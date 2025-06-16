@@ -1,0 +1,544 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Microsoft YaHei', '微軟雅黑', Arial, sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h1 {
+    color: #3a7bd5;
+    margin-bottom: 20px;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.nav-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    padding: 10px 20px;
+    margin: 0 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.nav-btn.active {
+    background-color: #3a7bd5;
+    color: white;
+    border-color: #2a6bc5;
+}
+
+.section {
+    display: none;
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.section.active {
+    display: block;
+}
+
+h2 {
+    color: #3a7bd5;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+h3 {
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+button {
+    background-color: #3a7bd5;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #2a6bc5;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* 單詞本樣式 */
+.vocabulary-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .vocabulary-container {
+        flex-direction: row;
+    }
+    
+    .vocabulary-input, .vocabulary-list {
+        flex: 1;
+    }
+}
+
+.vocabulary-input, .vocabulary-list {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+#batch-input {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: white;
+}
+
+#word-list {
+    list-style: none;
+}
+
+.word-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.word-item:last-child {
+    border-bottom: none;
+}
+
+.word-text {
+    flex: 1;
+}
+
+.word-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.edit-btn, .delete-btn {
+    padding: 5px 10px;
+    font-size: 0.8em;
+}
+
+.delete-btn {
+    background-color: #d9534f;
+}
+
+.delete-btn:hover {
+    background-color: #c9302c;
+}
+
+/* 默寫模式樣式 */
+.dictation-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .dictation-container {
+        flex-direction: row;
+    }
+    
+    .dictation-settings, .dictation-practice {
+        flex: 1;
+    }
+}
+
+.dictation-settings, .dictation-practice {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.settings-group {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.settings-group label {
+    margin-right: 10px;
+    min-width: 150px;
+}
+
+#dictation-word-display {
+    font-size: 2em;
+    text-align: center;
+    margin: 20px 0;
+    min-height: 60px;
+}
+
+#dictation-result {
+    margin-top: 15px;
+    min-height: 60px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.correct {
+    color: green;
+    background-color: #dff0d8;
+}
+
+.incorrect {
+    color: red;
+    background-color: #f2dede;
+}
+
+/* 學習模式樣式 */
+.learning-container {
+    display: grid;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .learning-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.word-selection, .word-details, .example-sentences, .practice-sentences {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+#detail-word {
+    font-size: 1.5em;
+    margin-bottom: 5px;
+}
+
+#detail-phonetic {
+    color: #666;
+    font-style: italic;
+    margin-bottom: 10px;
+}
+
+#detail-meaning {
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+#examples-container {
+    margin-bottom: 15px;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.example-item {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.example-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.example-english {
+    margin-bottom: 5px;
+}
+
+.example-chinese {
+    color: #666;
+    transition: all 0.3s ease;
+}
+
+.interactive-word {
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0 2px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.interactive-word:hover {
+    background-color: #f0f8ff;
+}
+
+.interactive-word.highlight {
+    color: #3a7bd5;
+    font-weight: bold;
+    background-color: #e6f3ff;
+    transition: all 0.2s ease-in-out;
+}
+
+#sentence-input {
+    min-height: 80px;
+    resize: vertical;
+}
+
+#sentence-feedback {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    min-height: 60px;
+}
+
+.feedback-correct {
+    background-color: #dff0d8;
+    color: #3c763d;
+}
+
+.feedback-incorrect {
+    background-color: #f2dede;
+    color: #a94442;
+}
+
+.feedback-suggestion {
+    margin-top: 10px;
+    font-style: italic;
+}
+
+/* 隨堂測驗樣式 */
+.quiz-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .quiz-container {
+        flex-direction: row;
+    }
+    
+    .quiz-settings {
+        flex: 0 0 300px;
+    }
+    
+    .quiz-content {
+        flex: 1;
+    }
+}
+
+.quiz-settings {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.quiz-content {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+#quiz-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: #3a7bd5;
+}
+
+#quiz-question-container {
+    text-align: center;
+}
+
+#quiz-question {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#quiz-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 480px) {
+    #quiz-options {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.quiz-option {
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quiz-option:hover {
+    border-color: #3a7bd5;
+    background-color: #f0f8ff;
+}
+
+.quiz-option.selected {
+    border-color: #3a7bd5;
+    background-color: #e6f3ff;
+}
+
+.quiz-option.correct {
+    border-color: #28a745;
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.quiz-option.incorrect {
+    border-color: #dc3545;
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.quiz-option.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.quiz-result {
+    text-align: center;
+    padding: 20px;
+    background-color: white;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.quiz-result.hidden {
+    display: none;
+}
+
+#final-score {
+    font-size: 2em;
+    margin: 20px 0;
+    color: #3a7bd5;
+}
+
+#quiz-summary {
+    margin: 20px 0;
+}
+
+/* Tooltip 樣式 */
+.tooltip {
+    position: absolute;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 300px;
+    max-width: 90vw;
+    font-size: 0.9em;
+    line-height: 1.6;
+    display: none;
+    color: #333;
+}
+
+.tooltip-title {
+    font-weight: bold;
+    color: #3a7bd5;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+}
+
+.tooltip-content p {
+    margin-bottom: 8px;
+}
+
+.score-excellent {
+    color: #28a745;
+}
+
+.score-good {
+    color: #ffc107;
+}
+
+.score-poor {
+    color: #dc3545;
+}
+
+#restart-quiz-btn {
+    margin-top: 20px;
+    padding: 12px 24px;
+    font-size: 1.1em;
+}
+/* 單詞本高亮樣式 */
+.word-item .highlight {
+    background-color: #e6f3ff;
+    color: #3a7bd5;
+    border-radius: 3px;
+    padding: 0 4px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
