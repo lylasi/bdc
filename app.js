@@ -558,26 +558,28 @@ function displayExamples(word) {
         let processedChinese = example.chinese;
 
         const sortedAlignment = [...example.alignment].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
+        const processedEn = new Set(); // 用於跟踪已處理的英文單詞（小寫）
 
         sortedAlignment.forEach((pair) => {
             if (pair.en && pair.zh) {
+                const lowerEn = pair.en.toLowerCase();
+                if (processedEn.has(lowerEn)) {
+                    return; // 如果這個單詞的小寫形式已經處理過，就跳過
+                }
+
                 const pairId = `${word.id}-${index}-${pair.en.replace(/[^a-zA-Z0-9]/g, '')}`;
                 
                 const enRegex = new RegExp(`(?<!<span[^>]*>)\\b(${escapeRegex(pair.en)})\\b(?!<\\/span>)`, 'gi');
-                processedEnglish = processedEnglish.split(enRegex).map((part, i) => {
-                    if (i % 2 === 1) { // Matched part
-                        return `<span class="interactive-word" data-pair-id="${pairId}">${part}</span>`;
-                    }
-                    return part;
-                }).join('');
+                processedEnglish = processedEnglish.replace(enRegex, (match) => {
+                    return `<span class="interactive-word" data-pair-id="${pairId}">${match}</span>`;
+                });
 
                 const zhRegex = new RegExp(`(?<!<span[^>]*>)(${escapeRegex(pair.zh)})(?!<\\/span>)`, 'g');
-                processedChinese = processedChinese.split(zhRegex).map((part, i) => {
-                    if (i % 2 === 1) { // Matched part
-                        return `<span class="interactive-word" data-pair-id="${pairId}">${part}</span>`;
-                    }
-                    return part;
-                }).join('');
+                processedChinese = processedChinese.replace(zhRegex, (match) => {
+                    return `<span class="interactive-word" data-pair-id="${pairId}">${match}</span>`;
+                });
+
+                processedEn.add(lowerEn); // 標記為已處理
             }
         });
 
