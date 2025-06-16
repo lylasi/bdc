@@ -1,6 +1,6 @@
 // AI 配置
 const API_URL = 'https://tbai.xin/v1/chat/completions';
-const API_KEY = 'sk-Cy8AfiJ0rVilVPkLGaoFmxMJaIivel4boHDdoX42bHtnLmnb'; // 請替換成你的 API Key
+const API_KEY = ''; // 請替換成你的 API Key
 
 // AI 模型配置
 const AI_MODELS = {
