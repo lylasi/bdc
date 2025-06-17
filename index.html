@@ -9,38 +9,64 @@
 <body>
     <div class="container">
         <header>
-            <h1>背單詞應用</h1>
+            <h1>PEN子背單詞</h1>
             <nav>
-                <button id="vocabulary-btn" class="nav-btn active">單詞本</button>
-                <button id="dictation-btn" class="nav-btn">默寫模式</button>
-                <button id="learning-btn" class="nav-btn">學習模式</button>
-                <button id="quiz-btn" class="nav-btn">隨堂測驗</button>
-                <button id="analysis-btn" class="nav-btn">文章詳解</button>
+               <button id="vocabulary-btn" class="nav-btn active">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-journal-text" viewBox="0 0 16 16"><path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/><path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"/><path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/></svg>
+                   <span class="nav-text" data-full-text="單詞本" data-short-text="詞">單詞本</span>
+               </button>
+               <button id="dictation-btn" class="nav-btn">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-earbuds" viewBox="0 0 16 16"><path d="M6.854 3.646a.5.5 0 0 1 0 .708L5.707 5.5h.793a2.5 2.5 0 0 1 2.5 2.5v1a.5.5 0 0 1-1 0v-1a1.5 1.5 0 0 0-1.5-1.5H5.707l1.147 1.146a.5.5 0 0 1-.708.708L4.5 5.854a.5.5 0 0 1 0-.708L6.146 3.5a.5.5 0 0 1 .708 0z"/><path d="M9.146 3.646a.5.5 0 0 0 0 .708L10.293 5.5h-.793A1.5 1.5 0 0 0 8 7v1a.5.5 0 0 0 1 0V7a2.5 2.5 0 0 1 2.5-2.5h.793l-1.147 1.146a.5.5 0 0 0 .708.708L11.5 5.854a.5.5 0 0 0 0-.708L9.854 3.5a.5.5 0 0 0-.708 0z"/><path fill-rule="evenodd" d="M8 3a4 4 0 0 0-4 4v3a4 4 0 0 0 4 4h1a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H8zm1 1a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1z"/></svg>
+                   <span class="nav-text" data-full-text="默寫模式" data-short-text="默">默寫模式</span>
+               </button>
+               <button id="learning-btn" class="nav-btn">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-lightbulb" viewBox="0 0 16 16"><path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A6 6 0 0 1 2 6zm6 8.5a.5.5 0 0 1 .5-.5h.5a.5.5 0 0 1 0 1h-.5a.5.5 0 0 1-.5-.5zM8 1a5 5 0 0 0-3.465 8.657.5.5 0 0 1-.23.193l-.338.253a.5.5 0 0 1-.428-.71A6 6 0 0 1 8 0a6 6 0 0 1 6 6 .5.5 0 0 1-1 0A5 5 0 0 0 8 1z"/></svg>
+                   <span class="nav-text" data-full-text="學習模式" data-short-text="學">學習模式</span>
+               </button>
+               <button id="quiz-btn" class="nav-btn">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2-square" viewBox="0 0 16 16"><path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5H3z"/><path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/></svg>
+                   <span class="nav-text" data-full-text="隨堂測驗" data-short-text="測">隨堂測驗</span>
+               </button>
+               <button id="analysis-btn" class="nav-btn">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-text" viewBox="0 0 16 16"><path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>
+                   <span class="nav-text" data-full-text="文章詳解" data-short-text="文">文章詳解</span>
+               </button>
             </nav>
         </header>
 
         <main>
             <!-- 單詞本頁面 -->
             <section id="vocabulary-section" class="section active">
-                <h2>單詞本管理</h2>
-                <div class="vocabulary-container">
-                    <div class="vocabulary-input">
-                        <h3>添加單詞</h3>
-                        <div class="input-group">
-                            <input type="text" id="word-input" placeholder="單詞 (例: apple)">
-                            <input type="text" id="phonetic-input" placeholder="音標 (例: ˈæp.əl)">
-                            <input type="text" id="meaning-input" placeholder="中文意思 (例: 蘋果)">
-                            <button id="add-word-btn">添加</button>
+                <div class="vocabulary-layout">
+                    <!-- 左側: 單詞本列表 -->
+                    <div id="vocab-books-panel" class="vocab-books-panel">
+                        <div class="panel-header">
+                            <h3>我的單詞本</h3>
+                            <button id="add-vocab-book-btn" class="icon-btn" title="新增單詞本">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+                            </button>
                         </div>
-                        <div class="input-group">
-                            <textarea id="batch-input" placeholder="批量添加單詞，每行一個，格式: 單詞#中文@音標 (例: apple#蘋果@ˈæp.əl)"></textarea>
-                            <button id="batch-add-btn">批量添加</button>
-                        </div>
+                        <ul id="vocab-book-list">
+                            <!-- JS動態生成 -->
+                        </ul>
                     </div>
-                    <div class="vocabulary-list">
-                        <h3>單詞列表</h3>
+                    <!-- 右側: 選定單詞本的內容 -->
+                    <div id="vocab-words-panel" class="vocab-words-panel">
+                        <div class="panel-header">
+                            <h3 id="current-book-name">請選擇一個單詞本</h3>
+                            <div class="word-panel-actions">
+                                <button id="edit-vocab-book-btn" class="icon-btn" title="編輯單詞" disabled>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+                                </button>
+                                <button id="delete-vocab-book-btn" class="icon-btn" title="刪除單詞本" disabled>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                                </button>
+                            </div>
+                        </div>
                         <div class="list-container">
-                            <ul id="word-list"></ul>
+                            <ul id="word-list">
+                                <li class="word-item-placeholder">請從左側選擇或創建一個單詞本</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -50,8 +76,18 @@
             <section id="dictation-section" class="section">
                 <h2>默寫模式</h2>
                 <div class="dictation-container">
+                    <div id="dictation-progress-container" class="progress-container hidden">
+                        <div id="dictation-progress-bar"></div>
+                        <span id="dictation-progress-text">0/0</span>
+                    </div>
                     <div class="dictation-settings">
                         <h3>設置</h3>
+                        <div class="settings-group">
+                            <label>選擇單詞本:</label>
+                            <div id="dictation-book-selector" class="book-selector">
+                                <!-- JS動態生成 -->
+                            </div>
+                        </div>
                         <div class="settings-group">
                             <label for="repeat-times">單詞重複次數:</label>
                             <input type="number" id="repeat-times" min="1" max="5" value="2">
@@ -68,8 +104,14 @@
                             <label for="loop-mode">循環模式:</label>
                             <input type="checkbox" id="loop-mode">
                         </div>
+                        <div class="settings-group">
+                            <label for="listen-only-mode">只聽不練:</label>
+                            <input type="checkbox" id="listen-only-mode" checked>
+                        </div>
                         <button id="start-dictation-btn">開始默寫</button>
                         <button id="stop-dictation-btn" disabled>停止</button>
+                        <button id="pause-dictation-btn" disabled>暫停</button>
+                        <button id="replay-dictation-btn" style="display: none;">重播</button>
                     </div>
                     <div class="dictation-practice">
                         <h3>默寫練習</h3>
@@ -176,6 +218,43 @@
                             <button id="analyze-article-btn">分析文章</button>
                             <button id="clear-article-btn">清除重寫</button>
                         </div>
+                        <div class="audio-controls">
+                            <h4>朗讀控制</h4>
+                            <div class="audio-main-buttons">
+                                <button id="read-article-btn" title="朗讀文章"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg></button>
+                                <button id="pause-resume-article-btn" title="暫停" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pause-fill" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/></svg></button>
+                                <button id="stop-read-article-btn" title="停止朗讀" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stop-fill" viewBox="0 0 16 16"><path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/></svg></button>
+                                <button id="download-audio-btn" title="下載語音"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg></button>
+                            </div>
+                            <div class="settings-group">
+                                <label for="reading-mode">模式:</label>
+                                <select id="reading-mode">
+                                    <option value="full">全文</option>
+                                    <option value="paragraph">段落</option>
+                                    <option value="sentence">句子</option>
+                                </select>
+                            </div>
+                            <div id="chunk-repeat-controls" class="settings-group hidden">
+                                <label for="chunk-repeat-times">重複:</label>
+                                <input type="number" id="chunk-repeat-times" min="1" max="10" value="1" title="設置段落/句子朗讀的重複次數">
+                            </div>
+                            <div class="settings-group">
+                                <label for="reading-speed">語速:</label>
+                                <div id="speed-control-group" class="speed-control">
+                                    <button class="speed-btn" data-speed="-100">x0.5</button>
+                                    <button class="speed-btn" data-speed="-50">x0.75</button>
+                                    <button class="speed-btn active" data-speed="0">x1.0</button>
+                                    <button class="speed-btn" data-speed="50">x1.25</button>
+                                    <button class="speed-btn" data-speed="100">x1.5</button>
+                                </div>
+                            </div>
+                            <div id="chunk-nav-controls" class="settings-group hidden">
+                                <button id="prev-chunk-btn" disabled>上一句</button>
+                                <span id="chunk-progress">0 / 0</span>
+                                <button id="next-chunk-btn" disabled>下一句</button>
+                            </div>
+                            <div id="current-sentence-display" class="current-sentence"></div>
+                        </div>
                     </div>
                     <div class="analysis-result">
                         <h3>分析結果</h3>
@@ -189,6 +268,17 @@
     </div>
 
     <div id="word-analysis-tooltip" class="tooltip"></div>
+
+    <!-- Modal 結構 -->
+    <div id="app-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h3 id="modal-title">Modal Title</h3>
+            <div id="modal-body">
+                <!-- JS動態生成 -->
+            </div>
+        </div>
+    </div>
 
     <script src="ai-config.js"></script>
     <script src="app.js"></script>
