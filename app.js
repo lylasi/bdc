@@ -1,10 +1,14 @@
-// 全局變量
-let vocabularyList = [];
+// =================================
+// 全局變量 (重構後)
+// =================================
+let vocabularyBooks = []; // { id: string, name: string, words: [...] }[]
+let activeBookId = null;
 let currentDictationIndex = -1;
 let dictationInterval;
 let dictationTimeout;
+let isDictationPaused = false;
 let synth = window.speechSynthesis;
-
+let ttsAudio; // 用於TTS API的音頻對象
 
 // 測驗相關變量
 let quizQuestions = [];
@@ -13,16 +17,21 @@ let quizScore = 0;
 let selectedAnswer = null;
 let quizInProgress = false;
 
-// DOM元素
+// =================================
+// DOM元素 (重構後)
+// =================================
 const navBtns = document.querySelectorAll('.nav-btn');
 const sections = document.querySelectorAll('.section');
-const wordInput = document.getElementById('word-input');
-const phoneticInput = document.getElementById('phonetic-input');
-const meaningInput = document.getElementById('meaning-input');
-const addWordBtn = document.getElementById('add-word-btn');
-const batchInput = document.getElementById('batch-input');
-const batchAddBtn = document.getElementById('batch-add-btn');
+
+// 單詞本頁面
+const vocabBookList = document.getElementById('vocab-book-list');
+const addVocabBookBtn = document.getElementById('add-vocab-book-btn');
+const currentBookName = document.getElementById('current-book-name');
+const editVocabBookBtn = document.getElementById('edit-vocab-book-btn');
+const deleteVocabBookBtn = document.getElementById('delete-vocab-book-btn');
 const wordList = document.getElementById('word-list');
+
+// 學習模式頁面
 const wordSelect = document.getElementById('word-select');
 const detailWord = document.getElementById('detail-word');
 const detailPhonetic = document.getElementById('detail-phonetic');
@@ -33,16 +42,26 @@ const examplesContainer = document.getElementById('examples-container');
 const sentenceInput = document.getElementById('sentence-input');
 const checkSentenceBtn = document.getElementById('check-sentence-btn');
 const sentenceFeedback = document.getElementById('sentence-feedback');
+
+// 默寫模式頁面
 const repeatTimes = document.getElementById('repeat-times');
 const wordInterval = document.getElementById('word-interval');
 const readMeaning = document.getElementById('read-meaning');
 const loopMode = document.getElementById('loop-mode');
 const startDictationBtn = document.getElementById('start-dictation-btn');
 const stopDictationBtn = document.getElementById('stop-dictation-btn');
+const pauseDictationBtn = document.getElementById('pause-dictation-btn');
+const replayDictationBtn = document.getElementById('replay-dictation-btn');
 const dictationWordDisplay = document.getElementById('dictation-word-display');
 const dictationInput = document.getElementById('dictation-input');
 const checkDictationBtn = document.getElementById('check-dictation-btn');
 const dictationResult = document.getElementById('dictation-result');
+const dictationBookSelector = document.getElementById('dictation-book-selector');
+const listenOnlyMode = document.getElementById('listen-only-mode');
+const dictationPractice = document.querySelector('.dictation-practice');
+const dictationProgressContainer = document.getElementById('dictation-progress-container');
+const dictationProgressBar = document.getElementById('dictation-progress-bar');
+const dictationProgressText = document.getElementById('dictation-progress-text');
 
 // 測驗模式DOM元素
 const quizCount = document.getElementById('quiz-count');
@@ -67,49 +86,94 @@ const articleAnalysisContainer = document.getElementById('article-analysis-conta
 const articleHistorySelect = document.getElementById('article-history-select');
 const deleteHistoryBtn = document.getElementById('delete-history-btn');
 const clearArticleBtn = document.getElementById('clear-article-btn');
+const readArticleBtn = document.getElementById('read-article-btn');
+const stopReadArticleBtn = document.getElementById('stop-read-article-btn');
+const pauseResumeArticleBtn = document.getElementById('pause-resume-article-btn');
+const downloadAudioBtn = document.getElementById('download-audio-btn');
+const readingModeSelect = document.getElementById('reading-mode');
+const speedBtnGroup = document.getElementById('speed-control-group');
+const chunkNavControls = document.getElementById('chunk-nav-controls');
+const prevChunkBtn = document.getElementById('prev-chunk-btn');
+const nextChunkBtn = document.getElementById('next-chunk-btn');
+const chunkProgressSpan = document.getElementById('chunk-progress');
+const chunkRepeatControls = document.getElementById('chunk-repeat-controls');
+const chunkRepeatTimes = document.getElementById('chunk-repeat-times');
+const currentSentenceDisplay = document.getElementById('current-sentence-display');
+
 
 // 文章詳解相關變量
 let analyzedArticles = [];
+let readingChunks = [];
+let currentChunkIndex = 0;
+let isReadingChunkPaused = false;
+let currentSpeed = 0;
+let sentenceRepeatCount = 0;
 
-// 初始化
+// Modal DOM 元素
+const appModal = document.getElementById('app-modal');
+const modalTitle = document.getElementById('modal-title');
+const modalBody = document.getElementById('modal-body');
+const modalCloseBtn = appModal.querySelector('.modal-close-btn');
+
+
+// =================================
+// 初始化與事件監聽 (重構後)
+// =================================
 document.addEventListener('DOMContentLoaded', () => {
-    loadVocabulary();
-    loadAnalyzedArticles(); // 新增：加載已分析的文章歷史
-    renderWordList();
-    populateWordSelect();
-    populateArticleHistorySelect(); // 新增：填充歷史記錄下拉菜單
+    loadVocabularyBooks();
+    loadAnalyzedArticles();
+    renderVocabBookList();
+    updateActiveBookView();
+    populateArticleHistorySelect();
     setupEventListeners();
+    // 手動觸發一次change事件來更新初始狀態
+    listenOnlyMode.dispatchEvent(new Event('change'));
 });
 
-// 設置事件監聽器
 function setupEventListeners() {
     // 導航按鈕
     navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // 如果正在進行測驗，先詢問是否要停止
             if (quizInProgress && btn.id !== 'quiz-btn') {
-                if (!confirm('測驗正在進行中，確定要離開嗎？')) {
-                    return;
-                }
+                if (!confirm('測驗正在進行中，確定要離開嗎？')) { return; }
                 stopQuiz();
             }
             
+            // 檢查是否正在進行默寫以及是否要離開默寫頁面
+            const isDictationRunning = !stopDictationBtn.disabled;
+            const isLeavingDictationSection = btn.id !== 'dictation-btn';
+            
+            // 根據新的需求，浮動條的顯示/隱藏只由默寫的開始和停止決定，
+            // 不再與頁面切換掛鉤。
+
             navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
             const targetId = btn.id.replace('-btn', '-section');
             sections.forEach(section => {
-                section.classList.remove('active');
-                if (section.id === targetId) {
-                    section.classList.add('active');
-                }
+                section.classList.toggle('active', section.id === targetId);
             });
+
+            // 切換到默寫頁面時，更新單詞本選擇器
+            if (targetId === 'dictation-section') {
+                populateDictationBookSelector();
+            }
         });
     });
-    
-    // 單詞本功能
-    addWordBtn.addEventListener('click', addWord);
-    batchAddBtn.addEventListener('click', batchAddWords);
+
+    // 單詞本面板事件
+    addVocabBookBtn.addEventListener('click', () => openModalForNewBook());
+    vocabBookList.addEventListener('click', handleVocabBookSelection);
+    editVocabBookBtn.addEventListener('click', () => openModalForEditBook());
+    deleteVocabBookBtn.addEventListener('click', deleteActiveVocabBook);
+
+    // Modal 事件
+    modalCloseBtn.addEventListener('click', closeModal);
+    appModal.addEventListener('click', (e) => {
+        if (e.target === appModal) {
+            closeModal();
+        }
+    });
     
     // 單詞列表高亮
     wordList.addEventListener('mouseover', (e) => {
@@ -131,7 +195,12 @@ function setupEventListeners() {
     // 默寫模式
     startDictationBtn.addEventListener('click', startDictation);
     stopDictationBtn.addEventListener('click', stopDictation);
+    pauseDictationBtn.addEventListener('click', togglePauseDictation);
+    replayDictationBtn.addEventListener('click', replayCurrentDictationWord);
     checkDictationBtn.addEventListener('click', checkDictation);
+    listenOnlyMode.addEventListener('change', () => {
+        dictationPractice.classList.toggle('hidden', listenOnlyMode.checked);
+    });
     
     // 學習模式
     wordSelect.addEventListener('change', displayWordDetails);
@@ -187,7 +256,36 @@ function setupEventListeners() {
     clearArticleBtn.addEventListener('click', clearArticleInput);
     articleHistorySelect.addEventListener('change', loadSelectedArticle);
     deleteHistoryBtn.addEventListener('click', deleteSelectedArticleHistory);
+    readArticleBtn.addEventListener('click', readArticle);
+    stopReadArticleBtn.addEventListener('click', stopReadArticle);
+    pauseResumeArticleBtn.addEventListener('click', togglePauseResume);
+    downloadAudioBtn.addEventListener('click', downloadAudio);
+    
+    speedBtnGroup.addEventListener('click', (e) => {
+        if (e.target.classList.contains('speed-btn')) {
+            speedBtnGroup.querySelectorAll('.speed-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            currentSpeed = parseInt(e.target.dataset.speed, 10);
+        }
+    });
 
+    readingModeSelect.addEventListener('change', () => {
+        stopReadArticle();
+        const mode = readingModeSelect.value;
+        const isChunkMode = mode === 'sentence' || mode === 'paragraph';
+        chunkRepeatControls.classList.toggle('hidden', !isChunkMode);
+        
+        let navText = '句';
+        if (mode === 'paragraph') {
+            navText = '段';
+        }
+        prevChunkBtn.textContent = `上一${navText}`;
+        nextChunkBtn.textContent = `下一${navText}`;
+    });
+    prevChunkBtn.addEventListener('click', playPrevChunk);
+    nextChunkBtn.addEventListener('click', playNextChunk);
+    
+    
     // 文章詳解結果區的事件監聽（類似於例句）
     articleAnalysisContainer.addEventListener('mouseover', (e) => {
         if (e.target.classList.contains('interactive-word')) {
@@ -222,7 +320,38 @@ function setupEventListeners() {
             }
         }
     });
+    
+    const navTextElements = document.querySelectorAll('.nav-text');
+
+    const updateNavText = () => {
+        const screenWidth = window.innerWidth;
+        navTextElements.forEach(el => {
+            if (screenWidth <= 480) {
+                el.style.display = 'none';
+            } else if (screenWidth <= 768) {
+                el.style.display = 'inline';
+                el.textContent = el.dataset.shortText;
+            } else {
+                el.style.display = 'inline';
+                el.textContent = el.dataset.fullText;
+            }
+        });
+    };
+    window.addEventListener('resize', updateNavText);
+    updateNavText(); // Initial check
+
+    // 頁面可見性變化事件，確保浮動控件在切換標籤頁後能恢復
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            const isDictationRunning = !stopDictationBtn.disabled;
+            // 如果默寫正在運行，就顯示浮動控件
+            if (isDictationRunning) {
+                showFloatingControls();
+            }
+        }
+    });
 }
+
 
 // 文章詳解功能
 async function analyzeArticle() {
@@ -237,7 +366,6 @@ async function analyzeArticle() {
     articleAnalysisContainer.innerHTML = '<p>正在為您生成詳細解析，請稍候...</p>';
 
     try {
-        // 最終優化 Prompt，要求極致的上下文關聯分析
         const prompt = `請對以下英文文章進行全面、深入的語法和語義分析，並嚴格按照指定的JSON格式返回結果。
 
 文章: "${articleText}"
@@ -273,7 +401,7 @@ async function analyzeArticle() {
                 'Authorization': `Bearer ${API_KEY}`
             },
             body: JSON.stringify({
-                model: AI_MODELS.exampleGeneration, // 可以考慮為此功能使用更強大的模型
+                model: AI_MODELS.exampleGeneration,
                 messages: [{ role: "user", content: prompt }],
                 temperature: 0.5,
             })
@@ -289,13 +417,8 @@ async function analyzeArticle() {
         const content = data.choices[0].message.content.replace(/^```json\n/, '').replace(/\n```$/, '');
         const analysisResult = JSON.parse(content);
 
-        // 將新的、更可靠的 detailed_analysis 數組存儲在 dataset 中
         articleAnalysisContainer.dataset.analysis = JSON.stringify(analysisResult.detailed_analysis || []);
-
-        // 渲染結果
         displayArticleAnalysis(articleText, analysisResult);
-
-        // 新增：保存分析結果到歷史記錄
         saveAnalysisResult(articleText, analysisResult);
 
     } catch (error) {
@@ -318,10 +441,8 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
 
     const escapeRegex = (string) => string ? string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') : '';
 
-    // --- 數據預處理 ---
-    // 1. 為每個分析的單詞計算其在原文的精確位置
     let cursor = 0;
-    const wordStartMap = new Map(); // 使用Map來從起始位置快速查找單詞
+    const wordStartMap = new Map();
     detailed_analysis.forEach(item => {
         const word = item.word;
         if (!word) return;
@@ -336,17 +457,15 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         }
     });
 
-    // 2. 處理中英文高亮配對，並將pairId賦予對應的英文單詞
     let processedChinese = chinese_translation;
     const sortedAlignment = [...word_alignment].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
-    const processedPhrases = new Array(originalArticle.length).fill(false); // 標記已處理的文本範圍
+    const processedPhrases = new Array(originalArticle.length).fill(false);
 
     sortedAlignment.forEach((pair, index) => {
         if (!pair.en || !pair.zh) return;
 
         let phraseIndex = -1;
         let tempCursor = 0;
-        // 查找一個尚未被更長的短語覆蓋的匹配項
         while ((phraseIndex = originalArticle.indexOf(pair.en, tempCursor)) !== -1) {
             if (!processedPhrases[phraseIndex]) {
                 break;
@@ -358,50 +477,40 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             const phraseEndIndex = phraseIndex + pair.en.length;
             const pairId = `article-pair-${index}`;
 
-            // 將此ID賦予所有起始位置在該短語範圍內的單詞
             for (let i = phraseIndex; i < phraseEndIndex; i++) {
                 if (wordStartMap.has(i)) {
                     const wordItem = wordStartMap.get(i);
-                    // 確保單詞完全包含在短語內
                     if (wordItem.endIndex <= phraseEndIndex) {
                         wordItem.pairId = pairId;
                     }
                 }
             }
             
-            // 將此範圍標記為已處理
             for (let i = phraseIndex; i < phraseEndIndex; i++) {
                 processedPhrases[i] = true;
             }
 
-            // 為中文部分添加高亮span
             const zhRegex = new RegExp(`(?<!<span[^>]*>)(${escapeRegex(pair.zh)})(?!<\\/span>)`);
             processedChinese = processedChinese.replace(zhRegex, `<span class="interactive-word" data-pair-id="${pairId}">${pair.zh}</span>`);
         }
     });
 
-    // --- 渲染 ---
-    // 3. 根據預處理好的數據構建英文顯示內容
     let processedEnglish = '';
     let lastIndex = 0;
     const wordCounts = {};
     detailed_analysis.forEach(item => {
         if (item.startIndex === undefined) return;
         
-        // 添加單詞間的普通文本
         processedEnglish += originalArticle.substring(lastIndex, item.startIndex);
         
-        // 添加帶有完整數據的單詞span
         const wordLower = item.word.toLowerCase();
         const wordIndex = wordCounts[wordLower] || 0;
         processedEnglish += `<span class="interactive-word" data-word="${item.word}" data-word-index="${wordIndex}" data-pair-id="${item.pairId || ''}">${item.word}</span>`;
         wordCounts[wordLower] = wordIndex + 1;
         lastIndex = item.endIndex;
     });
-    // 添加最後的剩餘文本
     processedEnglish += originalArticle.substring(lastIndex);
 
-    // 4. 插入最終的HTML
     articleAnalysisContainer.innerHTML = `
         <div class="example-item">
             <p class="example-english">${processedEnglish.replace(/\n/g, '<br>')}</p>
@@ -409,7 +518,6 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         </div>
     `;
     
-    // 存儲分析數據供點擊事件使用
     articleAnalysisContainer.dataset.analysis = JSON.stringify(detailed_analysis || []);
 }
 
@@ -423,10 +531,8 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         return;
     }
     
-    // 從總分析數組中，篩選出所有對應這個單詞的分析結果
     const matchingAnalyses = analysisArray.filter(item => item.word.toLowerCase() === wordText.toLowerCase());
 
-    // 根據存儲的索引，從篩選後的分析結果中獲取唯一的、正確的分析數據
     const wordAnalysisData = (wordIndex < matchingAnalyses.length)
         ? matchingAnalyses[wordIndex]
         : null;
@@ -450,47 +556,365 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
 }
 
 
-// 單詞本功能
-function addWord() {
-    const word = wordInput.value.trim();
-    const phonetic = phoneticInput.value.trim();
-    const meaning = meaningInput.value.trim();
-    
-    if (word && phonetic) {
-        const newWord = {
-            id: Date.now().toString(),
-            word,
-            phonetic,
-            meaning,
-            examples: []
-        };
+// 文章朗讀增強功能
+function readArticle() {
+    const text = articleInput.value.trim();
+    if (!text) {
+        alert('請先輸入要朗讀的文章！');
+        return;
+    }
+
+    if (ttsAudio && ttsAudio.paused) {
+        togglePauseResume();
+        return;
+    }
+
+    const mode = readingModeSelect.value;
+    isReadingChunkPaused = false;
+
+    const chunkMode = (mode === 'full') ? 'sentence' : mode;
+    readingChunks = splitText(text, chunkMode);
+
+    if (readingChunks.length > 0) {
+        currentChunkIndex = 0;
         
-        vocabularyList.push(newWord);
-        saveVocabulary();
-        renderWordList();
-        populateWordSelect();
+        if (mode === 'full') {
+            chunkNavControls.classList.add('hidden');
+        } else {
+            updateChunkNav();
+            chunkNavControls.classList.remove('hidden');
+        }
         
-        // 清空輸入框
-        wordInput.value = '';
-        phoneticInput.value = '';
-        meaningInput.value = '';
-    } else {
-        alert('請至少輸入單詞和音標！');
+        playCurrentChunk();
     }
 }
 
-function batchAddWords() {
-    const batchText = batchInput.value.trim();
-    if (!batchText) {
-        alert('請輸入要批量添加的單詞！');
+function stopCurrentAudio() {
+    if (ttsAudio) {
+        ttsAudio.onended = null;
+        ttsAudio.onerror = null;
+        if (!ttsAudio.paused) {
+            ttsAudio.pause();
+        }
+        ttsAudio.src = '';
+        ttsAudio = null;
+    }
+}
+
+function stopReadArticle() {
+    stopCurrentAudio();
+    isReadingChunkPaused = false;
+    readArticleBtn.disabled = false;
+    stopReadArticleBtn.disabled = true;
+    pauseResumeArticleBtn.disabled = true;
+    updatePauseResumeIcon(false);
+    
+    const mode = readingModeSelect.value;
+    if (mode === 'paragraph' || mode === 'sentence') {
+        updateChunkNav();
+    } else {
+        chunkNavControls.classList.add('hidden');
+    }
+
+    highlightCurrentChunk(null);
+    if(currentSentenceDisplay) {
+        currentSentenceDisplay.textContent = '';
+    }
+}
+
+function playCurrentChunk() {
+    if (currentChunkIndex < 0 || currentChunkIndex >= readingChunks.length) {
+        stopReadArticle();
         return;
     }
+
+    const chunk = readingChunks[currentChunkIndex];
+    highlightCurrentChunk(chunk);
+    if(currentSentenceDisplay){
+        currentSentenceDisplay.textContent = chunk;
+    }
+
+    const mode = readingModeSelect.value;
+    const isChunkMode = mode === 'sentence' || mode === 'paragraph';
+    const repeatTimesVal = isChunkMode ? parseInt(chunkRepeatTimes.value, 10) : 1;
+
+    const onStart = () => {
+        readArticleBtn.disabled = true;
+        stopReadArticleBtn.disabled = false;
+        updateChunkNav();
+    };
     
-    const lines = batchText.split('\n');
-    let addedCount = 0;
-    
-    lines.forEach(line => {
-        // 新格式: 單詞#中文@音標
+    const onEnd = () => {
+        sentenceRepeatCount++;
+        if (isReadingChunkPaused) {
+            return;
+        }
+        if (sentenceRepeatCount < repeatTimesVal) {
+            playCurrentChunk();
+        } else {
+            const isLastChunk = currentChunkIndex >= readingChunks.length - 1;
+            
+            if (!isLastChunk) {
+                currentChunkIndex++;
+                sentenceRepeatCount = 0;
+                playCurrentChunk();
+            } else {
+                 stopReadArticle();
+            }
+        }
+    };
+
+    speakText(chunk, 'en-US', currentSpeed, onStart, onEnd);
+}
+
+function playNextChunk() {
+    if (currentChunkIndex < readingChunks.length - 1) {
+        stopCurrentAudio();
+        currentChunkIndex++;
+        sentenceRepeatCount = 0;
+        isReadingChunkPaused = false;
+        playCurrentChunk();
+    }
+}
+
+function playPrevChunk() {
+    if (currentChunkIndex > 0) {
+        stopCurrentAudio();
+        currentChunkIndex--;
+        sentenceRepeatCount = 0;
+        isReadingChunkPaused = false;
+        playCurrentChunk();
+    }
+}
+
+function togglePauseResume() {
+    if (!ttsAudio) return;
+
+    if (ttsAudio.paused) {
+        ttsAudio.play().catch(e => console.error("恢復播放失敗", e));
+        isReadingChunkPaused = false;
+        updatePauseResumeIcon(false);
+    } else {
+        ttsAudio.pause();
+        isReadingChunkPaused = true;
+        updatePauseResumeIcon(true);
+    }
+}
+
+function updatePauseResumeIcon(isPaused) {
+    const icon = pauseResumeArticleBtn.querySelector('svg');
+    if (isPaused) {
+        icon.innerHTML = '<path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>';
+        pauseResumeArticleBtn.title = "繼續";
+    } else {
+        icon.innerHTML = '<path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>';
+        pauseResumeArticleBtn.title = "暫停";
+    }
+}
+
+function updateChunkNav() {
+    chunkProgressSpan.textContent = `${currentChunkIndex + 1} / ${readingChunks.length}`;
+    prevChunkBtn.disabled = currentChunkIndex === 0;
+    nextChunkBtn.disabled = currentChunkIndex === readingChunks.length - 1;
+}
+
+function splitText(text, mode) {
+    if (mode === 'paragraph') {
+        return text.split(/\n+/).filter(p => p.trim() !== '');
+    } else if (mode === 'sentence') {
+        return text.match(/[^.!?]+[.!?]*/g) || [];
+    }
+    return [text];
+}
+
+function highlightCurrentChunk(chunk) {
+    let analysisContent = articleAnalysisContainer.innerHTML;
+    analysisContent = analysisContent.replace(/<span class="highlight-reading">(.*?)<\/span>/gs, '$1');
+     if (chunk) {
+        analysisContent = analysisContent.replace(chunk, `<span class="highlight-reading">${chunk}</span>`);
+    }
+    articleAnalysisContainer.innerHTML = analysisContent;
+}
+
+async function downloadAudio() {
+    const text = articleInput.value.trim();
+    if (!text) {
+        alert('請先輸入要下載的文章！');
+        return;
+    }
+    const voice = TTS_CONFIG.voices.english;
+    const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${currentSpeed}`;
+
+    downloadAudioBtn.textContent = '下載中...';
+    downloadAudioBtn.disabled = true;
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`網絡響應錯誤: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = 'article_audio.mp3';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        a.remove();
+    } catch (error) {
+        console.error('下載音頻失敗:', error);
+        alert('下載音頻失敗，請稍後再試。');
+    } finally {
+        downloadAudioBtn.textContent = '下載語音';
+        downloadAudioBtn.disabled = false;
+    }
+}
+
+
+// =================================
+// 單詞本管理 (重構後)
+// =================================
+
+function renderVocabBookList() {
+    vocabBookList.innerHTML = '';
+    if (vocabularyBooks.length === 0) {
+        vocabBookList.innerHTML = '<li class="word-item-placeholder">還沒有單詞本</li>';
+        return;
+    }
+    vocabularyBooks.forEach(book => {
+        const li = document.createElement('li');
+        li.className = 'vocab-book-item';
+        li.dataset.bookId = book.id;
+        if (book.id === activeBookId) {
+            li.classList.add('active');
+        }
+        li.innerHTML = `<span>${book.name}</span> <span class="word-count">${book.words.length}</span>`;
+        vocabBookList.appendChild(li);
+    });
+}
+
+function handleVocabBookSelection(e) {
+    const target = e.target.closest('.vocab-book-item');
+    if (target) {
+        const bookId = target.dataset.bookId;
+        if (activeBookId !== bookId) {
+            activeBookId = bookId;
+            saveAppState();
+            renderVocabBookList();
+            updateActiveBookView();
+        }
+    }
+}
+
+function updateActiveBookView() {
+    const activeBook = vocabularyBooks.find(b => b.id === activeBookId);
+    if (activeBook) {
+        currentBookName.textContent = activeBook.name;
+        editVocabBookBtn.disabled = false;
+        deleteVocabBookBtn.disabled = false;
+        renderWordList();
+        populateWordSelect();
+    } else {
+        currentBookName.textContent = '請選擇一個單詞本';
+        editVocabBookBtn.disabled = true;
+        deleteVocabBookBtn.disabled = true;
+        wordList.innerHTML = '<li class="word-item-placeholder">請從左側選擇或創建一個單詞本</li>';
+        populateWordSelect();
+    }
+}
+
+function openModalForNewBook() {
+    modalTitle.textContent = '新增單詞本';
+    modalBody.innerHTML = `
+        <div class="input-group">
+            <label for="modal-book-name">單詞本名稱</label>
+            <input type="text" id="modal-book-name" placeholder="例如：雅思核心詞彙">
+        </div>
+        <div class="modal-actions">
+            <button class="cancel-btn">取消</button>
+            <button class="save-btn">創建</button>
+        </div>
+    `;
+    appModal.querySelector('.save-btn').onclick = () => saveVocabBook();
+    appModal.querySelector('.cancel-btn').onclick = closeModal;
+    openModal();
+}
+
+function openModalForEditBook() {
+    const book = vocabularyBooks.find(b => b.id === activeBookId);
+    if (!book) return;
+
+    modalTitle.textContent = '編輯單詞本 - ' + book.name;
+    const wordsText = book.words.map(w => `${w.word}#${w.meaning || ''}@${w.phonetic}`).join('\n');
+    modalBody.innerHTML = `
+        <div class="input-group">
+            <label for="modal-book-name">單詞本名稱</label>
+            <input type="text" id="modal-book-name" value="${book.name}">
+        </div>
+        <div class="input-group">
+            <label for="modal-vocab-content">單詞內容 (格式: 單詞#中文@音標)</label>
+            <textarea id="modal-vocab-content">${wordsText}</textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="cancel-btn">取消</button>
+            <button class="save-btn">保存更改</button>
+        </div>
+    `;
+    appModal.querySelector('.save-btn').onclick = () => saveVocabBook(book.id);
+    appModal.querySelector('.cancel-btn').onclick = closeModal;
+    openModal();
+}
+
+function saveVocabBook(bookId = null) {
+    const bookNameInput = document.getElementById('modal-book-name');
+    const name = bookNameInput.value.trim();
+    if (!name) {
+        alert('單詞本名稱不能為空！');
+        return;
+    }
+
+    if (bookId) { // 編輯模式
+        const book = vocabularyBooks.find(b => b.id === bookId);
+        if (book) {
+            book.name = name;
+            const wordsText = document.getElementById('modal-vocab-content').value.trim();
+            book.words = parseWordsFromText(wordsText);
+        }
+    } else { // 新增模式
+        const newBook = {
+            id: Date.now().toString(),
+            name: name,
+            words: []
+        };
+        vocabularyBooks.push(newBook);
+        activeBookId = newBook.id;
+    }
+
+    saveVocabularyBooks();
+    renderVocabBookList();
+    updateActiveBookView();
+    closeModal();
+}
+
+function deleteActiveVocabBook() {
+    const book = vocabularyBooks.find(b => b.id === activeBookId);
+    if (book && confirm(`確定要永久刪除單詞本 "${book.name}" 嗎？此操作無法撤銷。`)) {
+        vocabularyBooks = vocabularyBooks.filter(b => b.id !== activeBookId);
+        activeBookId = vocabularyBooks.length > 0 ? vocabularyBooks[0].id : null;
+        saveVocabularyBooks();
+        saveAppState();
+        renderVocabBookList();
+        updateActiveBookView();
+    }
+}
+
+function parseWordsFromText(text) {
+    const lines = text.split('\n');
+    const words = [];
+    lines.forEach((line, index) => {
+        if (!line.trim()) return;
         const hashIndex = line.indexOf('#');
         const atIndex = line.indexOf('@');
 
@@ -498,70 +922,35 @@ function batchAddWords() {
             const word = line.substring(0, hashIndex).trim();
             const meaning = line.substring(hashIndex + 1, atIndex).trim();
             const phonetic = line.substring(atIndex + 1).trim();
-            
+
             if (word && phonetic) {
-                const newWord = {
-                    id: Date.now().toString() + addedCount,
+                words.push({
+                    id: `${Date.now()}-${index}`,
                     word,
                     phonetic,
                     meaning,
                     examples: []
-                };
-                
-                vocabularyList.push(newWord);
-                addedCount++;
+                });
             }
         }
     });
-    
-    if (addedCount > 0) {
-        saveVocabulary();
-        renderWordList();
-        populateWordSelect();
-        batchInput.value = '';
-        alert(`成功添加了 ${addedCount} 個單詞！`);
-    } else {
-        alert('未能添加任何單詞，請檢查格式是否正確！格式：單詞#中文@音標');
-    }
+    return words;
 }
 
-function editWord(id) {
-    const word = vocabularyList.find(w => w.id === id);
-    if (word) {
-        const newWord = prompt('修改單詞:', word.word);
-        const newPhonetic = prompt('修改音標:', word.phonetic);
-        const newMeaning = prompt('修改中文意思:', word.meaning);
-        
-        if (newWord && newPhonetic) {
-            word.word = newWord;
-            word.phonetic = newPhonetic;
-            word.meaning = newMeaning || '';
-            
-            saveVocabulary();
-            renderWordList();
-            populateWordSelect();
-        }
-    }
-}
-
-function deleteWord(id) {
-    if (confirm('確定要刪除這個單詞嗎？')) {
-        vocabularyList = vocabularyList.filter(word => word.id !== id);
-        saveVocabulary();
-        renderWordList();
-        populateWordSelect();
-    }
-}
+// =================================
+// 單詞列表功能 (重構後)
+// =================================
 
 function renderWordList() {
     wordList.innerHTML = '';
-    
-    if (vocabularyList.length === 0) {
-        wordList.innerHTML = '<li class="word-item">還沒有添加單詞</li>';
+    const activeBook = vocabularyBooks.find(b => b.id === activeBookId);
+
+    if (!activeBook || activeBook.words.length === 0) {
+        wordList.innerHTML = '<li class="word-item-placeholder">這個單詞本是空的，點擊右上角鉛筆按鈕添加單詞。</li>';
         return;
     }
-    
-    vocabularyList.forEach(word => {
+
+    activeBook.words.forEach(word => {
         const li = document.createElement('li');
         li.className = 'word-item';
         li.innerHTML = `
@@ -571,59 +960,226 @@ function renderWordList() {
                 ${word.meaning ? `<span class="meaning" data-word-id="${word.id}">${word.meaning}</span>` : ''}
             </div>
             <div class="word-actions">
-                <button class="edit-btn">編輯</button>
-                <button class="delete-btn">刪除</button>
+                <button class="play-btn" title="播放"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play-circle" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg></button>
             </div>
         `;
-        
-        const editBtn = li.querySelector('.edit-btn');
-        const deleteBtn = li.querySelector('.delete-btn');
-        
-        editBtn.addEventListener('click', () => editWord(word.id));
-        deleteBtn.addEventListener('click', () => deleteWord(word.id));
+
+        const playBtn = li.querySelector('.play-btn');
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            playWordAndMeaning(word);
+        });
         
         wordList.appendChild(li);
     });
 }
 
-// 默寫模式功能
+
+// =================================
+// 默寫模式功能 (重構後)
+// =================================
+function populateDictationBookSelector() {
+    dictationBookSelector.innerHTML = '';
+    const bookCount = vocabularyBooks.length;
+
+    if (bookCount === 0) {
+        dictationBookSelector.innerHTML = '<p>沒有可用的單詞本。</p>';
+        return;
+    }
+
+    if (bookCount <= 5) { // 點選按鈕
+        vocabularyBooks.forEach((book, index) => {
+            const radioId = `book-radio-${book.id}`;
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.id = radioId;
+            radio.name = 'dictation-book';
+            radio.value = book.id;
+            radio.className = 'radio-btn';
+            if (index === 0) radio.checked = true;
+
+            const label = document.createElement('label');
+            label.htmlFor = radioId;
+            label.textContent = book.name;
+            label.className = 'radio-label';
+
+            dictationBookSelector.appendChild(radio);
+            dictationBookSelector.appendChild(label);
+        });
+    } else { // 下拉選擇框
+        const select = document.createElement('select');
+        select.id = 'dictation-book-select';
+        vocabularyBooks.forEach(book => {
+            const option = document.createElement('option');
+            option.value = book.id;
+            option.textContent = book.name;
+            select.appendChild(option);
+        });
+        dictationBookSelector.appendChild(select);
+    }
+}
+
+function getSelectedDictationWords() {
+    const bookCount = vocabularyBooks.length;
+    let selectedBookId;
+
+    if (bookCount <= 5) {
+        const selectedRadio = dictationBookSelector.querySelector('input[name="dictation-book"]:checked');
+        if (!selectedRadio) return null;
+        selectedBookId = selectedRadio.value;
+    } else {
+        const select = document.getElementById('dictation-book-select');
+        if (!select) return null;
+        selectedBookId = select.value;
+    }
+    
+    const book = vocabularyBooks.find(b => b.id === selectedBookId);
+    return book ? book.words : null;
+}
+
 function startDictation() {
-    if (vocabularyList.length === 0) {
-        alert('請先添加單詞！');
+    const wordsForDictation = getSelectedDictationWords();
+
+    if (!wordsForDictation || wordsForDictation.length === 0) {
+        alert('請先選擇一個包含單詞的單詞本！');
         return;
     }
     
-    // 禁用開始按鈕，啟用停止按鈕
     startDictationBtn.disabled = true;
     stopDictationBtn.disabled = false;
+    pauseDictationBtn.disabled = false;
+    isDictationPaused = false;
+    updatePauseButtonText();
     
-    // 初始化默寫狀態
+    dictationPractice.classList.toggle('hidden', listenOnlyMode.checked);
+    dictationProgressContainer.classList.remove('hidden');
+
     currentDictationIndex = 0;
     dictationWordDisplay.textContent = '';
     dictationInput.value = '';
     dictationResult.textContent = '';
     dictationResult.className = '';
     
-    // 開始播放第一個單詞
+    updateDictationProgress(wordsForDictation.length);
     playCurrentWord();
+    showFloatingControls();
 }
 
 function stopDictation() {
-    // 清除定時器
     clearTimeout(dictationTimeout);
     clearInterval(dictationInterval);
     
-    // 啟用開始按鈕，禁用停止按鈕
     startDictationBtn.disabled = false;
     stopDictationBtn.disabled = true;
-    
-    // 重置狀態
+    pauseDictationBtn.disabled = true;
+    isDictationPaused = false;
+    updatePauseButtonText();
+    dictationProgressContainer.classList.add('hidden');
+    dictationPractice.classList.remove('hidden'); // 停止時恢復顯示
+    replayDictationBtn.style.display = 'none';
     currentDictationIndex = -1;
     dictationWordDisplay.textContent = '已停止';
+
+    const floatingControls = document.getElementById('floating-dictation-controls');
+    if (floatingControls) {
+        floatingControls.remove();
+    }
+}
+
+function togglePauseDictation() {
+    if (stopDictationBtn.disabled) return;
+    
+    isDictationPaused = !isDictationPaused;
+
+    if (isDictationPaused) {
+        clearTimeout(dictationTimeout);
+        clearInterval(dictationInterval);
+        if (synth.speaking) {
+            synth.pause();
+        }
+        replayDictationBtn.style.display = 'inline-block';
+    } else {
+        if (synth.paused) {
+            synth.resume();
+        }
+        replayDictationBtn.style.display = 'none';
+        // 延遲一點時間再開始，避免語音引擎狀態問題
+        setTimeout(() => {
+            playCurrentWord();
+        }, 100);
+    }
+    updatePauseButtonText();
+}
+
+function updatePauseButtonText() {
+    const text = isDictationPaused ? '繼續' : '暫停';
+    if(pauseDictationBtn) {
+        pauseDictationBtn.textContent = text;
+    }
+    const floatingBtn = document.getElementById('floating-pause-btn');
+    if (floatingBtn) {
+        floatingBtn.textContent = text;
+    }
+    const floatingReplayBtn = document.getElementById('floating-replay-btn');
+    if (floatingReplayBtn) {
+        floatingReplayBtn.style.display = isDictationPaused ? 'inline-block' : 'none';
+    }
+}
+
+
+function showFloatingControls() {
+    if (document.getElementById('floating-dictation-controls')) return;
+
+    const controlsContainer = document.createElement('div');
+    controlsContainer.id = 'floating-dictation-controls';
+
+    const pauseBtn = document.createElement('button');
+    pauseBtn.id = 'floating-pause-btn';
+    pauseBtn.textContent = isDictationPaused ? '繼續' : '暫停';
+    pauseBtn.onclick = (e) => {
+        e.stopPropagation();
+        togglePauseDictation();
+    };
+
+    const stopBtn = document.createElement('button');
+    stopBtn.id = 'floating-stop-btn';
+    stopBtn.textContent = '停止';
+    stopBtn.onclick = (e) => {
+        e.stopPropagation();
+        stopDictation();
+    };
+
+    const progressSpan = document.createElement('span');
+    progressSpan.id = 'floating-progress-text';
+    progressSpan.textContent = dictationProgressText.textContent;
+
+    const replayBtn = document.createElement('button');
+    replayBtn.id = 'floating-replay-btn';
+    replayBtn.textContent = '重播';
+    replayBtn.onclick = (e) => {
+        e.stopPropagation();
+        replayCurrentDictationWord();
+    };
+    replayBtn.style.display = isDictationPaused ? 'inline-block' : 'none';
+
+    controlsContainer.appendChild(document.createTextNode('默寫進行中: '));
+    controlsContainer.appendChild(progressSpan);
+    controlsContainer.appendChild(pauseBtn);
+    controlsContainer.appendChild(replayBtn);
+    controlsContainer.appendChild(stopBtn);
+    document.body.appendChild(controlsContainer);
 }
 
 function playCurrentWord() {
-    if (currentDictationIndex >= vocabularyList.length) {
+    if (isDictationPaused) return;
+
+    const wordsForDictation = getSelectedDictationWords();
+    if (!wordsForDictation) {
+        stopDictation();
+        return;
+    }
+
+    if (currentDictationIndex >= wordsForDictation.length) {
         if (loopMode.checked) {
             currentDictationIndex = 0;
         } else {
@@ -633,29 +1189,25 @@ function playCurrentWord() {
         }
     }
     
-    const currentWord = vocabularyList[currentDictationIndex];
+    const currentWord = wordsForDictation[currentDictationIndex];
+    updateDictationProgress(wordsForDictation.length);
     let timesPlayed = 0;
     
-    // 清除之前的定時器
     clearInterval(dictationInterval);
     
-    // 播放單詞的功能
     const playWord = () => {
         speakText(currentWord.word);
         timesPlayed++;
         
-        // 如果需要朗讀中文，在單詞後朗讀中文
         if (readMeaning.checked && currentWord.meaning && timesPlayed === parseInt(repeatTimes.value)) {
             setTimeout(() => {
                 speakText(currentWord.meaning, 'zh-TW');
             }, 1000);
         }
         
-        // 如果已經播放了設定的次數，準備播放下一個單詞
         if (timesPlayed >= parseInt(repeatTimes.value)) {
             clearInterval(dictationInterval);
             
-            // 延遲後播放下一個單詞
             dictationTimeout = setTimeout(() => {
                 currentDictationIndex++;
                 playCurrentWord();
@@ -663,18 +1215,18 @@ function playCurrentWord() {
         }
     };
     
-    // 立即播放一次，然後設置間隔重複播放
     playWord();
     dictationInterval = setInterval(playWord, 2000);
 }
 
 function checkDictation() {
-    if (currentDictationIndex === -1 || currentDictationIndex >= vocabularyList.length) {
+    const wordsForDictation = getSelectedDictationWords();
+    if (!wordsForDictation || currentDictationIndex === -1 || currentDictationIndex >= wordsForDictation.length) {
         alert('請先開始默寫！');
         return;
     }
     
-    const currentWord = vocabularyList[currentDictationIndex];
+    const currentWord = wordsForDictation[currentDictationIndex];
     const userInput = dictationInput.value.trim().toLowerCase();
     
     if (userInput === currentWord.word.toLowerCase()) {
@@ -687,47 +1239,72 @@ function checkDictation() {
         dictationWordDisplay.textContent = currentWord.word;
     }
     
-    // 清空輸入框
     dictationInput.value = '';
+}
+
+function updateDictationProgress(totalWords) {
+    if (currentDictationIndex >= 0 && totalWords > 0) {
+        const progress = Math.round(((currentDictationIndex + 1) / totalWords) * 100);
+        dictationProgressBar.style.width = `${progress}%`;
+        dictationProgressText.textContent = `${currentDictationIndex + 1}/${totalWords}`;
+    } else {
+        dictationProgressBar.style.width = '0%';
+        dictationProgressText.textContent = `0/${totalWords}`;
+    }
+
+    const floatingProgress = document.getElementById('floating-progress-text');
+    if (floatingProgress) {
+        floatingProgress.textContent = dictationProgressText.textContent;
+    }
+}
+
+function replayCurrentDictationWord() {
+    if (currentDictationIndex < 0) return;
+    const wordsForDictation = getSelectedDictationWords();
+    if (!wordsForDictation || currentDictationIndex >= wordsForDictation.length) return;
+    
+    const currentWord = wordsForDictation[currentDictationIndex];
+    speakText(currentWord.word);
 }
 
 // 學習模式功能
 function populateWordSelect() {
-    // 保存當前選中的值
     const currentSelectedValue = wordSelect.value;
-    
-    // 清空選擇框
     wordSelect.innerHTML = '<option value="">請選擇單詞</option>';
     
-    // 添加所有單詞
-    vocabularyList.forEach(word => {
-        const option = document.createElement('option');
-        option.value = word.id;
-        option.textContent = word.word;
-        wordSelect.appendChild(option);
-    });
-    
-    // 如果可能，恢復先前選中的值
+    const activeBook = vocabularyBooks.find(b => b.id === activeBookId);
+    if (activeBook) {
+        activeBook.words.forEach(word => {
+            const option = document.createElement('option');
+            option.value = word.id;
+            option.textContent = word.word;
+            wordSelect.appendChild(option);
+        });
+    }
+
     if (currentSelectedValue) {
         wordSelect.value = currentSelectedValue;
     }
 }
 
+function getActiveWords() {
+    const activeBook = vocabularyBooks.find(b => b.id === activeBookId);
+    return activeBook ? activeBook.words : [];
+}
+
 function displayWordDetails() {
     const selectedId = wordSelect.value;
-    
     if (!selectedId) {
         clearWordDetails();
         return;
     }
     
-    const word = vocabularyList.find(w => w.id === selectedId);
+    const words = getActiveWords();
+    const word = words.find(w => w.id === selectedId);
     if (word) {
         detailWord.textContent = word.word;
         detailPhonetic.textContent = word.phonetic;
         detailMeaning.textContent = word.meaning || '(無中文意思)';
-        
-        // 顯示已有的例句
         displayExamples(word);
     } else {
         clearWordDetails();
@@ -743,13 +1320,13 @@ function clearWordDetails() {
 
 function speakCurrentWord() {
     const selectedId = wordSelect.value;
-    
     if (!selectedId) {
         alert('請先選擇一個單詞！');
         return;
     }
     
-    const word = vocabularyList.find(w => w.id === selectedId);
+    const words = getActiveWords();
+    const word = words.find(w => w.id === selectedId);
     if (word) {
         speakText(word.word);
     }
@@ -757,19 +1334,18 @@ function speakCurrentWord() {
 
 async function generateExamples() {
     const selectedId = wordSelect.value;
-    
     if (!selectedId) {
         alert('請先選擇一個單詞！');
         return;
     }
     
-    const word = vocabularyList.find(w => w.id === selectedId);
+    const words = getActiveWords();
+    const word = words.find(w => w.id === selectedId);
     if (word) {
         generateExamplesBtn.disabled = true;
         generateExamplesBtn.textContent = '生成中...';
         
         try {
-            // 步驟 1: 生成例句
             const prompt = `請為單詞 "${word.word}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯，以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -794,28 +1370,25 @@ async function generateExamples() {
             const content = data.choices[0].message.content;
             const exampleSentences = JSON.parse(content);
 
-            // 步驟 2: 為每個例句非同步獲取所有單詞的分析
             generateExamplesBtn.textContent = '分析語義中...';
             const analysisPromises = exampleSentences.map(example =>
                 analyzeWordsInSentence(example.english).then(analysis => {
-                    example.analysis = analysis; // 將分析結果附加到例句對象
+                    example.analysis = analysis;
                     return example;
                 })
             );
             
-            // 等待所有分析完成
             const examplesWithAnalysis = await Promise.all(analysisPromises);
             
             word.examples = examplesWithAnalysis;
-            saveVocabulary();
+            saveVocabularyBooks();
             displayExamples(word);
 
         } catch (error) {
             console.error('生成例句或分析時出錯:', error);
             alert('生成例句或分析失敗，請檢查API Key或網絡連接後再試。');
-            // 如果API失敗，則使用模擬數據作為後備
             word.examples = generateMockExamples(word.word);
-            saveVocabulary();
+            saveVocabularyBooks();
             displayExamples(word);
         } finally {
             generateExamplesBtn.disabled = false;
@@ -849,13 +1422,13 @@ function displayExamples(word) {
         let processedChinese = example.chinese;
 
         const sortedAlignment = [...example.alignment].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
-        const processedEn = new Set(); // 用於跟踪已處理的英文單詞（小寫）
+        const processedEn = new Set();
 
         sortedAlignment.forEach((pair) => {
             if (pair.en && pair.zh) {
                 const lowerEn = pair.en.toLowerCase();
                 if (processedEn.has(lowerEn)) {
-                    return; // 如果這個單詞的小寫形式已經處理過，就跳過
+                    return;
                 }
 
                 const pairId = `${word.id}-${index}-${pair.en.replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -870,7 +1443,7 @@ function displayExamples(word) {
                     return `<span class="interactive-word" data-pair-id="${pairId}">${match}</span>`;
                 });
 
-                processedEn.add(lowerEn); // 標記為已處理
+                processedEn.add(lowerEn);
             }
         });
 
@@ -882,9 +1455,7 @@ function displayExamples(word) {
     });
 }
 
-// 專門用於定位 Tooltip 的輔助函式
 function repositionTooltip(targetElement) {
-    // 使用 requestAnimationFrame 來確保 DOM 更新完畢，從而獲得準確的尺寸
     requestAnimationFrame(() => {
         const rect = targetElement.getBoundingClientRect();
         const tooltipHeight = analysisTooltip.offsetHeight;
@@ -893,33 +1464,26 @@ function repositionTooltip(targetElement) {
 
         let top, left;
 
-        // 決定垂直位置
         if (spaceAbove > tooltipHeight + 10) {
-            // 如果上方空間充足，顯示在上方
             top = rect.top + window.scrollY - tooltipHeight - 5;
         } else {
-            // 否則，顯示在下方 (這是更安全的默認選項)
             top = rect.bottom + window.scrollY + 5;
         }
 
-        // 決定水平位置，確保不超出視窗左右邊界
         left = rect.left;
         if (left + tooltipWidth > window.innerWidth - 10) {
-            // 如果右側超出，使其右對齊到觸發詞的右邊界
             left = rect.right - tooltipWidth;
         }
         if (left < 10) {
-            // 如果左側超出，設置為靠近邊界
             left = 10;
         }
 
         analysisTooltip.style.top = `${top}px`;
         analysisTooltip.style.left = `${left}px`;
-        analysisTooltip.style.visibility = 'visible'; // 確保可見
+        analysisTooltip.style.visibility = 'visible';
     });
 }
 
-// 新函式：一次性分析句子中所有單詞
 async function analyzeWordsInSentence(sentence) {
     try {
         const prompt = `對以下句子中的每個單詞進行詳細的語法分析。請以JSON對象形式返回結果，鍵為單詞原文（小寫）。每個單詞的分析應包含：1. "pos": 詞性（例如, "名詞", "動詞", "副詞"）。2. "meaning": 該單詞在當前上下文中的中文意思。3. "role": 在句子中的詳細語法作用。這個描述應該非常具體，例如，如果一個副詞修飾一個動詞，請明確指出它修飾了哪個動詞以及修飾的方面（如方式、程度、時間）。如果一個形容詞修飾一個名詞，請指出來。如果一個單詞是某個片語的一部分，也請說明。句子為: "${sentence}"。請只返回JSON格式，不要有其他任何文字。返回格式示例: {"word1": {"pos": "...", "meaning": "...", "role": "..." }, "word2": ...}`;
@@ -946,17 +1510,16 @@ async function analyzeWordsInSentence(sentence) {
 
     } catch (error) {
         console.error('批量分析單詞時出錯:', error);
-        return {}; // 返回空對象表示失敗
+        return {};
     }
 }
 
-// 修改後的函式：從預加載的數據顯示Tooltip
 function analyzeWordInContext(word, sentence, event) {
     const targetElement = event.target;
     const selectedId = wordSelect.value;
-    const currentWordData = vocabularyList.find(w => w.id === selectedId);
+    const words = getActiveWords();
+    const currentWordData = words.find(w => w.id === selectedId);
 
-    // 從例句的DOM中找到其索引
     const exampleItem = targetElement.closest('.example-item');
     const exampleIndex = Array.from(examplesContainer.children).indexOf(exampleItem);
     
@@ -971,7 +1534,6 @@ function analyzeWordInContext(word, sentence, event) {
     const normalizedWord = word.toLowerCase();
     let wordAnalysis = analysisData[normalizedWord];
 
-    // 如果直接查找失敗，嘗試更寬鬆的匹配，處理鍵中可能包含標點的情況
     if (!wordAnalysis) {
         const analysisKeys = Object.keys(analysisData);
         const matchingKey = analysisKeys.find(key =>
@@ -1013,7 +1575,8 @@ async function checkSentence() {
         return;
     }
     
-    const word = vocabularyList.find(w => w.id === selectedId);
+    const words = getActiveWords();
+    const word = words.find(w => w.id === selectedId);
     if (word) {
         const wordRegex = new RegExp(`\\b${word.word}\\b`, 'i');
         if (!wordRegex.test(userSentence)) {
@@ -1062,7 +1625,6 @@ async function checkSentence() {
         } catch (error) {
             console.error('檢查例句時出錯:', error);
             alert('檢查例句失敗，請檢查API Key或網絡連接後再試。');
-            // 後備方案
             sentenceFeedback.textContent = '檢查失敗，但您的句子包含了關鍵詞。';
             sentenceFeedback.className = 'feedback-correct';
         } finally {
@@ -1073,32 +1635,116 @@ async function checkSentence() {
 
 
 // 輔助功能
-function speakText(text, lang = 'en-US') {
-    if (!synth) {
-        console.error('您的瀏覽器不支持語音合成！');
-        return;
+function speakText(text, lang = 'en-US', speed = 0, onStart, onEnd) {
+    stopCurrentAudio();
+
+    const voice = lang.startsWith('zh') ? TTS_CONFIG.voices.chinese : TTS_CONFIG.voices.english;
+    const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${speed}`;
+    
+    ttsAudio = new Audio(url);
+    
+    pauseResumeArticleBtn.disabled = false;
+    
+    ttsAudio.addEventListener('play', () => {
+        if (onStart) onStart();
+    });
+
+    ttsAudio.onended = () => {
+        if (onEnd) onEnd();
+    };
+    
+    ttsAudio.onerror = (e) => {
+        console.error('播放音頻時出錯:', e);
+        alert('無法播放語音，請檢查TTS服務是否正在運行。');
+        if (onEnd) onEnd();
+    };
+
+    ttsAudio.play().catch(error => {
+        console.error('音頻播放失敗:', error);
+        if (error.name === 'NotAllowedError') {
+            alert('您的瀏覽器阻止了音頻自動播放。請再次點擊按鈕嘗試，或檢查您瀏覽器的網站設置以允許音頻播放。');
+        } else {
+            alert('播放音頻時發生未知錯誤，請查看控制台了解詳情。');
+        }
+        if (onEnd) onEnd();
+    });
+}
+
+function playWordAndMeaning(word) {
+    stopCurrentAudio();
+
+    speakText(word.word, 'en-US', 0, 
+        () => {
+            console.log(`Playing: ${word.word}`);
+        }, 
+        () => {
+            if (word.meaning) {
+                setTimeout(() => {
+                    speakText(word.meaning, 'zh-TW', 0,
+                        () => {
+                             console.log(`Playing: ${word.meaning}`);
+                        },
+                        () => {
+                            console.log("Finished playing all.");
+                        }
+                    );
+                }, 300);
+            }
+        }
+    );
+}
+
+// =================================
+// 本地存儲 (重構後)
+// =================================
+function saveVocabularyBooks() {
+    localStorage.setItem('vocabularyBooks', JSON.stringify(vocabularyBooks));
+}
+
+function loadVocabularyBooks() {
+    const saved = localStorage.getItem('vocabularyBooks');
+    vocabularyBooks = saved ? JSON.parse(saved) : [];
+    if (vocabularyBooks.length === 0) {
+        vocabularyBooks.push({
+            id: Date.now().toString(),
+            name: '我的第一個單詞本',
+            words: []
+        });
     }
-    
-    // 取消任何正在進行的語音
-    synth.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    utterance.rate = 0.9;
-    
-    synth.speak(utterance);
+    loadAppState();
 }
 
-function saveVocabulary() {
-    localStorage.setItem('vocabularyList', JSON.stringify(vocabularyList));
+function saveAppState() {
+    localStorage.setItem('activeBookId', activeBookId);
 }
 
-function loadVocabulary() {
-    const saved = localStorage.getItem('vocabularyList');
-    vocabularyList = saved ? JSON.parse(saved) : [];
+function loadAppState() {
+    const savedId = localStorage.getItem('activeBookId');
+    if (savedId && vocabularyBooks.some(b => b.id === savedId)) {
+        activeBookId = savedId;
+    } else if (vocabularyBooks.length > 0) {
+        activeBookId = vocabularyBooks[0].id;
+    } else {
+        activeBookId = null;
+    }
 }
 
-// 新增：文章詳解歷史記錄功能
+// =================================
+// Modal 控制
+// =================================
+function openModal() {
+    appModal.classList.remove('hidden');
+}
+
+function closeModal() {
+    appModal.classList.add('hidden');
+    modalBody.innerHTML = '';
+}
+
+
+// =================================
+// 文章詳解歷史記錄功能 (無變化)
+// =================================
 function saveAnalyzedArticles() {
     localStorage.setItem('analyzedArticles', JSON.stringify(analyzedArticles));
 }
@@ -1113,7 +1759,6 @@ function populateArticleHistorySelect() {
     analyzedArticles.forEach((item, index) => {
         const option = document.createElement('option');
         option.value = index;
-        // 截取文章前20個字符作為標題
         const title = item.article.substring(0, 20) + '...';
         option.textContent = title;
         articleHistorySelect.appendChild(option);
@@ -1121,7 +1766,6 @@ function populateArticleHistorySelect() {
 }
 
 function saveAnalysisResult(article, result) {
-    // 檢查是否已存在相同的文章，如果存在則更新
     const existingIndex = analyzedArticles.findIndex(item => item.article === article);
     if (existingIndex > -1) {
         analyzedArticles[existingIndex].result = result;
@@ -1170,7 +1814,6 @@ function clearArticleInput() {
 
 // 模擬AI功能 (作為API調用失敗時的後備)
 function generateMockExamples(word) {
-    // 這裡只是模擬例句，實際應用中應該調用AI API
     const examples = [
         {
             english: `The ${word} is an essential tool.`,
@@ -1202,32 +1845,29 @@ function generateMockExamples(word) {
 
 // 隨堂測驗功能
 function startQuiz() {
-    if (vocabularyList.length < 4) {
-        alert('至少需要4個單詞才能開始測驗！');
+    const wordsForQuiz = getActiveWords();
+    if (wordsForQuiz.length < 4) {
+        alert('當前單詞本至少需要4個單詞才能開始測驗！');
         return;
     }
     
     const questionCount = parseInt(quizCount.value);
-    if (vocabularyList.length < questionCount) {
-        alert(`您只有${vocabularyList.length}個單詞，請減少測驗題目數量！`);
+    if (wordsForQuiz.length < questionCount) {
+        alert(`您當前單詞本只有${wordsForQuiz.length}個單詞，請減少測驗題目數量！`);
         return;
     }
     
-    // 初始化測驗狀態
     quizInProgress = true;
     currentQuestionIndex = 0;
     quizScore = 0;
     selectedAnswer = null;
     
-    // 生成測驗題目
     generateQuizQuestions();
     
-    // 更新UI狀態
     startQuizBtn.disabled = true;
     stopQuizBtn.disabled = false;
     quizResult.classList.add('hidden');
     
-    // 顯示第一道題目
     showCurrentQuestion();
 }
 
@@ -1237,12 +1877,10 @@ function stopQuiz() {
     quizScore = 0;
     selectedAnswer = null;
     
-    // 重置UI狀態
     startQuizBtn.disabled = false;
     stopQuizBtn.disabled = true;
     nextQuestionBtn.disabled = true;
     
-    // 清空顯示
     quizQuestion.textContent = '';
     quizOptions.innerHTML = '';
     updateQuizProgress();
@@ -1255,8 +1893,8 @@ function generateQuizQuestions() {
     const type = quizType.value;
     quizQuestions = [];
     
-    // 隨機選擇單詞
-    const selectedWords = [...vocabularyList].sort(() => 0.5 - Math.random()).slice(0, questionCount);
+    const wordsForQuiz = getActiveWords();
+    const selectedWords = [...wordsForQuiz].sort(() => 0.5 - Math.random()).slice(0, questionCount);
     
     selectedWords.forEach(word => {
         let questionType = type;
@@ -1281,8 +1919,8 @@ function generateQuestionByType(targetWord, type) {
         options: []
     };
     
-    // 獲取其他單詞作為錯誤選項
-    const otherWords = vocabularyList.filter(w => w.id !== targetWord.id);
+    const wordsForQuiz = getActiveWords();
+    const otherWords = wordsForQuiz.filter(w => w.id !== targetWord.id);
     const wrongOptions = otherWords.sort(() => 0.5 - Math.random()).slice(0, 3);
     
     switch (type) {
@@ -1314,7 +1952,6 @@ function generateQuestionByType(targetWord, type) {
             break;
     }
     
-    // 隨機排列選項
     question.options = question.options.sort(() => 0.5 - Math.random());
     
     return question;
@@ -1329,10 +1966,8 @@ function showCurrentQuestion() {
     const question = quizQuestions[currentQuestionIndex];
     selectedAnswer = null;
     
-    // 顯示題目
     quizQuestion.textContent = question.question;
     
-    // 顯示選項
     quizOptions.innerHTML = '';
     question.options.forEach((option, index) => {
         const optionDiv = document.createElement('div');
@@ -1342,15 +1977,13 @@ function showCurrentQuestion() {
         quizOptions.appendChild(optionDiv);
     });
     
-    // 更新進度
     updateQuizProgress();
     
-    // 重置下一題按鈕
     nextQuestionBtn.disabled = true;
 }
 
 function selectOption(index, selectedText) {
-    if (selectedAnswer !== null) return; // 已經選擇過了
+    if (selectedAnswer !== null) return;
     
     selectedAnswer = selectedText;
     const question = quizQuestions[currentQuestionIndex];
@@ -1373,10 +2006,8 @@ function selectOption(index, selectedText) {
         }
     });
     
-    // 啟用下一題按鈕
     nextQuestionBtn.disabled = false;
     
-    // 更新得分
     updateQuizProgress();
 }
 
@@ -1393,17 +2024,13 @@ function updateQuizProgress() {
 function endQuiz() {
     quizInProgress = false;
     
-    // 隱藏問題容器，顯示結果
     document.getElementById('quiz-question-container').style.display = 'none';
     quizResult.classList.remove('hidden');
     
-    // 計算分數百分比
     const percentage = Math.round((quizScore / quizQuestions.length) * 100);
     
-    // 顯示最終分數
     finalScore.textContent = `${quizScore}/${quizQuestions.length} (${percentage}%)`;
     
-    // 根據分數設置顏色
     if (percentage >= 80) {
         finalScore.className = 'score-excellent';
     } else if (percentage >= 60) {
@@ -1412,7 +2039,6 @@ function endQuiz() {
         finalScore.className = 'score-poor';
     }
     
-    // 顯示總結
     let summary = '';
     if (percentage >= 90) {
         summary = '優秀！您對這些單詞掌握得很好！';
@@ -1426,17 +2052,14 @@ function endQuiz() {
     
     quizSummary.textContent = summary;
     
-    // 重置按鈕狀態
     startQuizBtn.disabled = false;
     stopQuizBtn.disabled = true;
     nextQuestionBtn.disabled = true;
 }
 
 function restartQuiz() {
-    // 重置顯示
     document.getElementById('quiz-question-container').style.display = 'block';
     quizResult.classList.add('hidden');
     
-    // 開始新的測驗
     startQuiz();
 }

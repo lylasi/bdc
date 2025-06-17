@@ -29,17 +29,32 @@ h1 {
 nav {
     display: flex;
     justify-content: center;
+    flex-wrap: nowrap; /* 強制不換行 */
+    gap: 10px;
     margin-bottom: 20px;
+    overflow-x: auto; /* 如果內容溢出，允許水平滾動 */
+    -webkit-overflow-scrolling: touch; /* 在 iOS 上實現平滑滾動 */
+    scrollbar-width: none; /* Firefox */
+}
+
+nav::-webkit-scrollbar {
+   display: none; /* Chrome, Safari, and Opera */
 }
 
 .nav-btn {
-    background-color: #f0f0f0;
-    border: 1px solid #ddd;
-    padding: 10px 20px;
-    margin: 0 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+   background-color: #e9ecef;
+   border: 1px solid #ced4da;
+   color: #495057;
+   padding: 10px 15px;
+   margin: 0 5px;
+   border-radius: 8px;
+   cursor: pointer;
+   transition: all 0.3s ease;
+   display: inline-flex;
+   align-items: center;
+   gap: 8px;
+   font-size: 1em;
+   font-weight: 500;
 }
 
 .nav-btn:hover {
@@ -169,9 +184,20 @@ button:disabled {
     gap: 5px;
 }
 
-.edit-btn, .delete-btn {
+.edit-btn, .delete-btn, .play-btn {
     padding: 5px 10px;
     font-size: 0.8em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.play-btn {
+    background-color: #28a745;
+}
+
+.play-btn:hover {
+    background-color: #218838;
 }
 
 .delete-btn {
@@ -185,8 +211,14 @@ button:disabled {
 /* 默寫模式樣式 */
 .dictation-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* 讓進度條在上方 */
     gap: 20px;
+}
+
+.dictation-main-content {
+    display: flex;
+    gap: 20px;
+    width: 100%;
 }
 
 @media (min-width: 768px) {
@@ -239,6 +271,39 @@ button:disabled {
 .incorrect {
     color: red;
     background-color: #f2dede;
+}
+
+.progress-container {
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    position: relative;
+    height: 20px;
+    overflow: hidden;
+}
+
+#dictation-progress-bar {
+    width: 0%;
+    height: 100%;
+    background-color: var(--primary-color, #3a7bd5);
+    border-radius: 5px;
+    transition: width 0.3s ease-in-out;
+}
+
+#dictation-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-color, #333);
+    font-size: 0.8em;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+.hidden {
+    display: none !important;
 }
 
 /* 學習模式樣式 */
@@ -520,6 +585,122 @@ button:disabled {
     margin-bottom: 10px;
 }
 
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.audio-controls {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.audio-controls h4 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.audio-main-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.audio-main-buttons button {
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+}
+
+.audio-controls .settings-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap; /* 允許換行以適配移動端 */
+}
+
+.audio-controls .settings-group label {
+    flex-shrink: 0;
+}
+
+.audio-controls .settings-group select,
+.audio-controls .settings-group input {
+    flex-grow: 1;
+    min-width: 80px;
+}
+
+#chunk-repeat-controls.hidden {
+    display: none;
+}
+
+.speed-control {
+    display: flex;
+    gap: 5px;
+}
+
+.speed-btn {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+}
+
+.speed-btn.active {
+    background-color: #3a7bd5;
+    color: white;
+    border-color: #2a6bc5;
+}
+
+#chunk-nav-controls {
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+
+@media (max-width: 600px) {
+    .audio-controls .settings-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .speed-control {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .audio-main-buttons {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 767px) {
+   .nav-btn {
+       padding: 10px;
+       min-width: 0; /* 允許按鈕收縮 */
+       flex-shrink: 1;
+   }
+}
+
+#chunk-nav-controls.hidden {
+    display: none;
+}
+
+#chunk-progress {
+    font-weight: bold;
+    color: #3a7bd5;
+}
+
+
 #article-analysis-container {
     background-color: white;
     border: 1px solid #ddd;
@@ -533,6 +714,12 @@ button:disabled {
 #article-analysis-container p:first-child {
     color: #666;
     font-style: italic;
+}
+
+.highlight-reading {
+    background-color: #fff3cd;
+    border-radius: 3px;
+    padding: 2px 0;
 }
 
 
@@ -589,4 +776,332 @@ button:disabled {
     padding: 0 4px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
+}
+.current-sentence {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f0f8ff; /* 淡藍色背景 */
+    border: 1px solid #cce5ff; /* 邊框顏色 */
+    border-radius: 5px;
+    color: #333;
+    font-size: 0.95em;
+    min-height: 40px; /* 最小高度，避免在沒有內容時塌陷 */
+    line-height: 1.5;
+    transition: background-color 0.3s;
+}
+/* =================================
+   新版單詞本佈局與樣式
+   ================================= */
+
+.vocabulary-layout {
+    display: flex;
+    gap: 20px;
+    min-height: 60vh;
+}
+
+.vocab-books-panel {
+    flex: 0 0 250px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+}
+
+.vocab-words-panel {
+    flex: 1;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+    color: #3a7bd5;
+}
+
+#current-book-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px; /* 根據需要調整 */
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn:hover {
+    background-color: #e9ecef;
+    color: #000;
+}
+
+.icon-btn:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+    background: none;
+}
+
+#vocab-book-list {
+    list-style: none;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.vocab-book-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.vocab-book-item:hover {
+    background-color: #f0f8ff;
+}
+
+.vocab-book-item.active {
+    background-color: #e6f3ff;
+    color: #3a7bd5;
+    font-weight: bold;
+}
+
+.vocab-book-item span {
+     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.word-item-placeholder {
+    color: #999;
+    text-align: center;
+    padding: 50px 20px;
+    font-style: italic;
+}
+
+.word-panel-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* =================================
+   默寫頁面單詞本選擇器
+   ================================= */
+.book-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.book-selector .radio-btn {
+    display: none;
+}
+
+.book-selector .radio-label {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.book-selector .radio-btn:checked + .radio-label {
+    background-color: #3a7bd5;
+    color: white;
+    border-color: #3a7bd5;
+}
+
+#dictation-book-select {
+    min-width: 200px;
+}
+
+
+/* =================================
+   彈出式Modal樣式
+   ================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.hidden .modal-content {
+    transform: translateY(-20px);
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.8em;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.modal-close-btn:hover {
+    color: #333;
+}
+
+#modal-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #3a7bd5;
+}
+
+#modal-body .input-group {
+    margin-bottom: 20px;
+}
+
+#modal-body label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+#modal-body input, #modal-body textarea {
+    width: 100%;
+}
+
+#modal-vocab-content {
+    min-height: 250px;
+    resize: vertical;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.modal-actions {
+    text-align: right;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    margin-left: 10px;
+}
+
+.modal-actions .cancel-btn {
+    background-color: #6c757d;
+}
+
+.modal-actions .cancel-btn:hover {
+    background-color: #5a6268;
+}
+/* =================================
+   浮動默寫控件
+   ================================= */
+#floating-dictation-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(58, 123, 213, 0.9); /* #3a7bd5 with transparency */
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+    font-size: 1em;
+}
+
+#floating-dictation-controls button {
+    background-color: #fff;
+    color: #3a7bd5;
+    border: 1px solid #3a7bd5;
+    margin-left: 15px;
+    padding: 5px 15px;
+    font-weight: bold;
+}
+
+#floating-dictation-controls button:hover {
+    background-color: #f0f8ff;
+}
+
+#floating-stop-btn {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+#floating-stop-btn:hover {
+    background-color: #f8d7da;
+}
+
+#floating-replay-btn {
+    color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+#floating-replay-btn:hover {
+    background-color: #e2f6f9;
+}
+
+#pause-dictation-btn {
+    background-color: #ffc107; /* 黃色 */
+}
+
+#pause-dictation-btn:hover {
+    background-color: #e0a800;
+}
+
+#replay-dictation-btn {
+    background-color: #17a2b8; /* 青色 */
+}
+
+#replay-dictation-btn:hover {
+    background-color: #138496;
+}
+#floating-progress-text {
+    margin: 0 15px;
+    font-weight: bold;
 }
