@@ -60,11 +60,24 @@ const quizSummary = document.getElementById('quiz-summary');
 const restartQuizBtn = document.getElementById('restart-quiz-btn');
 const analysisTooltip = document.getElementById('word-analysis-tooltip');
 
+// 文章詳解DOM元素
+const articleInput = document.getElementById('article-input');
+const analyzeArticleBtn = document.getElementById('analyze-article-btn');
+const articleAnalysisContainer = document.getElementById('article-analysis-container');
+const articleHistorySelect = document.getElementById('article-history-select');
+const deleteHistoryBtn = document.getElementById('delete-history-btn');
+const clearArticleBtn = document.getElementById('clear-article-btn');
+
+// 文章詳解相關變量
+let analyzedArticles = [];
+
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
     loadVocabulary();
+    loadAnalyzedArticles(); // 新增：加載已分析的文章歷史
     renderWordList();
     populateWordSelect();
+    populateArticleHistorySelect(); // 新增：填充歷史記錄下拉菜單
     setupEventListeners();
 });
 
@@ -168,7 +181,274 @@ function setupEventListeners() {
     stopQuizBtn.addEventListener('click', stopQuiz);
     nextQuestionBtn.addEventListener('click', nextQuestion);
     restartQuizBtn.addEventListener('click', restartQuiz);
+
+    // 文章詳解功能
+    analyzeArticleBtn.addEventListener('click', analyzeArticle);
+    clearArticleBtn.addEventListener('click', clearArticleInput);
+    articleHistorySelect.addEventListener('change', loadSelectedArticle);
+    deleteHistoryBtn.addEventListener('click', deleteSelectedArticleHistory);
+
+    // 文章詳解結果區的事件監聽（類似於例句）
+    articleAnalysisContainer.addEventListener('mouseover', (e) => {
+        if (e.target.classList.contains('interactive-word')) {
+            const pairId = e.target.dataset.pairId;
+            if (pairId) {
+                const elements = document.querySelectorAll(`[data-pair-id="${pairId}"]`);
+                elements.forEach(el => el.classList.add('highlight'));
+            }
+        }
+    });
+
+    articleAnalysisContainer.addEventListener('mouseout', (e) => {
+        if (e.target.classList.contains('interactive-word')) {
+            const pairId = e.target.dataset.pairId;
+            if (pairId) {
+                const elements = document.querySelectorAll(`[data-pair-id="${pairId}"]`);
+                elements.forEach(el => el.classList.remove('highlight'));
+            }
+        }
+    });
+
+    articleAnalysisContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('interactive-word')) {
+            e.stopPropagation();
+            try {
+                const analysisArray = JSON.parse(articleAnalysisContainer.dataset.analysis || '[]');
+                if (analysisArray.length > 0) {
+                    showArticleWordAnalysis(e.target, analysisArray);
+                }
+            } catch (err) {
+                console.error("Failed to parse analysis data:", err);
+            }
+        }
+    });
 }
+
+// 文章詳解功能
+async function analyzeArticle() {
+    const articleText = articleInput.value.trim();
+    if (!articleText) {
+        alert('請輸入要分析的文章！');
+        return;
+    }
+
+    analyzeArticleBtn.disabled = true;
+    analyzeArticleBtn.textContent = '分析中...';
+    articleAnalysisContainer.innerHTML = '<p>正在為您生成詳細解析，請稍候...</p>';
+
+    try {
+        // 最終優化 Prompt，要求極致的上下文關聯分析
+        const prompt = `請對以下英文文章進行全面、深入的語法和語義分析，並嚴格按照指定的JSON格式返回結果。
+
+文章: "${articleText}"
+
+請返回一個JSON對象，包含以下三個鍵:
+1. "chinese_translation": 字符串，為整篇文章的流暢中文翻譯。
+2. "word_alignment": 數組，每個元素是一個對象 {"en": "英文單詞", "zh": "對應的中文詞語"}，用於實現英漢詞語對照高亮。
+3. "detailed_analysis": 一個 **數組**，其中每個元素都是一個對象，代表文章中一個具體單詞的分析。
+   - **重要**: 這個數組中的對象必須嚴格按照單詞在原文中出現的順序排列。
+   - **重要**: 如果同一個單詞在文章中出現多次，請為每一次出現都創建一個獨立的分析對象。
+   - 每個對象的結構如下:
+     {
+       "word": "被分析的單詞原文",
+       "sentence": "該單詞所在的完整句子",
+       "analysis": {
+         "pos": "詞性",
+         "meaning": "在當前上下文中的準確中文意思",
+         "role": "在句子中的極其詳細的語法作用，並強力關聯上下文。描述必須非常具體，清晰地闡述該詞與前後文的邏輯關係。例如：
+                  - **並列結構**: 對於 'He bought snacks and waited' 中的 'waited'，分析應為 '與前面的動詞 'bought' 構成並列謂語，由連詞 'and' 連接，共同描述主語 'He' 的兩個連續動作：先「買了零食」，然後「等待」。'
+                  - **代詞**: 對於 'I liked it' 中的 'it'，分析應為 '指代上文提到的名詞 'the hot dog'。'
+                  - **副詞**: 對於 'They were so exciting' 中的 'so'，分析應為 '程度副詞，修飾形容詞 'exciting'，表示「非常」的意思，加強了遊樂設施的刺激程度。'
+                  - **關係代詞**: 對於 'the man who is a doctor' 中的 'who'，分析應為 '引導定語從句修飾先行詞 'the man'，並在從句中充當主語。'
+                  - **形容詞**: 對於 'colourful birds' 中的 'colourful'，分析應為 '作為定語，修飾名詞 'birds'，描述鳥的顏色是多彩的。'"
+       }
+     }
+
+請只返回JSON格式的數據，不要包含任何額外的解釋性文字或標記。`;
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+                model: AI_MODELS.exampleGeneration, // 可以考慮為此功能使用更強大的模型
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.5,
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('API Error:', errorData);
+            throw new Error(`API請求失敗，狀態碼: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices[0].message.content.replace(/^```json\n/, '').replace(/\n```$/, '');
+        const analysisResult = JSON.parse(content);
+
+        // 將新的、更可靠的 detailed_analysis 數組存儲在 dataset 中
+        articleAnalysisContainer.dataset.analysis = JSON.stringify(analysisResult.detailed_analysis || []);
+
+        // 渲染結果
+        displayArticleAnalysis(articleText, analysisResult);
+
+        // 新增：保存分析結果到歷史記錄
+        saveAnalysisResult(articleText, analysisResult);
+
+    } catch (error) {
+        console.error('分析文章時出錯:', error);
+        articleAnalysisContainer.innerHTML = `<p style="color: red;">分析失敗！請檢查API Key或網絡連接後再試。</p>`;
+        alert('分析文章失敗，請稍後再試。');
+    } finally {
+        analyzeArticleBtn.disabled = false;
+        analyzeArticleBtn.textContent = '分析文章';
+    }
+}
+
+function displayArticleAnalysis(originalArticle, analysisResult) {
+    const { chinese_translation, word_alignment, detailed_analysis } = analysisResult;
+
+    if (!chinese_translation || !word_alignment || !detailed_analysis) {
+        articleAnalysisContainer.innerHTML = `<p style="color: red;">API返回的數據格式不完整，無法顯示分析結果。</p>`;
+        return;
+    }
+
+    const escapeRegex = (string) => string ? string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') : '';
+
+    // --- 數據預處理 ---
+    // 1. 為每個分析的單詞計算其在原文的精確位置
+    let cursor = 0;
+    const wordStartMap = new Map(); // 使用Map來從起始位置快速查找單詞
+    detailed_analysis.forEach(item => {
+        const word = item.word;
+        if (!word) return;
+        const wordRegex = new RegExp(`\\b${escapeRegex(word)}\\b`);
+        const match = originalArticle.substring(cursor).match(wordRegex);
+        if (match) {
+            const startIndex = cursor + match.index;
+            item.startIndex = startIndex;
+            item.endIndex = startIndex + word.length;
+            wordStartMap.set(startIndex, item);
+            cursor = item.startIndex + 1;
+        }
+    });
+
+    // 2. 處理中英文高亮配對，並將pairId賦予對應的英文單詞
+    let processedChinese = chinese_translation;
+    const sortedAlignment = [...word_alignment].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
+    const processedPhrases = new Array(originalArticle.length).fill(false); // 標記已處理的文本範圍
+
+    sortedAlignment.forEach((pair, index) => {
+        if (!pair.en || !pair.zh) return;
+
+        let phraseIndex = -1;
+        let tempCursor = 0;
+        // 查找一個尚未被更長的短語覆蓋的匹配項
+        while ((phraseIndex = originalArticle.indexOf(pair.en, tempCursor)) !== -1) {
+            if (!processedPhrases[phraseIndex]) {
+                break;
+            }
+            tempCursor = phraseIndex + 1;
+        }
+
+        if (phraseIndex !== -1) {
+            const phraseEndIndex = phraseIndex + pair.en.length;
+            const pairId = `article-pair-${index}`;
+
+            // 將此ID賦予所有起始位置在該短語範圍內的單詞
+            for (let i = phraseIndex; i < phraseEndIndex; i++) {
+                if (wordStartMap.has(i)) {
+                    const wordItem = wordStartMap.get(i);
+                    // 確保單詞完全包含在短語內
+                    if (wordItem.endIndex <= phraseEndIndex) {
+                        wordItem.pairId = pairId;
+                    }
+                }
+            }
+            
+            // 將此範圍標記為已處理
+            for (let i = phraseIndex; i < phraseEndIndex; i++) {
+                processedPhrases[i] = true;
+            }
+
+            // 為中文部分添加高亮span
+            const zhRegex = new RegExp(`(?<!<span[^>]*>)(${escapeRegex(pair.zh)})(?!<\\/span>)`);
+            processedChinese = processedChinese.replace(zhRegex, `<span class="interactive-word" data-pair-id="${pairId}">${pair.zh}</span>`);
+        }
+    });
+
+    // --- 渲染 ---
+    // 3. 根據預處理好的數據構建英文顯示內容
+    let processedEnglish = '';
+    let lastIndex = 0;
+    const wordCounts = {};
+    detailed_analysis.forEach(item => {
+        if (item.startIndex === undefined) return;
+        
+        // 添加單詞間的普通文本
+        processedEnglish += originalArticle.substring(lastIndex, item.startIndex);
+        
+        // 添加帶有完整數據的單詞span
+        const wordLower = item.word.toLowerCase();
+        const wordIndex = wordCounts[wordLower] || 0;
+        processedEnglish += `<span class="interactive-word" data-word="${item.word}" data-word-index="${wordIndex}" data-pair-id="${item.pairId || ''}">${item.word}</span>`;
+        wordCounts[wordLower] = wordIndex + 1;
+        lastIndex = item.endIndex;
+    });
+    // 添加最後的剩餘文本
+    processedEnglish += originalArticle.substring(lastIndex);
+
+    // 4. 插入最終的HTML
+    articleAnalysisContainer.innerHTML = `
+        <div class="example-item">
+            <p class="example-english">${processedEnglish.replace(/\n/g, '<br>')}</p>
+            <p class="example-chinese">${processedChinese.replace(/\n/g, '<br>')}</p>
+        </div>
+    `;
+    
+    // 存儲分析數據供點擊事件使用
+    articleAnalysisContainer.dataset.analysis = JSON.stringify(detailed_analysis || []);
+}
+
+function showArticleWordAnalysis(clickedElement, analysisArray) {
+    const wordText = clickedElement.dataset.word;
+    const wordIndex = parseInt(clickedElement.dataset.wordIndex, 10);
+
+    if (!wordText || isNaN(wordIndex)) {
+        analysisTooltip.innerHTML = `<div class="tooltip-content"><p>無法識別單詞。</p></div>`;
+        repositionTooltip(clickedElement);
+        return;
+    }
+    
+    // 從總分析數組中，篩選出所有對應這個單詞的分析結果
+    const matchingAnalyses = analysisArray.filter(item => item.word.toLowerCase() === wordText.toLowerCase());
+
+    // 根據存儲的索引，從篩選後的分析結果中獲取唯一的、正確的分析數據
+    const wordAnalysisData = (wordIndex < matchingAnalyses.length)
+        ? matchingAnalyses[wordIndex]
+        : null;
+
+    if (wordAnalysisData && wordAnalysisData.analysis) {
+        const analysis = wordAnalysisData.analysis;
+        analysisTooltip.innerHTML = `
+            <div class="tooltip-title">${wordAnalysisData.word} (${analysis.pos})</div>
+            <div class="tooltip-content">
+                <p><strong>作用:</strong> ${analysis.role}</p>
+                <p><strong>意思:</strong> ${analysis.meaning}</p>
+            </div>
+        `;
+    } else {
+        analysisTooltip.innerHTML = `<div class="tooltip-content"><p>單詞 "${wordText}" (第 ${wordIndex + 1} 次出現) 的分析數據未找到或不匹配。</p></div>`;
+    }
+
+    analysisTooltip.style.visibility = 'hidden';
+    analysisTooltip.style.display = 'block';
+    repositionTooltip(clickedElement);
+}
+
 
 // 單詞本功能
 function addWord() {
@@ -489,6 +769,7 @@ async function generateExamples() {
         generateExamplesBtn.textContent = '生成中...';
         
         try {
+            // 步驟 1: 生成例句
             const prompt = `請為單詞 "${word.word}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯，以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -511,17 +792,27 @@ async function generateExamples() {
 
             const data = await response.json();
             const content = data.choices[0].message.content;
-            
-            // 嘗試解析API返回的JSON
             const exampleSentences = JSON.parse(content);
+
+            // 步驟 2: 為每個例句非同步獲取所有單詞的分析
+            generateExamplesBtn.textContent = '分析語義中...';
+            const analysisPromises = exampleSentences.map(example =>
+                analyzeWordsInSentence(example.english).then(analysis => {
+                    example.analysis = analysis; // 將分析結果附加到例句對象
+                    return example;
+                })
+            );
             
-            word.examples = exampleSentences;
+            // 等待所有分析完成
+            const examplesWithAnalysis = await Promise.all(analysisPromises);
+            
+            word.examples = examplesWithAnalysis;
             saveVocabulary();
             displayExamples(word);
 
         } catch (error) {
-            console.error('生成例句時出錯:', error);
-            alert('生成例句失敗，請檢查API Key或網絡連接後再試。');
+            console.error('生成例句或分析時出錯:', error);
+            alert('生成例句或分析失敗，請檢查API Key或網絡連接後再試。');
             // 如果API失敗，則使用模擬數據作為後備
             word.examples = generateMockExamples(word.word);
             saveVocabulary();
@@ -591,19 +882,47 @@ function displayExamples(word) {
     });
 }
 
-async function analyzeWordInContext(word, sentence, event) {
-    // 立即顯示 Tooltip，並設置為加載狀態
-    analysisTooltip.innerHTML = '<div class="tooltip-content"><p>分析中...</p></div>';
-    analysisTooltip.style.display = 'block';
+// 專門用於定位 Tooltip 的輔助函式
+function repositionTooltip(targetElement) {
+    // 使用 requestAnimationFrame 來確保 DOM 更新完畢，從而獲得準確的尺寸
+    requestAnimationFrame(() => {
+        const rect = targetElement.getBoundingClientRect();
+        const tooltipHeight = analysisTooltip.offsetHeight;
+        const tooltipWidth = analysisTooltip.offsetWidth;
+        const spaceAbove = rect.top;
 
-    // 根據點擊位置定位 Tooltip
-    const rect = event.target.getBoundingClientRect();
-    analysisTooltip.style.left = `${rect.left}px`;
-    analysisTooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+        let top, left;
 
+        // 決定垂直位置
+        if (spaceAbove > tooltipHeight + 10) {
+            // 如果上方空間充足，顯示在上方
+            top = rect.top + window.scrollY - tooltipHeight - 5;
+        } else {
+            // 否則，顯示在下方 (這是更安全的默認選項)
+            top = rect.bottom + window.scrollY + 5;
+        }
+
+        // 決定水平位置，確保不超出視窗左右邊界
+        left = rect.left;
+        if (left + tooltipWidth > window.innerWidth - 10) {
+            // 如果右側超出，使其右對齊到觸發詞的右邊界
+            left = rect.right - tooltipWidth;
+        }
+        if (left < 10) {
+            // 如果左側超出，設置為靠近邊界
+            left = 10;
+        }
+
+        analysisTooltip.style.top = `${top}px`;
+        analysisTooltip.style.left = `${left}px`;
+        analysisTooltip.style.visibility = 'visible'; // 確保可見
+    });
+}
+
+// 新函式：一次性分析句子中所有單詞
+async function analyzeWordsInSentence(sentence) {
     try {
-        const prompt = `在句子 "${sentence}" 中，單詞 "${word}" 的詞性是什麼？它在句子中扮演什麼角色或作用？請用中文簡潔地回答。請只返回JSON格式，不要有其他任何文字。格式為: {"pos": "詞性", "role": "作用", "meaning": "在該句中的中文意思"}`;
-        
+        const prompt = `對以下句子中的每個單詞進行詳細的語法分析。請以JSON對象形式返回結果，鍵為單詞原文（小寫）。每個單詞的分析應包含：1. "pos": 詞性（例如, "名詞", "動詞", "副詞"）。2. "meaning": 該單詞在當前上下文中的中文意思。3. "role": 在句子中的詳細語法作用。這個描述應該非常具體，例如，如果一個副詞修飾一個動詞，請明確指出它修飾了哪個動詞以及修飾的方面（如方式、程度、時間）。如果一個形容詞修飾一個名詞，請指出來。如果一個單詞是某個片語的一部分，也請說明。句子為: "${sentence}"。請只返回JSON格式，不要有其他任何文字。返回格式示例: {"word1": {"pos": "...", "meaning": "...", "role": "..." }, "word2": ...}`;
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -622,22 +941,62 @@ async function analyzeWordInContext(word, sentence, event) {
         }
 
         const data = await response.json();
-        // 處理API可能返回的包裹在```json ... ```中的情況
         const content = data.choices[0].message.content.replace(/^```json\n/, '').replace(/\n```$/, '');
-        const analysis = JSON.parse(content);
+        return JSON.parse(content);
 
-        // 更新 Tooltip 內容
+    } catch (error) {
+        console.error('批量分析單詞時出錯:', error);
+        return {}; // 返回空對象表示失敗
+    }
+}
+
+// 修改後的函式：從預加載的數據顯示Tooltip
+function analyzeWordInContext(word, sentence, event) {
+    const targetElement = event.target;
+    const selectedId = wordSelect.value;
+    const currentWordData = vocabularyList.find(w => w.id === selectedId);
+
+    // 從例句的DOM中找到其索引
+    const exampleItem = targetElement.closest('.example-item');
+    const exampleIndex = Array.from(examplesContainer.children).indexOf(exampleItem);
+    
+    if (!currentWordData || !currentWordData.examples[exampleIndex] || !currentWordData.examples[exampleIndex].analysis) {
+        analysisTooltip.innerHTML = '<div class="tooltip-content"><p>無分析數據。</p></div>';
+        analysisTooltip.style.display = 'block';
+        repositionTooltip(targetElement);
+        return;
+    }
+    
+    const analysisData = currentWordData.examples[exampleIndex].analysis;
+    const normalizedWord = word.toLowerCase();
+    let wordAnalysis = analysisData[normalizedWord];
+
+    // 如果直接查找失敗，嘗試更寬鬆的匹配，處理鍵中可能包含標點的情況
+    if (!wordAnalysis) {
+        const analysisKeys = Object.keys(analysisData);
+        const matchingKey = analysisKeys.find(key =>
+            key.replace(/[^a-z-]/g, '') === normalizedWord
+        );
+        if (matchingKey) {
+            wordAnalysis = analysisData[matchingKey];
+        }
+    }
+
+    if (wordAnalysis) {
         analysisTooltip.innerHTML = `
-            <div class="tooltip-title">${word} (${analysis.pos})</div>
+            <div class="tooltip-title">${word} (${wordAnalysis.pos})</div>
             <div class="tooltip-content">
-                <p><strong>作用:</strong> ${analysis.role}</p>
-                <p><strong>意思:</strong> ${analysis.meaning}</p>
+                <p><strong>作用:</strong> ${wordAnalysis.role}</p>
+                <p><strong>意思:</strong> ${wordAnalysis.meaning}</p>
             </div>
         `;
-    } catch (error) {
-        console.error('分析單詞時出錯:', error);
-        analysisTooltip.innerHTML = '<div class="tooltip-content"><p>分析失敗，請稍後再試。</p></div>';
+    } else {
+        analysisTooltip.innerHTML = `<div class="tooltip-content"><p>單詞 "${word}" 的分析數據未找到。</p></div>`;
     }
+
+    analysisTooltip.style.visibility = 'hidden';
+    analysisTooltip.style.display = 'block';
+    repositionTooltip(targetElement);
 }
 
 async function checkSentence() {
@@ -738,6 +1097,76 @@ function loadVocabulary() {
     const saved = localStorage.getItem('vocabularyList');
     vocabularyList = saved ? JSON.parse(saved) : [];
 }
+
+// 新增：文章詳解歷史記錄功能
+function saveAnalyzedArticles() {
+    localStorage.setItem('analyzedArticles', JSON.stringify(analyzedArticles));
+}
+
+function loadAnalyzedArticles() {
+    const saved = localStorage.getItem('analyzedArticles');
+    analyzedArticles = saved ? JSON.parse(saved) : [];
+}
+
+function populateArticleHistorySelect() {
+    articleHistorySelect.innerHTML = '<option value="">讀取歷史記錄</option>';
+    analyzedArticles.forEach((item, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        // 截取文章前20個字符作為標題
+        const title = item.article.substring(0, 20) + '...';
+        option.textContent = title;
+        articleHistorySelect.appendChild(option);
+    });
+}
+
+function saveAnalysisResult(article, result) {
+    // 檢查是否已存在相同的文章，如果存在則更新
+    const existingIndex = analyzedArticles.findIndex(item => item.article === article);
+    if (existingIndex > -1) {
+        analyzedArticles[existingIndex].result = result;
+    } else {
+        analyzedArticles.push({ article, result });
+    }
+    saveAnalyzedArticles();
+    populateArticleHistorySelect();
+}
+
+function loadSelectedArticle() {
+    const selectedIndex = articleHistorySelect.value;
+    if (selectedIndex === '') {
+        clearArticleInput();
+        return;
+    }
+    
+    const item = analyzedArticles[selectedIndex];
+    if (item) {
+        articleInput.value = item.article;
+        displayArticleAnalysis(item.article, item.result);
+    }
+}
+
+function deleteSelectedArticleHistory() {
+    const selectedIndex = articleHistorySelect.value;
+    if (selectedIndex === '') {
+        alert('請先選擇一個歷史記錄！');
+        return;
+    }
+    
+    if (confirm('確定要刪除這條歷史記錄嗎？')) {
+        analyzedArticles.splice(selectedIndex, 1);
+        saveAnalyzedArticles();
+        populateArticleHistorySelect();
+        clearArticleInput();
+    }
+}
+
+function clearArticleInput() {
+    articleInput.value = '';
+    articleAnalysisContainer.innerHTML = '<p>請先輸入文章並點擊分析按鈕。</p>';
+    articleHistorySelect.value = '';
+}
+
 
 // 模擬AI功能 (作為API調用失敗時的後備)
 function generateMockExamples(word) {

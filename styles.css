@@ -488,6 +488,54 @@ button:disabled {
     margin: 20px 0;
 }
 
+/* 文章詳解樣式 */
+.analysis-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (min-width: 992px) {
+    .analysis-container {
+        flex-direction: row;
+    }
+    .analysis-input {
+        flex: 1;
+    }
+    .analysis-result {
+        flex: 2;
+    }
+}
+
+.analysis-input, .analysis-result {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+#article-input {
+    min-height: 300px;
+    resize: vertical;
+    margin-bottom: 10px;
+}
+
+#article-analysis-container {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    min-height: 200px;
+    line-height: 1.8;
+    font-size: 1.1em;
+}
+
+#article-analysis-container p:first-child {
+    color: #666;
+    font-style: italic;
+}
+
+
 /* Tooltip 樣式 */
 .tooltip {
     position: absolute;

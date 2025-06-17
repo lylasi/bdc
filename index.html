@@ -15,6 +15,7 @@
                 <button id="dictation-btn" class="nav-btn">默寫模式</button>
                 <button id="learning-btn" class="nav-btn">學習模式</button>
                 <button id="quiz-btn" class="nav-btn">隨堂測驗</button>
+                <button id="analysis-btn" class="nav-btn">文章詳解</button>
             </nav>
         </header>
 
@@ -153,6 +154,33 @@
                             <div id="final-score"></div>
                             <div id="quiz-summary"></div>
                             <button id="restart-quiz-btn">重新測驗</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 文章詳解頁面 -->
+            <section id="analysis-section" class="section">
+                <h2>文章詳解</h2>
+                <div class="analysis-container">
+                    <div class="analysis-input">
+                        <h3>輸入文章</h3>
+                        <div class="history-controls">
+                            <select id="article-history-select">
+                                <option value="">讀取歷史記錄</option>
+                            </select>
+                            <button id="delete-history-btn" title="刪除選中的歷史記錄">刪除記錄</button>
+                        </div>
+                        <textarea id="article-input" placeholder="在這裡輸入或粘貼您想分析的文章..."></textarea>
+                        <div class="button-group">
+                            <button id="analyze-article-btn">分析文章</button>
+                            <button id="clear-article-btn">清除重寫</button>
+                        </div>
+                    </div>
+                    <div class="analysis-result">
+                        <h3>分析結果</h3>
+                        <div id="article-analysis-container">
+                            <p>請先輸入文章並點擊分析按鈕。</p>
                         </div>
                     </div>
                 </div>
