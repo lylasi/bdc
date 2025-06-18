@@ -242,11 +242,14 @@ button:disabled {
     margin-bottom: 15px;
     display: flex;
     align-items: center;
+    gap: 10px; /* 在標籤和控件之間增加一些間距 */
 }
 
 .settings-group label {
-    margin-right: 10px;
-    min-width: 150px;
+    flex-shrink: 0; /* 防止標籤在空間不足時被壓縮 */
+    min-width: 120px; /* 根據需要調整一個合適的最小寬度 */
+    text-align: right; /* 標籤文字右對齊，使冒號對齊 */
+    margin-right: 5px;
 }
 
 #dictation-word-display {
