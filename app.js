@@ -232,6 +232,7 @@ function setupEventListeners() {
     examplesContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('interactive-word')) {
             e.stopPropagation();
+            
             const word = e.target.textContent.replace(/[^a-zA-Z\s-]/g, '').trim();
             if (word) {
                 const sentence = e.target.closest('p').textContent;
@@ -310,6 +311,7 @@ function setupEventListeners() {
     articleAnalysisContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('interactive-word')) {
             e.stopPropagation();
+            
             try {
                 const analysisArray = JSON.parse(articleAnalysisContainer.dataset.analysis || '[]');
                 if (analysisArray.length > 0) {
@@ -363,19 +365,113 @@ async function analyzeArticle() {
 
     analyzeArticleBtn.disabled = true;
     analyzeArticleBtn.textContent = '分析中...';
-    articleAnalysisContainer.innerHTML = '<p>正在為您生成詳細解析，請稍候...</p>';
+    
+    // 按段落分割文章
+    const paragraphs = articleText.split(/\n+/).filter(p => p.trim() !== '');
+    
+    if (paragraphs.length === 0) {
+        alert('請輸入有效的文章內容！');
+        analyzeArticleBtn.disabled = false;
+        analyzeArticleBtn.textContent = '分析文章';
+        return;
+    }
+
+    // 顯示初始進度
+    articleAnalysisContainer.innerHTML = `
+        <div class="analysis-progress">
+            <p>正在分析文章，共 ${paragraphs.length} 個段落...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 0%"></div>
+            </div>
+            <p class="progress-text">準備中... (0/${paragraphs.length})</p>
+        </div>
+    `;
 
     try {
-        const prompt = `請對以下英文文章進行全面、深入的語法和語義分析，並嚴格按照指定的JSON格式返回結果。
+        // 存儲所有段落的分析結果
+        let combinedTranslation = '';
+        let combinedWordAlignment = [];
+        let paragraphAnalyses = [];
+        let combinedDetailedAnalysis = [];
+        
+        // 逐段落分析
+        for (let i = 0; i < paragraphs.length; i++) {
+            const paragraph = paragraphs[i];
+            
+            // 更新進度
+            updateAnalysisProgress(i, paragraphs.length, `正在分析第 ${i + 1} 段...`);
+            
+            try {
+                const paragraphResult = await analyzeParagraph(paragraph);
+                
+                // [BUG FIX] 修正重複添加，只添加一次
+                paragraphAnalyses.push(paragraphResult);
 
-文章: "${articleText}"
+                // 合併總翻譯和總詞語對齊
+                if (paragraphResult.chinese_translation) {
+                    combinedTranslation += (combinedTranslation ? '\n\n' : '') + paragraphResult.chinese_translation;
+                }
+                
+                if (paragraphResult.word_alignment) {
+                    combinedWordAlignment = combinedWordAlignment.concat(paragraphResult.word_alignment);
+                }
+                
+                // [BUG FIX] 不再手動合併 combinedDetailedAnalysis。
+                // 這是之前 Bug 的根源。我們將在下面從 paragraphAnalyses 陣列直接生成。
+                
+                // 更新進度顯示已完成的段落
+                updateAnalysisProgress(i + 1, paragraphs.length, `已完成 ${i + 1} 段分析`);
+                
+            } catch (error) {
+                console.error(`分析第 ${i + 1} 段時出錯:`, error);
+                updateAnalysisProgress(i + 1, paragraphs.length, `第 ${i + 1} 段分析失敗，繼續下一段...`);
+                
+                // 添加失敗段落的基本處理
+                const failedResult = {
+                    chinese_translation: `[第 ${i + 1} 段分析失敗]`,
+                    word_alignment: [],
+                    detailed_analysis: []
+                };
+                paragraphAnalyses.push(failedResult);
+                combinedTranslation += (combinedTranslation ? '\n\n' : '') + failedResult.chinese_translation;
+            }
+        }
+
+        // 組合最終結果
+        const finalResult = {
+            chinese_translation: combinedTranslation,
+            word_alignment: combinedWordAlignment,
+            detailed_analysis: paragraphAnalyses.flatMap(p => p.detailed_analysis || []),
+            paragraph_analysis: paragraphAnalyses
+        };
+
+        // 顯示最終結果
+        articleAnalysisContainer.dataset.analysis = JSON.stringify(finalResult.detailed_analysis || []);
+        displayArticleAnalysis(articleText, finalResult);
+        saveAnalysisResult(articleText, finalResult);
+
+    } catch (error) {
+        console.error('分析文章時出錯:', error);
+        articleAnalysisContainer.innerHTML = `<p style="color: red;">分析失敗！請檢查API Key或網絡連接後再試。</p>`;
+        alert('分析文章失敗，請稍後再試。');
+    } finally {
+        analyzeArticleBtn.disabled = false;
+        analyzeArticleBtn.textContent = '分析文章';
+    }
+}
+
+// 分析單個段落的函數
+async function analyzeParagraph(paragraph) {
+    const prompt = `請對以下英文段落進行全面、深入的語法和語義分析，並嚴格按照指定的JSON格式返回結果。
+
+段落: "${paragraph}"
 
 請返回一個JSON對象，包含以下三個鍵:
-1. "chinese_translation": 字符串，為整篇文章的流暢中文翻譯。
+1. "chinese_translation": 字符串，為此段落的流暢中文翻譯。
 2. "word_alignment": 數組，每個元素是一個對象 {"en": "英文單詞", "zh": "對應的中文詞語"}，用於實現英漢詞語對照高亮。
-3. "detailed_analysis": 一個 **數組**，其中每個元素都是一個對象，代表文章中一個具體單詞的分析。
+3. "detailed_analysis": 一個 **數組**，其中每個元素都是一個對象，代表段落中一個具體單詞的分析。
    - **重要**: 這個數組中的對象必須嚴格按照單詞在原文中出現的順序排列。
-   - **重要**: 如果同一個單詞在文章中出現多次，請為每一次出現都創建一個獨立的分析對象。
+   - **重要**: 如果同一個單詞在段落中出現多次，請為每一次出現都創建一個獨立的分析對象。
    - 每個對象的結構如下:
      {
        "word": "被分析的單詞原文",
@@ -392,133 +488,478 @@ async function analyzeArticle() {
        }
      }
 
-請只返回JSON格式的數據，不要包含任何額外的解釋性文字或標記。`;
+請只返回JSON格式的數據，不要包含任何額外的解釋性文字或標記。
+**極其重要**: JSON值內的所有雙引號都必須使用反斜杠進行轉義 (例如，寫成 \\" 而不是 ")。如果一個單詞的分析中需要引用其他單詞，請使用單引號或確保雙引號被正確轉義，否則會導致嚴重的解析錯誤。`;
 
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
-            },
-            body: JSON.stringify({
-                model: AI_MODELS.exampleGeneration,
-                messages: [{ role: "user", content: prompt }],
-                temperature: 0.5,
-            })
-        });
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify({
+            model: AI_MODELS.exampleGeneration,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.5,
+        })
+    });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('API Error:', errorData);
-            throw new Error(`API請求失敗，狀態碼: ${response.status}`);
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(`API請求失敗，狀態碼: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let content = data.choices[0].message.content.replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+
+    try {
+        // 優先嘗試直接解析，因為這是最快且最標準的方式。
+        return JSON.parse(content);
+    } catch (error) {
+        console.warn("常規 JSON 解析失敗，啟動備用解析策略。", `錯誤: ${error.message}`);
+        
+        // 備用策略 1: 嘗試修復常見的 AI 生成錯誤，例如在字串值末尾多餘的引號。
+        // 這個正則表達式尋找一個單詞字符或單引號，後面跟著一個雙引號，
+        // 再後面是任意空格和一個逗號或右大括號。然後它會移除那個多餘的雙引號。
+        // 例如: "role": "... 'cars'\" }" 會被修正為 "role": "... 'cars' }"
+        let fixedContent = content.replace(/([\w'])\"(\s*[,}])/g, '$1$2');
+
+        if (content !== fixedContent) {
+            console.log("已應用啟發式修復，正在嘗試重新解析...");
+            try {
+                return JSON.parse(fixedContent);
+            } catch (e1) {
+                console.warn("啟發式修復後解析失敗。繼續下一個策略。", `錯誤: ${e1.message}`);
+            }
         }
 
-        const data = await response.json();
-        const content = data.choices[0].message.content.replace(/^```json\n/, '').replace(/\n```$/, '');
-        const analysisResult = JSON.parse(content);
+        // 備用策略 2: 提取第一個 '{' 和最後一個 '}' 之間的內容。
+        // 這可以處理 AI 在 JSON 前後添加了額外文字的情況。
+        const firstBrace = content.indexOf('{');
+        const lastBrace = content.lastIndexOf('}');
 
-        articleAnalysisContainer.dataset.analysis = JSON.stringify(analysisResult.detailed_analysis || []);
-        displayArticleAnalysis(articleText, analysisResult);
-        saveAnalysisResult(articleText, analysisResult);
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+            const potentialJson = content.substring(firstBrace, lastBrace + 1);
+            console.log("正在嘗試解析提取出的 JSON 內容...");
+            try {
+                return JSON.parse(potentialJson);
+            } catch (e2) {
+                 console.error("所有備用解析策略均失敗。", `提取後解析錯誤: ${e2.message}`);
+            }
+        }
 
-    } catch (error) {
-        console.error('分析文章時出錯:', error);
-        articleAnalysisContainer.innerHTML = `<p style="color: red;">分析失敗！請檢查API Key或網絡連接後再試。</p>`;
-        alert('分析文章失敗，請稍後再試。');
-    } finally {
-        analyzeArticleBtn.disabled = false;
-        analyzeArticleBtn.textContent = '分析文章';
+        // 如果所有方法都失敗了，則記錄完整的上下文並拋出原始錯誤。
+        console.error("徹底解析失敗。無法從以下內容中恢復 JSON:", content);
+        throw error;
+    }
+}
+
+// 更新分析進度的函數
+function updateAnalysisProgress(completed, total, message) {
+    const progressFill = document.querySelector('.progress-fill');
+    const progressText = document.querySelector('.progress-text');
+    
+    if (progressFill && progressText) {
+        const percentage = (completed / total) * 100;
+        progressFill.style.width = `${percentage}%`;
+        progressText.textContent = `${message} (${completed}/${total})`;
     }
 }
 
 function displayArticleAnalysis(originalArticle, analysisResult) {
-    const { chinese_translation, word_alignment, detailed_analysis } = analysisResult;
+    const { chinese_translation, word_alignment, detailed_analysis, paragraph_analysis } = analysisResult;
 
-    if (!chinese_translation || !word_alignment || !detailed_analysis) {
+    if (!chinese_translation && (!paragraph_analysis || paragraph_analysis.length === 0)) {
         articleAnalysisContainer.innerHTML = `<p style="color: red;">API返回的數據格式不完整，無法顯示分析結果。</p>`;
         return;
     }
 
+    // 按段落分割原文和翻譯
+    const englishParagraphs = originalArticle.split(/\n+/).filter(p => p.trim() !== '');
+    const chineseParagraphs = chinese_translation.split(/\n+/).filter(p => p.trim() !== '');
+    
     const escapeRegex = (string) => string ? string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') : '';
 
-    let cursor = 0;
-    const wordStartMap = new Map();
-    detailed_analysis.forEach(item => {
-        const word = item.word;
-        if (!word) return;
-        const wordRegex = new RegExp(`\\b${escapeRegex(word)}\\b`);
-        const match = originalArticle.substring(cursor).match(wordRegex);
-        if (match) {
-            const startIndex = cursor + match.index;
-            item.startIndex = startIndex;
-            item.endIndex = startIndex + word.length;
-            wordStartMap.set(startIndex, item);
-            cursor = item.startIndex + 1;
-        }
-    });
-
-    let processedChinese = chinese_translation;
-    const sortedAlignment = [...word_alignment].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
-    const processedPhrases = new Array(originalArticle.length).fill(false);
-
-    sortedAlignment.forEach((pair, index) => {
-        if (!pair.en || !pair.zh) return;
-
-        let phraseIndex = -1;
-        let tempCursor = 0;
-        while ((phraseIndex = originalArticle.indexOf(pair.en, tempCursor)) !== -1) {
-            if (!processedPhrases[phraseIndex]) {
-                break;
+    // 建立段落級別的顯示
+    let htmlContent = '';
+    
+    for (let i = 0; i < Math.max(englishParagraphs.length, chineseParagraphs.length); i++) {
+        const englishPara = englishParagraphs[i] || '';
+        const chinesePara = chineseParagraphs[i] || '';
+        
+        if (!englishPara && !chinesePara) continue;
+        
+        // 處理該段落的單詞分析
+        let processedEnglish = englishPara;
+        let processedChinese = chinesePara;
+        
+        // 為當前段落找到相關的單詞分析
+        const paragraphWords = (paragraph_analysis && paragraph_analysis[i] && paragraph_analysis[i].detailed_analysis)
+            ? paragraph_analysis[i].detailed_analysis
+            : [];
+        
+        // 建立單詞映射
+        let cursor = 0;
+        const wordStartMap = new Map();
+        paragraphWords.forEach(item => {
+            const word = item.word;
+            if (!word) return;
+            const wordRegex = new RegExp(`\\b${escapeRegex(word)}\\b`);
+            const match = englishPara.substring(cursor).match(wordRegex);
+            if (match) {
+                const startIndex = cursor + match.index;
+                item.startIndex = startIndex;
+                item.endIndex = startIndex + word.length;
+                wordStartMap.set(startIndex, item);
+                cursor = item.startIndex + 1;
             }
-            tempCursor = phraseIndex + 1;
-        }
+        });
+        
+        // 處理詞語對齊高亮
+        const relevantAlignment = word_alignment.filter(pair =>
+            englishPara.includes(pair.en) && chinesePara.includes(pair.zh)
+        );
+        
+        const sortedAlignment = [...relevantAlignment].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
+        const processedPhrases = new Array(englishPara.length).fill(false);
 
-        if (phraseIndex !== -1) {
-            const phraseEndIndex = phraseIndex + pair.en.length;
-            const pairId = `article-pair-${index}`;
+        sortedAlignment.forEach((pair, index) => {
+            if (!pair.en || !pair.zh) return;
 
-            for (let i = phraseIndex; i < phraseEndIndex; i++) {
-                if (wordStartMap.has(i)) {
-                    const wordItem = wordStartMap.get(i);
-                    if (wordItem.endIndex <= phraseEndIndex) {
-                        wordItem.pairId = pairId;
+            let phraseIndex = -1;
+            let tempCursor = 0;
+            while ((phraseIndex = englishPara.indexOf(pair.en, tempCursor)) !== -1) {
+                if (!processedPhrases[phraseIndex]) {
+                    break;
+                }
+                tempCursor = phraseIndex + 1;
+            }
+
+            if (phraseIndex !== -1) {
+                const phraseEndIndex = phraseIndex + pair.en.length;
+                const pairId = `para-${i}-pair-${index}`;
+
+                for (let j = phraseIndex; j < phraseEndIndex; j++) {
+                    if (wordStartMap.has(j)) {
+                        const wordItem = wordStartMap.get(j);
+                        if (wordItem.endIndex <= phraseEndIndex) {
+                            wordItem.pairId = pairId;
+                        }
                     }
                 }
+                
+                for (let j = phraseIndex; j < phraseEndIndex; j++) {
+                    processedPhrases[j] = true;
+                }
+
+                const zhRegex = new RegExp(`(?<!<span[^>]*>)(${escapeRegex(pair.zh)})(?!<\\/span>)`);
+                processedChinese = processedChinese.replace(zhRegex, `<span class="interactive-word" data-pair-id="${pairId}">${pair.zh}</span>`);
             }
+        });
+
+        // 處理英文單詞（添加互動性和音標）
+        let processedEnglishFinal = '';
+        let lastIndex = 0;
+        const wordCounts = {};
+        paragraphWords.forEach(item => {
+            if (item.startIndex === undefined) return;
             
-            for (let i = phraseIndex; i < phraseEndIndex; i++) {
-                processedPhrases[i] = true;
-            }
-
-            const zhRegex = new RegExp(`(?<!<span[^>]*>)(${escapeRegex(pair.zh)})(?!<\\/span>)`);
-            processedChinese = processedChinese.replace(zhRegex, `<span class="interactive-word" data-pair-id="${pairId}">${pair.zh}</span>`);
-        }
-    });
-
-    let processedEnglish = '';
-    let lastIndex = 0;
-    const wordCounts = {};
-    detailed_analysis.forEach(item => {
-        if (item.startIndex === undefined) return;
+            processedEnglishFinal += englishPara.substring(lastIndex, item.startIndex);
+            
+            const wordLower = item.word.toLowerCase();
+            const wordIndex = wordCounts[wordLower] || 0;
+            
+            // 獲取音標
+            const phonetic = getPhonetic(item.word);
+            
+            processedEnglishFinal += `<span class="interactive-word" data-word="${item.word}" data-word-index="${wordIndex}" data-pair-id="${item.pairId || ''}" title="${item.analysis?.meaning || ''}">${item.word}</span>`;
+            wordCounts[wordLower] = wordIndex + 1;
+            lastIndex = item.endIndex;
+        });
+        processedEnglishFinal += englishPara.substring(lastIndex);
         
-        processedEnglish += originalArticle.substring(lastIndex, item.startIndex);
-        
-        const wordLower = item.word.toLowerCase();
-        const wordIndex = wordCounts[wordLower] || 0;
-        processedEnglish += `<span class="interactive-word" data-word="${item.word}" data-word-index="${wordIndex}" data-pair-id="${item.pairId || ''}">${item.word}</span>`;
-        wordCounts[wordLower] = wordIndex + 1;
-        lastIndex = item.endIndex;
-    });
-    processedEnglish += originalArticle.substring(lastIndex);
-
-    articleAnalysisContainer.innerHTML = `
-        <div class="example-item">
-            <p class="example-english">${processedEnglish.replace(/\n/g, '<br>')}</p>
-            <p class="example-chinese">${processedChinese.replace(/\n/g, '<br>')}</p>
-        </div>
-    `;
+        // 添加段落到HTML
+        htmlContent += `
+            <div class="paragraph-pair">
+                <div class="paragraph-english">${processedEnglishFinal}</div>
+                <div class="paragraph-chinese">${processedChinese}</div>
+            </div>
+        `;
+    }
     
+    articleAnalysisContainer.innerHTML = htmlContent;
     articleAnalysisContainer.dataset.analysis = JSON.stringify(detailed_analysis || []);
+}
+
+// 音標數據庫（常用單詞的音標）
+const phoneticDatabase = {
+    'the': 'ðə',
+    'a': 'ə',
+    'an': 'æn',
+    'and': 'ænd',
+    'or': 'ɔːr',
+    'but': 'bʌt',
+    'in': 'ɪn',
+    'on': 'ɒn',
+    'at': 'æt',
+    'to': 'tuː',
+    'for': 'fɔːr',
+    'of': 'ʌv',
+    'with': 'wɪθ',
+    'by': 'baɪ',
+    'is': 'ɪz',
+    'are': 'ɑːr',
+    'was': 'wʌz',
+    'were': 'wɜːr',
+    'have': 'hæv',
+    'has': 'hæz',
+    'had': 'hæd',
+    'do': 'duː',
+    'does': 'dʌz',
+    'did': 'dɪd',
+    'will': 'wɪl',
+    'would': 'wʊd',
+    'can': 'kæn',
+    'could': 'kʊd',
+    'should': 'ʃʊd',
+    'must': 'mʌst',
+    'may': 'meɪ',
+    'might': 'maɪt',
+    'this': 'ðɪs',
+    'that': 'ðæt',
+    'these': 'ðiːz',
+    'those': 'ðoʊz',
+    'he': 'hiː',
+    'she': 'ʃiː',
+    'it': 'ɪt',
+    'we': 'wiː',
+    'they': 'ðeɪ',
+    'you': 'juː',
+    'i': 'aɪ',
+    'me': 'miː',
+    'my': 'maɪ',
+    'your': 'jʊr',
+    'his': 'hɪz',
+    'her': 'hɜːr',
+    'its': 'ɪts',
+    'our': 'aʊr',
+    'their': 'ðeər',
+    'what': 'wʌt',
+    'when': 'wen',
+    'where': 'weər',
+    'why': 'waɪ',
+    'how': 'haʊ',
+    'who': 'huː',
+    'which': 'wɪtʃ',
+    'good': 'ɡʊd',
+    'bad': 'bæd',
+    'big': 'bɪɡ',
+    'small': 'smɔːl',
+    'new': 'nuː',
+    'old': 'oʊld',
+    'young': 'jʌŋ',
+    'long': 'lɔːŋ',
+    'short': 'ʃɔːrt',
+    'high': 'haɪ',
+    'low': 'loʊ',
+    'fast': 'fæst',
+    'slow': 'sloʊ',
+    'hot': 'hɑːt',
+    'cold': 'koʊld',
+    'warm': 'wɔːrm',
+    'cool': 'kuːl',
+    'easy': 'iːzi',
+    'hard': 'hɑːrd',
+    'important': 'ɪmˈpɔːrtənt',
+    'different': 'ˈdɪfərənt',
+    'same': 'seɪm',
+    'other': 'ˈʌðər',
+    'another': 'əˈnʌðər',
+    'first': 'fɜːrst',
+    'last': 'læst',
+    'next': 'nekst',
+    'best': 'best',
+    'better': 'ˈbetər',
+    'worse': 'wɜːrs',
+    'worst': 'wɜːrst',
+    'more': 'mɔːr',
+    'most': 'moʊst',
+    'less': 'les',
+    'least': 'liːst',
+    'much': 'mʌtʃ',
+    'many': 'ˈmeni',
+    'few': 'fjuː',
+    'little': 'ˈlɪtəl',
+    'all': 'ɔːl',
+    'some': 'sʌm',
+    'any': 'ˈeni',
+    'no': 'noʊ',
+    'none': 'nʌn',
+    'every': 'ˈevri',
+    'each': 'iːtʃ',
+    'both': 'boʊθ',
+    'either': 'ˈiːðər',
+    'neither': 'ˈniːðər',
+    'one': 'wʌn',
+    'two': 'tuː',
+    'three': 'θriː',
+    'four': 'fɔːr',
+    'five': 'faɪv',
+    'six': 'sɪks',
+    'seven': 'ˈsevən',
+    'eight': 'eɪt',
+    'nine': 'naɪn',
+    'ten': 'ten',
+    'hundred': 'ˈhʌndrəd',
+    'thousand': 'ˈθaʊzənd',
+    'million': 'ˈmɪljən',
+    'year': 'jɪr',
+    'month': 'mʌnθ',
+    'week': 'wiːk',
+    'day': 'deɪ',
+    'hour': 'aʊr',
+    'minute': 'ˈmɪnɪt',
+    'second': 'ˈsekənd',
+    'time': 'taɪm',
+    'today': 'təˈdeɪ',
+    'tomorrow': 'təˈmɑːroʊ',
+    'yesterday': 'ˈjestərdeɪ',
+    'now': 'naʊ',
+    'then': 'ðen',
+    'here': 'hɪr',
+    'there': 'ðer',
+    'home': 'hoʊm',
+    'work': 'wɜːrk',
+    'school': 'skuːl',
+    'house': 'haʊs',
+    'car': 'kɑːr',
+    'book': 'bʊk',
+    'water': 'ˈwɔːtər',
+    'food': 'fuːd',
+    'money': 'ˈmʌni',
+    'people': 'ˈpiːpəl',
+    'person': 'ˈpɜːrsən',
+    'man': 'mæn',
+    'woman': 'ˈwʊmən',
+    'child': 'tʃaɪld',
+    'children': 'ˈtʃɪldrən',
+    'family': 'ˈfæməli',
+    'friend': 'frend',
+    'love': 'lʌv',
+    'like': 'laɪk',
+    'want': 'wɑːnt',
+    'need': 'niːd',
+    'know': 'noʊ',
+    'think': 'θɪŋk',
+    'feel': 'fiːl',
+    'see': 'siː',
+    'hear': 'hɪr',
+    'say': 'seɪ',
+    'tell': 'tel',
+    'ask': 'æsk',
+    'answer': 'ˈænsər',
+    'speak': 'spiːk',
+    'talk': 'tɔːk',
+    'read': 'riːd',
+    'write': 'raɪt',
+    'listen': 'ˈlɪsən',
+    'look': 'lʊk',
+    'watch': 'wɑːtʃ',
+    'come': 'kʌm',
+    'go': 'ɡoʊ',
+    'get': 'ɡet',
+    'give': 'ɡɪv',
+    'take': 'teɪk',
+    'put': 'pʊt',
+    'make': 'meɪk',
+    'find': 'faɪnd',
+    'use': 'juːz',
+    'help': 'help',
+    'try': 'traɪ',
+    'start': 'stɑːrt',
+    'stop': 'stɑːp',
+    'open': 'ˈoʊpən',
+    'close': 'kloʊz',
+    'buy': 'baɪ',
+    'sell': 'sel',
+    'pay': 'peɪ',
+    'cost': 'kɔːst',
+    'eat': 'iːt',
+    'drink': 'drɪŋk',
+    'sleep': 'sliːp',
+    'walk': 'wɔːk',
+    'run': 'rʌn',
+    'sit': 'sɪt',
+    'stand': 'stænd',
+    'live': 'lɪv',
+    'play': 'pleɪ',
+    'study': 'ˈstʌdi',
+    'learn': 'lɜːrn',
+    'teach': 'tiːtʃ',
+    'understand': 'ˌʌndərˈstænd',
+    'remember': 'rɪˈmembər',
+    'forget': 'fərˈɡet',
+    'hope': 'hoʊp',
+    'believe': 'bɪˈliːv',
+    'agree': 'əˈɡriː',
+    'disagree': 'ˌdɪsəˈɡriː'
+};
+
+// 獲取單詞音標的函數
+function getPhonetic(word) {
+    if (!word) return '';
+    
+    const lowerWord = word.toLowerCase();
+    
+    // 首先查找本地數據庫
+    if (phoneticDatabase[lowerWord]) {
+        return phoneticDatabase[lowerWord];
+    }
+    
+    // 如果沒有找到，返回一個簡化的音標估計
+    // 這裡可以後續擴展為調用在線詞典API
+    return generatePhoneticApproximation(word);
+}
+
+// 生成音標近似值的函數（基本規則）
+function generatePhoneticApproximation(word) {
+    if (!word) return '';
+    
+    // 這是一個簡化的音標生成邏輯
+    // 實際應用中建議使用專業的音標API
+    let phonetic = word.toLowerCase();
+    
+    // 一些基本的音標轉換規則
+    phonetic = phonetic.replace(/tion$/, 'ʃən');
+    phonetic = phonetic.replace(/sion$/, 'ʒən');
+    phonetic = phonetic.replace(/ough/, 'ʌf');
+    phonetic = phonetic.replace(/ea/, 'iː');
+    phonetic = phonetic.replace(/ee/, 'iː');
+    phonetic = phonetic.replace(/oo/, 'uː');
+    phonetic = phonetic.replace(/ou/, 'aʊ');
+    phonetic = phonetic.replace(/ow/, 'oʊ');
+    phonetic = phonetic.replace(/ai/, 'eɪ');
+    phonetic = phonetic.replace(/ay/, 'eɪ');
+    phonetic = phonetic.replace(/oi/, 'ɔɪ');
+    phonetic = phonetic.replace(/oy/, 'ɔɪ');
+    phonetic = phonetic.replace(/ie/, 'aɪ');
+    phonetic = phonetic.replace(/y$/, 'i');
+    phonetic = phonetic.replace(/er$/, 'ər');
+    phonetic = phonetic.replace(/ar/, 'ɑːr');
+    phonetic = phonetic.replace(/or/, 'ɔːr');
+    phonetic = phonetic.replace(/ur/, 'ɜːr');
+    phonetic = phonetic.replace(/ir/, 'ɜːr');
+    phonetic = phonetic.replace(/ch/, 'tʃ');
+    phonetic = phonetic.replace(/sh/, 'ʃ');
+    phonetic = phonetic.replace(/th/, 'θ');
+    phonetic = phonetic.replace(/ng/, 'ŋ');
+    phonetic = phonetic.replace(/ph/, 'f');
+    phonetic = phonetic.replace(/gh/, '');
+    phonetic = phonetic.replace(/ck/, 'k');
+    phonetic = phonetic.replace(/x/, 'ks');
+    
+    return phonetic;
 }
 
 function showArticleWordAnalysis(clickedElement, analysisArray) {
@@ -539,13 +980,23 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
 
     if (wordAnalysisData && wordAnalysisData.analysis) {
         const analysis = wordAnalysisData.analysis;
+        const phonetic = getPhonetic(wordAnalysisData.word);
+        const phoneticDisplay = phonetic ? ` /${phonetic}/` : '';
+        
+        // 先建立結構，音標部分留空
         analysisTooltip.innerHTML = `
-            <div class="tooltip-title">${wordAnalysisData.word} (${analysis.pos})</div>
+            <div class="tooltip-title">${wordAnalysisData.word}<span class="tooltip-phonetic"></span> (${analysis.pos})</div>
             <div class="tooltip-content">
                 <p><strong>作用:</strong> ${analysis.role}</p>
                 <p><strong>意思:</strong> ${analysis.meaning}</p>
             </div>
         `;
+
+        // 然後使用 textContent 安全地設置音標
+        const phoneticSpan = analysisTooltip.querySelector('.tooltip-phonetic');
+        if (phoneticSpan) {
+            phoneticSpan.textContent = phoneticDisplay;
+        }
     } else {
         analysisTooltip.innerHTML = `<div class="tooltip-content"><p>單詞 "${wordText}" (第 ${wordIndex + 1} 次出現) 的分析數據未找到或不匹配。</p></div>`;
     }
@@ -1545,8 +1996,10 @@ function analyzeWordInContext(word, sentence, event) {
     }
 
     if (wordAnalysis) {
+        const phonetic = getPhonetic(word);
+        const phoneticDisplay = phonetic ? ` /${phonetic}/` : '';
         analysisTooltip.innerHTML = `
-            <div class="tooltip-title">${word} (${wordAnalysis.pos})</div>
+            <div class="tooltip-title">${word}<span class="tooltip-phonetic">${phoneticDisplay}</span> (${wordAnalysis.pos})</div>
             <div class="tooltip-content">
                 <p><strong>作用:</strong> ${wordAnalysis.role}</p>
                 <p><strong>意思:</strong> ${wordAnalysis.meaning}</p>
