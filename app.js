@@ -26,9 +26,11 @@ const sections = document.querySelectorAll('.section');
 // 單詞本頁面
 const vocabBookList = document.getElementById('vocab-book-list');
 const addVocabBookBtn = document.getElementById('add-vocab-book-btn');
+const importVocabBookBtn = document.getElementById('import-vocab-book-btn');
 const currentBookName = document.getElementById('current-book-name');
 const editVocabBookBtn = document.getElementById('edit-vocab-book-btn');
 const deleteVocabBookBtn = document.getElementById('delete-vocab-book-btn');
+const exportVocabBookBtn = document.getElementById('export-vocab-book-btn');
 const wordList = document.getElementById('word-list');
 
 // 學習模式頁面
@@ -166,6 +168,8 @@ function setupEventListeners() {
     vocabBookList.addEventListener('click', handleVocabBookSelection);
     editVocabBookBtn.addEventListener('click', () => openModalForEditBook());
     deleteVocabBookBtn.addEventListener('click', deleteActiveVocabBook);
+    importVocabBookBtn.addEventListener('click', openModalForImportBook);
+    exportVocabBookBtn.addEventListener('click', exportActiveVocabBook);
 
     // Modal 事件
     modalCloseBtn.addEventListener('click', closeModal);
@@ -713,8 +717,8 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
 
     if (wordAnalysisData && wordAnalysisData.analysis) {
         const analysis = wordAnalysisData.analysis;
-        const phonetic = analysis.phonetic || ''; // 直接從分析數據中獲取音標
-        const phoneticDisplay = phonetic ? ` /${phonetic}/` : '';
+        const phonetic = analysis.phonetic || '';
+        const phoneticDisplay = phonetic ? ` /${phonetic.replace(/^\/|\/$/g, '')}/` : '';
         
         // 先建立結構，音標部分留空
         analysisTooltip.innerHTML = `
@@ -992,12 +996,14 @@ function updateActiveBookView() {
         currentBookName.textContent = activeBook.name;
         editVocabBookBtn.disabled = false;
         deleteVocabBookBtn.disabled = false;
+        exportVocabBookBtn.disabled = false;
         renderWordList();
         populateWordSelect();
     } else {
         currentBookName.textContent = '請選擇一個單詞本';
         editVocabBookBtn.disabled = true;
         deleteVocabBookBtn.disabled = true;
+        exportVocabBookBtn.disabled = true;
         wordList.innerHTML = '<li class="word-item-placeholder">請從左側選擇或創建一個單詞本</li>';
         populateWordSelect();
     }
@@ -1025,7 +1031,10 @@ function openModalForEditBook() {
     if (!book) return;
 
     modalTitle.textContent = '編輯單詞本 - ' + book.name;
-    const wordsText = book.words.map(w => `${w.word}#${w.meaning || ''}@${w.phonetic}`).join('\n');
+    const wordsText = book.words.map(w => {
+        const phonetic = (w.phonetic || '').replace(/^\/+|\/+$/g, '');
+        return `${w.word}#${w.meaning || ''}@/${phonetic}/`;
+    }).join('\n');
     modalBody.innerHTML = `
         <div class="input-group">
             <label for="modal-book-name">單詞本名稱</label>
@@ -1044,6 +1053,225 @@ function openModalForEditBook() {
     appModal.querySelector('.cancel-btn').onclick = closeModal;
     openModal();
 }
+
+async function openModalForImportBook() {
+    modalTitle.textContent = '導入單詞本';
+    modalBody.innerHTML = `<p>正在加載預設單詞本...</p>`;
+    openModal();
+
+    try {
+        const defaultBooks = await fetchDefaultWordlists();
+        if (defaultBooks.length === 0) {
+            modalBody.innerHTML = `<p>沒有找到可用的預設單詞本。</p>`;
+            return;
+        }
+
+        let presetItemsHtml = defaultBooks.map(book => {
+            const safeId = `import-${book.path.replace(/[^a-zA-Z0-9]/g, '')}`;
+            return `
+                <div class="import-preset-item-wrapper">
+                    <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" class="import-checkbox">
+                    <label for="${safeId}" class="import-preset-item">${book.name}</label>
+                </div>
+            `;
+        }).join('');
+
+        modalBody.innerHTML = `
+            <div class="import-container">
+                <div class="import-section">
+                    <h4 class="import-section-title">從預設列表選擇</h4>
+                    <div id="modal-import-list" class="import-preset-list">
+                        ${presetItemsHtml}
+                    </div>
+                </div>
+                <div class="import-section">
+                    <h4 class="import-section-title">從URL導入</h4>
+                    <div class="input-group">
+                         <label for="modal-import-url">單詞本URL</label>
+                         <input type="url" id="modal-import-url" placeholder="https://example.com/words.json">
+                    </div>
+                </div>
+                <div class="import-section">
+                    <h4 class="import-section-title">從文件導入</h4>
+                    <div class="input-group">
+                        <label for="modal-import-file">選擇JSON文件</label>
+                        <input type="file" id="modal-import-file" accept=".json">
+                    </div>
+                </div>
+            </div>
+            <div id="modal-import-progress" class="import-progress"></div>
+            <div class="modal-actions">
+                <button class="cancel-btn">取消</button>
+                <button class="save-btn">導入選中</button>
+            </div>
+        `;
+        appModal.querySelector('.save-btn').onclick = () => importSharedVocabBooks();
+        appModal.querySelector('.cancel-btn').onclick = closeModal;
+
+    } catch (error) {
+        console.error('加載預設單詞本失敗:', error);
+        modalBody.innerHTML = `<p style="color: red;">加載失敗，請稍後再試。</p>`;
+    }
+}
+
+async function fetchDefaultWordlists() {
+    // 使用預打包的數據，避免在 file:// 協議下 fetch 失敗
+    try {
+        const response = await fetchPrepackagedData('wordlists/manifest.json');
+        const manifest = await response.json();
+        return manifest;
+    } catch (error) {
+        console.error("獲取預設單詞本列表時出錯 (從預打包數據):", error);
+        return [];
+    }
+}
+
+async function importSharedVocabBooks() {
+    const selectedCheckboxes = document.querySelectorAll('#modal-import-list input[type="checkbox"]:checked');
+    const urlInput = document.getElementById('modal-import-url');
+    const fileInput = document.getElementById('modal-import-file');
+    const progressContainer = document.getElementById('modal-import-progress');
+
+    const urlPath = urlInput.value.trim();
+    const file = fileInput.files[0];
+
+    let sources = Array.from(selectedCheckboxes).map(cb => ({ type: 'preset', value: cb.value, name: cb.dataset.name }));
+
+    if (urlPath) {
+        try {
+            const url = new URL(urlPath);
+            sources.push({ type: 'url', value: urlPath, name: url.pathname.split('/').pop() || 'URL單詞本' });
+        } catch (_) {
+            alert(`"${urlPath}" 不是一個有效的URL。`);
+            return;
+        }
+    }
+
+    if (file) {
+        sources.push({ type: 'file', value: file, name: file.name });
+    }
+
+    if (sources.length === 0) {
+        alert('請至少選擇一個預設單詞本、提供一個URL或選擇一個文件。');
+        return;
+    }
+
+    const saveBtn = appModal.querySelector('.save-btn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = '正在導入...';
+    progressContainer.innerHTML = '';
+
+    let successCount = 0;
+    let finalMessage = '導入完成！\n\n';
+
+    for (const source of sources) {
+        try {
+            progressContainer.innerHTML = `<p>正在處理: ${source.name}...</p>`;
+            let bookData;
+
+            if (source.type === 'preset' || source.type === 'url') {
+                const response = source.type === 'url' ? await fetch(source.value) : await fetchPrepackagedData(source.value);
+                if (!response.ok) throw new Error(`無法加載: ${source.name}`);
+                bookData = await response.json();
+            } else {
+                bookData = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        try { resolve(JSON.parse(reader.result)); } catch (e) { reject(new Error('文件格式無效')); }
+                    };
+                    reader.onerror = () => reject(new Error('讀取文件失敗'));
+                    reader.readAsText(source.value);
+                });
+            }
+
+            if (!bookData.name || !Array.isArray(bookData.words)) {
+                throw new Error(`數據源 ${source.name} 格式不正確。`);
+            }
+
+            const existingBookIndex = vocabularyBooks.findIndex(b => b.name === bookData.name);
+            if (existingBookIndex > -1) {
+                if (!confirm(`單詞本 "${bookData.name}" 已存在。要覆蓋它嗎？`)) {
+                    finalMessage += `已跳過: ${bookData.name}\n`;
+                    continue; // Skip to next source if user cancels
+                }
+            }
+
+            const wordsWithDetails = [];
+            for (let i = 0; i < bookData.words.length; i++) {
+                const line = bookData.words[i];
+                progressContainer.innerHTML = `<p>正在解析: ${line} (${i + 1}/${bookData.words.length})</p>`;
+                
+                const parsedWord = parseWordsFromText(line)[0];
+                if (!parsedWord) continue;
+
+                if (!parsedWord.meaning || !parsedWord.phonetic) {
+                    const analysis = await getWordAnalysis(parsedWord.word);
+                    parsedWord.phonetic = parsedWord.phonetic || (analysis.phonetic || 'n/a').replace(/^\/|\/$/g, '');
+                    parsedWord.meaning = parsedWord.meaning || analysis.meaning || '';
+                }
+                wordsWithDetails.push(parsedWord);
+            }
+
+            const newBook = { id: Date.now().toString(), name: bookData.name, words: wordsWithDetails };
+            
+            if (existingBookIndex > -1) {
+                vocabularyBooks[existingBookIndex] = { ...vocabularyBooks[existingBookIndex], ...newBook };
+                 finalMessage += `已覆蓋: ${bookData.name}\n`;
+            } else {
+                vocabularyBooks.push(newBook);
+                 finalMessage += `已導入: ${bookData.name}\n`;
+            }
+            activeBookId = newBook.id;
+            successCount++;
+
+        } catch (error) {
+            console.error(`導入 ${source.name} 失敗:`, error);
+            finalMessage += `導入失敗: ${source.name} (${error.message})\n`;
+        }
+    }
+    
+    if (successCount > 0) {
+        saveVocabularyBooks();
+        renderVocabBookList();
+        updateActiveBookView();
+    }
+    
+    alert(finalMessage);
+    closeModal();
+}
+
+// 獲取單一單詞分析的簡化版API調用
+async function getWordAnalysis(word) {
+    try {
+        const prompt = `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Chinese meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}.`;
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+                model: AI_MODELS.wordAnalysis,
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.2,
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices[0].message.content.replace(/^```json\n/, '').replace(/\n```$/, '');
+        return JSON.parse(content);
+
+    } catch (error) {
+        console.error(`Error analyzing word "${word}":`, error);
+        // 返回一個預設對象，這樣流程可以繼續
+        return { phonetic: 'error', pos: '', meaning: '分析失敗' };
+    }
+}
+
 
 function saveVocabBook(bookId = null) {
     const bookNameInput = document.getElementById('modal-book-name');
@@ -1090,29 +1318,83 @@ function deleteActiveVocabBook() {
 
 function parseWordsFromText(text) {
     const lines = text.split('\n');
-    const words = [];
-    lines.forEach((line, index) => {
-        if (!line.trim()) return;
-        const hashIndex = line.indexOf('#');
+    return lines.map((line, index) => {
+        if (!line.trim()) return null;
+        let word = '', meaning = '', phonetic = '';
         const atIndex = line.indexOf('@');
+        const hashIndex = line.indexOf('#');
 
-        if (hashIndex > 0 && atIndex > hashIndex) {
-            const word = line.substring(0, hashIndex).trim();
-            const meaning = line.substring(hashIndex + 1, atIndex).trim();
-            const phonetic = line.substring(atIndex + 1).trim();
-
-            if (word && phonetic) {
-                words.push({
-                    id: `${Date.now()}-${index}`,
-                    word,
-                    phonetic,
-                    meaning,
-                    examples: []
-                });
+        if (atIndex !== -1 && hashIndex !== -1) {
+            if (hashIndex < atIndex) { // format: word#meaning@phonetic
+                word = line.substring(0, hashIndex).trim();
+                meaning = line.substring(hashIndex + 1, atIndex).trim();
+                phonetic = line.substring(atIndex + 1).trim();
+            } else { // format: word@phonetic#meaning
+                word = line.substring(0, atIndex).trim();
+                phonetic = line.substring(atIndex + 1, hashIndex).trim();
+                meaning = line.substring(hashIndex + 1).trim();
             }
+        } else if (hashIndex !== -1) { // format: word#meaning
+            word = line.substring(0, hashIndex).trim();
+            meaning = line.substring(hashIndex + 1).trim();
+        } else if (atIndex !== -1) { // format: word@phonetic
+            word = line.substring(0, atIndex).trim();
+            phonetic = line.substring(atIndex + 1).trim();
+        } else {
+            word = line.trim();
         }
-    });
-    return words;
+
+        if (!word) return null;
+
+        return {
+            id: `${Date.now()}-${index}`,
+            word,
+            meaning,
+            phonetic: phonetic.replace(/^\/|\/$/g, ''), // 移除斜線
+            examples: [],
+        };
+    }).filter(w => w !== null);
+}
+
+function exportActiveVocabBook() {
+    const activeBook = vocabularyBooks.find(b => b.id === activeBookId);
+    if (!activeBook) {
+        alert('沒有激活的單詞本可以導出。');
+        return;
+    }
+
+    const bookData = {
+        name: activeBook.name,
+        words: activeBook.words.map(w => {
+            let parts = [w.word];
+            if (w.meaning) parts.push(`#${w.meaning}`);
+            if (w.phonetic) parts.push(`@${w.phonetic}`);
+            // 修正組合邏輯，確保 # 在 @ 前面
+            if (w.meaning && w.phonetic) {
+                return `${w.word}#${w.meaning}@${w.phonetic}`;
+            } else if (w.meaning) {
+                return `${w.word}#${w.meaning}`;
+            } else if (w.phonetic) {
+                return `${w.word}@${w.phonetic}`;
+            }
+            return w.word;
+        })
+    };
+
+    const content = JSON.stringify(bookData, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeBook.name.replace(/[\\/:\*\?"<>\|]/g, '_')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert(`單詞本 "${activeBook.name}" 已導出。`);
 }
 
 // =================================
@@ -1134,7 +1416,7 @@ function renderWordList() {
         li.innerHTML = `
             <div class="word-text">
                 <strong data-word-id="${word.id}">${word.word}</strong>
-                <span class="phonetic">${word.phonetic}</span>
+                <span class="phonetic">/${word.phonetic}/</span>
                 ${word.meaning ? `<span class="meaning" data-word-id="${word.id}">${word.meaning}</span>` : ''}
             </div>
             <div class="word-actions">
@@ -1481,7 +1763,7 @@ function displayWordDetails() {
     const word = words.find(w => w.id === selectedId);
     if (word) {
         detailWord.textContent = word.word;
-        detailPhonetic.textContent = word.phonetic;
+        detailPhonetic.textContent = word.phonetic ? `/${word.phonetic}/` : '';
         detailMeaning.textContent = word.meaning || '(無中文意思)';
         displayExamples(word);
     } else {
@@ -1723,8 +2005,8 @@ function analyzeWordInContext(word, sentence, event) {
     }
 
     if (wordAnalysis) {
-        const phonetic = wordAnalysis.phonetic || ''; // 直接從分析數據中獲取音標
-        const phoneticDisplay = phonetic ? ` /${phonetic}/` : '';
+        const phonetic = wordAnalysis.phonetic || '';
+        const phoneticDisplay = phonetic ? ` /${phonetic.replace(/^\/|\/$/g, '')}/` : '';
         analysisTooltip.innerHTML = `
             <div class="tooltip-title">${word}<span class="tooltip-phonetic">${phoneticDisplay}</span> (${wordAnalysis.pos})</div>
             <div class="tooltip-content">
@@ -1883,14 +2165,39 @@ function saveVocabularyBooks() {
 
 function loadVocabularyBooks() {
     const saved = localStorage.getItem('vocabularyBooks');
-    vocabularyBooks = saved ? JSON.parse(saved) : [];
-    if (vocabularyBooks.length === 0) {
-        vocabularyBooks.push({
+    let books = saved ? JSON.parse(saved) : [];
+
+    if (books.length === 0) {
+        // 如果沒有數據，創建一個預設的
+        books.push({
             id: Date.now().toString(),
             name: '我的第一個單詞本',
             words: []
         });
+    } else {
+        // 資料遷移和清理：遍歷所有單詞並標準化音標格式
+        let dataWasModified = false;
+        books.forEach(book => {
+            if (book.words && Array.isArray(book.words)) {
+                book.words.forEach(word => {
+                    if (word.phonetic && typeof word.phonetic === 'string') {
+                        const originalPhonetic = word.phonetic;
+                        const cleanedPhonetic = originalPhonetic.replace(/^\/+|\/+$/g, '');
+                        if (originalPhonetic !== cleanedPhonetic) {
+                            word.phonetic = cleanedPhonetic;
+                            dataWasModified = true;
+                        }
+                    }
+                });
+            }
+        });
+        // 如果資料被修改過，就立即存回localStorage
+        if (dataWasModified) {
+            localStorage.setItem('vocabularyBooks', JSON.stringify(books));
+        }
     }
+
+    vocabularyBooks = books;
     loadAppState();
 }
 
