@@ -1302,3 +1302,99 @@ button:disabled {
     margin: 0 15px;
     font-weight: bold;
 }
+/* =================================
+   數字加減控件 (垂直美化版)
+   ================================= */
+.number-stepper-vertical {
+    display: flex;
+    align-items: center;
+    width: 100px; /* 控件總寬度 */
+}
+
+.stepper-input {
+    width: 60px; /* 數字顯示區域寬度 */
+    height: 40px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+    -moz-appearance: textfield;
+    transition: border-color 0.2s;
+}
+
+.stepper-input:focus {
+    outline: none;
+    border-color: #3a7bd5;
+    box-shadow: 0 0 0 2px rgba(58, 123, 213, 0.2);
+}
+
+.stepper-input::-webkit-outer-spin-button,
+.stepper-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.stepper-controls {
+    display: flex;
+    flex-direction: column;
+    margin-left: 5px;
+}
+
+.stepper-btn {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    color: #555;
+    cursor: pointer;
+    width: 30px;
+    height: 19px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background-color 0.2s, border-color 0.2s;
+    position: relative;
+}
+
+.stepper-btn:hover {
+    background-color: #f0f0f0;
+    border-color: #aaa;
+}
+
+.stepper-btn:active {
+    background-color: #e0e0e0;
+}
+
+.stepper-btn.stepper-plus {
+    border-radius: 6px 6px 0 0;
+    border-bottom: none;
+}
+
+.stepper-btn.stepper-minus {
+    border-radius: 0 0 6px 6px;
+}
+
+.stepper-btn::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 0;
+    border-style: solid;
+}
+
+.stepper-btn.stepper-plus::after {
+    border-width: 0 5px 6px 5px;
+    border-color: transparent transparent #333 transparent;
+}
+
+.stepper-btn.stepper-minus::after {
+    border-width: 6px 5px 0 5px;
+    border-color: #333 transparent transparent transparent;
+}
+
+.stepper-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f8f8f8;
+}
