@@ -477,6 +477,7 @@ async function analyzeParagraph(paragraph) {
        "word": "被分析的單詞原文",
        "sentence": "該單詞所在的完整句子",
        "analysis": {
+         "phonetic": "該單詞的國際音標(IPA)，例如 'ˈæpəl'",
          "pos": "詞性",
          "meaning": "在當前上下文中的準確中文意思",
          "role": "在句子中的極其詳細的語法作用，並強力關聯上下文。描述必須非常具體，清晰地闡述該詞與前後文的邏輯關係。例如：
@@ -670,8 +671,9 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             const wordLower = item.word.toLowerCase();
             const wordIndex = wordCounts[wordLower] || 0;
             
-            // 獲取音標
-            const phonetic = getPhonetic(item.word);
+            // 獲取音標 - 現在直接從 analysis 中獲取
+            const phonetic = item.analysis?.phonetic || '';
+            const phoneticDisplay = phonetic ? `/${phonetic}/` : '';
             
             processedEnglishFinal += `<span class="interactive-word" data-word="${item.word}" data-word-index="${wordIndex}" data-pair-id="${item.pairId || ''}" title="${item.analysis?.meaning || ''}">${item.word}</span>`;
             wordCounts[wordLower] = wordIndex + 1;
@@ -692,275 +694,6 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
     articleAnalysisContainer.dataset.analysis = JSON.stringify(detailed_analysis || []);
 }
 
-// 音標數據庫（常用單詞的音標）
-const phoneticDatabase = {
-    'the': 'ðə',
-    'a': 'ə',
-    'an': 'æn',
-    'and': 'ænd',
-    'or': 'ɔːr',
-    'but': 'bʌt',
-    'in': 'ɪn',
-    'on': 'ɒn',
-    'at': 'æt',
-    'to': 'tuː',
-    'for': 'fɔːr',
-    'of': 'ʌv',
-    'with': 'wɪθ',
-    'by': 'baɪ',
-    'is': 'ɪz',
-    'are': 'ɑːr',
-    'was': 'wʌz',
-    'were': 'wɜːr',
-    'have': 'hæv',
-    'has': 'hæz',
-    'had': 'hæd',
-    'do': 'duː',
-    'does': 'dʌz',
-    'did': 'dɪd',
-    'will': 'wɪl',
-    'would': 'wʊd',
-    'can': 'kæn',
-    'could': 'kʊd',
-    'should': 'ʃʊd',
-    'must': 'mʌst',
-    'may': 'meɪ',
-    'might': 'maɪt',
-    'this': 'ðɪs',
-    'that': 'ðæt',
-    'these': 'ðiːz',
-    'those': 'ðoʊz',
-    'he': 'hiː',
-    'she': 'ʃiː',
-    'it': 'ɪt',
-    'we': 'wiː',
-    'they': 'ðeɪ',
-    'you': 'juː',
-    'i': 'aɪ',
-    'me': 'miː',
-    'my': 'maɪ',
-    'your': 'jʊr',
-    'his': 'hɪz',
-    'her': 'hɜːr',
-    'its': 'ɪts',
-    'our': 'aʊr',
-    'their': 'ðeər',
-    'what': 'wʌt',
-    'when': 'wen',
-    'where': 'weər',
-    'why': 'waɪ',
-    'how': 'haʊ',
-    'who': 'huː',
-    'which': 'wɪtʃ',
-    'good': 'ɡʊd',
-    'bad': 'bæd',
-    'big': 'bɪɡ',
-    'small': 'smɔːl',
-    'new': 'nuː',
-    'old': 'oʊld',
-    'young': 'jʌŋ',
-    'long': 'lɔːŋ',
-    'short': 'ʃɔːrt',
-    'high': 'haɪ',
-    'low': 'loʊ',
-    'fast': 'fæst',
-    'slow': 'sloʊ',
-    'hot': 'hɑːt',
-    'cold': 'koʊld',
-    'warm': 'wɔːrm',
-    'cool': 'kuːl',
-    'easy': 'iːzi',
-    'hard': 'hɑːrd',
-    'important': 'ɪmˈpɔːrtənt',
-    'different': 'ˈdɪfərənt',
-    'same': 'seɪm',
-    'other': 'ˈʌðər',
-    'another': 'əˈnʌðər',
-    'first': 'fɜːrst',
-    'last': 'læst',
-    'next': 'nekst',
-    'best': 'best',
-    'better': 'ˈbetər',
-    'worse': 'wɜːrs',
-    'worst': 'wɜːrst',
-    'more': 'mɔːr',
-    'most': 'moʊst',
-    'less': 'les',
-    'least': 'liːst',
-    'much': 'mʌtʃ',
-    'many': 'ˈmeni',
-    'few': 'fjuː',
-    'little': 'ˈlɪtəl',
-    'all': 'ɔːl',
-    'some': 'sʌm',
-    'any': 'ˈeni',
-    'no': 'noʊ',
-    'none': 'nʌn',
-    'every': 'ˈevri',
-    'each': 'iːtʃ',
-    'both': 'boʊθ',
-    'either': 'ˈiːðər',
-    'neither': 'ˈniːðər',
-    'one': 'wʌn',
-    'two': 'tuː',
-    'three': 'θriː',
-    'four': 'fɔːr',
-    'five': 'faɪv',
-    'six': 'sɪks',
-    'seven': 'ˈsevən',
-    'eight': 'eɪt',
-    'nine': 'naɪn',
-    'ten': 'ten',
-    'hundred': 'ˈhʌndrəd',
-    'thousand': 'ˈθaʊzənd',
-    'million': 'ˈmɪljən',
-    'year': 'jɪr',
-    'month': 'mʌnθ',
-    'week': 'wiːk',
-    'day': 'deɪ',
-    'hour': 'aʊr',
-    'minute': 'ˈmɪnɪt',
-    'second': 'ˈsekənd',
-    'time': 'taɪm',
-    'today': 'təˈdeɪ',
-    'tomorrow': 'təˈmɑːroʊ',
-    'yesterday': 'ˈjestərdeɪ',
-    'now': 'naʊ',
-    'then': 'ðen',
-    'here': 'hɪr',
-    'there': 'ðer',
-    'home': 'hoʊm',
-    'work': 'wɜːrk',
-    'school': 'skuːl',
-    'house': 'haʊs',
-    'car': 'kɑːr',
-    'book': 'bʊk',
-    'water': 'ˈwɔːtər',
-    'food': 'fuːd',
-    'money': 'ˈmʌni',
-    'people': 'ˈpiːpəl',
-    'person': 'ˈpɜːrsən',
-    'man': 'mæn',
-    'woman': 'ˈwʊmən',
-    'child': 'tʃaɪld',
-    'children': 'ˈtʃɪldrən',
-    'family': 'ˈfæməli',
-    'friend': 'frend',
-    'love': 'lʌv',
-    'like': 'laɪk',
-    'want': 'wɑːnt',
-    'need': 'niːd',
-    'know': 'noʊ',
-    'think': 'θɪŋk',
-    'feel': 'fiːl',
-    'see': 'siː',
-    'hear': 'hɪr',
-    'say': 'seɪ',
-    'tell': 'tel',
-    'ask': 'æsk',
-    'answer': 'ˈænsər',
-    'speak': 'spiːk',
-    'talk': 'tɔːk',
-    'read': 'riːd',
-    'write': 'raɪt',
-    'listen': 'ˈlɪsən',
-    'look': 'lʊk',
-    'watch': 'wɑːtʃ',
-    'come': 'kʌm',
-    'go': 'ɡoʊ',
-    'get': 'ɡet',
-    'give': 'ɡɪv',
-    'take': 'teɪk',
-    'put': 'pʊt',
-    'make': 'meɪk',
-    'find': 'faɪnd',
-    'use': 'juːz',
-    'help': 'help',
-    'try': 'traɪ',
-    'start': 'stɑːrt',
-    'stop': 'stɑːp',
-    'open': 'ˈoʊpən',
-    'close': 'kloʊz',
-    'buy': 'baɪ',
-    'sell': 'sel',
-    'pay': 'peɪ',
-    'cost': 'kɔːst',
-    'eat': 'iːt',
-    'drink': 'drɪŋk',
-    'sleep': 'sliːp',
-    'walk': 'wɔːk',
-    'run': 'rʌn',
-    'sit': 'sɪt',
-    'stand': 'stænd',
-    'live': 'lɪv',
-    'play': 'pleɪ',
-    'study': 'ˈstʌdi',
-    'learn': 'lɜːrn',
-    'teach': 'tiːtʃ',
-    'understand': 'ˌʌndərˈstænd',
-    'remember': 'rɪˈmembər',
-    'forget': 'fərˈɡet',
-    'hope': 'hoʊp',
-    'believe': 'bɪˈliːv',
-    'agree': 'əˈɡriː',
-    'disagree': 'ˌdɪsəˈɡriː'
-};
-
-// 獲取單詞音標的函數
-function getPhonetic(word) {
-    if (!word) return '';
-    
-    const lowerWord = word.toLowerCase();
-    
-    // 首先查找本地數據庫
-    if (phoneticDatabase[lowerWord]) {
-        return phoneticDatabase[lowerWord];
-    }
-    
-    // 如果沒有找到，返回一個簡化的音標估計
-    // 這裡可以後續擴展為調用在線詞典API
-    return generatePhoneticApproximation(word);
-}
-
-// 生成音標近似值的函數（基本規則）
-function generatePhoneticApproximation(word) {
-    if (!word) return '';
-    
-    // 這是一個簡化的音標生成邏輯
-    // 實際應用中建議使用專業的音標API
-    let phonetic = word.toLowerCase();
-    
-    // 一些基本的音標轉換規則
-    phonetic = phonetic.replace(/tion$/, 'ʃən');
-    phonetic = phonetic.replace(/sion$/, 'ʒən');
-    phonetic = phonetic.replace(/ough/, 'ʌf');
-    phonetic = phonetic.replace(/ea/, 'iː');
-    phonetic = phonetic.replace(/ee/, 'iː');
-    phonetic = phonetic.replace(/oo/, 'uː');
-    phonetic = phonetic.replace(/ou/, 'aʊ');
-    phonetic = phonetic.replace(/ow/, 'oʊ');
-    phonetic = phonetic.replace(/ai/, 'eɪ');
-    phonetic = phonetic.replace(/ay/, 'eɪ');
-    phonetic = phonetic.replace(/oi/, 'ɔɪ');
-    phonetic = phonetic.replace(/oy/, 'ɔɪ');
-    phonetic = phonetic.replace(/ie/, 'aɪ');
-    phonetic = phonetic.replace(/y$/, 'i');
-    phonetic = phonetic.replace(/er$/, 'ər');
-    phonetic = phonetic.replace(/ar/, 'ɑːr');
-    phonetic = phonetic.replace(/or/, 'ɔːr');
-    phonetic = phonetic.replace(/ur/, 'ɜːr');
-    phonetic = phonetic.replace(/ir/, 'ɜːr');
-    phonetic = phonetic.replace(/ch/, 'tʃ');
-    phonetic = phonetic.replace(/sh/, 'ʃ');
-    phonetic = phonetic.replace(/th/, 'θ');
-    phonetic = phonetic.replace(/ng/, 'ŋ');
-    phonetic = phonetic.replace(/ph/, 'f');
-    phonetic = phonetic.replace(/gh/, '');
-    phonetic = phonetic.replace(/ck/, 'k');
-    phonetic = phonetic.replace(/x/, 'ks');
-    
-    return phonetic;
-}
 
 function showArticleWordAnalysis(clickedElement, analysisArray) {
     const wordText = clickedElement.dataset.word;
@@ -980,23 +713,17 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
 
     if (wordAnalysisData && wordAnalysisData.analysis) {
         const analysis = wordAnalysisData.analysis;
-        const phonetic = getPhonetic(wordAnalysisData.word);
+        const phonetic = analysis.phonetic || ''; // 直接從分析數據中獲取音標
         const phoneticDisplay = phonetic ? ` /${phonetic}/` : '';
         
         // 先建立結構，音標部分留空
         analysisTooltip.innerHTML = `
-            <div class="tooltip-title">${wordAnalysisData.word}<span class="tooltip-phonetic"></span> (${analysis.pos})</div>
+            <div class="tooltip-title">${wordAnalysisData.word}<span class="tooltip-phonetic">${phoneticDisplay}</span> (${analysis.pos})</div>
             <div class="tooltip-content">
                 <p><strong>作用:</strong> ${analysis.role}</p>
                 <p><strong>意思:</strong> ${analysis.meaning}</p>
             </div>
         `;
-
-        // 然後使用 textContent 安全地設置音標
-        const phoneticSpan = analysisTooltip.querySelector('.tooltip-phonetic');
-        if (phoneticSpan) {
-            phoneticSpan.textContent = phoneticDisplay;
-        }
     } else {
         analysisTooltip.innerHTML = `<div class="tooltip-content"><p>單詞 "${wordText}" (第 ${wordIndex + 1} 次出現) 的分析數據未找到或不匹配。</p></div>`;
     }
@@ -1996,7 +1723,7 @@ function analyzeWordInContext(word, sentence, event) {
     }
 
     if (wordAnalysis) {
-        const phonetic = getPhonetic(word);
+        const phonetic = wordAnalysis.phonetic || ''; // 直接從分析數據中獲取音標
         const phoneticDisplay = phonetic ? ` /${phonetic}/` : '';
         analysisTooltip.innerHTML = `
             <div class="tooltip-title">${word}<span class="tooltip-phonetic">${phoneticDisplay}</span> (${wordAnalysis.pos})</div>
