@@ -40,6 +40,7 @@ const exportVocabBookBtn = document.getElementById('export-vocab-book-btn');
 const wordList = document.getElementById('word-list');
 
 // 學習模式頁面
+const learningBookSelector = document.getElementById('learning-book-selector');
 const wordSelect = document.getElementById('word-select');
 const detailWord = document.getElementById('detail-word');
 const detailPhonetic = document.getElementById('detail-phonetic');
@@ -72,6 +73,7 @@ const dictationProgressBar = document.getElementById('dictation-progress-bar');
 const dictationProgressText = document.getElementById('dictation-progress-text');
 
 // 測驗模式DOM元素
+const quizBookSelector = document.getElementById('quiz-book-selector');
 const quizCount = document.getElementById('quiz-count');
 const quizType = document.getElementById('quiz-type');
 const startQuizBtn = document.getElementById('start-quiz-btn');
@@ -85,6 +87,8 @@ const quizResult = document.getElementById('quiz-result');
 const finalScore = document.getElementById('final-score');
 const quizSummary = document.getElementById('quiz-summary');
 const restartQuizBtn = document.getElementById('restart-quiz-btn');
+const quizSettingsContainer = document.getElementById('quiz-settings-container');
+const quizMainContainer = document.getElementById('quiz-main-container');
 const analysisTooltip = document.getElementById('word-analysis-tooltip');
 
 // 文章詳解DOM元素
@@ -166,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     // 手動觸發一次change事件來更新初始狀態
     listenOnlyMode.dispatchEvent(new Event('change'));
+    setupNumberSteppers();
 });
 
 function setupEventListeners() {
@@ -199,8 +204,22 @@ function setupEventListeners() {
             // 切換到默寫頁面時，更新單詞本選擇器
             if (targetId === 'dictation-section') {
                 populateDictationBookSelector();
+            } else if (targetId === 'learning-section') {
+                createBookSelector(learningBookSelector, activeBookId);
+                // 當切換到學習模式時，直接創建選擇器並填充對應的單詞列表
+                populateWordSelect();
+                displayWordDetails();
+            } else if (targetId === 'quiz-section') {
+                createBookSelector(quizBookSelector, activeBookId);
             }
         });
+    });
+
+    // 為新的選擇器添加事件監聽
+    learningBookSelector.addEventListener('change', (e) => {
+        if (e.target.name === 'learning-book' || e.target.tagName === 'SELECT') {
+            populateWordSelect();
+        }
     });
 
     // 單詞本面板事件
@@ -1042,14 +1061,12 @@ function updateActiveBookView() {
         deleteVocabBookBtn.disabled = false;
         exportVocabBookBtn.disabled = false;
         renderWordList();
-        populateWordSelect();
     } else {
         currentBookName.textContent = '請選擇一個單詞本';
         editVocabBookBtn.disabled = true;
         deleteVocabBookBtn.disabled = true;
         exportVocabBookBtn.disabled = true;
         wordList.innerHTML = '<li class="word-item-placeholder">請從左側選擇或創建一個單詞本</li>';
-        populateWordSelect();
     }
 }
 
@@ -1482,63 +1499,94 @@ function renderWordList() {
 // =================================
 // 默寫模式功能 (重構後)
 // =================================
-function populateDictationBookSelector() {
-    dictationBookSelector.innerHTML = '';
+// 重構：創建一個通用的單詞本選擇器生成函數
+function createBookSelector(container, defaultBookId) {
+    container.innerHTML = '';
     const bookCount = vocabularyBooks.length;
+    const selectorType = container.id.split('-')[0]; // 'dictation', 'learning', 'quiz'
 
     if (bookCount === 0) {
-        dictationBookSelector.innerHTML = '<p>沒有可用的單詞本。</p>';
+        container.innerHTML = '<p>沒有可用的單詞本。請先在“單詞本”頁面創建一個。</p>';
         return;
     }
 
-    if (bookCount <= 5) { // 點選按鈕
-        vocabularyBooks.forEach((book, index) => {
-            const radioId = `book-radio-${book.id}`;
+    const name = `${selectorType}-book`; // e.g., 'dictation-book'
+
+    // 統一使用單選按鈕或下拉列表的邏輯
+    if (bookCount <= 5) {
+        vocabularyBooks.forEach(book => {
+            const radioId = `${selectorType}-radio-${book.id}`;
             const radio = document.createElement('input');
             radio.type = 'radio';
             radio.id = radioId;
-            radio.name = 'dictation-book';
+            radio.name = name;
             radio.value = book.id;
             radio.className = 'radio-btn';
-            if (index === 0) radio.checked = true;
+            // 設置默認選中項
+            if (book.id === defaultBookId) {
+                radio.checked = true;
+            }
 
             const label = document.createElement('label');
             label.htmlFor = radioId;
             label.textContent = book.name;
             label.className = 'radio-label';
 
-            dictationBookSelector.appendChild(radio);
-            dictationBookSelector.appendChild(label);
+            container.appendChild(radio);
+            container.appendChild(label);
         });
-    } else { // 下拉選擇框
+        // 如果沒有任何一個被選中（例如defaultBookId無效），則選中第一個
+        if (!container.querySelector('input:checked')) {
+            const firstRadio = container.querySelector('input');
+            if(firstRadio) firstRadio.checked = true;
+        }
+    } else {
         const select = document.createElement('select');
-        select.id = 'dictation-book-select';
+        select.id = `${selectorType}-book-select`;
         vocabularyBooks.forEach(book => {
             const option = document.createElement('option');
             option.value = book.id;
             option.textContent = book.name;
+            // 設置默認選中項
+            if (book.id === defaultBookId) {
+                option.selected = true;
+            }
             select.appendChild(option);
         });
-        dictationBookSelector.appendChild(select);
+        container.appendChild(select);
     }
 }
 
-function getSelectedDictationWords() {
+// 保留 populateDictationBookSelector 但讓它調用新函數，以保持兼容性
+function populateDictationBookSelector() {
+    createBookSelector(dictationBookSelector, activeBookId);
+}
+
+// 重構：創建一個通用的獲取選定單詞本單詞的函數
+function getSelectedWords(container) {
+    if (!container || !container.id) return null;
+
     const bookCount = vocabularyBooks.length;
     let selectedBookId;
 
     if (bookCount <= 5) {
-        const selectedRadio = dictationBookSelector.querySelector('input[name="dictation-book"]:checked');
-        if (!selectedRadio) return null;
-        selectedBookId = selectedRadio.value;
+        const selectorName = `${container.id.split('-')[0]}-book`;
+        const selectedRadio = container.querySelector(`input[name="${selectorName}"]:checked`);
+        selectedBookId = selectedRadio ? selectedRadio.value : null;
     } else {
-        const select = document.getElementById('dictation-book-select');
-        if (!select) return null;
-        selectedBookId = select.value;
+        const select = container.querySelector('select');
+        selectedBookId = select ? select.value : null;
     }
+
+    if (!selectedBookId) return null;
     
     const book = vocabularyBooks.find(b => b.id === selectedBookId);
-    return book ? book.words : null;
+    return book ? book.words : [];
+}
+
+
+function getSelectedDictationWords() {
+    return getSelectedWords(dictationBookSelector);
 }
 
 function startDictation() {
@@ -1832,26 +1880,46 @@ function replayCurrentDictationWord() {
 // 學習模式功能
 function populateWordSelect() {
     const currentSelectedValue = wordSelect.value;
-    wordSelect.innerHTML = '<option value="">請選擇單詞</option>';
-    
-    const activeBook = vocabularyBooks.find(b => b.id === activeBookId);
-    if (activeBook) {
-        activeBook.words.forEach(word => {
-            const option = document.createElement('option');
-            option.value = word.id;
-            option.textContent = word.word;
-            wordSelect.appendChild(option);
-        });
+    const words = getSelectedWords(learningBookSelector);
+
+    if (!words || words.length === 0) {
+        wordSelect.innerHTML = '<option value="">當前單詞本為空</option>';
+        clearWordDetails();
+        return;
     }
 
-    if (currentSelectedValue) {
+    wordSelect.innerHTML = '<option value="">請選擇單詞</option>';
+    words.forEach(word => {
+        const option = document.createElement('option');
+        option.value = word.id;
+        option.textContent = word.word;
+        wordSelect.appendChild(option);
+    });
+
+    // 嘗試恢復之前的選擇
+    if (Array.from(wordSelect.options).some(opt => opt.value === currentSelectedValue)) {
         wordSelect.value = currentSelectedValue;
+    } else {
+        // 否則清空詳情
+        clearWordDetails();
     }
 }
 
 function getActiveWords() {
-    const activeBook = vocabularyBooks.find(b => b.id === activeBookId);
-    return activeBook ? activeBook.words : [];
+    const activeSectionId = document.querySelector('.section.active').id;
+    
+    switch (activeSectionId) {
+        case 'learning-section':
+            return getSelectedWords(learningBookSelector) || [];
+        case 'quiz-section':
+            return getSelectedWords(quizBookSelector) || [];
+        case 'dictation-section':
+             return getSelectedDictationWords() || [];
+        case 'vocabulary-section':
+        default:
+            const activeBook = vocabularyBooks.find(b => b.id === activeBookId);
+            return activeBook ? activeBook.words : [];
+    }
 }
 
 function displayWordDetails() {
@@ -2462,17 +2530,14 @@ function generateMockExamples(word) {
 
 // 隨堂測驗功能
 function startQuiz() {
-    const wordsForQuiz = getActiveWords();
-    if (wordsForQuiz.length < 4) {
-        alert('當前單詞本至少需要4個單詞才能開始測驗！');
+    const wordsForQuiz = getSelectedWords(quizBookSelector);
+    if (!wordsForQuiz || wordsForQuiz.length < 4) {
+        alert('請先選擇一個至少包含4個單詞的單詞本開始測驗！');
         return;
     }
     
-    const questionCount = parseInt(quizCount.value);
-    if (wordsForQuiz.length < questionCount) {
-        alert(`您當前單詞本只有${wordsForQuiz.length}個單詞，請減少測驗題目數量！`);
-        return;
-    }
+    const questionCount = wordsForQuiz.length;
+    // 移除了题目数量检查，因为我们现在总是使用全部单词
     
     quizInProgress = true;
     currentQuestionIndex = 0;
@@ -2480,11 +2545,15 @@ function startQuiz() {
     selectedAnswer = null;
     
     generateQuizQuestions();
-    
-    startQuizBtn.disabled = true;
+
+    // UI-flow change
+    quizSettingsContainer.classList.add('hidden');
+    quizMainContainer.classList.remove('hidden');
+    document.getElementById('quiz-question-container').style.display = 'block'; // Ensure question container is visible
+    quizResult.classList.add('hidden'); // Ensure result is hidden
+
     stopQuizBtn.disabled = false;
-    quizResult.classList.add('hidden');
-    
+
     showCurrentQuestion();
 }
 
@@ -2493,25 +2562,31 @@ function stopQuiz() {
     currentQuestionIndex = 0;
     quizScore = 0;
     selectedAnswer = null;
-    
-    startQuizBtn.disabled = false;
+
+    // UI-flow change
+    quizSettingsContainer.classList.remove('hidden');
+    quizMainContainer.classList.add('hidden');
+
+    // Reset button states
     stopQuizBtn.disabled = true;
     nextQuestionBtn.disabled = true;
-    
+
+    // Reset content
     quizQuestion.textContent = '';
     quizOptions.innerHTML = '';
     updateQuizProgress();
-    
+
     alert('測驗已停止！');
 }
 
 function generateQuizQuestions() {
-    const questionCount = parseInt(quizCount.value);
     const type = quizType.value;
     quizQuestions = [];
     
-    const wordsForQuiz = getActiveWords();
-    const selectedWords = [...wordsForQuiz].sort(() => 0.5 - Math.random()).slice(0, questionCount);
+    const wordsForQuiz = getSelectedWords(quizBookSelector);
+    if (!wordsForQuiz) return;
+    // 使用所有单词，而不是 .slice() 截取
+    const selectedWords = [...wordsForQuiz].sort(() => 0.5 - Math.random());
     
     selectedWords.forEach(word => {
         let questionType = type;
@@ -2536,7 +2611,8 @@ function generateQuestionByType(targetWord, type) {
         options: []
     };
     
-    const wordsForQuiz = getActiveWords();
+    const wordsForQuiz = getSelectedWords(quizBookSelector);
+    if (!wordsForQuiz) return null;
     const otherWords = wordsForQuiz.filter(w => w.id !== targetWord.id);
     const wrongOptions = otherWords.sort(() => 0.5 - Math.random()).slice(0, 3);
     
@@ -2668,15 +2744,69 @@ function endQuiz() {
     }
     
     quizSummary.textContent = summary;
-    
-    startQuizBtn.disabled = false;
+
     stopQuizBtn.disabled = true;
     nextQuestionBtn.disabled = true;
 }
 
 function restartQuiz() {
-    document.getElementById('quiz-question-container').style.display = 'block';
-    quizResult.classList.add('hidden');
-    
+    // The logic to show/hide containers is now in startQuiz()
     startQuiz();
+}
+// =================================
+// 數字加減控件 (重構後)
+// =================================
+
+function setupNumberSteppers() {
+    document.querySelectorAll('.number-stepper-vertical').forEach(stepper => {
+        const input = stepper.querySelector('.stepper-input');
+        const minusBtn = stepper.querySelector('.stepper-minus');
+        const plusBtn = stepper.querySelector('.stepper-plus');
+        const min = parseInt(input.min, 10);
+        const max = parseInt(input.max, 10);
+
+        const updateButtons = (value) => {
+            minusBtn.disabled = value <= min;
+            plusBtn.disabled = value >= max;
+        };
+
+        const changeValue = (step) => {
+            let currentValue = parseInt(input.value, 10);
+            if (isNaN(currentValue)) {
+                currentValue = min;
+            }
+            let newValue = currentValue + step;
+
+            if (newValue < min) {
+                newValue = min;
+            }
+            if (newValue > max) {
+                newValue = max;
+            }
+
+            input.value = newValue;
+            updateButtons(newValue);
+            // 觸發 input 事件，以便其他監聽器可以捕獲變化
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+
+        minusBtn.addEventListener('click', () => changeValue(-1));
+        plusBtn.addEventListener('click', () => changeValue(1));
+
+        input.addEventListener('input', () => {
+            let value = parseInt(input.value, 10);
+            if (isNaN(value)) {
+                value = min;
+            } else if (value < min) {
+                value = min;
+            } else if (value > max) {
+                value = max;
+            }
+            input.value = value;
+            updateButtons(value);
+        });
+
+        // 初始化按钮状态
+        updateButtons(parseInt(input.value, 10));
+    });
 }
