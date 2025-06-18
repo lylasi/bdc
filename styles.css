@@ -1139,6 +1139,101 @@ button:disabled {
     background-color: #5a6268;
 }
 /* =================================
+   導入單詞本 Modal 樣式
+   ================================= */
+.import-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.import-section {
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.import-section-title {
+    margin: -15px -15px 15px -15px;
+    padding: 10px 15px;
+    background-color: #e9ecef;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    font-size: 1.1em;
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.import-preset-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.import-preset-item-wrapper {
+    position: relative;
+}
+
+.import-checkbox {
+    display: none; /* 隱藏原生checkbox */
+}
+
+.import-preset-item {
+    display: block;
+    background-color: #fff;
+    border: 2px solid #ced4da;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-weight: 500;
+}
+
+.import-preset-item:hover {
+    border-color: #adb5bd;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.import-checkbox:checked + .import-preset-item {
+    background-color: #e6f3ff;
+    border-color: #3a7bd5;
+    color: #2a6bc5;
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+#modal-import-file {
+    font-family: inherit;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 8px;
+    width: 100%;
+    background-color: #fff;
+}
+
+#modal-import-file::file-selector-button {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background-color: #3a7bd5;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    margin-right: 10px;
+}
+
+#modal-import-file::file-selector-button:hover {
+    background-color: #2a6bc5;
+}
+}
+
+#modal-import-url {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.95em;
+}
+/* =================================
    浮動默寫控件
    ================================= */
 #floating-dictation-controls {

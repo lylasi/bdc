@@ -1,0 +1,10 @@
+[
+  {
+    "name": "預設單詞本 (水果)",
+    "path": "wordlists/default.json"
+  },
+  {
+    "name": "4B_U6背",
+    "path": "wordlists/4B_U6.json"
+  }
+]
