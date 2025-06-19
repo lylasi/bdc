@@ -177,6 +177,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupEventListeners() {
+    // 添加默寫輸入框的 Enter 鍵監聽
+    dictationInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            checkDictation();
+        }
+    });
+    
     // 新增：在用戶首次與頁面交互時嘗試解鎖音頻
     document.body.addEventListener('click', unlockAudioContext, true);
     document.body.addEventListener('touchend', unlockAudioContext, true);
