@@ -100,7 +100,6 @@ const deleteHistoryBtn = document.getElementById('delete-history-btn');
 const clearArticleBtn = document.getElementById('clear-article-btn');
 const readArticleBtn = document.getElementById('read-article-btn');
 const stopReadArticleBtn = document.getElementById('stop-read-article-btn');
-const pauseResumeArticleBtn = document.getElementById('pause-resume-article-btn');
 const downloadAudioBtn = document.getElementById('download-audio-btn');
 const readingModeSelect = document.getElementById('reading-mode');
 const speedBtnGroup = document.getElementById('speed-control-group');
@@ -112,6 +111,10 @@ const chunkRepeatControls = document.getElementById('chunk-repeat-controls');
 const chunkRepeatTimes = document.getElementById('chunk-repeat-times');
 const currentSentenceDisplay = document.getElementById('current-sentence-display');
 
+// 文章庫 DOM 元素
+const showArticleLibraryBtn = document.getElementById('show-article-library-btn');
+const articleLibraryModal = document.getElementById('article-library-modal');
+const articleLibraryList = document.getElementById('article-library-list');
 
 // 文章詳解相關變量
 let analyzedArticles = [];
@@ -323,9 +326,8 @@ function setupEventListeners() {
     clearArticleBtn.addEventListener('click', clearArticleInput);
     articleHistorySelect.addEventListener('change', loadSelectedArticle);
     deleteHistoryBtn.addEventListener('click', deleteSelectedArticleHistory);
-    readArticleBtn.addEventListener('click', readArticle);
+    readArticleBtn.addEventListener('click', handleReadButtonClick);
     stopReadArticleBtn.addEventListener('click', stopReadArticle);
-    pauseResumeArticleBtn.addEventListener('click', togglePauseResume);
     downloadAudioBtn.addEventListener('click', downloadAudio);
     
     speedBtnGroup.addEventListener('click', (e) => {
@@ -389,6 +391,15 @@ function setupEventListeners() {
         }
     });
     
+    // 文章庫事件
+    showArticleLibraryBtn.addEventListener('click', openArticleLibrary);
+    articleLibraryModal.querySelector('.modal-close-btn').addEventListener('click', closeArticleLibrary);
+    articleLibraryModal.addEventListener('click', (e) => {
+        if (e.target === articleLibraryModal) {
+            closeArticleLibrary();
+        }
+    });
+
     const navTextElements = document.querySelectorAll('.nav-text');
 
     const updateNavText = () => {
@@ -420,6 +431,67 @@ function setupEventListeners() {
     });
 }
 
+// =================================
+// 文章庫功能
+// =================================
+async function openArticleLibrary() {
+    articleLibraryList.innerHTML = '<p>正在加載文章列表...</p>';
+    articleLibraryModal.classList.remove('hidden');
+
+    try {
+        const response = await fetch('articles/manifest.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const articles = await response.json();
+
+        if (articles.length === 0) {
+            articleLibraryList.innerHTML = '<p>文章庫是空的。</p>';
+            return;
+        }
+
+        articleLibraryList.innerHTML = articles.map(article => `
+            <div class="article-library-item" data-path="${article.path}">
+                <h4>${article.title}</h4>
+                <p class="description">${article.description}</p>
+                <div class="meta">
+                    <span class="difficulty">${article.difficulty}</span>
+                    <span class="category">${article.category}</span>
+                </div>
+            </div>
+        `).join('');
+
+        // 為每個項目添加事件監聽器
+        document.querySelectorAll('.article-library-item').forEach(item => {
+            item.addEventListener('click', () => {
+                loadArticleFromLibrary(item.dataset.path);
+            });
+        });
+
+    } catch (error) {
+        console.error("無法加載文章庫:", error);
+        articleLibraryList.innerHTML = '<p style="color: red;">加載文章列表失敗，請稍後再試。</p>';
+    }
+}
+
+async function loadArticleFromLibrary(path) {
+    try {
+        const response = await fetch(path);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const article = await response.json();
+        articleInput.value = article.content;
+        closeArticleLibrary();
+    } catch (error) {
+        console.error(`無法從 ${path} 加載文章:`, error);
+        alert('加載文章失敗！');
+    }
+}
+
+function closeArticleLibrary() {
+    articleLibraryModal.classList.add('hidden');
+}
 
 // 文章詳解功能
 async function analyzeArticle() {
@@ -801,16 +873,20 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
 
 
 // 文章朗讀增強功能
+function handleReadButtonClick() {
+    // If it's stopped (stop button is disabled)
+    if (stopReadArticleBtn.disabled) {
+        readArticle();
+    } else {
+        // If it's playing or paused, just toggle
+        togglePauseResume();
+    }
+}
+
 function readArticle() {
     const text = articleInput.value.trim();
     if (!text) {
         alert('請先輸入要朗讀的文章！');
-        return;
-    }
-
-    // 如果當前已暫停，點擊播放按鈕應觸發繼續功能
-    if (isReadingChunkPaused) {
-        togglePauseResume();
         return;
     }
 
@@ -846,10 +922,10 @@ function stopCurrentAudio() {
 function stopReadArticle() {
     stopCurrentAudio();
     isReadingChunkPaused = false;
-    readArticleBtn.disabled = false;
+    
+    // Update UI
     stopReadArticleBtn.disabled = true;
-    pauseResumeArticleBtn.disabled = true;
-    updatePauseResumeIcon(false);
+    updateReadButtonUI('stopped');
     
     const mode = readingModeSelect.value;
     if (mode === 'paragraph' || mode === 'sentence') {
@@ -881,8 +957,8 @@ function playCurrentChunk() {
     const repeatTimesVal = isChunkMode ? parseInt(chunkRepeatTimes.value, 10) : 1;
 
     const onStart = () => {
-        readArticleBtn.disabled = true;
         stopReadArticleBtn.disabled = false;
+        updateReadButtonUI('playing');
         updateChunkNav();
     };
     
@@ -940,20 +1016,36 @@ function togglePauseResume() {
     if (wasPaused) { // 如果之前是暫停狀態，現在點擊是為了繼續
         // 從當前句子/段落的開頭重新播放
         playCurrentChunk();
+        updateReadButtonUI('playing');
+    } else { // 如果之前是播放狀態，現在是為了暫停
+        updateReadButtonUI('paused');
     }
-    
-    // 更新UI狀態
-    updatePauseResumeIcon(isReadingChunkPaused);
 }
 
-function updatePauseResumeIcon(isPaused) {
-    const icon = pauseResumeArticleBtn.querySelector('svg');
-    if (isPaused) {
-        icon.innerHTML = '<path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>';
-        pauseResumeArticleBtn.title = "繼續";
-    } else {
-        icon.innerHTML = '<path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>';
-        pauseResumeArticleBtn.title = "暫停";
+function updateReadButtonUI(state) { // state: 'stopped', 'playing', 'paused'
+    const icon = readArticleBtn.querySelector('svg');
+    
+    const icons = {
+        play: '<path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>',
+        pause: '<path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>'
+    };
+
+    readArticleBtn.disabled = false;
+
+    switch (state) {
+        case 'playing':
+            icon.innerHTML = icons.pause;
+            readArticleBtn.title = "暫停";
+            break;
+        case 'paused':
+            icon.innerHTML = icons.play;
+            readArticleBtn.title = "繼續";
+            break;
+        case 'stopped':
+        default:
+            icon.innerHTML = icons.play;
+            readArticleBtn.title = "朗讀文章";
+            break;
     }
 }
 
@@ -2315,7 +2407,6 @@ async function speakText(text, lang = 'en-US', speed = 0, onStart, onEnd) {
             };
 
             audioSource.start(0);
-            pauseResumeArticleBtn.disabled = false;
 
         }, (decodeError) => {
             console.error('解碼音頻數據失敗:', decodeError);

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "sample-article-1",
+    "title": "The Importance of Sleep",
+    "description": "Sleep is a vital, often neglected, component of every person's overall health and well-being. Sleep is important because it enables the body to repair and be fit and ready for another day.",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "健康",
+    "path": "articles/sample-article-1.json"
+  },
+  {
+    "id": "sample-article-2",
+    "title": "The Rise of Artificial Intelligence",
+    "description": "Artificial intelligence (AI) is rapidly changing the world as we know it. From automating tasks to powering self-driving cars, AI's potential seems limitless.",
+    "difficulty": "中級 (CEFR B1)",
+    "category": "科技",
+    "path": "articles/sample-article-2.json"
+  }
+]
