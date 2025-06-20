@@ -12,7 +12,7 @@ let synth = window.speechSynthesis;
 // Web Audio API 相關全局變量，解決iOS播放限制
 let audioContext; // 全局音頻上下文
 let audioSource; // 當前的音頻播放源
-let currentAudio; // 當前的HTML Audio元素
+const globalAudioElement = new Audio(); // 全局、單一的 Audio 元素
 let isAudioContextUnlocked = false; // 標記音頻上下文是否已解鎖
 
 // 測驗相關變量
@@ -925,13 +925,12 @@ function stopCurrentAudio() {
     }
     
     // 停止 HTML Audio 元素
-    if (currentAudio) {
-        // 先清除回調，防止觸發onended事件
-        currentAudio.onended = null;
-        currentAudio.onerror = null;
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
-        currentAudio = null;
+    if (globalAudioElement && !globalAudioElement.paused) {
+        globalAudioElement.onended = null; // 停止時取消回調
+        globalAudioElement.onerror = null;
+        globalAudioElement.pause();
+        globalAudioElement.currentTime = 0;
+        // 我們不將 globalAudioElement 設為 null，因為它是全局共享的
     }
 }
 
@@ -2405,34 +2404,40 @@ async function speakText(text, lang = 'en-US', speed = 0, onStart, onEnd) {
     const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${speed}&api_key=${TTS_CONFIG.apiKey}`;
 
     try {
-        // 創建新的Audio元素
-        currentAudio = new Audio(url);
+        // 使用全局 Audio 元素
+        globalAudioElement.src = url;
+        globalAudioElement.load(); // 確保加載新的音源
         
-        // 設置事件監聽器
-        currentAudio.onloadstart = () => {
+        // 清理舊的監聽器並設置新的
+        globalAudioElement.onloadstart = () => {
             if (onStart) onStart();
         };
         
-        currentAudio.onended = () => {
+        globalAudioElement.onended = () => {
+            // 移除監聽器以防記憶體洩漏
+            globalAudioElement.onended = null;
+            globalAudioElement.onerror = null;
+            
             // 檢查是否處於暫停狀態，如果是則不執行回調
             if (isDictationPaused) {
-                currentAudio = null;
                 return;
             }
             if (onEnd) onEnd();
-            currentAudio = null; // 清理
         };
         
-        currentAudio.onerror = (error) => {
+        globalAudioElement.onerror = (error) => {
+             // 移除監聽器
+            globalAudioElement.onended = null;
+            globalAudioElement.onerror = null;
+
             console.error('音頻播放錯誤:', error);
             alert('無法播放語音，請檢查網絡連接或TTS服務。');
             // 錯誤時也檢查暫停狀態
             if (!isDictationPaused && onEnd) onEnd();
-            currentAudio = null;
         };
         
         // 開始播放
-        await currentAudio.play();
+        await globalAudioElement.play();
         
     } catch (error) {
         // 如果錯誤是由於播放被用戶（例如，通過按暫停/停止）主動中斷而引起的，
@@ -2453,7 +2458,6 @@ async function speakText(text, lang = 'en-US', speed = 0, onStart, onEnd) {
         
         // 錯誤時也檢查暫停狀態
         if (!isDictationPaused && onEnd) onEnd();
-        currentAudio = null;
     }
 }
 
