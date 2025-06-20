@@ -12,6 +12,7 @@ let synth = window.speechSynthesis;
 // Web Audio API 相關全局變量，解決iOS播放限制
 let audioContext; // 全局音頻上下文
 let audioSource; // 當前的音頻播放源
+let currentAudio; // 當前的HTML Audio元素
 let isAudioContextUnlocked = false; // 標記音頻上下文是否已解鎖
 
 // 測驗相關變量
@@ -20,8 +21,6 @@ let currentQuestionIndex = 0;
 let quizScore = 0;
 let selectedAnswer = null;
 let quizInProgress = false;
-
-const IS_TOUCH_DEVICE = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 // =================================
 // DOM元素 (重構後)
@@ -268,8 +267,8 @@ function setupEventListeners() {
     // 默寫模式
     startDictationBtn.addEventListener('click', startDictation);
     stopDictationBtn.addEventListener('click', stopDictation);
-    pauseDictationBtn.addEventListener(IS_TOUCH_DEVICE ? 'touchend' : 'click', (e) => {
-        if (IS_TOUCH_DEVICE) e.preventDefault();
+    pauseDictationBtn.addEventListener('click', (e) => {
+        // No longer need preventDefault as we are not handling touchend
         togglePauseDictation();
     });
     replayDictationBtn.addEventListener('click', replayCurrentDictationWord);
@@ -918,11 +917,21 @@ function readArticle() {
 }
 
 function stopCurrentAudio() {
-    // 使用 Web Audio API 後，停止 audioSource
+    // 停止 Web Audio API 音頻源
     if (audioSource) {
         audioSource.onended = null; // 停止時取消回調，避免觸發下一輪播放
         audioSource.stop();
         audioSource = null;
+    }
+    
+    // 停止 HTML Audio 元素
+    if (currentAudio) {
+        // 先清除回調，防止觸發onended事件
+        currentAudio.onended = null;
+        currentAudio.onerror = null;
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
     }
 }
 
@@ -1086,30 +1095,56 @@ async function downloadAudio() {
         alert('請先輸入要下載的文章！');
         return;
     }
+    
     const voice = TTS_CONFIG.voices.english;
-    const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${currentSpeed}`;
+    const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${currentSpeed}&api_key=${TTS_CONFIG.apiKey}`;
 
-    downloadAudioBtn.textContent = '下載中...';
+    downloadAudioBtn.textContent = '準備下載...';
     downloadAudioBtn.disabled = true;
 
     try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`網絡響應錯誤: ${response.statusText}`);
-        }
-        const blob = await response.blob();
-        const downloadUrl = window.URL.createObjectURL(blob);
+        // 由於 CORS 限制，我們直接創建下載鏈接而不是使用 fetch
         const a = document.createElement('a');
-a.style.display = 'none';
-        a.href = downloadUrl;
+        a.style.display = 'none';
+        a.href = url;
         a.download = 'article_audio.mp3';
+        a.target = '_blank'; // 在新標籤頁打開，避免CORS問題
         document.body.appendChild(a);
+        
+        // 提示用戶
+        downloadAudioBtn.textContent = '正在下載...';
+        
+        // 嘗試直接下載
         a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        a.remove();
+        
+        // 如果直接下載失敗，提供備用方案
+        setTimeout(() => {
+            if (confirm('如果下載沒有開始，點擊確定複製下載鏈接到剪貼板，然後手動在新標籤頁打開。')) {
+                // 複製鏈接到剪貼板
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('下載鏈接已複製到剪貼板！請在新標籤頁打開該鏈接下載音頻文件。');
+                }).catch(() => {
+                    // 如果無法複製到剪貼板，顯示鏈接
+                    prompt('請複製以下鏈接在新標籤頁打開下載：', url);
+                });
+            }
+        }, 2000);
+        
+        document.body.removeChild(a);
+        
     } catch (error) {
         console.error('下載音頻失敗:', error);
-        alert('下載音頻失敗，請稍後再試。');
+        
+        // 提供手動下載鏈接作為備用方案
+        if (confirm('自動下載失敗。點擊確定複製下載鏈接，然後手動在新標籤頁打開。')) {
+            const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${currentSpeed}&api_key=${TTS_CONFIG.apiKey}`;
+            
+            navigator.clipboard.writeText(url).then(() => {
+                alert('下載鏈接已複製到剪貼板！請在新標籤頁打開該鏈接下載音頻文件。');
+            }).catch(() => {
+                prompt('請複製以下鏈接在新標籤頁打開下載：', url);
+            });
+        }
     } finally {
         downloadAudioBtn.textContent = '下載語音';
         downloadAudioBtn.disabled = false;
@@ -1765,10 +1800,8 @@ function togglePauseDictation() {
         clearInterval(dictationInterval);
         stopCurrentAudio(); // 使用 Web Audio API 的方式停止音頻
     } else {
-        // 繼續邏輯：重啟當前單詞的播放循環
-        setTimeout(() => {
-            playCurrentWord();
-        }, 100);
+        // 繼續邏輯：立即重啟當前單詞的播放循環，以符合移動端音頻播放策略
+        playCurrentWord();
     }
     // 集中更新所有相關的UI元素
     // 使用 setTimeout 將 UI 更新推遲到下一個事件循環，以規避移動端瀏覽器音頻操作後的渲染問題
@@ -1808,8 +1841,7 @@ function showFloatingControls() {
     const pauseBtn = document.createElement('button');
     pauseBtn.id = 'floating-pause-btn';
     pauseBtn.textContent = isDictationPaused ? '繼續' : '暫停';
-    pauseBtn.addEventListener(IS_TOUCH_DEVICE ? 'touchend' : 'click', (e) => {
-        if (IS_TOUCH_DEVICE) e.preventDefault();
+    pauseBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         togglePauseDictation();
     });
@@ -1817,8 +1849,7 @@ function showFloatingControls() {
     const stopBtn = document.createElement('button');
     stopBtn.id = 'floating-stop-btn';
     stopBtn.textContent = '停止';
-    stopBtn.addEventListener(IS_TOUCH_DEVICE ? 'touchend' : 'click', (e) => {
-        if (IS_TOUCH_DEVICE) e.preventDefault();
+    stopBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         stopDictation();
     });
@@ -1830,8 +1861,7 @@ function showFloatingControls() {
     const replayBtn = document.createElement('button');
     replayBtn.id = 'floating-replay-btn';
     replayBtn.textContent = '重播';
-    replayBtn.addEventListener(IS_TOUCH_DEVICE ? 'touchend' : 'click', (e) => {
-        if (IS_TOUCH_DEVICE) e.preventDefault();
+    replayBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         replayCurrentDictationWord();
     });
@@ -2367,86 +2397,111 @@ async function checkSentence() {
 
 // 輔助功能
 async function speakText(text, lang = 'en-US', speed = 0, onStart, onEnd) {
-    // 1. 檢查 AudioContext 是否解鎖
-    if (!isAudioContextUnlocked) {
-        console.warn("AudioContext not unlocked. User needs to interact with the page first.");
-        // 嘗試最後一次解鎖
-        unlockAudioContext();
-        if (!isAudioContextUnlocked) {
-            alert('音頻功能尚未啟用，請先點擊頁面任意位置以啟用。');
-            if (onEnd) onEnd(); // 確保調用鏈不會中斷
-            return;
-        }
-    }
-
-    // 如果上下文因頁面切換等原因被掛起，嘗試恢復
-    if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-    }
-
-    // 2. 停止當前可能正在播放的音頻
+    // 停止當前可能正在播放的音頻
     stopCurrentAudio();
 
-    // 3. 獲取音頻數據
+    // 構建音頻URL
     const voice = lang.startsWith('zh') ? TTS_CONFIG.voices.chinese : TTS_CONFIG.voices.english;
-    const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${speed}`;
+    const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${speed}&api_key=${TTS_CONFIG.apiKey}`;
 
     try {
-        if (onStart) onStart();
+        // 創建新的Audio元素
+        currentAudio = new Audio(url);
         
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`TTS請求失敗: ${response.statusText}`);
-        }
-        const audioData = await response.arrayBuffer();
+        // 設置事件監聽器
+        currentAudio.onloadstart = () => {
+            if (onStart) onStart();
+        };
         
-        // 4. 解碼音頻數據
-        // 使用回調風格的 decodeAudioData 以獲得更好的兼容性
-        audioContext.decodeAudioData(audioData, (buffer) => {
-            // 5. 創建播放源並播放
-            audioSource = audioContext.createBufferSource();
-            audioSource.buffer = buffer;
-            audioSource.connect(audioContext.destination);
-
-            audioSource.onended = () => {
-                if (onEnd) onEnd();
-                audioSource = null; // 清理
-            };
-
-            audioSource.start(0);
-
-        }, (decodeError) => {
-            console.error('解碼音頻數據失敗:', decodeError);
-            alert('無法處理音頻數據。');
+        currentAudio.onended = () => {
+            // 檢查是否處於暫停狀態，如果是則不執行回調
+            if (isDictationPaused) {
+                currentAudio = null;
+                return;
+            }
             if (onEnd) onEnd();
-        });
-
+            currentAudio = null; // 清理
+        };
+        
+        currentAudio.onerror = (error) => {
+            console.error('音頻播放錯誤:', error);
+            alert('無法播放語音，請檢查網絡連接或TTS服務。');
+            // 錯誤時也檢查暫停狀態
+            if (!isDictationPaused && onEnd) onEnd();
+            currentAudio = null;
+        };
+        
+        // 開始播放
+        await currentAudio.play();
+        
     } catch (error) {
-        console.error('獲取或播放音頻時出錯:', error);
-        alert('無法播放語音，請檢查網絡連接或TTS服務。');
-        if (onEnd) onEnd();
+        // 如果錯誤是由於播放被用戶（例如，通過按暫停/停止）主動中斷而引起的，
+        // 這是一個預期行為（error.name === 'AbortError'），我們不應彈出警告。
+        if (error.name === 'AbortError') {
+            console.log('Audio playback was aborted, which is expected on pause/stop.');
+        } else {
+            console.error('播放音頻時出錯:', error);
+            // 檢查是否是其他類型的錯誤
+            if (error.name === 'NotAllowedError') {
+                alert('音頻播放被阻止，請允許該網站播放音頻。');
+            } else if (error.name === 'NetworkError' || error.message.includes('CORS')) {
+                alert('網絡錯誤，無法訪問TTS服務。請檢查網絡連接。');
+            } else {
+                alert('無法播放語音，請稍後再試。');
+            }
+        }
+        
+        // 錯誤時也檢查暫停狀態
+        if (!isDictationPaused && onEnd) onEnd();
+        currentAudio = null;
     }
 }
 
 function playWordAndMeaning(word) {
     stopCurrentAudio();
 
-    speakText(word.word, 'en-US', 0, 
+    // 獲取對應的DOM元素用於高亮
+    const wordElements = wordList.querySelectorAll(`[data-word-id="${word.id}"]`);
+    const wordElement = wordList.querySelector(`strong[data-word-id="${word.id}"]`);
+    const meaningElement = wordList.querySelector(`span.meaning[data-word-id="${word.id}"]`);
+
+    // 清除之前的高亮
+    wordList.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+
+    speakText(word.word, 'en-US', 0,
         () => {
             console.log(`Playing: ${word.word}`);
-        }, 
+            // 播放單詞時高亮單詞元素
+            if (wordElement) {
+                wordElement.classList.add('highlight');
+            }
+        },
         () => {
+            // 移除單詞高亮
+            if (wordElement) {
+                wordElement.classList.remove('highlight');
+            }
+            
             if (word.meaning) {
+                // 增加到500毫秒間隔
                 setTimeout(() => {
                     speakText(word.meaning, 'zh-TW', 0,
                         () => {
-                             console.log(`Playing: ${word.meaning}`);
+                            console.log(`Playing: ${word.meaning}`);
+                            // 播放中文意思時高亮中文意思元素
+                            if (meaningElement) {
+                                meaningElement.classList.add('highlight');
+                            }
                         },
                         () => {
                             console.log("Finished playing all.");
+                            // 播放完成後移除中文意思高亮
+                            if (meaningElement) {
+                                meaningElement.classList.remove('highlight');
+                            }
                         }
                     );
-                }, 300);
+                }, 500);
             }
         }
     );
