@@ -1,1 +1,8 @@
 ai-config.js
+
+# Roo-related files
+.roomodes
+rooveterinaryinc.roo-cline/
+
+# Roo CLI directory
+.roo/
