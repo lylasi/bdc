@@ -1260,21 +1260,55 @@ async function openModalForImportBook() {
             return;
         }
 
-        let presetItemsHtml = defaultBooks.map(book => {
-            const safeId = `import-${book.path.replace(/[^a-zA-Z0-9]/g, '')}`;
-            return `
-                <div class="import-preset-item-wrapper">
-                    <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" class="import-checkbox">
-                    <label for="${safeId}" class="import-preset-item">${book.name}</label>
+        let presetItemsHtml;
+        if (defaultBooks.length > 5) {
+            const checkboxesHtml = defaultBooks.slice(0, 5).map(book => {
+                const safeId = `import-checkbox-${book.path.replace(/[^a-zA-Z0-9]/g, '')}`;
+                return `
+                    <div class="import-preset-item-wrapper">
+                        <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" class="import-checkbox">
+                        <label for="${safeId}" class="import-preset-item">${book.name}</label>
+                    </div>
+                `;
+            }).join('');
+
+            const selectOptionsHtml = defaultBooks.slice(5).map(book =>
+                `<option value="${book.path}" data-name="${book.name}">${book.name}</option>`
+            ).join('');
+
+            const selectHtml = `
+                <div class="import-preset-select-wrapper">
+                    <select id="modal-import-select-more" class="import-select">
+                        <option value="">更多選擇...</option>
+                        ${selectOptionsHtml}
+                    </select>
                 </div>
             `;
-        }).join('');
+
+            presetItemsHtml = `
+                <div class="import-preset-list">
+                    ${checkboxesHtml}
+                </div>
+                ${selectHtml}
+            `;
+        } else {
+            const checkboxesHtml = defaultBooks.map(book => {
+                 const safeId = `import-checkbox-${book.path.replace(/[^a-zA-Z0-9]/g, '')}`;
+                 return `
+                    <div class="import-preset-item-wrapper">
+                        <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" class="import-checkbox">
+                        <label for="${safeId}" class="import-preset-item">${book.name}</label>
+                    </div>
+                `;
+            }).join('');
+            presetItemsHtml = `<div class="import-preset-list">${checkboxesHtml}</div>`;
+        }
 
         modalBody.innerHTML = `
             <div class="import-container">
                 <div class="import-section">
                     <h4 class="import-section-title">從預設列表選擇</h4>
-                    <div id="modal-import-list" class="import-preset-list">
+                    <div id="modal-import-list">
                         ${presetItemsHtml}
                     </div>
                 </div>
@@ -1309,19 +1343,22 @@ async function openModalForImportBook() {
 }
 
 async function fetchDefaultWordlists() {
-    // 使用預打包的數據，避免在 file:// 協議下 fetch 失敗
     try {
-        const response = await fetchPrepackagedData('wordlists/manifest.json');
+        const response = await fetch('wordlists/manifest.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const manifest = await response.json();
         return manifest;
     } catch (error) {
-        console.error("獲取預設單詞本列表時出錯 (從預打包數據):", error);
+        console.error("獲取預設單詞本列表時出錯:", error);
         return [];
     }
 }
 
 async function importSharedVocabBooks() {
-    const selectedCheckboxes = document.querySelectorAll('#modal-import-list input[type="checkbox"]:checked');
+    const selectedCheckboxes = document.querySelectorAll('.import-checkbox:checked');
+    const selectElement = document.getElementById('modal-import-select-more');
     const urlInput = document.getElementById('modal-import-url');
     const fileInput = document.getElementById('modal-import-file');
     const progressContainer = document.getElementById('modal-import-progress');
@@ -1330,6 +1367,15 @@ async function importSharedVocabBooks() {
     const file = fileInput.files[0];
 
     let sources = Array.from(selectedCheckboxes).map(cb => ({ type: 'preset', value: cb.value, name: cb.dataset.name }));
+
+    if (selectElement && selectElement.value) {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        sources.push({
+            type: 'preset',
+            value: selectElement.value,
+            name: selectedOption.dataset.name
+        });
+    }
 
     if (urlPath) {
         try {
@@ -1364,7 +1410,7 @@ async function importSharedVocabBooks() {
             let bookData;
 
             if (source.type === 'preset' || source.type === 'url') {
-                const response = source.type === 'url' ? await fetch(source.value) : await fetchPrepackagedData(source.value);
+                const response = await fetch(source.value);
                 if (!response.ok) throw new Error(`無法加載: ${source.name}`);
                 bookData = await response.json();
             } else {
