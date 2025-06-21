@@ -1587,7 +1587,7 @@ function parseWordsFromText(text) {
         if (!word) return null;
 
         return {
-            id: `${Date.now()}-${index}`,
+            id: `${Date.now()}-${index}-${Math.random()}`,
             word,
             meaning,
             phonetic: phonetic.replace(/^\/|\/$/g, ''), // 移除斜線
