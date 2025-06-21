@@ -36,6 +36,7 @@ const currentBookName = document.getElementById('current-book-name');
 const editVocabBookBtn = document.getElementById('edit-vocab-book-btn');
 const deleteVocabBookBtn = document.getElementById('delete-vocab-book-btn');
 const exportVocabBookBtn = document.getElementById('export-vocab-book-btn');
+const mergeVocabBooksBtn = document.getElementById('merge-vocab-books-btn');
 const wordList = document.getElementById('word-list');
 
 // 學習模式頁面
@@ -238,6 +239,7 @@ function setupEventListeners() {
     deleteVocabBookBtn.addEventListener('click', deleteActiveVocabBook);
     importVocabBookBtn.addEventListener('click', openModalForImportBook);
     exportVocabBookBtn.addEventListener('click', exportActiveVocabBook);
+   mergeVocabBooksBtn.addEventListener('click', openModalForMergeBooks);
 
     // Modal 事件
     modalCloseBtn.addEventListener('click', closeModal);
@@ -1210,12 +1212,17 @@ function openModalForNewBook() {
             <label for="modal-book-name">單詞本名稱</label>
             <input type="text" id="modal-book-name" placeholder="例如：雅思核心詞彙">
         </div>
+        <div class="input-group">
+            <label for="modal-vocab-content">批量新增單詞 (每行一個)</label>
+            <textarea id="modal-vocab-content" placeholder="可只輸入英文單詞，如:\napple\nbanana\ncherry\n系統將自動補全音標和釋義。"></textarea>
+            <div id="modal-ai-progress" class="import-progress"></div>
+        </div>
         <div class="modal-actions">
             <button class="cancel-btn">取消</button>
             <button class="save-btn">創建</button>
         </div>
     `;
-    appModal.querySelector('.save-btn').onclick = () => saveVocabBook();
+    appModal.querySelector('.save-btn').onclick = () => saveBookWithAICompletion();
     appModal.querySelector('.cancel-btn').onclick = closeModal;
     openModal();
 }
@@ -1237,13 +1244,15 @@ function openModalForEditBook() {
         <div class="input-group">
             <label for="modal-vocab-content">單詞內容 (格式: 單詞#中文@音標)</label>
             <textarea id="modal-vocab-content">${wordsText}</textarea>
+            <small class="form-hint">對於只有單詞的行，系統將嘗試自動補全音標和釋義。</small>
+            <div id="modal-ai-progress" class="import-progress"></div>
         </div>
         <div class="modal-actions">
             <button class="cancel-btn">取消</button>
             <button class="save-btn">保存更改</button>
         </div>
     `;
-    appModal.querySelector('.save-btn').onclick = () => saveVocabBook(book.id);
+    appModal.querySelector('.save-btn').onclick = () => saveBookWithAICompletion(book.id);
     appModal.querySelector('.cancel-btn').onclick = closeModal;
     openModal();
 }
@@ -1483,7 +1492,7 @@ async function importSharedVocabBooks() {
 // 獲取單一單詞分析的簡化版API調用
 async function getWordAnalysis(word) {
     try {
-        const prompt = `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Chinese meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}.`;
+        const prompt = `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Traditional Chinese meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}. Ensure the meaning is in Traditional Chinese.`;
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -1513,7 +1522,7 @@ async function getWordAnalysis(word) {
 }
 
 
-function saveVocabBook(bookId = null) {
+async function saveBookWithAICompletion(bookId = null) {
     const bookNameInput = document.getElementById('modal-book-name');
     const name = bookNameInput.value.trim();
     if (!name) {
@@ -1521,21 +1530,28 @@ function saveVocabBook(bookId = null) {
         return;
     }
 
+    const saveBtn = appModal.querySelector('.save-btn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = '處理中...';
+
+    let book;
     if (bookId) { // 編輯模式
-        const book = vocabularyBooks.find(b => b.id === bookId);
-        if (book) {
-            book.name = name;
-            const wordsText = document.getElementById('modal-vocab-content').value.trim();
-            book.words = parseWordsFromText(wordsText);
-        }
+        book = vocabularyBooks.find(b => b.id === bookId);
+        if (book) book.name = name;
     } else { // 新增模式
-        const newBook = {
+        book = {
             id: Date.now().toString(),
             name: name,
             words: []
         };
-        vocabularyBooks.push(newBook);
-        activeBookId = newBook.id;
+    }
+
+    const wordsText = document.getElementById('modal-vocab-content').value.trim();
+    await processWordsWithAI(book, wordsText);
+    
+    if (!bookId) { // 如果是新書，則添加到書庫
+        vocabularyBooks.push(book);
+        activeBookId = book.id;
     }
 
     saveVocabularyBooks();
@@ -1544,10 +1560,41 @@ function saveVocabBook(bookId = null) {
     closeModal();
 }
 
+async function processWordsWithAI(book, wordsText) {
+    const progressContainer = document.getElementById('modal-ai-progress');
+    const preliminaryWords = parseWordsFromText(wordsText);
+    const finalWords = [];
+
+    for (let i = 0; i < preliminaryWords.length; i++) {
+        let wordObject = preliminaryWords[i];
+        
+        // [FIX] 只有當單詞的中文意思或音標真正為空（去除空白後）時，才發起AI請求
+        if (!wordObject.meaning.trim() || !wordObject.phonetic.trim()) {
+            if(progressContainer) progressContainer.innerHTML = `<p>正在分析: ${wordObject.word} (${i + 1}/${preliminaryWords.length})</p>`;
+            try {
+                const analysis = await getWordAnalysis(wordObject.word);
+                wordObject.phonetic = wordObject.phonetic || (analysis.phonetic || 'n/a').replace(/^\/|\/$/g, '');
+                wordObject.meaning = wordObject.meaning || analysis.meaning || '分析失敗';
+            } catch (e) {
+                console.error(`Error analyzing word "${wordObject.word}":`, e);
+                wordObject.meaning = wordObject.meaning || '分析失敗';
+                wordObject.phonetic = wordObject.phonetic || 'n/a';
+            }
+        }
+        finalWords.push(wordObject);
+    }
+    
+    book.words = finalWords;
+    if(progressContainer) progressContainer.innerHTML = `<p style="color: green;">處理完成！</p>`;
+}
+
 function deleteActiveVocabBook() {
     const book = vocabularyBooks.find(b => b.id === activeBookId);
     if (book && confirm(`確定要永久刪除單詞本 "${book.name}" 嗎？此操作無法撤銷。`)) {
-        vocabularyBooks = vocabularyBooks.filter(b => b.id !== activeBookId);
+        const bookIndex = vocabularyBooks.findIndex(b => b.id === activeBookId);
+        if (bookIndex > -1) {
+            vocabularyBooks.splice(bookIndex, 1);
+        }
         activeBookId = vocabularyBooks.length > 0 ? vocabularyBooks[0].id : null;
         saveVocabularyBooks();
         saveAppState();
@@ -1636,6 +1683,96 @@ function exportActiveVocabBook() {
     
     alert(`單詞本 "${activeBook.name}" 已導出。`);
 }
+
+function openModalForMergeBooks() {
+    if (vocabularyBooks.length < 2) {
+        alert('至少需要兩個單詞本才能進行合併。');
+        return;
+    }
+
+    modalTitle.textContent = '合併單詞本';
+    
+    const bookCheckboxes = vocabularyBooks.map(book => `
+        <div class="import-preset-item-wrapper">
+            <input type="checkbox" id="merge-checkbox-${book.id}" value="${book.id}" class="merge-checkbox">
+            <label for="merge-checkbox-${book.id}" class="import-preset-item">${book.name} (${book.words.length}個單詞)</label>
+        </div>
+    `).join('');
+
+    modalBody.innerHTML = `
+        <div class="input-group">
+            <label>選擇要合併的單詞本 (至少2個)</label>
+            <div class="import-preset-list">${bookCheckboxes}</div>
+        </div>
+        <div class="input-group">
+            <label for="modal-merge-book-name">新單詞本名稱</label>
+            <input type="text" id="modal-merge-book-name" placeholder="例如：我的合輯">
+        </div>
+        <small class="form-hint">重複的單詞將會被自動去除。</small>
+        <div class="modal-actions">
+            <button class="cancel-btn">取消</button>
+            <button class="save-btn">合併</button>
+        </div>
+    `;
+
+    appModal.querySelector('.save-btn').onclick = () => mergeSelectedBooks();
+    appModal.querySelector('.cancel-btn').onclick = closeModal;
+    openModal();
+}
+
+function mergeSelectedBooks() {
+    const selectedCheckboxes = document.querySelectorAll('.merge-checkbox:checked');
+    if (selectedCheckboxes.length < 2) {
+        alert('請至少選擇兩個單詞本進行合併。');
+        return;
+    }
+
+    const newBookNameInput = document.getElementById('modal-merge-book-name');
+    const newBookName = newBookNameInput.value.trim();
+    if (!newBookName) {
+        alert('新單詞本的名稱不能為空。');
+        return;
+    }
+
+    if (vocabularyBooks.some(b => b.name === newBookName)) {
+        alert(`已存在名為 "${newBookName}" 的單詞本，請使用其他名稱。`);
+        return;
+    }
+
+    const mergedWords = [];
+    const seenWords = new Set();
+    
+    selectedCheckboxes.forEach(checkbox => {
+        const bookId = checkbox.value;
+        const book = vocabularyBooks.find(b => b.id === bookId);
+        if (book) {
+            book.words.forEach(word => {
+                const wordIdentifier = word.word.toLowerCase();
+                if (!seenWords.has(wordIdentifier)) {
+                    mergedWords.push(word);
+                    seenWords.add(wordIdentifier);
+                }
+            });
+        }
+    });
+
+    const newBook = {
+        id: Date.now().toString(),
+        name: newBookName,
+        words: mergedWords
+    };
+
+    vocabularyBooks.push(newBook);
+    activeBookId = newBook.id;
+
+    saveVocabularyBooks();
+    saveAppState();
+    renderVocabBookList();
+    updateActiveBookView();
+    closeModal();
+    alert(`成功合併 ${selectedCheckboxes.length} 個單詞本為 "${newBookName}"！`);
+}
+
 
 // =================================
 // 單詞列表功能 (重構後)
