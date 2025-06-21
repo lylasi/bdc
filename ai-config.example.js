@@ -11,3 +11,14 @@ const AI_MODELS = {
     // 用於檢查句子語法
     sentenceChecking: "gpt-4.1-nano"
 };
+
+
+// TTS 服務配置
+const TTS_CONFIG = {
+    baseUrl: 'https://xxx.1414.xyz',
+    apiKey: 'xxxxx',
+    voices: {
+        english: 'en-US-JennyNeural',
+        chinese: 'zh-CN-XiaoxiaoNeural'
+    }
+};
