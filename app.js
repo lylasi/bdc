@@ -1269,49 +1269,16 @@ async function openModalForImportBook() {
             return;
         }
 
-        let presetItemsHtml;
-        if (defaultBooks.length > 5) {
-            const checkboxesHtml = defaultBooks.slice(0, 5).map(book => {
-                const safeId = `import-checkbox-${book.path.replace(/[^a-zA-Z0-9]/g, '')}`;
-                return `
-                    <div class="import-preset-item-wrapper">
-                        <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" class="import-checkbox">
-                        <label for="${safeId}" class="import-preset-item">${book.name}</label>
-                    </div>
-                `;
-            }).join('');
-
-            const selectOptionsHtml = defaultBooks.slice(5).map(book =>
-                `<option value="${book.path}" data-name="${book.name}">${book.name}</option>`
-            ).join('');
-
-            const selectHtml = `
-                <div class="import-preset-select-wrapper">
-                    <select id="modal-import-select-more" class="import-select">
-                        <option value="">更多選擇...</option>
-                        ${selectOptionsHtml}
-                    </select>
+        const checkboxesHtml = defaultBooks.map(book => {
+             const safeId = `import-checkbox-${book.path.replace(/[^a-zA-Z0-9]/g, '')}`;
+             return `
+                <div class="import-preset-item-wrapper">
+                    <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" class="import-checkbox">
+                    <label for="${safeId}" class="import-preset-item">${book.name}</label>
                 </div>
             `;
-
-            presetItemsHtml = `
-                <div class="import-preset-list">
-                    ${checkboxesHtml}
-                </div>
-                ${selectHtml}
-            `;
-        } else {
-            const checkboxesHtml = defaultBooks.map(book => {
-                 const safeId = `import-checkbox-${book.path.replace(/[^a-zA-Z0-9]/g, '')}`;
-                 return `
-                    <div class="import-preset-item-wrapper">
-                        <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" class="import-checkbox">
-                        <label for="${safeId}" class="import-preset-item">${book.name}</label>
-                    </div>
-                `;
-            }).join('');
-            presetItemsHtml = `<div class="import-preset-list">${checkboxesHtml}</div>`;
-        }
+        }).join('');
+        const presetItemsHtml = `<div class="import-preset-list">${checkboxesHtml}</div>`;
 
         modalBody.innerHTML = `
             <div class="import-container">
@@ -1691,59 +1658,116 @@ function openModalForMergeBooks() {
     }
 
     modalTitle.textContent = '合併單詞本';
-    
-    const bookCheckboxes = vocabularyBooks.map(book => `
-        <div class="import-preset-item-wrapper">
-            <input type="checkbox" id="merge-checkbox-${book.id}" value="${book.id}" class="merge-checkbox">
-            <label for="merge-checkbox-${book.id}" class="import-preset-item">${book.name} (${book.words.length}個單詞)</label>
-        </div>
-    `).join('');
-
     modalBody.innerHTML = `
-        <div class="input-group">
-            <label>選擇要合併的單詞本 (至少2個)</label>
-            <div class="import-preset-list">${bookCheckboxes}</div>
+        <div class="merge-layout">
+            <div class="merge-selection-panel">
+                <h4>選擇要合併的單詞本 (至少2個)</h4>
+                <div id="merge-book-list" class="import-preset-list">
+                    ${vocabularyBooks.map(book => `
+                        <div class="import-preset-item-wrapper" data-book-id="${book.id}">
+                            <div class="import-preset-item">${book.name} (${book.words.length}個單詞)</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="merge-preview-panel">
+                <h4>合併預覽</h4>
+                <div class="input-group">
+                    <label for="modal-merge-book-name">新單詞本名稱</label>
+                    <input type="text" id="modal-merge-book-name" placeholder="例如：我的合輯">
+                </div>
+                <div id="merge-preview-details">
+                    <p><strong>已選單詞本:</strong> <span id="merge-selected-count">0</span></p>
+                    <ul id="merge-selected-list"></ul>
+                    <p><strong>去重後總詞數:</strong> <span id="merge-total-words">0</span></p>
+                </div>
+                <small class="form-hint">重複的單詞將會被自動去除。</small>
+            </div>
         </div>
-        <div class="input-group">
-            <label for="modal-merge-book-name">新單詞本名稱</label>
-            <input type="text" id="modal-merge-book-name" placeholder="例如：我的合輯">
-        </div>
-        <small class="form-hint">重複的單詞將會被自動去除。</small>
         <div class="modal-actions">
             <button class="cancel-btn">取消</button>
-            <button class="save-btn">合併</button>
+            <button id="confirm-merge-btn" class="save-btn" disabled>合併</button>
         </div>
     `;
 
-    appModal.querySelector('.save-btn').onclick = () => mergeSelectedBooks();
-    appModal.querySelector('.cancel-btn').onclick = closeModal;
+    // Add event listeners
+    const mergeBookList = modalBody.querySelector('#merge-book-list');
+    const newBookNameInput = modalBody.querySelector('#modal-merge-book-name');
+    
+    mergeBookList.addEventListener('click', (e) => {
+        const item = e.target.closest('.import-preset-item-wrapper');
+        if (item) {
+            item.classList.toggle('selected');
+            updateMergePreview();
+        }
+    });
+
+    newBookNameInput.addEventListener('input', () => updateMergePreview());
+
+    modalBody.querySelector('#confirm-merge-btn').onclick = () => mergeSelectedBooks();
+    modalBody.querySelector('.cancel-btn').onclick = closeModal;
+    
     openModal();
+    updateMergePreview(); // Initial state
+}
+
+function updateMergePreview() {
+    const selectedItems = document.querySelectorAll('.import-preset-item-wrapper.selected');
+    const newBookName = document.getElementById('modal-merge-book-name').value.trim();
+    const selectedCountSpan = document.getElementById('merge-selected-count');
+    const selectedListUl = document.getElementById('merge-selected-list');
+    const totalWordsSpan = document.getElementById('merge-total-words');
+    const confirmBtn = document.getElementById('confirm-merge-btn');
+
+    selectedListUl.innerHTML = '';
+    const mergedWords = new Set();
+    let selectedBooks = [];
+
+    selectedItems.forEach(item => {
+        const bookId = item.dataset.bookId;
+        const book = vocabularyBooks.find(b => b.id === bookId);
+        if (book) {
+            selectedBooks.push(book.name);
+            book.words.forEach(word => mergedWords.add(word.word.toLowerCase()));
+        }
+    });
+
+    selectedCountSpan.textContent = selectedItems.length;
+    selectedListUl.innerHTML = selectedBooks.map(name => `<li>${name}</li>`).join('');
+    totalWordsSpan.textContent = mergedWords.size;
+
+    if (selectedItems.length >= 2 && newBookName) {
+        confirmBtn.disabled = false;
+    } else {
+        confirmBtn.disabled = true;
+    }
 }
 
 function mergeSelectedBooks() {
-    const selectedCheckboxes = document.querySelectorAll('.merge-checkbox:checked');
-    if (selectedCheckboxes.length < 2) {
-        alert('請至少選擇兩個單詞本進行合併。');
-        return;
-    }
-
+    const selectedItems = document.querySelectorAll('.import-preset-item-wrapper.selected');
     const newBookNameInput = document.getElementById('modal-merge-book-name');
     const newBookName = newBookNameInput.value.trim();
-    if (!newBookName) {
-        alert('新單詞本的名稱不能為空。');
+
+    // Validations are now mostly handled by disabling the button, but we keep them as a safeguard.
+    if (selectedItems.length < 2) {
+        // This case should ideally not happen if the button is disabled correctly.
+        console.error("Merge button was clicked with less than 2 books selected.");
         return;
     }
-
+    if (!newBookName) {
+        console.error("Merge button was clicked without a new book name.");
+        return;
+    }
     if (vocabularyBooks.some(b => b.name === newBookName)) {
-        alert(`已存在名為 "${newBookName}" 的單詞本，請使用其他名稱。`);
+        alert(`已存在名為 "${newBookName}" 的單詞本，請使用其他名稱。`); // Keep this alert as it's a specific user error.
         return;
     }
 
     const mergedWords = [];
     const seenWords = new Set();
     
-    selectedCheckboxes.forEach(checkbox => {
-        const bookId = checkbox.value;
+    selectedItems.forEach(item => {
+        const bookId = item.dataset.bookId;
         const book = vocabularyBooks.find(b => b.id === bookId);
         if (book) {
             book.words.forEach(word => {
@@ -1770,7 +1794,8 @@ function mergeSelectedBooks() {
     renderVocabBookList();
     updateActiveBookView();
     closeModal();
-    alert(`成功合併 ${selectedCheckboxes.length} 個單詞本為 "${newBookName}"！`);
+    // Optional: Replace alert with a more modern notification system in the future.
+    alert(`成功合併 ${selectedItems.length} 個單詞本為 "${newBookName}"！`);
 }
 
 
@@ -1828,48 +1853,36 @@ function createBookSelector(container, defaultBookId) {
 
     const name = `${selectorType}-book`; // e.g., 'dictation-book'
 
-    // 統一使用單選按鈕或下拉列表的邏輯
-    if (bookCount <= 5) {
-        vocabularyBooks.forEach(book => {
-            const radioId = `${selectorType}-radio-${book.id}`;
-            const radio = document.createElement('input');
-            radio.type = 'radio';
-            radio.id = radioId;
-            radio.name = name;
-            radio.value = book.id;
-            radio.className = 'radio-btn';
-            // 設置默認選中項
-            if (book.id === defaultBookId) {
-                radio.checked = true;
-            }
-
-            const label = document.createElement('label');
-            label.htmlFor = radioId;
-            label.textContent = book.name;
-            label.className = 'radio-label';
-
-            container.appendChild(radio);
-            container.appendChild(label);
-        });
-        // 如果沒有任何一個被選中（例如defaultBookId無效），則選中第一個
-        if (!container.querySelector('input:checked')) {
-            const firstRadio = container.querySelector('input');
-            if(firstRadio) firstRadio.checked = true;
+    // Always display as a radio button list
+    vocabularyBooks.forEach(book => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'radio-item-wrapper';
+        
+        const radioId = `${selectorType}-radio-${book.id}`;
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.id = radioId;
+        radio.name = name;
+        radio.value = book.id;
+        radio.className = 'radio-btn';
+        if (book.id === defaultBookId) {
+            radio.checked = true;
         }
-    } else {
-        const select = document.createElement('select');
-        select.id = `${selectorType}-book-select`;
-        vocabularyBooks.forEach(book => {
-            const option = document.createElement('option');
-            option.value = book.id;
-            option.textContent = book.name;
-            // 設置默認選中項
-            if (book.id === defaultBookId) {
-                option.selected = true;
-            }
-            select.appendChild(option);
-        });
-        container.appendChild(select);
+
+        const label = document.createElement('label');
+        label.htmlFor = radioId;
+        label.textContent = book.name;
+        label.className = 'radio-label';
+
+        wrapper.appendChild(radio);
+        wrapper.appendChild(label);
+        container.appendChild(wrapper);
+    });
+
+    // If no item is selected (e.g., if defaultBookId is invalid), select the first one
+    if (!container.querySelector('input:checked')) {
+        const firstRadio = container.querySelector('input[type="radio"]');
+        if(firstRadio) firstRadio.checked = true;
     }
 }
 
@@ -1882,20 +1895,17 @@ function populateDictationBookSelector() {
 function getSelectedWords(container) {
     if (!container || !container.id) return null;
 
-    const bookCount = vocabularyBooks.length;
     let selectedBookId;
 
-    if (bookCount <= 5) {
-        const selectorName = `${container.id.split('-')[0]}-book`;
-        const selectedRadio = container.querySelector(`input[name="${selectorName}"]:checked`);
-        selectedBookId = selectedRadio ? selectedRadio.value : null;
+    const radioSelector = `input[name="${container.id.split('-')[0]}-book"]:checked`;
+    const selectedRadio = container.querySelector(radioSelector);
+
+    if (selectedRadio) {
+        selectedBookId = selectedRadio.value;
     } else {
-        const select = container.querySelector('select');
-        selectedBookId = select ? select.value : null;
+        return null;
     }
 
-    if (!selectedBookId) return null;
-    
     const book = vocabularyBooks.find(b => b.id === selectedBookId);
     return book ? book.words : [];
 }
