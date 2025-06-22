@@ -97,61 +97,67 @@
                         <div id="dictation-progress-bar"></div>
                         <span id="dictation-progress-text">0/0</span>
                     </div>
-                    <div class="dictation-settings">
-                        <h3>設置</h3>
-                        <div class="settings-group full-width">
-                            <label>選擇單詞本:</label>
-                            <div id="dictation-book-selector" class="book-selector">
-                                <!-- JS動態生成 -->
-                            </div>
-                        </div>
-                        <div class="settings-group">
-                            <label for="repeat-times">單詞重複次數:</label>
-                            <div class="number-stepper-vertical">
-                                <input type="text" id="repeat-times" class="stepper-input" inputmode="numeric" pattern="[0-9]*" min="1" max="5" value="2">
-                                <div class="stepper-controls">
-                                    <button type="button" class="stepper-btn stepper-plus" aria-label="Increase"></button>
-                                    <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease"></button>
+                    <div class="dictation-main-content">
+                        <div class="dictation-settings">
+                            <h3>設置</h3>
+                            <div id="dictation-settings-container">
+                                <div class="settings-grid">
+                                    <div class="form-group settings-group full-width">
+                                        <label>選擇單詞本:</label>
+                                        <div id="dictation-book-selector" class="book-selector">
+                                            <!-- JS動態生成 -->
+                                        </div>
+                                    </div>
+                                    <div class="form-group settings-group">
+                                        <label for="repeat-times">單詞重複次數:</label>
+                                        <div class="number-stepper-vertical">
+                                            <input type="text" id="repeat-times" class="stepper-input" inputmode="numeric" pattern="[0-9]*" min="1" max="5" value="2">
+                                            <div class="stepper-controls">
+                                                <button type="button" class="stepper-btn stepper-plus" aria-label="Increase"></button>
+                                                <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease"></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group settings-group">
+                                        <label for="word-interval">單詞間隔(秒):</label>
+                                        <div class="number-stepper-vertical">
+                                            <input type="text" id="word-interval" class="stepper-input" inputmode="numeric" pattern="[0-9]*" min="1" max="10" value="3">
+                                            <div class="stepper-controls">
+                                                <button type="button" class="stepper-btn stepper-plus" aria-label="Increase"></button>
+                                                <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease"></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group settings-group">
+                                        <label for="read-meaning">朗讀中文意思:</label>
+                                        <input type="checkbox" id="read-meaning">
+                                    </div>
+                                    <div class="form-group settings-group">
+                                        <label for="loop-mode">循環模式:</label>
+                                        <input type="checkbox" id="loop-mode">
+                                    </div>
+                                    <div class="form-group settings-group">
+                                        <label for="listen-only-mode">只聽不練:</label>
+                                        <input type="checkbox" id="listen-only-mode" checked>
+                                    </div>
+                                </div>
+                                <div class="button-group">
+                                    <button id="start-dictation-btn" class="btn-primary">開始默寫</button>
+                                    <button id="stop-dictation-btn" class="btn-secondary" disabled>停止</button>
+                                    <button id="pause-dictation-btn" class="btn-secondary" disabled>暫停</button>
+                                    <button id="replay-dictation-btn" class="btn-secondary" style="display: none;">重播</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="settings-group">
-                            <label for="word-interval">單詞間隔(秒):</label>
-                            <div class="number-stepper-vertical">
-                                <input type="text" id="word-interval" class="stepper-input" inputmode="numeric" pattern="[0-9]*" min="1" max="10" value="3">
-                                <div class="stepper-controls">
-                                    <button type="button" class="stepper-btn stepper-plus" aria-label="Increase"></button>
-                                    <button type="button" class="stepper-btn stepper-minus" aria-label="Decrease"></button>
-                                </div>
+                        <div class="dictation-practice">
+                            <h3>默寫練習</h3>
+                            <div id="dictation-word-display" class="word-display-box"></div>
+                            <div class="input-group">
+                                <input type="text" id="dictation-input" class="input-field" placeholder="請輸入聽到的單詞">
+                                <button id="check-dictation-btn" class="btn-primary">檢查</button>
                             </div>
+                            <div id="dictation-result" class="result-box"></div>
                         </div>
-                        <div class="settings-group">
-                            <label for="read-meaning">朗讀中文意思:</label>
-                            <input type="checkbox" id="read-meaning">
-                        </div>
-                        <div class="settings-group">
-                            <label for="loop-mode">循環模式:</label>
-                            <input type="checkbox" id="loop-mode">
-                        </div>
-                        <div class="settings-group">
-                            <label for="listen-only-mode">只聽不練:</label>
-                            <input type="checkbox" id="listen-only-mode" checked>
-                        </div>
-                        <div class="button-group">
-                            <button id="start-dictation-btn">開始默寫</button>
-                            <button id="stop-dictation-btn" disabled>停止</button>
-                            <button id="pause-dictation-btn" disabled>暫停</button>
-                            <button id="replay-dictation-btn" style="display: none;">重播</button>
-                        </div>
-                    </div>
-                    <div class="dictation-practice">
-                        <h3>默寫練習</h3>
-                        <div id="dictation-word-display"></div>
-                        <div class="input-group">
-                            <input type="text" id="dictation-input" placeholder="請輸入聽到的單詞">
-                            <button id="check-dictation-btn">檢查</button>
-                        </div>
-                        <div id="dictation-result"></div>
                     </div>
                 </div>
             </section>
@@ -334,9 +340,18 @@
     <div id="app-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <button class="modal-close-btn">&times;</button>
-            <h3 id="modal-title">Modal Title</h3>
-            <div id="modal-body">
-                <!-- JS動態生成 -->
+            <div class="modal-layout">
+                <header id="modal-header">
+                    <h3 id="modal-title">Modal Title</h3>
+                </header>
+                <main id="modal-body">
+                    <!-- JS動態生成 -->
+                </main>
+                <footer id="modal-actions">
+                    <div class="modal-actions">
+                        <!-- 按鈕將由JS動態生成 -->
+                    </div>
+                </footer>
             </div>
         </div>
     </div>

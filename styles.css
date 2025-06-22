@@ -31,12 +31,13 @@ nav {
     display: flex;
     justify-content: center;
     flex-wrap: nowrap;
-    gap: 12px;
-    margin-bottom: 15px;
+    gap: 8px;
+    margin-bottom: 20px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     padding: 10px 0;
+    position: relative;
 }
 
 nav::-webkit-scrollbar {
@@ -44,31 +45,74 @@ nav::-webkit-scrollbar {
 }
 
 .nav-btn {
-    background-color: #e9ecef;
-    border: 1px solid #ced4da;
+    background: linear-gradient(180deg, #f8f9fa, #e9ecef);
+    border: 1px solid #dee2e6;
     color: #495057;
-    padding: 8px 16px;
-    margin: 0 2px;
-    border-radius: 6px;
+    padding: 12px 20px;
+    margin: 0 4px;
+    border-radius: 50px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.9em;
-    font-weight: 500;
-    min-height: 38px;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    min-height: 44px;
     touch-action: manipulation;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.nav-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #3a7bd5, #4a8ce5);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+    border-radius: 50px;
 }
 
 .nav-btn:hover {
-    background-color: #e0e0e0;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: #ced4da;
+}
+
+.nav-btn:hover::before {
+    opacity: 0.1;
 }
 
 .nav-btn.active {
-    background-color: #3a7bd5;
+    background: linear-gradient(135deg, #3a7bd5, #4a8ce5);
     color: white;
     border-color: #2a6bc5;
+    box-shadow: 0 4px 10px rgba(58, 123, 213, 0.3);
+}
+
+.nav-btn.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(58, 123, 213, 0.4);
+}
+
+.nav-btn.active::before {
+    opacity: 0;
+}
+
+.nav-btn .nav-text {
+    transition: transform 0.3s ease;
+}
+
+.nav-btn:hover .nav-text {
+    transform: scale(1.05);
 }
 
 .section {
@@ -185,7 +229,7 @@ button:disabled {
 }
 
 .list-container {
-    max-height: 400px;
+    max-height: 800px;
     overflow-y: auto;
     border: 1px solid #eee;
     border-radius: 5px;
@@ -259,18 +303,15 @@ button:disabled {
 
 .dictation-main-content {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: column; /* 始終保持列佈局 */
+    gap: 20px;
     width: 100%;
 }
 
 @media (min-width: 992px) {
-    .dictation-main-content {
-        flex-direction: row;
-    }
-    
+    /* PC端不再切換為行佈局，保持堆疊 */
     .dictation-settings {
-        flex: 0 0 280px;
+       /* flex: 0 0 420px;  不再需要固定寬度 */
     }
     
     .dictation-practice {
@@ -280,11 +321,12 @@ button:disabled {
 }
 
 .dictation-settings, .dictation-practice {
-    padding: 15px;
+    padding: 20px;
     border: 1px solid #e0e0e0;
-    border-radius: 6px;
+    border-radius: 10px;
     background-color: white;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden; /* 移除內部的 max-height 和 overflow */
 }
 
 .dictation-practice {
@@ -293,12 +335,127 @@ button:disabled {
     gap: 20px;
 }
 
-.settings-group {
-    margin-bottom: 15px;
+.settings-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* 增加gap以獲得更好的間距 */
+    margin-bottom: 20px;
+}
+
+.form-group.settings-group {
+    flex: 1 1 180px; /* 讓元素更靈活地並排或換行 */
+    margin-bottom: 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.settings-group.full-width {
+    flex-basis: 100%; /* 確保單詞本選擇器始終獨佔一行 */
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.settings-group.full-width label {
+    flex-shrink: 0;
+    width: 120px;
+}
+
+.book-selector {
+    flex-grow: 1;
+    /* max-height: 250px; 已移除，允許自由擴展 */
+    /* overflow-y: auto; 已移除 */
+    display: flex;
     flex-wrap: wrap;
+    gap: 8px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.book-selector {
+    display: flex;
+    flex-direction: column; /* Changed to column */
+    gap: 8px;
+    max-height: 220px; /* Set a max-height */
+    overflow-y: auto;  /* Add vertical scroll */
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.radio-item-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.btn-primary {
+    background-color: #3a7bd5;
+    color: white;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #2a6bc5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+.word-display-box {
+    font-size: 2em;
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa, #e4e7eb);
+    border-radius: 10px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.input-field {
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1.1em;
+    transition: border-color 0.3s;
+}
+
+.input-field:focus {
+    border-color: #3a7bd5;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.1);
+}
+
+.result-box {
+    margin-top: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 500;
+    text-align: center;
 }
 
 .settings-group label {
@@ -312,7 +469,7 @@ button:disabled {
 
 .settings-group > * {
     margin: 0;
-    flex-grow: 0;
+    /* flex-grow: 0; */
 }
 
 .settings-group.full-width {
@@ -810,6 +967,24 @@ button:disabled {
     min-width: 0;
 }
 
+/* 新增：表单组样式 */
+.form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+/*
+ * 已移除 #dictation-settings-container 規則以消除內部滾動條。
+ * 此前該規則限制了設置區域的高度並導致滾動。
+*/
+
+/* 全宽表单组样式 */
+.form-group.full-width {
+    width: 100%;
+}
+
 #article-input {
     min-height: 300px;
     resize: vertical;
@@ -819,8 +994,9 @@ button:disabled {
 .button-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 15px;
+    gap: 10px; /* Increased gap for better spacing */
+    margin-top: 20px; /* Add margin to separate from settings */
+    width: 100%;
 }
 
 .audio-controls {
@@ -996,6 +1172,19 @@ button:disabled {
    }
 }
 
+@media (max-width: 768px) {
+    /* .dictation-main-content 已經是 column，無需重複 */
+
+    .form-group.settings-group {
+        /* flex-basis: 100%; */ /* 在移動端，flex: 1 1 180px; 會自動處理換行 */
+        min-width: 150px;
+    }
+
+    .dictation-settings {
+        flex: 1; /* Allow settings to grow */
+    }
+}
+
 @media (min-width: 768px) and (max-width: 991px) {
    .container {
        padding: 15px;
@@ -1119,65 +1308,87 @@ button:disabled {
 
 .vocabulary-layout {
     display: flex;
-    gap: 20px;
-    min-height: 60vh;
+    gap: 25px;
+    min-height: 65vh;
+    margin-top: 10px;
 }
 
 .vocab-books-panel {
-    flex: 0 0 250px;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    background-color: #f9f9f9;
+    flex: 0 0 280px;
+    border-radius: 12px;
+    background: linear-gradient(to bottom, #ffffff, #f8f9fa);
     display: flex;
     flex-direction: column;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
 }
 
 .vocab-words-panel {
     flex: 1;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    background-color: white;
+    border-radius: 12px;
+    background: linear-gradient(to bottom, #ffffff, #f8f9fa);
     display: flex;
     flex-direction: column;
     min-width: 0;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
 }
 
 .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
-    border-bottom: 1px solid #eee;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    background: linear-gradient(135deg, #3a7bd5, #4a8ce5);
+    color: white;
 }
 
 .panel-header h3 {
     margin: 0;
-    font-size: 1.1em;
-    color: #3a7bd5;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 #current-book-name {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px; /* 根據需要調整 */
+    max-width: 220px;
+    font-weight: 500;
 }
 
 .icon-btn {
-    background: none;
+    background: rgba(255,255,255,0.2);
     border: none;
-    color: #555;
+    color: white;
     cursor: pointer;
-    padding: 5px;
+    padding: 8px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .icon-btn:hover {
-    background-color: #e9ecef;
-    color: #000;
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.word-panel-actions {
+    display: flex;
+    gap: 8px;
 }
 
 .icon-btn:disabled {
@@ -1234,23 +1445,22 @@ button:disabled {
 /* =================================
    默寫頁面單詞本選擇器
    ================================= */
-.book-selector {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-}
 
 .book-selector .radio-btn {
     display: none;
 }
 
 .book-selector .radio-label {
-    padding: 8px 12px;
+    padding: 6px 15px; /* 調整內邊距 */
     border: 1px solid #ccc;
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: normal; /* 允許文本換行 */
+    word-break: break-all; /* 強制長單詞換行 */
+    text-align: center; /* 讓換行後的文本居中 */
+    flex-grow: 1; /* 允許按鈕在flex容器中伸展 */
+    min-width: 80px; /* 設置一個最小寬度 */
 }
 
 .book-selector .radio-btn:checked + .radio-label {
@@ -1263,6 +1473,40 @@ button:disabled {
     min-width: 200px;
 }
 
+/* 新增：可滾動的單詞本列表樣式 */
+.book-selector-list {
+    max-height: 220px; /* 或者一個適合的高度，例如 5.5 個 item 的高度 */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 5px;
+    background-color: #fff;
+}
+
+.book-selector-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    transition: background-color 0.2s, color 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.book-selector-item:last-child {
+    margin-bottom: 0;
+}
+
+.book-selector-item:hover {
+    background-color: #f0f8ff;
+}
+
+.book-selector-item.selected {
+    background-color: #3a7bd5;
+    color: white;
+    font-weight: bold;
+}
 
 /* =================================
    彈出式Modal樣式
@@ -1289,14 +1533,69 @@ button:disabled {
 
 .modal-content {
     background: white;
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     width: 90%;
     max-width: 500px;
     position: relative;
     transform: translateY(0);
     transition: transform 0.3s ease;
+}
+
+/* 重构后的合并单词本模态窗口样式 - Flexbox布局 */
+#app-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.modal-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+#modal-header, #modal-footer {
+  flex-shrink: 0;
+}
+
+#modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#modal-body .input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+#modal-body textarea {
+  font-size: 14px;
+  min-height: 250px;
+  font-family: 'Courier New', Courier, monospace;
+  padding: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  resize: vertical;
+  transition: border-color 0.3s;
+}
+
+#modal-body textarea:focus {
+  border-color: #3a7bd5;
+  box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.1);
+  outline: none;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 20px;
 }
 
 .modal-overlay.hidden .modal-content {
@@ -1368,6 +1667,8 @@ button:disabled {
     display: flex;
     flex-direction: column;
     gap: 25px;
+    max-height: 600px;
+    overflow-y: scroll;
 }
 
 .import-section {
@@ -1396,6 +1697,18 @@ button:disabled {
 
 .import-preset-item-wrapper {
     position: relative;
+    display: contents;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 2px solid transparent;
+}
+
+.import-preset-item-wrapper.selected {
+    background-color: #e0f7fa; /* 使用一個清晰的淡藍色背景 */
+    border: 2px solid #0097a7; /* 使用一個醒目的、加粗的藍色邊框 */
+    color: #004d40; /* 確保深色文字以保證對比度 */
 }
 
 .import-checkbox {
@@ -1716,4 +2029,60 @@ button:disabled {
     outline: none;
     border-color: #3a7bd5;
     box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.2);
+}
+/* =================================
+   Merge Modal Styles
+   ================================= */
+
+.merge-layout {
+    display: flex;
+    gap: 20px;
+    min-height: 300px;
+}
+
+.merge-selection-panel {
+    flex: 1;
+    border-right: 1px solid #e0e0e0;
+    padding-right: 20px;
+    overflow-y: auto;
+    max-height: 400px; /* or a height that fits your design */
+}
+
+.merge-preview-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#merge-preview-details {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+    flex-grow: 1;
+}
+
+#merge-preview-details p {
+    margin: 0 0 10px 0;
+}
+
+#merge-selected-list {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 5px 0 15px 0;
+    max-height: 100px;
+    overflow-y: auto;
+    font-size: 0.9em;
+    color: #555;
+}
+
+#merge-selected-list li {
+    padding: 2px 0;
+}
+
+#merge-total-words {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: var(--primary-color);
 }
