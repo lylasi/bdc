@@ -35,6 +35,7 @@ export const repeatTimes = document.getElementById('repeat-times');
 export const wordInterval = document.getElementById('word-interval');
 export const readMeaning = document.getElementById('read-meaning');
 export const loopMode = document.getElementById('loop-mode');
+export const shuffleMode = document.getElementById('shuffle-mode');
 export const startDictationBtn = document.getElementById('start-dictation-btn');
 export const stopDictationBtn = document.getElementById('stop-dictation-btn');
 export const pauseDictationBtn = document.getElementById('pause-dictation-btn');

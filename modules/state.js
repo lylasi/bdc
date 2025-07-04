@@ -16,6 +16,7 @@ export let currentDictationIndex = -1;
 export let dictationInterval = null;
 export let dictationTimeout = null;
 export let isDictationPaused = false;
+export let dictationWords = [];
 
 // ---------------------------------
 // 测验模式状态
@@ -73,6 +74,10 @@ export function setDictationTimeout(timeout) {
 
 export function setIsDictationPaused(paused) {
     isDictationPaused = paused;
+}
+
+export function setDictationWords(words) {
+    dictationWords = words;
 }
 
 export function setQuizQuestions(questions) {

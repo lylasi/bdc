@@ -36,12 +36,18 @@ function getSelectedDictationWords() {
 }
 
 function startDictation() {
-    const wordsForDictation = getSelectedDictationWords();
+    let wordsForDictation = getSelectedDictationWords();
 
     if (!wordsForDictation || wordsForDictation.length === 0) {
         alert('請先選擇一個包含單詞的單詞本！');
         return;
     }
+
+    if (dom.shuffleMode.checked) {
+        wordsForDictation = [...wordsForDictation].sort(() => Math.random() - 0.5);
+    }
+    
+    state.setDictationWords(wordsForDictation);
     
     dom.startDictationBtn.disabled = true;
     dom.stopDictationBtn.disabled = false;
@@ -58,7 +64,7 @@ function startDictation() {
     dom.dictationResult.textContent = '';
     dom.dictationResult.className = '';
     
-    updateDictationProgress(wordsForDictation.length);
+    updateDictationProgress(state.dictationWords.length);
     playCurrentWord();
     showFloatingControls();
 }
@@ -74,7 +80,7 @@ function stopDictation() {
     dom.stopDictationBtn.disabled = true;
     dom.pauseDictationBtn.disabled = true;
     dom.dictationProgressContainer.classList.add('hidden');
-    dom.dictationPractice.classList.remove('hidden');
+    dom.dictationPractice.classList.toggle('hidden', dom.listenOnlyMode.checked);
     dom.replayDictationBtn.style.display = 'none';
     dom.dictationWordDisplay.textContent = '已停止';
     
@@ -88,7 +94,7 @@ function stopDictation() {
     }
 }
 
-function togglePauseDictation() {
+export function togglePauseDictation() {
     if (dom.stopDictationBtn.disabled) return;
 
     state.setIsDictationPaused(!state.isDictationPaused);
@@ -163,13 +169,7 @@ function showFloatingControls() {
 function playCurrentWord() {
     if (state.isDictationPaused) return;
 
-    const wordsForDictation = getSelectedDictationWords();
-    if (!wordsForDictation) {
-        stopDictation();
-        return;
-    }
-
-    if (state.currentDictationIndex >= wordsForDictation.length) {
+    if (state.currentDictationIndex >= state.dictationWords.length) {
         if (dom.loopMode.checked) {
             state.setCurrentDictationIndex(0);
         } else {
@@ -179,8 +179,8 @@ function playCurrentWord() {
         }
     }
 
-    const currentWord = wordsForDictation[state.currentDictationIndex];
-    updateDictationProgress(wordsForDictation.length);
+    const currentWord = state.dictationWords[state.currentDictationIndex];
+    updateDictationProgress(state.dictationWords.length);
     
     let timesPlayed = 0;
     const repeatTarget = parseInt(dom.repeatTimes.value, 10);
@@ -218,13 +218,12 @@ function playCurrentWord() {
 }
 
 function checkDictation() {
-    const wordsForDictation = getSelectedDictationWords();
-    if (!wordsForDictation || state.currentDictationIndex < 0 || state.currentDictationIndex >= wordsForDictation.length) {
+    if (!state.dictationWords || state.currentDictationIndex < 0 || state.currentDictationIndex >= state.dictationWords.length) {
         alert('請先開始默寫！');
         return;
     }
     
-    const currentWord = wordsForDictation[state.currentDictationIndex];
+    const currentWord = state.dictationWords[state.currentDictationIndex];
     const userInput = dom.dictationInput.value.trim().toLowerCase();
     
     if (userInput === currentWord.word.toLowerCase()) {
@@ -256,10 +255,9 @@ function updateDictationProgress(totalWords) {
 
 function replayCurrentDictationWord() {
     if (state.currentDictationIndex < 0) return;
-    const wordsForDictation = getSelectedDictationWords();
-    if (!wordsForDictation || state.currentDictationIndex >= wordsForDictation.length) return;
+    if (!state.dictationWords || state.currentDictationIndex >= state.dictationWords.length) return;
     
-    const currentWord = wordsForDictation[state.currentDictationIndex];
+    const currentWord = state.dictationWords[state.currentDictationIndex];
     audio.speakText(currentWord.word);
 }
 

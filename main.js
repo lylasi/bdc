@@ -5,7 +5,7 @@ import { initModal, setupNumberSteppers, initTooltip } from './modules/ui.js';
 import { unlockAudioContext } from './modules/audio.js';
 import { initVocabulary } from './features/vocabulary/vocabulary.js';
 import { initLearning, populateLearningBookSelector, populateWordSelect } from './features/learning/learning.js';
-import { initDictation, populateDictationBookSelector } from './features/dictation/dictation.js';
+import { initDictation, populateDictationBookSelector, togglePauseDictation } from './features/dictation/dictation.js';
 import { initQuiz, populateQuizBookSelector } from './features/quiz/quiz.js';
 import { initArticle } from './features/article/article.js';
 
@@ -75,4 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     console.log("应用程序已完全初始化。");
+
+    // 監聽頁面可見性變化，以處理背景播放問題
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            // 如果默寫正在進行中且未暫停，則自動暫停
+            if (!dom.stopDictationBtn.disabled && !state.isDictationPaused) {
+                togglePauseDictation();
+            }
+        }
+    });
 });
