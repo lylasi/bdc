@@ -4,38 +4,6 @@
     "path": "wordlists/5A_Unit1.json"
   },
   {
-    "name": "預設單詞本 (水果)",
-    "path": "wordlists/default.json"
-  },
-  {
-    "name": "4B_U6背",
-    "path": "wordlists/4B_U6.json"
-  },
-  {
-    "name": "Unit 1 The story of Princess Milky (Part 1)",
-    "path": "wordlists/4B_Unit1.json"
-  },
-  {
-    "name": "Unit 2 The story of Princess Milky (Part 2)",
-    "path": "wordlists/4B_Unit2.json"
-  },
-  {
-    "name": "Unit 3 Museum Day",
-    "path": "wordlists/4B_Unit3.json"
-  },
-  {
-    "name": "Unit 4 A fun time",
-    "path": "wordlists/4B_Unit4.json"
-  },
-  {
-    "name": "Unit 5 Out with the Cubs",
-    "path": "wordlists/4B_Unit5.json"
-  },
-  {
-    "name": "Unit 6 The great escape",
-    "path": "wordlists/4B_Unit6.json"
-  },
-  {
     "name": "3A 全册单词",
     "path": "wordlists/3A_full_wordlist.json"
   },
