@@ -1,5 +1,9 @@
 [
   {
+    "name": "Unit 1 Travelling is fun",
+    "path": "wordlists/5A_Unit1.json"
+  },
+  {
     "name": "預設單詞本 (水果)",
     "path": "wordlists/default.json"
   },
