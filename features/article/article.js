@@ -38,8 +38,24 @@ export function initArticle() {
         dom.nextChunkBtn.textContent = `下一${navText}`;
     });
 
-    dom.prevChunkBtn.addEventListener('click', playPrevChunk);
-    dom.nextChunkBtn.addEventListener('click', playNextChunk);
+    // 防抖处理快速点击
+    let chunkNavigationTimeout = null;
+    
+    dom.prevChunkBtn.addEventListener('click', () => {
+        if (chunkNavigationTimeout) return; // 防止快速点击
+        chunkNavigationTimeout = setTimeout(() => {
+            chunkNavigationTimeout = null;
+        }, 300); // 300ms防抖时间
+        playPrevChunk();
+    });
+    
+    dom.nextChunkBtn.addEventListener('click', () => {
+        if (chunkNavigationTimeout) return; // 防止快速点击  
+        chunkNavigationTimeout = setTimeout(() => {
+            chunkNavigationTimeout = null;
+        }, 300); // 300ms防抖时间
+        playNextChunk();
+    });
     
     dom.articleAnalysisContainer.addEventListener('mouseover', handleWordHighlight);
     dom.articleAnalysisContainer.addEventListener('mouseout', handleWordHighlight);
