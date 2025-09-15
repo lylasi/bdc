@@ -543,24 +543,21 @@ button:disabled {
 }
 
 .progress-container {
-    display: inline-block;
-    width: auto;
-    min-width: 200px;
-    background-color: #e0e0e0;
-    border-radius: 4px;
-    margin: 0 10px 0 0;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
     position: relative;
-    height: 12px;
-    overflow: hidden;
-    vertical-align: middle;
 }
 
 #dictation-progress-bar {
     width: 0%;
-    height: 100%;
-    background-color: var(--primary-color, #3a7bd5);
-    border-radius: 5px;
-    transition: width 0.3s ease-in-out;
+    height: 20px;
+    background-color: #28a745;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    position: relative;
 }
 
 #dictation-progress-text {
@@ -568,10 +565,45 @@ button:disabled {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: var(--text-color, #333);
-    font-size: 0.8em;
+    color: #333;
     font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    font-size: 14px;
+}
+
+/* 大尺寸导航按钮 */
+.nav-large {
+    font-size: 18px !important;
+    font-weight: bold !important;
+    min-width: 120px !important;
+    padding: 12px 20px !important;
+    margin: 0 5px !important;
+}
+
+#prev-dictation-btn {
+    background-color: #6f42c1 !important;
+    border-color: #6f42c1 !important;
+}
+
+#prev-dictation-btn:hover {
+    background-color: #5a32a3 !important;
+    border-color: #5a32a3 !important;
+}
+
+#next-dictation-btn {
+    background-color: #6f42c1 !important;
+    border-color: #6f42c1 !important;
+}
+
+#next-dictation-btn:hover {
+    background-color: #5a32a3 !important;
+    border-color: #5a32a3 !important;
+}
+
+#prev-dictation-btn:disabled,
+#next-dictation-btn:disabled {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    opacity: 0.6;
 }
 
 .hidden {
@@ -1834,6 +1866,7 @@ button:disabled {
 #replay-dictation-btn:hover {
     background-color: #138496;
 }
+
 #floating-progress-text {
     margin: 0 10px;
     font-weight: bold;

@@ -15,6 +15,8 @@ export function initDictation() {
     dom.stopDictationBtn.addEventListener('click', stopDictation);
     dom.pauseDictationBtn.addEventListener('click', togglePauseDictation);
     dom.replayDictationBtn.addEventListener('click', replayCurrentDictationWord);
+    dom.prevDictationBtn.addEventListener('click', gotoPrevDictationWord);
+    dom.nextDictationBtn.addEventListener('click', gotoNextDictationWord);
     dom.checkDictationBtn.addEventListener('click', checkDictation);
     dom.listenOnlyMode.addEventListener('change', () => {
         dom.dictationPractice.classList.toggle('hidden', dom.listenOnlyMode.checked);
@@ -53,17 +55,19 @@ function startDictation() {
     dom.stopDictationBtn.disabled = false;
     dom.pauseDictationBtn.disabled = false;
     state.setIsDictationPaused(false);
-    updatePauseButtonUI();
     
     dom.dictationPractice.classList.toggle('hidden', dom.listenOnlyMode.checked);
     dom.dictationProgressContainer.classList.remove('hidden');
 
+    // 关键：先设置索引，再更新UI
     state.setCurrentDictationIndex(0);
     dom.dictationWordDisplay.textContent = '';
     dom.dictationInput.value = '';
     dom.dictationResult.textContent = '';
     dom.dictationResult.className = '';
     
+    // 现在更新按钮UI，此时currentDictationIndex已经是0了
+    updatePauseButtonUI();
     updateDictationProgress(state.dictationWords.length);
     playCurrentWord();
     showFloatingControls();
@@ -112,15 +116,22 @@ export function togglePauseDictation() {
 function updatePauseButtonUI() {
     const text = state.isDictationPaused ? '繼續' : '暫停';
     const replayBtnDisplay = state.isDictationPaused ? 'inline-block' : 'none';
+    // 导航按钮在默写开始后就显示（不管是否暂停）
+    const navBtnDisplay = (state.currentDictationIndex >= 0 && state.dictationWords.length > 0) ? 'inline-block' : 'none';
 
     if (dom.pauseDictationBtn) dom.pauseDictationBtn.textContent = text;
     if (dom.replayDictationBtn) dom.replayDictationBtn.style.display = replayBtnDisplay;
+    if (dom.prevDictationBtn) dom.prevDictationBtn.style.display = navBtnDisplay;
+    if (dom.nextDictationBtn) dom.nextDictationBtn.style.display = navBtnDisplay;
 
     const floatingPauseBtn = document.getElementById('floating-pause-btn');
     if (floatingPauseBtn) floatingPauseBtn.textContent = text;
     
     const floatingReplayBtn = document.getElementById('floating-replay-btn');
     if (floatingReplayBtn) floatingReplayBtn.style.display = replayBtnDisplay;
+
+    // 更新按钮状态
+    updateNavigationButtonState();
 }
 
 function showFloatingControls() {
@@ -259,6 +270,102 @@ function replayCurrentDictationWord() {
     
     const currentWord = state.dictationWords[state.currentDictationIndex];
     audio.speakText(currentWord.word);
+}
+
+function gotoPrevDictationWord() {
+    if (!state.dictationWords || state.dictationWords.length === 0) return;
+    
+    // 如果正在播放，先自动暂停
+    if (!state.isDictationPaused) {
+        state.setIsDictationPaused(true);
+        clearTimeout(state.dictationTimeout);
+        clearInterval(state.dictationInterval);
+        audio.stopCurrentAudio();
+        updatePauseButtonUI(); // 更新暂停按钮UI
+    }
+    
+    let newIndex = state.currentDictationIndex - 1;
+    
+    // 处理边界情况
+    if (newIndex < 0) {
+        if (dom.loopMode.checked) {
+            newIndex = state.dictationWords.length - 1; // 循环到最后一个
+        } else {
+            return; // 不允许超出边界
+        }
+    }
+    
+    state.setCurrentDictationIndex(newIndex);
+    playCurrentWordOnce();
+    updateDictationProgress(state.dictationWords.length);
+    updateNavigationButtonState();
+    
+    // 清空输入和结果
+    dom.dictationInput.value = '';
+    dom.dictationResult.textContent = '';
+    dom.dictationResult.className = '';
+    dom.dictationWordDisplay.textContent = '';
+}
+
+function gotoNextDictationWord() {
+    if (!state.dictationWords || state.dictationWords.length === 0) return;
+    
+    // 如果正在播放，先自动暂停
+    if (!state.isDictationPaused) {
+        state.setIsDictationPaused(true);
+        clearTimeout(state.dictationTimeout);
+        clearInterval(state.dictationInterval);
+        audio.stopCurrentAudio();
+        updatePauseButtonUI(); // 更新暂停按钮UI
+    }
+    
+    let newIndex = state.currentDictationIndex + 1;
+    
+    // 处理边界情况
+    if (newIndex >= state.dictationWords.length) {
+        if (dom.loopMode.checked) {
+            newIndex = 0; // 循环到第一个
+        } else {
+            return; // 不允许超出边界
+        }
+    }
+    
+    state.setCurrentDictationIndex(newIndex);
+    playCurrentWordOnce();
+    updateDictationProgress(state.dictationWords.length);
+    updateNavigationButtonState();
+    
+    // 清空输入和结果
+    dom.dictationInput.value = '';
+    dom.dictationResult.textContent = '';
+    dom.dictationResult.className = '';
+    dom.dictationWordDisplay.textContent = '';
+}
+
+function playCurrentWordOnce() {
+    // 单次播放当前单词，用于手动切换时
+    if (state.currentDictationIndex >= 0 && state.currentDictationIndex < state.dictationWords.length) {
+        const currentWord = state.dictationWords[state.currentDictationIndex];
+        audio.speakText(currentWord.word);
+    }
+}
+
+function updateNavigationButtonState() {
+    if (!state.dictationWords || state.dictationWords.length === 0) return;
+    
+    const isFirstWord = state.currentDictationIndex <= 0;
+    const isLastWord = state.currentDictationIndex >= state.dictationWords.length - 1;
+    const loopEnabled = dom.loopMode.checked;
+    
+    // 导航按钮在默写进行时总是可用，但行为有所不同
+    if (dom.prevDictationBtn) {
+        // 在首位且无循环时禁用，否则启用
+        dom.prevDictationBtn.disabled = (isFirstWord && !loopEnabled);
+    }
+    if (dom.nextDictationBtn) {
+        // 在末位且无循环时禁用，否则启用
+        dom.nextDictationBtn.disabled = (isLastWord && !loopEnabled);
+    }
 }
 
 export function populateDictationBookSelector() {
