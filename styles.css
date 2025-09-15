@@ -115,10 +115,14 @@ nav::-webkit-scrollbar {
 .nav-btn svg {
     display: inline-block;
     vertical-align: middle;
-    fill: currentColor;
+    fill: #495057; /* 使用固定的深灰色 */
     width: 16px;
     height: 16px;
     margin-right: 6px;
+}
+
+.nav-btn.active svg {
+    fill: white; /* 激活状态时图标为白色 */
 }
 
 .nav-btn svg path {
@@ -129,7 +133,6 @@ nav::-webkit-scrollbar {
 [class^="bi-"], [class*=" bi-"] {
     display: inline-block;
     vertical-align: middle;
-    fill: currentColor;
 }
 
 .nav-btn:hover .nav-text {
@@ -1901,6 +1904,22 @@ button:disabled {
     margin: 0 8px;
 }
 
+/* 重播按钮样式 */
+.replay-btn {
+    min-width: 50px;
+    font-size: 18px;
+    margin: 0 6px;
+    background: #17a2b8;
+    color: white;
+    border-color: #17a2b8;
+}
+
+.replay-btn:hover {
+    background: #138496;
+    color: white;
+    border-color: #138496;
+}
+
 .prev-btn {
     border-radius: 12px 4px 4px 12px;
 }
@@ -2105,6 +2124,12 @@ button:disabled {
         margin: 0 4px;
     }
     
+    .replay-btn {
+        min-width: 45px;
+        font-size: 16px;
+        margin: 0 4px;
+    }
+    
     .pause-btn {
         min-width: 60px;
         font-size: 14px;
@@ -2131,6 +2156,11 @@ button:disabled {
     .prev-btn, .next-btn {
         min-width: 60px; /* 小屏幕适度增加，从40px到60px */
         font-size: 16px;
+    }
+    
+    .replay-btn {
+        min-width: 40px;
+        font-size: 14px;
     }
     
     .pause-btn {
