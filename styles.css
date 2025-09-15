@@ -1419,7 +1419,7 @@ button:disabled {
 }
 
 .icon-btn {
-    background: rgba(255,255,255,0.2);
+    background: rgb(65 130 220);
     border: none;
     color: white;
     cursor: pointer;
