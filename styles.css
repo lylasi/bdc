@@ -132,6 +132,10 @@ nav::-webkit-scrollbar {
     fill: currentColor;
 }
 
+.nav-btn:hover .nav-text {
+    transform: scale(1.05);
+}
+
 .section {
     display: none;
     background-color: white;
@@ -2219,27 +2223,39 @@ button:disabled {
 .number-stepper-vertical {
     display: flex;
     align-items: center;
-    width: 65px; /* 进一步减小控件总宽度 */
+    width: 80px; /* 增加宽度以提供更好的可点击区域 */
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.number-stepper-vertical:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
 .stepper-input {
-    width: 35px; /* 进一步减小输入框宽度 */
-    height: 28px; /* 减小输入框高度 */
+    width: 40px; /* 稍微增加输入框宽度 */
+    height: 32px; /* 增加输入框高度便于触摸 */
     text-align: center;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 0.9em;
-    font-weight: bold;
-    color: #333;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    background: white;
+    color: #495057;
     -moz-appearance: textfield;
-    transition: border-color 0.2s;
-    padding: 0 1px;
+    transition: all 0.2s ease;
+    padding: 0 4px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .stepper-input:focus {
     outline: none;
     border-color: #3a7bd5;
-    box-shadow: 0 0 0 2px rgba(58, 123, 213, 0.2);
+    box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.15), inset 0 1px 2px rgba(0,0,0,0.05);
+    background: #fff;
 }
 
 .stepper-input::-webkit-outer-spin-button,
@@ -2251,41 +2267,48 @@ button:disabled {
 .stepper-controls {
     display: flex;
     flex-direction: column;
-    margin-left: 5px;
+    margin-left: 4px;
 }
 
 .stepper-btn {
-    background-color: transparent;
-    border: 1px solid #ccc;
-    color: #555;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    border: 1px solid #dee2e6;
+    color: #6c757d;
     cursor: pointer;
-    width: 20px;
-    height: 13px;
+    width: 24px; /* 增加按钮宽度 */
+    height: 16px; /* 调整按钮高度 */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    transition: background-color 0.2s, border-color 0.2s;
+    transition: all 0.2s ease;
     position: relative;
-    margin-left: 1px;
+    margin: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .stepper-btn:hover {
-    background-color: #f0f0f0;
-    border-color: #aaa;
+    background: linear-gradient(135deg, #3a7bd5, #4ea5e0);
+    border-color: #3a7bd5;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(58, 123, 213, 0.3);
 }
 
 .stepper-btn:active {
-    background-color: #e0e0e0;
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(58, 123, 213, 0.3);
 }
 
 .stepper-btn.stepper-plus {
-    border-radius: 6px 6px 0 0;
-    border-bottom: none;
+    border-radius: 6px 6px 2px 2px;
+    border-bottom: 0.5px solid #dee2e6;
 }
 
 .stepper-btn.stepper-minus {
-    border-radius: 0 0 6px 6px;
+    border-radius: 2px 2px 6px 6px;
+    border-top: 0.5px solid #dee2e6;
+    margin-top: 1px;
 }
 
 .stepper-btn::after {
@@ -2297,19 +2320,66 @@ button:disabled {
 }
 
 .stepper-btn.stepper-plus::after {
-    border-width: 0 4px 5px 4px; /* 减小箭头大小 */
-    border-color: transparent transparent #333 transparent;
+    border-width: 0 3px 4px 3px; /* 调整箭头大小 */
+    border-color: transparent transparent currentColor transparent;
 }
 
 .stepper-btn.stepper-minus::after {
-    border-width: 5px 4px 0 4px; /* 减小箭头大小 */
-    border-color: #333 transparent transparent transparent;
+    border-width: 4px 3px 0 3px; /* 调整箭头大小 */
+    border-color: currentColor transparent transparent transparent;
 }
 
 .stepper-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
-    background-color: #f8f8f8;
+    background: #f8f9fa;
+    color: #adb5bd;
+    transform: none;
+    box-shadow: none;
+}
+
+.stepper-btn:disabled:hover {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+    color: #adb5bd;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+    .number-stepper-vertical {
+        width: 75px;
+    }
+    
+    .stepper-input {
+        width: 36px;
+        height: 30px;
+        font-size: 13px;
+    }
+    
+    .stepper-btn {
+        width: 22px;
+        height: 15px;
+    }
+}
+
+/* 小屏幕进一步优化 */
+@media (max-width: 480px) {
+    .number-stepper-vertical {
+        width: 70px;
+    }
+    
+    .stepper-input {
+        width: 34px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .stepper-btn {
+        width: 20px;
+        height: 14px;
+    }
 }
 
 /* =================================
