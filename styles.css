@@ -1802,49 +1802,370 @@ button:disabled {
     font-size: 0.95em;
 }
 /* =================================
-   浮動默寫控件
+   增强版浮动默写控件
    ================================= */
+
+/* 基础状态栏样式 */
 #floating-dictation-controls {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: rgba(58, 123, 213, 0.9);
+    background: linear-gradient(135deg, #3a7bd5 0%, #4ea5e0 100%);
     color: white;
-    padding: 4px 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     z-index: 9999;
-    box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
-    font-size: 0.9em;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    --touch-target-size: 44px; /* 默认iOS标准 */
 }
 
-#floating-dictation-controls button {
-    background-color: #fff;
+/* 展开状态 */
+#floating-dictation-controls.expanded {
+    height: auto;
+    background: linear-gradient(180deg, #3a7bd5 0%, #4ea5e0 50%, #f8f9fa 100%);
+}
+
+/* 主控制区域 */
+.main-controls {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    min-height: var(--touch-target-size);
+}
+
+/* 控制按钮基础样式 */
+.control-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
     color: #3a7bd5;
-    border: 1px solid #3a7bd5;
-    margin-left: 8px;
-    padding: 4px 10px;
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 16px;
+    min-height: var(--touch-target-size);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    outline: none;
+    
+    /* 触摸优化 */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
 }
 
-#floating-dictation-controls button:hover {
-    background-color: #f0f8ff;
+.control-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
+.control-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 上一个/下一个按钮（大按钮，易盲按） */
+.prev-btn, .next-btn {
+    min-width: 60px;
+    font-size: 20px;
+    margin: 0 8px;
+}
+
+.prev-btn {
+    border-radius: 12px 4px 4px 12px;
+}
+
+.next-btn {
+    border-radius: 4px 12px 12px 4px;
+}
+
+/* 中间信息区域 */
+.info-area {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.info-area:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.progress-text {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.expand-icon {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.expanded .expand-icon {
+    transform: rotate(180deg);
+}
+
+/* 暂停/继续按钮 */
+.pause-btn {
+    min-width: 80px;
+    margin: 0 8px;
+    background: #ffc107;
+    color: #212529;
+    border-color: #ffc107;
+}
+
+.pause-btn:hover {
+    background: #e0a800;
+    color: #212529;
+}
+
+/* 展开面板 */
+.expand-panel {
+    background: #f8f9fa;
+    color: #212529;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    max-height: 50vh;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* 面板头部 */
+.panel-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #dee2e6;
+    background: #fff;
+}
+
+.panel-header h3 {
+    margin: 0;
+    flex: 1;
+    font-size: 16px;
+    color: #495057;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: #f8f9fa;
+    color: #495057;
+}
+
+/* 面板控制选项 */
+.panel-controls {
+    flex: 1;
+    text-align: center;
+}
+
+.toggle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #6c757d;
+    cursor: pointer;
+}
+
+.toggle-label input[type="checkbox"] {
+    margin: 0;
+}
+
+/* 单词列表容器 */
+.word-list-container {
+    height: calc(50vh - 80px); /* 减去头部高度 */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 单词列表 */
+.word-list {
+    padding: 8px;
+}
+
+/* 单词项 */
+.word-item {
+    background: #fff;
+    margin: 4px 0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.word-item:hover {
+    background: #f8f9fa;
+    border-color: #3a7bd5;
+    transform: translateX(4px);
+}
+
+.word-item.current {
+    background: linear-gradient(135deg, #3a7bd5, #4ea5e0);
+    color: white;
+    border-color: #3a7bd5;
+    font-weight: 600;
+}
+
+.word-item.current::before {
+    content: "▶";
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #3a7bd5;
+    font-size: 12px;
+}
+
+.word-text {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.word-meaning {
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+.word-item.current .word-meaning {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .control-btn {
+        min-height: 44px; /* iOS标准 */
+        font-size: 14px;
+    }
+    
+    .prev-btn, .next-btn {
+        min-width: 50px;
+        font-size: 18px;
+        margin: 0 4px;
+    }
+    
+    .pause-btn {
+        min-width: 60px;
+        font-size: 14px;
+    }
+    
+    .progress-text {
+        font-size: 14px;
+    }
+    
+    .word-list-container {
+        height: calc(50vh - 60px);
+    }
+}
+
+@media (max-width: 480px) {
+    .main-controls {
+        padding: 4px;
+    }
+    
+    .control-btn {
+        font-size: 12px;
+    }
+    
+    .prev-btn, .next-btn {
+        min-width: 40px;
+        font-size: 16px;
+    }
+    
+    .pause-btn {
+        min-width: 50px;
+        font-size: 12px;
+    }
+}
+
+/* 平台特定优化 */
+
+/* iOS优化 */
+@supports (-webkit-touch-callout: none) {
+    .control-btn {
+        -webkit-appearance: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+    }
+    
+    .word-list-container {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* 微信浏览器优化 */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+    .control-btn:active {
+        background: rgba(255, 255, 255, 0.8);
+    }
+}
+
+/* PC端优化 */
+@media (min-width: 1024px) {
+    .control-btn:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .word-item:hover {
+        transform: translateX(8px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+}
+
+/* 兼容旧版浮动控件样式 */
 #floating-stop-btn {
     color: #dc3545;
     border-color: #dc3545;
+    background: rgba(255, 255, 255, 0.9);
 }
 
 #floating-stop-btn:hover {
-    background-color: #f8d7da;
+    background: #f8d7da;
+    color: #721c24;
 }
 
 #floating-replay-btn {
     color: #17a2b8;
     border-color: #17a2b8;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+#floating-replay-btn:hover {
+    background: #d1ecf1;
+    color: #0c5460;
 }
 
 #floating-replay-btn:hover {
