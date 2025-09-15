@@ -316,6 +316,17 @@ function createMainControls() {
         gotoPrevDictationWord();
     });
     
+    // 重播按钮（在左侧按钮和信息区域之间）
+    const replayBtn = document.createElement('button');
+    replayBtn.id = 'floating-replay-btn';
+    replayBtn.className = 'control-btn replay-btn';
+    replayBtn.innerHTML = '🔄';
+    replayBtn.title = '重播当前单词';
+    replayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        replayCurrentDictationWord();
+    });
+    
     // 中间信息区域
     const infoArea = document.createElement('div');
     infoArea.className = 'info-area';
@@ -355,6 +366,7 @@ function createMainControls() {
     });
     
     container.appendChild(prevBtn);
+    container.appendChild(replayBtn);
     container.appendChild(infoArea);
     container.appendChild(pauseBtn);
     container.appendChild(nextBtn);
