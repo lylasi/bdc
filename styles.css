@@ -2168,10 +2168,6 @@ button:disabled {
     color: #0c5460;
 }
 
-#floating-replay-btn:hover {
-    background-color: #e2f6f9;
-}
-
 #pause-dictation-btn {
     background-color: #ffc107; /* 黃色 */
 }

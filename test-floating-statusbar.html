@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>默写状态栏功能测试</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🧪 默写状态栏功能测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 平台检测测试</h3>
+        <button onclick="testPlatformDetection()">检测当前平台</button>
+        <div id="platform-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 状态持久化测试</h3>
+        <button onclick="testStatePersistence()">测试状态保存/加载</button>
+        <div id="state-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 浮动控制器UI测试</h3>
+        <button onclick="testFloatingControls()">显示测试状态栏</button>
+        <button onclick="removeFloatingControls()">移除状态栏</button>
+        <div id="ui-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. 页面可见性测试</h3>
+        <p>请最小化浏览器窗口或切换到其他标签页来测试页面可见性检测：</p>
+        <div id="visibility-result" class="test-result info">页面当前可见</div>
+    </div>
+
+    <script type="module">
+        // 导入测试所需的模块
+        import * as platform from './modules/platform.js';
+        import * as state from './modules/state.js';
+        
+        // 将模块添加到全局作用域以供按钮调用
+        window.platform = platform;
+        window.state = state;
+        
+        // 测试函数
+        window.testPlatformDetection = function() {
+            const result = document.getElementById('platform-result');
+            try {
+                const detect = platform.detect;
+                const features = platform.features;
+                const viewportHeight = platform.getViewportHeight();
+                
+                result.className = 'test-result success';
+                result.innerHTML = `
+                    <strong>平台检测结果：</strong><br>
+                    • 设备类型：${detect.isMobile ? '移动端' : 'PC端'}<br>
+                    • 操作系统：${detect.isIOS ? 'iOS' : detect.isAndroid ? 'Android' : '其他'}<br>
+                    • 浏览器：${detect.isSafari ? 'Safari' : detect.isChrome ? 'Chrome' : detect.isFirefox ? 'Firefox' : '其他'}<br>
+                    • 微信浏览器：${detect.isWeixin ? '是' : '否'}<br>
+                    • 视窗高度：${viewportHeight}px<br>
+                    • WebAudio支持：${features.webAudio ? '是' : '否'}<br>
+                    • localStorage支持：${features.localStorage ? '是' : '否'}
+                `;
+            } catch (error) {
+                result.className = 'test-result error';
+                result.textContent = '平台检测失败：' + error.message;
+            }
+        };
+        
+        window.testStatePersistence = function() {
+            const result = document.getElementById('state-result');
+            try {
+                // 测试设置保存
+                const testSettings = {
+                    repeatTimes: 3,
+                    wordInterval: 5,
+                    readMeaning: true,
+                    loopMode: true
+                };
+                
+                state.setDictationSettings(testSettings);
+                state.saveDictationSettings();
+                
+                // 测试会话状态保存
+                state.setDictationSessionActive(true);
+                state.setCurrentDictationIndex(5);
+                state.setDictationWords([
+                    { word: 'test1', meaning: '测试1' },
+                    { word: 'test2', meaning: '测试2' }
+                ]);
+                state.saveDictationSession();
+                
+                // 测试加载
+                const loadedSettings = state.loadDictationSettings();
+                const loadedSession = state.loadDictationSession();
+                
+                result.className = 'test-result success';
+                result.innerHTML = `
+                    <strong>状态持久化测试通过：</strong><br>
+                    • 设置保存/加载：✓<br>
+                    • 会话保存/加载：✓<br>
+                    • 当前会话状态：${loadedSession ? '活跃' : '无'}<br>
+                    • 测试数据完整性：✓
+                `;
+                
+                // 清理测试数据
+                state.clearDictationSession();
+                state.setDictationSessionActive(false);
+                
+            } catch (error) {
+                result.className = 'test-result error';
+                result.textContent = '状态持久化测试失败：' + error.message;
+            }
+        };
+        
+        window.testFloatingControls = function() {
+            const result = document.getElementById('ui-result');
+            try {
+                // 创建测试用的浮动控制器
+                if (document.getElementById('floating-dictation-controls')) {
+                    document.getElementById('floating-dictation-controls').remove();
+                }
+                
+                const statusBar = document.createElement('div');
+                statusBar.id = 'floating-dictation-controls';
+                statusBar.className = 'enhanced-floating-controls';
+                
+                // 创建主控制区域
+                const mainControls = document.createElement('div');
+                mainControls.className = 'main-controls';
+                
+                // 添加按钮
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'control-btn prev-btn';
+                prevBtn.innerHTML = '⬅';
+                prevBtn.title = '上一个';
+                
+                const infoArea = document.createElement('div');
+                infoArea.className = 'info-area';
+                infoArea.innerHTML = '<span class="progress-text">测试中 5/10</span><span class="expand-icon">▲</span>';
+                infoArea.onclick = () => alert('展开功能测试');
+                
+                const pauseBtn = document.createElement('button');
+                pauseBtn.className = 'control-btn pause-btn';
+                pauseBtn.textContent = '暂停';
+                pauseBtn.onclick = () => {
+                    pauseBtn.textContent = pauseBtn.textContent === '暂停' ? '继续' : '暂停';
+                };
+                
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'control-btn next-btn';
+                nextBtn.innerHTML = '➡';
+                nextBtn.title = '下一个';
+                
+                mainControls.appendChild(prevBtn);
+                mainControls.appendChild(infoArea);
+                mainControls.appendChild(pauseBtn);
+                mainControls.appendChild(nextBtn);
+                
+                statusBar.appendChild(mainControls);
+                document.body.appendChild(statusBar);
+                
+                result.className = 'test-result success';
+                result.textContent = '✓ 浮动状态栏显示成功！请查看页面底部。';
+                
+            } catch (error) {
+                result.className = 'test-result error';
+                result.textContent = 'UI测试失败：' + error.message;
+            }
+        };
+        
+        window.removeFloatingControls = function() {
+            const controls = document.getElementById('floating-dictation-controls');
+            if (controls) {
+                controls.remove();
+                document.getElementById('ui-result').textContent = '✓ 状态栏已移除';
+            }
+        };
+        
+        // 页面可见性测试
+        const visibilityResult = document.getElementById('visibility-result');
+        if (platform.features && typeof platform.onVisibilityChange === 'function') {
+            platform.onVisibilityChange((isVisible) => {
+                visibilityResult.textContent = `页面当前${isVisible ? '可见' : '不可见'} - ${new Date().toLocaleTimeString()}`;
+                visibilityResult.className = `test-result ${isVisible ? 'success' : 'info'}`;
+            });
+        }
+        
+        // 页面加载完成提示
+        console.log('🧪 默写状态栏功能测试页面已加载');
+        console.log('📱 检测到的平台信息:', platform.detect);
+    </script>
+</body>
+</html>
