@@ -38,22 +38,26 @@ export function initArticle() {
         dom.nextChunkBtn.textContent = `下一${navText}`;
     });
 
-    // 防抖处理快速点击
-    let chunkNavigationTimeout = null;
+    // 重新设计导航控制 - 分别防抖每个按钮
+    let prevClickTime = 0;
+    let nextClickTime = 0;
+    const CLICK_DEBOUNCE_TIME = 300;
     
     dom.prevChunkBtn.addEventListener('click', () => {
-        if (chunkNavigationTimeout) return; // 防止快速点击
-        chunkNavigationTimeout = setTimeout(() => {
-            chunkNavigationTimeout = null;
-        }, 300); // 300ms防抖时间
+        const now = Date.now();
+        if (now - prevClickTime < CLICK_DEBOUNCE_TIME) {
+            return; // 防抖拦截
+        }
+        prevClickTime = now;
         playPrevChunk();
     });
     
     dom.nextChunkBtn.addEventListener('click', () => {
-        if (chunkNavigationTimeout) return; // 防止快速点击  
-        chunkNavigationTimeout = setTimeout(() => {
-            chunkNavigationTimeout = null;
-        }, 300); // 300ms防抖时间
+        const now = Date.now();
+        if (now - nextClickTime < CLICK_DEBOUNCE_TIME) {
+            return; // 防抖拦截
+        }
+        nextClickTime = now;
         playNextChunk();
     });
     
@@ -310,22 +314,42 @@ function playCurrentChunk() {
 }
 
 function playNextChunk() {
+    // 防止在非播放状态下切换
+    if (dom.stopReadArticleBtn.disabled) return;
+    
     if (state.currentChunkIndex < state.readingChunks.length - 1) {
         audio.stopCurrentAudio();
         state.setCurrentChunkIndex(state.currentChunkIndex + 1);
         state.setSentenceRepeatCount(0);
         state.setIsReadingChunkPaused(false);
-        playCurrentChunk();
+        
+        // 立即更新UI
+        updateChunkNav();
+        
+        // 短延迟后开始播放
+        setTimeout(() => {
+            playCurrentChunk();
+        }, 50);
     }
 }
 
 function playPrevChunk() {
+    // 防止在非播放状态下切换
+    if (dom.stopReadArticleBtn.disabled) return;
+    
     if (state.currentChunkIndex > 0) {
         audio.stopCurrentAudio();
         state.setCurrentChunkIndex(state.currentChunkIndex - 1);
         state.setSentenceRepeatCount(0);
         state.setIsReadingChunkPaused(false);
-        playCurrentChunk();
+        
+        // 立即更新UI
+        updateChunkNav();
+        
+        // 短延迟后开始播放
+        setTimeout(() => {
+            playCurrentChunk();
+        }, 50);
     }
 }
 
