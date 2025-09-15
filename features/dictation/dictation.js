@@ -27,6 +27,108 @@ export function initDictation() {
             checkDictation();
         }
     });
+    
+    // 加载保存的设置
+    state.loadDictationSettings();
+    loadDictationSettings();
+    
+    // 检查是否有未完成的会话需要恢复
+    checkAndRestoreDictationSession();
+}
+
+/**
+ * 加载默写设置到界面
+ */
+function loadDictationSettings() {
+    if (dom.repeatTimes) dom.repeatTimes.value = state.dictationSettings.repeatTimes;
+    if (dom.wordInterval) dom.wordInterval.value = state.dictationSettings.wordInterval;
+    if (dom.readMeaning) dom.readMeaning.checked = state.dictationSettings.readMeaning;
+    if (dom.loopMode) dom.loopMode.checked = state.dictationSettings.loopMode;
+    if (dom.shuffleMode) dom.shuffleMode.checked = state.dictationSettings.shuffleMode;
+    if (dom.listenOnlyMode) dom.listenOnlyMode.checked = state.dictationSettings.listenOnlyMode;
+}
+
+/**
+ * 保存当前设置
+ */
+function saveDictationSettings() {
+    const settings = {
+        repeatTimes: parseInt(dom.repeatTimes?.value || '2'),
+        wordInterval: parseInt(dom.wordInterval?.value || '3'),
+        readMeaning: dom.readMeaning?.checked || false,
+        loopMode: dom.loopMode?.checked || false,
+        shuffleMode: dom.shuffleMode?.checked || false,
+        listenOnlyMode: dom.listenOnlyMode?.checked || true
+    };
+    
+    state.setDictationSettings(settings);
+    state.saveDictationSettings();
+}
+
+/**
+ * 检查并恢复默写会话
+ */
+function checkAndRestoreDictationSession() {
+    const session = state.loadDictationSession();
+    if (!session) return;
+    
+    // 显示恢复提示
+    showSessionRestorePrompt(session);
+}
+
+/**
+ * 显示会话恢复提示
+ */
+function showSessionRestorePrompt(session) {
+    const startTime = new Date(session.startTime).toLocaleString();
+    const message = `检测到未完成的默写会话：\n开始时间：${startTime}\n进度：${session.currentIndex + 1}/${session.words.length}\n\n是否继续之前的会话？`;
+    
+    if (confirm(message)) {
+        restoreDictationSession(session);
+    } else {
+        state.clearDictationSession();
+    }
+}
+
+/**
+ * 恢复默写会话
+ */
+function restoreDictationSession(session) {
+    try {
+        // 恢复设置
+        loadDictationSettings();
+        
+        // 恢复状态
+        state.setDictationWords(session.words);
+        state.setCurrentDictationIndex(session.currentIndex);
+        state.setIsDictationPaused(session.isPaused);
+        state.setDictationSessionActive(true);
+        state.setDictationStartTime(session.startTime);
+        
+        // 更新界面
+        dom.startDictationBtn.disabled = true;
+        dom.stopDictationBtn.disabled = false;
+        dom.pauseDictationBtn.disabled = false;
+        dom.dictationPractice.classList.toggle('hidden', dom.listenOnlyMode.checked);
+        dom.dictationProgressContainer.classList.remove('hidden');
+        
+        // 显示浮动控制器
+        showFloatingControls();
+        
+        // 更新进度和按钮状态
+        updateDictationProgress(session.words.length);
+        updatePauseButtonUI();
+        
+        // 如果不是暂停状态，继续播放
+        if (!session.isPaused) {
+            setTimeout(() => playCurrentWord(), 1000);
+        }
+        
+        console.log('默写会话已恢复');
+    } catch (error) {
+        console.error('恢复默写会话失败:', error);
+        state.clearDictationSession();
+    }
 }
 
 function getSelectedDictationWords() {
@@ -46,11 +148,17 @@ function startDictation() {
         return;
     }
 
+    // 保存当前设置
+    saveDictationSettings();
+
     if (dom.shuffleMode.checked) {
         wordsForDictation = [...wordsForDictation].sort(() => Math.random() - 0.5);
     }
     
     state.setDictationWords(wordsForDictation);
+    
+    // 激活会话状态
+    state.setDictationSessionActive(true);
     
     dom.startDictationBtn.disabled = true;
     dom.stopDictationBtn.disabled = false;
@@ -72,6 +180,9 @@ function startDictation() {
     updateDictationProgress(state.dictationWords.length);
     playCurrentWord();
     showFloatingControls();
+    
+    // 保存会话状态
+    state.saveDictationSession();
 }
 
 function stopDictation() {
@@ -91,6 +202,11 @@ function stopDictation() {
     
     state.setCurrentDictationIndex(-1);
     state.setIsDictationPaused(false);
+    
+    // 停用会话状态并清理持久化数据
+    state.setDictationSessionActive(false);
+    state.clearDictationSession();
+    
     updatePauseButtonUI();
 
     // 清理浮动控制器和事件监听器
@@ -121,6 +237,11 @@ export function togglePauseDictation() {
         playCurrentWord();
     }
     setTimeout(updatePauseButtonUI, 0);
+    
+    // 保存状态变化
+    if (state.dictationSessionActive) {
+        state.saveDictationSession();
+    }
 }
 
 function updatePauseButtonUI() {
@@ -398,6 +519,11 @@ function jumpToWord(index) {
         dom.dictationResult.className = '';
     }
     if (dom.dictationWordDisplay) dom.dictationWordDisplay.textContent = '';
+    
+    // 保存状态变化
+    if (state.dictationSessionActive) {
+        state.saveDictationSession();
+    }
 }
 
 /**
