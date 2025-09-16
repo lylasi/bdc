@@ -1,0 +1,29 @@
+{
+  "id": "qa_transport_unit1",
+  "name": "Unit 1 - Transport and Travel",
+  "category": "英语阅读理解",
+  "description": "关于交通和旅行的阅读理解问答",
+  "creator": "系统预置",
+  "questions": [
+    {
+      "qid": 1,
+      "question": "Why was the race difficult for the children?",
+      "answer": "It was because they got lost."
+    },
+    {
+      "qid": 2,
+      "question": "Why didn't the children take a taxi to the hotel?",
+      "answer": "They didn't take a taxi to the hotel because it was against the rules."
+    },
+    {
+      "qid": 3,
+      "question": "What are the two options for the children to get to the hotel?",
+      "answer": "They can walk or take a bus."
+    },
+    {
+      "qid": 4,
+      "question": "What is your favourite type of transport? Why?",
+      "answer": "My favourite type of transport is taking a taxi because it is fast."
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "qa_general_knowledge",
+  "name": "常识问答",
+  "category": "综合知识",
+  "description": "基础常识类问答题",
+  "creator": "系统预置",
+  "questions": [
+    {
+      "qid": 1,
+      "question": "What is the capital of France?",
+      "answer": "The capital of France is Paris."
+    },
+    {
+      "qid": 2,
+      "question": "How many days are there in a week?",
+      "answer": "There are 7 days in a week."
+    },
+    {
+      "qid": 3,
+      "question": "What color do you get when you mix blue and yellow?",
+      "answer": "When you mix blue and yellow, you get green."
+    },
+    {
+      "qid": 4,
+      "question": "Why is exercise important for our health?",
+      "answer": "Exercise is important because it keeps our body strong, improves heart health, and helps maintain a healthy weight."
+    }
+  ]
+}
