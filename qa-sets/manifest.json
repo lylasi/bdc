@@ -1,0 +1,20 @@
+[
+  {
+    "id": "qa_transport_unit1",
+    "name": "Unit 1 - Transport and Travel",
+    "path": "qa-sets/qa_transport_unit1.json",
+    "category": "英语阅读理解"
+  },
+  {
+    "id": "qa_general_knowledge",
+    "name": "常识问答",
+    "path": "qa-sets/qa_general_knowledge.json",
+    "category": "综合知识"
+  },
+  {
+    "id": "qa_custom_001",
+    "name": "自定义问答集模板",
+    "path": "qa-sets/qa_custom_template.json",
+    "category": "自定义"
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "id": "qa_custom_001",
+  "name": "自定义问答集模板",
+  "category": "自定义",
+  "description": "请填写您的问答集描述",
+  "creator": "用户名",
+  "questions": [
+    {
+      "qid": 1,
+      "question": "在此处输入您的第一个问题",
+      "answer": "在此处输入标准答案"
+    },
+    {
+      "qid": 2,
+      "question": "在此处输入您的第二个问题",
+      "answer": "在此处输入标准答案"
+    }
+  ]
+}
