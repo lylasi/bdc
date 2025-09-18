@@ -320,90 +320,41 @@ export function showOptionsModal(config) {
   const modalOverlay = document.createElement('div');
   modalOverlay.className = 'options-modal-overlay';
   modalOverlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10001;
-    animation: fadeIn 0.2s ease;
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    background: rgba(17,24,39,0.5);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 10001; animation: fadeIn 0.2s ease;
   `;
 
   // 創建彈窗內容
   const modalContent = document.createElement('div');
   modalContent.className = 'options-modal-content';
   modalContent.style.cssText = `
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    max-width: 480px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-    animation: slideIn 0.3s ease;
-    transform-origin: center;
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    max-width: 560px; width: min(92vw, 560px);
+    max-height: 86vh; overflow-y: auto;
+    animation: slideIn 0.25s ease; transform-origin: center;
   `;
 
   // 創建彈窗HTML
   modalContent.innerHTML = `
-    <div class="modal-header" style="
-      padding: 24px 24px 16px 24px;
-      border-bottom: 1px solid #e5e7eb;
-    ">
+    <div class="modal-header" style="padding: 18px 20px 12px 20px; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; background: #fff; z-index: 1;">
       <h3 style="
-        margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-        color: #1f2937;
-        line-height: 1.4;
+        margin: 0; font-size: 18px; font-weight: 700; color: #111827; line-height: 1.4;
       ">${title}</h3>
       ${description ? `
-        <p style="
-          margin: 8px 0 0 0;
-          font-size: 14px;
-          color: #6b7280;
-          line-height: 1.5;
-        ">${description}</p>
+        <p style="margin: 6px 0 0 0; font-size: 13px; color: #6b7280; line-height: 1.5;">${description}</p>
       ` : ''}
     </div>
 
-    <div class="modal-body" style="
-      padding: 20px 24px;
-    ">
-      <div id="options-container"></div>
+    <div class="modal-body" style="padding: 16px 20px;">
+      <div id="options-container" class="om-grid"></div>
     </div>
 
-    <div class="modal-footer" style="
-      padding: 16px 24px 24px 24px;
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-      border-top: 1px solid #e5e7eb;
-    ">
-      <button id="cancel-btn" style="
-        padding: 8px 16px;
-        border: 1px solid #d1d5db;
-        background: white;
-        color: #374151;
-        border-radius: 6px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all 0.2s;
-      ">取消</button>
-      <button id="confirm-btn" style="
-        padding: 8px 16px;
-        border: none;
-        background: #3b82f6;
-        color: white;
-        border-radius: 6px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all 0.2s;
-      ">確定</button>
+    <div class="modal-footer" style="padding: 12px 20px 16px 20px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid #e5e7eb; position: sticky; bottom: 0; background: #fff;">
+      <button id="cancel-btn" class="om-btn om-btn-ghost">取消</button>
+      <button id="confirm-btn" class="om-btn om-btn-primary">確定</button>
     </div>
   `;
 
@@ -424,15 +375,34 @@ export function showOptionsModal(config) {
         transform: scale(1) translateY(0);
       }
     }
-    .options-modal-overlay button:hover {
-      transform: translateY(-1px);
-    }
-    #cancel-btn:hover {
-      background: #f9fafb;
-      border-color: #9ca3af;
-    }
-    #confirm-btn:hover {
-      background: #2563eb;
+    .om-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 640px) { .om-grid { grid-template-columns: 1fr; } }
+    @media (min-width: 768px) { .om-grid { grid-template-columns: 1fr; } }
+    .option-item { margin: 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; transition: box-shadow .2s, border-color .2s; }
+    .option-item:hover { border-color: #c7d2fe; box-shadow: 0 2px 10px rgba(59,130,246,0.08); background: #fbfdff; }
+
+    .radio-card { display: grid; grid-template-columns: 24px 1fr; align-items: start; gap: 10px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 10px; cursor: pointer; }
+    .radio-card:hover { border-color: #93c5fd; background: #f8fafc; }
+    .radio-card input { margin-top: 3px; }
+
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; vertical-align: middle; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #d1d5db; border-radius: 999px; transition: .2s; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; top: 2px; background: white; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+    input:checked + .slider { background: #3b82f6; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .om-btn { padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease; }
+    .om-btn:active { transform: translateY(1px); }
+    .om-btn-ghost { background: #fff; color: #374151; border: 1px solid #d1d5db; }
+    .om-btn-ghost:hover { background: #f9fafb; border-color: #9ca3af; }
+    .om-btn-primary { background: #3b82f6; color: #fff; border: none; }
+    .om-btn-primary:hover { background: #2563eb; }
+
+    /* Mobile bottom-sheet style */
+    @media (max-width: 480px) {
+      .options-modal-overlay { align-items: flex-end; }
+      .options-modal-content { width: 100%; border-radius: 14px 14px 0 0; max-height: 92vh; }
     }
   `;
   document.head.appendChild(style);
@@ -499,23 +469,6 @@ function renderOptions(container, options) {
   options.forEach((option, index) => {
     const optionElement = document.createElement('div');
     optionElement.className = 'option-item';
-    optionElement.style.cssText = `
-      margin-bottom: 16px;
-      padding: 16px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      transition: all 0.2s;
-    `;
-
-    optionElement.addEventListener('mouseenter', () => {
-      optionElement.style.borderColor = '#3b82f6';
-      optionElement.style.backgroundColor = '#f8fafc';
-    });
-
-    optionElement.addEventListener('mouseleave', () => {
-      optionElement.style.borderColor = '#e5e7eb';
-      optionElement.style.backgroundColor = 'white';
-    });
 
     if (option.type === 'radio') {
       optionElement.innerHTML = createRadioOption(option, index);
@@ -534,29 +487,12 @@ function renderOptions(container, options) {
 // 創建單選選項
 function createRadioOption(option, index) {
   const radioOptions = option.choices.map((choice, choiceIndex) => `
-    <label style="
-      display: flex;
-      align-items: center;
-      margin-bottom: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      color: #374151;
-    ">
-      <input
-        type="radio"
-        name="option-${index}"
-        value="${choice.value}"
-        ${choice.value === option.default ? 'checked' : ''}
-        style="margin-right: 8px; cursor: pointer;"
-      >
-      <span>${choice.label}</span>
-      ${choice.description ? `
-        <span style="
-          font-size: 12px;
-          color: #6b7280;
-          margin-left: auto;
-        ">${choice.description}</span>
-      ` : ''}
+    <label class="radio-card">
+      <input type="radio" name="option-${index}" value="${choice.value}" ${choice.value === option.default ? 'checked' : ''}>
+      <div>
+        <div style="font-weight:600;color:#111827;font-size:14px;">${choice.label}</div>
+        ${choice.description ? `<div style=\"font-size:12px;color:#6b7280;margin-top:2px;\">${choice.description}</div>` : ''}
+      </div>
     </label>
   `).join('');
 
@@ -584,31 +520,15 @@ function createRadioOption(option, index) {
 
 // 創建復選框選項
 function createCheckboxOption(option, index) {
+  const id = `chk-${option.key}-${index}`;
   return `
-    <label style="
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      font-size: 14px;
-      color: #374151;
-    ">
-      <input
-        type="checkbox"
-        data-option-key="${option.key}"
-        ${option.default ? 'checked' : ''}
-        style="margin-right: 8px; cursor: pointer;"
-      >
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
       <div>
-        <span style="font-weight: 500;">${option.label}</span>
-        ${option.description ? `
-          <div style="
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 4px;
-          ">${option.description}</div>
-        ` : ''}
+        <div style="font-weight:600;color:#111827;font-size:14px;">${option.label}</div>
+        ${option.description ? `<div style=\"font-size:12px;color:#6b7280;margin-top:2px;\">${option.description}</div>` : ''}
       </div>
-    </label>
+      <label class="switch" for="${id}"><input id="${id}" type="checkbox" data-option-key="${option.key}" ${option.default ? 'checked' : ''}><span class="slider"></span></label>
+    </div>
   `;
 }
 
