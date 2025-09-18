@@ -1,25 +1,33 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-The app is a browser-first ES module codebase. Entry point `index.html` renders the shell, `styles.css` carries global theming, and `main.js` orchestrates feature bootstrapping. Shared services live under `modules/` (state, DOM selectors, storage, UI, audio, API, platform). Feature flows live in `features/<name>/`, each exporting an `init*` and helper utilities; keep cross-feature helpers in `modules/` rather than duplicating logic. Data fixtures and user assets are stored in `wordlists/`, `articles/`, `qa-sets/`, and media under the root. Review `docs/prd.md` and `PLAN.md` whenever touching the QA training roadmap.
+更新日期：2025-09-18
 
-## Build, Test, and Development Commands
-- `npx serve .` (or VS Code Live Server) starts a static dev server so module imports work and fetch requests hit the right origin.
-- `npx http-server -c-1 .` is a quick alternative when you need cache-busting while debugging storage flows.
-- Use your editor's ESLint/Prettier integrations with 4-space indentation and single quotes; there is no repo-managed config yet.
+## 專案結構與模組組織
+- 入口檔案 `index.html` 負責渲染頁面框架，`styles.css` 管理全域主題，`main.js` 啟動各功能模組。
+- 共用服務集中於 `modules/`（狀態、DOM、儲存、UI、音訊、API、平台）；若需要跨功能工具，請優先放置於此以避免重複。
+- 功能流程依 `features/<name>/` 分層，每個模組需輸出 `init*` 初始化器與其輔助工具；當檔案超過約 300 行應拆分為鄰近的工具檔。
+- 資料資產存放於 `wordlists/`、`articles/`、`qa-sets/` 及根目錄媒體檔；調整 QA 設計時請同步查閱 `docs/prd.md` 與 `PLAN.md`。
 
-## Coding Style & Naming Conventions
-Stick to ES2022 syntax with named imports/exports and `const`/`let`. Functions and variables use `camelCase`; reserve `PascalCase` for constructors or namespace objects. Group DOM access through `modules/dom.js`, keep side-effects behind intent-revealing helpers, and extract feature-specific utilities into sibling files once they exceed ~300 lines. Inline comments should explain why, not what, and prefer TODO tags with owner initials.
+## 建置、測試與開發指令
+- `npx serve .` 啟動靜態開發伺服器，確保 ES 模組與 fetch 來源一致。
+- `npx http-server -c-1 .` 提供快取無效化版本，適合偵錯儲存流程。
+- 建議透過編輯器整合的 ESLint/Prettier（四空白縮排、單引號）保持格式一致，目前未內建專案設定檔。
 
-## Testing Guidelines
-Automated suites are not in place yet. Use `test-floating-statusbar.html` for smoke tests on platform detection, state persistence, and floating controls, and update it whenever UI affordances change. Extend `qa-sets/*.json` with representative prompts whenever you add QA features, and note the dataset you exercised in your PR. Document manual verification steps, including which wordlists/articles were used, so reviewers can replay them.
+## 程式風格與命名規範
+- 採用 ES2022 語法，預設使用 `const` 與 `let`；函式與變數採 `camelCase`，類別或命名空間保留給 `PascalCase`。
+- DOM 近端操作統一呼叫 `modules/dom.js` 內的選擇器，避免直接查詢。
+- 內嵌註解僅補充「為何」或 TODO，必要時標記負責人縮寫。
 
-## Commit & Pull Request Guidelines
-Follow the existing Conventional Commit-inspired style (`feat:`, `fix:`, `chore:`) with concise Mandarin or English summaries (see `git log`). Limit each branch to one logical change, link related docs or issues, and attach before/after screenshots or GIFs for UI updates. PR descriptions must enumerate configuration steps, manual test evidence, and any data migrations to streamline review.
+## 測試方針
+- 目前無自動化測試；請以 `test-floating-statusbar.html` 進行煙霧測試，覆蓋平台偵測、狀態持久化與浮動控制。
+- 新增 QA 功能時同步擴充 `qa-sets/*.json`，並記錄使用的資料集方便審查者重播情境。
 
-## Security & Configuration Tips
-`ai-config.js` ships demo keys-create a private copy of `ai-config.example.js` for real credentials and exclude it from commits. Scrub sensitive examples from `wordlists/` and `articles/` before sharing. When adding external requests, document rate-limit handling in `modules/api.js` and avoid blocking UI threads with long-running AI calls.
+## Commit 與 Pull Request 準則
+- 依循類似 Conventional Commit 格式（如 `feat:`、`fix:`、`chore:`），摘要可使用中文或英文，但保持精煉。
+- 每個分支聚焦單一變更，PR 需連結相關文件或議題，並附上前後截圖或 GIF（若有 UI 更新）。
+- 提交說明應列出設定步驟、手動驗證證據及資料異動，以加速審查。
 
-## 用户要求
-使用繁体中文
-生成文档要获取当前日期。
+## 安全與設定提示
+- 發佈環境請複製 `ai-config.example.js` 為私有設定並忽略提交，避免將憑證推送至版本庫。
+- 添增外部 API 呼叫時，務必在 `modules/api.js` 標示速率限制與錯誤處理策略，避免阻斷 UI 執行緒。
+- 分享內容前再次檢查 `wordlists/` 與 `articles/`，移除敏感資料樣本。
