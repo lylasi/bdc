@@ -97,6 +97,21 @@ export const showArticleLibraryBtn = document.getElementById('show-article-libra
 export const articleLibraryModal = document.getElementById('article-library-modal');
 export const articleLibraryList = document.getElementById('article-library-list');
 
+// --- 问答训练模块 ---
+export const qaModule = document.getElementById('qa-module');
+export const qaBtn = document.getElementById('qa-btn');
+export const qaTrainingArea = document.getElementById('qa-training-area');
+export const qaCreatorArea = document.getElementById('qa-creator-area');
+export const qaReportArea = document.getElementById('qa-report-area');
+export const qaManagementArea = document.getElementById('qa-management-area');
+
+// --- 各个页面的 section ---
+export const vocabularySection = document.getElementById('vocabulary-section');
+export const learningSection = document.getElementById('learning-section');
+export const dictationSection = document.getElementById('dictation-section');
+export const quizSection = document.getElementById('quiz-section');
+export const articleSection = document.getElementById('article-section');
+
 // --- 通用 Modal ---
 export const appModal = document.getElementById('app-modal');
 export const modalTitle = document.getElementById('modal-title');

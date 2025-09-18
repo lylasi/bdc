@@ -8,6 +8,7 @@ import { initLearning, populateLearningBookSelector, populateWordSelect } from '
 import { initDictation, populateDictationBookSelector, togglePauseDictation } from './features/dictation/dictation.js';
 import { initQuiz, populateQuizBookSelector } from './features/quiz/quiz.js';
 import { initArticle } from './features/article/article.js';
+import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
 
 function setupNavigation() {
     dom.navBtns.forEach(btn => {
@@ -16,31 +17,53 @@ function setupNavigation() {
                 if (!confirm('測驗正在進行中，確定要離開嗎？')) { return; }
                 // 需要一个 stopQuiz 的引用，暂时从 quiz 模块导出
                 // import { stopQuiz } from './features/quiz/quiz.js';
-                // stopQuiz(); 
+                // stopQuiz();
             }
-            
+
             dom.navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
-            const targetId = btn.id.replace('-btn', '-section');
-            dom.sections.forEach(section => {
-                section.classList.toggle('active', section.id === targetId);
-            });
 
-            // 根據頁面切換，更新對應模塊的視圖
-            if (targetId === 'dictation-section') {
-                populateDictationBookSelector();
-            } else if (targetId === 'learning-section') {
-                populateLearningBookSelector();
-                populateWordSelect();
-            } else if (targetId === 'quiz-section') {
-                populateQuizBookSelector();
+            // 隱藏所有模組
+            hideAllModules();
+
+            // 根據按鈕顯示對應模組
+            switch (btn.id) {
+                case 'vocabulary-btn':
+                    dom.vocabularySection.classList.add('active');
+                    break;
+                case 'learning-btn':
+                    dom.learningSection.classList.add('active');
+                    populateLearningBookSelector();
+                    populateWordSelect();
+                    break;
+                case 'dictation-btn':
+                    dom.dictationSection.classList.add('active');
+                    populateDictationBookSelector();
+                    break;
+                case 'quiz-btn':
+                    dom.quizSection.classList.add('active');
+                    populateQuizBookSelector();
+                    break;
+                case 'article-btn':
+                    dom.articleSection.classList.add('active');
+                    break;
+                case 'qa-btn':
+                    showQAModule();
+                    break;
             }
         });
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// 隱藏所有模組的輔助函數
+function hideAllModules() {
+    dom.sections.forEach(section => {
+        section.classList.remove('active');
+    });
+    hideQAModule();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
     // 1. 加载核心数据
     loadVocabularyBooks();
     loadAnalyzedArticles();
@@ -60,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDictation();
     initQuiz();
     initArticle();
+    await initQA();
     
     // 5. 填充初始视图
     // 确保在导航设置前，为默认显示的模块（如此处为学习模块）填充内容
