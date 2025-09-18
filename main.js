@@ -63,6 +63,16 @@ function hideAllModules() {
     hideQAModule();
 }
 
+// 根據視窗寬度切換主導航文案（移動端顯示短文案）
+function responsiveNavLabels() {
+    const isCompact = window.innerWidth <= 480;
+    document.querySelectorAll('.nav-btn .nav-text').forEach(el => {
+        const full = el.getAttribute('data-full-text') || el.textContent;
+        const short = el.getAttribute('data-short-text') || full;
+        el.textContent = isCompact ? short : full;
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. 加载核心数据
     loadVocabularyBooks();
@@ -92,6 +102,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 6. 初始化主导航
     setupNavigation();
+    // 6.1 移動端壓縮文案（並監聽視窗縮放）
+    responsiveNavLabels();
+    window.addEventListener('resize', responsiveNavLabels);
 
     // 7. 手動觸發一次change事件來更新初始狀態
     if(dom.listenOnlyMode) {
