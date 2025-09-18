@@ -497,6 +497,11 @@ Q2: 什麼是HTML? A2: 超文本標記語言"></textarea>
         </div>
     </div>
 
+    <!-- 注入思源黑體與 Noto Sans TC（繁/簡/英文皆可顯示）。若偵測到 Noto 則優先使用 Noto。 -->
+    <!-- 優先載入 Noto Sans TC 子集，若不存在再載入完整 Noto 與 SC mini 作為保底 -->
+    <script src="modules/fonts/NotoSansTC-Subset.loader.js"></script>
+    <script src="modules/fonts/NotoSansTC-Regular.loader.js"></script>
+    <script src="modules/fonts/SourceHanSansSC-Normal-Min-normal.js"></script>
     <script type="module" src="main.js"></script>
 </body>
 </html>

@@ -4,6 +4,18 @@ import { loadQASet } from './qa-storage.js';
 
 console.log('qa-pdf.js 模組載入');
 
+// ========================= 可調整區（PDF 版面配置） =========================
+// 說明：以下常數為 PDF 生成時使用的主要版面與樣式配置。
+// 之後若要調整間距、字體大小、顏色等，僅需改動此區即可。
+// 實務參考：
+// - 若手寫題（不含答案）覺得線與題幹距離太近/太遠 → 調整 spacing.answerLineGap
+// - 若含答案版本想讓答案更靠近題目 → 調整 spacing.answerTextTopGap
+// - 若兩行書寫時線距不夠 → 同樣調整 spacing.answerLineGap（兩條線與題幹距離同步）
+// - 若題與題之間太擠 → 調整 spacing.answerTextBottomGap（含答案）或 spacing.answerBottomGap（手寫）
+// - 邊界留白需增減 → 調整 margin.*
+// - 標題/內文大小 → 調整 fontSize.*
+// - 主色/文字色 → 調整 colors.*
+// ========================================================================
 // PDF生成配置
 const PDF_CONFIG = {
   margin: {
@@ -23,7 +35,18 @@ const PDF_CONFIG = {
     titleBottom: 6,
     instructionBottom: 8,
     questionSpacing: 6,
-    answerSpacing: 4
+    // 答題線行距（兩條線之間的距離），同時也作為題目到第一條線的上方距離
+    answerLineGap: 10,
+    // 答題線上方預留空間（供書寫） - 與行距一致以保持對稱
+    answerTopGap: 10,
+    // 答題線後的下方間距（更緊湊）
+    answerBottomGap: 3,
+    // 含答案模式：題目 → 答案 的上方距離（更靠近題目）
+    answerTextTopGap: 4,
+    // 含答案模式：答案結束 → 下一題 的下方距離（留出間距）
+    answerTextBottomGap: 8,
+    // 題目之間的額外間距
+    answerSpacing: 2
   },
   colors: {
     primary: '#2563eb',
@@ -34,6 +57,7 @@ const PDF_CONFIG = {
     lightGray: '#f3f4f6'
   }
 };
+// ======================= 可調整區（PDF 版面配置）結束 =======================
 
 // 導出問答集為手寫默寫PDF
 export async function exportQASetForHandwriting(qaSetId, options = {}) {
@@ -86,6 +110,12 @@ export async function exportQASetForHandwriting(qaSetId, options = {}) {
       throw new Error('jsPDF載入失敗，請檢查網路連接或嘗試刷新頁面');
     }
 
+    // 註冊中文字型（若可用 Base64）— 會在提供 Base64 時自動生效
+
+    // 兼容掘金方法：若前端以 <script src="./SourceHanSansSC-Normal-Min-normal.js"></script>
+    // 暴露 window.fontBase64/window.fontFamilyName，則此處會自動註冊。
+    await registerChineseFont(doc, options.font || {});
+
     const {
       shuffleQuestions = false,
       includeAnswers = false,
@@ -117,11 +147,23 @@ export async function exportQASetForHandwriting(qaSetId, options = {}) {
     for (let i = 0; i < questions.length; i++) {
       const question = questions[i];
 
-      // 估算當前問題需要的空間（更緊湊）
-      const estimatedHeight = includeAnswers ? 15 : (answerLines * 8 + 15);
+      // 精準估算當前題塊高度（避免被切頁）
+      const questionText = `${i + 1}. ${question.question}`;
+      const qLines = doc.splitTextToSize(questionText, contentWidth).length;
+      const qHeight = qLines * getLineHeightMm(PDF_CONFIG.fontSize.normal);
+      let blockHeight;
+      if (includeAnswers) {
+        const answerLabel = `答案: ${question.answer}`;
+        const aLines = doc.splitTextToSize(answerLabel, contentWidth).length;
+        const aHeight = aLines * getLineHeightMm(PDF_CONFIG.fontSize.small);
+        blockHeight = qHeight + PDF_CONFIG.spacing.answerTextTopGap + aHeight + PDF_CONFIG.spacing.answerTextBottomGap + PDF_CONFIG.spacing.answerSpacing;
+      } else {
+        const L = PDF_CONFIG.spacing.answerLineGap;
+        blockHeight = qHeight + L + (answerLines * L) + PDF_CONFIG.spacing.answerBottomGap + PDF_CONFIG.spacing.answerSpacing;
+      }
 
-      // 檢查是否需要新頁面（更寬鬆的分頁條件）
-      if (questionCount >= questionsPerPage || yPosition + estimatedHeight > pageHeight - 25) {
+      // 檢查是否需要新頁面
+      if (questionCount >= questionsPerPage || yPosition + blockHeight > pageHeight - 25) {
         doc.addPage();
         yPosition = PDF_CONFIG.margin.top;
         questionCount = 0;
@@ -164,18 +206,15 @@ function addHandwritingTitle(doc, qaSetName, yPosition) {
   // 使用中文標題，並進行UTF-8編碼處理
   const title = `${qaSetName} - 手寫默寫練習`;
 
-  try {
-    // 嘗試直接輸出中文
-    doc.text(title, PDF_CONFIG.margin.left, yPosition);
-  } catch (error) {
-    // 如果中文失敗，則使用英文
-    console.warn('中文字體不支持，使用英文標題');
-    const fallbackTitle = `${qaSetName} - Handwriting Practice`;
-    doc.text(fallbackTitle, PDF_CONFIG.margin.left, yPosition);
-  }
+  // 方案B：將含中文的行以 Canvas 轉圖片嵌入，避免缺字
+  addTextWithCJKImageFallback(doc, title, PDF_CONFIG.margin.left, yPosition, {
+    fontSizePt: PDF_CONFIG.fontSize.title,
+    color: PDF_CONFIG.colors.primary,
+    weight: '600'
+  });
 
   // 添加下劃線
-  const textWidth = doc.getTextWidth(title);
+  const textWidth = getApproxTextWidthMm(title, PDF_CONFIG.fontSize.title);
   doc.setLineWidth(0.5);
   doc.line(PDF_CONFIG.margin.left, yPosition + 2, PDF_CONFIG.margin.left + textWidth, yPosition + 2);
 
@@ -196,21 +235,12 @@ function addHandwritingInstructions(doc, yPosition, includeAnswers) {
   ];
 
   instructions.forEach((instruction, index) => {
-    if (instruction) {
-      try {
-        doc.text(instruction, PDF_CONFIG.margin.left, yPosition + (index * 4));
-      } catch (error) {
-        // 如果中文失敗，使用英文替代
-        const englishInstructions = [
-          `Date: _______________    Name: _______________    Score: _______________`,
-          '',
-          includeAnswers ?
-            'Instructions: Write answers based on the questions. Answers are provided below for reference.' :
-            'Instructions: Write complete English answers on the lines below. Pay attention to spelling and punctuation.'
-        ];
-        doc.text(englishInstructions[index], PDF_CONFIG.margin.left, yPosition + (index * 4));
-      }
-    }
+    if (!instruction) return;
+    const y = yPosition + (index * 4);
+    addTextWithCJKImageFallback(doc, instruction, PDF_CONFIG.margin.left, y, {
+      fontSizePt: PDF_CONFIG.fontSize.small,
+      color: PDF_CONFIG.colors.text
+    });
   });
 
   return yPosition + PDF_CONFIG.spacing.instructionBottom;
@@ -225,21 +255,30 @@ function addHandwritingQuestion(doc, question, questionNumber, yPosition, conten
   const questionText = `${questionNumber}. ${question.question}`;
   const questionLines = doc.splitTextToSize(questionText, contentWidth);
   doc.text(questionLines, PDF_CONFIG.margin.left, yPosition);
-  yPosition += questionLines.length * 5 + 1; // 減少問題後的間距
+  // [版面點位] 題目與下方內容之間的間距：
+  // - 含答案：answerTextTopGap（更靠題目）
+  // - 手寫題：answerLineGap（與兩條線距離一致，保持對稱）
+  const gapAfterQuestion = includeAnswers ? PDF_CONFIG.spacing.answerTextTopGap : PDF_CONFIG.spacing.answerLineGap;
+  yPosition += questionLines.length * 5 + gapAfterQuestion;
 
   if (includeAnswers) {
     // 顯示答案
-    doc.setFontSize(PDF_CONFIG.fontSize.small);
+    const answerLabel = `答案: ${question.answer}`;
+    const answerX = PDF_CONFIG.margin.left; // 與題目左對齊
+    const fontSize = PDF_CONFIG.fontSize.small;
+    const lhMm = getLineHeightMm(fontSize);
+    doc.setFontSize(fontSize);
     doc.setTextColor(PDF_CONFIG.colors.primary);
-    try {
-      doc.text(`答案: ${question.answer}`, PDF_CONFIG.margin.left + 10, yPosition);
-    } catch (error) {
-      doc.text(`Answer: ${question.answer}`, PDF_CONFIG.margin.left + 10, yPosition);
-    }
-    yPosition += 5;
+    // [版面點位] 答案段落：左對齊題幹，並自動換行（優先 jsPDF，退回 Canvas）
+    const usedHeight = addWrappedTextSmart(doc, answerLabel, answerX, yPosition, contentWidth, {
+      fontSizePt: fontSize,
+      color: PDF_CONFIG.colors.primary
+    });
+    // [版面點位] 答案段落結束後與下一題的距離
+    yPosition += (usedHeight > 0 ? usedHeight : lhMm) + PDF_CONFIG.spacing.answerTextBottomGap;
   } else {
     // 添加答題線，確保對齊和間距
-    const lineSpacing = answerLines === 2 ? 8 : 6; // 減少線間距
+    const lineSpacing = PDF_CONFIG.spacing.answerLineGap; // [版面點位] 兩條線間距（與題幹→第一條線一致）
     const lineStartX = PDF_CONFIG.margin.left + 5;
     const lineEndX = PDF_CONFIG.margin.left + contentWidth - 5;
 
@@ -249,7 +288,8 @@ function addHandwritingQuestion(doc, question, questionNumber, yPosition, conten
       const lineY = yPosition + (i * lineSpacing);
       doc.line(lineStartX, lineY, lineEndX, lineY);
     }
-    yPosition += answerLines * lineSpacing + 2; // 減少線後間距
+    // 緊湊處理：線條底部留較小空白
+    yPosition += answerLines * lineSpacing + PDF_CONFIG.spacing.answerBottomGap;
   }
 
   return yPosition + PDF_CONFIG.spacing.answerSpacing;
@@ -264,17 +304,14 @@ function addHandwritingFooter(doc) {
     doc.setFontSize(PDF_CONFIG.fontSize.small);
     doc.setTextColor(PDF_CONFIG.colors.text);
 
-    try {
-      const footerText = `第 ${i} 頁，共 ${pageCount} 頁`;
-      const footerX = doc.internal.pageSize.width / 2;
-      const footerY = doc.internal.pageSize.height - 10;
-      doc.text(footerText, footerX, footerY, { align: 'center' });
-    } catch (error) {
-      const footerText = `Page ${i} of ${pageCount}`;
-      const footerX = doc.internal.pageSize.width / 2;
-      const footerY = doc.internal.pageSize.height - 10;
-      doc.text(footerText, footerX, footerY, { align: 'center' });
-    }
+    const footerText = `第 ${i} 頁，共 ${pageCount} 頁`;
+    const footerX = doc.internal.pageSize.width / 2;
+    const footerY = doc.internal.pageSize.height - 10;
+    addTextWithCJKImageFallback(doc, footerText, footerX, footerY, {
+      fontSizePt: PDF_CONFIG.fontSize.small,
+      color: PDF_CONFIG.colors.text,
+      align: 'center'
+    });
   }
 }
 
@@ -332,6 +369,9 @@ export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult
     } else {
       throw new Error('jsPDF載入失敗，請檢查網路連接或嘗試刷新頁面');
     }
+
+    // 註冊中文字型（若前端已提供 Base64）
+    await registerChineseFont(doc);
 
     let yPosition = PDF_CONFIG.margin.top;
     const pageHeight = doc.internal.pageSize.height;
@@ -582,6 +622,76 @@ function getScoreColor(score) {
   return PDF_CONFIG.colors.error;
 }
 
+// 以向量文字為主，必要時回退到 Canvas 估算換行，回傳實際佔用高度（毫米）
+function addWrappedTextSmart(doc, text, xMm, yMm, maxWidthMm, opts = {}) {
+  const { fontSizePt = PDF_CONFIG.fontSize.normal, color = PDF_CONFIG.colors.text, weight = '400' } = opts;
+  doc.setTextColor(color);
+  doc.setFontSize(fontSizePt);
+  const lineHeightMm = getLineHeightMm(fontSizePt);
+  try {
+    const lines = doc.splitTextToSize(text, maxWidthMm);
+    doc.text(lines, xMm, yMm);
+    return lines.length * lineHeightMm;
+  } catch (_) {
+    // 回退：使用 Canvas 計算換行
+    const lines = splitTextByCanvas(text, fontSizePt, maxWidthMm, weight);
+    let cursorY = yMm;
+    for (const line of lines) {
+      addTextWithCJKImageFallback(doc, line, xMm, cursorY, { fontSizePt, color, weight });
+      cursorY += lineHeightMm;
+    }
+    return lines.length * lineHeightMm;
+  }
+}
+
+function getLineHeightMm(fontSizePt) {
+  const px = ptToPx(fontSizePt);
+  return pxToMm(Math.round(px * 1.25));
+}
+
+function mmToPx(mm) { return Math.round(mm * (96 / 25.4)); }
+
+// 使用 Canvas 度量計算多行斷行（支援中英文及長單字）
+function splitTextByCanvas(text, fontSizePt, maxWidthMm, weight = '400') {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const fontPx = ptToPx(fontSizePt);
+  const family = "'Noto Sans TC','Source Han Sans TC','PingFang TC','Microsoft JhengHei','Heiti TC',sans-serif";
+  ctx.font = `${weight} ${fontPx}px ${family}`;
+
+  const maxPx = mmToPx(maxWidthMm);
+  const words = text.split(/(\s+)/); // 保留空白作為分隔
+  const lines = [];
+  let line = '';
+
+  const width = s => ctx.measureText(s).width;
+  const pushLine = () => { lines.push(line.trim()); line = ''; };
+
+  for (let i = 0; i < words.length; i++) {
+    const token = words[i];
+    const tentative = line + token;
+    if (width(tentative) <= maxPx) {
+      line = tentative;
+      continue;
+    }
+    // token 本身太長，對其內部做字符級斷行
+    if (!line) {
+      let tmp = '';
+      for (const ch of token) {
+        if (width(tmp + ch) <= maxPx) tmp += ch; else { lines.push(tmp); tmp = ch; }
+      }
+      line = tmp;
+      continue;
+    }
+    // 先收斂當前行，再處理 token
+    pushLine();
+    i--; // 重新評估此 token
+  }
+
+  if (line.trim()) pushLine();
+  return lines.length ? lines : [text];
+}
+
 // 添加頁腳
 function addFooter(doc) {
   const pageCount = doc.internal.getNumberOfPages();
@@ -595,11 +705,19 @@ function addFooter(doc) {
     const footerX = doc.internal.pageSize.width / 2;
     const footerY = doc.internal.pageSize.height - 10;
 
-    doc.text(footerText, footerX, footerY, { align: 'center' });
+    addTextWithCJKImageFallback(doc, footerText, footerX, footerY, {
+      fontSizePt: PDF_CONFIG.fontSize.small,
+      color: PDF_CONFIG.colors.text,
+      align: 'center'
+    });
 
     // 添加生成時間
     const generateTime = `生成時間: ${formatDate(new Date())}`;
-    doc.text(generateTime, PDF_CONFIG.margin.right, footerY, { align: 'right' });
+    addTextWithCJKImageFallback(doc, generateTime, PDF_CONFIG.margin.right, footerY, {
+      fontSizePt: PDF_CONFIG.fontSize.small,
+      color: PDF_CONFIG.colors.text,
+      align: 'right'
+    });
   }
 }
 
@@ -619,4 +737,133 @@ function formatDuration(duration) {
   const minutes = Math.floor(duration / 60000);
   const seconds = Math.floor((duration % 60000) / 1000);
   return `${minutes}分${seconds}秒`;
+}
+
+// 嘗試從多種來源註冊中文字型（思源黑體等）
+// 支援：
+// 1) options.font.base64 / options.font.fontBase64 / options.font.fileName / options.font.fontFamily；
+// 2) window.fontBase64 與（可選）window.fontFamilyName / window.fontFileName；
+// 3) window.SourceHanSansSC = { base64, name, fileName } 結構；
+async function registerChineseFont(doc, opts = {}) {
+  // 避免重複註冊
+  if (doc.__cjkFontReady) return true;
+
+  const options = opts || {};
+  const fromWindow = typeof window !== 'undefined' ? window : {};
+
+  // 來源優先序：顯式傳入 > Noto TC > 思源 TC > 思源 SC > 其他全域
+  let fontBase64 = options.base64 || options.fontBase64 || fromWindow.SourceHanSansTC?.base64 || fromWindow.SourceHanSans?.base64;
+  let fontFamily = options.fontFamily || fromWindow.SourceHanSansTC?.name || fromWindow.SourceHanSans?.name || fromWindow.fontFamilyName;
+  let fileName = options.fileName || fromWindow.SourceHanSansTC?.fileName || fromWindow.SourceHanSans?.fileName || fromWindow.fontFileName;
+  // 若仍無，才回退到通用 window.fontBase64；但若其為 SC mini，改嘗試抓 Noto 再回退
+  const isSCMini = (fromWindow.fontFamilyName || '').toLowerCase().includes('sourcehansanssc') || (fromWindow.fontFileName || '').toLowerCase().includes('sc-') || (fromWindow.fontFamilyName || '').toLowerCase().includes('min');
+  if (!fontBase64) {
+    if (!isSCMini && fromWindow.fontBase64) {
+      fontBase64 = fromWindow.fontBase64;
+      fontFamily = fontFamily || fromWindow.fontFamilyName || 'CJK-Fallback';
+      fileName = fileName || fromWindow.fontFileName || `${fontFamily}.ttf`;
+    }
+  }
+
+  // 若尚未提供 Base64，嘗試從預設路徑動態抓取（開發伺服器情境）
+  if ((!fontBase64 || isSCMini) && typeof fetch === 'function') {
+    try {
+      const resp = await fetch('modules/fonts/NotoSansTC-Regular.base64.txt');
+      if (resp.ok) {
+        const text = await resp.text();
+        if (text && text.length > 1024) {
+          fromWindow.fontBase64 = text; // 緩存於全域，供後續使用
+          fontBase64 = text;
+          fontFamily = 'NotoSansTC-Regular';
+          fileName = 'NotoSansTC-Regular.ttf';
+        }
+      }
+    } catch (_) { /* ignore */ }
+  }
+
+  const finalBase64 = fontBase64 || fromWindow.fontBase64;
+  if (!finalBase64 || typeof doc.addFileToVFS !== 'function' || typeof doc.addFont !== 'function') {
+    console.warn('未提供中文字型 Base64 或 addFont API 不可用；跳過字型註冊。');
+    return false;
+  }
+
+  try {
+    doc.addFileToVFS(fileName, finalBase64);
+    doc.addFont(fileName, fontFamily, 'normal');
+    doc.setFont(fontFamily, 'normal');
+    doc.__cjkFontReady = true;
+    console.log(`已註冊中文字型: ${fontFamily}`);
+    return true;
+  } catch (err) {
+    console.warn('註冊中文字型失敗：', err);
+    return false;
+  }
+}
+
+// ===== 方案B的通用工具：以 Canvas 轉圖像輸出含中文的行 =====
+
+// 判斷文字是否包含 CJK（中日韓）或全形標點
+function hasCJK(text) {
+  return /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uFF00-\uFFEF]/.test(text);
+}
+
+// 點數轉像素（假設瀏覽器 96DPI；1pt = 1/72 inch）
+function ptToPx(pt) {
+  return Math.round(pt * (96 / 72));
+}
+
+// 像素轉毫米（96DPI；1in=25.4mm）
+function pxToMm(px) {
+  return px * 25.4 / 96;
+}
+
+// 估算文字寬度（毫米），供畫下劃線等用途
+function getApproxTextWidthMm(text, fontSizePt) {
+  const px = ptToPx(fontSizePt);
+  // 寬度估算：字符數 * 0.6 倍字號（對於拉丁字準確；中文稍寬，我們加上係數 0.9）
+  const approxPx = Math.max(1, Math.ceil(text.length * px * 0.6 * (hasCJK(text) ? 0.9 : 1)));
+  return pxToMm(approxPx);
+}
+
+// 在 PDF 上輸出文字；若偵測到 CJK 即改以圖片輸出，避免 PDF 字型缺字
+function addTextWithCJKImageFallback(doc, text, xMm, yMm, opts = {}) {
+  const { fontSizePt = 12, color = '#000000', weight = '400', align = 'left' } = opts;
+
+  // 若無 CJK 或已註冊中文字型，優先輸出向量文字
+  const options = align ? { align } : undefined;
+  if (!hasCJK(text) || doc.__cjkFontReady) {
+    try { doc.text(text, xMm, yMm, options); return; } catch (_) { /* fallback to image */ }
+  }
+
+  // 以 Canvas 畫成位圖再嵌入
+  const fontPx = ptToPx(fontSizePt);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  // 優先使用常見繁體字體家族
+  const family = "'Noto Sans TC','Source Han Sans TC','PingFang TC','Microsoft JhengHei','Heiti TC',sans-serif";
+  ctx.font = `${weight} ${fontPx}px ${family}`;
+  const metrics = ctx.measureText(text);
+  const ascent = Math.ceil(metrics.actualBoundingBoxAscent || fontPx * 0.8);
+  const descent = Math.ceil(metrics.actualBoundingBoxDescent || fontPx * 0.2);
+  const textWidth = Math.ceil(metrics.width) + 2;
+  const textHeight = ascent + descent + 2;
+
+  canvas.width = textWidth;
+  canvas.height = textHeight;
+  const ctx2 = canvas.getContext('2d');
+  ctx2.font = `${weight} ${fontPx}px ${family}`;
+  ctx2.textBaseline = 'top';
+  ctx2.fillStyle = color;
+  ctx2.fillText(text, 1, 1);
+
+  const dataUrl = canvas.toDataURL('image/png');
+  const wMm = pxToMm(textWidth);
+  const hMm = pxToMm(textHeight);
+
+  let x = xMm;
+  if (align === 'center') x = xMm - wMm / 2;
+  else if (align === 'right') x = xMm - wMm;
+
+  // yMm 在此視為頂部對齊
+  doc.addImage(dataUrl, 'PNG', x, yMm - 1, wMm, hMm);
 }
