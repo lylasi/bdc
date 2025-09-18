@@ -27,9 +27,13 @@
                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2-square" viewBox="0 0 16 16"><path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5H3z"/><path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/></svg>
                    <span class="nav-text" data-full-text="隨堂測驗" data-short-text="測">隨堂測驗</span>
                </button>
-               <button id="analysis-btn" class="nav-btn">
+               <button id="article-btn" class="nav-btn">
                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-text" viewBox="0 0 16 16"><path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>
                    <span class="nav-text" data-full-text="文章詳解" data-short-text="文">文章詳解</span>
+               </button>
+               <button id="qa-btn" class="nav-btn">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
+                   <span class="nav-text" data-full-text="問答訓練" data-short-text="問">問答訓練</span>
                </button>
             </nav>
         </header>
@@ -269,7 +273,7 @@
             </section>
 
             <!-- 文章詳解頁面 -->
-            <section id="analysis-section" class="section">
+            <section id="article-section" class="section">
                 <h2>文章詳解</h2>
                 <div class="analysis-container">
                     <div class="analysis-input">
@@ -334,6 +338,126 @@
                         <div id="article-analysis-container">
                             <p>請先輸入文章並點擊分析按鈕。</p>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 問答訓練模組 -->
+            <section id="qa-module" class="section" style="display: none;">
+                <h2>問答訓練</h2>
+
+                <!-- 問答集管理區域 -->
+                <div id="qa-management-area" class="qa-management">
+                    <h3>我的問答集</h3>
+                    <div class="qa-buttons">
+                        <button id="create-qa-set-btn" class="btn primary">創建問答集</button>
+                        <button id="import-qa-set-btn" class="btn secondary">導入問答集</button>
+                    </div>
+                    <div id="qa-sets-list" class="qa-sets-list">
+                        <!-- 問答集列表將在這裡動態生成 -->
+                    </div>
+                </div>
+
+                <!-- 問答集創建區域 -->
+                <div id="qa-creator-area" class="qa-creator" style="display: none;">
+                    <h3>創建問答集</h3>
+                    <div class="qa-creator-form">
+                        <div class="form-group">
+                            <label for="qa-set-name">問答集名稱：</label>
+                            <input type="text" id="qa-set-name" placeholder="輸入問答集名稱">
+                        </div>
+                        <div class="form-group">
+                            <label for="qa-set-description">描述：</label>
+                            <input type="text" id="qa-set-description" placeholder="輸入問答集描述">
+                        </div>
+                        <div class="form-group">
+                            <label for="qa-pairs-input">問答對 (Q1: 問題 A1: 答案)：</label>
+                            <textarea id="qa-pairs-input" rows="10" placeholder="Q1: 什麼是JavaScript? A1: 一種程式語言
+Q2: 什麼是HTML? A2: 超文本標記語言"></textarea>
+                        </div>
+                        <div id="qa-preview" class="qa-preview">
+                            <!-- 解析預覽將在這裡顯示 -->
+                        </div>
+                        <div class="qa-creator-actions">
+                            <button id="save-qa-set-btn" class="btn primary">保存問答集</button>
+                            <button id="cancel-qa-creator-btn" class="btn secondary">取消</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 問答訓練區域 -->
+                <div id="qa-training-area" class="qa-training" style="display: none;">
+                    <div class="qa-training-header">
+                        <h3 id="qa-training-title">問答訓練</h3>
+                        <div class="qa-progress">
+                            <span id="qa-progress-text">第 1 題 / 共 10 題</span>
+                            <div class="progress-bar">
+                                <div id="qa-progress-bar" class="progress-fill" style="width: 10%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="qa-question-area">
+                        <div class="question-card">
+                            <h4>問題：</h4>
+                            <p id="qa-current-question">這裡將顯示當前問題</p>
+                        </div>
+
+                        <div class="answer-area">
+                            <label for="qa-answer-input">您的答案：</label>
+                            <textarea id="qa-answer-input" rows="4" placeholder="請輸入您的答案"></textarea>
+                        </div>
+
+                                                <div class="qa-training-controls">
+                            <button id="prev-qa-btn" class="btn secondary">上一題</button>
+                            <button id="submit-answer-btn" class="btn primary">提交答案</button>
+                            <button id="submit-and-check-btn" class="btn primary">提交並 AI 校對本題</button>
+                            <button id="next-qa-btn" class="btn secondary">下一題</button>
+                        </div>
+                        <div id="qa-instant-feedback" class="qa-instant-feedback" style="display: none;">
+                            <h4>本題 AI 回饋</h4>
+                            <div id="qa-instant-feedback-content" class="qa-instant-feedback-content"></div>
+                        </div>
+                    </div>
+
+                    <div class="qa-training-actions">
+                        <button id="finish-training-btn" class="btn warning">完成訓練</button>
+                        <button id="back-to-qa-list-btn" class="btn secondary">返回問答集</button>
+                    </div>
+                </div>
+
+                <!-- 校對報告區域 -->
+                <div id="qa-report-area" class="qa-report" style="display: none;">
+                    <h3>AI校對報告</h3>
+                    <div class="report-summary">
+                        <div class="accuracy-display">
+                            <span class="accuracy-label">準確率：</span>
+                            <span id="qa-accuracy" class="accuracy-value">0%</span>
+                        </div>
+                        <div class="score-display">
+                            <span class="score-label">得分：</span>
+                            <span id="qa-score" class="score-value">0/0</span>
+                        </div>
+                    </div>
+
+                    <div id="qa-detailed-results" class="detailed-results">
+                        <!-- 詳細結果將在這裡顯示 -->
+                    </div>
+
+                    <!-- AI校對進度提示 -->
+                    <div id="ai-checking-progress" class="checking-progress" style="display: none;">
+                        <div class="progress-indicator">
+                            <div class="spinner"></div>
+                            <span id="checking-status">正在進行AI智能校對...</span>
+                        </div>
+                        <div id="checking-details" class="checking-details"></div>
+                    </div>
+
+                    <div class="report-actions">
+                        <button id="ai-check-btn" class="btn primary">AI 校對全部題目</button>
+                        <button id="export-pdf-btn" class="btn primary">導出PDF</button>
+                        <button id="retry-training-btn" class="btn secondary">重新訓練</button>
+                        <button id="back-to-qa-menu-btn" class="btn secondary">返回主選單</button>
                     </div>
                 </div>
             </section>
