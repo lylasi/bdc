@@ -206,17 +206,30 @@ function escapeHtml(text) {
 
 // 生成示例文本
 export function generateExampleText() {
-  return `Q1: 什麼是JavaScript？
-A1: JavaScript是一種高級的、動態的程式設計語言，主要用於網頁開發。
+  // Beginner English Q&A (A1/A2) — simple daily topics
+  return `Q1: What's your name?
+A1: My name is Alex.
 
-Q2: HTML代表什麼？
-A2: HTML代表超文本標記語言（HyperText Markup Language），用於創建網頁結構。
+Q2: How old are you?
+A2: I am twelve years old.
 
-Q3: CSS的主要用途是什麼？
-A3: CSS（層疊樣式表）主要用於控制網頁的外觀和佈局，包括顏色、字體、間距等視覺樣式。
+Q3: Where are you from?
+A3: I am from Taiwan.
 
-Q4: 什麼是響應式設計？
-A4: 響應式設計是一種網頁設計方法，使網站能夠在不同設備和螢幕尺寸上都能良好顯示和運作。`;
+Q4: What is your favorite color?
+A4: My favorite color is blue.
+
+Q5: How do you go to school?
+A5: I go to school by bus.
+
+Q6: What time do you get up?
+A6: I get up at seven o'clock.
+
+Q7: What do you like to do after school?
+A7: I like to play basketball with my friends.
+
+Q8: What do you want to be in the future?
+A8: I want to be a teacher.`;
 }
 
 // 清空表單
