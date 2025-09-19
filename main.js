@@ -10,6 +10,32 @@ import { initQuiz, populateQuizBookSelector } from './features/quiz/quiz.js';
 import { initArticle } from './features/article/article.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
 
+const MODULE_ALIAS_TO_BUTTON_ID = {
+    v: 'vocabulary-btn',
+    vocab: 'vocabulary-btn',
+    vocabulary: 'vocabulary-btn',
+    l: 'learning-btn',
+    learn: 'learning-btn',
+    learning: 'learning-btn',
+    d: 'dictation-btn',
+    dict: 'dictation-btn',
+    dictation: 'dictation-btn',
+    q: 'quiz-btn',
+    quiz: 'quiz-btn',
+    a: 'article-btn',
+    article: 'article-btn',
+    qa: 'qa-btn'
+};
+
+const BUTTON_ID_TO_PRIMARY_ALIAS = {
+    'vocabulary-btn': 'v',
+    'learning-btn': 'l',
+    'dictation-btn': 'd',
+    'quiz-btn': 'q',
+    'article-btn': 'a',
+    'qa-btn': 'qa'
+};
+
 function setupNavigation() {
     dom.navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -51,6 +77,8 @@ function setupNavigation() {
                     showQAModule();
                     break;
             }
+
+            updateModuleHashFromButtonId(btn.id);
         });
     });
 }
@@ -115,6 +143,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         dom.listenOnlyMode.dispatchEvent(new Event('change'));
     }
 
+    handleModuleRouting({ ensureHash: true });
+    window.addEventListener('hashchange', () => handleModuleRouting());
+
     // 8. 處理透過 URL 傳入的單詞本導入需求
     await handleVocabularyQueryParams();
 
@@ -130,3 +161,106 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
+
+function handleModuleRouting(options = {}) {
+    const aliasFromUrl = extractModuleAliasFromUrl();
+
+    if (!aliasFromUrl) {
+        if (options.ensureHash) {
+            const activeBtn = document.querySelector('.nav-btn.active');
+            if (activeBtn) {
+                updateModuleHashFromButtonId(activeBtn.id);
+            }
+        }
+        return;
+    }
+
+    const buttonId = resolveButtonIdFromAlias(aliasFromUrl);
+    if (!buttonId) {
+        console.warn('未知的模組參數:', aliasFromUrl);
+        return;
+    }
+
+    const button = document.getElementById(buttonId);
+    if (!button) {
+        console.warn('找不到對應的導航按鈕:', buttonId);
+        return;
+    }
+
+    if (button.classList.contains('active')) {
+        updateModuleHashFromButtonId(button.id);
+        return;
+    }
+
+    button.click();
+}
+
+function resolveButtonIdFromAlias(alias) {
+    if (!alias) return null;
+    return MODULE_ALIAS_TO_BUTTON_ID[alias] || null;
+}
+
+function extractModuleAliasFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    let rawAlias = params.get('module') || params.get('tab') || params.get('page');
+
+    if (!rawAlias) {
+        const searchMatch = window.location.search.match(/^\?\/?([^&#]+)/);
+        if (searchMatch) {
+            rawAlias = searchMatch[1];
+        }
+    }
+
+    if (!rawAlias && window.location.hash) {
+        rawAlias = window.location.hash;
+    }
+
+    return normalizeModuleAlias(rawAlias);
+}
+
+function normalizeModuleAlias(value) {
+    if (!value) return null;
+    if (Array.isArray(value)) {
+        value = value[0];
+    }
+
+    const trimmed = String(value).trim();
+    if (!trimmed) return null;
+
+    const withoutPrefix = trimmed.replace(/^[#/?]+/, '');
+    if (!withoutPrefix) return null;
+
+    const firstSegment = withoutPrefix.split(/[?#&/]/)[0];
+    return firstSegment.toLowerCase();
+}
+
+function updateModuleHashFromButtonId(buttonId) {
+    const alias = BUTTON_ID_TO_PRIMARY_ALIAS[buttonId];
+    if (!alias) return;
+
+    const desiredHash = `#${alias}`;
+    if (window.location.hash === desiredHash) return;
+
+    const cleanedSearch = getSearchWithoutRoutingParams();
+    const newUrl = `${window.location.pathname}${cleanedSearch}${desiredHash}`;
+    history.replaceState(null, '', newUrl);
+}
+
+function getSearchWithoutRoutingParams() {
+    let search = window.location.search || '';
+
+    if (search.startsWith('?/') || (search.startsWith('?') && !search.includes('='))) {
+        const nextParamIndex = search.indexOf('&');
+        search = nextParamIndex === -1 ? '' : `?${search.slice(nextParamIndex + 1)}`;
+    }
+
+    if (!search) {
+        return '';
+    }
+
+    const params = new URLSearchParams(search);
+    ['module', 'tab', 'page'].forEach(key => params.delete(key));
+
+    const normalized = params.toString();
+    return normalized ? `?${normalized}` : '';
+}

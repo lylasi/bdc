@@ -7,6 +7,7 @@
 - 共用服務集中於 `modules/`（狀態、DOM、儲存、UI、音訊、API、平台）；若需要跨功能工具，請優先放置於此以避免重複。
 - 功能流程依 `features/<name>/` 分層，每個模組需輸出 `init*` 初始化器與其輔助工具；當檔案超過約 300 行應拆分為鄰近的工具檔。
 - 資料資產存放於 `wordlists/`、`articles/`、`qa-sets/` 及根目錄媒體檔；調整 QA 設計時請同步查閱 `docs/prd.md` 與 `PLAN.md`。
+- URL 參數與模組捷徑範例請參見 `docs/url-parameters.md`。
 
 ## 建置、測試與開發指令
 - `npx serve .` 啟動靜態開發伺服器，確保 ES 模組與 fetch 來源一致。
