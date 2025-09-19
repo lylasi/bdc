@@ -1,38 +1,47 @@
 [
   {
     "name": "Unit 1 All around the city",
-    "path": "wordlists/5A_Unit1.json"
+    "path": "wordlists/5A_Unit1.json",
+    "id": "5a-unit1"
   },
   {
     "name": "Unit 2 A tour in Hong Kong",
-    "path": "wordlists/5A_Unit2.json"
+    "path": "wordlists/5A_Unit2.json",
+    "id": "5a-unit2"
   },
   {
     "name": "Unit 3 When Grandma was young",
-    "path": "wordlists/5A_Unit3.json"
+    "path": "wordlists/5A_Unit3.json",
+    "id": "5a-unit3"
   },
   {
     "name": "Unit 4 An offline holiday",
-    "path": "wordlists/5A_Unit4.json"
+    "path": "wordlists/5A_Unit4.json",
+    "id": "5a-unit4"
   },
   {
     "name": "Unit 5 A wonderful weekend",
-    "path": "wordlists/5A_Unit5.json"
+    "path": "wordlists/5A_Unit5.json",
+    "id": "5a-unit5"
   },
   {
     "name": "Unit 6 While Aunt was away",
-    "path": "wordlists/5A_Unit6.json"
+    "path": "wordlists/5A_Unit6.json",
+    "id": "5a-unit6"
   },
   {
     "name": "5A 全册单词",
-    "path": "wordlists/5A_full_wordlist.json"
+    "path": "wordlists/5A_full_wordlist.json",
+    "id": "5a-full"
   },
   {
     "name": "3A 全册单词",
-    "path": "wordlists/3A_full_wordlist.json"
+    "path": "wordlists/3A_full_wordlist.json",
+    "id": "3a-full"
   },
   {
     "name": "4B 全册单词",
-    "path": "wordlists/4B_full_wordlist.json"
+    "path": "wordlists/4B_full_wordlist.json",
+    "id": "4b-full"
   }
 ]
