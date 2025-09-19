@@ -247,7 +247,7 @@ function createQASetCard(qaSet) {
       <div class="qa-set-description">${qaSet.description}</div>
       <div class="qa-set-actions">
         <button class="btn small primary start-training-btn">開始訓練</button>
-        <button class="btn small secondary export-btn">導出</button>
+        <button class="btn small secondary export-btn">導出手默</button>
         ${!qaSet.isPreset ? '<button class="btn small danger delete-btn">刪除</button>' : ''}
       </div>
     </div>
