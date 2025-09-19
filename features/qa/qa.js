@@ -2,11 +2,11 @@
 import * as dom from '../../modules/dom.js';
 import * as state from '../../modules/state.js';
 import { getStoredQASets, getAllQASets, loadQASet, saveQASet, deleteQASet, importQASet, exportQASet, getQASetStats, cleanupExpiredCache } from './qa-storage.js';
-import { initCreator, parseQAPairs, saveNewSet, clearForm, handleTextInputChange } from './qa-creator.js';
+import { initCreator, parseQAPairs, saveNewSet, clearForm, handleTextInputChange, fillFormWithQASet, qaSetToText } from './qa-creator.js';
 import { startTraining, getCurrentQuestion, getCurrentAnswer, getTrainingProgress, getSessionState, submitAnswer, nextQuestion, previousQuestion, finishTraining, pauseTraining, resumeTraining, cancelTraining, restoreTrainingProgress, saveTrainingProgress } from './qa-trainer.js';
 import { startAIChecking, clearCheckingCache, getCheckingCacheStats, recheckAnswer } from './qa-checker.js';
 import { exportTrainingResultToPDF, exportQASetForHandwriting } from './qa-pdf.js';
-import { displayMessage, showOptionsModal } from '../../modules/ui.js';
+import { displayMessage, showOptionsModal, openModal, closeModal } from '../../modules/ui.js';
 
 // 問答模組狀態
 const qaModuleState = {
@@ -88,7 +88,19 @@ function initEventListeners() {
     // 創建問答集按鈕
     const createBtn = dom.qaModule.querySelector('#create-qa-set-btn');
     if (createBtn) {
-      createBtn.addEventListener('click', showCreatorView);
+      createBtn.addEventListener('click', () => {
+        showCreatorView();
+      });
+    }
+
+    const loadTemplateBtn = dom.qaModule.querySelector('#load-qa-template-btn');
+    if (loadTemplateBtn) {
+      loadTemplateBtn.addEventListener('click', handleLoadTemplate);
+    }
+
+    const templateSelect = dom.qaModule.querySelector('#qa-template-select');
+    if (templateSelect) {
+      templateSelect.addEventListener('change', updateTemplateControlsState);
     }
 
     // 導入問答集按鈕
@@ -185,20 +197,28 @@ async function loadQASets() {
 
   try {
     // 載入所有問答集（預置 + 用戶創建）
-    qaModuleState.qaSets = await getAllQASets();
+    qaModuleState.qaSets = (await getAllQASets()).map(set => ({
+      ...set,
+      isPreset: Boolean(set.isPreset)
+    }));
 
     console.log(`載入完成: ${qaModuleState.qaSets.length} 個問答集`);
 
     // 更新顯示
     updateQASetsDisplay();
+    refreshCreatorTemplateSelector();
 
   } catch (error) {
     console.error('載入問答集時出錯:', error);
     displayMessage('載入問答集失敗', 'error');
 
     // 降級到只顯示用戶創建的問答集
-    qaModuleState.qaSets = getStoredQASets();
+    qaModuleState.qaSets = getStoredQASets().map(set => ({
+      ...set,
+      isPreset: Boolean(set.isPreset)
+    }));
     updateQASetsDisplay();
+    refreshCreatorTemplateSelector();
   }
 }
 
@@ -233,7 +253,10 @@ function updateQASetsDisplay() {
   }
 
   // 添加卡片點擊事件
-  listContainer.addEventListener('click', handleQASetCardClick);
+  if (!listContainer.dataset.listenerAttached) {
+    listContainer.addEventListener('click', handleQASetCardClick);
+    listContainer.dataset.listenerAttached = 'true';
+  }
 }
 
 // 創建問答集卡片HTML
@@ -247,6 +270,7 @@ function createQASetCard(qaSet) {
       <div class="qa-set-description">${qaSet.description}</div>
       <div class="qa-set-actions">
         <button class="btn small primary start-training-btn">開始訓練</button>
+        ${!qaSet.isPreset ? '<button class="btn small secondary edit-btn">編輯</button>' : ''}
         <button class="btn small secondary export-btn">導出手默</button>
         ${!qaSet.isPreset ? '<button class="btn small danger delete-btn">刪除</button>' : ''}
       </div>
@@ -264,11 +288,210 @@ function handleQASetCardClick(event) {
 
   if (button.classList.contains('start-training-btn')) {
     startQATraining(qaId);
+  } else if (button.classList.contains('edit-btn')) {
+    handleEditQASet(qaId);
   } else if (button.classList.contains('export-btn')) {
     handleQASetExport(qaId);
   } else if (button.classList.contains('delete-btn')) {
     handleDeleteQASet(qaId);
   }
+}
+
+// 問答集工具：編輯與範本套用
+async function handleEditQASet(qaId) {
+  try {
+    const summary = qaModuleState.qaSets.find(item => item.id === qaId);
+    if (summary?.isPreset) {
+      displayMessage('預置問答集無法直接覆寫，請使用「套用範本」建立副本。', 'info');
+      return;
+    }
+
+    const qaSet = await loadQASet(qaId);
+    if (!qaSet) {
+      displayMessage('無法載入選定的問答集進行編輯。', 'error');
+      return;
+    }
+
+    openQASetEditorModal(qaSet);
+  } catch (error) {
+    console.error('載入問答集進行編輯時出錯:', error);
+    displayMessage('載入問答集失敗，無法進行編輯。', 'error');
+  }
+}
+
+async function handleLoadTemplate() {
+  const select = dom.qaModule?.querySelector('#qa-template-select');
+  const button = dom.qaModule?.querySelector('#load-qa-template-btn');
+
+  if (!select || !button) return;
+
+  const qaId = select.value;
+  if (!qaId) {
+    displayMessage('請先選擇要套用的問答集。', 'warning');
+    return;
+  }
+
+  button.disabled = true;
+  try {
+    const qaSet = await loadQASet(qaId);
+    if (!qaSet) {
+      displayMessage('載入問答集失敗。', 'error');
+      return;
+    }
+
+    fillFormWithQASet(qaSet, { treatAsTemplate: true });
+    displayMessage(`已套用「${qaSet.name}」作為範本。`, 'success');
+  } catch (error) {
+    console.error('套用問答集範本時出錯:', error);
+    displayMessage('無法套用範本，請稍後再試。', 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function refreshCreatorTemplateSelector(selectedId = '') {
+  const select = dom.qaModule?.querySelector('#qa-template-select');
+  if (!select) return;
+
+  const previousValue = selectedId || select.value;
+  select.innerHTML = '';
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '選擇既有問答集';
+  select.appendChild(placeholder);
+
+  const collator = new Intl.Collator('zh-Hant', { sensitivity: 'base' });
+  const sortedSets = [...qaModuleState.qaSets].sort((a, b) => collator.compare(a.name, b.name));
+
+  sortedSets.forEach(set => {
+    const option = document.createElement('option');
+    option.value = set.id;
+    option.textContent = `${set.name}${set.isPreset ? '（預置）' : ''}`;
+    select.appendChild(option);
+  });
+
+  const values = Array.from(select.options).map(option => option.value);
+  select.value = values.includes(previousValue) ? previousValue : '';
+
+  updateTemplateControlsState();
+}
+
+function updateTemplateControlsState() {
+  const select = dom.qaModule?.querySelector('#qa-template-select');
+  const loadTemplateBtn = dom.qaModule?.querySelector('#load-qa-template-btn');
+
+  if (!select || !loadTemplateBtn) return;
+
+  loadTemplateBtn.disabled = !select.value;
+}
+
+function openQASetEditorModal(qaSet) {
+  openModal();
+
+  if (dom.modalTitle) {
+    dom.modalTitle.textContent = `編輯問答集`;
+  }
+
+  if (!dom.modalBody) return;
+
+  dom.modalBody.innerHTML = `
+    <div class="qa-editor-modal">
+      <form id="qa-editor-form" class="qa-editor-form">
+        <div class="qa-editor-grid">
+          <div class="form-group">
+            <label for="qa-edit-name">問答集名稱</label>
+            <input id="qa-edit-name" type="text" placeholder="輸入問答集名稱">
+          </div>
+          <div class="form-group">
+            <label for="qa-edit-description">描述</label>
+            <input id="qa-edit-description" type="text" placeholder="輸入問答集描述">
+          </div>
+          <div class="form-group">
+            <label for="qa-edit-pairs">問答對 (Q1: 問題 A1: 答案)</label>
+            <textarea id="qa-edit-pairs" rows="10" placeholder="Q1: 問題1? A1: 答案1"></textarea>
+          </div>
+        </div>
+        <div id="qa-edit-preview" class="qa-preview"></div>
+        <div class="qa-editor-actions">
+          <button type="button" class="btn secondary qa-edit-cancel">取消</button>
+          <button type="submit" class="btn primary qa-edit-save">保存變更</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  const form = dom.modalBody.querySelector('#qa-editor-form');
+  const nameInput = dom.modalBody.querySelector('#qa-edit-name');
+  const descInput = dom.modalBody.querySelector('#qa-edit-description');
+  const pairsInput = dom.modalBody.querySelector('#qa-edit-pairs');
+  const preview = dom.modalBody.querySelector('#qa-edit-preview');
+  const cancelBtn = dom.modalBody.querySelector('.qa-edit-cancel');
+
+  if (!form || !nameInput || !descInput || !pairsInput || !preview) {
+    console.error('初始化問答集編輯器時缺少必要的元素');
+    return;
+  }
+
+  nameInput.value = qaSet.name || '';
+  descInput.value = qaSet.description || '';
+  pairsInput.value = qaSetToText(qaSet);
+
+  const updatePreview = () => {
+    handleTextInputChange(pairsInput, preview);
+  };
+
+  updatePreview();
+  pairsInput.addEventListener('input', updatePreview);
+
+  cancelBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeModal();
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    try {
+      const name = nameInput.value.trim();
+      const description = descInput.value.trim();
+      const text = pairsInput.value.trim();
+      const pairs = parseQAPairs(text);
+
+      const savedQASet = saveNewSet(name, description, pairs, qaSet);
+
+      if (savedQASet) {
+        const summary = {
+          id: savedQASet.id,
+          name: savedQASet.name,
+          category: savedQASet.category || '自定義',
+          questionCount: savedQASet.questions.length,
+          difficulty: savedQASet.difficulty || 'unknown',
+          description: savedQASet.description || '',
+          isPreset: false
+        };
+
+        const index = qaModuleState.qaSets.findIndex(item => item.id === summary.id);
+        if (index >= 0) {
+          qaModuleState.qaSets[index] = {
+            ...qaModuleState.qaSets[index],
+            ...summary
+          };
+        } else {
+          qaModuleState.qaSets.push(summary);
+        }
+
+        updateQASetsDisplay();
+        refreshCreatorTemplateSelector(savedQASet.id);
+
+        displayMessage(`問答集 "${savedQASet.name}" 已更新！`, 'success');
+        closeModal();
+      }
+    } catch (error) {
+      console.error('更新問答集時出錯:', error);
+      displayMessage('更新失敗: ' + error.message, 'error');
+    }
+  });
 }
 
 // 開始問答訓練
@@ -789,6 +1012,7 @@ async function handleDeleteQASet(qaId) {
       // 從本地狀態中移除
       qaModuleState.qaSets = qaModuleState.qaSets.filter(qa => qa.id !== qaId);
       updateQASetsDisplay();
+      refreshCreatorTemplateSelector();
       displayMessage('問答集已刪除', 'success');
     }
   }
@@ -818,7 +1042,6 @@ function handleSaveQASet() {
   console.log('保存問答集...');
 
   try {
-    // 獲取表單數據
     const nameInput = document.getElementById('qa-set-name');
     const descInput = document.getElementById('qa-set-description');
     const pairsInput = document.getElementById('qa-pairs-input');
@@ -831,58 +1054,54 @@ function handleSaveQASet() {
     const description = descInput.value.trim();
     const text = pairsInput.value.trim();
 
-    // 解析問答對
     const pairs = parseQAPairs(text);
-
-    // 保存問答集
     const savedQASet = saveNewSet(name, description, pairs);
 
     if (savedQASet) {
-      // 更新本地狀態
-      qaModuleState.qaSets.push({
+      const summary = {
         id: savedQASet.id,
         name: savedQASet.name,
-        category: savedQASet.category,
+        category: savedQASet.category || '自定義',
         questionCount: savedQASet.questions.length,
-        difficulty: savedQASet.difficulty,
-        description: savedQASet.description,
+        difficulty: savedQASet.difficulty || 'unknown',
+        description: savedQASet.description || '',
         isPreset: false
-      });
+      };
 
-      // 更新顯示
+      const exists = qaModuleState.qaSets.some(item => item.id === summary.id);
+      if (!exists) {
+        qaModuleState.qaSets.push(summary);
+      }
+
       updateQASetsDisplay();
+      refreshCreatorTemplateSelector(savedQASet.id);
 
-      // 顯示成功消息
       displayMessage(`問答集 "${savedQASet.name}" 保存成功！`, 'success');
 
-      // 返回管理視圖
       setTimeout(() => {
         showManagementView();
-      }, 1000);
+      }, 800);
     }
-
   } catch (error) {
     console.error('保存問答集時出錯:', error);
     displayMessage('保存失敗: ' + error.message, 'error');
   }
 }
 
-// 顯示管理視圖
 function showManagementView() {
   setActiveView('management');
   qaModuleState.currentView = 'management';
   clearInstantFeedbackArea();
 }
 
-// 顯示創建視圖
 function showCreatorView() {
-  setActiveView('creator');
   qaModuleState.currentView = 'creator';
+  setActiveView('creator');
 
-  // 初始化創建器（如果尚未初始化）
   setTimeout(() => {
     initCreator();
-    clearForm(); // 清空表單
+    clearForm();
+    refreshCreatorTemplateSelector('');
   }, 100);
 }
 

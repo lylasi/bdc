@@ -4,11 +4,5 @@
     "name": "Unit 1 - Transport and Travel",
     "path": "qa-sets/qa_transport_unit1.json",
     "category": "五年級 Q & A"
-  },
-  {
-    "id": "qa_custom_001",
-    "name": "自定義模版",
-    "path": "qa-sets/qa_custom_template.json",
-    "category": "自己製作"
   }
 ]

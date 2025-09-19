@@ -2808,7 +2808,7 @@ button:disabled {
     border-radius: 8px;
     padding: 15px;
     transition: all 0.3s ease;
-    cursor: pointer;
+    cursor: default;
 }
 
 .qa-set-card:hover {
@@ -2867,7 +2867,152 @@ button:disabled {
 }
 
 .qa-creator-form {
-    max-width: 800px;
+    max-width: 880px;
+    margin: 0 auto;
+}
+
+.qa-creator-card {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(31, 45, 61, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+.qa-creator-header {
+    padding: 20px 24px 0 24px;
+}
+
+.qa-template-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.qa-creator-body {
+    padding: 16px 24px 24px 24px;
+    display: grid;
+    gap: 18px;
+}
+
+.qa-creator-actions {
+    border-top: 1px solid #e9ecef;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.qa-template-row select {
+    flex: 1;
+    min-width: 220px;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+}
+
+.qa-template-row button {
+    white-space: nowrap;
+}
+
+.qa-form-row {
+    --qa-label-width: 88px;
+    --qa-field-gap: 16px;
+    display: flex;
+    gap: var(--qa-field-gap);
+    align-items: center;
+}
+
+.qa-input-label {
+    width: var(--qa-label-width);
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+}
+
+.qa-form-row input,
+.qa-form-row textarea,
+.qa-form-row .qa-pairs-field {
+    flex: 1;
+}
+
+.qa-form-row input,
+.qa-form-row textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.qa-pairs-field {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.qa-form-row textarea {
+    min-height: 200px;
+    resize: vertical;
+    font-family: 'Courier New', monospace;
+    line-height: 1.5;
+}
+
+.qa-pairs-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.qa-preview-wrapper {
+    margin-left: calc(var(--qa-label-width) + var(--qa-field-gap));
+}
+
+.qa-preview-wrapper .qa-preview {
+    margin-top: 0;
+}
+
+.form-hint {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #6c757d;
+}
+
+@media (max-width: 720px) {
+    .qa-template-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .qa-template-row select,
+    .qa-template-row button {
+        width: 100%;
+    }
+
+    .qa-creator-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .qa-form-row {
+        --qa-label-width: 100%;
+        --qa-field-gap: 12px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .qa-preview-wrapper {
+        margin-left: 0;
+    }
+
+    .qa-pairs-actions {
+        justify-content: flex-start;
+    }
 }
 
 .form-group {
@@ -2987,12 +3132,33 @@ button:disabled {
     color: #007bff;
 }
 
-.qa-creator-actions {
+.qa-editor-modal {
+    padding: 4px 0;
+}
+
+.qa-editor-form {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #dee2e6;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 70vh;
+}
+
+.qa-editor-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.qa-editor-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+    .qa-editor-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
 }
 
 /* 問答訓練區域 */

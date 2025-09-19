@@ -383,25 +383,45 @@
                 <div id="qa-creator-area" class="qa-creator" style="display: none;">
                     <h3>創建問答集</h3>
                     <div class="qa-creator-form">
-                        <div class="form-group">
-                            <label for="qa-set-name">問答集名稱：</label>
-                            <input type="text" id="qa-set-name" placeholder="輸入問答集名稱">
-                        </div>
-                        <div class="form-group">
-                            <label for="qa-set-description">描述：</label>
-                            <input type="text" id="qa-set-description" placeholder="輸入問答集描述">
-                        </div>
-                        <div class="form-group">
-                            <label for="qa-pairs-input">問答對 (Q1: 問題 A1: 答案)：</label>
-                            <textarea id="qa-pairs-input" rows="10" placeholder="Q1: 問題1? A1: 答案1
+                        <div class="qa-creator-card">
+                            <div class="qa-creator-header">
+                                <div class="qa-template-row">
+                                    <select id="qa-template-select">
+                                        <option value="">選擇既有問答集</option>
+                                    </select>
+                                    <button id="load-qa-template-btn" class="btn small secondary" disabled>套用範本</button>
+                                </div>
+                                <p class="form-hint">選擇問答集作為起點，仍可微調後另存新集。</p>
+                            </div>
+
+                            <div class="qa-creator-body">
+                                <div class="qa-form-row">
+                                    <label class="qa-input-label" for="qa-set-name">名稱</label>
+                                    <input type="text" id="qa-set-name" placeholder="輸入問答集名稱">
+                                </div>
+                                <div class="qa-form-row">
+                                    <label class="qa-input-label" for="qa-set-description">描述</label>
+                                    <input type="text" id="qa-set-description" placeholder="輸入問答集描述">
+                                </div>
+                                <div class="qa-form-row qa-pairs-row">
+                                    <label class="qa-input-label" for="qa-pairs-input">問答對 (Q1: 問題 A1: 答案)</label>
+                                    <div class="qa-pairs-field">
+                                        <textarea id="qa-pairs-input" rows="10" placeholder="Q1: 問題1? A1: 答案1
 Q2: 問題2? A2: 答案2."></textarea>
-                        </div>
-                        <div id="qa-preview" class="qa-preview">
-                            <!-- 解析預覽將在這裡顯示 -->
-                        </div>
-                        <div class="qa-creator-actions">
-                            <button id="save-qa-set-btn" class="btn primary">保存問答集</button>
-                            <button id="cancel-qa-creator-btn" class="btn secondary">取消</button>
+                                        <div class="qa-pairs-actions">
+                                            <button id="load-example-btn" type="button" class="btn small secondary">載入示例</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="qa-preview-wrapper">
+                                    <div id="qa-preview" class="qa-preview"></div>
+                                </div>
+                            </div>
+
+                            <div class="qa-creator-actions">
+                                <button id="save-qa-set-btn" class="btn primary">保存問答集</button>
+                                <button id="cancel-qa-creator-btn" class="btn secondary">取消</button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -67,17 +67,49 @@ export async function getAllQASets() {
     // 載入預置問答集清單
     if (presetQASets.length === 0) {
       const manifest = await loadPresetManifest();
-      presetQASets = manifest.map(item => ({
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        description: `預置問答集`,
-        isPreset: true,
-        questionCount: 0, // 將在載入時更新
-        difficulty: 'unknown',
-        createdAt: new Date().toISOString(),
-        path: item.path
-      }));
+      const presetSummaries = await Promise.all(
+        manifest.map(async item => {
+          const preset = await loadPresetQASet(item);
+          if (!preset) {
+            const fallbackTimestamp = new Date().toISOString();
+            return {
+              id: item.id,
+              name: item.name,
+              category: item.category || '未分類',
+              description: '預置問答集',
+              isPreset: true,
+              questionCount: 0,
+              difficulty: 'unknown',
+              createdAt: fallbackTimestamp,
+              path: item.path
+            };
+          }
+
+          const {
+            id,
+            name,
+            category,
+            description,
+            difficulty,
+            createdAt,
+            questions
+          } = preset;
+
+          return {
+            id: id || item.id,
+            name: name || item.name,
+            category: category || item.category || '未分類',
+            description: description || '預置問答集',
+            isPreset: true,
+            questionCount: Array.isArray(questions) ? questions.length : 0,
+            difficulty: difficulty || 'unknown',
+            createdAt: createdAt || new Date().toISOString(),
+            path: item.path
+          };
+        })
+      );
+
+      presetQASets = presetSummaries;
     }
 
     // 載入用戶創建的問答集
