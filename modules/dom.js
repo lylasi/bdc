@@ -33,7 +33,9 @@ export const sentenceFeedback = document.getElementById('sentence-feedback');
 // --- 默写模式页面 ---
 export const repeatTimes = document.getElementById('repeat-times');
 export const wordInterval = document.getElementById('word-interval');
-export const readMeaning = document.getElementById('read-meaning');
+export const readChineseMandarin = document.getElementById('read-chinese-mandarin');
+export const readChineseCantonese = document.getElementById('read-chinese-cantonese');
+export const chineseVoiceToggles = document.querySelectorAll('.voice-toggle');
 export const loopMode = document.getElementById('loop-mode');
 export const shuffleMode = document.getElementById('shuffle-mode');
 export const startDictationBtn = document.getElementById('start-dictation-btn');

@@ -60,15 +60,25 @@ export function stopCurrentAudio() {
 /**
  * 使用 TTS 服務朗讀指定的文本。
  * @param {string} text - 要朗讀的文本。
- * @param {string} lang - 語言代碼 (e.g., 'en-US', 'zh-TW')。
+ * @param {string} langOrVoice - 語言代碼或 TTS_CONFIG 中的 voice key。
  * @param {number} speed - 語速調整值。
  * @param {function} onStart - 播放開始時的回調函數。
  * @param {function} onEnd - 播放結束時的回調函數。
  */
-export async function speakText(text, lang = 'en-US', speed = 0, onStart, onEnd) {
+export async function speakText(text, langOrVoice = 'english', speed = 0, onStart, onEnd) {
     stopCurrentAudio();
 
-    const voice = lang.startsWith('zh') ? TTS_CONFIG.voices.chinese : TTS_CONFIG.voices.english;
+    let voiceKey = 'english';
+    if (typeof langOrVoice === 'string') {
+        const value = langOrVoice.toLowerCase();
+        if (TTS_CONFIG.voices[value]) {
+            voiceKey = value;
+        } else if (value.startsWith('zh')) {
+            voiceKey = 'chinese';
+        }
+    }
+
+    const voice = TTS_CONFIG.voices[voiceKey] || TTS_CONFIG.voices.english;
     const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${speed}&api_key=${TTS_CONFIG.apiKey}`;
 
     try {
