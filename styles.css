@@ -1973,7 +1973,7 @@ button:disabled {
 }
 
 .expanded .expand-icon {
-    transform: rotate(180deg);
+    transform: scale(1.1);
 }
 
 /* 暂停/继续按钮 */
@@ -2109,10 +2109,51 @@ button:disabled {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui;
 }
 
+.word-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.word-header .word-text {
+    margin-bottom: 0;
+}
+
 .word-text {
     font-size: 16px;
     font-weight: 600;
     margin-bottom: 4px;
+}
+
+.word-phonetic {
+    font-size: 14px;
+    color: #3a7bd5;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.word-phonetic--missing {
+    color: #adb5bd;
+    font-style: italic;
+}
+
+.word-item.current .word-phonetic {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.word-item[data-phonetic-only="true"] .word-header {
+    justify-content: center;
+    margin-bottom: 0;
+}
+
+.word-item[data-phonetic-only="true"] .word-phonetic {
+    font-size: 16px;
+}
+
+.word-item[data-phonetic-only="true"] .word-phonetic--missing {
+    font-size: 14px;
 }
 
 .word-meaning {
@@ -2123,6 +2164,12 @@ button:disabled {
 
 .word-item.current .word-meaning {
     color: rgba(255, 255, 255, 0.9);
+}
+
+@media (max-width: 480px) {
+    .word-item:not([data-phonetic-only="true"]) .word-phonetic {
+        display: none;
+    }
 }
 
 /* 响应式设计 */
