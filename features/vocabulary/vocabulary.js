@@ -43,6 +43,57 @@ export function initVocabulary() {
     updateActiveBookView();
 }
 
+export async function handleVocabularyQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+    const manifestId = params.get('wordlist') || params.get('wordlistId');
+    const urlParam = params.get('wordlistUrl') || params.get('wordlistURL');
+
+    const sources = [];
+
+    if (manifestId) {
+        try {
+            const defaultBooks = await fetchDefaultWordlists();
+            const matchedBook = defaultBooks.find(book => book.id === manifestId);
+
+            if (!matchedBook) {
+                alert(`未找到ID為 "${manifestId}" 的預設單詞本。`);
+            } else if (confirm(`偵測到參數請求導入預設單詞本「${matchedBook.name}」。是否現在導入？`)) {
+                sources.push({ type: 'preset', value: matchedBook.path, name: matchedBook.name });
+            }
+        } catch (error) {
+            console.error('加載預設單詞本清單失敗:', error);
+            alert('無法讀取預設單詞本清單，請稍後再試。');
+        }
+    }
+
+    if (urlParam) {
+        try {
+            const resolvedUrl = new URL(urlParam, window.location.href).toString();
+            const urlDisplayName = new URL(resolvedUrl).pathname.split('/').pop() || 'URL單詞本';
+            if (confirm(`偵測到外部單詞本 URL:\n${resolvedUrl}\n是否導入？`)) {
+                sources.push({ type: 'url', value: resolvedUrl, name: urlDisplayName });
+            }
+        } catch (error) {
+            console.error('wordlistUrl 參數無效:', error);
+            alert(`URL 參數無效，無法導入: ${urlParam}`);
+        }
+    }
+
+    if (sources.length === 0) {
+        return;
+    }
+
+    const { summary } = await importVocabularySources(sources, {
+        onStatus: (message) => console.log(`[Wordlist import] ${message}`)
+    });
+
+    if (summary.length > 0) {
+        alert(`導入完成！\n\n${summary.join('\n')}`);
+    } else {
+        alert('沒有導入任何單詞本。');
+    }
+}
+
 function renderVocabBookList() {
     dom.vocabBookList.innerHTML = '';
     if (state.vocabularyBooks.length === 0) {
@@ -156,10 +207,11 @@ async function openModalForImportBook() {
         }
 
         const checkboxesHtml = defaultBooks.map(book => {
-             const safeId = `import-checkbox-${book.path.replace(/[^a-zA-Z0-9]/g, '')}`;
+             const safeIdBase = book.id ? book.id.replace(/[^a-zA-Z0-9_-]/g, '') : book.path.replace(/[^a-zA-Z0-9]/g, '');
+             const safeId = `import-checkbox-${safeIdBase || Math.random().toString(36).slice(2)}`;
              return `
                 <div class="import-preset-item-wrapper">
-                    <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" class="import-checkbox">
+                    <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" data-id="${book.id || ''}" class="import-checkbox">
                     <label for="${safeId}" class="import-preset-item">${book.name}</label>
                 </div>
             `;
@@ -217,6 +269,107 @@ async function fetchDefaultWordlists() {
     }
 }
 
+async function importVocabularySources(sources, options = {}) {
+    const {
+        onStatus = () => {},
+        confirmOverwrite = defaultConfirmOverwrite
+    } = options;
+
+    let successCount = 0;
+    const summary = [];
+
+    for (const source of sources) {
+        try {
+            onStatus(`正在處理: ${source.name}...`, { type: 'info' });
+
+            let bookData;
+            if (source.type === 'preset' || source.type === 'url') {
+                const response = await fetch(source.value);
+                if (!response.ok) {
+                    throw new Error(`無法加載: ${source.name}`);
+                }
+                bookData = await response.json();
+            } else if (source.type === 'file') {
+                bookData = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        try {
+                            resolve(JSON.parse(reader.result));
+                        } catch (err) {
+                            reject(new Error('文件格式無效'));
+                        }
+                    };
+                    reader.onerror = () => reject(new Error('讀取文件失敗'));
+                    reader.readAsText(source.value);
+                });
+            } else {
+                throw new Error('未知的來源類型');
+            }
+
+            if (!bookData.name || !Array.isArray(bookData.words)) {
+                throw new Error(`數據源 ${source.name} 格式不正確。`);
+            }
+
+            const existingBookIndex = state.vocabularyBooks.findIndex(b => b.name === bookData.name);
+            if (existingBookIndex > -1) {
+                const shouldOverwrite = await Promise.resolve(confirmOverwrite(bookData.name, source));
+                if (!shouldOverwrite) {
+                    summary.push(`已跳過: ${bookData.name}`);
+                    onStatus(`已跳過: ${bookData.name}`, { type: 'info' });
+                    continue;
+                }
+            }
+
+            const wordsWithDetails = [];
+            for (let i = 0; i < bookData.words.length; i++) {
+                const line = bookData.words[i];
+                onStatus(`正在解析: ${line} (${i + 1}/${bookData.words.length})`, { type: 'info' });
+
+                const parsedWord = parseWordsFromText(line)[0];
+                if (!parsedWord) continue;
+
+                if (!parsedWord.meaning || !parsedWord.phonetic) {
+                    const analysis = await api.getWordAnalysis(parsedWord.word);
+                    parsedWord.phonetic = parsedWord.phonetic || (analysis.phonetic || 'n/a').replace(/^\/|\/$/g, '');
+                    parsedWord.meaning = parsedWord.meaning || analysis.meaning || '';
+                }
+                wordsWithDetails.push(parsedWord);
+            }
+
+            const newBook = { id: Date.now().toString(), name: bookData.name, words: wordsWithDetails };
+
+            if (existingBookIndex > -1) {
+                state.vocabularyBooks[existingBookIndex] = { ...state.vocabularyBooks[existingBookIndex], ...newBook };
+                summary.push(`已覆蓋: ${bookData.name}`);
+                onStatus(`已覆蓋: ${bookData.name}`, { type: 'success' });
+            } else {
+                state.vocabularyBooks.push(newBook);
+                summary.push(`已導入: ${bookData.name}`);
+                onStatus(`已導入: ${bookData.name}`, { type: 'success' });
+            }
+
+            state.setActiveBookId(newBook.id);
+            successCount++;
+        } catch (error) {
+            console.error(`導入 ${source.name} 失敗:`, error);
+            summary.push(`導入失敗: ${source.name} (${error.message})`);
+            onStatus(`導入失敗: ${source.name}`, { type: 'error' });
+        }
+    }
+
+    if (successCount > 0) {
+        storage.saveVocabularyBooks();
+        renderVocabBookList();
+        updateActiveBookView();
+    }
+
+    return { successCount, summary };
+}
+
+function defaultConfirmOverwrite(bookName) {
+    return confirm(`單詞本 "${bookName}" 已存在。要覆蓋它嗎？`);
+}
+
 async function importSharedVocabBooks() {
     const selectedCheckboxes = document.querySelectorAll('.import-checkbox:checked');
     const urlInput = document.getElementById('modal-import-url');
@@ -226,12 +379,12 @@ async function importSharedVocabBooks() {
     const urlPath = urlInput.value.trim();
     const file = fileInput.files[0];
 
-    let sources = Array.from(selectedCheckboxes).map(cb => ({ type: 'preset', value: cb.value, name: cb.dataset.name }));
+    const sources = Array.from(selectedCheckboxes).map(cb => ({ type: 'preset', value: cb.value, name: cb.dataset.name }));
 
     if (urlPath) {
         try {
-            const url = new URL(urlPath);
-            sources.push({ type: 'url', value: urlPath, name: url.pathname.split('/').pop() || 'URL單詞本' });
+            const url = new URL(urlPath, window.location.href);
+            sources.push({ type: 'url', value: url.toString(), name: url.pathname.split('/').pop() || 'URL單詞本' });
         } catch (_) {
             alert(`"${urlPath}" 不是一個有效的URL。`);
             return;
@@ -248,87 +401,37 @@ async function importSharedVocabBooks() {
     }
 
     const saveBtn = dom.appModal.querySelector('.save-btn');
-    saveBtn.disabled = true;
-    saveBtn.textContent = '正在導入...';
-    progressContainer.innerHTML = '';
+    const updateStatus = (message, meta = {}) => {
+        if (!progressContainer) return;
+        const color = meta.type === 'error' ? 'red' : meta.type === 'success' ? 'green' : 'inherit';
+        const colorStyle = color === 'inherit' ? '' : ` style="color: ${color};"`;
+        progressContainer.innerHTML = `<p${colorStyle}>${message}</p>`;
+    };
 
-    let successCount = 0;
-    let finalMessage = '導入完成！\n\n';
-
-    for (const source of sources) {
-        try {
-            progressContainer.innerHTML = `<p>正在處理: ${source.name}...</p>`;
-            let bookData;
-
-            if (source.type === 'preset' || source.type === 'url') {
-                const response = await fetch(source.value);
-                if (!response.ok) throw new Error(`無法加載: ${source.name}`);
-                bookData = await response.json();
-            } else {
-                bookData = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        try { resolve(JSON.parse(reader.result)); } catch (e) { reject(new Error('文件格式無效')); }
-                    };
-                    reader.onerror = () => reject(new Error('讀取文件失敗'));
-                    reader.readAsText(source.value);
-                });
-            }
-
-            if (!bookData.name || !Array.isArray(bookData.words)) {
-                throw new Error(`數據源 ${source.name} 格式不正確。`);
-            }
-
-            const existingBookIndex = state.vocabularyBooks.findIndex(b => b.name === bookData.name);
-            if (existingBookIndex > -1) {
-                if (!confirm(`單詞本 "${bookData.name}" 已存在。要覆蓋它嗎？`)) {
-                    finalMessage += `已跳過: ${bookData.name}\n`;
-                    continue;
-                }
-            }
-
-            const wordsWithDetails = [];
-            for (let i = 0; i < bookData.words.length; i++) {
-                const line = bookData.words[i];
-                progressContainer.innerHTML = `<p>正在解析: ${line} (${i + 1}/${bookData.words.length})</p>`;
-                
-                const parsedWord = parseWordsFromText(line)[0];
-                if (!parsedWord) continue;
-
-                if (!parsedWord.meaning || !parsedWord.phonetic) {
-                    const analysis = await api.getWordAnalysis(parsedWord.word);
-                    parsedWord.phonetic = parsedWord.phonetic || (analysis.phonetic || 'n/a').replace(/^\/|\/$/g, '');
-                    parsedWord.meaning = parsedWord.meaning || analysis.meaning || '';
-                }
-                wordsWithDetails.push(parsedWord);
-            }
-
-            const newBook = { id: Date.now().toString(), name: bookData.name, words: wordsWithDetails };
-            
-            if (existingBookIndex > -1) {
-                state.vocabularyBooks[existingBookIndex] = { ...state.vocabularyBooks[existingBookIndex], ...newBook };
-                 finalMessage += `已覆蓋: ${bookData.name}\n`;
-            } else {
-                state.vocabularyBooks.push(newBook);
-                 finalMessage += `已導入: ${bookData.name}\n`;
-            }
-            state.setActiveBookId(newBook.id);
-            successCount++;
-
-        } catch (error) {
-            console.error(`導入 ${source.name} 失敗:`, error);
-            finalMessage += `導入失敗: ${source.name} (${error.message})\n`;
+    try {
+        saveBtn.disabled = true;
+        saveBtn.textContent = '正在導入...';
+        if (progressContainer) {
+            progressContainer.innerHTML = '';
         }
+
+        const { summary } = await importVocabularySources(sources, {
+            onStatus: updateStatus
+        });
+
+        const finalMessage = summary.length > 0
+            ? `導入完成！\n\n${summary.join('\n')}`
+            : '導入完成，但沒有任何變更。';
+
+        alert(finalMessage);
+        ui.closeModal();
+    } catch (error) {
+        console.error('批量導入單詞本失敗:', error);
+        alert('導入過程發生錯誤，請查看控制台日誌。');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '導入選中';
     }
-    
-    if (successCount > 0) {
-        storage.saveVocabularyBooks();
-        renderVocabBookList();
-        updateActiveBookView();
-    }
-    
-    alert(finalMessage);
-    ui.closeModal();
 }
 
 async function saveBookWithAICompletion(bookId = null) {

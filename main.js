@@ -3,7 +3,7 @@ import * as state from './modules/state.js';
 import { loadVocabularyBooks, loadAnalyzedArticles } from './modules/storage.js';
 import { initModal, setupNumberSteppers, initTooltip } from './modules/ui.js';
 import { unlockAudioContext } from './modules/audio.js';
-import { initVocabulary } from './features/vocabulary/vocabulary.js';
+import { initVocabulary, handleVocabularyQueryParams } from './features/vocabulary/vocabulary.js';
 import { initLearning, populateLearningBookSelector, populateWordSelect } from './features/learning/learning.js';
 import { initDictation, populateDictationBookSelector, togglePauseDictation } from './features/dictation/dictation.js';
 import { initQuiz, populateQuizBookSelector } from './features/quiz/quiz.js';
@@ -114,6 +114,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(dom.listenOnlyMode) {
         dom.listenOnlyMode.dispatchEvent(new Event('change'));
     }
+
+    // 8. 處理透過 URL 傳入的單詞本導入需求
+    await handleVocabularyQueryParams();
 
     console.log("应用程序已完全初始化。");
 
