@@ -58,7 +58,10 @@ function saveDictationSettings() {
         readMeaning: dom.readMeaning?.checked || false,
         loopMode: dom.loopMode?.checked || false,
         shuffleMode: dom.shuffleMode?.checked || false,
-        listenOnlyMode: dom.listenOnlyMode?.checked || true
+        listenOnlyMode: dom.listenOnlyMode?.checked || true,
+        showWordInfo: typeof state.dictationSettings.showWordInfo === 'boolean'
+            ? state.dictationSettings.showWordInfo
+            : false
     };
     
     state.setDictationSettings(settings);
@@ -339,8 +342,10 @@ function createMainControls() {
     
     const expandIcon = document.createElement('span');
     expandIcon.className = 'expand-icon';
-    expandIcon.innerHTML = '▲';
-    
+    expandIcon.textContent = '▼';
+    expandIcon.setAttribute('aria-label', '展开单词列表');
+    expandIcon.dataset.expanded = 'false';
+
     infoArea.appendChild(progressSpan);
     infoArea.appendChild(expandIcon);
     
@@ -401,11 +406,29 @@ function createExpandPanel() {
     
     const showInfoToggle = document.createElement('label');
     showInfoToggle.className = 'toggle-label';
-    showInfoToggle.innerHTML = `
-        <input type="checkbox" id="show-word-info" checked>
-        <span>显示单词信息</span>
-    `;
-    
+
+    const showInfoCheckbox = document.createElement('input');
+    showInfoCheckbox.type = 'checkbox';
+    showInfoCheckbox.id = 'show-word-info';
+
+    const showInfoLabel = document.createElement('span');
+    showInfoLabel.textContent = '显示单词信息';
+
+    showInfoToggle.appendChild(showInfoCheckbox);
+    showInfoToggle.appendChild(showInfoLabel);
+
+    const shouldShowInfo = typeof state.dictationSettings.showWordInfo === 'boolean'
+        ? state.dictationSettings.showWordInfo
+        : false;
+    showInfoCheckbox.checked = shouldShowInfo;
+
+    showInfoCheckbox.addEventListener('change', () => {
+        const isChecked = showInfoCheckbox.checked;
+        state.setDictationSettings({ showWordInfo: isChecked });
+        state.saveDictationSettings();
+        updateFloatingWordList();
+    });
+
     controls.appendChild(showInfoToggle);
     
     header.appendChild(title);
@@ -433,22 +456,19 @@ function createExpandPanel() {
  */
 function toggleExpandPanel() {
     const panel = document.getElementById('expand-panel');
-    const expandIcon = document.querySelector('.expand-icon');
     const statusBar = document.getElementById('floating-dictation-controls');
     
-    if (!panel || !expandIcon || !statusBar) return;
+    if (!panel || !statusBar) return;
     
     const isExpanded = panel.style.display !== 'none';
     
     if (isExpanded) {
         // 收起面板
         panel.style.display = 'none';
-        expandIcon.innerHTML = '▲';
         statusBar.classList.remove('expanded');
     } else {
         // 展开面板
         panel.style.display = 'block';
-        expandIcon.innerHTML = '▼';
         statusBar.classList.add('expanded');
         
         // 更新单词列表
@@ -458,6 +478,16 @@ function toggleExpandPanel() {
         const viewportHeight = platform.getViewportHeight();
         panel.style.height = `${viewportHeight * 0.5}px`;
     }
+
+    updateExpandIcon(!isExpanded);
+}
+
+function updateExpandIcon(isExpanded) {
+    const expandIcon = document.querySelector('.expand-icon');
+    if (!expandIcon) return;
+    expandIcon.textContent = isExpanded ? '▲' : '▼';
+    expandIcon.setAttribute('aria-label', isExpanded ? '收起单词列表' : '展开单词列表');
+    expandIcon.dataset.expanded = String(isExpanded);
 }
 
 /**
@@ -469,21 +499,50 @@ function updateFloatingWordList() {
     
     if (!wordList || !state.dictationWords) return;
     
-    const showInfo = showInfoCheckbox ? showInfoCheckbox.checked : true;
+    const storedPreference = typeof state.dictationSettings.showWordInfo === 'boolean'
+        ? state.dictationSettings.showWordInfo
+        : false;
+    const showInfo = showInfoCheckbox ? showInfoCheckbox.checked : storedPreference;
     
     wordList.innerHTML = '';
     
     state.dictationWords.forEach((word, index) => {
         const wordItem = document.createElement('div');
-        wordItem.className = `word-item ${index === state.currentDictationIndex ? 'current' : ''}`;
+        wordItem.className = 'word-item';
+        if (index === state.currentDictationIndex) {
+            wordItem.classList.add('current');
+        }
         wordItem.dataset.index = index;
-        
-        const wordText = document.createElement('div');
-        wordText.className = 'word-text';
-        wordText.textContent = word.word;
-        
-        wordItem.appendChild(wordText);
-        
+        wordItem.dataset.phoneticOnly = (!showInfo).toString();
+
+        const wordHeader = document.createElement('div');
+        wordHeader.className = 'word-header';
+        wordItem.appendChild(wordHeader);
+
+        if (showInfo) {
+            const wordText = document.createElement('div');
+            wordText.className = 'word-text';
+            wordText.textContent = word.word;
+            wordHeader.appendChild(wordText);
+        }
+
+        const rawPhonetic = typeof word.phonetic === 'string' ? word.phonetic.trim() : '';
+        const cleanedPhonetic = rawPhonetic.replace(/^\/+|\/+$/g, '');
+        const hasPhonetic = cleanedPhonetic && cleanedPhonetic.toLowerCase() !== 'n/a';
+        const shouldRenderPhonetic = hasPhonetic || !showInfo;
+
+        if (shouldRenderPhonetic) {
+            const phoneticEl = document.createElement('span');
+            phoneticEl.className = 'word-phonetic';
+            if (hasPhonetic) {
+                phoneticEl.textContent = `/${cleanedPhonetic}/`;
+            } else {
+                phoneticEl.textContent = '暂无音标';
+                phoneticEl.classList.add('word-phonetic--missing');
+            }
+            wordHeader.appendChild(phoneticEl);
+        }
+
         if (showInfo && word.meaning) {
             const wordMeaning = document.createElement('div');
             wordMeaning.className = 'word-meaning';
@@ -614,6 +673,9 @@ function updateFloatingStatus() {
     const panel = document.getElementById('expand-panel');
     if (panel && panel.style.display !== 'none') {
         updateFloatingWordList();
+        updateExpandIcon(true);
+    } else {
+        updateExpandIcon(false);
     }
 }
 
@@ -632,6 +694,7 @@ function playCurrentWord() {
 
     const currentWord = state.dictationWords[state.currentDictationIndex];
     updateDictationProgress(state.dictationWords.length);
+    updateNavigationButtonState();
     
     let timesPlayed = 0;
     const repeatTarget = parseInt(dom.repeatTimes.value, 10);

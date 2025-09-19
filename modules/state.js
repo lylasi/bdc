@@ -28,7 +28,8 @@ export let dictationSettings = {
     readMeaning: false,
     loopMode: false,
     shuffleMode: false,
-    listenOnlyMode: true
+    listenOnlyMode: true,
+    showWordInfo: false
 };
 
 // ---------------------------------
@@ -264,6 +265,9 @@ export function loadDictationSettings() {
         if (saved) {
             const loadedSettings = JSON.parse(saved);
             dictationSettings = { ...dictationSettings, ...loadedSettings };
+            if (typeof dictationSettings.showWordInfo !== 'boolean') {
+                dictationSettings.showWordInfo = false;
+            }
             return dictationSettings;
         }
     } catch (error) {
