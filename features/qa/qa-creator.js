@@ -134,7 +134,7 @@ export function handleTextInputChange(textArea, previewContainer) {
 }
 
 // 保存新問答集
-export function saveNewSet(name, description, pairs) {
+export function saveNewSet(name, description, pairs, existingQASet = null) {
   try {
     // 驗證輸入
     if (!name || name.trim() === '') {
@@ -150,24 +150,46 @@ export function saveNewSet(name, description, pairs) {
       throw new Error('問答對格式錯誤：' + validation.errors.join(', '));
     }
 
-    // 生成唯一ID
-    const id = generateQASetId(name);
+    const now = new Date().toISOString();
+    let qaSet;
 
-    // 創建問答集對象
-    const qaSet = {
-      id: id,
-      name: name.trim(),
-      description: description.trim() || '',
-      category: '自定義',
-      difficulty: 'unknown',
-      creator: '用戶創建',
-      createdAt: new Date().toISOString(),
-      questions: pairs.map(pair => ({
-        qid: pair.qid,
-        question: pair.question.trim(),
-        answer: pair.answer.trim()
-      }))
-    };
+    if (existingQASet) {
+      qaSet = {
+        ...existingQASet,
+        id: existingQASet.id,
+        name: name.trim(),
+        description: description.trim() || '',
+        category: existingQASet.category || '自定義',
+        difficulty: existingQASet.difficulty || 'unknown',
+        creator: existingQASet.creator || '用戶創建',
+        createdAt: existingQASet.createdAt || now,
+        updatedAt: now,
+        questions: pairs.map(pair => ({
+          qid: pair.qid,
+          question: pair.question.trim(),
+          answer: pair.answer.trim()
+        }))
+      };
+    } else {
+      // 生成唯一ID
+      const id = generateQASetId(name);
+
+      qaSet = {
+        id: id,
+        name: name.trim(),
+        description: description.trim() || '',
+        category: '自定義',
+        difficulty: 'unknown',
+        creator: '用戶創建',
+        createdAt: now,
+        updatedAt: now,
+        questions: pairs.map(pair => ({
+          qid: pair.qid,
+          question: pair.question.trim(),
+          answer: pair.answer.trim()
+        }))
+      };
+    }
 
     // 保存問答集
     if (saveQASet(qaSet)) {
@@ -202,6 +224,14 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// 為範本載入生成易辨識名稱
+function generateTemplateName(baseName = '') {
+  if (!baseName) return '';
+
+  const suffix = ' (複本)';
+  return baseName.endsWith(suffix) ? baseName : `${baseName}${suffix}`;
 }
 
 // 生成示例文本
@@ -268,10 +298,13 @@ export function initCreator() {
   const preview = document.getElementById('qa-preview');
 
   if (pairsInput && preview) {
-    // 實時預覽
-    pairsInput.addEventListener('input', () => {
-      handleTextInputChange(pairsInput, preview);
-    });
+    if (!pairsInput.dataset.previewListenerAttached) {
+      // 實時預覽（僅綁定一次）
+      pairsInput.addEventListener('input', () => {
+        handleTextInputChange(pairsInput, preview);
+      });
+      pairsInput.dataset.previewListenerAttached = 'true';
+    }
 
     // 初始化預覽
     handleTextInputChange(pairsInput, preview);
@@ -281,29 +314,60 @@ export function initCreator() {
   addExampleButton();
 }
 
+// 根據問答集填入表單
+export function fillFormWithQASet(qaSet, options = {}) {
+  const { treatAsTemplate = false } = options;
+
+  if (!qaSet) return;
+
+  const nameInput = document.getElementById('qa-set-name');
+  const descInput = document.getElementById('qa-set-description');
+  const pairsInput = document.getElementById('qa-pairs-input');
+  const preview = document.getElementById('qa-preview');
+
+  if (!nameInput || !descInput || !pairsInput || !preview) {
+    return;
+  }
+
+  const text = qaSetToText(qaSet);
+
+  nameInput.value = treatAsTemplate ? generateTemplateName(qaSet.name) : (qaSet.name || '');
+  descInput.value = qaSet.description || '';
+  pairsInput.value = text;
+
+  handleTextInputChange(pairsInput, preview);
+}
+
+export function qaSetToText(qaSet) {
+  if (!qaSet) return '';
+
+  const questions = Array.isArray(qaSet.questions) ? [...qaSet.questions] : [];
+  questions.sort((a, b) => (a.qid || 0) - (b.qid || 0));
+
+  return questions
+    .map(q => `Q${q.qid}: ${q.question}\nA${q.qid}: ${q.answer}`)
+    .join('\n\n');
+}
+
 // 添加示例按鈕
 function addExampleButton() {
-  const pairsInput = document.getElementById('qa-pairs-input');
-  if (!pairsInput) return;
+  const button = document.getElementById('load-example-btn');
+  if (!button) {
+    const pairsInput = document.getElementById('qa-pairs-input');
+    const container = document.querySelector('.qa-pairs-actions');
+    if (!pairsInput || !container) return;
 
-  // 檢查是否已經有示例按鈕
-  if (document.getElementById('load-example-btn')) return;
+    const dynamicButton = document.createElement('button');
+    dynamicButton.id = 'load-example-btn';
+    dynamicButton.type = 'button';
+    dynamicButton.className = 'btn small secondary';
+    dynamicButton.textContent = '載入示例';
+    dynamicButton.onclick = loadExample;
 
-  // 創建示例按鈕
-  const button = document.createElement('button');
-  button.id = 'load-example-btn';
-  button.type = 'button';
-  button.className = 'btn small secondary';
-  button.textContent = '載入示例';
-  button.onclick = loadExample;
-
-  // 插入到文本框後面
-  const parent = pairsInput.parentElement;
-  if (parent) {
-    const label = parent.querySelector('label[for="qa-pairs-input"]');
-    if (label) {
-      button.style.marginLeft = '10px';
-      label.appendChild(button);
-    }
+    container.appendChild(dynamicButton);
+    return;
   }
+
+  button.classList.remove('hidden');
+  button.onclick = loadExample;
 }
