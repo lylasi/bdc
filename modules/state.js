@@ -25,7 +25,7 @@ export let dictationSettings = {
     selectedBookId: null,
     repeatTimes: 2,
     wordInterval: 3,
-    readMeaning: false,
+    readChineseVoice: 'none',
     loopMode: false,
     shuffleMode: false,
     listenOnlyMode: true,
@@ -267,6 +267,12 @@ export function loadDictationSettings() {
             dictationSettings = { ...dictationSettings, ...loadedSettings };
             if (typeof dictationSettings.showWordInfo !== 'boolean') {
                 dictationSettings.showWordInfo = false;
+            }
+            if (typeof dictationSettings.readChineseVoice !== 'string') {
+                dictationSettings.readChineseVoice = 'none';
+            }
+            if (loadedSettings.hasOwnProperty('readMeaning') && !loadedSettings.hasOwnProperty('readChineseVoice')) {
+                dictationSettings.readChineseVoice = loadedSettings.readMeaning ? 'chinese' : 'none';
             }
             return dictationSettings;
         }

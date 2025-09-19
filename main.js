@@ -66,6 +66,10 @@ function hideAllModules() {
 // 根據視窗寬度切換主導航文案（移動端顯示短文案）
 function responsiveNavLabels() {
     const isCompact = window.innerWidth <= 480;
+    const nav = document.querySelector('nav');
+    if (nav) {
+        nav.classList.toggle('nav-compact', isCompact);
+    }
     document.querySelectorAll('.nav-btn .nav-text').forEach(el => {
         const full = el.getAttribute('data-full-text') || el.textContent;
         const short = el.getAttribute('data-short-text') || full;

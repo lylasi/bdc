@@ -41,45 +41,104 @@ export function initModal() {
  * 為頁面中所有的數字步進器組件初始化事件監聽和功能。
  */
 export function setupNumberSteppers() {
-    document.querySelectorAll('.number-stepper-vertical').forEach(stepper => {
-        const input = stepper.querySelector('.stepper-input');
-        const minusBtn = stepper.querySelector('.stepper-minus');
-        const plusBtn = stepper.querySelector('.stepper-plus');
-        const min = parseInt(input.min, 10);
-        const max = parseInt(input.max, 10);
+    const steppers = document.querySelectorAll('.number-stepper, .number-stepper-vertical');
 
-        const updateButtons = (value) => {
-            minusBtn.disabled = value <= min;
-            plusBtn.disabled = value >= max;
+    steppers.forEach(stepper => {
+        const input = stepper.querySelector('.stepper-input');
+        const minusBtn = stepper.querySelector('.stepper-minus, .stepper-down');
+        const plusBtn = stepper.querySelector('.stepper-plus, .stepper-up');
+        const slider = stepper.querySelector('.stepper-slider');
+
+        if (!input || !minusBtn || !plusBtn) return;
+
+        const parsedMin = parseInt(input.getAttribute('min') ?? '', 10);
+        const parsedMax = parseInt(input.getAttribute('max') ?? '', 10);
+        const min = Number.isNaN(parsedMin) ? Number.NEGATIVE_INFINITY : parsedMin;
+        const max = Number.isNaN(parsedMax) ? Number.POSITIVE_INFINITY : parsedMax;
+
+        if (slider) {
+            const datasetMin = parseInt(stepper.dataset.sliderMin ?? '', 10);
+            const datasetMax = parseInt(stepper.dataset.sliderMax ?? '', 10);
+
+            if (!slider.hasAttribute('min')) {
+                const sliderMin = !Number.isNaN(datasetMin) ? datasetMin : (Number.isFinite(min) ? min : 0);
+                slider.setAttribute('min', sliderMin);
+            }
+
+            if (!slider.hasAttribute('max')) {
+                if (!Number.isNaN(datasetMax)) {
+                    slider.setAttribute('max', datasetMax);
+                } else if (Number.isFinite(max)) {
+                    slider.setAttribute('max', max);
+                }
+            }
+
+            if (!slider.hasAttribute('step')) {
+                slider.setAttribute('step', '1');
+            }
+        }
+
+        const clampValue = (value) => {
+            let numeric = parseInt(value, 10);
+            if (Number.isNaN(numeric)) {
+                numeric = Number.isFinite(min) ? min : 0;
+            }
+
+            if (numeric < min) numeric = min;
+            if (numeric > max) numeric = max;
+
+            return numeric;
         };
 
-        const changeValue = (step) => {
-            let currentValue = parseInt(input.value, 10);
-            if (isNaN(currentValue)) currentValue = min;
-            
-            let newValue = currentValue + step;
-            if (newValue < min) newValue = min;
-            if (newValue > max) newValue = max;
+        const updateButtons = (value) => {
+            minusBtn.disabled = Number.isFinite(min) && value <= min;
+            plusBtn.disabled = Number.isFinite(max) && value >= max;
+        };
 
-            input.value = newValue;
-            updateButtons(newValue);
+        const syncSlider = (value) => {
+            if (!slider) return;
+            const sliderMax = parseInt(slider.getAttribute('max') ?? '', 10);
+            if (!Number.isNaN(sliderMax) && value > sliderMax) {
+                slider.setAttribute('max', value);
+            }
+            slider.value = value;
+        };
+
+        const commitValue = (value) => {
+            const clamped = clampValue(value);
+            input.value = clamped;
+            updateButtons(clamped);
+            syncSlider(clamped);
             input.dispatchEvent(new Event('input', { bubbles: true }));
         };
 
-        minusBtn.addEventListener('click', () => changeValue(-1));
-        plusBtn.addEventListener('click', () => changeValue(1));
-
-        input.addEventListener('input', () => {
-            let value = parseInt(input.value, 10);
-            if (isNaN(value)) value = min;
-            else if (value < min) value = min;
-            else if (value > max) value = max;
-            
-            input.value = value;
-            updateButtons(value);
+        minusBtn.addEventListener('click', () => {
+            commitValue(clampValue(input.value) - 1);
         });
 
-        updateButtons(parseInt(input.value, 10));
+        plusBtn.addEventListener('click', () => {
+            commitValue(clampValue(input.value) + 1);
+        });
+
+        input.addEventListener('input', () => {
+            const sanitized = clampValue(input.value);
+            if (sanitized.toString() !== input.value.trim()) {
+                input.value = sanitized;
+            }
+            updateButtons(sanitized);
+            syncSlider(sanitized);
+        });
+
+        if (slider) {
+            slider.addEventListener('input', () => {
+                commitValue(slider.value);
+            }, { passive: true });
+        }
+
+        const initialValue = clampValue(input.value);
+        input.value = initialValue;
+        updateButtons(initialValue);
+        syncSlider(initialValue);
     });
 }
 

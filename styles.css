@@ -148,6 +148,9 @@ nav::-webkit-scrollbar {
   .nav-btn svg { width: 14px; height: 14px; margin-right: 4px; }
   .nav-btn.active { box-shadow: 0 3px 10px rgba(58,123,213,0.25); }
   .nav-btn .nav-text { line-height: 1.1; }
+  nav.nav-compact .nav-btn { flex-direction: column; gap: 4px; padding: 10px 12px; min-width: 64px; }
+  nav.nav-compact .nav-btn svg { margin: 0; width: 18px; height: 18px; }
+  nav.nav-compact .nav-btn .nav-text { text-align: center; }
   nav::before, nav::after { content: ""; position: sticky; top: 0; width: 16px; height: 100%; z-index: 2; pointer-events: none; }
   nav::before { left: 0; background: linear-gradient(90deg, rgba(245,245,245,1), rgba(245,245,245,0)); }
   nav::after { right: 0; background: linear-gradient(270deg, rgba(245,245,245,1), rgba(245,245,245,0)); }
@@ -433,30 +436,56 @@ button:disabled {
 
 .btn-primary {
     background-color: #3a7bd5;
-    color: white;
-    font-weight: 500;
+    border: 1px solid #2f66c3;
+    color: #ffffff;
+    font-weight: 600;
     padding: 10px 20px;
-    border-radius: 6px;
-    transition: all 0.3s;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+    box-shadow: 0 8px 18px rgba(58, 123, 213, 0.2);
 }
 
 .btn-primary:hover {
-    background-color: #2a6bc5;
+    background-color: #2f66c3;
+    border-color: #2856a8;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 20px rgba(58, 123, 213, 0.24);
+}
+
+.btn-primary:disabled {
+    background-color: #c7d8f8;
+    border-color: #b4caf0;
+    color: #f6f8ff;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .btn-secondary {
-    background-color: #6c757d;
-    color: white;
+    background-color: #eef3ff;
+    border: 1px solid #d6e1ff;
+    color: #2f4f9d;
     padding: 10px 20px;
-    border-radius: 6px;
-    transition: all 0.3s;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+    box-shadow: none;
 }
 
 .btn-secondary:hover {
-    background-color: #5a6268;
+    background-color: #dfe9ff;
+    border-color: #c7d6ff;
+    color: #274896;
     transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(58, 123, 213, 0.16);
+}
+
+.btn-secondary:disabled {
+    background-color: #f3f6fb;
+    border-color: #e2e8f4;
+    color: #9aa8c8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .word-display-box {
@@ -610,38 +639,36 @@ button:disabled {
 
 /* 大尺寸导航按钮 */
 .nav-large {
-    font-size: 18px !important;
-    font-weight: bold !important;
-    min-width: 120px !important;
-    padding: 12px 20px !important;
-    margin: 0 5px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    min-width: 140px !important;
+    padding: 12px 22px !important;
+    margin: 0 6px !important;
+    border-radius: 10px !important;
 }
 
-#prev-dictation-btn {
-    background-color: #6f42c1 !important;
-    border-color: #6f42c1 !important;
-}
-
-#prev-dictation-btn:hover {
-    background-color: #5a32a3 !important;
-    border-color: #5a32a3 !important;
-}
-
+#prev-dictation-btn,
 #next-dictation-btn {
-    background-color: #6f42c1 !important;
-    border-color: #6f42c1 !important;
+    background-color: #3a7bd5 !important;
+    border-color: #2f66c3 !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 18px rgba(58, 123, 213, 0.2) !important;
 }
 
+#prev-dictation-btn:hover,
 #next-dictation-btn:hover {
-    background-color: #5a32a3 !important;
-    border-color: #5a32a3 !important;
+    background-color: #2f66c3 !important;
+    border-color: #2856a8 !important;
+    color: #ffffff !important;
 }
 
 #prev-dictation-btn:disabled,
 #next-dictation-btn:disabled {
-    background-color: #6c757d !important;
-    border-color: #6c757d !important;
-    opacity: 0.6;
+    background-color: #dbe5fa !important;
+    border-color: #c3d3f7 !important;
+    color: #7f93c5 !important;
+    box-shadow: none !important;
+    opacity: 1;
 }
 
 .hidden {
@@ -1416,6 +1443,14 @@ button:disabled {
     color: white;
 }
 
+#vocab-books-panel .panel-header > button:first-of-type {
+    margin-left: auto;
+}
+
+#vocab-books-panel .panel-header > button + button {
+    margin-left: 10px;
+}
+
 .panel-header h3 {
     margin: 0;
     font-size: 1.2em;
@@ -1873,73 +1908,95 @@ button:disabled {
 
 /* 控制按钮基础样式 */
 .control-btn {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    color: #3a7bd5;
+    background: #f1f5ff;
+    border: 1px solid #d2def5;
+    border-radius: 10px;
+    color: #2454a6;
     font-weight: 600;
-    font-size: 16px;
+    font-size: 15px;
     min-height: var(--touch-target-size);
+    padding: 10px 16px;
     transition: all 0.2s ease;
     cursor: pointer;
     outline: none;
-    
+    box-shadow: 0 2px 6px rgba(58, 123, 213, 0.15);
+
     /* 触摸优化 */
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
-    
+
     /* 确保特殊字符正确显示 */
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Arial Unicode MS', system-ui, sans-serif;
     text-rendering: optimizeLegibility;
 }
 
 .control-btn:hover {
-    background: rgba(255, 255, 255, 1);
+    background: #ffffff;
+    border-color: #3a7bd5;
+    color: #244fa0;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 14px rgba(58, 123, 213, 0.18);
 }
 
 .control-btn:active {
     transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    background: #e7efff;
+    box-shadow: 0 2px 8px rgba(58, 123, 213, 0.16);
 }
 
 .control-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
 }
 
-/* 上一个/下一个按钮（大按钮，易盲按） */
-.prev-btn, .next-btn {
-    min-width: 90px; /* 从60px增加到90px，增加1.5倍 */
-    font-size: 20px;
-    margin: 0 8px;
+/* 主操作按钮（上/下一个、暂停） */
+.prev-btn,
+.next-btn,
+.pause-btn {
+    background: #3a7bd5;
+    border-color: #2f66c3;
+    color: #ffffff;
+    min-width: 96px;
+    font-size: 16px;
+    box-shadow: 0 6px 16px rgba(58, 123, 213, 0.22);
+}
+
+.prev-btn:hover,
+.next-btn:hover,
+.pause-btn:hover {
+    background: #2f66c3;
+    border-color: #2856a8;
+    color: #ffffff;
+}
+
+.prev-btn:disabled,
+.next-btn:disabled,
+.pause-btn:disabled {
+    background: #dbe5fa;
+    border-color: #c3d3f7;
+    color: #7f93c5;
+    box-shadow: none;
 }
 
 /* 重播按钮样式 */
 .replay-btn {
-    min-width: 50px;
-    font-size: 18px;
-    margin: 0 6px;
-    background: #17a2b8;
-    color: white;
-    border-color: #17a2b8;
+    min-width: 56px;
+    font-size: 16px;
+    margin: 0 8px;
+    background: #eef3ff;
+    color: #2f66c3;
+    border-color: #d6e1ff;
+    box-shadow: none;
 }
 
 .replay-btn:hover {
-    background: #138496;
-    color: white;
-    border-color: #138496;
-}
-
-.prev-btn {
-    border-radius: 12px 4px 4px 12px;
-}
-
-.next-btn {
-    border-radius: 4px 12px 12px 4px;
+    background: #ffffff;
+    border-color: #3a7bd5;
+    color: #244fa0;
+    box-shadow: 0 4px 12px rgba(58, 123, 213, 0.15);
 }
 
 /* 中间信息区域 */
@@ -1963,6 +2020,8 @@ button:disabled {
 .progress-text {
     font-size: 16px;
     font-weight: 600;
+    color: #f6f9ff;
+    letter-spacing: 0.4px;
 }
 
 .expand-icon {
@@ -1970,24 +2029,17 @@ button:disabled {
     transition: transform 0.3s ease;
     display: inline-block;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui;
+    color: #f6f9ff;
 }
 
 .expanded .expand-icon {
     transform: scale(1.1);
 }
 
-/* 暂停/继续按钮 */
+/* 暂停/继续按钮 （继承主操作色，仅调整布距）*/
 .pause-btn {
-    min-width: 80px;
+    min-width: 96px;
     margin: 0 8px;
-    background: #ffc107;
-    color: #212529;
-    border-color: #ffc107;
-}
-
-.pause-btn:hover {
-    background: #e0a800;
-    color: #212529;
 }
 
 /* 展开面板 */
@@ -2180,20 +2232,20 @@ button:disabled {
     }
     
     .prev-btn, .next-btn {
-        min-width: 75px; /* 移动端也相应增加，从50px到75px */
-        font-size: 18px;
-        margin: 0 4px;
+        min-width: 88px;
+        font-size: 15px;
+        margin: 0 6px;
     }
     
     .replay-btn {
-        min-width: 45px;
-        font-size: 16px;
-        margin: 0 4px;
+        min-width: 48px;
+        font-size: 15px;
+        margin: 0 6px;
     }
     
     .pause-btn {
-        min-width: 60px;
-        font-size: 14px;
+        min-width: 88px;
+        font-size: 15px;
     }
     
     .progress-text {
@@ -2215,18 +2267,18 @@ button:disabled {
     }
     
     .prev-btn, .next-btn {
-        min-width: 60px; /* 小屏幕适度增加，从40px到60px */
-        font-size: 16px;
-    }
-    
-    .replay-btn {
-        min-width: 40px;
+        min-width: 72px;
         font-size: 14px;
     }
     
+    .replay-btn {
+        min-width: 44px;
+        font-size: 13px;
+    }
+    
     .pause-btn {
-        min-width: 50px;
-        font-size: 12px;
+        min-width: 68px;
+        font-size: 13px;
     }
 }
 
@@ -2248,14 +2300,14 @@ button:disabled {
 /* 微信浏览器优化 */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
     .control-btn:active {
-        background: rgba(255, 255, 255, 0.8);
+        background: #e7efff;
     }
 }
 
 /* PC端优化 */
 @media (min-width: 1024px) {
     .control-btn:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 10px 22px rgba(58, 123, 213, 0.22);
     }
     
     .word-item:hover {
@@ -2287,66 +2339,74 @@ button:disabled {
     color: #0c5460;
 }
 
-#pause-dictation-btn {
-    background-color: #ffc107; /* 黃色 */
-}
-
-#pause-dictation-btn:hover {
-    background-color: #e0a800;
-}
-
-#replay-dictation-btn {
-    background-color: #17a2b8; /* 青色 */
-}
-
-#replay-dictation-btn:hover {
-    background-color: #138496;
-}
-
 #floating-progress-text {
     margin: 0 10px;
-    font-weight: bold;
-    font-size: 0.9em;
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #f6f9ff;
 }
 /* =================================
-   數字加減控件 (垂直美化版)
+   數字加減控件 (滑桿 + 垂直箭頭)
    ================================= */
-.number-stepper-vertical {
-    display: flex;
-    align-items: center;
-    width: 80px; /* 增加宽度以提供更好的可点击区域 */
+.number-stepper {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px;
     background: #f8f9fa;
-    border-radius: 8px;
-    padding: 2px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: all 0.2s ease;
+    border-radius: 14px;
+    border: 1px solid #e2e8f4;
+    box-shadow: 0 1px 3px rgba(58, 123, 213, 0.1);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.number-stepper-vertical:hover {
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+.number-stepper:hover {
+    border-color: #c7d6ff;
+    box-shadow: 0 4px 12px rgba(58, 123, 213, 0.18);
+}
+
+.number-stepper:focus-within {
+    border-color: #3a7bd5;
+    box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.15);
+    background: #f1f5ff;
+}
+
+.stepper-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid #d2def5;
+    border-radius: 12px;
+    padding: 6px 8px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.stepper-field:focus-within {
+    border-color: #3a7bd5;
+    box-shadow: 0 0 0 2px rgba(58, 123, 213, 0.12), inset 0 1px 2px rgba(0,0,0,0.03);
 }
 
 .stepper-input {
-    width: 40px; /* 稍微增加输入框宽度 */
-    height: 32px; /* 增加输入框高度便于触摸 */
+    flex: 1;
+    min-width: 70px;
+    height: 36px;
     text-align: center;
     border: 1px solid transparent;
-    border-radius: 6px;
-    font-size: 14px;
+    border-radius: 8px;
+    font-size: 16px;
     font-weight: 600;
-    background: white;
-    color: #495057;
+    background: #f7f9ff;
+    color: #1f2e4d;
     -moz-appearance: textfield;
-    transition: all 0.2s ease;
-    padding: 0 4px;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    transition: border-color 0.2s ease, background 0.2s ease;
+    padding: 0 10px;
 }
 
 .stepper-input:focus {
     outline: none;
     border-color: #3a7bd5;
-    box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.15), inset 0 1px 2px rgba(0,0,0,0.05);
-    background: #fff;
+    background: #ffffff;
 }
 
 .stepper-input::-webkit-outer-spin-button,
@@ -2355,121 +2415,189 @@ button:disabled {
     margin: 0;
 }
 
-.stepper-controls {
+.stepper-buttons {
     display: flex;
     flex-direction: column;
-    margin-left: 4px;
+    gap: 4px;
 }
 
-.stepper-btn {
-    background: linear-gradient(135deg, #ffffff, #f8f9fa);
-    border: 1px solid #dee2e6;
-    color: #6c757d;
+.stepper-arrow {
+    width: 38px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #d2def5;
+    background: linear-gradient(135deg, #ffffff, #eef3ff);
+    color: #2f4f9d;
     cursor: pointer;
-    width: 24px; /* 增加按钮宽度 */
-    height: 16px; /* 调整按钮高度 */
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0;
+    line-height: 1;
     transition: all 0.2s ease;
-    position: relative;
-    margin: 0;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 3px rgba(58, 123, 213, 0.15);
 }
 
-.stepper-btn:hover {
-    background: linear-gradient(135deg, #3a7bd5, #4ea5e0);
-    border-color: #3a7bd5;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(58, 123, 213, 0.3);
-}
-
-.stepper-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(58, 123, 213, 0.3);
-}
-
-.stepper-btn.stepper-plus {
-    border-radius: 6px 6px 2px 2px;
-    border-bottom: 0.5px solid #dee2e6;
-}
-
-.stepper-btn.stepper-minus {
-    border-radius: 2px 2px 6px 6px;
-    border-top: 0.5px solid #dee2e6;
-    margin-top: 1px;
-}
-
-.stepper-btn::after {
+.stepper-arrow::before {
     content: '';
-    display: block;
     width: 0;
     height: 0;
     border-style: solid;
 }
 
-.stepper-btn.stepper-plus::after {
-    border-width: 0 3px 4px 3px; /* 调整箭头大小 */
+.stepper-up::before {
+    border-width: 0 5px 6px 5px;
     border-color: transparent transparent currentColor transparent;
 }
 
-.stepper-btn.stepper-minus::after {
-    border-width: 4px 3px 0 3px; /* 调整箭头大小 */
+.stepper-down::before {
+    border-width: 6px 5px 0 5px;
     border-color: currentColor transparent transparent transparent;
 }
 
-.stepper-btn:disabled {
-    opacity: 0.4;
+.stepper-arrow:hover {
+    background: #3a7bd5;
+    border-color: #2856a8;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(58, 123, 213, 0.18);
+}
+
+.stepper-arrow:active {
+    transform: translateY(0);
+    background: #2f66c3;
+    color: #ffffff;
+}
+
+.stepper-arrow:disabled {
+    opacity: 0.35;
     cursor: not-allowed;
-    background: #f8f9fa;
-    color: #adb5bd;
     transform: none;
     box-shadow: none;
+    background: #eef3ff;
+    color: #9aa8c8;
+    border-color: #dbe3f6;
 }
 
-.stepper-btn:disabled:hover {
-    background: #f8f9fa;
-    border-color: #dee2e6;
-    color: #adb5bd;
-    transform: none;
-    box-shadow: none;
+.stepper-slider {
+    width: 100%;
+    accent-color: #3a7bd5;
+    height: 4px;
+    border-radius: 999px;
 }
 
-/* 移动端优化 */
+.stepper-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #3a7bd5 0%, #4ea5e0 100%);
+}
+
+.stepper-slider::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #3a7bd5 0%, #4ea5e0 100%);
+}
+
+.stepper-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3a7bd5;
+    box-shadow: 0 2px 6px rgba(58, 123, 213, 0.25);
+    border: 2px solid #ffffff;
+}
+
+.stepper-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3a7bd5;
+    box-shadow: 0 2px 6px rgba(58, 123, 213, 0.25);
+    border: 2px solid #ffffff;
+}
+
+.chinese-voice-options {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.voice-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid #d2def5;
+    background: linear-gradient(135deg, #ffffff, #eef3ff);
+    color: #2f4f9d;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(58, 123, 213, 0.15);
+}
+
+.voice-toggle input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.voice-toggle span {
+    pointer-events: none;
+}
+
+.voice-toggle.is-active {
+    background: linear-gradient(135deg, #3a7bd5, #4ea5e0);
+    border-color: #2856a8;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(58, 123, 213, 0.2);
+}
+
+.voice-toggle:hover {
+    border-color: #2856a8;
+    box-shadow: 0 4px 12px rgba(58, 123, 213, 0.18);
+}
+
 @media (max-width: 768px) {
-    .number-stepper-vertical {
-        width: 75px;
+    .number-stepper {
+        width: 100%;
+        max-width: 280px;
     }
-    
+
     .stepper-input {
-        width: 36px;
-        height: 30px;
-        font-size: 13px;
+        height: 46px;
+        font-size: 18px;
     }
-    
-    .stepper-btn {
-        width: 22px;
-        height: 15px;
+
+    .stepper-buttons {
+        gap: 6px;
+    }
+
+    .stepper-arrow {
+        width: 44px;
+        height: 44px;
     }
 }
 
-/* 小屏幕进一步优化 */
 @media (max-width: 480px) {
-    .number-stepper-vertical {
-        width: 70px;
+    .number-stepper {
+        max-width: 260px;
     }
-    
+
     .stepper-input {
-        width: 34px;
-        height: 28px;
-        font-size: 12px;
+        height: 44px;
+        font-size: 16px;
     }
-    
-    .stepper-btn {
-        width: 20px;
-        height: 14px;
+
+    .stepper-arrow {
+        width: 40px;
+        height: 40px;
     }
 }
 

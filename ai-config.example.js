@@ -24,7 +24,8 @@ export const TTS_CONFIG = {
   apiKey: '',
   voices: {
     english: 'en-US-JennyNeural',
-    chinese: 'zh-CN-XiaoxiaoNeural'
+    chinese: 'zh-CN-XiaoxiaoNeural',
+    cantonese: 'zh-HK-HiuGaaiNeural'
   }
 };
 

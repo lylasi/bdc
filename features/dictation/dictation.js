@@ -9,7 +9,7 @@ import * as platform from '../../modules/platform.js';
 // =================================
 
 /**
- * 初始化默写模式功能，绑定事件监听器。
+ * 初始化默寫模式功能，綁定事件監聽器。
  */
 export function initDictation() {
     dom.startDictationBtn.addEventListener('click', startDictation);
@@ -28,34 +28,82 @@ export function initDictation() {
         }
     });
     
-    // 加载保存的设置
+    // 加載保存的設置
     state.loadDictationSettings();
     loadDictationSettings();
+    setupChineseVoiceOptions();
     
-    // 检查是否有未完成的会话需要恢复
+    // 檢查是否有未完成的會話需要恢復
     checkAndRestoreDictationSession();
 }
 
 /**
- * 加载默写设置到界面
+ * 加載默寫設置到界面
  */
 function loadDictationSettings() {
     if (dom.repeatTimes) dom.repeatTimes.value = state.dictationSettings.repeatTimes;
     if (dom.wordInterval) dom.wordInterval.value = state.dictationSettings.wordInterval;
-    if (dom.readMeaning) dom.readMeaning.checked = state.dictationSettings.readMeaning;
     if (dom.loopMode) dom.loopMode.checked = state.dictationSettings.loopMode;
     if (dom.shuffleMode) dom.shuffleMode.checked = state.dictationSettings.shuffleMode;
     if (dom.listenOnlyMode) dom.listenOnlyMode.checked = state.dictationSettings.listenOnlyMode;
+    applyChineseVoiceSelection(state.dictationSettings.readChineseVoice || 'none');
+}
+
+function getSelectedChineseVoice() {
+    if (dom.readChineseMandarin?.checked) return 'chinese';
+    if (dom.readChineseCantonese?.checked) return 'cantonese';
+    return 'none';
+}
+
+function applyChineseVoiceSelection(voice) {
+    if (dom.readChineseMandarin) dom.readChineseMandarin.checked = voice === 'chinese';
+    if (dom.readChineseCantonese) dom.readChineseCantonese.checked = voice === 'cantonese';
+    updateChineseVoiceToggleStyles();
+}
+
+function updateChineseVoiceToggleStyles() {
+    if (!dom.chineseVoiceToggles) return;
+    dom.chineseVoiceToggles.forEach(toggle => {
+        const input = toggle.querySelector('input');
+        if (!input) return;
+        toggle.classList.toggle('is-active', input.checked);
+    });
+}
+
+function setupChineseVoiceOptions() {
+    if (!dom.readChineseMandarin || !dom.readChineseCantonese) return;
+
+    const syncSelection = () => {
+        saveDictationSettings();
+        updateChineseVoiceToggleStyles();
+    };
+
+    dom.readChineseMandarin.addEventListener('change', () => {
+        if (dom.readChineseMandarin.checked) {
+            dom.readChineseCantonese.checked = false;
+        }
+        syncSelection();
+    });
+
+    dom.readChineseCantonese.addEventListener('change', () => {
+        if (dom.readChineseCantonese.checked) {
+            dom.readChineseMandarin.checked = false;
+        }
+        syncSelection();
+    });
+
+    updateChineseVoiceToggleStyles();
 }
 
 /**
- * 保存当前设置
+ * 保存當前設置
  */
 function saveDictationSettings() {
+    const chineseVoice = getSelectedChineseVoice();
     const settings = {
         repeatTimes: parseInt(dom.repeatTimes?.value || '2'),
         wordInterval: parseInt(dom.wordInterval?.value || '3'),
-        readMeaning: dom.readMeaning?.checked || false,
+        readChineseVoice: chineseVoice,
         loopMode: dom.loopMode?.checked || false,
         shuffleMode: dom.shuffleMode?.checked || false,
         listenOnlyMode: dom.listenOnlyMode?.checked || true,
@@ -69,22 +117,22 @@ function saveDictationSettings() {
 }
 
 /**
- * 检查并恢复默写会话
+ * 檢查並恢復默寫會話
  */
 function checkAndRestoreDictationSession() {
     const session = state.loadDictationSession();
     if (!session) return;
     
-    // 显示恢复提示
+    // 顯示恢復提示
     showSessionRestorePrompt(session);
 }
 
 /**
- * 显示会话恢复提示
+ * 顯示會話恢復提示
  */
 function showSessionRestorePrompt(session) {
     const startTime = new Date(session.startTime).toLocaleString();
-    const message = `检测到未完成的默写会话：\n开始时间：${startTime}\n进度：${session.currentIndex + 1}/${session.words.length}\n\n是否继续之前的会话？`;
+    const message = `檢測到未完成的默寫會話：\n開始時間：${startTime}\n進度：${session.currentIndex + 1}/${session.words.length}\n\n是否繼續之前的會話？`;
     
     if (confirm(message)) {
         restoreDictationSession(session);
@@ -94,14 +142,14 @@ function showSessionRestorePrompt(session) {
 }
 
 /**
- * 恢复默写会话
+ * 恢復默寫會話
  */
 function restoreDictationSession(session) {
     try {
-        // 恢复设置
+        // 恢復設置
         loadDictationSettings();
         
-        // 恢复状态
+        // 恢復狀態
         state.setDictationWords(session.words);
         state.setCurrentDictationIndex(session.currentIndex);
         state.setIsDictationPaused(session.isPaused);
@@ -115,21 +163,21 @@ function restoreDictationSession(session) {
         dom.dictationPractice.classList.toggle('hidden', dom.listenOnlyMode.checked);
         dom.dictationProgressContainer.classList.remove('hidden');
         
-        // 显示浮动控制器
+        // 顯示浮動控制器
         showFloatingControls();
         
-        // 更新进度和按钮状态
+        // 更新進度和按鈕狀態
         updateDictationProgress(session.words.length);
         updatePauseButtonUI();
         
-        // 如果不是暂停状态，继续播放
+        // 如果不是暫停狀態，繼續播放
         if (!session.isPaused) {
             setTimeout(() => playCurrentWord(), 1000);
         }
         
-        console.log('默写会话已恢复');
+        console.log('默寫會話已恢復');
     } catch (error) {
-        console.error('恢复默写会话失败:', error);
+        console.error('恢復默寫會話失敗:', error);
         state.clearDictationSession();
     }
 }
@@ -151,7 +199,7 @@ function startDictation() {
         return;
     }
 
-    // 保存当前设置
+    // 保存當前設置
     saveDictationSettings();
 
     if (dom.shuffleMode.checked) {
@@ -160,7 +208,7 @@ function startDictation() {
     
     state.setDictationWords(wordsForDictation);
     
-    // 激活会话状态
+    // 激活會話狀態
     state.setDictationSessionActive(true);
     
     dom.startDictationBtn.disabled = true;
@@ -171,20 +219,20 @@ function startDictation() {
     dom.dictationPractice.classList.toggle('hidden', dom.listenOnlyMode.checked);
     dom.dictationProgressContainer.classList.remove('hidden');
 
-    // 关键：先设置索引，再更新UI
+    // 關鍵：先設置索引，再更新UI
     state.setCurrentDictationIndex(0);
     dom.dictationWordDisplay.textContent = '';
     dom.dictationInput.value = '';
     dom.dictationResult.textContent = '';
     dom.dictationResult.className = '';
     
-    // 现在更新按钮UI，此时currentDictationIndex已经是0了
+    // 現在更新按鈕UI，此時currentDictationIndex已經是0了
     updatePauseButtonUI();
     updateDictationProgress(state.dictationWords.length);
     playCurrentWord();
     showFloatingControls();
     
-    // 保存会话状态
+    // 保存會話狀態
     state.saveDictationSession();
 }
 
@@ -206,19 +254,19 @@ function stopDictation() {
     state.setCurrentDictationIndex(-1);
     state.setIsDictationPaused(false);
     
-    // 停用会话状态并清理持久化数据
+    // 停用會話狀態並清理持久化數據
     state.setDictationSessionActive(false);
     state.clearDictationSession();
     
     updatePauseButtonUI();
 
-    // 清理浮动控制器和事件监听器
+    // 清理浮動控制器和事件監聽器
     const floatingControls = document.getElementById('floating-dictation-controls');
     if (floatingControls) {
         floatingControls.remove();
     }
     
-    // 清理平台相关的事件监听器
+    // 清理平臺相關的事件監聽器
     if (window._dictationCleanups) {
         window._dictationCleanups.forEach(cleanup => {
             if (typeof cleanup === 'function') cleanup();
@@ -241,7 +289,7 @@ export function togglePauseDictation() {
     }
     setTimeout(updatePauseButtonUI, 0);
     
-    // 保存状态变化
+    // 保存狀態變化
     if (state.dictationSessionActive) {
         state.saveDictationSession();
     }
@@ -250,7 +298,7 @@ export function togglePauseDictation() {
 function updatePauseButtonUI() {
     const text = state.isDictationPaused ? '繼續' : '暫停';
     const replayBtnDisplay = state.isDictationPaused ? 'inline-block' : 'none';
-    // 导航按钮在默写开始后就显示（不管是否暂停）
+    // 導航按鈕在默寫開始後就顯示（不管是否暫停）
     const navBtnDisplay = (state.currentDictationIndex >= 0 && state.dictationWords.length > 0) ? 'inline-block' : 'none';
 
     if (dom.pauseDictationBtn) dom.pauseDictationBtn.textContent = text;
@@ -264,37 +312,37 @@ function updatePauseButtonUI() {
     const floatingReplayBtn = document.getElementById('floating-replay-btn');
     if (floatingReplayBtn) floatingReplayBtn.style.display = replayBtnDisplay;
 
-    // 更新按钮状态
+    // 更新按鈕狀態
     updateNavigationButtonState();
 }
 
 function showFloatingControls() {
     if (document.getElementById('floating-dictation-controls')) return;
 
-    // 创建增强版状态栏
+    // 創建增強版狀態欄
     const statusBar = createEnhancedStatusBar();
     document.body.appendChild(statusBar);
     
-    // 初始化平台特定的优化
+    // 初始化平臺特定的優化
     initPlatformOptimizations(statusBar);
     
-    // 监听页面可见性变化
+    // 監聽頁面可見性變化
     setupVisibilityHandling();
 }
 
 /**
- * 创建增强版浮动状态栏
+ * 創建增強版浮動狀態欄
  */
 function createEnhancedStatusBar() {
     const statusBar = document.createElement('div');
     statusBar.id = 'floating-dictation-controls';
     statusBar.className = 'enhanced-floating-controls';
     
-    // 创建主控制区域
+    // 創建主控制區域
     const mainControls = createMainControls();
     statusBar.appendChild(mainControls);
     
-    // 创建展开面板
+    // 創建展開面板
     const expandPanel = createExpandPanel();
     statusBar.appendChild(expandPanel);
     
@@ -302,35 +350,35 @@ function createEnhancedStatusBar() {
 }
 
 /**
- * 创建主控制区域（不展开时显示）
+ * 創建主控制區域（不展開時顯示）
  */
 function createMainControls() {
     const container = document.createElement('div');
     container.className = 'main-controls';
     
-    // 上一个按钮（左侧，大按钮）
+    // 上一個按鈕（左側，大按鈕）
     const prevBtn = document.createElement('button');
     prevBtn.id = 'floating-prev-btn';
     prevBtn.className = 'control-btn prev-btn';
     prevBtn.innerHTML = '⬅';
-    prevBtn.title = '上一个单词';
+    prevBtn.title = '上一個單詞';
     prevBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         gotoPrevDictationWord();
     });
     
-    // 重播按钮（在左侧按钮和信息区域之间）
+    // 重播按鈕（在左側按鈕和信息區域之間）
     const replayBtn = document.createElement('button');
     replayBtn.id = 'floating-replay-btn';
     replayBtn.className = 'control-btn replay-btn';
     replayBtn.innerHTML = '🔄';
-    replayBtn.title = '重播当前单词';
+    replayBtn.title = '重播當前單詞';
     replayBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         replayCurrentDictationWord();
     });
     
-    // 中间信息区域
+    // 中間信息區域
     const infoArea = document.createElement('div');
     infoArea.className = 'info-area';
     infoArea.addEventListener('click', toggleExpandPanel);
@@ -343,28 +391,28 @@ function createMainControls() {
     const expandIcon = document.createElement('span');
     expandIcon.className = 'expand-icon';
     expandIcon.textContent = '▼';
-    expandIcon.setAttribute('aria-label', '展开单词列表');
+    expandIcon.setAttribute('aria-label', '展開單詞列表');
     expandIcon.dataset.expanded = 'false';
 
     infoArea.appendChild(progressSpan);
     infoArea.appendChild(expandIcon);
     
-    // 暂停/继续按钮（中间）
+    // 暫停/繼續按鈕（中間）
     const pauseBtn = document.createElement('button');
     pauseBtn.id = 'floating-pause-btn';
     pauseBtn.className = 'control-btn pause-btn';
-    pauseBtn.textContent = state.isDictationPaused ? '继续' : '暂停';
+    pauseBtn.textContent = state.isDictationPaused ? '繼續' : '暫停';
     pauseBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         togglePauseDictation();
     });
     
-    // 下一个按钮（右侧，大按钮）
+    // 下一個按鈕（右側，大按鈕）
     const nextBtn = document.createElement('button');
     nextBtn.id = 'floating-next-btn';
     nextBtn.className = 'control-btn next-btn';
     nextBtn.innerHTML = '➡';
-    nextBtn.title = '下一个单词';
+    nextBtn.title = '下一個單詞';
     nextBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         gotoNextDictationWord();
@@ -380,7 +428,7 @@ function createMainControls() {
 }
 
 /**
- * 创建展开面板
+ * 創建展開面板
  */
 function createExpandPanel() {
     const panel = document.createElement('div');
@@ -388,19 +436,19 @@ function createExpandPanel() {
     panel.className = 'expand-panel';
     panel.style.display = 'none';
     
-    // 面板头部
+    // 面板頭部
     const header = document.createElement('div');
     header.className = 'panel-header';
     
     const title = document.createElement('h3');
-    title.textContent = '单词列表';
+    title.textContent = '單詞列表';
     
     const closeBtn = document.createElement('button');
     closeBtn.className = 'close-btn';
     closeBtn.innerHTML = '×';
     closeBtn.addEventListener('click', () => toggleExpandPanel());
     
-    // 控制选项
+    // 控制選項
     const controls = document.createElement('div');
     controls.className = 'panel-controls';
     
@@ -412,7 +460,7 @@ function createExpandPanel() {
     showInfoCheckbox.id = 'show-word-info';
 
     const showInfoLabel = document.createElement('span');
-    showInfoLabel.textContent = '显示单词信息';
+    showInfoLabel.textContent = '顯示單詞信息';
 
     showInfoToggle.appendChild(showInfoCheckbox);
     showInfoToggle.appendChild(showInfoLabel);
@@ -435,7 +483,7 @@ function createExpandPanel() {
     header.appendChild(controls);
     header.appendChild(closeBtn);
     
-    // 单词列表容器
+    // 單詞列表容器
     const listContainer = document.createElement('div');
     listContainer.className = 'word-list-container';
     
@@ -452,7 +500,7 @@ function createExpandPanel() {
 }
 
 /**
- * 切换展开面板显示状态
+ * 切換展開面板顯示狀態
  */
 function toggleExpandPanel() {
     const panel = document.getElementById('expand-panel');
@@ -467,14 +515,14 @@ function toggleExpandPanel() {
         panel.style.display = 'none';
         statusBar.classList.remove('expanded');
     } else {
-        // 展开面板
+        // 展開面板
         panel.style.display = 'block';
         statusBar.classList.add('expanded');
         
-        // 更新单词列表
+        // 更新單詞列表
         updateFloatingWordList();
         
-        // 设置面板高度为屏幕的1/2
+        // 設置面板高度爲屏幕的1/2
         const viewportHeight = platform.getViewportHeight();
         panel.style.height = `${viewportHeight * 0.5}px`;
     }
@@ -486,12 +534,12 @@ function updateExpandIcon(isExpanded) {
     const expandIcon = document.querySelector('.expand-icon');
     if (!expandIcon) return;
     expandIcon.textContent = isExpanded ? '▲' : '▼';
-    expandIcon.setAttribute('aria-label', isExpanded ? '收起单词列表' : '展开单词列表');
+    expandIcon.setAttribute('aria-label', isExpanded ? '收起單詞列表' : '展開單詞列表');
     expandIcon.dataset.expanded = String(isExpanded);
 }
 
 /**
- * 更新浮动单词列表
+ * 更新浮動單詞列表
  */
 function updateFloatingWordList() {
     const wordList = document.getElementById('floating-word-list');
@@ -537,7 +585,7 @@ function updateFloatingWordList() {
             if (hasPhonetic) {
                 phoneticEl.textContent = `/${cleanedPhonetic}/`;
             } else {
-                phoneticEl.textContent = '暂无音标';
+                phoneticEl.textContent = '暫無音標';
                 phoneticEl.classList.add('word-phonetic--missing');
             }
             wordHeader.appendChild(phoneticEl);
@@ -550,7 +598,7 @@ function updateFloatingWordList() {
             wordItem.appendChild(wordMeaning);
         }
         
-        // 点击跳转到该单词
+        // 點擊跳轉到該單詞
         wordItem.addEventListener('click', () => {
             jumpToWord(index);
         });
@@ -558,17 +606,17 @@ function updateFloatingWordList() {
         wordList.appendChild(wordItem);
     });
     
-    // 滚动到当前单词
+    // 滾動到當前單詞
     scrollToCurrentWord();
 }
 
 /**
- * 跳转到指定单词
+ * 跳轉到指定單詞
  */
 function jumpToWord(index) {
     if (index < 0 || index >= state.dictationWords.length) return;
     
-    // 暂停当前播放
+    // 暫停當前播放
     if (!state.isDictationPaused) {
         state.setIsDictationPaused(true);
         clearTimeout(state.dictationTimeout);
@@ -576,14 +624,14 @@ function jumpToWord(index) {
         audio.stopCurrentAudio();
     }
     
-    // 跳转到指定单词
+    // 跳轉到指定單詞
     state.setCurrentDictationIndex(index);
     playCurrentWordOnce();
     updateDictationProgress(state.dictationWords.length);
     updatePauseButtonUI();
     updateFloatingWordList();
     
-    // 清空输入和结果
+    // 清空輸入和結果
     if (dom.dictationInput) dom.dictationInput.value = '';
     if (dom.dictationResult) {
         dom.dictationResult.textContent = '';
@@ -591,14 +639,14 @@ function jumpToWord(index) {
     }
     if (dom.dictationWordDisplay) dom.dictationWordDisplay.textContent = '';
     
-    // 保存状态变化
+    // 保存狀態變化
     if (state.dictationSessionActive) {
         state.saveDictationSession();
     }
 }
 
 /**
- * 滚动到当前单词
+ * 滾動到當前單詞
  */
 function scrollToCurrentWord() {
     const currentItem = document.querySelector('.word-item.current');
@@ -611,51 +659,51 @@ function scrollToCurrentWord() {
 }
 
 /**
- * 初始化平台特定优化
+ * 初始化平臺特定優化
  */
 function initPlatformOptimizations(statusBar) {
-    // iOS特殊处理
+    // iOS特殊處理
     if (platform.detect.isIOS) {
-        // 禁用弹性滚动
+        // 禁用彈性滾動
         const wordList = statusBar.querySelector('.word-list');
         if (wordList) {
             platform.disableBounceScrolling(wordList);
         }
         
-        // 触摸优化
+        // 觸摸優化
         const touchTargetSize = platform.getOptimalTouchTarget();
         statusBar.style.setProperty('--touch-target-size', `${touchTargetSize}px`);
     }
     
-    // 微信浏览器优化
+    // 微信瀏覽器優化
     if (platform.detect.isWeixin) {
         platform.initWeixinAudio(() => {
-            console.log('微信音频已初始化');
+            console.log('微信音頻已初始化');
         });
     }
 }
 
 /**
- * 设置页面可见性处理
+ * 設置頁面可見性處理
  */
 function setupVisibilityHandling() {
     const removeListener = platform.onVisibilityChange((isVisible) => {
         if (!isVisible) {
-            // 页面不可见时，继续播放但更新状态栏
+            // 頁面不可見時，繼續播放但更新狀態欄
             updateFloatingStatus();
         } else {
-            // 页面可见时，恢复状态栏显示
+            // 頁面可見時，恢復狀態欄顯示
             updateFloatingStatus();
         }
     });
     
-    // 保存移除监听器的函数，在停止默写时调用
+    // 保存移除監聽器的函數，在停止默寫時調用
     if (!window._dictationCleanups) window._dictationCleanups = [];
     window._dictationCleanups.push(removeListener);
 }
 
 /**
- * 更新浮动状态栏信息
+ * 更新浮動狀態欄信息
  */
 function updateFloatingStatus() {
     const progressText = document.getElementById('floating-progress-text');
@@ -666,10 +714,10 @@ function updateFloatingStatus() {
     }
     
     if (pauseBtn) {
-        pauseBtn.textContent = state.isDictationPaused ? '继续' : '暂停';
+        pauseBtn.textContent = state.isDictationPaused ? '繼續' : '暫停';
     }
     
-    // 更新单词列表（如果展开）
+    // 更新單詞列表（如果展開）
     const panel = document.getElementById('expand-panel');
     if (panel && panel.style.display !== 'none') {
         updateFloatingWordList();
@@ -708,8 +756,10 @@ function playCurrentWord() {
             if (timesPlayed < repeatTarget) {
                 setTimeout(playSequence, 500);
             } else {
-                if (dom.readMeaning.checked && currentWord.meaning) {
-                    setTimeout(() => audio.speakText(currentWord.meaning, 'zh-TW', 0, null, scheduleNextWord), 500);
+                const chineseVoice = state.dictationSettings.readChineseVoice || 'none';
+                if (chineseVoice !== 'none' && currentWord.meaning) {
+                    const voiceKey = chineseVoice === 'cantonese' ? 'cantonese' : 'chinese';
+                    setTimeout(() => audio.speakText(currentWord.meaning, voiceKey, 0, null, scheduleNextWord), 500);
                 } else {
                     scheduleNextWord();
                 }
@@ -778,23 +828,23 @@ function replayCurrentDictationWord() {
 function gotoPrevDictationWord() {
     if (!state.dictationWords || state.dictationWords.length === 0) return;
     
-    // 如果正在播放，先自动暂停
+    // 如果正在播放，先自動暫停
     if (!state.isDictationPaused) {
         state.setIsDictationPaused(true);
         clearTimeout(state.dictationTimeout);
         clearInterval(state.dictationInterval);
         audio.stopCurrentAudio();
-        updatePauseButtonUI(); // 更新暂停按钮UI
+        updatePauseButtonUI(); // 更新暫停按鈕UI
     }
     
     let newIndex = state.currentDictationIndex - 1;
     
-    // 处理边界情况
+    // 處理邊界情況
     if (newIndex < 0) {
         if (dom.loopMode.checked) {
-            newIndex = state.dictationWords.length - 1; // 循环到最后一个
+            newIndex = state.dictationWords.length - 1; // 循環到最後一個
         } else {
-            return; // 不允许超出边界
+            return; // 不允許超出邊界
         }
     }
     
@@ -803,7 +853,7 @@ function gotoPrevDictationWord() {
     updateDictationProgress(state.dictationWords.length);
     updateNavigationButtonState();
     
-    // 清空输入和结果
+    // 清空輸入和結果
     dom.dictationInput.value = '';
     dom.dictationResult.textContent = '';
     dom.dictationResult.className = '';
@@ -813,23 +863,23 @@ function gotoPrevDictationWord() {
 function gotoNextDictationWord() {
     if (!state.dictationWords || state.dictationWords.length === 0) return;
     
-    // 如果正在播放，先自动暂停
+    // 如果正在播放，先自動暫停
     if (!state.isDictationPaused) {
         state.setIsDictationPaused(true);
         clearTimeout(state.dictationTimeout);
         clearInterval(state.dictationInterval);
         audio.stopCurrentAudio();
-        updatePauseButtonUI(); // 更新暂停按钮UI
+        updatePauseButtonUI(); // 更新暫停按鈕UI
     }
     
     let newIndex = state.currentDictationIndex + 1;
     
-    // 处理边界情况
+    // 處理邊界情況
     if (newIndex >= state.dictationWords.length) {
         if (dom.loopMode.checked) {
-            newIndex = 0; // 循环到第一个
+            newIndex = 0; // 循環到第一個
         } else {
-            return; // 不允许超出边界
+            return; // 不允許超出邊界
         }
     }
     
@@ -838,7 +888,7 @@ function gotoNextDictationWord() {
     updateDictationProgress(state.dictationWords.length);
     updateNavigationButtonState();
     
-    // 清空输入和结果
+    // 清空輸入和結果
     dom.dictationInput.value = '';
     dom.dictationResult.textContent = '';
     dom.dictationResult.className = '';
@@ -846,7 +896,7 @@ function gotoNextDictationWord() {
 }
 
 function playCurrentWordOnce() {
-    // 单次播放当前单词，用于手动切换时
+    // 單次播放當前單詞，用於手動切換時
     if (state.currentDictationIndex >= 0 && state.currentDictationIndex < state.dictationWords.length) {
         const currentWord = state.dictationWords[state.currentDictationIndex];
         audio.speakText(currentWord.word);
@@ -860,17 +910,17 @@ function updateNavigationButtonState() {
     const isLastWord = state.currentDictationIndex >= state.dictationWords.length - 1;
     const loopEnabled = dom.loopMode.checked;
     
-    // 更新页面内导航按钮
+    // 更新頁面內導航按鈕
     if (dom.prevDictationBtn) {
-        // 在首位且无循环时禁用，否则启用
+        // 在首位且無循環時禁用，否則啓用
         dom.prevDictationBtn.disabled = (isFirstWord && !loopEnabled);
     }
     if (dom.nextDictationBtn) {
-        // 在末位且无循环时禁用，否则启用
+        // 在末位且無循環時禁用，否則啓用
         dom.nextDictationBtn.disabled = (isLastWord && !loopEnabled);
     }
     
-    // 更新浮动状态栏按钮
+    // 更新浮動狀態欄按鈕
     const floatingPrevBtn = document.getElementById('floating-prev-btn');
     const floatingNextBtn = document.getElementById('floating-next-btn');
     
@@ -881,7 +931,7 @@ function updateNavigationButtonState() {
         floatingNextBtn.disabled = (isLastWord && !loopEnabled);
     }
     
-    // 更新浮动状态栏显示
+    // 更新浮動狀態欄顯示
     updateFloatingStatus();
 }
 
