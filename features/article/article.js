@@ -1148,12 +1148,7 @@ async function toggleSentenceCard(sentenceEl) {
         renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx);
         // 首次渲染即整句高亮
         applySentenceHighlight(paraIdx, sentIdx, true);
-        // After rendering, mark chunks within the sentence and corresponding Chinese sentence
-        try {
-            const paraEl = sentenceEl.closest('.paragraph-pair');
-            const zhSentenceEl = paraEl ? paraEl.querySelector(`.interactive-sentence-zh[data-sent-index="${sentIdx}"]`) : null;
-            applyChunkMarkers(sentenceEl, zhSentenceEl, data, paraIdx, sentIdx);
-        } catch (_) {}
+        // 片語級標記已移除，僅保留整句高亮
         // Prefetch next sentence lazily
         setTimeout(async () => {
             const next = sentenceEl.parentElement.querySelector(`.interactive-sentence[data-para-index=\"${paraIdx}\"][data-sent-index=\"${sentIdx+1}\"]`);
@@ -1204,7 +1199,6 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
             + `</div>` : ''}
         ${chunks.length? `<div class="sentence-chunks">`
             + chunks.slice(0,8).map((c,idx)=>`<div class="chunk-item" data-chunk-id="sent-${paraIdx}-${sentIdx}-${idx}" style="margin:4px 0;display:flex;gap:6px;align-items:center;">
-                    <button class="chunk-toggle" data-chunk-id="sent-${paraIdx}-${sentIdx}-${idx}" style="font-size:12px;">高亮</button>
                     <button class="chunk-explain" data-chunk-id="sent-${paraIdx}-${sentIdx}-${idx}" data-phrase="${esc(c.text)}" style="font-size:12px;">詳解</button>
                     <div class="chunk-line"><span class="chunk-text" style="color:#22c55e">${esc(c.text)}</span> — <em>${esc(c.role)}</em>${c.note? `：${esc(c.note)}`:''}</div>
                 </div>`).join('')
@@ -1250,28 +1244,10 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         }
     });
 
-    // chunk list interactions
-    card.addEventListener('mouseover', (e)=>{
-        const item = e.target.closest && e.target.closest('.chunk-item');
-        if (!item) return;
-        const id = item.getAttribute('data-chunk-id');
-        toggleChunkActive(paraIdx, sentIdx, id, true);
-    });
-    card.addEventListener('mouseout', (e)=>{
-        const item = e.target.closest && e.target.closest('.chunk-item');
-        if (!item) return;
-        const id = item.getAttribute('data-chunk-id');
-        toggleChunkActive(paraIdx, sentIdx, id, false);
-    });
+    // chunk actions: 只保留「詳解」
     card.addEventListener('click', async (e)=>{
-        const tgl = e.target.closest && e.target.closest('.chunk-toggle');
         const exp = e.target.closest && e.target.closest('.chunk-explain');
-        if (tgl) {
-            const id = tgl.getAttribute('data-chunk-id');
-            const mark = getChunkMark(paraIdx, sentIdx, id);
-            const on = !(mark && mark.classList.contains('active'));
-            toggleChunkActive(paraIdx, sentIdx, id, on);
-        } else if (exp) {
+        if (exp) {
             const phrase = exp.getAttribute('data-phrase') || '';
             exp.disabled = true; exp.textContent = '詳解中...';
             try {
@@ -1307,60 +1283,6 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     });
 }
 
-function includesIgnoreCase(h, n) { return (h||'').toLowerCase().includes((n||'').toLowerCase()); }
-
-function clearChunkMarkers(engSentenceEl, zhSentenceEl, prefix) {
-    const unwarp = (root, selector) => {
-        if (!root) return;
-        const nodes = root.querySelectorAll(selector);
-        nodes.forEach(span => {
-            const parent = span.parentNode;
-            const text = document.createTextNode(span.textContent);
-            parent.replaceChild(text, span);
-        });
-    };
-    unwarp(engSentenceEl, `.chunk-mark[data-chunk-id^="${prefix}"]`);
-    unwarp(zhSentenceEl, `.chunk-mark-zh[data-chunk-id^="${prefix}"]`);
-}
-
-function wrapTextOnce(root, text, className, attrs) {
-    if (!root || !text) return false;
-    const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
-    let node;
-    while ((node = tw.nextNode())) {
-        const idx = (node.nodeValue || '').indexOf(text);
-        if (idx >= 0) {
-            const before = document.createTextNode(node.nodeValue.slice(0, idx));
-            const mid = document.createElement('span');
-            mid.className = className;
-            for (const k in (attrs||{})) mid.setAttribute(k, attrs[k]);
-            mid.textContent = node.nodeValue.slice(idx, idx + text.length);
-            const after = document.createTextNode(node.nodeValue.slice(idx + text.length));
-            const p = node.parentNode;
-            p.replaceChild(after, node);
-            p.insertBefore(mid, after);
-            p.insertBefore(before, mid);
-            return true;
-        }
-    }
-    return false;
-}
-
-function applyChunkMarkers(engSentenceEl, zhSentenceEl, data, paraIdx, sentIdx) {
-    // 已精簡：不做片語級標記，改為整句高亮
-    const prefix = `sent-${paraIdx}-${sentIdx}-`;
-    clearChunkMarkers(engSentenceEl, zhSentenceEl, prefix);
-}
-
-function getChunkMark(paraIdx, sentIdx, id) {
-    const eng = document.querySelector(`.interactive-sentence[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
-    if (!eng) return null;
-    return eng.querySelector(`.chunk-mark[data-chunk-id="${id}"]`);
-}
-
-function toggleChunkActive(paraIdx, sentIdx, id, on) {
-    // 兼容：現在不再標記 chunk，留空即可
-}
 
 function applySentenceHighlight(paraIdx, sentIdx, on) {
     const eng = document.querySelector(`.interactive-sentence[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
