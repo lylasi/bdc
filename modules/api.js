@@ -1,44 +1,111 @@
 import { API_URL, API_KEY, AI_MODELS } from '../ai-config.js';
+import * as cache from './cache.js';
+import * as validate from './validate.js';
 
 // =================================
 // AI API 服務
 // =================================
 
-/**
- * 通用的 AI API 請求函數
- * @param {string} model - 使用的 AI 模型
- * @param {string} prompt - 發送給 AI 的提示
- * @param {number} temperature - 控制生成文本的隨機性
- * @returns {Promise<any>} - 返回 AI 的響應內容
- */
-async function fetchAIResponse(model, prompt, temperature = 0.5) {
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`
-        },
-        body: JSON.stringify({
-            model: model,
-            messages: [{ role: "user", content: prompt }],
-            temperature: temperature,
-        })
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error:', errorData);
-        throw new Error(`API請求失敗，狀態碼: ${response.status}`);
+// Small, reusable AI request helper with timeout and retry.
+async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat }) {
+    // AbortController per request; chain with external signal if provided
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
+    const composed = signal ? new AbortController() : null;
+    if (signal && composed) {
+        const onAbort = () => composed.abort(signal.reason);
+        signal.addEventListener('abort', onAbort, { once: true });
+        // When composed aborts, also abort ac
+        composed.signal.addEventListener('abort', () => ac.abort(composed.signal.reason), { once: true });
     }
 
-    const data = await response.json();
-    let content = data.choices[0].message.content.replace(/^```json\n/, '').replace(/\n```$/, '').trim();
-    
+    const body = {
+        model,
+        messages,
+        temperature,
+    };
+    if (typeof maxTokens === 'number') body.max_tokens = maxTokens;
+    if (responseFormat) {
+        body.response_format = typeof responseFormat === 'string' ? { type: responseFormat } : responseFormat;
+    }
+
+    const fetchOnce = async () => {
+        const resp = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify(body),
+            signal: ac.signal
+        });
+        if (!resp.ok) {
+            let errPayload = null;
+            try { errPayload = await resp.json(); } catch (_) { /* ignore */ }
+            const err = new Error(`AI request failed ${resp.status}`);
+            err.status = resp.status;
+            err.payload = errPayload;
+            try {
+                const ra = resp.headers.get && resp.headers.get('retry-after');
+                if (ra) err.retryAfter = parseFloat(ra);
+            } catch(_) {}
+            throw err;
+        }
+        return resp.json();
+    };
+
+    const maxRetries = 2;
+    let attempt = 0;
+    let lastErr = null;
+    while (attempt <= maxRetries) {
+        try {
+            const json = await fetchOnce();
+            clearTimeout(timer);
+            return json;
+        } catch (err) {
+            lastErr = err;
+            // Abort or client-side timeout: do not retry
+            if (err?.name === 'AbortError') break;
+            const status = err?.status || 0;
+            // Retry on 429/5xx
+            if (status === 429 || (status >= 500 && status < 600)) {
+                let backoff;
+                if (status === 429 && err && typeof err.retryAfter === 'number' && !Number.isNaN(err.retryAfter)) {
+                    backoff = Math.min(err.retryAfter * 1000 + Math.random() * 250, 15000);
+                } else {
+                    backoff = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 250, 5000);
+                }
+                await new Promise(r => setTimeout(r, backoff));
+                attempt += 1;
+                continue;
+            }
+            break;
+        }
+    }
+    clearTimeout(timer);
+    throw lastErr || new Error('AI request failed');
+}
+
+/**
+ * 通用的 AI API 請求函數；預期回傳 JSON 內容或可解析為 JSON 的字串。
+ */
+async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTokens, timeoutMs = 30000, signal, responseFormat } = {}) {
+    const data = await requestAI({
+        model,
+        temperature,
+        maxTokens,
+        messages: [{ role: 'user', content: prompt }],
+        timeoutMs,
+        signal,
+        responseFormat
+    });
+
+    let content = (data?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
     try {
         return JSON.parse(content);
     } catch (error) {
-        console.warn("JSON 解析失敗，將返回原始文本內容。", `錯誤: ${error.message}`);
-        return content; // 如果解析失敗，返回原始字符串
+        console.warn('JSON 解析失敗，將返回原始文本內容。', `錯誤: ${error.message}`);
+        return content;
     }
 }
 
@@ -62,9 +129,9 @@ export async function getWordAnalysis(word) {
  * @param {string} word - 需要例句的單詞。
  * @returns {Promise<Array>} - 包含例句對象的數組。
  */
-export async function generateExamplesForWord(word) {
+export async function generateExamplesForWord(word, opts = {}) {
     const prompt = `請為單詞 "${word.word}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯，以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
-    return await fetchAIResponse(AI_MODELS.exampleGeneration, prompt, 0.7);
+    return await fetchAIResponse(AI_MODELS.exampleGeneration, prompt, 0.7, { maxTokens: 600, timeoutMs: 20000, ...opts });
 }
 
 /**
@@ -73,9 +140,9 @@ export async function generateExamplesForWord(word) {
  * @param {string} userSentence - 用戶創建的句子。
  * @returns {Promise<string>} - AI 的反饋文本。
  */
-export async function checkUserSentence(word, userSentence) {
+export async function checkUserSentence(word, userSentence, opts = {}) {
     const prompt = `請判斷以下這個使用單詞 "${word}" 的句子在語法和用法上是否正確: "${userSentence}"。如果正確，請只回答 "正確"。如果不正確，請詳細指出錯誤並提供一個修改建議，格式為 "不正確。建議：[你的建議]"。並總結錯誤的知識點。`;
-    return await fetchAIResponse(AI_MODELS.sentenceChecking, prompt, 0.5);
+    return await fetchAIResponse(AI_MODELS.sentenceChecking, prompt, 0.5, { maxTokens: 400, timeoutMs: 15000, ...opts });
 }
 
 /**
@@ -83,69 +150,214 @@ export async function checkUserSentence(word, userSentence) {
  * @param {string} paragraph - 要分析的段落。
  * @returns {Promise<object>} - 包含段落分析結果的對象。
  */
-export async function analyzeParagraph(paragraph) {
-    const prompt = `請對以下英文段落進行全面、深入的語法和語義分析，並嚴格按照指定的JSON格式返回結果。
+export async function analyzeParagraph(paragraph, opts = {}) {
+    const { timeoutMs = 45000, signal, level = 'standard', detailTopN = 12, noCache = false } = opts;
+    const model = AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
 
-段落: "${paragraph}"
-
-請返回一個JSON對象，包含以下三個鍵:
-1. "chinese_translation": 字符串，為此段落的流暢中文翻譯。
-2. "word_alignment": 數組，每個元素是一個對象 {"en": "英文單詞", "zh": "對應的中文詞語"}，用於實現英漢詞語對照高亮。
-3. "detailed_analysis": 一個 **數組**，其中每個元素都是一個對象，代表段落中一個具體單詞的分析。
-   - **重要**: 這個數組中的對象必須嚴格按照單詞在原文中出現的順序排列。
-   - **重要**: 如果同一個單詞在段落中出現多次，請為每一次出現都創建一個獨立的分析對象。
-   - 每個對象的結構如下:
-     {
-       "word": "被分析的單詞原文",
-       "sentence": "該單詞所在的完整句子",
-       "analysis": {
-         "phonetic": "該單詞的國際音標(IPA)，例如 'ˈæpəl'",
-         "pos": "詞性",
-         "meaning": "在當前上下文中的準確中文意思",
-         "role": "在句子中的極其詳細的語法作用，並強力關聯上下文。描述必須非常具體，清晰地闡述該詞與前後文的邏輯關係。"
-       }
-     }
-
-請只返回JSON格式的數據，不要包含任何額外的解釋性文字或標記。
-**極其重要**: JSON值內的所有雙引號都必須使用反斜杠進行轉義 (例如，寫成 \\" 而不是 ")。`;
-    
-    // 針對這個複雜的解析，我們直接在這裡處理，而不是用通用解析器
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`
-        },
-        body: JSON.stringify({
-            model: AI_MODELS.exampleGeneration,
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.5,
-        })
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error:', errorData);
-        throw new Error(`API請求失敗，狀態碼: ${response.status}`);
+    // local cache lookup
+    if (!noCache) {
+        try {
+            const cached = await cache.getParagraphAnalysisCached(paragraph, level, model);
+            if (cached) return cached;
+        } catch (e) { /* ignore cache errors */ }
     }
 
-    const data = await response.json();
-    let content = data.choices[0].message.content.replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+    // Compose instructions by level
+    let instructions = '';
+    if (level === 'quick') {
+        instructions = `只返回 JSON：{"chinese_translation":"..."}
+要求：
+- 翻譯請使用繁體中文（正體），語氣自然流暢；
+- 不要返回 word_alignment 與 detailed_analysis。`;
+    } else if (level === 'standard') {
+        instructions = `只返回 JSON：{"chinese_translation":"...","detailed_analysis":[...]} 
+detailed_analysis 僅針對本段最關鍵的 ${detailTopN} 個詞，格式：
+{"word":"單詞","sentence":"所在完整句子","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思","role":"在句中的語法作用（簡潔）"}}`;
+    } else {
+        instructions = `只返回 JSON：{"chinese_translation":"...","detailed_analysis":[...]} 
+detailed_analysis 應覆蓋段落中的所有詞（或主要詞），按出現順序，同詞多次出現需分條。每條格式：
+{"word":"單詞","sentence":"所在完整句子","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思","role":"在句中的語法作用（具體）"}}`;
+    }
 
+    const prompt = `請對以下英文段落進行分析並返回嚴格有效的 JSON（不允許代碼塊或額外解釋）：
+
+段落: """
+${paragraph}
+"""
+
+${instructions}`;
+
+    const maxTokens = level === 'quick' ? 600 : level === 'standard' ? 1000 : 1500;
     try {
-        return JSON.parse(content);
-    } catch (error) {
-        console.warn("常規 JSON 解析失敗，啟動備用解析策略。", `錯誤: ${error.message}`);
-        // 嘗試修復常見的 AI 生成錯誤
-        let fixedContent = content.replace(/([\w'])\"(\s*[,}])/g, '$1$2');
-        if (content !== fixedContent) {
-            try {
-                return JSON.parse(fixedContent);
-            } catch (e1) {
-                console.warn("啟發式修復後解析失敗。", `錯誤: ${e1.message}`);
+        const data = await requestAI({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.3,
+            maxTokens,
+            timeoutMs,
+            signal,
+            responseFormat: { type: 'json_object' }
+        });
+        let content = (data?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+        try {
+            const parsed = JSON.parse(content);
+            if (!validate.validateArticleAnalysis(parsed, level)) {
+                throw new Error('Schema validation failed');
             }
+            try {
+                // store in cache (TTL varies by level)
+                const ttlMs = level === 'quick' ? 14*24*60*60*1000 : level === 'standard' ? 21*24*60*60*1000 : 30*24*60*60*1000;
+                await cache.setParagraphAnalysisCached(paragraph, level, model, parsed, ttlMs);
+            } catch(_) {}
+            return parsed;
+        } catch (e) {
+            const fixed = content.replace(/,\s*([}\]])/g, '$1').replace(/(\{|\[)\s*,/g, '$1');
+            const parsed = JSON.parse(fixed);
+            if (!validate.validateArticleAnalysis(parsed, level)) {
+                throw new Error('Schema validation failed after fix');
+            }
+            try { const ttlMs = level === 'quick' ? 14*24*60*60*1000 : level === 'standard' ? 21*24*60*60*1000 : 30*24*60*60*1000; await cache.setParagraphAnalysisCached(paragraph, level, model, parsed, ttlMs);} catch(_){}
+            return parsed;
         }
-        // 如果所有方法都失敗了，拋出原始錯誤
-        throw error;
+    } catch (err) {
+        console.warn('段落分析失敗，回退到最小輸出。', err);
+        // 最小回退：僅翻譯
+        const fbPrompt = `只返回 JSON：{"chinese_translation":"..."}
+請使用繁體中文（正體）進行翻譯。
+段落:"""
+${paragraph}
+"""`;
+        const fb = await requestAI({
+            model,
+            messages: [{ role: 'user', content: fbPrompt }],
+            temperature: 0.2,
+            maxTokens: 500,
+            timeoutMs,
+            signal,
+            responseFormat: { type: 'json_object' }
+        });
+        let content = (fb?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+        const base = JSON.parse(content);
+        const parsed = { chinese_translation: base.chinese_translation || '', word_alignment: [], detailed_analysis: [] };
+        try { const ttlMs = 7*24*60*60*1000; await cache.setParagraphAnalysisCached(paragraph, level, model, parsed, ttlMs);} catch(_){}
+        return parsed;
     }
+}
+
+/**
+ * 懶載：針對單個詞（或短語）在其所在句子中的詳解。
+ */
+export async function analyzeWordInSentence(word, sentence, opts = {}) {
+    const { timeoutMs = 20000, signal } = opts;
+    const model = AI_MODELS.wordAnalysis || AI_MODELS.articleAnalysis;
+    // local cache lookup
+    try {
+        const cached = await cache.getWordAnalysisCached(word, sentence, model);
+        if (cached) return cached;
+    } catch (_) {}
+    const prompt = `請針對下列句子中的目標詞進行語音/詞性/語義與句法作用的簡潔分析，返回嚴格 JSON：
+詞: "${word}"
+句: "${sentence}"
+只返回：{"word":"...","sentence":"...","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思","role":"語法作用（簡潔）"}}`;
+    const data = await requestAI({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+        maxTokens: 300,
+        timeoutMs,
+        signal,
+        responseFormat: { type: 'json_object' }
+    });
+    let content = (data?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+    try {
+        const parsed = JSON.parse(content);
+        if (!validate.validateWordInSentence(parsed)) throw new Error('Schema validation failed');
+        try { await cache.setWordAnalysisCached(word, sentence, model, parsed, 30*24*60*60*1000);} catch(_){}
+        return parsed;
+    } catch (e) {
+        const fixed = content.replace(/,\s*([}\]])/g, '$1').replace(/(\{|\[)\s*,/g, '$1');
+        const parsed = JSON.parse(fixed);
+        if (!validate.validateWordInSentence(parsed)) throw e;
+        try { await cache.setWordAnalysisCached(word, sentence, model, parsed, 30*24*60*60*1000);} catch(_){}
+        return parsed;
+    }
+}
+
+// --- Sentence-level analysis ---
+export async function analyzeSentence(sentence, context = '', opts = {}) {
+    const { timeoutMs = 20000, signal, noCache = false, conciseKeypoints = true, includeStructure = true } = opts;
+    const model = AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    let contextHash = '';
+    try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
+    if (!noCache) {
+        try {
+            const cached = await cache.getSentenceAnalysisCached(sentence, contextHash, model);
+            if (cached) return cached;
+        } catch (_) {}
+    }
+    const keyPointRule = '請輸出 2-4 條最重要的關鍵點；避免與片語/結構重覆描述，偏向語義/語氣/結構/常見誤用等高階提示。';
+    const basePrompt = `上下文（僅供理解，不要逐句分析）: \"\"\"\n${context}\n\"\"\"\n目標句: \"\"\"\n${sentence}\n\"\"\"`;
+    const prompt = includeStructure
+      ? `對下列英文句子進行分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  \"sentence\":\"...\",\n  \"translation\":\"...\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\n${keyPointRule}`
+      : `僅對下列英文句子進行精簡分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  \"sentence\":\"...\",\n  \"translation\":\"...\",\n  \"key_points\":[\"...\"]\n}\n${keyPointRule}`;
+    try {
+        const data = await requestAI({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.2,
+            maxTokens: includeStructure ? 650 : 450,
+            timeoutMs,
+            signal,
+            responseFormat: { type: 'json_object' }
+        });
+        const content = (data?.choices?.[0]?.message?.content || '').trim();
+        const parsed = JSON.parse(content);
+        if (!validate.validateSentenceAnalysis(parsed)) throw new Error('Schema validation failed');
+        try { await cache.setSentenceAnalysisCached(sentence, contextHash, model, parsed, 21*24*60*60*1000); } catch(_){}
+        return parsed;
+    } catch (e) {
+        const fbPrompt = `僅翻譯下列句子並提煉 2-3 條關鍵點（JSON）：\n{\"sentence\":\"${sentence}\",\"translation\":\"...\",\"key_points\":[\"...\"]}`;
+        const fb = await requestAI({
+            model,
+            messages: [{ role: 'user', content: fbPrompt }],
+            temperature: 0.2,
+            maxTokens: 300,
+            timeoutMs,
+            signal,
+            responseFormat: { type: 'json_object' }
+        });
+        const content = (fb?.choices?.[0]?.message?.content || '').trim();
+        const parsed = JSON.parse(content);
+        if (!parsed.translation) parsed.translation = '';
+        if (!parsed.key_points) parsed.key_points = [];
+        try { await cache.setSentenceAnalysisCached(sentence, contextHash, model, parsed, 7*24*60*60*1000); } catch(_){}
+        return parsed;
+    }
+}
+
+// --- Selection/phrase analysis ---
+export async function analyzeSelection(selection, sentence, context = '', opts = {}) {
+    const { timeoutMs = 15000, signal, noCache = false } = opts;
+    const model = AI_MODELS.wordAnalysis || AI_MODELS.articleAnalysis;
+    let contextHash = '';
+    try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
+    if (!noCache) {
+        const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, model);
+        if (cached) return cached;
+    }
+    const prompt = `針對句子中的選中片語給出簡潔解析（JSON）：\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
+    const data = await requestAI({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+        maxTokens: 300,
+        timeoutMs,
+        signal,
+        responseFormat: { type: 'json_object' }
+    });
+    const content = (data?.choices?.[0]?.message?.content || '').trim();
+    const parsed = JSON.parse(content);
+    if (!validate.validateSelectionAnalysis(parsed)) throw new Error('Schema validation failed');
+    try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, model, parsed, 30*24*60*60*1000); } catch(_){}
+    return parsed;
 }
