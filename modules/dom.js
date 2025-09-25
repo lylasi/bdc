@@ -77,10 +77,12 @@ export const analysisTooltip = document.getElementById('word-analysis-tooltip');
 // --- 文章详解页面 ---
 export const articleInput = document.getElementById('article-input');
 export const analyzeArticleBtn = document.getElementById('analyze-article-btn');
+export const retryFailedParagraphsBtn = document.getElementById('retry-failed-paragraphs-btn');
 export const articleAnalysisContainer = document.getElementById('article-analysis-container');
 export const articleHistorySelect = document.getElementById('article-history-select');
 export const deleteHistoryBtn = document.getElementById('delete-history-btn');
 export const clearArticleBtn = document.getElementById('clear-article-btn');
+export const analysisLevelSelect = document.getElementById('analysis-level');
 export const readArticleBtn = document.getElementById('read-article-btn');
 export const stopReadArticleBtn = document.getElementById('stop-read-article-btn');
 export const downloadAudioBtn = document.getElementById('download-audio-btn');

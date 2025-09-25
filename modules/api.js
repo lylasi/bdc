@@ -116,7 +116,7 @@ async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTokens, ti
  */
 export async function getWordAnalysis(word) {
     try {
-        const prompt = `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Traditional Chinese meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}. Ensure the meaning is in Traditional Chinese.`;
+        const prompt = `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Traditional Chinese (Hong Kong) meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}. Ensure the meaning is in Traditional Chinese (Hong Kong) vocabulary (e.g., 網上/上載/電郵/巴士/的士/單車/軟件/網絡/連結/相片).`;
         return await fetchAIResponse(AI_MODELS.wordAnalysis, prompt, 0.2);
     } catch (error) {
         console.error(`Error analyzing word "${word}":`, error);
@@ -130,7 +130,7 @@ export async function getWordAnalysis(word) {
  * @returns {Promise<Array>} - 包含例句對象的數組。
  */
 export async function generateExamplesForWord(word, opts = {}) {
-    const prompt = `請為單詞 "${word.word}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯，以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
+    const prompt = `請為單詞 "${word.word}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯（使用香港繁體中文用字），以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
     return await fetchAIResponse(AI_MODELS.exampleGeneration, prompt, 0.7, { maxTokens: 600, timeoutMs: 20000, ...opts });
 }
 
@@ -167,16 +167,21 @@ export async function analyzeParagraph(paragraph, opts = {}) {
     if (level === 'quick') {
         instructions = `只返回 JSON：{"chinese_translation":"..."}
 要求：
-- 翻譯請使用繁體中文（正體），語氣自然流暢；
+- 翻譯請使用繁體中文（香港），語氣自然流暢；
+- 用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。
 - 不要返回 word_alignment 與 detailed_analysis。`;
     } else if (level === 'standard') {
         instructions = `只返回 JSON：{"chinese_translation":"...","detailed_analysis":[...]} 
 detailed_analysis 僅針對本段最關鍵的 ${detailTopN} 個詞，格式：
-{"word":"單詞","sentence":"所在完整句子","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思","role":"在句中的語法作用（簡潔）"}}`;
+{"word":"單詞","sentence":"所在完整句子","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思（香港繁體中文用字）","role":"在句中的語法作用（簡潔）"}}
+要求：
+- 中文請使用繁體中文（香港），用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。`;
     } else {
         instructions = `只返回 JSON：{"chinese_translation":"...","detailed_analysis":[...]} 
 detailed_analysis 應覆蓋段落中的所有詞（或主要詞），按出現順序，同詞多次出現需分條。每條格式：
-{"word":"單詞","sentence":"所在完整句子","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思","role":"在句中的語法作用（具體）"}}`;
+{"word":"單詞","sentence":"所在完整句子","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思（香港繁體中文用字）","role":"在句中的語法作用（具體）"}}
+要求：
+- 中文請使用繁體中文（香港），用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。`;
     }
 
     const prompt = `請對以下英文段落進行分析並返回嚴格有效的 JSON（不允許代碼塊或額外解釋）：
@@ -223,7 +228,7 @@ ${instructions}`;
         console.warn('段落分析失敗，回退到最小輸出。', err);
         // 最小回退：僅翻譯
         const fbPrompt = `只返回 JSON：{"chinese_translation":"..."}
-請使用繁體中文（正體）進行翻譯。
+請使用繁體中文（香港）進行翻譯，用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。
 段落:"""
 ${paragraph}
 """`;
@@ -255,7 +260,7 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
         const cached = await cache.getWordAnalysisCached(word, sentence, model);
         if (cached) return cached;
     } catch (_) {}
-    const prompt = `請針對下列句子中的目標詞進行語音/詞性/語義與句法作用的簡潔分析，返回嚴格 JSON：
+    const prompt = `請針對下列句子中的目標詞進行語音/詞性/語義與句法作用的簡潔分析，返回嚴格 JSON（中文用香港繁體用字）：
 詞: "${word}"
 句: "${sentence}"
 只返回：{"word":"...","sentence":"...","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思","role":"語法作用（簡潔）"}}`;
@@ -295,7 +300,7 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
             if (cached) return cached;
         } catch (_) {}
     }
-    const keyPointRule = '請輸出 2-4 條最重要的關鍵點；避免與片語/結構重覆描述，偏向語義/語氣/結構/常見誤用等高階提示。';
+    const keyPointRule = '請輸出 2-4 條最重要的關鍵點；避免與片語/結構重覆描述，偏向語義/語氣/結構/常見誤用等高階提示。中文請使用香港繁體中文用字。';
     const basePrompt = `上下文（僅供理解，不要逐句分析）: \"\"\"\n${context}\n\"\"\"\n目標句: \"\"\"\n${sentence}\n\"\"\"`;
     const prompt = includeStructure
       ? `對下列英文句子進行分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  \"sentence\":\"...\",\n  \"translation\":\"...\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\n${keyPointRule}`
@@ -316,7 +321,7 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
         try { await cache.setSentenceAnalysisCached(sentence, contextHash, model, parsed, 21*24*60*60*1000); } catch(_){}
         return parsed;
     } catch (e) {
-        const fbPrompt = `僅翻譯下列句子並提煉 2-3 條關鍵點（JSON）：\n{\"sentence\":\"${sentence}\",\"translation\":\"...\",\"key_points\":[\"...\"]}`;
+        const fbPrompt = `僅翻譯下列句子並提煉 2-3 條關鍵點（JSON，中文請使用香港繁體中文）：\n{\"sentence\":\"${sentence}\",\"translation\":\"...\",\"key_points\":[\"...\"]}`;
         const fb = await requestAI({
             model,
             messages: [{ role: 'user', content: fbPrompt }],
@@ -345,7 +350,7 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
         const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, model);
         if (cached) return cached;
     }
-    const prompt = `針對句子中的選中片語給出簡潔解析（JSON）：\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
+    const prompt = `針對句子中的選中片語給出簡潔解析（JSON，中文請使用香港繁體中文）：\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
     const data = await requestAI({
         model,
         messages: [{ role: 'user', content: prompt }],
