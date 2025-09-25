@@ -1443,6 +1443,28 @@ button:disabled {
     color: white;
 }
 
+/* Sentence-level highlight */
+.interactive-sentence.sentence-active,
+.interactive-sentence-zh.sentence-active {
+    background: rgba(56,189,248,0.18);
+    border-radius: 4px;
+    transition: background .15s ease;
+}
+.interactive-sentence.sentence-active.sentence-dim,
+.interactive-sentence-zh.sentence-active.sentence-dim {
+    background: rgba(56,189,248,0.10);
+}
+
+.sent-analyze-btn {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.sent-analyze-btn:hover { background: #1d4ed8; }
+
 #vocab-books-panel .panel-header > button:first-of-type {
     margin-left: auto;
 }
@@ -3730,3 +3752,5 @@ mark.diff-extra {
     color: #155724;
     line-height: 1.4;
 }
+.settings-group label[for="analysis-level"],
+#analysis-level { display: none !important; }
