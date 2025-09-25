@@ -66,7 +66,8 @@ export function initArticle() {
     // dom.articleAnalysisContainer.addEventListener('mouseout', handleWordHighlight);
     dom.articleAnalysisContainer.addEventListener('click', handleArticleWordAnalysisClick);
     dom.articleAnalysisContainer.addEventListener('click', (e) => {
-        const btn = e.target.closest && e.target.closest('.retry-paragraph-btn');
+        const rawTarget = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
+        const btn = rawTarget?.closest && rawTarget.closest('.retry-paragraph-btn');
         if (btn) {
             const idx = parseInt(btn.getAttribute('data-index'), 10);
             if (!Number.isNaN(idx)) retrySingleParagraph(idx, { force: true });
@@ -671,7 +672,55 @@ function handleArticleWordAnalysisClick(e) {
 
 // Sentence analyze button to lazy-load sentence analysis
 dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
-    const btn = ev.target.closest && ev.target.closest('.sent-analyze-btn');
+    const rawTarget = ev.target && ev.target.nodeType === 3 ? ev.target.parentElement : ev.target;
+    const chunkBtn = rawTarget?.closest && rawTarget.closest('.chunk-explain');
+    if (chunkBtn) {
+        ev.stopPropagation();
+        ev.preventDefault();
+        const card = chunkBtn.closest('.sentence-card');
+        if (!card) return;
+        const phrase = chunkBtn.getAttribute('data-phrase') || '';
+        if (!phrase) return;
+        const sentence = card.dataset.sentence || '';
+        const context = card.dataset.context || '';
+        const paraIdx = parseInt(card.dataset.paraIdx, 10) || 0;
+        const sentIdx = parseInt(card.dataset.sentIdx, 10) || 0;
+        chunkBtn.disabled = true; chunkBtn.textContent = '詳解中...';
+        try {
+            const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
+            const box = document.createElement('div');
+            box.className = 'phrase-explain-box';
+            box.style.margin = '4px 0 4px 50px';
+            box.style.fontSize = '12px';
+            const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+            const ex = Array.isArray(res.analysis?.examples) ? res.analysis.examples.slice(0,2) : [];
+            box.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+                               <div><strong>${esc(res.selection || phrase)}</strong>：${esc(res.analysis?.meaning || '')}
+                                   ${res.analysis?.usage ? `<div>用法：${esc(res.analysis.usage)}</div>`:''}
+                                   ${ex.length? '<div>' + ex.map(x=>`<div>• ${esc(x.en)} — ${esc(x.zh)}</div>`).join('') + '</div>' : ''}
+                               </div>
+                               <button class="phrase-close" style="font-size:12px;">關閉</button>
+                             </div>`;
+            const chunkItem = chunkBtn.closest('.chunk-item');
+            if (chunkItem) chunkItem.after(box);
+            else card.appendChild(box);
+            applySentenceDim(paraIdx, sentIdx, true);
+            const closeBtn = box.querySelector('.phrase-close');
+            if (closeBtn) closeBtn.addEventListener('click', () => {
+                box.remove();
+                if (!card.querySelector('.phrase-explain-box')) {
+                    applySentenceDim(paraIdx, sentIdx, false);
+                }
+            });
+        } catch (err) {
+            console.warn('片語詳解請求失敗:', err);
+            alert('解析失敗，稍後再試');
+        } finally {
+            chunkBtn.disabled = false; chunkBtn.textContent = '詳解';
+        }
+        return;
+    }
+    const btn = rawTarget?.closest && rawTarget.closest('.sent-analyze-btn');
     if (!btn) return;
     ev.stopPropagation();
     const paraIdx = parseInt(btn.getAttribute('data-para-index'), 10) || 0;
@@ -684,9 +733,10 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
 dom.analysisTooltip.addEventListener('click', async (e) => {
     // 在 tooltip 內的任何點擊都不向外冒泡，避免觸發外層關閉/重繪邏輯
     e.stopPropagation();
-    const btnPhrase = e.target.closest && e.target.closest('.btn-analyze-phrase');
-    const btnCustom = e.target.closest && e.target.closest('.btn-analyze-phrase-custom');
-    const btnPlay = e.target.closest && e.target.closest('.btn-play-word');
+    const rawTarget = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
+    const btnPhrase = rawTarget?.closest && rawTarget.closest('.btn-analyze-phrase');
+    const btnCustom = rawTarget?.closest && rawTarget.closest('.btn-analyze-phrase-custom');
+    const btnPlay = rawTarget?.closest && rawTarget.closest('.btn-play-word');
     if (btnPlay) {
         const w = btnPlay.getAttribute('data-word') || '';
         if (w) audio.speakText(w, 'en-US', 0);
@@ -1185,6 +1235,11 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         const dup = chunkLines.some(cl => cl.includes(t) || t.includes(cl));
         if (!dup) filteredPoints.push(p);
     }
+    card.dataset.paraIdx = paraIdx;
+    card.dataset.sentIdx = sentIdx;
+    card.dataset.sentence = sentence;
+    card.dataset.context = context;
+
     card.innerHTML = `
         <div class="sentence-card-head" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
             <div style="font-weight:600">句子解析</div>
@@ -1244,43 +1299,6 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         }
     });
 
-    // chunk actions: 只保留「詳解」
-    card.addEventListener('click', async (e)=>{
-        const exp = e.target.closest && e.target.closest('.chunk-explain');
-        if (exp) {
-            const phrase = exp.getAttribute('data-phrase') || '';
-            exp.disabled = true; exp.textContent = '詳解中...';
-            try {
-                const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
-                const box = document.createElement('div');
-                box.className = 'phrase-explain-box';
-                box.style.margin = '4px 0 4px 50px';
-                box.style.fontSize = '12px';
-                const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-                const ex = Array.isArray(res.analysis?.examples) ? res.analysis.examples.slice(0,2) : [];
-                box.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
-                                   <div><strong>${esc(res.selection || phrase)}</strong>：${esc(res.analysis?.meaning || '')}
-                                       ${res.analysis?.usage ? `<div>用法：${esc(res.analysis.usage)}</div>`:''}
-                                       ${ex.length? '<div>' + ex.map(x=>`<div>• ${esc(x.en)} — ${esc(x.zh)}</div>`).join('') + '</div>' : ''}
-                                   </div>
-                                   <button class="phrase-close" style="font-size:12px;">關閉</button>
-                                 </div>`;
-                exp.closest('.chunk-item').after(box);
-                // dim whole-sentence highlight while explanation is open
-                applySentenceDim(paraIdx, sentIdx, true);
-                // close handler
-                const closeBtn = box.querySelector('.phrase-close');
-                if (closeBtn) closeBtn.addEventListener('click', () => {
-                    box.remove();
-                    // if no more boxes under this card, remove dim
-                    if (!card.querySelector('.phrase-explain-box')) {
-                        applySentenceDim(paraIdx, sentIdx, false);
-                    }
-                });
-            } catch (_) {}
-            finally { exp.disabled = false; exp.textContent = '詳解'; }
-        }
-    });
 }
 
 
