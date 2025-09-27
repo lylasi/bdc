@@ -102,6 +102,9 @@ export const dimmingIntensity = document.getElementById('dimming-intensity');
 export const showArticleLibraryBtn = document.getElementById('show-article-library-btn');
 export const articleLibraryModal = document.getElementById('article-library-modal');
 export const articleLibraryList = document.getElementById('article-library-list');
+export const articleLibraryControls = document.getElementById('article-library-controls');
+export const articleCategoryFilter = document.getElementById('article-category-filter');
+export const articleLibraryCount = document.getElementById('article-library-count');
 
 // --- 问答训练模块 ---
 export const qaModule = document.getElementById('qa-module');

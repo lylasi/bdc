@@ -712,35 +712,66 @@ async function downloadAudio() {
 
 // --- Article Library ---
 
+
+// --- Article Library ---
+let _articleLibraryData = [];
+
+function renderArticleLibraryList(filter = {}) {
+    const cat = (filter.category || '').trim();
+    const items = _articleLibraryData.filter(a => !cat || (a.category || '') === cat);
+    if (dom.articleLibraryCount) dom.articleLibraryCount.textContent = `${items.length} 篇`;
+    if (items.length === 0) {
+        dom.articleLibraryList.innerHTML = '<p>沒有符合條件的文章。</p>';
+        return;
+    }
+    dom.articleLibraryList.innerHTML = items.map(article => `
+        <div class="article-library-item" data-path="${article.path}" data-category="${(article.category||'').replace(/\"/g,'&quot;')}">
+            <h4>${article.title}</h4>
+            <p class="description">${article.description}</p>
+            <div class="meta">
+                <span class="difficulty">${article.difficulty}</span>
+                <span class="category">${article.category || '未分類'}</span>
+            </div>
+        </div>`).join('');
+    dom.articleLibraryList.querySelectorAll('.article-library-item').forEach(item => {
+        item.addEventListener('click', () => loadArticleFromLibrary(item.dataset.path));
+    });
+}
+
 async function openArticleLibrary() {
     dom.articleLibraryList.innerHTML = '<p>正在加載文章列表...</p>';
     dom.articleLibraryModal.classList.remove('hidden');
     try {
-        const response = await fetch('articles/manifest.json');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const articles = await response.json();
-        if (articles.length === 0) {
+        if (!_articleLibraryData || _articleLibraryData.length === 0) {
+            const response = await fetch('articles/manifest.json');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            _articleLibraryData = await response.json();
+        }
+
+        if (!_articleLibraryData || _articleLibraryData.length === 0) {
             dom.articleLibraryList.innerHTML = '<p>文章庫是空的。</p>';
             return;
         }
-        dom.articleLibraryList.innerHTML = articles.map(article => `
-            <div class="article-library-item" data-path="${article.path}">
-                <h4>${article.title}</h4>
-                <p class="description">${article.description}</p>
-                <div class="meta">
-                    <span class="difficulty">${article.difficulty}</span>
-                    <span class="category">${article.category}</span>
-                </div>
-            </div>`).join('');
-        document.querySelectorAll('.article-library-item').forEach(item => {
-            item.addEventListener('click', () => loadArticleFromLibrary(item.dataset.path));
-        });
+
+        // 構建分類下拉
+        if (dom.articleCategoryFilter) {
+            const cats = Array.from(new Set(_articleLibraryData.map(a => a.category || '未分類')));
+            const prev = dom.articleCategoryFilter.value || '';
+            dom.articleCategoryFilter.innerHTML = ['<option value="">全部分類</option>']
+                .concat(cats.map(c => `<option value="${String(c).replace(/\"/g,'&quot;')}">${c}</option>`))
+                .join('');
+            dom.articleCategoryFilter.value = prev;
+            dom.articleCategoryFilter.onchange = () => {
+                renderArticleLibraryList({ category: dom.articleCategoryFilter.value });
+            };
+        }
+
+        renderArticleLibraryList({ category: dom.articleCategoryFilter ? dom.articleCategoryFilter.value : '' });
     } catch (error) {
-        console.error("無法加載文章庫:", error);
+        console.error('無法加載文章庫:', error);
         dom.articleLibraryList.innerHTML = '<p style="color: red;">加載文章列表失敗。</p>';
     }
 }
-
 async function loadArticleFromLibrary(path) {
     try {
         const response = await fetch(path);
