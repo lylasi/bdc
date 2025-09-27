@@ -678,12 +678,36 @@ function highlightCurrentChunk(chunk) {
 }
 
 async function downloadAudio() {
-    const text = dom.articleInput.value.trim();
-    if (!text) {
-        alert('請先輸入要下載的文章！');
-        return;
+    const raw = dom.articleInput.value.trim();
+    if (!raw) { alert('請先輸入要下載的文章！'); return; }
+    // 構造下載文本：
+    const mode = dom.readingModeSelect.value;
+    const chunks = (function() {
+        try { return buildReadingChunks(mode === 'full' ? 'sentence' : mode); } catch(_) { return []; }
+    })();
+    let textToDownload = '';
+    if (mode === 'sentence' || mode === 'paragraph') {
+        const cur = state.readingChunks[state.currentChunkIndex] || chunks[0];
+        textToDownload = (cur && cur.text) || '';
+    } else {
+        // full: 合併全部句子為單檔
+        textToDownload = chunks.map(c => c.text).join(' ');
     }
-    alert('下載功能正在開發中...');
+    if (!textToDownload) {
+        // 後備：直接使用輸入框
+        const { title, paragraphs } = parseTitleAndParagraphs(raw);
+        textToDownload = [title, ...paragraphs].filter(Boolean).join(' ');
+    }
+    const makeSlug = (s) => (s || '').toLowerCase().replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-').replace(/-+/g,'-') || 'article';
+    const { title } = parseTitleAndParagraphs(raw);
+    const base = title ? makeSlug(title) : makeSlug(textToDownload.slice(0, 40));
+    const fname = `${base}-${mode === 'full' ? 'full' : mode}.mp3`;
+    try {
+        await audio.downloadTextAsAudio(textToDownload, 'en-US', state.currentSpeed, fname);
+    } catch (err) {
+        console.error('下載音頻失敗:', err);
+        alert('下載音頻失敗，可能是文字過長或網絡問題。請嘗試切換為句子/段落模式下載。');
+    }
 }
 
 // --- Article Library ---

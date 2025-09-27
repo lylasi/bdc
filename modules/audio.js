@@ -58,6 +58,44 @@ export function stopCurrentAudio() {
 }
 
 /**
+ * 構造 TTS 下載 URL（與播放相同邏輯）。
+ */
+export function buildTTSUrl(text, langOrVoice = 'english', speed = 0) {
+    let voiceKey = 'english';
+    if (typeof langOrVoice === 'string') {
+        const value = langOrVoice.toLowerCase();
+        if (TTS_CONFIG.voices[value]) {
+            voiceKey = value;
+        } else if (value.startsWith('zh')) {
+            voiceKey = 'chinese';
+        }
+    }
+    const voice = TTS_CONFIG.voices[voiceKey] || TTS_CONFIG.voices.english;
+    // 注意：保持與 speakText 同步
+    return `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${speed}&api_key=${TTS_CONFIG.apiKey}`;
+}
+
+/**
+ * 下載指定文本的 TTS 音頻。
+ */
+export async function downloadTextAsAudio(text, langOrVoice = 'english', speed = 0, filename = 'audio.mp3') {
+    const url = buildTTSUrl(text, langOrVoice, speed);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`TTS download failed: ${res.status}`);
+    const buf = await res.arrayBuffer();
+    const blob = new Blob([buf], { type: 'audio/mpeg' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        URL.revokeObjectURL(a.href);
+        a.remove();
+    }, 1000);
+}
+
+/**
  * 使用 TTS 服務朗讀指定的文本。
  * @param {string} text - 要朗讀的文本。
  * @param {string} langOrVoice - 語言代碼或 TTS_CONFIG 中的 voice key。
