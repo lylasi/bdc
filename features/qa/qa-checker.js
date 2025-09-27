@@ -172,12 +172,6 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
     "vocabulary": ["選詞不當（可留空）"],
     "structure": ["語序/邏輯問題（可留空）"]
   },
-  "overallScore": 0-100,                      // 可選；若無明確依據可估算，否則給 0
-  "accuracy": 0-100,                          // 可選；可留 0
-  "grammar": 0-100,                           // 可選；可留 0
-  "vocabulary": 0-100,                        // 可選；可留 0
-  "spelling": 0-100,                          // 可選；可留 0
-  "structure": 0-100,                         // 可選；可留 0
   "aiFeedbackOk": true/false,                 // 你對自己本次評語品質的自檢
   "aiFeedbackIssues": ["若你的評語可能有誤或不完滿，簡短列出原因（如：未檢查大小寫、錯把附和句視為正確等）"]
 }
@@ -188,7 +182,7 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
 學生答案: ${userAnswer}
 
 評估規則：
-- 嚴禁把「Yes/No/You are right/Good/OK/我同意/It depends」等附和或評述句視為正確答案；若出現，isCorrect應為false，並在 teacherFeedback 指明「未直接回答題目」。
+- 嚴禁把附和或評述句視為正確答案；若出現，isCorrect應為false，並在 teacherFeedback 指明「未直接回答題目」。
 - 嚴格檢查大小寫與標點：句首需大寫、句末需 . ? !；Yes/No 後建議加逗號；若有問題請放入 errors.punctuation。
 - 當學生語義正確但表述不同：isCorrect=true，teacherFeedback 簡述與標準答案差異（<=20字）。
 - 若你對自己的評語不完全確定或可能遺漏某類錯誤，aiFeedbackOk=false 並在 aiFeedbackIssues 中列出原因。
