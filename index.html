@@ -550,6 +550,13 @@ Q2: 問題2? A2: 答案2."></textarea>
         <div class="modal-content">
             <button class="modal-close-btn">&times;</button>
             <h3 id="modal-title">文章庫</h3>
+            <div id="article-library-controls" class="article-library-controls">
+                <label for="article-category-filter" class="sr-only">分類</label>
+                <select id="article-category-filter">
+                    <option value="">全部分類</option>
+                </select>
+                <span id="article-library-count" class="article-library-count"></span>
+            </div>
             <div id="article-library-list" class="article-library">
                 <!-- JS動態生成 -->
             </div>
