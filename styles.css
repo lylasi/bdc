@@ -1492,14 +1492,19 @@ button:disabled {
     padding: 0 2px;
     border-radius: 3px;
 }
-.paragraph-english .sent-analyze-btn { opacity: 0.15; transition: opacity .15s ease; }
-.paragraph-english:hover .sent-analyze-btn,
-.interactive-sentence:hover + .sent-analyze-btn { opacity: 0.8; }
+.sent-analyze-btn.icon-only { transition: opacity .15s ease, background .15s ease; }
 .sent-analyze-btn.icon-only:hover { background: rgba(37, 99, 235, 0.08); }
 
 /* 段落級高亮（用於朗讀模式：段落） */
 .paragraph-english.para-active {
     background: rgba(56,189,248,0.10);
+}
+
+/* 全文朗讀高亮：輕量背景與內陰影提醒 */
+#article-analysis-container.full-reading-active {
+    background: rgba(56,189,248,0.06);
+    box-shadow: inset 0 0 0 2px rgba(56,189,248,0.18);
+    border-radius: 6px;
 }
 
 #vocab-books-panel .panel-header > button:first-of-type {
@@ -3806,3 +3811,19 @@ mark.diff-extra {
 }
 .settings-group label[for="analysis-level"],
 #analysis-level { display: none !important; }
+.sentence-wrap {
+    position: relative;
+    display: inline-block;
+    padding-right: 16px; /* 給右側icon留空間 */
+    margin-right: 2px;
+}
+.sentence-wrap .sent-analyze-btn.icon-only {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.15;
+}
+.sentence-wrap:hover .sent-analyze-btn.icon-only {
+    opacity: 0.9;
+}
