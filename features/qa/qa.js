@@ -1232,6 +1232,30 @@ function generateResultsHTML(trainingResult) {
   return html;
 }
 
+// 將錯誤分類扁平為清單，附上精簡標籤，避免『錯誤類型』區塊冗長
+function collectIssueList(errorAnalysis) {
+  if (!errorAnalysis) return [];
+  const items = [];
+  const push = (arr, label) => {
+    if (Array.isArray(arr) && arr.length) {
+      arr.forEach(m => items.push(`【${label}】` + m));
+    }
+  };
+  push(errorAnalysis.punctuation, '標點/格式');
+  push(errorAnalysis.grammar, '文法');
+  push(errorAnalysis.spelling, '拼寫');
+  push(errorAnalysis.vocabulary, '用字');
+  push(errorAnalysis.structure, '句構');
+  // 去重（忽略大小寫）
+  const seen = new Set();
+  const unique = [];
+  for (const it of items) {
+    const k = String(it).toLowerCase();
+    if (!seen.has(k)) { unique.push(it); seen.add(k); }
+  }
+  return unique;
+}
+
 // HTML轉義函數
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -1420,7 +1444,6 @@ async function handleAIChecking() {
         detailsDiv.innerHTML = `
           <div>✅ 校對完成</div>
           <div>📊 準確率: ${checkingResult.summary?.accuracy || 0}%</div>
-          <div>🎯 平均分數: ${checkingResult.summary?.averageScore || 0}分</div>
         `;
       }
     } else {
@@ -1496,10 +1519,6 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
             <span class="stat-value">${summary.accuracy}%</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">平均分數</span>
-            <span class="stat-value">${summary.averageScore}</span>
-          </div>
-          <div class="stat-item">
             <span class="stat-label">正確答案</span>
             <span class="stat-value">${summary.correctAnswers}/${summary.totalAnswers}</span>
           </div>
@@ -1521,9 +1540,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
   html += '<div class="ai-checked-results">';
 
   checkedAnswers.forEach((answer, index) => {
-    const resultClass = answer.isCorrect ? 'ai-checked-result' :
-                       answer.score >= 70 ? 'ai-checked-result partial' :
-                       'ai-checked-result incorrect';
+    const resultClass = answer.isCorrect ? 'ai-checked-result' : 'ai-checked-result incorrect';
     const questionNumber = typeof answer.displayIndex === 'number' ?
       answer.displayIndex + 1 : index + 1;
 
@@ -1562,8 +1579,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
       <div class="result-item ${resultClass}">
         <div class="result-header">
           <span class="question-number">Q${questionNumber}</span>
-          <span class="ai-score">${typeof answer.score === 'number' ? answer.score : 0}分</span>
-          <span class="result-status">${answer.isCorrect ? '完全正確' : answer.score >= 70 ? '部分符合' : '需加強'}</span>
+          <span class="result-status">${answer.isCorrect ? '正確' : '需改進'}</span>
         </div>
 
         <div class="result-question">
@@ -1655,43 +1671,14 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
           </div>
         ` : ''}
 
-        ${answer.errorAnalysis && (answer.errorAnalysis.spelling?.length > 0 || answer.errorAnalysis.grammar?.length > 0 || answer.errorAnalysis.vocabulary?.length > 0 || answer.errorAnalysis.structure?.length > 0 || answer.errorAnalysis.punctuation?.length > 0) ? `
-          <div class="error-analysis">
-            <h5>錯誤類型</h5>
-            ${answer.errorAnalysis.spelling?.length > 0 ? `
-              <div class="error-category">
-                <strong>拼寫錯誤:</strong>
-                <ul class="error-list">
-                  ${answer.errorAnalysis.spelling.map(error => `<li class="spelling-error">${escapeHtml(error)}</li>`).join('')}
-                </ul>
-              </div>
-            ` : ''}
-            ${answer.errorAnalysis.grammar?.length > 0 ? `
-              <div class="error-category">
-                <strong>文法錯誤:</strong>
-                <ul class="error-list">
-                  ${answer.errorAnalysis.grammar.map(error => `<li class="grammar-error">${escapeHtml(error)}</li>`).join('')}
-                </ul>
-              </div>
-            ` : ''}
-            ${answer.errorAnalysis.vocabulary?.length > 0 ? `
-              <div class="error-category">
-                <strong>字彙使用:</strong>
-                <ul class="error-list">
-                  ${answer.errorAnalysis.vocabulary.map(error => `<li class="vocabulary-error">${escapeHtml(error)}</li>`).join('')}
-                </ul>
-              </div>
-            ` : ''}
-            ${answer.errorAnalysis.structure?.length > 0 ? `
-              <div class="error-category">
-                <strong>句構表達:</strong>
-                <ul class="error-list">
-                  ${answer.errorAnalysis.structure.map(error => `<li class="structure-error">${escapeHtml(error)}</li>`).join('')}
-                </ul>
-              </div>
-            ` : ''}
+        ${(() => { const issues = collectIssueList(answer.errorAnalysis); return issues.length ? `
+          <div class="issue-list">
+            <h5>需要修正</h5>
+            <ul class="issues">
+              ${issues.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
+            </ul>
           </div>
-        ` : ''}
+        ` : '' })()}
       </div>
     `;
   });
@@ -1882,8 +1869,7 @@ function generateSingleCheckResultHTML(result) {
   return `
     <div class="ai-check-result">
       <div class="result-header">
-        <span class="ai-score">${typeof result.score === 'number' ? result.score : 0}分</span>
-        <span class="result-status">${result.isCorrect ? '完全正確' : result.score >= 70 ? '部分符合' : '需加強'}</span>
+        <span class="result-status">${result.isCorrect ? '正確' : '需改進'}</span>
       </div>
 
       <div class="result-answers">
@@ -1922,43 +1908,14 @@ function generateSingleCheckResultHTML(result) {
         </div>
       ` : ''}
 
-      ${result.errorAnalysis && (result.errorAnalysis.spelling?.length > 0 || result.errorAnalysis.grammar?.length > 0 || result.errorAnalysis.vocabulary?.length > 0 || result.errorAnalysis.structure?.length > 0 || result.errorAnalysis.punctuation?.length > 0) ? `
-        <div class="error-analysis">
-          <h5>錯誤類型</h5>
-          ${result.errorAnalysis.spelling?.length > 0 ? `
-            <div class="error-category">
-              <strong>拼寫錯誤:</strong>
-              <ul class="error-list">
-                ${result.errorAnalysis.spelling.map(error => `<li>${escapeHtml(error)}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          ${result.errorAnalysis.grammar?.length > 0 ? `
-            <div class="error-category">
-              <strong>文法錯誤:</strong>
-              <ul class="error-list">
-                ${result.errorAnalysis.grammar.map(error => `<li>${escapeHtml(error)}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          ${result.errorAnalysis.vocabulary?.length > 0 ? `
-            <div class="error-category">
-              <strong>字彙使用:</strong>
-              <ul class="error-list">
-                ${result.errorAnalysis.vocabulary.map(error => `<li>${escapeHtml(error)}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          ${result.errorAnalysis.structure?.length > 0 ? `
-            <div class="error-category">
-              <strong>句構表達:</strong>
-              <ul class="error-list">
-                ${result.errorAnalysis.structure.map(error => `<li>${escapeHtml(error)}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
+      ${(() => { const issues = collectIssueList(result.errorAnalysis); return issues.length ? `
+        <div class="issue-list">
+          <h5>需要修正</h5>
+          <ul>
+            ${issues.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
+          </ul>
         </div>
-      ` : ''}
+      ` : '' })()}
 
       ${Array.isArray(result.aiFeedbackIssues) && result.aiFeedbackIssues.length > 0 ? `
         <div class="ai-feedback-review">
