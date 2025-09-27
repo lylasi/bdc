@@ -1601,6 +1601,17 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
           </div>
         ` : ''}
 
+        ${Array.isArray(answer.aiFeedbackIssues) && answer.aiFeedbackIssues.length > 0 ? `
+          <div class="ai-feedback-review">
+            <h5>AI 評語自檢</h5>
+            <ul class="issues-list">
+              ${answer.aiFeedbackIssues.map(issue => `<li class="issue-item">${escapeHtml(issue)}</li>`).join('')}
+            </ul>
+          </div>
+        ` : (answer.aiFeedbackOk === true ? `
+          <div class="ai-feedback-review ok">AI 評語檢查：無明顯問題</div>
+        ` : '')}
+
         ${answer.improvementSuggestions && answer.improvementSuggestions.length > 0 ? `
           <div class="improvement-suggestions">
             <h5>改進建議</h5>
@@ -1948,6 +1959,15 @@ function generateSingleCheckResultHTML(result) {
           ` : ''}
         </div>
       ` : ''}
+
+      ${Array.isArray(result.aiFeedbackIssues) && result.aiFeedbackIssues.length > 0 ? `
+        <div class="ai-feedback-review">
+          <h5>AI 評語自檢</h5>
+          <ul>
+            ${result.aiFeedbackIssues.map(issue => `<li>${escapeHtml(issue)}</li>`).join('')}
+          </ul>
+        </div>
+      ` : (result.aiFeedbackOk === true ? `<div class="ai-feedback-review ok">AI 評語檢查：無明顯問題</div>` : '')}
     </div>
   `;
 }

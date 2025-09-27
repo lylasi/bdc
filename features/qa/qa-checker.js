@@ -125,20 +125,7 @@ async function checkSingleAnswer(answer) {
     return checkResultsCache.get(cacheKey);
   }
 
-  // 基本檢查
-  const isExactMatch = userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
-  if (isExactMatch) {
-    const result = {
-      ...answer,
-      isCorrect: true,
-      score: 100,
-      aiSuggestions: [],
-      feedback: '答案完全正確！',
-      checkMethod: 'exact_match'
-    };
-    checkResultsCache.set(cacheKey, result);
-    return result;
-  }
+  // 本地不做過多限制與評分，統一交由 AI 判定
 
   // AI語義分析
   try {
@@ -149,20 +136,7 @@ async function checkSingleAnswer(answer) {
       checkMethod: 'ai_analysis'
     };
 
-    // 合併本地標點差異（AI 可能未返回，但仍需提示）
-    try {
-      const __pun = analyzePunctuationDifferences(userAnswer, correctAnswer);
-      if (__pun && __pun.length) {
-        result.errorAnalysis = result.errorAnalysis || {};
-        const existed = new Set((result.errorAnalysis.punctuation || []).map(x => String(x).toLowerCase()));
-        const merged = result.errorAnalysis.punctuation ? result.errorAnalysis.punctuation.slice() : [];
-        for (const msg of __pun) {
-          const lower = String(msg).toLowerCase();
-          if (!existed.has(lower)) { merged.push(msg); existed.add(lower); }
-        }
-        result.errorAnalysis.punctuation = merged;    // 也同步加入到改進建議中，確保前端可見\n      if (__pun && __pun.length) {\n        result.improvementSuggestions = Array.isArray(result.improvementSuggestions) ? result.improvementSuggestions : [];\n        for (const m of __pun) {\n          const msg = (typeof m === 'string' ? m : String(m));\n          if (!result.improvementSuggestions.includes(msg)) {\n            result.improvementSuggestions.push(msg);\n          }\n        }\n      }
-      }
-    } catch (_) { /* ignore */ }
+    // 本地不再主動合併格式/標點檢查，完全交給 AI 回傳
 
     checkResultsCache.set(cacheKey, result);
     return result;
@@ -184,37 +158,41 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
   const __temperature = (qaCfg.temperature ?? 0.2);
   const __maxTokens = (qaCfg.maxTokens ?? 1500);
 
-  const prompt = `你是一位以繁體中文回覆的英語老師。請以「標準答案」為唯一依據進行判定，並用最精簡輸出。當學生答案語義正確但與標準答案描述不一致時，仍判為正確，但必須在 teacherFeedback 指出「與答案集不一致，但表達正確」，並簡述差異點（最多 20 字）。
+  const prompt = `你是一位以繁體中文回覆的英語老師與審稿員。你只依據「題目 + 標準答案」來判定學生答案是否正確，並在必要時指出格式問題（大小寫、標點）。不要產生長篇說理，輸出務必簡潔、可機器解析。
 
-請回傳 JSON（不要加任何說明或程式碼圍欄），欄位如下：
+請回傳單一 JSON（不要加任何說明或程式碼圍欄），欄位如下：
 {
-  "overallScore": 0-100,                    // 綜合分
-  "accuracy": 0-100,                        // 與標準答案語義貼近度
-  "grammar": 0-100,
-  "vocabulary": 0-100,
-  "spelling": 0-100,
-  "structure": 0-100,
-  "isCorrect": true/false,                   // 是否語義正確
-  "teacherFeedback": "<=60字，重點、簡短", // 若與標準答案不一致但語義正確，需明確說明
-  "improvementSuggestions": ["最多2條，每條<=40字"],
-  "errors": {                                // 僅在錯誤或需改進時列出具體點
-    "grammar": ["具體錯點，例：時態錯誤、主謂不一致"],
-    "spelling": ["具體錯字"],
-    "vocabulary": ["詞義或選詞問題"],
-    "structure": ["語序/連接詞/邏輯問題" ]
-  }
+  "isCorrect": true/false,                    // 僅判定是否正確
+  "teacherFeedback": "<=50字，指出是否答題、不足之處與核心差異", 
+  "improvementSuggestions": ["<=2條，每條<=30字，提供最小修改方向"],
+  "errors": {                                 // 指出具體可定位的問題
+    "punctuation": ["標點或格式問題，如：句首需大寫/句末缺標點/Yes 後需逗號"],
+    "grammar": ["文法錯誤（可留空）"],
+    "spelling": ["拼寫錯誤（可留空）"],
+    "vocabulary": ["選詞不當（可留空）"],
+    "structure": ["語序/邏輯問題（可留空）"]
+  },
+  "overallScore": 0-100,                      // 可選；若無明確依據可估算，否則給 0
+  "accuracy": 0-100,                          // 可選；可留 0
+  "grammar": 0-100,                           // 可選；可留 0
+  "vocabulary": 0-100,                        // 可選；可留 0
+  "spelling": 0-100,                          // 可選；可留 0
+  "structure": 0-100,                         // 可選；可留 0
+  "aiFeedbackOk": true/false,                 // 你對自己本次評語品質的自檢
+  "aiFeedbackIssues": ["若你的評語可能有誤或不完滿，簡短列出原因（如：未檢查大小寫、錯把附和句視為正確等）"]
 }
 
-資料：
+資料（請務必結合三者比對）：
 題目: ${question}
 標準答案: ${correctAnswer}
 學生答案: ${userAnswer}
 
-評分規則：
-- 以「標準答案」為準確性判定基準。
-- 當學生答案語義正確但表述不同：isCorrect=true，並在 teacherFeedback 指出不一致處；不必給大量建議。
-- 當答案錯誤：在 errors.* 中列出具體可定位的錯點（短語級或詞級），並用 improvementSuggestions 指出最小修改方向；避免長篇說理。
-- 回覆必須是單一 JSON 且可被 JSON.parse 解析。`;
+評估規則：
+- 嚴禁把「Yes/No/You are right/Good/OK/我同意/It depends」等附和或評述句視為正確答案；若出現，isCorrect應為false，並在 teacherFeedback 指明「未直接回答題目」。
+- 嚴格檢查大小寫與標點：句首需大寫、句末需 . ? !；Yes/No 後建議加逗號；若有問題請放入 errors.punctuation。
+- 當學生語義正確但表述不同：isCorrect=true，teacherFeedback 簡述與標準答案差異（<=20字）。
+- 若你對自己的評語不完全確定或可能遺漏某類錯誤，aiFeedbackOk=false 並在 aiFeedbackIssues 中列出原因。
+- 僅輸出 JSON。`;
 
   const response = await fetch(__apiUrl, {
     method: 'POST',
@@ -252,7 +230,7 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
 
   return {
     isCorrect: aiResult.isCorrect,
-    score: Math.round(aiResult.overallScore || aiResult.score || 0),
+    score: (typeof aiResult.overallScore === 'number' ? Math.round(aiResult.overallScore) : (typeof aiResult.score === 'number' ? Math.round(aiResult.score) : 0)),
     accuracy: Math.round(aiResult.accuracy || 0),
     grammar: Math.round(aiResult.grammar || 0),
     vocabulary: Math.round(aiResult.vocabulary || 0),
@@ -268,11 +246,14 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
       grammar: aiResult.errors?.grammar || [],
       spelling: aiResult.errors?.spelling || [],
       vocabulary: aiResult.errors?.vocabulary || [],
-      structure: aiResult.errors?.structure || []
+      structure: aiResult.errors?.structure || [],
+      punctuation: aiResult.errors?.punctuation || []
     },
     // 保持向後兼容
     feedback: aiResult.teacherFeedback || aiResult.feedback || '',
-    aiSuggestions: aiResult.improvementSuggestions || aiResult.suggestions || []
+    aiSuggestions: aiResult.improvementSuggestions || aiResult.suggestions || [],
+    aiFeedbackIssues: aiResult.aiFeedbackIssues || aiResult.feedbackIssues || [],
+    aiFeedbackOk: typeof aiResult.aiFeedbackOk === 'boolean' ? aiResult.aiFeedbackOk : (Array.isArray(aiResult.aiFeedbackIssues) ? aiResult.aiFeedbackIssues.length === 0 : true)
   };
 }
 
@@ -281,20 +262,19 @@ function createTimeoutPromise(__timeout, answer) {
   return new Promise((_, reject) => {
     setTimeout(() => {
       reject(new Error(`校對超時: Q${answer.qid}`));
-    }, timeout);
+    }, __timeout);
   });
 }
 
 // 創建備用結果
 function createFailbackResult(answer) {
   const { userAnswer, correctAnswer } = answer;
-  const isExactMatch = userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
 
   return {
     ...answer,
-    isCorrect: isExactMatch,
-    score: isExactMatch ? 100 : calculateBasicScore(userAnswer, correctAnswer),
-    feedback: isExactMatch ? '答案正確' : '答案與標準答案不完全匹配',
+    isCorrect: false,
+    score: 0,
+    feedback: 'AI 校對暫不可用，請稍後再試',
     aiSuggestions: [],
     errorAnalysis: {},
     checkMethod: 'basic_check'
@@ -512,4 +492,124 @@ function analyzePunctuationDifferences(userAnswer = '', correctAnswer = '') {
     if (du > dc) msgs.push("多餘標點 '" + ch + "'");
   }
   return msgs;
+}
+
+// 英文停用詞（簡化版）
+const EN_STOPWORDS = new Set(['the','a','an','to','of','in','on','at','for','with','and','or','but','so','because','as','by','from','that','this','these','those','is','am','are','was','were','be','been','being','do','does','did','have','has','had','will','would','shall','should','can','could','may','might','must','it','its','they','them','their','there','here','then','than','also','too','very','just','not','however','though','although','if','else','when','where','who','whom','which','what','why','how','into','over','under','about','out','up','down','again','once']);
+
+function tokenizeWords(s = '') {
+  const tokens = (s || '').toLowerCase().match(/\b[\w']+\b/g) || [];
+  return tokens;
+}
+
+function extractKeywordList(correctAnswer = '') {
+  const tokens = tokenizeWords(correctAnswer);
+  const keywords = [];
+  const seen = new Set();
+  for (const t of tokens) {
+    const clean = t.replace(/^'+|'+$/g, ''); // trim quotes
+    if (clean.length < 3) continue; // 忽略過短詞
+    if (EN_STOPWORDS.has(clean)) continue;
+    if (!seen.has(clean)) { keywords.push(clean); seen.add(clean); }
+    if (keywords.length >= 12) break; // 控制長度
+  }
+  // 保底：若沒有抽出任何關鍵詞，就退回全部去重 token（最多6個）
+  if (keywords.length === 0) {
+    const uniq = Array.from(new Set(tokens));
+    return uniq.slice(0, 6);
+  }
+  return keywords;
+}
+
+function analyzeFormatIssues(userAnswer = '') {
+  if (!userAnswer) return [];
+  const s = userAnswer.trim();
+  const msgs = [];
+  // 句首大寫
+  const firstAlpha = s.match(/[A-Za-z]/);
+  if (firstAlpha && firstAlpha[0] === firstAlpha[0].toLowerCase()) {
+    msgs.push('句首應使用大寫字母');
+  }
+  // 句末標點
+  if (!/[.!?]$/.test(s)) {
+    msgs.push('句末缺少標點');
+  }
+  // Yes/No 之後的逗號
+  if (/^(yes|no)\s+[a-z]/i.test(s) && !/^(yes|no),\s/i.test(s)) {
+    msgs.push('"Yes/No" 後建議加逗號');
+  }
+  // I 應大寫
+  if (/\bi\b/.test(s)) {
+    msgs.push('代詞 I 應大寫');
+  }
+  // 多餘空格
+  if (/\s{2,}/.test(s)) {
+    msgs.push('請避免連續空格');
+  }
+  // 標點前空格
+  if (/\s[,:;!?\.]/.test(s)) {
+    msgs.push('標點前不應有空格');
+  }
+  return msgs;
+}
+
+function computeKeywordRecall(userAnswer = '', keywords = []) {
+  if (!userAnswer || !keywords || keywords.length === 0) return 0;
+  const uTokens = new Set(tokenizeWords(userAnswer));
+  let hits = 0;
+  for (const k of keywords) if (uTokens.has(k)) hits += 1;
+  return hits / keywords.length;
+}
+
+function ruleBasedPrecheck(question = '', correctAnswer = '', userAnswer = '') {
+  const ua = (userAnswer || '').trim();
+  if (!ua) {
+    return {
+      intercept: true,
+      payload: {
+        isCorrect: false,
+        score: 0,
+        teacherFeedback: '未作答或內容為空',
+        improvementSuggestions: ['請直接作答問題', '可參考標準答案要點進行回答'],
+        errorAnalysis: { punctuation: [], grammar: [], vocabulary: [], structure: ['未直接回應題目'] }
+      }
+    };
+  }
+
+  // 攔截明顯的元回覆/敷衍回覆
+  const metaPattern = /^(yes|no|yeah|yep|ok|okay|agree|i think|maybe|you are right|that'?s right|correct|right\.?|sure|fine)\b/i;
+  const onlyAcknowledgement = metaPattern.test(ua);
+
+  const keywords = extractKeywordList(correctAnswer);
+  const recall = computeKeywordRecall(ua, keywords);
+  const fmt = analyzeFormatIssues(ua);
+  const punc = analyzePunctuationDifferences(ua, correctAnswer);
+  const missing = keywords.filter(k => !new Set(tokenizeWords(ua)).has(k)).slice(0, 5);
+
+  if (onlyAcknowledgement || recall < 0.3) {
+    const suggestions = [];
+    if (missing.length) suggestions.push('補充關鍵資訊：' + missing.join(', '));
+    suggestions.push('請直接回答題目重點');
+    if (fmt.length) suggestions.push(...fmt);
+    if (punc.length) suggestions.push(...punc);
+
+    return {
+      intercept: true,
+      payload: {
+        isCorrect: false,
+        score: Math.round(recall * 40),
+        teacherFeedback: onlyAcknowledgement ? '答案偏向附和/評述，未回應題目要點' : '未覆蓋標準答案的關鍵資訊',
+        improvementSuggestions: suggestions.slice(0, 5),
+        errorAnalysis: {
+          punctuation: [].concat(fmt, punc),
+          grammar: [],
+          vocabulary: [],
+          structure: ['未直接回應題目或關鍵資訊不足']
+        }
+      }
+    };
+  }
+
+  // 不攔截，讓 AI 深入分析
+  return { intercept: false };
 }
