@@ -953,6 +953,15 @@ button:disabled {
     gap: 20px;
 }
 
+/* 文章標題（來自文本中以 # 開頭的行） */
+.article-title {
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin: 6px 0 10px;
+}
+
 /* 段落對段落樣式 */
 .paragraph-pair {
     margin-bottom: 20px;
@@ -970,6 +979,17 @@ button:disabled {
     line-height: 1.8;
     font-size: 1.1em;
     overflow-wrap: break-word;
+}
+
+.paragraph-pair.is-title .paragraph-english {
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: 700;
+    background-color: #fff;
+}
+
+.paragraph-pair.is-title .paragraph-chinese {
+    text-align: center;
 }
 
 .paragraph-chinese {
@@ -1465,6 +1485,23 @@ button:disabled {
 }
 .sent-analyze-btn:hover { background: #1d4ed8; }
 
+/* 干擾更小的句子解析按鈕：默認微弱、僅在 hover 時突顯 */
+.sent-analyze-btn.icon-only {
+    background: transparent;
+    color: #2563eb;
+    padding: 0 2px;
+    border-radius: 3px;
+}
+.paragraph-english .sent-analyze-btn { opacity: 0.15; transition: opacity .15s ease; }
+.paragraph-english:hover .sent-analyze-btn,
+.interactive-sentence:hover + .sent-analyze-btn { opacity: 0.8; }
+.sent-analyze-btn.icon-only:hover { background: rgba(37, 99, 235, 0.08); }
+
+/* 段落級高亮（用於朗讀模式：段落） */
+.paragraph-english.para-active {
+    background: rgba(56,189,248,0.10);
+}
+
 #vocab-books-panel .panel-header > button:first-of-type {
     margin-left: auto;
 }
@@ -1951,6 +1988,21 @@ button:disabled {
     /* 确保特殊字符正确显示 */
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Arial Unicode MS', system-ui, sans-serif;
     text-rendering: optimizeLegibility;
+}
+
+/* Ghost/mini buttons for compact inline actions */
+.btn-ghost {
+  background: #fff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+.btn-ghost:hover { background: #f8fafc; border-color: #d1d5db; }
+.btn-ghost:active { background: #f1f5f9; }
+.btn-mini {
+  padding: 4px 6px;
+  font-size: 12px;
+  min-height: 24px;
+  line-height: 1.2;
 }
 
 .control-btn:hover {

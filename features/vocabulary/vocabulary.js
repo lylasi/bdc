@@ -20,6 +20,7 @@ export function initVocabulary() {
     dom.importVocabBookBtn.addEventListener('click', openModalForImportBook);
     dom.exportVocabBookBtn.addEventListener('click', exportActiveVocabBook);
     dom.mergeVocabBooksBtn.addEventListener('click', openModalForMergeBooks);
+    if (dom.completeMissingBtn) dom.completeMissingBtn.addEventListener('click', openModalForCompleteMissing);
 
     // 單詞列表高亮
     dom.wordList.addEventListener('mouseover', (e) => {
@@ -41,6 +42,16 @@ export function initVocabulary() {
     // 初次加載時渲染視圖
     renderVocabBookList();
     updateActiveBookView();
+}
+
+// 外部可呼叫：在導航切換回單詞本頁時刷新視圖
+export function refreshVocabularyView() {
+    try {
+        renderVocabBookList();
+        updateActiveBookView();
+    } catch (e) {
+        console.warn('刷新單詞本視圖失敗:', e);
+    }
 }
 
 export async function handleVocabularyQueryParams() {
@@ -132,14 +143,95 @@ function updateActiveBookView() {
         dom.editVocabBookBtn.disabled = false;
         dom.deleteVocabBookBtn.disabled = false;
         dom.exportVocabBookBtn.disabled = false;
+        if (dom.completeMissingBtn) dom.completeMissingBtn.disabled = (activeBook.words.length === 0);
         renderWordList();
     } else {
         dom.currentBookName.textContent = '請選擇一個單詞本';
         dom.editVocabBookBtn.disabled = true;
         dom.deleteVocabBookBtn.disabled = true;
         dom.exportVocabBookBtn.disabled = true;
+        if (dom.completeMissingBtn) dom.completeMissingBtn.disabled = true;
         dom.wordList.innerHTML = '<li class="word-item-placeholder">請從左側選擇或創建一個單詞本</li>';
     }
+}
+
+async function openModalForCompleteMissing() {
+    const book = state.vocabularyBooks.find(b => b.id === state.activeBookId);
+    if (!book) return;
+
+    const missing = findMissingEntries(book.words);
+    dom.modalTitle.textContent = '補完缺失';
+    dom.modalBody.innerHTML = `
+        <div class="input-group" style="display:block;">
+            <p>當前單詞本：<strong>${book.name}</strong></p>
+            <p>共 <strong>${book.words.length}</strong> 條，其中缺失資料（音標為 n/a 或空白、或中文釋義缺失）的有 <strong>${missing.length}</strong> 條。</p>
+            <small class="form-hint">片語將優先嘗試以存檔的上下文補齊中文釋義，並補上音標（可用整體讀音或逐詞 IPA 串接）。</small>
+        </div>
+        <div id="complete-missing-progress" class="import-progress"></div>
+        <div class="modal-actions">
+            <button class="cancel-btn">取消</button>
+            <button class="save-btn" ${missing.length===0?'disabled':''}>開始</button>
+        </div>
+    `;
+    const cancel = dom.appModal.querySelector('.cancel-btn');
+    const save = dom.appModal.querySelector('.save-btn');
+    cancel.onclick = () => ui.closeModal();
+    save.onclick = () => runCompleteMissing(book, missing);
+    ui.openModal();
+}
+
+function findMissingEntries(words) {
+    const isMissing = (w) => {
+        const phon = (w.phonetic || '').trim().toLowerCase();
+        const meaning = (w.meaning || '').trim();
+        const missingPhon = !phon || phon === 'n/a' || phon === 'na';
+        const missingMeaning = !meaning;
+        return missingPhon || missingMeaning;
+    };
+    return (words || []).filter(isMissing);
+}
+
+async function runCompleteMissing(book, missingList) {
+    const progress = document.getElementById('complete-missing-progress');
+    if (!progress) return;
+    let cancelled = false;
+    const saveBtn = dom.appModal.querySelector('.save-btn');
+    const cancelBtn = dom.appModal.querySelector('.cancel-btn');
+    if (saveBtn) saveBtn.disabled = true;
+    if (cancelBtn) cancelBtn.textContent = '停止';
+    cancelBtn.onclick = () => { cancelled = true; cancelBtn.disabled = true; };
+
+    const { addWordToDefaultBook, ensureWordDetails } = await import('../../modules/vocab.js');
+
+    const total = missingList.length;
+    let done = 0; let updated = 0; let skipped = 0;
+
+    const runOne = async (entry) => {
+        if (cancelled) return;
+        const before = { phon: entry.phonetic, meaning: entry.meaning };
+        try {
+            await ensureWordDetails(entry, { sentence: entry.context||'', context: entry.context||'', allowDeferForPhrase: false });
+        } catch (_) {}
+        const after = { phon: entry.phonetic, meaning: entry.meaning };
+        if ((after.phon && after.phon !== 'n/a' && !before.phon) || (after.meaning && !before.meaning)) updated += 1; else skipped += 1;
+        done += 1;
+        if (progress) progress.innerHTML = `<p>正在補完：${entry.word}（${done}/${total}）</p>`;
+    };
+
+    // limit concurrency
+    const CONCURRENCY = Math.min(2, total);
+    let idx = 0;
+    const workers = Array.from({ length: CONCURRENCY }, async () => {
+        while (!cancelled && idx < total) {
+            const current = missingList[idx++];
+            await runOne(current);
+        }
+    });
+    await Promise.all(workers);
+
+    try { storage.saveVocabularyBooks(); } catch(_) {}
+    if (progress) progress.innerHTML = `<p style="color:green;">完成：更新 ${updated} 條，略過 ${skipped} 條。</p>`;
+    setTimeout(() => { ui.closeModal(); renderWordList(); }, 600);
 }
 
 function openModalForNewBook() {
@@ -329,9 +421,14 @@ async function importVocabularySources(sources, options = {}) {
                 if (!parsedWord) continue;
 
                 if (!parsedWord.meaning || !parsedWord.phonetic) {
-                    const analysis = await api.getWordAnalysis(parsedWord.word);
-                    parsedWord.phonetic = parsedWord.phonetic || (analysis.phonetic || 'n/a').replace(/^\/|\/$/g, '');
-                    parsedWord.meaning = parsedWord.meaning || analysis.meaning || '';
+                    try {
+                        // 使用通用補全：同時照顧單詞與片語（片語可逐詞拼合 IPA）
+                        await (await import('../../modules/vocab.js')).ensureWordDetails(parsedWord, { allowDeferForPhrase: false });
+                    } catch (_) {
+                        const analysis = await api.getWordAnalysis(parsedWord.word);
+                        parsedWord.phonetic = parsedWord.phonetic || (analysis.phonetic || 'n/a').replace(/^\/|\/$/g, '');
+                        parsedWord.meaning = parsedWord.meaning || analysis.meaning || '';
+                    }
                 }
                 wordsWithDetails.push(parsedWord);
             }
@@ -483,13 +580,18 @@ async function processWordsWithAI(book, wordsText) {
         if (!wordObject.meaning.trim() || !wordObject.phonetic.trim()) {
             if(progressContainer) progressContainer.innerHTML = `<p>正在分析: ${wordObject.word} (${i + 1}/${preliminaryWords.length})</p>`;
             try {
-                const analysis = await api.getWordAnalysis(wordObject.word);
-                wordObject.phonetic = wordObject.phonetic || (analysis.phonetic || 'n/a').replace(/^\/|\/$/g, '');
-                wordObject.meaning = wordObject.meaning || analysis.meaning || '分析失敗';
+                const mod = await import('../../modules/vocab.js');
+                await mod.ensureWordDetails(wordObject, { allowDeferForPhrase: false });
             } catch (e) {
-                console.error(`Error analyzing word "${wordObject.word}":`, e);
-                wordObject.meaning = wordObject.meaning || '分析失敗';
-                wordObject.phonetic = wordObject.phonetic || 'n/a';
+                console.error(`Error completing word \"${wordObject.word}\":`, e);
+                try {
+                    const analysis = await api.getWordAnalysis(wordObject.word);
+                    wordObject.phonetic = wordObject.phonetic || (analysis.phonetic || 'n/a').replace(/^\/|\/$/g, '');
+                    wordObject.meaning = wordObject.meaning || analysis.meaning || '分析失敗';
+                } catch (_) {
+                    wordObject.meaning = wordObject.meaning || '分析失敗';
+                    wordObject.phonetic = wordObject.phonetic || 'n/a';
+                }
             }
         }
         finalWords.push(wordObject);

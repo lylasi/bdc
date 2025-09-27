@@ -15,6 +15,7 @@ export const editVocabBookBtn = document.getElementById('edit-vocab-book-btn');
 export const deleteVocabBookBtn = document.getElementById('delete-vocab-book-btn');
 export const exportVocabBookBtn = document.getElementById('export-vocab-book-btn');
 export const mergeVocabBooksBtn = document.getElementById('merge-vocab-books-btn');
+export const completeMissingBtn = document.getElementById('complete-missing-btn');
 export const wordList = document.getElementById('word-list');
 
 // --- 学习模式页面 ---

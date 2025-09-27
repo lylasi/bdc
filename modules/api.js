@@ -350,7 +350,7 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
         const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, model);
         if (cached) return cached;
     }
-    const prompt = `針對句子中的選中片語給出簡潔解析（JSON，中文請使用香港繁體中文）：\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
+    const prompt = `針對句子中的選中片語給出簡潔解析（JSON，中文請使用香港繁體中文）。\n請同時提供該片語的國際音標 IPA：若能提供片語整體讀音則給整體讀音；若無可靠整體讀音，可用逐詞 IPA 串接（用空格分隔）。\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n只返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
     const data = await requestAI({
         model,
         messages: [{ role: 'user', content: prompt }],
