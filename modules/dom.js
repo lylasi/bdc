@@ -96,6 +96,7 @@ export const chunkProgressSpan = document.getElementById('chunk-progress');
 export const chunkRepeatControls = document.getElementById('chunk-repeat-controls');
 export const chunkRepeatTimes = document.getElementById('chunk-repeat-times');
 export const currentSentenceDisplay = document.getElementById('current-sentence-display');
+export const dimmingIntensity = document.getElementById('dimming-intensity');
 
 // --- 文章库 ---
 export const showArticleLibraryBtn = document.getElementById('show-article-library-btn');
