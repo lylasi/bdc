@@ -1436,7 +1436,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
             <div style="font-weight:600">句子解析</div>
             <div class="actions" style="display:flex;gap:6px;">
                 <button class="btn-ghost btn-mini sent-refresh">重新獲取</button>
-                <button class="btn-ghost btn-mini sent-collapse">收合</button>
+                <button class="btn-ghost btn-mini sent-collapse" title="收合 (點擊標題列或右側也可收合)">收合</button>
             </div>
         </div>
         <div class="sentence-translation" style="margin:6px 0 8px 0;">${translation}</div>
@@ -1458,11 +1458,32 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     `;
     const refresh = card.querySelector('.sent-refresh');
     const collapse = card.querySelector('.sent-collapse');
+    const head = card.querySelector('.sentence-card-head');
     const selBtn = card.querySelector('.analyze-selection');
     if (collapse) collapse.addEventListener('click', ()=> {
         const hidden = card.classList.toggle('hidden');
         applySentenceHighlight(paraIdx, sentIdx, !hidden);
     });
+    if (head) head.addEventListener('click', (ev) => {
+        // 允許整個標題列點擊收合，但避免點擊按鈕重複觸發
+        const t = ev.target;
+        if (t.closest && t.closest('button')) return;
+        const hidden = card.classList.toggle('hidden');
+        applySentenceHighlight(paraIdx, sentIdx, !hidden);
+    });
+
+    // 右側大面積收合區（提高點按容忍度）
+    try {
+        card.style.position = 'relative';
+        const overlay = document.createElement('div');
+        overlay.className = 'card-collapse-overlay';
+        overlay.title = '點擊此區收合';
+        overlay.addEventListener('click', () => {
+            const hidden = card.classList.toggle('hidden');
+            applySentenceHighlight(paraIdx, sentIdx, !hidden);
+        });
+        card.appendChild(overlay);
+    } catch (_) {}
     if (refresh) refresh.addEventListener('click', async ()=>{
         refresh.disabled = true; refresh.textContent = '重新獲取中...';
         try { const fresh = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true }); renderSentenceCard(card, fresh, sentence, context, paraIdx, sentIdx); }
