@@ -72,7 +72,7 @@ export function buildTTSUrl(text, langOrVoice = 'english', speed = 0) {
     }
     const voice = TTS_CONFIG.voices[voiceKey] || TTS_CONFIG.voices.english;
     // 注意：保持與 speakText 同步
-    return `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${speed}&api_key=${TTS_CONFIG.apiKey}`;
+    return `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(TTS_CONFIG.apiKey)}`;
 }
 
 /**
@@ -85,23 +85,26 @@ export async function downloadTextAsAudio(text, langOrVoice = 'english', speed =
         const params = [];
         if (options && typeof options.pitch === 'number') params.push(`p=${encodeURIComponent(String(options.pitch))}`);
         if (options && typeof options.style === 'string' && options.style) params.push(`s=${encodeURIComponent(options.style)}`);
-        if (options && options.download === true) params.push('d=true');
+        // 強制要求服務端走下載回應，以避開跨源 fetch 的 CORS 讀取限制
+        if (!options || options.download === true) params.push('d=true');
         if (params.length) u += `&${params.join('&')}`;
         return u;
     })();
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`TTS download failed: ${res.status}`);
-    const buf = await res.arrayBuffer();
-    const blob = new Blob([buf], { type: 'audio/mpeg' });
+
+    // 注意：許多第三方 TTS 服務未開啟 CORS，
+    // 用 fetch(arrayBuffer) 會因為跨源而失敗（TypeError: Failed to fetch）。
+    // 因此改為直接以 <a href> 觸發下載，交給瀏覽器處理跨源檔案。
+    // 若服務端回覆 Content-Disposition: attachment，將直接下載；
+    // 部分瀏覽器會忽略跨源的 a.download 檔名，但仍能下載成功。
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
+    a.href = url;
+    a.rel = 'noopener';
+    a.target = '_blank'; // 確保在新分頁處理跨源下載，避免破壞當前單頁應用
+    try { a.download = filename; } catch (_) { /* 某些瀏覽器會忽略跨源檔名 */ }
     document.body.appendChild(a);
     a.click();
-    setTimeout(() => {
-        URL.revokeObjectURL(a.href);
-        a.remove();
-    }, 1000);
+    // 立即清理 DOM（不需要 URL.revokeObjectURL，因為未建立 blob: URL）
+    setTimeout(() => a.remove(), 0);
 }
 
 /**
@@ -126,7 +129,7 @@ export async function speakText(text, langOrVoice = 'english', speed = 0, onStar
     }
 
     const voice = TTS_CONFIG.voices[voiceKey] || TTS_CONFIG.voices.english;
-    const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${voice}&r=${speed}&api_key=${TTS_CONFIG.apiKey}`;
+    const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(TTS_CONFIG.apiKey)}`;
 
     try {
         state.globalAudioElement.src = url;
