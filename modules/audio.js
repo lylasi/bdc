@@ -78,8 +78,17 @@ export function buildTTSUrl(text, langOrVoice = 'english', speed = 0) {
 /**
  * 下載指定文本的 TTS 音頻。
  */
-export async function downloadTextAsAudio(text, langOrVoice = 'english', speed = 0, filename = 'audio.mp3') {
-    const url = buildTTSUrl(text, langOrVoice, speed);
+export async function downloadTextAsAudio(text, langOrVoice = 'english', speed = 0, filename = 'audio.mp3', options = {}) {
+    // 支援 p(音高) / s(風格) / d(下載)
+    const url = (() => {
+        let u = buildTTSUrl(text, langOrVoice, speed);
+        const params = [];
+        if (options && typeof options.pitch === 'number') params.push(`p=${encodeURIComponent(String(options.pitch))}`);
+        if (options && typeof options.style === 'string' && options.style) params.push(`s=${encodeURIComponent(options.style)}`);
+        if (options && options.download === true) params.push('d=true');
+        if (params.length) u += `&${params.join('&')}`;
+        return u;
+    })();
     const res = await fetch(url);
     if (!res.ok) throw new Error(`TTS download failed: ${res.status}`);
     const buf = await res.arrayBuffer();
