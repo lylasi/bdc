@@ -4,7 +4,7 @@
     "title": "Lost in the city",
     "description": "A City Race in Tsim Sha Tsui challenges Ben and friends as they navigate buses, crossings and street signs.",
     "difficulty": "初級 (CEFR A2)",
-    "category": "城市",
+    "category": "ready reading",
     "path": "articles/5a ready reading/u1-lost-in-the-city.json"
   },
   {
@@ -12,7 +12,7 @@
     "title": "K-Pop Super Star Yuna in Hong Kong for Christmas Concert",
     "description": "K-pop star Yuna Kim shares her Hong Kong concert plans and a three-day itinerary with fans.",
     "difficulty": "初級 (CEFR A2)",
-    "category": "旅遊",
+    "category": "ready reading",
     "path": "articles/5a ready reading/u2-k-pop-super-star-yuna-in-hong-kong-for-christmas-concert.json"
   },
   {
@@ -20,7 +20,7 @@
     "title": "When Grandma was young",
     "description": "Anna and Grandma discuss what children could do by themselves then and now.",
     "difficulty": "初級 (CEFR A2)",
-    "category": "家庭",
+    "category": "ready reading",
     "path": "articles/5a ready reading/u3-when-grandma-was-young.json"
   },
   {
@@ -28,7 +28,7 @@
     "title": "An offline holiday",
     "description": "On a Bangkok trip, a family spends a night offline and rediscovers card games and conversation.",
     "difficulty": "初級 (CEFR A2)",
-    "category": "生活",
+    "category": "ready reading",
     "path": "articles/5a ready reading/u4-an-offline-holiday.json"
   },
   {
@@ -36,7 +36,7 @@
     "title": "Fantasy Family Farm",
     "description": "A family farm website invites visitors to try hands-on activities and features an interview with the 10,000th guest.",
     "difficulty": "初級 (CEFR A2)",
-    "category": "戶外",
+    "category": "ready reading",
     "path": "articles/5a ready reading/u5-fantasy-family-farm.json"
   },
   {
@@ -44,7 +44,7 @@
     "title": "Ame Aunr was away",
     "description": "With Aunt away, Karen’s family tackles a housework to-do list—complete with mishaps and teamwork.",
     "difficulty": "初級 (CEFR A2)",
-    "category": "家庭",
+    "category": "ready reading",
     "path": "articles/5a ready reading/u6-ame-aunr-was-away.json"
   }
 ]

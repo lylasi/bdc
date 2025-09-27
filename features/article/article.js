@@ -87,6 +87,9 @@ export function initArticle() {
     }
 
     populateArticleHistorySelect();
+
+    // 選字快速加入生詞本（文章詳解區）
+    try { initArticleSelectionToWordbook(); } catch (_) {}
 }
 
 
@@ -132,6 +135,17 @@ function mergeDetailedAnalyses(existing, incoming) {
     return out;
 }
 
+function parseTitleAndParagraphs(text) {
+    const paras = text.split(/\n+/).filter(p => p.trim() !== '');
+    if (paras.length === 0) return { title: '', paragraphs: [] };
+    const first = paras[0].trim();
+    const m = first.match(/^#+\s*(.+)$/); // support '# Title' or '## Title'
+    if (m) {
+        return { title: m[1].trim(), paragraphs: paras.slice(1) };
+    }
+    return { title: '', paragraphs: paras };
+}
+
 async function analyzeArticle() {
     const articleText = dom.articleInput.value.trim();
     if (!articleText) {
@@ -148,20 +162,21 @@ async function analyzeArticle() {
     dom.analyzeArticleBtn.disabled = true;
     dom.analyzeArticleBtn.textContent = '分析中...';
     
-    const paragraphs = articleText.split(/\n+/).filter(p => p.trim() !== '');
-    if (paragraphs.length === 0) {
+    const { title, paragraphs } = parseTitleAndParagraphs(articleText);
+    const items = title ? [title, ...paragraphs] : paragraphs; // 將標題也納入分析列表
+    if (items.length === 0) {
         alert('請輸入有效的文章內容！');
         dom.analyzeArticleBtn.disabled = false;
         dom.analyzeArticleBtn.textContent = '分析文章';
         return;
     }
 
-    updateAnalysisProgress(0, paragraphs.length, '準備中...');
+    updateAnalysisProgress(0, items.length, '準備中...');
 
     // Pre-render placeholders for incremental rendering
     const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-    dom.articleAnalysisContainer.innerHTML = paragraphs.map((p, i) => `
-        <div class="paragraph-pair" data-paragraph-index="${i}" data-english="${esc(p)}">
+    dom.articleAnalysisContainer.innerHTML = items.map((p, i) => `
+        <div class="paragraph-pair${title && i === 0 ? ' is-title' : ''}" data-paragraph-index="${i}" data-english="${esc(p)}">
             <div class="para-status" data-status="pending" style="font-size:12px;opacity:.8;margin:4px 0;display:flex;gap:8px;align-items:center;">
                 <span class="status-icon">⏳</span>
                 <span class="status-text">分析中...</span>
@@ -173,7 +188,7 @@ async function analyzeArticle() {
         </div>`).join('');
 
     try {
-        const total = paragraphs.length;
+        const total = items.length;
         let completed = 0;
         let paragraphAnalyses = new Array(total);
 
@@ -190,7 +205,7 @@ async function analyzeArticle() {
             if (idx >= total) return;
             // 啟動前延遲，平滑請求節奏
             await new Promise(r => setTimeout(r, SPACING_MS));
-            const text = paragraphs[idx];
+            const text = items[idx];
             updateAnalysisProgress(completed, total, `正在分析第 ${idx + 1} 段...`);
             try {
                 // start timing for this paragraph
@@ -266,7 +281,9 @@ function updateAnalysisProgress(completed, total, message) {
             inline.style.fontSize = '12px';
             inline.style.opacity = '0.8';
             inline.style.margin = '6px 0';
-            container.prepend(inline);
+            const titlePair = container.querySelector('.paragraph-pair.is-title');
+            if (titlePair) titlePair.insertAdjacentElement('afterend', inline);
+            else container.prepend(inline);
         }
         inline.textContent = `${message} (${completed}/${total})`;
         return;
@@ -294,7 +311,8 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         return;
     }
 
-    const englishParagraphs = originalArticle.split(/\n+/).filter(p => p.trim() !== '');
+    const { title, paragraphs: englishParagraphsRaw } = parseTitleAndParagraphs(originalArticle);
+    const englishParagraphs = title ? [title, ...englishParagraphsRaw] : englishParagraphsRaw;
     const chineseParagraphs = (chinese_translation || '').split(/\n+/).filter(p => p.trim() !== '');
     const escapeRegex = (string) => string ? string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') : '';
     const stripSpanTags = (s) => (s || '').replace(/<\/?span[^>]*>/g, '');
@@ -350,7 +368,7 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
                 const re = new RegExp(`\b(${escapeRegex(w)})\b`, 'g');
                 sHtml = sHtml.replace(re, `<span class=\"interactive-word\" data-word=\"${escapeAttr(w)}\">$1</span>`);
             });
-            return `<span class=\"interactive-sentence\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" data-sentence=\"${escapeAttr(sText)}\">${sHtml}</span><button class=\"sent-analyze-btn\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" style=\"margin-left:6px;font-size:12px;\">解析</button>`;
+            return `<span class=\"interactive-sentence\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" data-sentence=\"${escapeAttr(sText)}\">${sHtml}</span><button class=\"sent-analyze-btn icon-only\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\" style=\"margin-left:4px;\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>`;
         }).join(' ');
 
         // Chinese sentence wrapping + cleaning
@@ -358,8 +376,9 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         const zhSentences = sentenceSplitZh(cleanedZh);
         const zhHtml = zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\">${escapeAttr(z)}</span>`).join(' ');
 
+        const isTitle = !!title && i === 0;
         htmlContent += `
-            <div class=\"paragraph-pair\" data-paragraph-index=\"${i}\" data-english=\"${escapeAttr(englishPara)}\">
+            <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}\" data-paragraph-index=\"${i}\" data-english=\"${escapeAttr(englishPara)}\">
                 <div class=\"paragraph-english\">${englishHtml}</div>
                 <div class=\"paragraph-chinese\">${zhHtml}</div>
             </div>`;
@@ -427,6 +446,65 @@ function handleReadButtonClick() {
     else togglePauseResume();
 }
 
+// Build reading chunks from the rendered analysis DOM when available,
+// falling back to raw text splitting when analysis is not present.
+function buildReadingChunks(mode) {
+    const chunks = [];
+    const area = dom.articleAnalysisContainer;
+    const hasRendered = !!area.querySelector('.paragraph-pair');
+
+    if (hasRendered) {
+        const paraEls = Array.from(area.querySelectorAll('.paragraph-pair .paragraph-english'));
+        if (mode === 'full') {
+            const text = paraEls.map(el => el.textContent.trim()).filter(Boolean).join(' ');
+            chunks.push({ type: 'full', text, el: null });
+            return chunks;
+        }
+        if (mode === 'paragraph') {
+            paraEls.forEach(el => {
+                const text = Array.from(el.querySelectorAll('.interactive-sentence')).map(s => s.textContent.trim()).join(' ')
+                    || el.textContent.trim();
+                if (text) chunks.push({ type: 'paragraph', text, el });
+            });
+            return chunks;
+        }
+        // sentence mode
+        paraEls.forEach(el => {
+            const sentEls = Array.from(el.querySelectorAll('.interactive-sentence'));
+            if (sentEls.length) {
+                sentEls.forEach(s => {
+                    const t = s.textContent.trim();
+                    if (t) chunks.push({ type: 'sentence', text: t, el: s });
+                });
+            } else {
+                const t = el.textContent.trim();
+                if (t) chunks.push({ type: 'sentence', text: t, el });
+            }
+        });
+        return chunks;
+    }
+
+    // Fallback when no analysis rendered yet
+    const text = dom.articleInput.value.trim();
+    if (!text) return chunks;
+    const splitText = (t, m) => {
+        if (m === 'paragraph') return t.split(/\n+/).filter(p => p.trim() !== '');
+        if (m === 'sentence' || m === 'full') return t.match(/[^.!?]+[.!?]*/g) || [t];
+        return [t];
+    };
+    const parts = splitText(text, mode);
+    if (mode === 'full') {
+        chunks.push({ type: 'full', text, el: null });
+    } else if (mode === 'paragraph') {
+        parts.forEach(p => chunks.push({ type: 'paragraph', text: p, el: null }));
+    } else {
+        parts.forEach(s => chunks.push({ type: 'sentence', text: s, el: null }));
+    }
+    return chunks;
+}
+
+let _playToken = 0; // 用於避免競態：切段期間舊的 onEnd 不再推進
+
 function readArticle() {
     const text = dom.articleInput.value.trim();
     if (!text) {
@@ -435,10 +513,12 @@ function readArticle() {
     }
     const mode = dom.readingModeSelect.value;
     state.setIsReadingChunkPaused(false);
-    state.setReadingChunks(splitText(text, mode === 'full' ? 'sentence' : mode));
+    const chunks = buildReadingChunks(mode === 'full' ? 'full' : mode);
+    state.setReadingChunks(chunks);
     if (state.readingChunks.length > 0) {
         state.setCurrentChunkIndex(0);
-        dom.chunkNavControls.classList.toggle('hidden', mode === 'full');
+        dom.chunkNavControls.classList.toggle('hidden', state.readingChunks.length <= 1);
+        _playToken++; // 重置 token
         playCurrentChunk();
     }
 }
@@ -448,7 +528,8 @@ function stopReadArticle() {
     state.setIsReadingChunkPaused(false);
     dom.stopReadArticleBtn.disabled = true;
     updateReadButtonUI('stopped');
-    dom.chunkNavControls.classList.toggle('hidden', dom.readingModeSelect.value === 'full');
+    // 若片段數量 <= 1，隱藏切換控制
+    try { dom.chunkNavControls.classList.toggle('hidden', (state.readingChunks || []).length <= 1); } catch (_) {}
     highlightCurrentChunk(null);
     if(dom.currentSentenceDisplay) dom.currentSentenceDisplay.textContent = '';
 }
@@ -460,11 +541,15 @@ function playCurrentChunk() {
     }
     const chunk = state.readingChunks[state.currentChunkIndex];
     highlightCurrentChunk(chunk);
-    if(dom.currentSentenceDisplay) dom.currentSentenceDisplay.textContent = chunk;
+    if (dom.currentSentenceDisplay) {
+        dom.currentSentenceDisplay.textContent = (chunk?.type === 'full') ? '全文' : (chunk?.text || '');
+    }
 
     const repeatTimesVal = parseInt(dom.chunkRepeatTimes.value, 10) || 1;
     
+    const token = ++_playToken;
     const onEnd = () => {
+        if (token !== _playToken) return; // 已切換，不再推進
         state.setSentenceRepeatCount(state.sentenceRepeatCount + 1);
         if (state.isReadingChunkPaused) return;
         if (state.sentenceRepeatCount < repeatTimesVal) {
@@ -479,7 +564,7 @@ function playCurrentChunk() {
             }
         }
     };
-    audio.speakText(chunk, 'en-US', state.currentSpeed, () => {
+    audio.speakText(chunk?.text || String(chunk || ''), 'en-US', state.currentSpeed, () => {
         dom.stopReadArticleBtn.disabled = false;
         updateReadButtonUI('playing');
         updateChunkNav();
@@ -492,6 +577,7 @@ function playNextChunk() {
     
     if (state.currentChunkIndex < state.readingChunks.length - 1) {
         audio.stopCurrentAudio();
+        _playToken++; // 取消前一段的 onEnd 推進
         state.setCurrentChunkIndex(state.currentChunkIndex + 1);
         state.setSentenceRepeatCount(0);
         state.setIsReadingChunkPaused(false);
@@ -499,10 +585,8 @@ function playNextChunk() {
         // 立即更新UI
         updateChunkNav();
         
-        // 短延迟后开始播放
-        setTimeout(() => {
-            playCurrentChunk();
-        }, 50);
+        // 短延遲後開始播放
+        setTimeout(() => { playCurrentChunk(); }, 10);
     }
 }
 
@@ -512,6 +596,7 @@ function playPrevChunk() {
     
     if (state.currentChunkIndex > 0) {
         audio.stopCurrentAudio();
+        _playToken++;
         state.setCurrentChunkIndex(state.currentChunkIndex - 1);
         state.setSentenceRepeatCount(0);
         state.setIsReadingChunkPaused(false);
@@ -519,10 +604,8 @@ function playPrevChunk() {
         // 立即更新UI
         updateChunkNav();
         
-        // 短延迟后开始播放
-        setTimeout(() => {
-            playCurrentChunk();
-        }, 50);
+        // 短延遲後開始播放
+        setTimeout(() => { playCurrentChunk(); }, 10);
     }
 }
 
@@ -554,19 +637,22 @@ function updateChunkNav() {
     dom.nextChunkBtn.disabled = state.currentChunkIndex === state.readingChunks.length - 1;
 }
 
-function splitText(text, mode) {
-    if (mode === 'paragraph') return text.split(/\n+/).filter(p => p.trim() !== '');
-    if (mode === 'sentence') return text.match(/[^.!?]+[.!?]*/g) || [];
-    return [text];
+function clearReadingHighlights() {
+    dom.articleAnalysisContainer.querySelectorAll('.interactive-sentence.sentence-active').forEach(el => el.classList.remove('sentence-active'));
+    dom.articleAnalysisContainer.querySelectorAll('.paragraph-english.para-active').forEach(el => el.classList.remove('para-active'));
 }
 
 function highlightCurrentChunk(chunk) {
-    let content = dom.articleAnalysisContainer.innerHTML;
-    content = content.replace(/<span class="highlight-reading">(.*?)<\/span>/gs, '$1');
-    if (chunk) {
-        content = content.replace(chunk, `<span class="highlight-reading">${chunk}</span>`);
+    clearReadingHighlights();
+    if (!chunk) return;
+    if (chunk.type === 'sentence' && chunk.el) {
+        chunk.el.classList.add('sentence-active');
+        // 確保可視
+        try { chunk.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+    } else if (chunk.type === 'paragraph' && chunk.el) {
+        chunk.el.classList.add('para-active');
+        try { chunk.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
     }
-    dom.articleAnalysisContainer.innerHTML = content;
 }
 
 async function downloadAudio() {
@@ -614,7 +700,9 @@ async function loadArticleFromLibrary(path) {
         const response = await fetch(path);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const article = await response.json();
-        dom.articleInput.value = article.content;
+        // 將標題一併插入正文最前面，以 Markdown 風格 # 開頭展示
+        const title = (article && article.title) ? `# ${article.title}\n\n` : '';
+        dom.articleInput.value = `${title}${article.content || ''}`.trim();
         closeArticleLibrary();
     } catch (error) {
         console.error(`無法從 ${path} 加載文章:`, error);
@@ -742,6 +830,20 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
         if (w) audio.speakText(w, 'en-US', 0);
         return;
     }
+    const btnAdd = rawTarget?.closest && rawTarget.closest('.btn-add-to-book');
+    if (btnAdd) {
+        e.stopPropagation();
+        const w = btnAdd.getAttribute('data-word') || '';
+        const sentence = btnAdd.getAttribute('data-sentence') || '';
+        const context = btnAdd.getAttribute('data-context') || '';
+        try {
+            const mod = await import('../../modules/vocab.js');
+            await mod.addWordToDefaultBook(w, { source: 'article', sentence, context });
+        } catch (err) {
+            console.warn('加入生詞本失敗:', err);
+        }
+        return;
+    }
     if (!btnPhrase && !btnCustom) return;
     // 已在最上方 stopPropagation；此處保持語義一致
     const sentence = (btnPhrase || btnCustom).getAttribute('data-sentence') || '';
@@ -759,7 +861,8 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
         if (resultBox) {
             const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
             const ex = Array.isArray(res.analysis?.examples) ? res.analysis.examples.slice(0,2) : [];
-            resultBox.innerHTML = `<div><strong>片語:</strong> ${esc(res.selection || selection)}</div>
+            const phon = (res.analysis?.phonetic || '').replace(/^\/|\/$/g, '');
+            resultBox.innerHTML = `<div><strong>片語:</strong> ${esc(res.selection || selection)}${phon ? ` <span class=\"tooltip-phonetic\">/${esc(phon)}/</span>` : ''}</div>
                                    <div><strong>釋義:</strong> ${esc(res.analysis?.meaning || '')}</div>
                                    ${res.analysis?.usage ? `<div><strong>用法:</strong> ${esc(res.analysis.usage)}</div>`:''}
                                    ${ex.length? '<div style="margin-top:4px">' + ex.map(x=>`<div>• ${esc(x.en)} — ${esc(x.zh)}</div>`).join('') + '</div>' : ''}`;
@@ -789,9 +892,10 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
                     <p><strong>意思:</strong> ${analysis.meaning}</p>
                 </div>
                 <div class="tooltip-actions" style="margin-top:6px;display:flex;gap:6px;align-items:center;">
-                    <button class="btn-play-word" data-word="${escAttr(data.word || defaultPhrase)}">發音</button>
-                    <button class="btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">片語解析</button>
-                    <button class="btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">自訂片語...</button>
+                    <button class="btn-ghost btn-mini btn-play-word" data-word="${escAttr(data.word || defaultPhrase)}">發音</button>
+                    <button class="btn-ghost btn-mini btn-add-to-book" data-word="${escAttr(defaultPhrase||data.word||'')}" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}">加入生詞本</button>
+                    <button class="btn-ghost btn-mini btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">片語解析</button>
+                    <button class="btn-ghost btn-mini btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">自訂片語...</button>
                 </div>
                 <div class="tooltip-phrase-result" style="margin-top:6px;font-size:12px;"></div>`;
         } else {
@@ -930,11 +1034,12 @@ function wrapChineseWithPairId(container, zh, pairId) {
 async function retrySingleParagraph(idx, options = {}) {
     const articleText = dom.articleInput.value.trim();
     if (!articleText) return;
-    const paragraphs = articleText.split(/\n+/).filter(p => p.trim() !== '');
-    if (idx < 0 || idx >= paragraphs.length) return;
+    const { title, paragraphs } = parseTitleAndParagraphs(articleText);
+    const all = title ? [title, ...paragraphs] : paragraphs;
+    if (idx < 0 || idx >= all.length) return;
     const level = (dom.analysisLevelSelect && dom.analysisLevelSelect.value) || 'standard';
     const timeoutMs = level === 'quick' ? 30000 : (level === 'standard' ? 45000 : 60000);
-    const text = paragraphs[idx];
+    const text = all[idx];
     const statusDiv = document.querySelector(`.paragraph-pair[data-paragraph-index="${idx}"] .para-status`);
     if (statusDiv) {
         statusDiv.dataset.status = 'pending';
@@ -1028,7 +1133,7 @@ function renderParagraph(index, englishPara, result) {
             const re = new RegExp(`\\b(${escapeRegex(word)})\\b`, 'g');
             sHtml = sHtml.replace(re, `<span class=\"interactive-word\" data-word=\"${esc(word)}\">$1</span>`);
         });
-        htmlParts.push(`<span class=\"interactive-sentence\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" data-sentence=\"${esc(s)}\">${sHtml}</span><button class=\"sent-analyze-btn\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" style=\"margin-left:6px;font-size:12px;\">解析</button>`);
+        htmlParts.push(`<span class=\"interactive-sentence\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" data-sentence=\"${esc(s)}\">${sHtml}</span><button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\" style=\"margin-left:4px;\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>`);
     });
 
     englishDiv.innerHTML = htmlParts.join(' ');
@@ -1073,7 +1178,8 @@ async function retryFailedParagraphs() {
         try { currentAnalysisAbort.abort('cancelled-by-retry'); } catch(_) {}
     }
     currentAnalysisAbort = new AbortController();
-    const paragraphs = articleText.split(/\n+/).filter(p => p.trim() !== '');
+    const { title, paragraphs } = parseTitleAndParagraphs(articleText);
+    const all = title ? [title, ...paragraphs] : paragraphs;
     const total = lastFailedIndices.length;
     const level = (dom.analysisLevelSelect && dom.analysisLevelSelect.value) || 'standard';
     const timeoutMs = level === 'quick' ? 30000 : (level === 'standard' ? 45000 : 60000);
@@ -1097,7 +1203,7 @@ async function retryFailedParagraphs() {
         if (pick >= indices.length) return;
         await new Promise(r => setTimeout(r, SPACING_MS));
         const idx = indices[pick];
-        const text = paragraphs[idx];
+        const text = all[idx];
         try {
             const result = await api.analyzeParagraph(text, { timeoutMs, signal: currentAnalysisAbort.signal, level });
             renderParagraph(idx, text, result);
@@ -1164,6 +1270,81 @@ function cleanChinese(s) {
     s = s.replace(/\s+/g, ' ');
     s = s.replace(/\s*([，。！？；：,.!?;:])\s*/g, '$1');
     return s.trim();
+}
+
+// QA 同款：在文章詳解區選字後顯示一個小按鈕，直接加入生詞本
+function initArticleSelectionToWordbook() {
+    const area = dom.articleAnalysisContainer;
+    if (!area) return;
+
+    let btn = null;
+    function ensureBtn() {
+        if (btn) return btn;
+        btn = document.createElement('button');
+        btn.className = 'btn-ghost btn-mini';
+        btn.textContent = '加入生詞本';
+        btn.style.cssText = [
+            'position:absolute',
+            'z-index:9999',
+            'display:none'
+        ].join(';');
+        document.body.appendChild(btn);
+        btn.addEventListener('click', async () => {
+            const sel = window.getSelection();
+            const text = (sel && sel.toString && sel.toString().trim()) || '';
+            if (!text) { return hideBtn(); }
+
+            // 推斷上下文：優先 sentence，再回退 paragraph 英文
+            let sentence = '';
+            let context = '';
+            try {
+                const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+                const node = range ? (range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement) : null;
+                const sentenceEl = node && node.closest ? node.closest('.interactive-sentence') : null;
+                const pair = node && node.closest ? node.closest('.paragraph-pair') : null;
+                sentence = (sentenceEl && (sentenceEl.getAttribute('data-sentence') || sentenceEl.textContent)) || '';
+                context = (pair && (pair.getAttribute('data-english'))) || (pair && pair.querySelector('.paragraph-english') && pair.querySelector('.paragraph-english').textContent) || sentence || '';
+                if (!context) context = (dom.articleInput && dom.articleInput.value) || '';
+            } catch (_) {}
+
+            try {
+                const mod = await import('../../modules/vocab.js');
+                await mod.addWordToDefaultBook(text, { source: 'article', sentence, context });
+            } catch (_) {}
+            hideBtn();
+            try { sel && sel.removeAllRanges && sel.removeAllRanges(); } catch (_) {}
+        });
+        return btn;
+    }
+
+    function hideBtn() { if (btn) btn.style.display = 'none'; }
+
+    function showBtnNearSelection() {
+        const sel = window.getSelection();
+        const text = (sel && sel.toString && sel.toString().trim()) || '';
+        if (!text) { return hideBtn(); }
+        if (!sel || sel.rangeCount === 0) { return hideBtn(); }
+        const range = sel.getRangeAt(0);
+        // 僅處理在分析容器內的選區
+        const container = range.commonAncestorContainer;
+        const host = (container.nodeType === 1 ? container : container.parentElement);
+        if (!area.contains(host)) { return hideBtn(); }
+        const rect = range.getBoundingClientRect();
+        if (!rect || (rect.width === 0 && rect.height === 0)) { return hideBtn(); }
+        const b = ensureBtn();
+        b.style.left = `${rect.left + window.scrollX}px`;
+        b.style.top = `${rect.bottom + window.scrollY + 6}px`;
+        b.style.display = 'inline-block';
+    }
+
+    area.addEventListener('mouseup', () => setTimeout(showBtnNearSelection, 0));
+    area.addEventListener('touchend', () => setTimeout(showBtnNearSelection, 0), { passive: true });
+    document.addEventListener('mousedown', (e) => {
+        if (!btn) return;
+        if (e.target === btn) return;
+        hideBtn();
+    });
+    window.addEventListener('scroll', hideBtn, { passive: true });
 }
 
 async function toggleSentenceCard(sentenceEl) {
@@ -1244,8 +1425,8 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         <div class="sentence-card-head" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
             <div style="font-weight:600">句子解析</div>
             <div class="actions" style="display:flex;gap:6px;">
-                <button class="sent-refresh">重新獲取</button>
-                <button class="sent-collapse">收合</button>
+                <button class="btn-ghost btn-mini sent-refresh">重新獲取</button>
+                <button class="btn-ghost btn-mini sent-collapse">收合</button>
             </div>
         </div>
         <div class="sentence-translation" style="margin:6px 0 8px 0;">${translation}</div>
@@ -1254,14 +1435,14 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
             + `</div>` : ''}
         ${chunks.length? `<div class="sentence-chunks">`
             + chunks.slice(0,8).map((c,idx)=>`<div class="chunk-item" data-chunk-id="sent-${paraIdx}-${sentIdx}-${idx}" style="margin:4px 0;display:flex;gap:6px;align-items:center;">
-                    <button class="chunk-explain" data-chunk-id="sent-${paraIdx}-${sentIdx}-${idx}" data-phrase="${esc(c.text)}" style="font-size:12px;">詳解</button>
+                    <button class="btn-ghost btn-mini chunk-explain" data-chunk-id="sent-${paraIdx}-${sentIdx}-${idx}" data-phrase="${esc(c.text)}">詳解</button>
                     <div class="chunk-line"><span class="chunk-text" style="color:#22c55e">${esc(c.text)}</span> — <em>${esc(c.role)}</em>${c.note? `：${esc(c.note)}`:''}</div>
                 </div>`).join('')
             + `</div>` : ''}
         ${filteredPoints.length? `<ul class="sentence-points" style="margin:6px 0 0 18px;">`
             + filteredPoints.slice(0,6).map(p=>`<li>${esc(p)}</li>`).join('') + `</ul>` : ''}
         <div class="sent-footer" style="margin-top:8px;display:flex;gap:6px;align-items:center;">
-            <button class="analyze-selection">解析選中</button>
+            <button class="btn-ghost btn-mini analyze-selection">解析選中</button>
             <small style="opacity:.8">選取句中片語後點擊</small>
         </div>
     `;
@@ -1296,6 +1477,24 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
             alert('解析失敗，稍後再試');
         } finally {
             selBtn.disabled = false; selBtn.textContent = '解析選中';
+        }
+    });
+    // Add to wordbook from current selection (sentence card)
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-ghost btn-mini sent-add-to-book';
+    addBtn.textContent = '加入生詞本（選中）';
+    addBtn.style.marginLeft = '6px';
+    const footer = card.querySelector('.sent-footer');
+    if (footer) footer.insertBefore(addBtn, footer.lastElementChild);
+    addBtn.addEventListener('click', async () => {
+        const selection = window.getSelection();
+        const text = (selection && selection.toString && selection.toString().trim()) || '';
+        if (!text) { alert('請先在該句中選取詞/片語'); return; }
+        try {
+            const mod = await import('../../modules/vocab.js');
+            await mod.addWordToDefaultBook(text, { source: 'article', sentence, context });
+        } catch (err) {
+            console.warn('加入生詞本失敗:', err);
         }
     });
 

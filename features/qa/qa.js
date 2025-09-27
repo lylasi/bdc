@@ -38,6 +38,9 @@ export async function init() {
   // 初始化事件監聽器
   initEventListeners();
 
+  // 問答區選字：顯示「加入生詞本」懸浮按鈕（簡化版）
+  try { initQASelectionToWordbook(); } catch (_) {}
+
   // 載入問答集
   await loadQASets();
 
@@ -66,6 +69,75 @@ export function showQAModule() {
   } else {
     console.error('找不到問答模組DOM元素');
   }
+}
+
+// 簡化版：在 QA 訓練區域選字後，顯示一個小按鈕可直接加入生詞本
+function initQASelectionToWordbook() {
+  const area = dom.qaTrainingArea;
+  if (!area) return;
+
+  let btn = null;
+  function ensureBtn() {
+    if (btn) return btn;
+    btn = document.createElement('button');
+    btn.textContent = '加入生詞本';
+    btn.style.cssText = [
+      'position:absolute',
+      'z-index:9999',
+      'padding:4px 8px',
+      'font-size:12px',
+      'border:1px solid #d1d5db',
+      'border-radius:6px',
+      'background:#fff',
+      'color:#111827',
+      'box-shadow:0 2px 6px rgba(0,0,0,0.08)',
+      'display:none',
+      'min-height:unset'
+    ].join(';');
+    document.body.appendChild(btn);
+    btn.addEventListener('click', async () => {
+      const sel = window.getSelection();
+      const text = (sel && sel.toString && sel.toString().trim()) || '';
+      if (!text) { displayMessage('請先選取要加入的詞/片語', 'warning'); return; }
+      const q = dom.qaModule?.querySelector('#qa-current-question')?.textContent || '';
+      try {
+        const mod = await import('../../modules/vocab.js');
+        await mod.addWordToDefaultBook(text, { source: 'qa', sentence: q, context: q });
+      } catch (err) {
+        console.warn('加入生詞本失敗:', err);
+      } finally {
+        hideBtn();
+        try { sel && sel.removeAllRanges && sel.removeAllRanges(); } catch (_) {}
+      }
+    });
+    return btn;
+  }
+
+  function hideBtn() { if (btn) btn.style.display = 'none'; }
+
+  area.addEventListener('mouseup', (e) => {
+    setTimeout(() => {
+      const sel = window.getSelection();
+      const text = (sel && sel.toString && sel.toString().trim()) || '';
+      if (!text) { hideBtn(); return; }
+      // Only react to selections inside QA training area
+      if (!sel || sel.rangeCount === 0) { hideBtn(); return; }
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (!rect || (rect.width === 0 && rect.height === 0)) { hideBtn(); return; }
+      const b = ensureBtn();
+      b.style.left = `${rect.left + window.scrollX}px`;
+      b.style.top = `${rect.bottom + window.scrollY + 6}px`;
+      b.style.display = 'inline-block';
+    }, 0);
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    if (!btn) return;
+    if (e.target === btn) return;
+    // If clicking outside, hide the button
+    hideBtn();
+  });
 }
 
 // 隱藏問答模組

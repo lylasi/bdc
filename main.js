@@ -3,7 +3,7 @@ import * as state from './modules/state.js';
 import { loadVocabularyBooks, loadAnalyzedArticles } from './modules/storage.js';
 import { initModal, setupNumberSteppers, initTooltip } from './modules/ui.js';
 import { unlockAudioContext } from './modules/audio.js';
-import { initVocabulary, handleVocabularyQueryParams } from './features/vocabulary/vocabulary.js';
+import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView } from './features/vocabulary/vocabulary.js';
 import { initLearning, populateLearningBookSelector, populateWordSelect } from './features/learning/learning.js';
 import { initDictation, populateDictationBookSelector, togglePauseDictation } from './features/dictation/dictation.js';
 import { initQuiz, populateQuizBookSelector } from './features/quiz/quiz.js';
@@ -56,6 +56,7 @@ function setupNavigation() {
             switch (btn.id) {
                 case 'vocabulary-btn':
                     dom.vocabularySection.classList.add('active');
+                    try { refreshVocabularyView(); } catch (_) {}
                     break;
                 case 'learning-btn':
                     dom.learningSection.classList.add('active');
