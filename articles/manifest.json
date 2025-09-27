@@ -46,5 +46,85 @@
     "difficulty": "初級 (CEFR A2)",
     "category": "ready reading",
     "path": "articles/5a ready reading/u6-ame-aunr-was-away.json"
+  },
+  {
+    "id": "u1-travelling",
+    "title": "Travelling",
+    "description": "Jumpstart Reading Unit 1: Travelling",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u1-travelling.json"
+  },
+  {
+    "id": "u2-freddys-job",
+    "title": "Freddy's Job",
+    "description": "Jumpstart Reading Unit 2: Freddy's Job",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u2-freddys-job.json"
+  },
+  {
+    "id": "u3-just-one-second",
+    "title": "Just one second",
+    "description": "Jumpstart Reading Unit 3: Just one second",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u3-just-one-second.json"
+  },
+  {
+    "id": "u4-lets-party",
+    "title": "Let's party!",
+    "description": "Jumpstart Reading Unit 4: Let's party!",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u4-lets-party.json"
+  },
+  {
+    "id": "u5-uncommon-clothing",
+    "title": "Uncommon clothing",
+    "description": "Jumpstart Reading Unit 5: Uncommon clothing",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u5-uncommon-clothing.json"
+  },
+  {
+    "id": "u6-the-wrong-train",
+    "title": "The Wrong Train",
+    "description": "Jumpstart Reading Unit 6: The Wrong Train",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u6-the-wrong-train.json"
+  },
+  {
+    "id": "u7-yoga-classes",
+    "title": "Yoga Classes",
+    "description": "Jumpstart Reading Unit 7: Yoga Classes",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u7-yoga-classes.json"
+  },
+  {
+    "id": "u8-picasso",
+    "title": "Picasso",
+    "description": "Jumpstart Reading Unit 8: Picasso",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u8-picasso.json"
+  },
+  {
+    "id": "u9-air-conditioning",
+    "title": "Air conditioning",
+    "description": "Jumpstart Reading Unit 9: Air conditioning",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u9-air-conditioning.json"
+  },
+  {
+    "id": "u10-delicious-pasta",
+    "title": "Delicious pasta",
+    "description": "Jumpstart Reading Unit 10: Delicious pasta",
+    "difficulty": "初級 (CEFR A2)",
+    "category": "R&E",
+    "path": "articles/5a jumpstart reading/u10-delicious-pasta.json"
   }
 ]
