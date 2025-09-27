@@ -1267,6 +1267,61 @@ function collectIssueList(errorAnalysis) {
   return unique;
 }
 
+// 在使用者答案中以紅色標示常見的標點/格式問題
+function highlightPunctuationInUserAnswer(currentHTML, rawUser = '', rawCorrect = '') {
+  if (!rawUser) return currentHTML;
+
+  // 先將 currentHTML 中的純文字節點替換；我們只做輕量處理：
+  // - Yes/No 後缺逗號：高亮 Yes/No
+  // - 連續空格：高亮
+  // - 句末缺少標點：於末尾加紅色提示符
+  try {
+    let html = currentHTML;
+
+    // Yes/No 後缺逗號
+    if (/^(\s*)(yes|no)\s+[a-z]/i.test(rawUser) && !/^(\s*)(yes|no),\s/i.test(rawUser)) {
+      html = html.replace(/^(\s*)(Yes|No)(\b)/i, (m, p1, p2, p3) => `${p1}<mark class="punc-err">${p2}</mark>${p3}`);
+    }
+
+    // 連續空格（顯示為紅底空格）
+    html = html.replace(/ {2,}/g, (m) => `<mark class="punc-err-space">${'&nbsp;'.repeat(m.length)}</mark>`);
+
+    // 句末缺少標點（參考正確答案是否有終止符）
+    const correctEndPunc = /[.!?]$/.test(rawCorrect);
+    const userEndPunc = /[.!?]$/.test(rawUser);
+    if (correctEndPunc && !userEndPunc) {
+      html = html + '<span class="punc-missing-end" title="句末缺少標點"></span>';
+    }
+
+    return html;
+  } catch (_) {
+    return currentHTML;
+  }
+}
+
+// 檢出本地可判斷的標點/格式問題，作為補強（即使 AI 略過也能提示）
+function detectLocalPunctuationIssues(rawUser = '', rawCorrect = '') {
+  const msgs = [];
+  if (!rawUser) return msgs;
+
+  // Yes/No 後建議加逗號
+  if (/^(\s*)(yes|no)\s+[a-z]/i.test(rawUser) && !/^(\s*)(yes|no),\s/i.test(rawUser)) {
+    msgs.push('"Yes/No" 後建議加逗號');
+  }
+
+  // 連續空格
+  if (/ {2,}/.test(rawUser)) {
+    msgs.push('請避免連續空格');
+  }
+
+  // 句末缺少標點（若標準答案有終止符）
+  if (/[.!?]$/.test(rawCorrect) && !/[.!?]$/.test(rawUser)) {
+    msgs.push('句末缺少標點');
+  }
+
+  return msgs;
+}
+
 // HTML轉義函數
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -1551,18 +1606,30 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
   html += '<div class="ai-checked-results">';
 
   checkedAnswers.forEach((answer, index) => {
-    const resultClass = answer.isCorrect ? 'ai-checked-result' : 'ai-checked-result incorrect';
     const questionNumber = typeof answer.displayIndex === 'number' ?
       answer.displayIndex + 1 : index + 1;
 
-    const difference = !answer.isCorrect ? createDifferenceAnalysis(answer.userAnswer, answer.correctAnswer) : null;
+    // 一律計算差異（即使語義判定為正確，也可能有格式/標點問題）
+    const difference = createDifferenceAnalysis(answer.userAnswer, answer.correctAnswer);
 
-    const userAnswerContent = answer.userAnswer
+    let userAnswerContent = answer.userAnswer
       ? (difference ? difference.userHighlighted : escapeHtml(answer.userAnswer))
       : '<span class="no-answer">未作答</span>';
+    // 在使用者答案內標示標點/格式問題位置
+    userAnswerContent = highlightPunctuationInUserAnswer(userAnswerContent, answer.userAnswer || '', answer.correctAnswer || '');
     const correctAnswerContent = answer.correctAnswer
       ? (difference ? difference.correctHighlighted : escapeHtml(answer.correctAnswer))
       : '<span class="no-answer">尚無標準答案</span>';
+
+    // 決定卡片顏色：完全正確(綠) / 語義正確但有瑕疵(黃) / 錯誤(紅)
+    let issues = collectIssueList(answer.errorAnalysis);
+    const localPuncIssues = detectLocalPunctuationIssues(answer.userAnswer || '', answer.correctAnswer || '');
+    if (localPuncIssues.length) {
+      issues = issues.concat(localPuncIssues.map(m => `【標點/格式】${m}`));
+    }
+    const hasIssues = issues.length > 0;
+    const isExact = Boolean(answer.isCorrect) && !hasIssues && (!difference || !difference.hasDifferences);
+    const resultClass = isExact ? 'ai-checked-result' : (answer.isCorrect ? 'ai-checked-result partial' : 'ai-checked-result incorrect');
 
     const differenceSection = difference ? `
           <div class="difference-analysis">
@@ -1682,14 +1749,14 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
           </div>
         ` : ''}
 
-        ${(() => { const issues = collectIssueList(answer.errorAnalysis); return issues.length ? `
+        ${issues.length ? `
           <div class="issue-list">
             <h5>需要修正</h5>
             <ul class="issues">
               ${issues.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
             </ul>
           </div>
-        ` : '' })()}
+        ` : ''}
       </div>
     `;
   });
