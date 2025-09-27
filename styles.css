@@ -3814,7 +3814,7 @@ mark.diff-extra {
 .sentence-wrap {
     position: relative;
     display: inline-block;
-    padding-right: 24px; /* 給右側icon留更大空間方便點擊 */
+    padding-right: 36px; /* 給右側icon/熱區留空間方便點擊 */
     margin-right: 2px;
 }
 .sentence-wrap .sent-analyze-btn.icon-only {
@@ -3835,7 +3835,7 @@ mark.diff-extra {
 }
 .analysis-container #article-analysis-container.dim-others .interactive-sentence,
 .analysis-container #article-analysis-container.dim-others .interactive-sentence-zh {
-    opacity: .45;
+    opacity: var(--dim-opacity, .45);
     transition: opacity .15s ease;
 }
 .analysis-container #article-analysis-container.dim-others .interactive-sentence.sentence-active,
@@ -3854,5 +3854,15 @@ mark.diff-extra {
     right: 0;
     width: 64px; /* 右側更大可點區 */
     height: 100%;
+    cursor: pointer;
+}
+
+/* 句子右側更大點按熱區（覆蓋整個句子高度） */
+.sentence-wrap .sentence-hotzone {
+    position: absolute;
+    right: 0;
+    top: -4px; /* 增加上下容忍度 */
+    bottom: -4px; /* 增加上下容忍度 */
+    width: 28px;
     cursor: pointer;
 }

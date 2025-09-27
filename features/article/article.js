@@ -86,6 +86,20 @@ export function initArticle() {
         dom.retryFailedParagraphsBtn.addEventListener('click', retryFailedParagraphs);
     }
 
+    // 淡化強度調整
+    if (dom.dimmingIntensity) {
+        const applyDim = () => {
+            const v = parseFloat(dom.dimmingIntensity.value);
+            if (!Number.isNaN(v)) {
+                dom.articleAnalysisContainer.style.setProperty('--dim-opacity', String(v));
+            }
+        };
+        dom.dimmingIntensity.addEventListener('input', applyDim);
+        dom.dimmingIntensity.addEventListener('change', applyDim);
+        // 初始套用
+        try { applyDim(); } catch(_) {}
+    }
+
     populateArticleHistorySelect();
 
     // 選字快速加入生詞本（文章詳解區）
@@ -371,6 +385,7 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             return `<span class=\"sentence-wrap\">` +
                    `<span class=\"interactive-sentence\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" data-sentence=\"${escapeAttr(sText)}\">${sHtml}</span>` +
                    `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
+                   `<span class=\"sentence-hotzone\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" title=\"展開/收合\"></span>` +
                    `</span>`;
         }).join(' ');
 
@@ -768,6 +783,23 @@ function handleArticleWordAnalysisClick(e) {
 // Sentence analyze button to lazy-load sentence analysis
 dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
     const rawTarget = ev.target && ev.target.nodeType === 3 ? ev.target.parentElement : ev.target;
+    // 1) 句子整行/熱區可點開/收合
+    const wrap = rawTarget?.closest && rawTarget.closest('.sentence-wrap');
+    const isIcon = rawTarget?.closest && rawTarget.closest('.sent-analyze-btn');
+    const isHotzone = rawTarget?.closest && rawTarget.closest('.sentence-hotzone');
+    const isWord = rawTarget?.closest && rawTarget.closest('.interactive-word');
+    if (wrap && !isIcon && !isWord) {
+        // 如果正在選字，避免誤觸
+        try { const sel = window.getSelection && window.getSelection(); if (sel && sel.toString && sel.toString().trim()) return; } catch(_) {}
+        const sent = wrap.querySelector('.interactive-sentence');
+        if (sent) { ev.stopPropagation(); await toggleSentenceCard(sent); return; }
+    }
+    if (isHotzone) {
+        const paraIdx = parseInt(rawTarget.getAttribute('data-para-index'), 10) || 0;
+        const sentIdx = parseInt(rawTarget.getAttribute('data-sent-index'), 10) || 0;
+        const el = dom.articleAnalysisContainer.querySelector(`.interactive-sentence[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
+        if (el) { ev.stopPropagation(); await toggleSentenceCard(el); return; }
+    }
     const chunkBtn = rawTarget?.closest && rawTarget.closest('.chunk-explain');
     if (chunkBtn) {
         ev.stopPropagation();
@@ -1143,6 +1175,7 @@ function renderParagraph(index, englishPara, result) {
         htmlParts.push(`<span class=\"sentence-wrap\">` +
             `<span class=\"interactive-sentence\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" data-sentence=\"${esc(s)}\">${sHtml}</span>` +
             `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
+            `<span class=\"sentence-hotzone\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"展開/收合\"></span>` +
             `</span>`);
     });
 
