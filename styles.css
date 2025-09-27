@@ -3844,4 +3844,15 @@ mark.diff-extra {
 }
 .sentence-card {
     font-size: 14px;
+    position: relative;
+}
+.sentence-card-head { cursor: pointer; }
+.sentence-card-head:hover { background: rgba(0,0,0,0.03); }
+.card-collapse-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 64px; /* 右側更大可點區 */
+    height: 100%;
+    cursor: pointer;
 }
