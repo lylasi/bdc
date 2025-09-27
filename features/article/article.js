@@ -703,7 +703,7 @@ async function downloadAudio() {
     const base = title ? makeSlug(title) : makeSlug(textToDownload.slice(0, 40));
     const fname = `${base}-${mode === 'full' ? 'full' : mode}.mp3`;
     try {
-        await audio.downloadTextAsAudio(textToDownload, 'en-US', state.currentSpeed, fname);
+        await audio.downloadTextAsAudio(textToDownload, 'en-US', state.currentSpeed, fname, { pitch: 0, style: 'general', download: true });
     } catch (err) {
         console.error('下載音頻失敗:', err);
         alert('下載音頻失敗，可能是文字過長或網絡問題。請嘗試切換為句子/段落模式下載。');
