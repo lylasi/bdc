@@ -2698,6 +2698,38 @@ button:disabled {
     margin: -15px; /* 微調以更好地利用空間 */
 }
 
+/* 文章庫 篩選控制列 */
+.article-library-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 10px 0;
+}
+
+.article-library-controls select {
+    padding: 6px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+}
+
+.article-library-count {
+    margin-left: auto;
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap; /* added line */
+    border: 0;
+}
+
 .article-library-item {
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;
@@ -3516,11 +3548,14 @@ button:disabled {
 
 .qa-instant-feedback .ai-checked-results {
     margin: 0;
+    padding: 4px 2px; /* 留出內邊距，避免內容緊貼邊框 */
 }
 
 .qa-instant-feedback .result-item {
-    margin-bottom: 0;
+    margin: 10px 0;   /* 給單題結果留出上下間距 */
     box-shadow: none;
+    padding: 14px;    /* 稍微放鬆內距，避免擁擠 */
+    border-radius: 8px;
 }
 
 .instant-feedback-status {
@@ -3538,8 +3573,8 @@ button:disabled {
 }
 
 .difference-analysis {
-    margin-top: 14px;
-    padding-top: 12px;
+    margin-top: 12px;
+    padding-top: 10px;
     border-top: 1px dashed rgba(13, 110, 253, 0.3);
 }
 
@@ -3565,6 +3600,34 @@ button:disabled {
     font-size: 14px;
     line-height: 1.5;
     color: #343a40;
+}
+
+/* 更清爽的單題區塊層次 */
+.result-question { margin-bottom: 10px; }
+.result-answers { margin-bottom: 10px; }
+
+/* 改進建議、教師回饋、AI 自檢、需要修正區塊：統一間距與字級 */
+.teacher-feedback, .improvement-suggestions, .ai-feedback-review, .issue-list,
+.student-strengths, .study-focus, .improved-examples {
+    margin-top: 10px;
+}
+.teacher-feedback h5, .improvement-suggestions h5, .ai-feedback-review h5,
+.issue-list h5, .student-strengths h5, .study-focus h5, .improved-examples h5 {
+    margin: 0 0 6px 0;
+    font-size: 14px;
+    color: #0c5460;
+}
+.issues, .suggestions-list, .strengths-list, .focus-list {
+    margin: 0;
+    padding-left: 18px; /* 讓項目更整齊，避免靠邊重疊 */
+}
+.issues li, .suggestions-list li, .strengths-list li, .focus-list li {
+    line-height: 1.5;
+    margin: 2px 0;
+}
+.ai-feedback-review.ok {
+    font-size: 13px;
+    color: #117a8b;
 }
 
 .difference-tags {
