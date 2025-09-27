@@ -368,7 +368,10 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
                 const re = new RegExp(`\b(${escapeRegex(w)})\b`, 'g');
                 sHtml = sHtml.replace(re, `<span class=\"interactive-word\" data-word=\"${escapeAttr(w)}\">$1</span>`);
             });
-            return `<span class=\"interactive-sentence\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" data-sentence=\"${escapeAttr(sText)}\">${sHtml}</span><button class=\"sent-analyze-btn icon-only\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\" style=\"margin-left:4px;\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>`;
+            return `<span class=\"sentence-wrap\">` +
+                   `<span class=\"interactive-sentence\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" data-sentence=\"${escapeAttr(sText)}\">${sHtml}</span>` +
+                   `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
+                   `</span>`;
         }).join(' ');
 
         // Chinese sentence wrapping + cleaning
@@ -640,6 +643,7 @@ function updateChunkNav() {
 function clearReadingHighlights() {
     dom.articleAnalysisContainer.querySelectorAll('.interactive-sentence.sentence-active').forEach(el => el.classList.remove('sentence-active'));
     dom.articleAnalysisContainer.querySelectorAll('.paragraph-english.para-active').forEach(el => el.classList.remove('para-active'));
+    dom.articleAnalysisContainer.classList.remove('full-reading-active');
 }
 
 function highlightCurrentChunk(chunk) {
@@ -652,6 +656,9 @@ function highlightCurrentChunk(chunk) {
     } else if (chunk.type === 'paragraph' && chunk.el) {
         chunk.el.classList.add('para-active');
         try { chunk.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+    } else if (chunk.type === 'full') {
+        dom.articleAnalysisContainer.classList.add('full-reading-active');
+        try { dom.articleAnalysisContainer.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {}
     }
 }
 
@@ -1133,7 +1140,10 @@ function renderParagraph(index, englishPara, result) {
             const re = new RegExp(`\\b(${escapeRegex(word)})\\b`, 'g');
             sHtml = sHtml.replace(re, `<span class=\"interactive-word\" data-word=\"${esc(word)}\">$1</span>`);
         });
-        htmlParts.push(`<span class=\"interactive-sentence\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" data-sentence=\"${esc(s)}\">${sHtml}</span><button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\" style=\"margin-left:4px;\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>`);
+        htmlParts.push(`<span class=\"sentence-wrap\">` +
+            `<span class=\"interactive-sentence\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" data-sentence=\"${esc(s)}\">${sHtml}</span>` +
+            `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
+            `</span>`);
     });
 
     englishDiv.innerHTML = htmlParts.join(' ');
