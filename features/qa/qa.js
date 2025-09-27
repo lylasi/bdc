@@ -574,9 +574,20 @@ async function startQATraining(qaId) {
     // 檢查是否有進行中的訓練
     const sessionState = getSessionState();
     if (sessionState.isActive) {
-      const confirmed = confirm('已有進行中的訓練，是否要開始新的訓練？');
-      if (!confirmed) {
+      // 若同一問答集或未能識別ID，直接續練；不同問答集再詢問
+      if (!sessionState.qaSetId || sessionState.qaSetId === qaId) {
+        showTrainingView();
+        updateTrainingInterface();
+        displayMessage('已為你繼續上一個訓練。', 'info');
         return;
+      } else {
+        const confirmed = confirm('已有進行中的訓練。確定要開始新的訓練嗎？選「取消」將繼續先前訓練。');
+        if (!confirmed) {
+          showTrainingView();
+          updateTrainingInterface();
+          displayMessage('已為你繼續上一個訓練。', 'info');
+          return;
+        }
       }
     }
 
