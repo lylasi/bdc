@@ -458,11 +458,7 @@ function buildReadingChunks(mode) {
 
     if (hasRendered) {
         const paraEls = Array.from(area.querySelectorAll('.paragraph-pair .paragraph-english'));
-        if (mode === 'full') {
-            const text = paraEls.map(el => el.textContent.trim()).filter(Boolean).join(' ');
-            chunks.push({ type: 'full', text, el: null });
-            return chunks;
-        }
+        // full 模式改為逐句朗讀（視覺效果更好，支援逐句高亮/淡化）
         if (mode === 'paragraph') {
             paraEls.forEach(el => {
                 const text = Array.from(el.querySelectorAll('.interactive-sentence')).map(s => s.textContent.trim()).join(' ')
@@ -471,7 +467,7 @@ function buildReadingChunks(mode) {
             });
             return chunks;
         }
-        // sentence mode
+        // sentence / full mode：逐句
         paraEls.forEach(el => {
             const sentEls = Array.from(el.querySelectorAll('.interactive-sentence'));
             if (sentEls.length) {
@@ -496,9 +492,7 @@ function buildReadingChunks(mode) {
         return [t];
     };
     const parts = splitText(text, mode);
-    if (mode === 'full') {
-        chunks.push({ type: 'full', text, el: null });
-    } else if (mode === 'paragraph') {
+    if (mode === 'paragraph') {
         parts.forEach(p => chunks.push({ type: 'paragraph', text: p, el: null }));
     } else {
         parts.forEach(s => chunks.push({ type: 'sentence', text: s, el: null }));
@@ -516,11 +510,12 @@ function readArticle() {
     }
     const mode = dom.readingModeSelect.value;
     state.setIsReadingChunkPaused(false);
-    const chunks = buildReadingChunks(mode === 'full' ? 'full' : mode);
+    const chunks = buildReadingChunks(mode === 'full' ? 'sentence' : mode);
     state.setReadingChunks(chunks);
     if (state.readingChunks.length > 0) {
         state.setCurrentChunkIndex(0);
-        dom.chunkNavControls.classList.toggle('hidden', state.readingChunks.length <= 1);
+        // 全文模式強制隱藏導航（雖然逐句朗讀，但視覺上仍視為全文）
+        dom.chunkNavControls.classList.toggle('hidden', mode === 'full' || state.readingChunks.length <= 1);
         _playToken++; // 重置 token
         playCurrentChunk();
     }
@@ -644,6 +639,7 @@ function clearReadingHighlights() {
     dom.articleAnalysisContainer.querySelectorAll('.interactive-sentence.sentence-active').forEach(el => el.classList.remove('sentence-active'));
     dom.articleAnalysisContainer.querySelectorAll('.paragraph-english.para-active').forEach(el => el.classList.remove('para-active'));
     dom.articleAnalysisContainer.classList.remove('full-reading-active');
+    dom.articleAnalysisContainer.classList.remove('dim-others');
 }
 
 function highlightCurrentChunk(chunk) {
@@ -651,13 +647,17 @@ function highlightCurrentChunk(chunk) {
     if (!chunk) return;
     if (chunk.type === 'sentence' && chunk.el) {
         chunk.el.classList.add('sentence-active');
+        // 淡化其他句子
+        dom.articleAnalysisContainer.classList.add('dim-others');
         // 確保可視
         try { chunk.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
     } else if (chunk.type === 'paragraph' && chunk.el) {
         chunk.el.classList.add('para-active');
         try { chunk.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+        dom.articleAnalysisContainer.classList.remove('dim-others');
     } else if (chunk.type === 'full') {
-        dom.articleAnalysisContainer.classList.add('full-reading-active');
+        // 已不再用 full 單片段，保留兼容
+        dom.articleAnalysisContainer.classList.add('dim-others');
         try { dom.articleAnalysisContainer.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {}
     }
 }
@@ -1515,6 +1515,9 @@ function applySentenceHighlight(paraIdx, sentIdx, on) {
     const eng = document.querySelector(`.interactive-sentence[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
     const zh = document.querySelector(`.interactive-sentence-zh[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
     [eng, zh].forEach(el => { if (el) el.classList.toggle('sentence-active', !!on); });
+    // 若有任何句卡展開，啟用淡化其它句子
+    const anyOpen = !!document.querySelector('.sentence-card:not(.hidden)');
+    dom.articleAnalysisContainer.classList.toggle('dim-others', anyOpen);
 }
 
 function applySentenceDim(paraIdx, sentIdx, on) {
