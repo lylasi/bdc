@@ -3905,16 +3905,16 @@ mark.punc-err-space {
     right: 0;
     top: 50%;
     transform: translateY(-50%);
-    opacity: 0.2;
-    width: 22px;
-    height: 22px;
+    opacity: 0.6; /* 顯示明顯一點 */
+    width: 26px;
+    height: 26px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
 }
 .sentence-wrap:hover .sent-analyze-btn.icon-only {
-    opacity: 0.9;
+    opacity: 1;
 }
 .analysis-container #article-analysis-container.dim-others .interactive-sentence,
 .analysis-container #article-analysis-container.dim-others .interactive-sentence-zh {
@@ -3939,6 +3939,38 @@ mark.punc-err-space {
     height: 100%;
     cursor: pointer;
     z-index: 1;
+    /* 以分段陰影製造「一塊塊」的視覺，便利使用者辨識此區可點 */
+    background-image: repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.04) 0px,
+        rgba(0,0,0,0.04) 12px,
+        transparent 12px,
+        transparent 24px
+    );
+}
+
+/* 右側收合手柄：顯示明顯的指示圖示 */
+.card-collapse-overlay .collapse-handle {
+    position: absolute;
+    top: 50%;
+    right: 50%;
+    transform: translate(50%, -50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(30, 64, 175, 0.12);
+    border: 1px solid rgba(30, 64, 175, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.card-collapse-overlay .collapse-handle .chevron {
+    font-size: 16px;
+    color: #1e40af;
+    line-height: 1;
+}
+.card-collapse-overlay:hover .collapse-handle {
+    background: rgba(30, 64, 175, 0.18);
 }
 
 /* 句子右側更大點按熱區（覆蓋整個句子高度） */
