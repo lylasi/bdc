@@ -1017,7 +1017,7 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
                         data-sentence="${escAttr(sentenceForBtn||'')}"
                         data-context="${escAttr(contextForBtn||'')}"
                         data-meaning="${escAttr(analysis.meaning || '')}"
-                        data-phonetic="${escAttr((analysis.phonetic||'').replace(/^\\/|\\$/g,''))}"
+                        data-phonetic="${escAttr(analysis.phonetic || '')}"
                         data-pos="${escAttr(analysis.pos || '')}"
                     >加入生詞本</button>
                     <button class="btn-ghost btn-mini btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">片語解析</button>
