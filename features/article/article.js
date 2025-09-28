@@ -631,6 +631,8 @@ function togglePauseResume() {
         updateReadButtonUI('playing');
     } else {
         updateReadButtonUI('paused');
+        // 不在播放狀態時，移除整體淡化效果
+        try { dom.articleAnalysisContainer.classList.remove('dim-others'); } catch (_) {}
     }
 }
 
@@ -662,8 +664,10 @@ function highlightCurrentChunk(chunk) {
     if (!chunk) return;
     if (chunk.type === 'sentence' && chunk.el) {
         chunk.el.classList.add('sentence-active');
-        // 淡化其他句子
-        dom.articleAnalysisContainer.classList.add('dim-others');
+        // 僅在實際播放時才啟用淡化（暫停或未播放時不淡化）
+        if (!state.isReadingChunkPaused) {
+            dom.articleAnalysisContainer.classList.add('dim-others');
+        }
         // 確保可視
         try { chunk.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
     } else if (chunk.type === 'paragraph' && chunk.el) {
@@ -671,8 +675,8 @@ function highlightCurrentChunk(chunk) {
         try { chunk.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
         dom.articleAnalysisContainer.classList.remove('dim-others');
     } else if (chunk.type === 'full') {
-        // 已不再用 full 單片段，保留兼容
-        dom.articleAnalysisContainer.classList.add('dim-others');
+        // 已不再用 full 單片段，保留兼容，但遵循播放狀態
+        if (!state.isReadingChunkPaused) dom.articleAnalysisContainer.classList.add('dim-others');
         try { dom.articleAnalysisContainer.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {}
     }
 }
@@ -1577,6 +1581,11 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         // 降低層級，讓標題列與其上的按鈕可點擊在上層
         overlay.style.zIndex = '1';
         overlay.setAttribute('aria-label', '點擊右側空白區可收合');
+        // 顯示更明顯的收合圖示與分塊感
+        const handle = document.createElement('div');
+        handle.className = 'collapse-handle';
+        handle.innerHTML = '<span class="chevron">◀</span>';
+        overlay.appendChild(handle);
         overlay.addEventListener('click', (ev) => {
             // 避免冒泡，也避免在選字時誤觸
             ev.stopPropagation();
@@ -1641,9 +1650,9 @@ function applySentenceHighlight(paraIdx, sentIdx, on) {
     const eng = document.querySelector(`.interactive-sentence[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
     const zh = document.querySelector(`.interactive-sentence-zh[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
     [eng, zh].forEach(el => { if (el) el.classList.toggle('sentence-active', !!on); });
-    // 若有任何句卡展開，啟用淡化其它句子
-    const anyOpen = !!document.querySelector('.sentence-card:not(.hidden)');
-    dom.articleAnalysisContainer.classList.toggle('dim-others', anyOpen);
+    // 僅在文章朗讀實際播放時啟用淡化，其餘情況不淡化
+    const isPlaying = !state.isReadingChunkPaused && !dom.stopReadArticleBtn.disabled;
+    dom.articleAnalysisContainer.classList.toggle('dim-others', !!isPlaying);
 }
 
 function applySentenceDim(paraIdx, sentIdx, on) {
