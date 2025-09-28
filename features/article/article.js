@@ -844,6 +844,9 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
     const isHotzone = rawTarget?.closest && rawTarget.closest('.sentence-hotzone');
     const isWord = rawTarget?.closest && rawTarget.closest('.interactive-word');
     if (wrap && !isIcon && !isWord) {
+        // 若點擊來源位於已展開的句卡內部，則不觸發句子層級的開合
+        // 這能避免在卡片中選字或操作時誤收合
+        if (rawTarget.closest && rawTarget.closest('.sentence-card')) return;
         // 如果正在選字，避免誤觸
         try { const sel = window.getSelection && window.getSelection(); if (sel && sel.toString && sel.toString().trim()) return; } catch(_) {}
         const sent = wrap.querySelector('.interactive-sentence');
