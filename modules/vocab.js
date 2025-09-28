@@ -14,8 +14,31 @@ function nowId() {
     return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function _collapseSpaces(s) {
+    return s.replace(/\s+/g, ' ').trim();
+}
+
+// 規範化用於去重的 key：
+// - 移除首尾非字母數字的符號（含中英文標點與括號/引號）
+// - 合併多空白，轉小寫，比對更穩定
 function normalizeWordKey(text) {
-    return (text || '').trim().toLowerCase();
+    let s = String(text || '');
+    s = _collapseSpaces(s);
+    // 去除首尾常見標點與括號、引號（中英文）
+    s = s.replace(/^[\s"'“”‘’()\[\]{}<>，。！？；：,.!?;:]+/, '');
+    s = s.replace(/[\s"'“”‘’()\[\]{}<>，。！？；：,.!?;:]+$/, '');
+    // 再次合併空白
+    s = _collapseSpaces(s);
+    return s.toLowerCase();
+}
+
+// 顯示文字的清理（保留原大小寫，但移除首尾噪音符號與多餘空白）
+function cleanDisplayText(text) {
+    let s = String(text || '');
+    s = _collapseSpaces(s);
+    s = s.replace(/^[\s"'“”‘’()\[\]{}<>，。！？；：,.!?;:]+/, '');
+    s = s.replace(/[\s"'“”‘’()\[\]{}<>，。！？；：,.!?;:]+$/, '');
+    return _collapseSpaces(s);
 }
 
 function isPhrase(text) {
@@ -130,21 +153,22 @@ export function findInBookByWord(book, text) {
 export async function addWordToDefaultBook(text, options = {}) {
     const { source = 'article', sentence = '', context = '' } = options;
     const raw = (text || '').trim();
-    if (!raw) {
+    const key = normalizeWordKey(raw);
+    if (!key) {
         ui.displayMessage('沒有可加入的文字。', 'warning');
         return { ok: false, reason: 'empty' };
     }
 
     const book = ensureDefaultWordbook();
-    const dup = findInBookByWord(book, raw);
+    const dup = findInBookByWord(book, key);
     if (dup) {
-        ui.displayMessage(`「${raw}」已存在於《${DEFAULT_BOOK_NAME}》。`, 'info');
+        ui.displayMessage(`「${cleanDisplayText(raw)}」已存在於《${DEFAULT_BOOK_NAME}》。`, 'info');
         return { ok: true, reason: 'duplicate', id: dup.id };
     }
 
     const entry = {
         id: nowId(),
-        word: raw,
+        word: cleanDisplayText(raw),
         meaning: '',
         phonetic: '',
         examples: [],
