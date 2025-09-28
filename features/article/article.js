@@ -940,11 +940,23 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
         const w = btnAdd.getAttribute('data-word') || '';
         const sentence = btnAdd.getAttribute('data-sentence') || '';
         const context = btnAdd.getAttribute('data-context') || '';
+        const prev = btnAdd.textContent;
+        btnAdd.disabled = true;
+        btnAdd.textContent = '加入中...';
+        btnAdd.setAttribute('aria-busy', 'true');
         try {
             const mod = await import('../../modules/vocab.js');
-            await mod.addWordToDefaultBook(w, { source: 'article', sentence, context });
+            const res = await mod.addWordToDefaultBook(w, { source: 'article', sentence, context });
+            btnAdd.textContent = res && res.reason === 'duplicate' ? '已存在' : '已加入';
         } catch (err) {
             console.warn('加入生詞本失敗:', err);
+            btnAdd.textContent = '失敗';
+        } finally {
+            setTimeout(() => {
+                btnAdd.removeAttribute('aria-busy');
+                btnAdd.disabled = false;
+                btnAdd.textContent = prev || '加入生詞本';
+            }, 1000);
         }
         return;
     }
@@ -1415,11 +1427,14 @@ function initArticleSelectionToWordbook() {
                 if (!context) context = (dom.articleInput && dom.articleInput.value) || '';
             } catch (_) {}
 
+            const prev = btn.textContent;
+            btn.disabled = true; btn.textContent = '加入中...'; btn.setAttribute('aria-busy','true');
             try {
                 const mod = await import('../../modules/vocab.js');
                 await mod.addWordToDefaultBook(text, { source: 'article', sentence, context });
             } catch (_) {}
             hideBtn();
+            btn.removeAttribute('aria-busy'); btn.disabled = false; btn.textContent = prev || '加入生詞本';
             try { sel && sel.removeAllRanges && sel.removeAllRanges(); } catch (_) {}
         });
         return btn;
@@ -1696,11 +1711,20 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         const selection = window.getSelection();
         const text = (selection && selection.toString && selection.toString().trim()) || '';
         if (!text) { alert('請先在該句中選取詞/片語'); return; }
+        const prev = addBtn.textContent;
+        addBtn.disabled = true; addBtn.textContent = '加入中...'; addBtn.setAttribute('aria-busy','true');
         try {
             const mod = await import('../../modules/vocab.js');
-            await mod.addWordToDefaultBook(text, { source: 'article', sentence, context });
+            const res = await mod.addWordToDefaultBook(text, { source: 'article', sentence, context });
+            addBtn.textContent = (res && res.reason === 'duplicate') ? '已存在' : '已加入';
         } catch (err) {
             console.warn('加入生詞本失敗:', err);
+            addBtn.textContent = '失敗';
+        } finally {
+            setTimeout(()=>{
+                addBtn.removeAttribute('aria-busy');
+                addBtn.disabled = false; addBtn.textContent = prev || '加入生詞本（選中）';
+            }, 1000);
         }
     });
 

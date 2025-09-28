@@ -100,12 +100,17 @@ function initQASelectionToWordbook() {
       const text = (sel && sel.toString && sel.toString().trim()) || '';
       if (!text) { displayMessage('請先選取要加入的詞/片語', 'warning'); return; }
       const q = dom.qaModule?.querySelector('#qa-current-question')?.textContent || '';
+      const prev = btn.textContent;
+      btn.disabled = true; btn.textContent = '加入中...'; btn.setAttribute('aria-busy','true');
       try {
         const mod = await import('../../modules/vocab.js');
-        await mod.addWordToDefaultBook(text, { source: 'qa', sentence: q, context: q });
+        const res = await mod.addWordToDefaultBook(text, { source: 'qa', sentence: q, context: q });
+        btn.textContent = (res && res.reason === 'duplicate') ? '已存在' : '已加入';
       } catch (err) {
         console.warn('加入生詞本失敗:', err);
+        btn.textContent = '失敗';
       } finally {
+        setTimeout(()=>{ btn.removeAttribute('aria-busy'); btn.disabled = false; btn.textContent = prev || '加入生詞本'; }, 1000);
         hideBtn();
         try { sel && sel.removeAllRanges && sel.removeAllRanges(); } catch (_) {}
       }
