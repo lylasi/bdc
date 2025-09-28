@@ -72,25 +72,39 @@ export async function ensureWordDetails(entry, opts = {}) {
     const hasMeaning = entry.meaning && entry.meaning.trim();
     if (hasPhon && hasMeaning) return entry;
 
+    // 先嘗試『帶上下文的片語/詞解析』，以取得最符合原文語境的中文意思
+    // 適用單詞與片語，只要提供了 sentence/context 即啟用
+    if ((sentence || context) && !hasMeaning) {
+        try {
+            const sel = await api.analyzeSelection(text, sentence || '', context || '', { timeoutMs: 12000 });
+            if (sel && sel.analysis) {
+                // 優先採用語境對應的 meaning
+                if (!entry.meaning && sel.analysis.meaning) {
+                    entry.meaning = sel.analysis.meaning;
+                }
+                // 若有給出片語/單詞的 IPA，也一併帶回
+                const selPhon = (sel.analysis.phonetic || '').replace(/^\/|\/$/g, '');
+                if (!entry.phonetic && selPhon) entry.phonetic = selPhon;
+            }
+        } catch (_) {
+            // 忽略失敗，轉用一般詞典接口
+        }
+    }
+
     try {
         if (!phrase) {
             // single word: use dedicated analysis API
-            const res = await api.getWordAnalysis(text);
-            entry.phonetic = (entry.phonetic || res.phonetic || 'n/a').replace(/^\/|\/$/g, '');
-            entry.meaning = entry.meaning || res.meaning || '';
-            entry.pos = entry.pos || res.pos || '';
-        } else {
-            // phrase: 先以 selection 解析補齊釋義與音標；若無上下文或未得結果，再嘗試整體或逐詞拼合 IPA。
-            if ((sentence || context) && (!hasMeaning || !entry.phonetic || entry.phonetic === 'n/a')) {
-                try {
-                    const sel = await api.analyzeSelection(text, sentence || '', context || '', { timeoutMs: 12000 });
-                    entry.meaning = entry.meaning || (sel?.analysis?.meaning || '');
-                    const selPhon = (sel?.analysis?.phonetic || '').replace(/^\/|\/$/g, '');
-                    if (selPhon) entry.phonetic = selPhon;
-                } catch (_) {
-                    // ignore selection failure and fallback below
+            if (!hasMeaning || !hasPhon) {
+                const res = await api.getWordAnalysis(text);
+                if (res) {
+                    if (!entry.phonetic) entry.phonetic = (res.phonetic || 'n/a').replace(/^\/|\/$/g, '');
+                    if (!entry.meaning) entry.meaning = res.meaning || '';
+                    if (!entry.pos) entry.pos = res.pos || '';
                 }
             }
+        } else {
+            // phrase: 先以 selection 解析補齊釋義與音標；若無上下文或未得結果，再嘗試整體或逐詞拼合 IPA。
+            // 此處的 analyzeSelection 已在上方共通處理過；這裡保留原 fallback 流程
 
             // 若音標仍缺失，嘗試直接對整個片語做分析（部分模型能給出片語 IPA）
             if (!entry.phonetic || entry.phonetic === 'n/a') {
