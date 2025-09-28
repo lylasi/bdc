@@ -133,6 +133,9 @@ function analyzeSentenceDedupe(sentence, context = '', opts = {}) {
     return p;
 }
 
+// 以 Modal 呈現句子詳解（避免佔據版面與收合誤觸）
+const USE_SENTENCE_MODAL = true;
+
 // Merge helper: deduplicate detailed_analysis by key (word|sentence)
 function mergeDetailedAnalyses(existing, incoming) {
     const out = [];
@@ -1459,14 +1462,54 @@ async function toggleSentenceCard(sentenceEl) {
     const pairContainer = sentenceEl.closest('.paragraph-pair');
     const context = pairContainer ? pairContainer.getAttribute('data-english') || '' : '';
 
+    // Modal 模式：直接在彈窗中顯示詳解
+    if (USE_SENTENCE_MODAL) {
+        // 高亮當前句（未播放時不淡化，其邏輯在 applySentenceHighlight 內）
+        applySentenceHighlight(paraIdx, sentIdx, true);
+        try { ui.openModal(); } catch (_) {}
+        try { dom.modalTitle.textContent = '句子解析'; } catch (_) {}
+        // 建立容器並標記為 modal 環境
+        dom.modalBody.innerHTML = '';
+        try {
+            const mc = dom.appModal.querySelector('.modal-content');
+            mc && mc.classList.add('modal-large');
+        } catch (_) {}
+        const card = document.createElement('div');
+        card.className = 'sentence-card';
+        card.dataset.modal = '1';
+        card.style.margin = '0';
+        card.style.padding = '8px 10px 8px 10px';
+        card.style.border = '1px solid #e5e7eb';
+        card.style.borderRadius = '6px';
+        card.style.background = '#fafafa';
+        card.innerHTML = '<div style="font-size:12px;opacity:.8">載入中...</div>';
+        dom.modalBody.appendChild(card);
+
+        // 關閉時清理高亮
+        const cleanup = () => {
+            try { applySentenceHighlight(paraIdx, sentIdx, false); } catch (_) {}
+            try { const mc = dom.appModal.querySelector('.modal-content'); mc && mc.classList.remove('modal-large'); } catch(_) {}
+        };
+        try { dom.modalCloseBtn.addEventListener('click', cleanup, { once: true }); } catch(_) {}
+        try { dom.appModal.addEventListener('click', (e)=>{ if (e.target === dom.appModal) cleanup(); }, { once: true }); } catch(_) {}
+
+        try {
+            const data = await analyzeSentenceDedupe(sentence, context, { timeoutMs: 22000, conciseKeypoints: true, includeStructure: true });
+            renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx);
+        } catch (e) {
+            card.innerHTML = `<div style=\"color:#b91c1c\">解析失敗，稍後再試</div>`;
+        }
+        return;
+    }
+
+    // Inline 卡片模式（保留兼容）
     // existing card toggle
     let card = sentenceEl.nextElementSibling;
     if (card && card.classList.contains('sentence-card')) {
         const hidden = card.classList.toggle('hidden');
-        // 切換整句高亮
-        const paraIdx = parseInt(sentenceEl.getAttribute('data-para-index'), 10) || 0;
-        const sentIdx = parseInt(sentenceEl.getAttribute('data-sent-index'), 10) || 0;
-        applySentenceHighlight(paraIdx, sentIdx, !hidden);
+        const paraIdx2 = parseInt(sentenceEl.getAttribute('data-para-index'), 10) || 0;
+        const sentIdx2 = parseInt(sentenceEl.getAttribute('data-sent-index'), 10) || 0;
+        applySentenceHighlight(paraIdx2, sentIdx2, !hidden);
         return;
     }
     card = document.createElement('div');
@@ -1556,47 +1599,65 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     `;
     const refresh = card.querySelector('.sent-refresh');
     const collapse = card.querySelector('.sent-collapse');
+    // Modal 環境下，將收合按鈕文案替換為「關閉」
+    if (collapse && card.dataset.modal === '1') {
+        collapse.textContent = '關閉';
+        collapse.title = '關閉視窗';
+    }
     const head = card.querySelector('.sentence-card-head');
     const selBtn = card.querySelector('.analyze-selection');
     if (collapse) collapse.addEventListener('click', (ev)=> {
         // 避免事件冒泡到標題列或 overlay 造成重複觸發
         ev.stopPropagation();
-        const hidden = card.classList.toggle('hidden');
-        applySentenceHighlight(paraIdx, sentIdx, !hidden);
+        if (card.dataset.modal === '1') {
+            // 在彈窗中：按鈕行為改為關閉彈窗
+            try { ui.closeModal(); } catch(_) {}
+            applySentenceHighlight(paraIdx, sentIdx, false);
+        } else {
+            const hidden = card.classList.toggle('hidden');
+            applySentenceHighlight(paraIdx, sentIdx, !hidden);
+        }
     });
     if (head) head.addEventListener('click', (ev) => {
         // 允許整個標題列點擊收合，但避免點擊按鈕重複觸發
         const t = ev.target;
         if (t.closest && t.closest('button')) return;
+        if (card.dataset.modal === '1') {
+            try { ui.closeModal(); } catch(_) {}
+            applySentenceHighlight(paraIdx, sentIdx, false);
+            return;
+        }
         const hidden = card.classList.toggle('hidden');
         applySentenceHighlight(paraIdx, sentIdx, !hidden);
     });
 
-    // 右側大面積收合區（提高點按容忍度）
+    // 右側大面積收合區（提高點按容忍度）— 僅在 inline 卡片時加入
     try {
-        card.style.position = 'relative';
-        const overlay = document.createElement('div');
-        overlay.className = 'card-collapse-overlay';
-        overlay.title = '點擊此區收合';
-        // 降低層級，讓標題列與其上的按鈕可點擊在上層
-        overlay.style.zIndex = '1';
-        overlay.setAttribute('aria-label', '點擊右側空白區可收合');
-        // 顯示更明顯的收合圖示與分塊感
-        const handle = document.createElement('div');
-        handle.className = 'collapse-handle';
-        handle.innerHTML = '<span class="chevron">◀</span>';
-        overlay.appendChild(handle);
-        overlay.addEventListener('click', (ev) => {
-            // 避免冒泡，也避免在選字時誤觸
-            ev.stopPropagation();
-            try {
-                const sel = window.getSelection && window.getSelection();
-                if (sel && sel.toString && sel.toString().trim()) return;
-            } catch (_) {}
-            const hidden = card.classList.toggle('hidden');
-            applySentenceHighlight(paraIdx, sentIdx, !hidden);
-        });
-        card.appendChild(overlay);
+        if (card.dataset.modal !== '1') {
+            card.style.position = 'relative';
+            const overlay = document.createElement('div');
+            overlay.className = 'card-collapse-overlay';
+            overlay.title = '點擊此區收合';
+            // 降低層級，讓標題列與其上的按鈕可點擊在上層
+            overlay.style.zIndex = '1';
+            overlay.setAttribute('aria-label', '點擊右側空白區可收合');
+            // 顯示更明顯的收合圖示與分塊感
+            const handle = document.createElement('div');
+            handle.className = 'collapse-handle';
+            handle.innerHTML = '<span class="chevron">◀</span>';
+            overlay.appendChild(handle);
+            overlay.addEventListener('click', (ev) => {
+                // 避免冒泡，也避免在選字時誤觸
+                ev.stopPropagation();
+                try {
+                    const sel = window.getSelection && window.getSelection();
+                    if (sel && sel.toString && sel.toString().trim()) return;
+                } catch (_) {}
+                const hidden = card.classList.toggle('hidden');
+                applySentenceHighlight(paraIdx, sentIdx, !hidden);
+            });
+            card.appendChild(overlay);
+        }
     } catch (_) {}
     if (refresh) refresh.addEventListener('click', async ()=>{
         refresh.disabled = true; refresh.textContent = '重新獲取中...';

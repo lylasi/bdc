@@ -1712,6 +1712,13 @@ button:disabled {
     transition: transform 0.3s ease;
 }
 
+/* 句子詳解用較寬版彈窗 */
+.modal-content.modal-large {
+  max-width: 860px;
+  max-height: 80vh;
+  overflow: auto;
+}
+
 /* 重构后的合并单词本模态窗口样式 - Flexbox布局 */
 #app-modal .modal-content {
   display: flex;
