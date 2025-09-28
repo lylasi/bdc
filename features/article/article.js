@@ -1465,7 +1465,10 @@ async function toggleSentenceCard(sentenceEl) {
     card = document.createElement('div');
     card.className = 'sentence-card';
     card.style.margin = '6px 0 10px 0';
-    card.style.padding = '8px 10px';
+    // 為了在句卡右側提供一整塊可點擊的收合區（overlay），
+    // 這裡主動預留右側空白，避免 overlay 蓋住內容與操作按鈕。
+    card.style.padding = '8px 10px 8px 10px';
+    card.style.paddingRight = '76px'; // 與 CSS 中 overlay 寬度對齊，並多留一點緩衝
     card.style.border = '1px solid #e5e7eb';
     card.style.borderRadius = '6px';
     card.style.background = '#fafafa';
@@ -1548,7 +1551,9 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     const collapse = card.querySelector('.sent-collapse');
     const head = card.querySelector('.sentence-card-head');
     const selBtn = card.querySelector('.analyze-selection');
-    if (collapse) collapse.addEventListener('click', ()=> {
+    if (collapse) collapse.addEventListener('click', (ev)=> {
+        // 避免事件冒泡到標題列或 overlay 造成重複觸發
+        ev.stopPropagation();
         const hidden = card.classList.toggle('hidden');
         applySentenceHighlight(paraIdx, sentIdx, !hidden);
     });
@@ -1566,7 +1571,16 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         const overlay = document.createElement('div');
         overlay.className = 'card-collapse-overlay';
         overlay.title = '點擊此區收合';
-        overlay.addEventListener('click', () => {
+        // 降低層級，讓標題列與其上的按鈕可點擊在上層
+        overlay.style.zIndex = '1';
+        overlay.setAttribute('aria-label', '點擊右側空白區可收合');
+        overlay.addEventListener('click', (ev) => {
+            // 避免冒泡，也避免在選字時誤觸
+            ev.stopPropagation();
+            try {
+                const sel = window.getSelection && window.getSelection();
+                if (sel && sel.toString && sel.toString().trim()) return;
+            } catch (_) {}
             const hidden = card.classList.toggle('hidden');
             applySentenceHighlight(paraIdx, sentIdx, !hidden);
         });

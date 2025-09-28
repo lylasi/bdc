@@ -3929,15 +3929,16 @@ mark.punc-err-space {
     font-size: 14px;
     position: relative;
 }
-.sentence-card-head { cursor: pointer; }
+.sentence-card-head { cursor: pointer; position: relative; z-index: 2; }
 .sentence-card-head:hover { background: rgba(0,0,0,0.03); }
 .card-collapse-overlay {
     position: absolute;
     top: 0;
     right: 0;
-    width: 64px; /* 右側更大可點區 */
+    width: 72px; /* 右側更大可點區，與 JS 預留的 paddingRight 對齊 */
     height: 100%;
     cursor: pointer;
+    z-index: 1;
 }
 
 /* 句子右側更大點按熱區（覆蓋整個句子高度） */
@@ -3948,4 +3949,11 @@ mark.punc-err-space {
     bottom: -4px; /* 增加上下容忍度 */
     width: 28px;
     cursor: pointer;
+    z-index: 1; /* 讓右側小熱區不蓋住分析 icon */
 }
+
+/* 解析 icon 始終高於右側句子熱區，避免被遮擋導致點擊失效 */
+.sentence-wrap .sent-analyze-btn.icon-only { z-index: 2; }
+
+/* 保險：若 inline 樣式未設定，預留右側收合專區的空白 */
+.sentence-card { padding-right: 76px; }
