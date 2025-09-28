@@ -169,14 +169,17 @@ async function openModalForCompleteMissing() {
         </div>
         <div id="complete-missing-progress" class="import-progress"></div>
         <div class="modal-actions">
+            <button id="dedupe-words-btn" class="btn-ghost">合併去重</button>
             <button class="cancel-btn">取消</button>
             <button class="save-btn" ${missing.length===0?'disabled':''}>開始</button>
         </div>
     `;
     const cancel = dom.appModal.querySelector('.cancel-btn');
     const save = dom.appModal.querySelector('.save-btn');
+    const dedupe = dom.appModal.querySelector('#dedupe-words-btn');
     cancel.onclick = () => ui.closeModal();
     save.onclick = () => runCompleteMissing(book, missing);
+    dedupe.onclick = () => mergeDedupeActiveBook(book);
     ui.openModal();
 }
 
@@ -232,6 +235,59 @@ async function runCompleteMissing(book, missingList) {
     try { storage.saveVocabularyBooks(); } catch(_) {}
     if (progress) progress.innerHTML = `<p style="color:green;">完成：更新 ${updated} 條，略過 ${skipped} 條。</p>`;
     setTimeout(() => { ui.closeModal(); renderWordList(); }, 600);
+}
+
+// 合併去重：同一單詞（忽略大小寫與首尾標點、合併空白）僅保留一筆，並合併資訊
+async function mergeDedupeActiveBook(book) {
+    const progress = document.getElementById('complete-missing-progress');
+    try {
+        const { normalizeWordKey } = await import('../../modules/vocab.js');
+        const map = new Map();
+        const out = [];
+        let removed = 0;
+        const mergeInto = (dst, src) => {
+            if (!dst) return src;
+            // 補齊缺失欄位；音標以非 n/a 為佳
+            const hasPhon = (v) => v && String(v).trim().toLowerCase() !== 'n/a';
+            if (!dst.meaning && src.meaning) dst.meaning = src.meaning;
+            if (!hasPhon(dst.phonetic) && hasPhon(src.phonetic)) dst.phonetic = src.phonetic;
+            if (!dst.pos && src.pos) dst.pos = src.pos;
+            if (!dst.context && src.context) dst.context = src.context;
+            if (Array.isArray(src.examples) && src.examples.length) {
+                if (!Array.isArray(dst.examples)) dst.examples = [];
+                src.examples.forEach(ex => {
+                    const exists = dst.examples.some(e => JSON.stringify(e) === JSON.stringify(ex));
+                    if (!exists) dst.examples.push(ex);
+                });
+            }
+            return dst;
+        };
+        for (const w of (book.words || [])) {
+            const key = normalizeWordKey(w.word || '');
+            if (!key) { out.push(w); continue; }
+            if (!map.has(key)) { map.set(key, w); out.push(w); }
+            else { const kept = map.get(key); mergeInto(kept, w); removed += 1; }
+        }
+        book.words = out;
+        storage.saveVocabularyBooks();
+        // 更新統計文字與按鈕狀態
+        const info = dom.appModal.querySelector('.input-group');
+        if (info) {
+            const ps = info.querySelectorAll('p');
+            if (ps[1]) {
+                const missing = findMissingEntries(book.words);
+                ps[1].innerHTML = `共 <strong>${book.words.length}</strong> 條，其中缺失資料（音標為 n/a 或空白、或中文釋義缺失）的有 <strong>${missing.length}</strong> 條。`;
+                const startBtn = dom.appModal.querySelector('.save-btn');
+                if (startBtn) startBtn.disabled = missing.length === 0;
+            }
+        }
+        if (progress) progress.innerHTML = `<p style="color:green;">去重完成：移除 ${removed} 條重複。</p>`;
+        // 同步列表
+        renderWordList();
+    } catch (e) {
+        console.warn('合併去重失敗:', e);
+        if (progress) progress.innerHTML = `<p style="color:#b91c1c;">去重失敗，請稍後再試。</p>`;
+    }
 }
 
 function openModalForNewBook() {
