@@ -946,7 +946,10 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
         btnAdd.setAttribute('aria-busy', 'true');
         try {
             const mod = await import('../../modules/vocab.js');
-            const res = await mod.addWordToDefaultBook(w, { source: 'article', sentence, context });
+            const meaning = btnAdd.getAttribute('data-meaning') || '';
+            const phonetic = btnAdd.getAttribute('data-phonetic') || '';
+            const pos = btnAdd.getAttribute('data-pos') || '';
+            const res = await mod.addWordToDefaultBook(w, { source: 'article', sentence, context, meaning, phonetic, pos });
             btnAdd.textContent = res && res.reason === 'duplicate' ? '已存在' : '已加入';
         } catch (err) {
             console.warn('加入生詞本失敗:', err);
@@ -1009,7 +1012,14 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
                 </div>
                 <div class="tooltip-actions" style="margin-top:6px;display:flex;gap:6px;align-items:center;">
                     <button class="btn-ghost btn-mini btn-play-word" data-word="${escAttr(data.word || defaultPhrase)}">發音</button>
-                    <button class="btn-ghost btn-mini btn-add-to-book" data-word="${escAttr(defaultPhrase||data.word||'')}" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}">加入生詞本</button>
+                    <button class="btn-ghost btn-mini btn-add-to-book"
+                        data-word="${escAttr(defaultPhrase||data.word||'')}"
+                        data-sentence="${escAttr(sentenceForBtn||'')}"
+                        data-context="${escAttr(contextForBtn||'')}"
+                        data-meaning="${escAttr(analysis.meaning || '')}"
+                        data-phonetic="${escAttr((analysis.phonetic||'').replace(/^\\/|\\$/g,''))}"
+                        data-pos="${escAttr(analysis.pos || '')}"
+                    >加入生詞本</button>
                     <button class="btn-ghost btn-mini btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">片語解析</button>
                     <button class="btn-ghost btn-mini btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">自訂片語...</button>
                 </div>

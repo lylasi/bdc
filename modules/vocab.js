@@ -165,7 +165,7 @@ export function findInBookByWord(book, text) {
 }
 
 export async function addWordToDefaultBook(text, options = {}) {
-    const { source = 'article', sentence = '', context = '' } = options;
+    const { source = 'article', sentence = '', context = '', meaning: hintMeaning = '', phonetic: hintPhonetic = '', pos: hintPos = '' } = options;
     const raw = (text || '').trim();
     const key = normalizeWordKey(raw);
     if (!key) {
@@ -183,17 +183,23 @@ export async function addWordToDefaultBook(text, options = {}) {
     const entry = {
         id: nowId(),
         word: cleanDisplayText(raw),
-        meaning: '',
-        phonetic: '',
+        meaning: cleanDisplayText(hintMeaning) || '',
+        phonetic: (hintPhonetic || '').replace(/^\/|\/$/g, ''),
         examples: [],
         addedAt: new Date().toISOString(),
         source,
         context: sentence || context || ''
     };
+    if (hintPos && !entry.pos) entry.pos = hintPos;
 
     // Try to complete details now; phrases may defer meaning if context not available
     try {
-        await ensureWordDetails(entry, { sentence, context, allowDeferForPhrase: true });
+        // 若已有語境中提取的意思/音標，就不再額外請求；否則再補齊
+        const hasMeaning = entry.meaning && entry.meaning.trim();
+        const hasPhon = entry.phonetic && entry.phonetic.trim() && entry.phonetic !== 'n/a';
+        if (!hasMeaning || !hasPhon) {
+            await ensureWordDetails(entry, { sentence, context, allowDeferForPhrase: true });
+        }
     } catch (_) {}
 
     book.words.push(entry);
