@@ -102,48 +102,45 @@ function showLoginModal() {
   try { ui.openModal(); } catch(_) {}
   try { dom.modalTitle.textContent = '登入 / 註冊'; } catch(_) {}
   const html = `
-    <div style="display:flex;flex-direction:column;gap:10px;min-width:280px;">
-      <label style="display:flex;gap:6px;align-items:center;">
-        <input type="radio" name="auth-mode" value="password" checked>
-        <span>電郵＋密碼登入</span>
-      </label>
-      <label style="display:flex;gap:6px;align-items:center;">
-        <input type="radio" name="auth-mode" value="signup">
-        <span>新用戶註冊（電郵＋密碼）</span>
-      </label>
-      <label style="display:flex;gap:6px;align-items:center;">
-        <input type="radio" name="auth-mode" value="magic">
-        <span>魔術連結（寄登入信）</span>
-      </label>
-      <div class="form-group settings-group">
-        <label>電郵</label>
-        <input id="auth-email" type="email" placeholder="you@example.com" style="width:100%">
+    <div class="auth-modal" style="min-width:300px;">
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab is-active" data-mode="password" role="tab" aria-selected="true">登入</button>
+        <button class="auth-tab" data-mode="signup" role="tab" aria-selected="false">註冊</button>
+        <button class="auth-tab" data-mode="magic" role="tab" aria-selected="false">魔術連結</button>
       </div>
-      <div class="form-group settings-group" id="auth-pass-wrap">
-        <label>密碼</label>
-        <input id="auth-password" type="password" placeholder="至少 6 位" style="width:100%">
+      <div class="auth-field">
+        <label for="auth-email">電郵</label>
+        <input id="auth-email" type="email" placeholder="you@example.com">
       </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <div class="auth-field" id="auth-pass-wrap">
+        <label for="auth-password">密碼</label>
+        <input id="auth-password" type="password" placeholder="至少 6 位">
+      </div>
+      <div class="auth-actions">
         <button id="auth-forgot" class="btn-secondary" type="button">忘記密碼</button>
         <button id="auth-submit" class="btn-primary" type="button">確定</button>
       </div>
-      <div id="auth-msg" style="font-size:12px;color:#666"></div>
+      <div id="auth-msg" class="auth-msg"></div>
     </div>`;
   dom.modalBody.innerHTML = html;
-  const modeInputs = dom.modalBody.querySelectorAll('input[name="auth-mode"]');
+  const tabs = Array.from(dom.modalBody.querySelectorAll('.auth-tab'));
   const emailEl = dom.modalBody.querySelector('#auth-email');
   const passWrap = dom.modalBody.querySelector('#auth-pass-wrap');
   const passEl = dom.modalBody.querySelector('#auth-password');
   const submitBtn = dom.modalBody.querySelector('#auth-submit');
   const forgotBtn = dom.modalBody.querySelector('#auth-forgot');
   const msg = dom.modalBody.querySelector('#auth-msg');
-  const getMode = () => { const it = Array.from(modeInputs).find(r => r.checked); return it ? it.value : 'password'; };
-  const updateUI = () => { const m = getMode(); passWrap.style.display = (m === 'password' || m === 'signup') ? 'block' : 'none'; forgotBtn.style.display = m === 'password' ? 'inline-block' : 'none'; };
-  modeInputs.forEach(r => r.addEventListener('change', updateUI));
-  updateUI();
+  let mode = 'password';
+  const setMode = (m) => {
+    mode = m;
+    tabs.forEach(t => { const on = t.dataset.mode === m; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    passWrap.style.display = (m === 'password' || m === 'signup') ? 'block' : 'none';
+    forgotBtn.style.display = m === 'password' ? 'inline-block' : 'none';
+  };
+  tabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
+  setMode('password');
 
   submitBtn.onclick = async () => {
-    const mode = getMode();
     const email = (emailEl.value || '').trim();
     const password = (passEl.value || '').trim();
     if (!email) { msg.textContent = '請輸入電郵'; return; }
