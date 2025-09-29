@@ -1086,6 +1086,20 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         showArticleWordAnalysis._lazyCache.set(lazyKey, normalized);
         const merged = mergeDetailedAnalyses(analysisArray, [normalized]);
         dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(merged);
+        // 持久化新增的詞詳解到當前文章的分析結果，便於跨端同步
+        try {
+            const articleText = (dom.articleInput.value || '').trim();
+            if (articleText) {
+                const current = (state.analyzedArticles || []).find(it => it.article === articleText);
+                if (current && current.result) {
+                    const updated = {
+                        ...current.result,
+                        detailed_analysis: mergeDetailedAnalyses(current.result.detailed_analysis || [], [normalized])
+                    };
+                    storage.saveAnalysisResult(articleText, updated);
+                }
+            }
+        } catch (_) { /* ignore persistence errors */ }
         showTooltip(normalized, sentence, paraEnglish, wordText);
     }).catch(err => {
         console.warn('懶載詳解失敗:', err);
