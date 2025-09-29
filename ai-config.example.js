@@ -43,12 +43,21 @@ export const QA_CHECK = {
   includeAnalysis: true // 是否回傳錯誤分類分析
 };
 
+// Supabase 設定（示例）
+// - url 例：'https://YOUR-PROJECT.supabase.co'
+// - anonKey 從 Supabase 控台 Project Settings → API 取得（anon public）
+export const SUPABASE = {
+  url: '',
+  anonKey: ''
+};
+
 // 匯出預設設定，便於動態 import 使用 config.default 取得整體物件
 const __DEFAULT__ = {
   API_URL,
   API_KEY,
   AI_MODELS,
   TTS_CONFIG,
-  QA_CHECK
+  QA_CHECK,
+  SUPABASE
 };
 export default __DEFAULT__;
