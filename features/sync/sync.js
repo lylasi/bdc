@@ -4,6 +4,7 @@
 import * as dom from '../../modules/dom.js';
 import { buildLocalSnapshot, applyMergedSnapshot } from '../../modules/sync-core.js';
 import { syncNow, auth, subscribeSnapshotChanges, unsubscribeChannel } from '../../modules/sync-supabase.js';
+import * as ui from '../../modules/ui.js';
 
 export function initSync() {
   try {
@@ -28,55 +29,7 @@ export function initSync() {
 function wireAuthUI() {
   console.log('[sync] wireAuthUI()', { loginBtn: !!dom.loginBtn, logoutBtn: !!dom.logoutBtn, syncNowBtn: !!dom.syncNowBtn });
   if (dom.loginBtn) dom.loginBtn.addEventListener('click', async () => {
-    const mode = prompt('選擇登入方式：\n1 = 電郵魔術連結（免密碼）\n2 = 電郵＋密碼登入\n3 = 新用戶註冊（電郵＋密碼）', '2');
-    if (!mode) return;
-
-    if (mode === '2') {
-      const email = prompt('請輸入電郵：');
-      if (!email) return;
-      const password = prompt('請輸入密碼（注意：此視窗不會隱藏輸入，建議後續改成自訂彈窗）：');
-      if (!password) return;
-      const { error } = await auth.signInWithPassword({ email, password });
-      if (error) {
-        updateStatus('登入失敗：' + error.message);
-        alert('登入失敗：' + error.message);
-      } else {
-        updateStatus('登入成功');
-      }
-      return;
-    }
-
-    if (mode === '3') {
-      const email = prompt('請輸入電郵（用於登入/找回密碼）：');
-      if (!email) return;
-      const password = prompt('設定密碼（至少 6 位）：');
-      if (!password) return;
-      const { data, error } = await auth.signUp({ email, password });
-      if (error) {
-        updateStatus('註冊失敗：' + error.message);
-        alert('註冊失敗：' + error.message);
-      } else {
-        if (data?.user && !data?.session) {
-          updateStatus('註冊成功，請至電郵完成驗證');
-          alert('註冊成功，請至電郵完成驗證');
-        } else {
-          updateStatus('註冊並登入成功');
-        }
-      }
-      return;
-    }
-
-    // 默認：魔術連結
-    const email = prompt('請輸入登入電郵（將寄送登入連結）：');
-    if (!email) return;
-    const { error } = await auth.signInWithOtp({ email });
-    if (error) {
-      updateStatus('登入失敗：' + error.message);
-      alert('登入失敗：' + error.message);
-    } else {
-      updateStatus('已傳送登入連結，請到電郵確認');
-      alert('已傳送登入連結，請到電郵確認');
-    }
+    showLoginModal();
   });
 
   if (dom.logoutBtn) dom.logoutBtn.addEventListener('click', async () => {
@@ -143,6 +96,91 @@ function updateAuthButtons(user) {
   const loggedIn = !!user;
   if (dom.loginBtn) dom.loginBtn.style.display = loggedIn ? 'none' : 'inline-block';
   if (dom.logoutBtn) dom.logoutBtn.style.display = loggedIn ? 'inline-block' : 'none';
+}
+
+function showLoginModal() {
+  try { ui.openModal(); } catch(_) {}
+  try { dom.modalTitle.textContent = '登入 / 註冊'; } catch(_) {}
+  const html = `
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:280px;">
+      <label style="display:flex;gap:6px;align-items:center;">
+        <input type="radio" name="auth-mode" value="password" checked>
+        <span>電郵＋密碼登入</span>
+      </label>
+      <label style="display:flex;gap:6px;align-items:center;">
+        <input type="radio" name="auth-mode" value="signup">
+        <span>新用戶註冊（電郵＋密碼）</span>
+      </label>
+      <label style="display:flex;gap:6px;align-items:center;">
+        <input type="radio" name="auth-mode" value="magic">
+        <span>魔術連結（寄登入信）</span>
+      </label>
+      <div class="form-group settings-group">
+        <label>電郵</label>
+        <input id="auth-email" type="email" placeholder="you@example.com" style="width:100%">
+      </div>
+      <div class="form-group settings-group" id="auth-pass-wrap">
+        <label>密碼</label>
+        <input id="auth-password" type="password" placeholder="至少 6 位" style="width:100%">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="auth-forgot" class="btn-secondary" type="button">忘記密碼</button>
+        <button id="auth-submit" class="btn-primary" type="button">確定</button>
+      </div>
+      <div id="auth-msg" style="font-size:12px;color:#666"></div>
+    </div>`;
+  dom.modalBody.innerHTML = html;
+  const modeInputs = dom.modalBody.querySelectorAll('input[name="auth-mode"]');
+  const emailEl = dom.modalBody.querySelector('#auth-email');
+  const passWrap = dom.modalBody.querySelector('#auth-pass-wrap');
+  const passEl = dom.modalBody.querySelector('#auth-password');
+  const submitBtn = dom.modalBody.querySelector('#auth-submit');
+  const forgotBtn = dom.modalBody.querySelector('#auth-forgot');
+  const msg = dom.modalBody.querySelector('#auth-msg');
+  const getMode = () => { const it = Array.from(modeInputs).find(r => r.checked); return it ? it.value : 'password'; };
+  const updateUI = () => { const m = getMode(); passWrap.style.display = (m === 'password' || m === 'signup') ? 'block' : 'none'; forgotBtn.style.display = m === 'password' ? 'inline-block' : 'none'; };
+  modeInputs.forEach(r => r.addEventListener('change', updateUI));
+  updateUI();
+
+  submitBtn.onclick = async () => {
+    const mode = getMode();
+    const email = (emailEl.value || '').trim();
+    const password = (passEl.value || '').trim();
+    if (!email) { msg.textContent = '請輸入電郵'; return; }
+    submitBtn.disabled = true; submitBtn.textContent = '處理中...';
+    try {
+      if (mode === 'password') {
+        const { error } = await auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        msg.textContent = '登入成功'; ui.closeModal();
+      } else if (mode === 'signup') {
+        const { data, error } = await auth.signUp({ email, password });
+        if (error) throw error;
+        if (data?.user && !data?.session) { msg.textContent = '註冊成功，請至電郵完成驗證'; }
+        else { msg.textContent = '註冊並登入成功'; ui.closeModal(); }
+      } else {
+        const { error } = await auth.signInWithOtp({ email });
+        if (error) throw error;
+        msg.textContent = '已寄出登入連結，請至電郵確認';
+      }
+    } catch (e) {
+      msg.textContent = '錯誤：' + (e?.message || '請稍後再試');
+    } finally {
+      submitBtn.disabled = false; submitBtn.textContent = '確定';
+    }
+  };
+
+  forgotBtn.onclick = async () => {
+    const email = (emailEl.value || '').trim();
+    if (!email) { msg.textContent = '請先輸入電郵'; return; }
+    try {
+      const { error } = await auth.resetPasswordForEmail(email, { redirectTo: location.origin });
+      if (error) throw error;
+      msg.textContent = '已寄送重設密碼連結';
+    } catch (e) {
+      msg.textContent = '錯誤：' + (e?.message || '請稍後再試');
+    }
+  };
 }
 
 // -----------------
