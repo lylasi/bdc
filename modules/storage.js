@@ -9,8 +9,17 @@ import * as state from './state.js';
 /**
  * 將當前的單詞本數據保存到 localStorage。
  */
-export function saveVocabularyBooks() {
+export function saveVocabularyBooks(options = {}) {
+    // options: { preserveUpdatedAt?: boolean, updatedAtOverride?: string }
     localStorage.setItem('vocabularyBooks', JSON.stringify(state.vocabularyBooks));
+    try {
+        const key = 'vocabularyUpdatedAt';
+        if (options && typeof options.updatedAtOverride === 'string' && options.updatedAtOverride) {
+            localStorage.setItem(key, options.updatedAtOverride);
+        } else if (!options || options.preserveUpdatedAt !== true) {
+            localStorage.setItem(key, new Date().toISOString());
+        }
+    } catch (_) { /* ignore quota errors */ }
 }
 
 /**
@@ -61,8 +70,17 @@ export function loadVocabularyBooks() {
 /**
  * 保存當前激活的單詞本ID。
  */
-export function saveAppState() {
+export function saveAppState(options = {}) {
     localStorage.setItem('activeBookId', state.activeBookId);
+    // 變更當前書視為 vocabulary 分組的變更
+    try {
+        const key = 'vocabularyUpdatedAt';
+        if (options && typeof options.updatedAtOverride === 'string' && options.updatedAtOverride) {
+            localStorage.setItem(key, options.updatedAtOverride);
+        } else if (!options || options.preserveUpdatedAt !== true) {
+            localStorage.setItem(key, new Date().toISOString());
+        }
+    } catch (_) { /* ignore */ }
 }
 
 /**
@@ -85,8 +103,16 @@ export function loadAppState() {
 /**
  * 保存已分析的文章列表。
  */
-export function saveAnalyzedArticles() {
+export function saveAnalyzedArticles(options = {}) {
     localStorage.setItem('analyzedArticles', JSON.stringify(state.analyzedArticles));
+    try {
+        const key = 'articlesUpdatedAt';
+        if (options && typeof options.updatedAtOverride === 'string' && options.updatedAtOverride) {
+            localStorage.setItem(key, options.updatedAtOverride);
+        } else if (!options || options.preserveUpdatedAt !== true) {
+            localStorage.setItem(key, new Date().toISOString());
+        }
+    } catch (_) { /* ignore */ }
 }
 
 /**

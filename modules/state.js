@@ -248,12 +248,14 @@ export function clearDictationSession() {
 /**
  * 保存默写设置到 localStorage
  */
-export function saveDictationSettings() {
+export function saveDictationSettings(preserveUpdatedAt = false) {
     try {
         // 設置分組級變更時間戳，便於雲端同步時做 LWW 合併
-        try {
-            dictationSettings = { ...dictationSettings, updatedAt: new Date().toISOString() };
-        } catch (_) { /* 保守處理，避免因序列化錯誤中斷 */ }
+        if (!preserveUpdatedAt) {
+            try {
+                dictationSettings = { ...dictationSettings, updatedAt: new Date().toISOString() };
+            } catch (_) { /* 保守處理，避免因序列化錯誤中斷 */ }
+        }
         localStorage.setItem(DICTATION_SETTINGS_KEY, JSON.stringify(dictationSettings));
     } catch (error) {
         console.warn('Failed to save dictation settings:', error);
