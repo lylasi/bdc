@@ -126,3 +126,9 @@ export const appModal = document.getElementById('app-modal');
 export const modalTitle = document.getElementById('modal-title');
 export const modalBody = document.getElementById('modal-body');
 export const modalCloseBtn = appModal.querySelector('.modal-close-btn');
+
+// --- 同步/登入控制 ---
+export const syncNowBtn = document.getElementById('sync-now-btn');
+export const loginBtn = document.getElementById('login-btn');
+export const logoutBtn = document.getElementById('logout-btn');
+export const syncStatus = document.getElementById('sync-status');

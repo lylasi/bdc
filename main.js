@@ -9,6 +9,7 @@ import { initDictation, populateDictationBookSelector, togglePauseDictation } fr
 import { initQuiz, populateQuizBookSelector } from './features/quiz/quiz.js';
 import { initArticle } from './features/article/article.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
+import { initSync } from './features/sync/sync.js';
 
 const MODULE_ALIAS_TO_BUTTON_ID = {
     v: 'vocabulary-btn',
@@ -127,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initQuiz();
     initArticle();
     await initQA();
+    initSync();
     
     // 5. 填充初始视图
     // 确保在导航设置前，为默认显示的模块（如此处为学习模块）填充内容
