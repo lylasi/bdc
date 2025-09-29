@@ -67,3 +67,24 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
     }
   }
 }
+
+// Realtime subscription for snapshots row of current user
+export function subscribeSnapshotChanges(userId, onChange) {
+  try {
+    const channel = supabase.channel('snapshots-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'snapshots', filter: `user_id=eq.${userId}` }, (payload) => {
+        try { onChange && onChange(payload); } catch(_) {}
+      })
+      .subscribe((status) => {
+        // console.log('[realtime] status:', status)
+      });
+    return channel;
+  } catch (e) {
+    console.warn('subscribeSnapshotChanges failed:', e);
+    return null;
+  }
+}
+
+export function unsubscribeChannel(ch) {
+  try { if (ch) supabase.removeChannel(ch); } catch(_) {}
+}

@@ -1,5 +1,6 @@
 // QA專用存儲方法
 import { displayMessage } from '../../modules/ui.js';
+import { touch as syncTouch } from '../../modules/sync-signals.js';
 
 // 問答集存儲的localStorage鍵名
 const QA_SETS_KEY = 'qa-sets';
@@ -131,6 +132,8 @@ export function saveQASetsManifest(qaSets) {
   try {
     localStorage.setItem(QA_SETS_KEY, JSON.stringify(qaSets));
     console.log('問答集清單已儲存');
+    try { localStorage.setItem('qaUpdatedAt', new Date().toISOString()); } catch(_) {}
+    try { syncTouch('qa'); } catch(_) {}
     return true;
   } catch (error) {
     console.error('儲存問答集清單時出錯:', error);
@@ -183,6 +186,8 @@ export function saveQASet(qaSet) {
 
     // 更新清單
     updateQASetsManifest(qaSet);
+    try { localStorage.setItem('qaUpdatedAt', new Date().toISOString()); } catch(_) {}
+    try { syncTouch('qa'); } catch(_) {}
 
     console.log(`問答集已儲存: ${qaSet.name}`);
     return true;
@@ -221,6 +226,8 @@ export async function deleteQASet(id) {
 
     // 從清單中移除
     removeFromQASetsManifest(id);
+    try { localStorage.setItem('qaUpdatedAt', new Date().toISOString()); } catch(_) {}
+    try { syncTouch('qa'); } catch(_) {}
 
     console.log(`問答集已刪除: ${id}`);
     return true;

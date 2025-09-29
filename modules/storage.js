@@ -1,4 +1,5 @@
 import * as state from './state.js';
+import { touch as syncTouch } from './sync-signals.js';
 
 // =================================
 // 本地存儲管理 (LocalStorage)
@@ -20,6 +21,7 @@ export function saveVocabularyBooks(options = {}) {
             localStorage.setItem(key, new Date().toISOString());
         }
     } catch (_) { /* ignore quota errors */ }
+    try { syncTouch('vocabulary'); } catch (_) {}
 }
 
 /**
@@ -81,6 +83,7 @@ export function saveAppState(options = {}) {
             localStorage.setItem(key, new Date().toISOString());
         }
     } catch (_) { /* ignore */ }
+    try { syncTouch('vocabulary'); } catch (_) {}
 }
 
 /**
@@ -113,6 +116,7 @@ export function saveAnalyzedArticles(options = {}) {
             localStorage.setItem(key, new Date().toISOString());
         }
     } catch (_) { /* ignore */ }
+    try { syncTouch('articles'); } catch (_) {}
 }
 
 /**
@@ -139,5 +143,6 @@ export function saveAnalysisResult(article, result) {
         articles.push({ article, result });
     }
     state.setAnalyzedArticles(articles);
-    saveAnalyzedArticles(); // 持久化到localStorage
+    saveAnalyzedArticles(); // 持久化到localStorage（會觸發 articlesUpdatedAt）
+    try { syncTouch('articles'); } catch (_) {}
 }
