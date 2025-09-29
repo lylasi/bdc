@@ -250,6 +250,10 @@ export function clearDictationSession() {
  */
 export function saveDictationSettings() {
     try {
+        // 設置分組級變更時間戳，便於雲端同步時做 LWW 合併
+        try {
+            dictationSettings = { ...dictationSettings, updatedAt: new Date().toISOString() };
+        } catch (_) { /* 保守處理，避免因序列化錯誤中斷 */ }
         localStorage.setItem(DICTATION_SETTINGS_KEY, JSON.stringify(dictationSettings));
     } catch (error) {
         console.warn('Failed to save dictation settings:', error);
@@ -270,6 +274,11 @@ export function loadDictationSettings() {
             }
             if (typeof dictationSettings.readChineseVoice !== 'string') {
                 dictationSettings.readChineseVoice = 'none';
+            }
+            // 兼容舊資料：若缺少 updatedAt，立即補上以避免與遠端比較時為空
+            if (!dictationSettings.updatedAt) {
+                dictationSettings.updatedAt = new Date().toISOString();
+                try { localStorage.setItem(DICTATION_SETTINGS_KEY, JSON.stringify(dictationSettings)); } catch (_) {}
             }
             if (loadedSettings.hasOwnProperty('readMeaning') && !loadedSettings.hasOwnProperty('readChineseVoice')) {
                 dictationSettings.readChineseVoice = loadedSettings.readMeaning ? 'chinese' : 'none';
