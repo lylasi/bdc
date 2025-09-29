@@ -6,12 +6,22 @@ import { buildLocalSnapshot, applyMergedSnapshot } from '../../modules/sync-core
 import { syncNow, auth } from '../../modules/sync-supabase.js';
 
 export function initSync() {
-  wireAuthUI();
-  if (dom.syncNowBtn) dom.syncNowBtn.addEventListener('click', handleSync);
+  try {
+    console.log('[sync] initSync()');
+    wireAuthUI();
+    if (dom.syncNowBtn) {
+      dom.syncNowBtn.addEventListener('click', handleSync);
+    } else {
+      console.warn('[sync] syncNowBtn not found');
+    }
+  } catch (e) {
+    console.error('[sync] init failed:', e);
+  }
 }
 
 function wireAuthUI() {
-  if (dom.loginBtn) dom.loginBtn.onclick = async () => {
+  console.log('[sync] wireAuthUI()', { loginBtn: !!dom.loginBtn, logoutBtn: !!dom.logoutBtn, syncNowBtn: !!dom.syncNowBtn });
+  if (dom.loginBtn) dom.loginBtn.addEventListener('click', async () => {
     const email = prompt('請輸入登入電郵：');
     if (!email) return;
     const { error } = await auth.signInWithOtp({ email });
@@ -22,13 +32,13 @@ function wireAuthUI() {
       updateStatus('已傳送登入連結，請到電郵確認');
       alert('已傳送登入連結，請到電郵確認');
     }
-  };
+  });
 
-  if (dom.logoutBtn) dom.logoutBtn.onclick = async () => {
+  if (dom.logoutBtn) dom.logoutBtn.addEventListener('click', async () => {
     try { await auth.signOut(); } catch (_) {}
     updateAuthButtons(null);
     updateStatus('已登出');
-  };
+  });
 
   auth.onAuthStateChange((_e, session) => {
     const user = session?.user || null;
@@ -45,6 +55,7 @@ function wireAuthUI() {
 }
 
 async function handleSync() {
+  console.log('[sync] handleSync()');
   // 必須登入後才能同步
   const { data } = await auth.getSession();
   if (!data?.session) {
@@ -82,4 +93,3 @@ function updateAuthButtons(user) {
   if (dom.loginBtn) dom.loginBtn.style.display = loggedIn ? 'none' : 'inline-block';
   if (dom.logoutBtn) dom.logoutBtn.style.display = loggedIn ? 'inline-block' : 'none';
 }
-
