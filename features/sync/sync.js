@@ -22,7 +22,46 @@ export function initSync() {
 function wireAuthUI() {
   console.log('[sync] wireAuthUI()', { loginBtn: !!dom.loginBtn, logoutBtn: !!dom.logoutBtn, syncNowBtn: !!dom.syncNowBtn });
   if (dom.loginBtn) dom.loginBtn.addEventListener('click', async () => {
-    const email = prompt('請輸入登入電郵：');
+    const mode = prompt('選擇登入方式：\n1 = 電郵魔術連結（免密碼）\n2 = 電郵＋密碼登入\n3 = 新用戶註冊（電郵＋密碼）', '2');
+    if (!mode) return;
+
+    if (mode === '2') {
+      const email = prompt('請輸入電郵：');
+      if (!email) return;
+      const password = prompt('請輸入密碼（注意：此視窗不會隱藏輸入，建議後續改成自訂彈窗）：');
+      if (!password) return;
+      const { error } = await auth.signInWithPassword({ email, password });
+      if (error) {
+        updateStatus('登入失敗：' + error.message);
+        alert('登入失敗：' + error.message);
+      } else {
+        updateStatus('登入成功');
+      }
+      return;
+    }
+
+    if (mode === '3') {
+      const email = prompt('請輸入電郵（用於登入/找回密碼）：');
+      if (!email) return;
+      const password = prompt('設定密碼（至少 6 位）：');
+      if (!password) return;
+      const { data, error } = await auth.signUp({ email, password });
+      if (error) {
+        updateStatus('註冊失敗：' + error.message);
+        alert('註冊失敗：' + error.message);
+      } else {
+        if (data?.user && !data?.session) {
+          updateStatus('註冊成功，請至電郵完成驗證');
+          alert('註冊成功，請至電郵完成驗證');
+        } else {
+          updateStatus('註冊並登入成功');
+        }
+      }
+      return;
+    }
+
+    // 默認：魔術連結
+    const email = prompt('請輸入登入電郵（將寄送登入連結）：');
     if (!email) return;
     const { error } = await auth.signInWithOtp({ email });
     if (error) {
