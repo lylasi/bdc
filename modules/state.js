@@ -248,6 +248,8 @@ export function clearDictationSession() {
 /**
  * 保存默写设置到 localStorage
  */
+import { touch as syncTouch } from './sync-signals.js';
+
 export function saveDictationSettings(preserveUpdatedAt = false) {
     try {
         // 設置分組級變更時間戳，便於雲端同步時做 LWW 合併
@@ -257,6 +259,7 @@ export function saveDictationSettings(preserveUpdatedAt = false) {
             } catch (_) { /* 保守處理，避免因序列化錯誤中斷 */ }
         }
         localStorage.setItem(DICTATION_SETTINGS_KEY, JSON.stringify(dictationSettings));
+        try { syncTouch('dictation'); } catch (_) {}
     } catch (error) {
         console.warn('Failed to save dictation settings:', error);
     }

@@ -3,7 +3,7 @@
 
 import * as dom from '../../modules/dom.js';
 import { buildLocalSnapshot, applyMergedSnapshot } from '../../modules/sync-core.js';
-import { syncNow, auth } from '../../modules/sync-supabase.js';
+import { syncNow, auth, subscribeSnapshotChanges, unsubscribeChannel } from '../../modules/sync-supabase.js';
 
 export function initSync() {
   try {
@@ -14,6 +14,12 @@ export function initSync() {
     } else {
       console.warn('[sync] syncNowBtn not found');
     }
+    // Auto-sync: listen to data change signals
+    window.addEventListener('bdc:data-changed', (e) => {
+      const g = e?.detail?.group || 'unknown';
+      console.log('[sync] data changed:', g);
+      scheduleAutoSync('data:' + g);
+    });
   } catch (e) {
     console.error('[sync] init failed:', e);
   }
@@ -83,6 +89,7 @@ function wireAuthUI() {
     const user = session?.user || null;
     updateAuthButtons(user);
     updateStatus(user ? (user.email || '已登入') : '未登入');
+    attachRealtime(user);
   });
 
   // 初始化一次（避免等待事件）
@@ -90,6 +97,7 @@ function wireAuthUI() {
     const user = data?.session?.user || null;
     updateAuthButtons(user);
     updateStatus(user ? (user.email || '已登入') : '未登入');
+    attachRealtime(user);
   }).catch(() => {});
 }
 
@@ -107,6 +115,7 @@ async function handleSync() {
     setBusy(true);
     updateStatus('同步中...');
     await syncNow(buildLocalSnapshot, applyMergedSnapshot);
+    lastSyncAt = Date.now();
     updateStatus('已完成同步');
   } catch (e) {
     console.warn(e);
@@ -124,11 +133,68 @@ function setBusy(b) {
 }
 
 function updateStatus(text) {
-  if (dom.syncStatus) dom.syncStatus.textContent = text || '';
+  if (dom.syncStatus) {
+    const ts = lastSyncAt ? `（上次：${new Date(lastSyncAt).toLocaleTimeString()}）` : '';
+    dom.syncStatus.textContent = (text || '') + ' ' + ts;
+  }
 }
 
 function updateAuthButtons(user) {
   const loggedIn = !!user;
   if (dom.loginBtn) dom.loginBtn.style.display = loggedIn ? 'none' : 'inline-block';
   if (dom.logoutBtn) dom.logoutBtn.style.display = loggedIn ? 'inline-block' : 'none';
+}
+
+// -----------------
+// Auto sync & Realtime
+// -----------------
+let autoTimer = null;
+let lastSyncAt = 0;
+let syncInFlight = false;
+const DEBOUNCE_MS = 6000; // 6s after last change
+const MIN_INTERVAL_MS = 20000; // at least 20s between sync runs
+let rtChannel = null;
+let rtThrottled = 0;
+
+function scheduleAutoSync(reason) {
+  const now = Date.now();
+  const delta = now - lastSyncAt;
+  if (delta < MIN_INTERVAL_MS && !autoTimer) {
+    const wait = MIN_INTERVAL_MS - delta + 200; // small buffer
+    autoTimer = setTimeout(() => { autoTimer = null; doAutoSync('min-interval'); }, wait);
+    return;
+  }
+  if (autoTimer) clearTimeout(autoTimer);
+  autoTimer = setTimeout(() => { autoTimer = null; doAutoSync(reason || 'debounce'); }, DEBOUNCE_MS);
+}
+
+async function doAutoSync(reason) {
+  const { data } = await auth.getSession();
+  if (!data?.session) return; // not logged in
+  if (syncInFlight) return; // avoid reentry
+  try {
+    syncInFlight = true;
+    updateStatus('自動同步中...');
+    await syncNow(buildLocalSnapshot, applyMergedSnapshot);
+    lastSyncAt = Date.now();
+    updateStatus('已完成同步');
+  } catch (e) {
+    console.warn('[sync] auto sync failed:', e);
+    updateStatus('自動同步失敗');
+  } finally {
+    syncInFlight = false;
+  }
+}
+
+function attachRealtime(user) {
+  try { if (rtChannel) { unsubscribeChannel(rtChannel); rtChannel = null; } } catch(_) {}
+  if (!user || !user.id) return;
+  rtChannel = subscribeSnapshotChanges(user.id, (payload) => {
+    const now = Date.now();
+    // throttle realtime triggers (min every 5s)
+    if (now - rtThrottled < 5000) return;
+    rtThrottled = now;
+    console.log('[sync] realtime change:', payload?.eventType || 'update');
+    scheduleAutoSync('realtime');
+  });
 }
