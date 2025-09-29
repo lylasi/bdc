@@ -34,7 +34,9 @@ export async function pushSnapshot(expectedVersion, payload) {
     throw error;
   }
   const row = Array.isArray(data) ? data[0] : data;
-  return { conflict: false, version: row?.version, updatedAt: row?.updated_at };
+  const version = row?.version ?? row?.out_version ?? row?.v ?? 0;
+  const updatedAt = row?.updated_at ?? row?.out_updated_at ?? row?.updatedAt ?? null;
+  return { conflict: false, version, updatedAt };
 }
 
 // High-level sync: pull → LWW merge → conditional push with expected_version
@@ -65,4 +67,3 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
     }
   }
 }
-
