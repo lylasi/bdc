@@ -152,6 +152,41 @@ function mergeDetailedAnalyses(existing, incoming) {
     return out;
 }
 
+// --- Persist helpers (merge & save to analyzedArticles for sync) ---
+function _safeString(x) { return (x || '').toString(); }
+
+function persistSentenceAnalysis(sentence, context, data) {
+    try {
+        const articleText = (dom.articleInput.value || '').trim();
+        if (!articleText) return;
+        const rec = (state.analyzedArticles || []).find(it => it.article === articleText);
+        if (!rec || !rec.result) return;
+        const arr = Array.isArray(rec.result.sentence_analysis) ? rec.result.sentence_analysis : [];
+        const keyOf = (s, c) => `${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
+        const next = [...arr];
+        const normalized = { ...data, sentence, context };
+        const idx = next.findIndex(x => keyOf(x.sentence, x.context || x._context) === keyOf(sentence, context));
+        if (idx >= 0) next[idx] = normalized; else next.push(normalized);
+        storage.saveAnalysisResult(articleText, { ...rec.result, sentence_analysis: next });
+    } catch (_) { /* ignore */ }
+}
+
+function persistPhraseAnalysis(selection, sentence, context, data) {
+    try {
+        const articleText = (dom.articleInput.value || '').trim();
+        if (!articleText) return;
+        const rec = (state.analyzedArticles || []).find(it => it.article === articleText);
+        if (!rec || !rec.result) return;
+        const arr = Array.isArray(rec.result.phrase_analysis) ? rec.result.phrase_analysis : [];
+        const keyOf = (sel, s, c) => `${_safeString(sel).trim()}||${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
+        const next = [...arr];
+        const normalized = { ...(data || {}), selection: data?.selection || selection, sentence, context };
+        const idx = next.findIndex(x => keyOf(x.selection, x.sentence, x.context || x._context) === keyOf(normalized.selection, sentence, context));
+        if (idx >= 0) next[idx] = normalized; else next.push(normalized);
+        storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: next });
+    } catch (_) { /* ignore */ }
+}
+
 function parseTitleAndParagraphs(text) {
     const paras = text.split(/\n+/).filter(p => p.trim() !== '');
     if (paras.length === 0) return { title: '', paragraphs: [] };
@@ -896,6 +931,8 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
             const chunkItem = chunkBtn.closest('.chunk-item');
             if (chunkItem) chunkItem.after(box);
             else card.appendChild(box);
+            // 持久化片語解析
+            try { persistPhraseAnalysis(phrase, sentence, context, res); } catch (_) {}
             applySentenceDim(paraIdx, sentIdx, true);
             const closeBtn = box.querySelector('.phrase-close');
             if (closeBtn) closeBtn.addEventListener('click', () => {
@@ -1535,6 +1572,8 @@ async function toggleSentenceCard(sentenceEl) {
         try {
             const data = await analyzeSentenceDedupe(sentence, context, { timeoutMs: 22000, conciseKeypoints: true, includeStructure: true });
             renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx);
+            // 持久化句子解析
+            persistSentenceAnalysis(sentence, context, data);
         } catch (e) {
             card.innerHTML = `<div style=\"color:#b91c1c\">解析失敗，稍後再試</div>`;
         }
@@ -1567,6 +1606,8 @@ async function toggleSentenceCard(sentenceEl) {
     try {
         const data = await analyzeSentenceDedupe(sentence, context, { timeoutMs: 22000, conciseKeypoints: true, includeStructure: true });
         renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx);
+        // 持久化句子解析
+        persistSentenceAnalysis(sentence, context, data);
         // 首次渲染即整句高亮
         applySentenceHighlight(paraIdx, sentIdx, true);
         // 片語級標記已移除，僅保留整句高亮
@@ -1700,7 +1741,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     } catch (_) {}
     if (refresh) refresh.addEventListener('click', async ()=>{
         refresh.disabled = true; refresh.textContent = '重新獲取中...';
-        try { const fresh = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true }); renderSentenceCard(card, fresh, sentence, context, paraIdx, sentIdx); }
+        try { const fresh = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true }); renderSentenceCard(card, fresh, sentence, context, paraIdx, sentIdx); persistSentenceAnalysis(sentence, context, fresh); }
         finally { refresh.disabled = false; refresh.textContent = '重新獲取'; }
     });
     if (selBtn) selBtn.addEventListener('click', async ()=>{
@@ -1718,6 +1759,8 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
                              ${res.analysis?.usage? `<div style=\"opacity:.9\">用法：${esc(res.analysis.usage)}</div>`:''}
                              ${Array.isArray(res.analysis?.examples) && res.analysis.examples.length? '<div style=\"margin-top:4px\">' + res.analysis.examples.slice(0,2).map(ex=>`<div>• ${esc(ex.en)} — ${esc(ex.zh)}</div>`).join('') + '</div>' : ''}`;
             card.appendChild(box);
+            // 持久化片語解析
+            try { persistPhraseAnalysis(text, sentence, context, res); } catch (_) {}
         } catch (e) {
             alert('解析失敗，稍後再試');
         } finally {
