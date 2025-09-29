@@ -51,17 +51,21 @@ function wireAuthUI() {
 
   auth.onAuthStateChange((_e, session) => {
     const user = session?.user || null;
+    try { window.__supabase_user = user || null; } catch(_) {}
     updateAuthButtons(user);
     updateStatus(user ? (user.email || '已登入') : '未登入');
     attachRealtime(user);
+    setGearLoginState(!!user, user?.email || '');
   });
 
   // 初始化一次（避免等待事件）
   auth.getSession().then(({ data }) => {
     const user = data?.session?.user || null;
+    try { window.__supabase_user = user || null; } catch(_) {}
     updateAuthButtons(user);
     updateStatus(user ? (user.email || '已登入') : '未登入');
     attachRealtime(user);
+    setGearLoginState(!!user, user?.email || '');
   }).catch(() => {});
 }
 
@@ -199,22 +203,26 @@ function toggleGearMenu() {
   m.className = 'gear-menu';
   const email = (window.__supabase_user && window.__supabase_user.email) || '';
   const status = dom.syncStatus?.textContent || '';
+  const loggedIn = !!email;
   m.innerHTML = `
     <div class="menu-item" id="gm-sync"><span>🔄</span><span>立即同步</span><span class="meta"></span></div>
-    <div class="menu-item" id="gm-login"><span>🔐</span><span>登入</span><span class="meta">${email ? email : ''}</span></div>
-    <div class="menu-item" id="gm-logout"><span>🚪</span><span>登出</span></div>
+    ${loggedIn ? '' : '<div class="menu-item" id="gm-login"><span>🔐</span><span>登入 / 註冊</span></div>'}
+    ${loggedIn ? '<div class="menu-item" id="gm-logout"><span>🚪</span><span>登出</span><span class="meta">'+escapeHtml(email)+'</span></div>' : ''}
     <div class="menu-divider"></div>
     <div class="menu-item" id="gm-settings"><span>⚙️</span><span>全局設定</span></div>
+    <div class="menu-item" id="gm-clear-cache"><span>🧹</span><span>清理本機快取</span></div>
     <div class="menu-status">${status}</div>`;
   document.body.appendChild(m);
   const sync = m.querySelector('#gm-sync');
   const login = m.querySelector('#gm-login');
   const logout = m.querySelector('#gm-logout');
   const settings = m.querySelector('#gm-settings');
+  const clearCache = m.querySelector('#gm-clear-cache');
   if (sync) sync.addEventListener('click', () => { handleSync(); m.remove(); });
   if (login) login.addEventListener('click', () => { showLoginModal(); m.remove(); });
   if (logout) logout.addEventListener('click', async () => { try { await auth.signOut(); } catch(_){} updateAuthButtons(null); updateStatus('已登出'); m.remove(); });
   if (settings) settings.addEventListener('click', () => { showGlobalSettingsModal(); m.remove(); });
+  if (clearCache) clearCache.addEventListener('click', async () => { await clearLocalCaches(); alert('已清理本機快取'); m.remove(); });
 }
 
 function showGlobalSettingsModal() {
@@ -265,6 +273,28 @@ function showGlobalSettingsModal() {
       $('#gs-msg').textContent = '儲存失敗：' + (e?.message || '');
     }
   };
+}
+
+function setGearLoginState(isLoggedIn, email) {
+  if (!dom.appGearBtn) return;
+  dom.appGearBtn.classList.toggle('is-logged-in', !!isLoggedIn);
+  if (email) dom.appGearBtn.title = `設定（${email}）`; else dom.appGearBtn.title = '設定';
+}
+
+async function clearLocalCaches() {
+  try {
+    // localStorage cache entries
+    const keys = Object.keys(localStorage);
+    for (const k of keys) { if (k.startsWith('bdc:cache:v1:')) localStorage.removeItem(k); }
+  } catch(_) {}
+  try {
+    // IndexedDB 'bdc-cache'
+    const dbs = await (indexedDB?.databases ? indexedDB.databases() : Promise.resolve([]));
+    const has = Array.isArray(dbs) ? dbs.some(d => d.name === 'bdc-cache') : true;
+    if (has && indexedDB && indexedDB.deleteDatabase) {
+      await new Promise(res => { const req = indexedDB.deleteDatabase('bdc-cache'); req.onsuccess = req.onerror = req.onblocked = () => res(); });
+    }
+  } catch(_) {}
 }
 
 function escapeHtml(s){

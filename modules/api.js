@@ -122,7 +122,9 @@ async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTokens, ti
 export async function getWordAnalysis(word) {
     try {
         const prompt = `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Traditional Chinese (Hong Kong) meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}. Ensure the meaning is in Traditional Chinese (Hong Kong) vocabulary (e.g., 網上/上載/電郵/巴士/的士/單車/軟件/網絡/連結/相片).`;
-        return await fetchAIResponse(AI_MODELS.wordAnalysis, prompt, 0.2);
+        const s = loadGlobalSettings();
+        const model = (s?.ai?.models && s.ai.models.wordAnalysis) || AI_MODELS.wordAnalysis;
+        return await fetchAIResponse(model, prompt, 0.2);
     } catch (error) {
         console.error(`Error analyzing word "${word}":`, error);
         return { phonetic: 'error', pos: '', meaning: '分析失敗' };
@@ -136,7 +138,9 @@ export async function getWordAnalysis(word) {
  */
 export async function generateExamplesForWord(word, opts = {}) {
     const prompt = `請為單詞 "${word.word}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯（使用香港繁體中文用字），以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
-    return await fetchAIResponse(AI_MODELS.exampleGeneration, prompt, 0.7, { maxTokens: 600, timeoutMs: 20000, ...opts });
+    const s = loadGlobalSettings();
+    const model = (s?.ai?.models && s.ai.models.exampleGeneration) || AI_MODELS.exampleGeneration;
+    return await fetchAIResponse(model, prompt, 0.7, { maxTokens: 600, timeoutMs: 20000, ...opts });
 }
 
 /**
@@ -147,7 +151,9 @@ export async function generateExamplesForWord(word, opts = {}) {
  */
 export async function checkUserSentence(word, userSentence, opts = {}) {
     const prompt = `請判斷以下這個使用單詞 "${word}" 的句子在語法和用法上是否正確: "${userSentence}"。如果正確，請只回答 "正確"。如果不正確，請詳細指出錯誤並提供一個修改建議，格式為 "不正確。建議：[你的建議]"。並總結錯誤的知識點。`;
-    return await fetchAIResponse(AI_MODELS.sentenceChecking, prompt, 0.5, { maxTokens: 400, timeoutMs: 15000, ...opts });
+    const s = loadGlobalSettings();
+    const model = (s?.ai?.models && s.ai.models.sentenceChecking) || AI_MODELS.sentenceChecking;
+    return await fetchAIResponse(model, prompt, 0.5, { maxTokens: 400, timeoutMs: 15000, ...opts });
 }
 
 /**
@@ -157,7 +163,8 @@ export async function checkUserSentence(word, userSentence, opts = {}) {
  */
 export async function analyzeParagraph(paragraph, opts = {}) {
     const { timeoutMs = 45000, signal, level = 'standard', detailTopN = 12, noCache = false } = opts;
-    const model = AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const s = loadGlobalSettings();
+    const model = (s?.ai?.models && s.ai.models.articleAnalysis) || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
 
     // local cache lookup
     if (!noCache) {
@@ -259,7 +266,8 @@ ${paragraph}
  */
 export async function analyzeWordInSentence(word, sentence, opts = {}) {
     const { timeoutMs = 20000, signal } = opts;
-    const model = AI_MODELS.wordAnalysis || AI_MODELS.articleAnalysis;
+    const s = loadGlobalSettings();
+    const model = (s?.ai?.models && s.ai.models.wordAnalysis) || AI_MODELS.wordAnalysis || AI_MODELS.articleAnalysis;
     // local cache lookup
     try {
         const cached = await cache.getWordAnalysisCached(word, sentence, model);
@@ -296,7 +304,8 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
 // --- Sentence-level analysis ---
 export async function analyzeSentence(sentence, context = '', opts = {}) {
     const { timeoutMs = 20000, signal, noCache = false, conciseKeypoints = true, includeStructure = true } = opts;
-    const model = AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const s = loadGlobalSettings();
+    const model = (s?.ai?.models && s.ai.models.articleAnalysis) || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {
@@ -348,7 +357,8 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
 // --- Selection/phrase analysis ---
 export async function analyzeSelection(selection, sentence, context = '', opts = {}) {
     const { timeoutMs = 15000, signal, noCache = false } = opts;
-    const model = AI_MODELS.wordAnalysis || AI_MODELS.articleAnalysis;
+    const s = loadGlobalSettings();
+    const model = (s?.ai?.models && s.ai.models.wordAnalysis) || AI_MODELS.wordAnalysis || AI_MODELS.articleAnalysis;
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {

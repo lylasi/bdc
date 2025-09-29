@@ -4,7 +4,7 @@ const SETTINGS_KEY = 'pen_global_settings';
 const SECRETS_KEY = 'pen_global_secrets';
 
 const defaults = {
-  ai: { apiUrl: '' }, // request endpoint override
+  ai: { apiUrl: '', models: {} }, // request endpoint & per-feature model override
   tts: { baseUrl: '' },
   updatedAt: null
 };
@@ -37,4 +37,3 @@ export function saveGlobalSecrets(partial) {
   const next = { ...cur, ...(partial || {}), updatedAt: new Date().toISOString() };
   try { localStorage.setItem(SECRETS_KEY, JSON.stringify(next)); return next; } catch(_) { return cur; }
 }
-
