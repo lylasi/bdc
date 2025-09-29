@@ -164,7 +164,7 @@ function persistSentenceAnalysis(sentence, context, data) {
         const arr = Array.isArray(rec.result.sentence_analysis) ? rec.result.sentence_analysis : [];
         const keyOf = (s, c) => `${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
         const next = [...arr];
-        const normalized = { ...data, sentence, context };
+        const normalized = { ...data, sentence, context, updatedAt: new Date().toISOString() };
         const idx = next.findIndex(x => keyOf(x.sentence, x.context || x._context) === keyOf(sentence, context));
         if (idx >= 0) next[idx] = normalized; else next.push(normalized);
         storage.saveAnalysisResult(articleText, { ...rec.result, sentence_analysis: next });
@@ -180,10 +180,21 @@ function persistPhraseAnalysis(selection, sentence, context, data) {
         const arr = Array.isArray(rec.result.phrase_analysis) ? rec.result.phrase_analysis : [];
         const keyOf = (sel, s, c) => `${_safeString(sel).trim()}||${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
         const next = [...arr];
-        const normalized = { ...(data || {}), selection: data?.selection || selection, sentence, context };
+        const normalized = { ...(data || {}), selection: data?.selection || selection, sentence, context, updatedAt: new Date().toISOString() };
         const idx = next.findIndex(x => keyOf(x.selection, x.sentence, x.context || x._context) === keyOf(normalized.selection, sentence, context));
         if (idx >= 0) next[idx] = normalized; else next.push(normalized);
-        storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: next });
+        // 保留策略：每句（sentence+context）最多 3 條片語解析（依 updatedAt 取最新）
+        try {
+            const scKey = (s, c) => `${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
+            const targetKey = scKey(sentence, context);
+            const group = next.filter(x => scKey(x.sentence, x.context || x._context) === targetKey);
+            const others = next.filter(x => scKey(x.sentence, x.context || x._context) !== targetKey);
+            group.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+            const trimmed = group.slice(0, 3);
+            storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: [...others, ...trimmed] });
+        } catch (_) {
+            storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: next });
+        }
     } catch (_) { /* ignore */ }
 }
 

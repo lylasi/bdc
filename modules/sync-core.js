@@ -17,6 +17,54 @@ function getLocalUpdatedAt(key, fallbackNow = true) {
   return '';
 }
 
+// Compact policy for articles:
+// - sentence_analysis: keep only 1 per (sentence+context); prefer latest updatedAt
+// - phrase_analysis: for each (sentence+context), keep top 3 by updatedAt
+function compactAnalyzedArticles(arr) {
+  try {
+    if (!Array.isArray(arr)) return [];
+    const out = [];
+    for (const item of arr) {
+      const r = item && item.result ? { ...item.result } : null;
+      if (!r) { out.push(item); continue; }
+      // sentence_analysis
+      if (Array.isArray(r.sentence_analysis)) {
+        const map = new Map();
+        const keyOf = (s, c) => `${String(s||'').trim()}||${String(c||'').trim()}`.toLowerCase();
+        for (const it of r.sentence_analysis) {
+          const k = keyOf(it?.sentence, it?.context || it?._context);
+          const prev = map.get(k);
+          if (!prev) map.set(k, it);
+          else {
+            const pa = String(prev?.updatedAt || '');
+            const pb = String(it?.updatedAt || '');
+            if (pb > pa) map.set(k, it); else map.set(k, prev);
+          }
+        }
+        r.sentence_analysis = Array.from(map.values());
+      }
+      // phrase_analysis
+      if (Array.isArray(r.phrase_analysis)) {
+        const buckets = new Map();
+        const keySC = (s, c) => `${String(s||'').trim()}||${String(c||'').trim()}`.toLowerCase();
+        for (const it of r.phrase_analysis) {
+          const k = keySC(it?.sentence, it?.context || it?._context);
+          if (!buckets.has(k)) buckets.set(k, []);
+          buckets.get(k).push(it);
+        }
+        const merged = [];
+        for (const list of buckets.values()) {
+          list.sort((a,b)=> String(b?.updatedAt||'').localeCompare(String(a?.updatedAt||'')) );
+          merged.push(...list.slice(0,3));
+        }
+        r.phrase_analysis = merged;
+      }
+      out.push({ ...item, result: r });
+    }
+    return out;
+  } catch(_) { return Array.isArray(arr) ? arr : []; }
+}
+
 // Build a local snapshot payload
 // Returns an object: { schemaVersion, updatedAt, payload }
 export async function buildLocalSnapshot() {
@@ -49,6 +97,9 @@ export async function buildLocalSnapshot() {
   })();
   const qaUpdatedAt = getLocalUpdatedAt('qaUpdatedAt');
 
+  // Compact articles before push to reduce payload
+  const compactArticles = compactAnalyzedArticles(state.analyzedArticles);
+
   return {
     schemaVersion: 1,
     updatedAt: new Date().toISOString(),
@@ -63,7 +114,7 @@ export async function buildLocalSnapshot() {
       },
       articles: {
         updatedAt: articlesUpdatedAt,
-        analyzedArticles: state.analyzedArticles
+        analyzedArticles: compactArticles
       },
       qa: {
         updatedAt: qaUpdatedAt,
@@ -118,7 +169,8 @@ export async function applyMergedSnapshot(snapshot) {
     const lts = String(la || '');
     if (!lts || rts > lts) {
       if (Array.isArray(remoteA.analyzedArticles)) {
-        state.setAnalyzedArticles(remoteA.analyzedArticles);
+        const compacted = compactAnalyzedArticles(remoteA.analyzedArticles);
+        state.setAnalyzedArticles(compacted);
         saveAnalyzedArticles({ preserveUpdatedAt: true, updatedAtOverride: remoteA.updatedAt });
       }
     }
