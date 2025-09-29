@@ -132,3 +132,4 @@ export const syncNowBtn = document.getElementById('sync-now-btn');
 export const loginBtn = document.getElementById('login-btn');
 export const logoutBtn = document.getElementById('logout-btn');
 export const syncStatus = document.getElementById('sync-status');
+export const appGearBtn = document.getElementById('app-gear-btn');

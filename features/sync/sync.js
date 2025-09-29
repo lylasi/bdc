@@ -15,6 +15,17 @@ export function initSync() {
     } else {
       console.warn('[sync] syncNowBtn not found');
     }
+    // Floating gear menu
+    if (dom.appGearBtn) {
+      dom.appGearBtn.addEventListener('click', toggleGearMenu);
+    }
+    document.addEventListener('click', (e) => {
+      const m = document.getElementById('gear-menu');
+      if (!m) return;
+      if (e.target === dom.appGearBtn || dom.appGearBtn.contains(e.target)) return;
+      if (m.contains(e.target)) return;
+      m.remove();
+    });
     // Auto-sync: listen to data change signals
     window.addEventListener('bdc:data-changed', (e) => {
       const g = e?.detail?.group || 'unknown';
@@ -178,6 +189,94 @@ function showLoginModal() {
       msg.textContent = '錯誤：' + (e?.message || '請稍後再試');
     }
   };
+}
+
+function toggleGearMenu() {
+  const existed = document.getElementById('gear-menu');
+  if (existed) { existed.remove(); return; }
+  const m = document.createElement('div');
+  m.id = 'gear-menu';
+  m.className = 'gear-menu';
+  const email = (window.__supabase_user && window.__supabase_user.email) || '';
+  const status = dom.syncStatus?.textContent || '';
+  m.innerHTML = `
+    <div class="menu-item" id="gm-sync"><span>🔄</span><span>立即同步</span><span class="meta"></span></div>
+    <div class="menu-item" id="gm-login"><span>🔐</span><span>登入</span><span class="meta">${email ? email : ''}</span></div>
+    <div class="menu-item" id="gm-logout"><span>🚪</span><span>登出</span></div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" id="gm-settings"><span>⚙️</span><span>全局設定</span></div>
+    <div class="menu-status">${status}</div>`;
+  document.body.appendChild(m);
+  const sync = m.querySelector('#gm-sync');
+  const login = m.querySelector('#gm-login');
+  const logout = m.querySelector('#gm-logout');
+  const settings = m.querySelector('#gm-settings');
+  if (sync) sync.addEventListener('click', () => { handleSync(); m.remove(); });
+  if (login) login.addEventListener('click', () => { showLoginModal(); m.remove(); });
+  if (logout) logout.addEventListener('click', async () => { try { await auth.signOut(); } catch(_){} updateAuthButtons(null); updateStatus('已登出'); m.remove(); });
+  if (settings) settings.addEventListener('click', () => { showGlobalSettingsModal(); m.remove(); });
+}
+
+function showGlobalSettingsModal() {
+  try { ui.openModal(); } catch(_) {}
+  try { dom.modalTitle.textContent = '全局設定'; } catch(_) {}
+  // read existing
+  let settings, secrets;
+  try { const mod = requireOrImportSettings(); settings = mod.settings; secrets = mod.secrets; } catch(_) { settings = {}; secrets = {}; }
+  const html = `
+    <div class="auth-modal" style="min-width:320px;">
+      <div class="auth-field">
+        <label>AI API URL</label>
+        <input id="gs-ai-url" type="text" placeholder="https://api.example.com/v1/chat/completions" value="${escapeHtml(settings.aiUrl||'')}">
+      </div>
+      <div class="auth-field">
+        <label>AI API Key（僅保存在本機）</label>
+        <input id="gs-ai-key" type="password" placeholder="sk-..." value="${escapeHtml(secrets.aiKey||'')}">
+      </div>
+      <div class="auth-field">
+        <label>TTS 基礎 URL</label>
+        <input id="gs-tts-url" type="text" placeholder="https://tts.example.com" value="${escapeHtml(settings.ttsUrl||'')}">
+      </div>
+      <div class="auth-field">
+        <label>TTS API Key（僅保存在本機）</label>
+        <input id="gs-tts-key" type="password" placeholder="..." value="${escapeHtml(secrets.ttsKey||'')}">
+      </div>
+      <div class="auth-actions">
+        <button id="gs-cancel" class="btn-secondary">取消</button>
+        <button id="gs-save" class="btn-primary">儲存</button>
+      </div>
+      <div class="auth-msg" id="gs-msg">設定僅保存在本機，不會同步到雲端。</div>
+    </div>`;
+  dom.modalBody.innerHTML = html;
+  const $ = (id)=> dom.modalBody.querySelector(id);
+  $('#gs-cancel').onclick = ()=> ui.closeModal();
+  $('#gs-save').onclick = async ()=>{
+    try {
+      const { saveGlobalSettings, saveGlobalSecrets } = await import('../../modules/settings.js');
+      const aiUrl = $('#gs-ai-url').value.trim();
+      const aiKey = $('#gs-ai-key').value.trim();
+      const ttsUrl = $('#gs-tts-url').value.trim();
+      const ttsKey = $('#gs-tts-key').value.trim();
+      saveGlobalSettings({ ai: { apiUrl: aiUrl }, tts: { baseUrl: ttsUrl } });
+      saveGlobalSecrets({ aiApiKey: aiKey, ttsApiKey: ttsKey });
+      $('#gs-msg').textContent = '已儲存（僅本機）';
+      setTimeout(()=> ui.closeModal(), 500);
+    } catch (e) {
+      $('#gs-msg').textContent = '儲存失敗：' + (e?.message || '');
+    }
+  };
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function requireOrImportSettings() {
+  // Read current values synchronously from localStorage
+  let settings = {}, secrets = {};
+  try { const raw = localStorage.getItem('pen_global_settings'); if (raw) { const s = JSON.parse(raw); settings.aiUrl = s?.ai?.apiUrl || ''; settings.ttsUrl = s?.tts?.baseUrl || ''; } } catch(_) {}
+  try { const raw = localStorage.getItem('pen_global_secrets'); if (raw) { const s = JSON.parse(raw); secrets.aiKey = s?.aiApiKey || ''; secrets.ttsKey = s?.ttsApiKey || ''; } } catch(_) {}
+  return { settings, secrets };
 }
 
 // -----------------
