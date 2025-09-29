@@ -1,4 +1,5 @@
 import { API_URL, API_KEY, AI_MODELS } from '../ai-config.js';
+import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
 
@@ -30,11 +31,15 @@ async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeou
     }
 
     const fetchOnce = async () => {
-        const resp = await fetch(API_URL, {
+        const s = loadGlobalSettings();
+        const sec = loadGlobalSecrets();
+        const endpoint = (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
+        const key = (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
+        const resp = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
+                'Authorization': `Bearer ${key}`
             },
             body: JSON.stringify(body),
             signal: ac.signal

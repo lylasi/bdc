@@ -10,6 +10,42 @@ body {
     color: #333;
 }
 
+/* Floating gear (global settings & sync menu) */
+.floating-gear-btn {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(180deg,#f8f9fa,#e9ecef);
+  border: 1px solid #dee2e6;
+  color: #3a7bd5;
+  box-shadow: 0 6px 18px rgba(58,123,213,0.18);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 2500;
+}
+.floating-gear-btn:hover { box-shadow: 0 8px 22px rgba(58,123,213,0.26); }
+
+.gear-menu {
+  position: fixed;
+  top: 62px;
+  right: 12px;
+  width: 260px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 14px 38px rgba(0,0,0,0.14);
+  z-index: 2500;
+  padding: 8px;
+}
+.gear-menu .menu-item { display:flex; align-items:center; gap:10px; padding:10px 10px; border-radius: 10px; cursor:pointer; color:#374151; }
+.gear-menu .menu-item:hover { background:#f3f4f6; }
+.gear-menu .menu-item .meta { margin-left:auto; font-size:12px; color:#6b7280; }
+.gear-menu .menu-divider { height:1px; background:#eef2f7; margin:6px 4px; }
+.gear-menu .menu-status { font-size:12px; color:#6b7280; padding:6px 10px; }
+
+
 .container {
     max-width: 1200px;
     margin: 0 auto;

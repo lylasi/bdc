@@ -1,5 +1,6 @@
 import * as state from './state.js';
 import { TTS_CONFIG } from '../ai-config.js';
+import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 
 // =================================
 // 音频播放管理 (Web Audio & TTS)
@@ -70,9 +71,13 @@ export function buildTTSUrl(text, langOrVoice = 'english', speed = 0) {
             voiceKey = 'chinese';
         }
     }
+    const s = loadGlobalSettings();
+    const sec = loadGlobalSecrets();
+    const baseUrl = (s?.tts?.baseUrl && String(s.tts.baseUrl).trim()) || TTS_CONFIG.baseUrl;
+    const apiKey = (sec?.ttsApiKey && String(sec.ttsApiKey).trim()) || TTS_CONFIG.apiKey;
     const voice = TTS_CONFIG.voices[voiceKey] || TTS_CONFIG.voices.english;
     // 注意：保持與 speakText 同步
-    return `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(TTS_CONFIG.apiKey)}`;
+    return `${baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(apiKey)}`;
 }
 
 /**
@@ -128,8 +133,12 @@ export async function speakText(text, langOrVoice = 'english', speed = 0, onStar
         }
     }
 
+    const s = loadGlobalSettings();
+    const sec = loadGlobalSecrets();
+    const baseUrl = (s?.tts?.baseUrl && String(s.tts.baseUrl).trim()) || TTS_CONFIG.baseUrl;
+    const apiKey = (sec?.ttsApiKey && String(sec.ttsApiKey).trim()) || TTS_CONFIG.apiKey;
     const voice = TTS_CONFIG.voices[voiceKey] || TTS_CONFIG.voices.english;
-    const url = `${TTS_CONFIG.baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(TTS_CONFIG.apiKey)}`;
+    const url = `${baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(apiKey)}`;
 
     try {
         state.globalAudioElement.src = url;
