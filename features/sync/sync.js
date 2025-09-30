@@ -261,6 +261,15 @@ function showGlobalSettingsModal() {
         <label>TTS API Key（僅保存在本機）</label>
         <input id="gs-tts-key" type="password" placeholder="..." value="${escapeHtml(secrets.ttsKey||'')}">
       </div>
+      <div class="auth-field">
+        <label>AI 模型覆蓋（留空則使用預設）</label>
+        <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+          <input id="gs-model-word" type="text" placeholder="wordAnalysis，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.wordAnalysis)||'')}">
+          <input id="gs-model-sentence" type="text" placeholder="sentenceChecking，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.sentenceChecking)||'')}">
+          <input id="gs-model-article" type="text" placeholder="articleAnalysis，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.articleAnalysis)||'')}">
+          <input id="gs-model-example" type="text" placeholder="exampleGeneration，例如 gpt-4.1-nano" value="${escapeHtml((settings.models&&settings.models.exampleGeneration)||'')}">
+        </div>
+      </div>
       <div class="auth-actions">
         <button id="gs-cancel" class="btn-secondary">取消</button>
         <button id="gs-save" class="btn-primary">儲存</button>
@@ -277,7 +286,16 @@ function showGlobalSettingsModal() {
       const aiKey = $('#gs-ai-key').value.trim();
       const ttsUrl = $('#gs-tts-url').value.trim();
       const ttsKey = $('#gs-tts-key').value.trim();
-      saveGlobalSettings({ ai: { apiUrl: aiUrl }, tts: { baseUrl: ttsUrl } });
+      // 模型覆蓋（空值表示清除）
+      const models = {
+        wordAnalysis: $('#gs-model-word').value.trim(),
+        sentenceChecking: $('#gs-model-sentence').value.trim(),
+        articleAnalysis: $('#gs-model-article').value.trim(),
+        exampleGeneration: $('#gs-model-example').value.trim()
+      };
+      // 移除空鍵，避免污染設置
+      Object.keys(models).forEach(k => { if (!models[k]) delete models[k]; });
+      saveGlobalSettings({ ai: { apiUrl: aiUrl, models }, tts: { baseUrl: ttsUrl } });
       saveGlobalSecrets({ aiApiKey: aiKey, ttsApiKey: ttsKey });
       $('#gs-msg').textContent = '已儲存（僅本機）';
       setTimeout(()=> ui.closeModal(), 500);

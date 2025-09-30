@@ -15,24 +15,24 @@ body {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 8px);
   right: calc(env(safe-area-inset-right, 0px) + 8px);
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: rgba(248,249,250,0.9);
-  border: 1px solid #dee2e6;
-  color: #3a7bd5;
-  box-shadow: 0 6px 16px rgba(58,123,213,0.16);
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgb(65 130 220); /* match .icon-btn */
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer;
   z-index: 2500;
 }
-.floating-gear-btn:hover { box-shadow: 0 10px 24px rgba(58,123,213,0.22); background: #f8f9fa; }
+.floating-gear-btn:hover { transform: scale(1.05); }
 .floating-gear-btn.is-logged-in::after {
   content: '';
   position: absolute; bottom: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: #10b981; border: 2px solid #fff;
 }
 
 @media (max-width: 520px) {
-  .floating-gear-btn { width: 34px; height: 34px; border-radius: 10px; }
+  .floating-gear-btn { width: 36px; height: 36px; }
   .gear-menu { right: 8px; width: 240px; }
 }
 
