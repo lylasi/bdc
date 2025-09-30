@@ -56,6 +56,9 @@ function wireAuthUI() {
     updateStatus(user ? (user.email || '已登入') : '未登入');
     attachRealtime(user);
     setGearLoginState(!!user, user?.email || '');
+    if (user) {
+      try { scheduleAutoSync('login'); } catch(_) {}
+    }
   });
 
   // 初始化一次（避免等待事件）
@@ -66,6 +69,9 @@ function wireAuthUI() {
     updateStatus(user ? (user.email || '已登入') : '未登入');
     attachRealtime(user);
     setGearLoginState(!!user, user?.email || '');
+    if (user) {
+      try { scheduleAutoSync('init-session'); } catch(_) {}
+    }
   }).catch(() => {});
 }
 
@@ -200,6 +206,11 @@ function showLoginModal() {
   };
 }
 
+// 對外暴露：提供給其他功能模組開啟登入彈窗
+export function openLoginModal() {
+  try { showLoginModal(); } catch (_) { alert('登入模組暫時不可用'); }
+}
+
 function toggleGearMenu() {
   const existed = document.getElementById('gear-menu');
   if (existed) { existed.remove(); return; }
@@ -207,10 +218,14 @@ function toggleGearMenu() {
   m.id = 'gear-menu';
   m.className = 'gear-menu';
   const email = (window.__supabase_user && window.__supabase_user.email) || '';
-  const ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
+  let ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
   const atMs = parseInt(localStorage.getItem('lastSnapshotAt')||'0',10) || 0;
   const t = atMs ? new Date(atMs).toLocaleTimeString() : '';
   const status = dom.syncStatus?.textContent || '';
+  if (!ver && status) {
+    const mVer = status.match(/v(\d+)/i);
+    if (mVer) { ver = parseInt(mVer[1], 10) || 0; try { if (ver>0) localStorage.setItem('lastSnapshotVersion', String(ver)); } catch(_) {} }
+  }
   const loggedIn = !!email;
   m.innerHTML = `
     <div class="menu-item" id="gm-sync">

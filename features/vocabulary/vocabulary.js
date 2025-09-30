@@ -4,6 +4,8 @@ import * as storage from '../../modules/storage.js';
 import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
+// 提供登入入口（已登入的使用者可直接同步雲端單詞本）
+import { openLoginModal as openSyncLoginModal } from '../sync/sync.js';
 
 // =================================
 // Vocabulary Feature
@@ -42,6 +44,15 @@ export function initVocabulary() {
     // 初次加載時渲染視圖
     renderVocabBookList();
     updateActiveBookView();
+
+    // 首次啟動且沒有任何單詞本時，提醒用戶導入
+    try {
+        const shown = localStorage.getItem('vocabImportPromptShown') === '1';
+        if (state.vocabularyBooks.length === 0 && !shown) {
+            showNoBookOnboarding();
+            localStorage.setItem('vocabImportPromptShown', '1');
+        }
+    } catch (_) { /* 忽略存取錯誤 */ }
 }
 
 // 外部可呼叫：在導航切換回單詞本頁時刷新視圖
@@ -108,7 +119,10 @@ export async function handleVocabularyQueryParams() {
 function renderVocabBookList() {
     dom.vocabBookList.innerHTML = '';
     if (state.vocabularyBooks.length === 0) {
-        dom.vocabBookList.innerHTML = '<li class="word-item-placeholder">還沒有單詞本</li>';
+        // 空狀態：不要默認創建單詞本，改為顯示導入提示
+        dom.vocabBookList.innerHTML = '<li class="word-item-placeholder">還沒有單詞本。<a id="import-hint-link" href="#">點此導入</a>，或點擊上方「導入單詞本」。</li>';
+        const link = document.getElementById('import-hint-link');
+        if (link) link.addEventListener('click', (e) => { e.preventDefault(); openModalForImportBook(); });
         return;
     }
     state.vocabularyBooks.forEach(book => {
@@ -121,6 +135,30 @@ function renderVocabBookList() {
         li.innerHTML = `<span>${book.name}</span> <span class="word-count">${book.words.length}</span>`;
         dom.vocabBookList.appendChild(li);
     });
+}
+
+// 首次無單詞本的引導彈窗
+function showNoBookOnboarding() {
+    dom.modalTitle.textContent = '開始之前';
+    dom.modalBody.innerHTML = `
+        <div class="input-group" style="display:block;">
+            <p>目前還沒有任何單詞本。</p>
+            <p>建議先「導入單詞本」或「新建單詞本」，之後就可以在學習 / 默寫 / 測驗等功能中使用。</p>
+            <p style="margin-top:8px;color:#64748b;">已經有雲端帳號？可直接登入並同步既有單詞本。</p>
+        </div>
+        <div class="modal-actions">
+            <button class="cancel-btn">稍後</button>
+            <button id="login-btn" class="btn-ghost">登入</button>
+            <button class="save-btn">導入單詞本</button>
+        </div>
+    `;
+    const cancel = dom.appModal.querySelector('.cancel-btn');
+    const save = dom.appModal.querySelector('.save-btn');
+    const login = dom.appModal.querySelector('#login-btn');
+    cancel.onclick = () => ui.closeModal();
+    save.onclick = () => { ui.closeModal(); openModalForImportBook(); };
+    login.onclick = () => { ui.closeModal(); openSyncLoginModal(); };
+    ui.openModal();
 }
 
 function handleVocabBookSelection(e) {
@@ -366,7 +404,7 @@ async function openModalForImportBook() {
         }).join('');
         const presetItemsHtml = `<div class="import-preset-list">${checkboxesHtml}</div>`;
 
-        dom.modalBody.innerHTML = `
+    dom.modalBody.innerHTML = `
             <div class="import-container">
                 <div class="import-section">
                     <h4 class="import-section-title">從預設列表選擇</h4>
@@ -388,15 +426,21 @@ async function openModalForImportBook() {
                         <input type="file" id="modal-import-file" accept=".json">
                     </div>
                 </div>
+                <div class="import-section" style="border-top:1px dashed #e5e7eb;margin-top:8px;padding-top:8px;">
+                    <small class="form-hint">已有帳號？登入即可同步雲端單詞本，無須再次導入。</small>
+                </div>
             </div>
             <div id="modal-import-progress" class="import-progress"></div>
             <div class="modal-actions">
                 <button class="cancel-btn">取消</button>
+                <button id="login-to-sync-btn" class="btn-ghost">登入</button>
                 <button class="save-btn">導入選中</button>
             </div>
         `;
         dom.appModal.querySelector('.save-btn').onclick = () => importSharedVocabBooks();
         dom.appModal.querySelector('.cancel-btn').onclick = ui.closeModal;
+        const loginBtn = dom.appModal.querySelector('#login-to-sync-btn');
+        if (loginBtn) loginBtn.onclick = () => { ui.closeModal(); openSyncLoginModal(); };
 
     } catch (error) {
         console.error('加載預設單詞本失敗:', error);

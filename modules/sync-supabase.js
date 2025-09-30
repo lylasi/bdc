@@ -39,11 +39,45 @@ export async function pushSnapshot(expectedVersion, payload) {
   return { conflict: false, version, updatedAt };
 }
 
+// Heuristic: detect accidental local wipe (local empty, remote has data, and we've synced before)
+function isLikelyAccidentalWipe(localPayload, remotePayload) {
+  try {
+    const lv = localPayload?.vocabulary, rv = remotePayload?.vocabulary;
+    const la = localPayload?.articles,   ra = remotePayload?.articles;
+    const lq = localPayload?.qa,         rq = remotePayload?.qa;
+
+    const localEmpty = (
+      (!lv || !Array.isArray(lv.books) || lv.books.length === 0) &&
+      (!la || !Array.isArray(la.analyzedArticles) || la.analyzedArticles.length === 0) &&
+      (!lq || !Array.isArray(lq.manifest) || lq.manifest.length === 0)
+    );
+
+    const remoteHas = (
+      (rv && Array.isArray(rv.books) && rv.books.length > 0) ||
+      (ra && Array.isArray(ra.analyzedArticles) && ra.analyzedArticles.length > 0) ||
+      (rq && Array.isArray(rq.manifest) && rq.manifest.length > 0)
+    );
+
+    const lastVer = parseInt(localStorage.getItem('lastSnapshotVersion') || '0', 10) || 0;
+
+    return lastVer > 0 && localEmpty && remoteHas;
+  } catch (_) {
+    return false;
+  }
+}
+
 // High-level sync: pull → LWW merge → conditional push with expected_version
 export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
   const remote = await pullSnapshot();             // { version, updated_at, payload } | null
   const local = await buildLocalSnapshot();        // { payload, updatedAt }
   const baseVersion = remote?.version ?? 0;
+
+  // Safety net: if local looks wiped but remote still has data and we had synced before,
+  // treat this as pull-only to avoid wiping cloud data.
+  if (remote && isLikelyAccidentalWipe(local.payload, remote.payload)) {
+    await applyMergedSnapshot({ payload: remote.payload || {} });
+    return { version: remote.version ?? 0, updatedAt: remote.updated_at ?? null };
+  }
 
   // Group-level LWW for dictation via per-group updatedAt
   const merged = lwwMerge(local.payload, remote?.payload || {});
