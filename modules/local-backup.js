@@ -6,7 +6,8 @@ import { buildLocalSnapshot } from './sync-core.js';
 
 const PREFIX = 'bdc:backup:v1:';
 const INDEX_KEY = 'bdc:backup:index:v1';
-const MAX_BACKUPS = 5; // keep the latest N backups
+// Auto-backup retention (manual backups are not counted nor pruned by this limit)
+const MAX_AUTO_BACKUPS = 2;
 
 function readIndex() {
   try {
@@ -64,14 +65,37 @@ export function saveBackupPayload(payload, note = '') {
     localStorage.setItem(keyOf(id), raw);
     const idx = readIndex();
     idx.push(id);
-    // prune to MAX_BACKUPS (newest first)
-    idx.sort((a, b) => String(b).localeCompare(String(a)));
-    const keep = idx.slice(0, MAX_BACKUPS);
-    // delete overflow
-    for (const drop of idx.slice(MAX_BACKUPS)) {
-      try { localStorage.removeItem(keyOf(drop)); } catch (_) {}
+    // Build a view of entries with ts and note to distinguish auto vs manual
+    const entries = [];
+    for (const bid of idx) {
+      try {
+        const rawB = localStorage.getItem(keyOf(bid));
+        if (!rawB) continue;
+        const obj = JSON.parse(rawB);
+        const ts = obj?.ts || bid;
+        const n = String(obj?.note || '');
+        const isManual = /手動|manual/i.test(n);
+        entries.push({ id: bid, ts, isManual });
+      } catch (_) {}
     }
-    writeIndex(keep);
+    // Separate manual and auto
+    const manual = entries.filter(e => e.isManual);
+    const auto = entries.filter(e => !e.isManual);
+    auto.sort((a,b)=> String(b.ts).localeCompare(String(a.ts)));
+    const keptAuto = auto.slice(0, MAX_AUTO_BACKUPS);
+    const keepIdsSet = new Set([...manual.map(e=>e.id), ...keptAuto.map(e=>e.id)]);
+    // Delete overflow (auto beyond limit)
+    for (const e of entries) {
+      if (!keepIdsSet.has(e.id)) {
+        try { localStorage.removeItem(keyOf(e.id)); } catch (_) {}
+      }
+    }
+    // Write back pruned index (newest first for display)
+    const keepSorted = entries
+      .filter(e => keepIdsSet.has(e.id))
+      .sort((a,b)=> String(b.ts).localeCompare(String(a.ts)))
+      .map(e => e.id);
+    writeIndex(keepSorted);
     return { id };
   } catch (e) {
     return { error: e };
@@ -87,4 +111,3 @@ export async function createBackup(note = '') {
     return { error: e };
   }
 }
-
