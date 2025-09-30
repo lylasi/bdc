@@ -76,7 +76,7 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
   // treat this as pull-only to avoid wiping cloud data.
   if (remote && isLikelyAccidentalWipe(local.payload, remote.payload)) {
     await applyMergedSnapshot({ payload: remote.payload || {} });
-    return { version: remote.version ?? 0, updatedAt: remote.updated_at ?? null };
+    return { version: remote.version ?? 0, updatedAt: remote.updated_at ?? null, restoredFromRemote: true };
   }
 
   // Group-level LWW for dictation via per-group updatedAt
