@@ -84,6 +84,7 @@ async function handleSync() {
     updateStatus('同步中...');
     const info = await syncNow(buildLocalSnapshot, applyMergedSnapshot);
     lastSyncAt = Date.now();
+    try { localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
     if (info && typeof info.version === 'number') {
       try { localStorage.setItem('lastSnapshotVersion', String(info.version)); } catch(_) {}
     }
@@ -207,15 +208,21 @@ function toggleGearMenu() {
   m.className = 'gear-menu';
   const email = (window.__supabase_user && window.__supabase_user.email) || '';
   const ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
+  const atMs = parseInt(localStorage.getItem('lastSnapshotAt')||'0',10) || 0;
+  const t = atMs ? new Date(atMs).toLocaleTimeString() : '';
   const status = dom.syncStatus?.textContent || '';
   const loggedIn = !!email;
   m.innerHTML = `
-    <div class="menu-item" id="gm-sync"><span>🔄</span><span>立即同步</span><span class="meta">${ver ? 'v'+ver : ''}</span></div>
-    ${loggedIn ? '' : '<div class="menu-item" id="gm-login"><span>🔐</span><span>登入 / 註冊</span></div>'}
-    ${loggedIn ? '<div class="menu-item" id="gm-logout"><span>🚪</span><span>登出</span><span class="meta">'+escapeHtml(email)+'</span></div>' : ''}
+    <div class="menu-item" id="gm-sync">
+      <span class="mi-icon" aria-hidden="true">${svgSync()}</span>
+      <span class="mi-text">立即同步</span>
+      <span class="meta">${ver ? 'v'+ver : ''}${t ? ' · ' + t.replace(/:\\d{2}$/, '') : ''}</span>
+    </div>
+    ${loggedIn ? '' : `<div class="menu-item" id="gm-login"><span class="mi-icon">${svgLogin()}</span><span class="mi-text">登入 / 註冊</span></div>`}
+    ${loggedIn ? `<div class="menu-item" id="gm-logout"><span class="mi-icon">${svgLogout()}</span><span class="mi-text">登出</span><span class="meta">${escapeHtml(email)}</span></div>` : ''}
     <div class="menu-divider"></div>
-    <div class="menu-item" id="gm-settings"><span>⚙️</span><span>全局設定</span></div>
-    <div class="menu-item" id="gm-clear-cache"><span>🧹</span><span>清理本機快取</span></div>
+    <div class="menu-item" id="gm-settings"><span class="mi-icon">${svgGear()}</span><span class="mi-text">全局設定</span></div>
+    <div class="menu-item" id="gm-clear-cache"><span class="mi-icon">${svgTrash()}</span><span class="mi-text">清理本機快取</span></div>
     <div class="menu-status">${status}</div>`;
   document.body.appendChild(m);
   const sync = m.querySelector('#gm-sync');
@@ -346,6 +353,7 @@ async function doAutoSync(reason) {
     updateStatus('自動同步中...');
     const info = await syncNow(buildLocalSnapshot, applyMergedSnapshot);
     lastSyncAt = Date.now();
+    try { localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
     if (info && typeof info.version === 'number') {
       try { localStorage.setItem('lastSnapshotVersion', String(info.version)); } catch(_) {}
     }
@@ -356,6 +364,23 @@ async function doAutoSync(reason) {
   } finally {
     syncInFlight = false;
   }
+}
+
+// SVG icons
+function svgSync(){
+  return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 1 1 .908.418A6 6 0 1 1 8 2v1z"/><path d="M8 0a.5.5 0 0 1 .5.5v3.707l1.146-1.147a.5.5 0 0 1 .708.708L8.354 5.768a.5.5 0 0 1-.708 0L5.646 3.768a.5.5 0 1 1 .708-.708L7.5 4.207V.5A.5.5 0 0 1 8 0z"/></svg>';
+}
+function svgLogin(){
+  return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 12a1 1 0 0 0 1-1V9H7.5a.5.5 0 0 1 0-1H11V5a1 1 0 0 0-1-1H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2z"/><path d="M13.354 8.354a.5.5 0 0 0 0-.708L11.172 5.464a.5.5 0 0 0-.708.708L12.293 8l-1.829 1.828a.5.5 0 1 0 .708.708z"/></svg>';
+}
+function svgLogout(){
+  return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 12a1 1 0 0 0 1-1V9H7.5a.5.5 0 0 1 0-1H11V5a1 1 0 0 0-1-1H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2z"/><path d="M11.146 5.146a.5.5 0 0 1 .708 0L14 7.293a1 1 0 0 1 0 1.414l-2.146 2.147a.5.5 0 1 1-.708-.708L12.793 8l-1.647-1.646a.5.5 0 0 1 0-.708z"/></svg>';
+}
+function svgGear(){
+  return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1 1 0 0 1-.52.63l-.31.15c-1.283.62-1.283 2.39 0 3.01l.31.15a1 1 0 0 1 .52.63l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1 1 0 0 1 .52-.63l.31-.15c1.283-.62 1.283-2.39 0-3.01l-.31-.15a1 1 0 0 1-.52-.63zM8 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M4.754 9.036a1 1 0 0 0-.417 1.341l.176.352a1 1 0 0 1 0 .542l-.176.352a1 1 0 0 0 .417 1.341l.352.176a1 1 0 0 1 .352.293l.243.303c.936 1.166 2.764.58 2.764-.954V12.5a1 1 0 0 1 .293-.707l.303-.243a1 1 0 0 1 .352-.293l.352-.176a1 1 0 0 0 .417-1.341l-.176-.352a1 1 0 0 1 0-.542l.176-.352a1 1 0 0 0-.417-1.341l-.352-.176a1 1 0 0 1-.352-.293l-.303-.243A1 1 0 0 1 8.5 7h-.5a1 1 0 0 1-.707.293l-.303.243a1 1 0 0 1-.352.293z"/></svg>';
+}
+function svgTrash(){
+  return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 1h3a.5.5 0 0 1 .5.5V3h3a.5.5 0 0 1 0 1H3a.5.5 0 0 1 0-1h3V1.5a.5.5 0 0 1 .5-.5z"/><path d="M5.5 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5z"/><path d="M4.118 4.5 4 14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l-.118-9.5H4.118z"/></svg>';
 }
 
 function attachRealtime(user) {

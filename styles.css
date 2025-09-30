@@ -54,6 +54,17 @@ body {
 .gear-menu .menu-divider { height:1px; background:#eef2f7; margin:6px 4px; }
 .gear-menu .menu-status { font-size:12px; color:#6b7280; padding:6px 10px; }
 
+/* Consistent icon style in gear menu (match app icon-btn look) */
+.gear-menu .mi-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #f8f9fa, #e9ecef);
+  border: 1px solid #dee2e6; color: #3a7bd5;
+  box-shadow: 0 2px 6px rgba(58,123,213,0.15);
+}
+.gear-menu .mi-icon svg { width: 16px; height: 16px; fill: currentColor; }
+.gear-menu .mi-text { font-weight: 600; color: #374151; }
+
 
 .container {
     max-width: 1200px;
