@@ -409,7 +409,7 @@ async function doAutoSync(reason) {
       try { ui.displayMessage('已從雲端恢復（自動偵測）', 'warning', 5000); } catch(_) {}
     } else {
       updateStatus('已完成同步');
-      try { ui.displayMessage('自動同步完成', 'success', 1500); } catch(_) {}
+      // 自動同步成功不再彈出提示，避免干擾
     }
     try { await backup.createBackup('自動同步後備份'); } catch(_) {}
   } catch (e) {
