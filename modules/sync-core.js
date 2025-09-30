@@ -72,8 +72,9 @@ export async function buildLocalSnapshot() {
   try { state.loadDictationSettings(); } catch (_) {}
 
   const dictation = state.dictationSettings || {};
-  const vocabularyUpdatedAt = getLocalUpdatedAt('vocabularyUpdatedAt');
-  const articlesUpdatedAt = getLocalUpdatedAt('articlesUpdatedAt');
+  // Do NOT auto-create timestamps when missing; treat as unknown so remote wins on first run after local wipe
+  const vocabularyUpdatedAt = getLocalUpdatedAt('vocabularyUpdatedAt', false);
+  const articlesUpdatedAt = getLocalUpdatedAt('articlesUpdatedAt', false);
 
   // QA group (user-created only)
   const qaManifest = (() => {
@@ -95,7 +96,8 @@ export async function buildLocalSnapshot() {
     } catch(_) {}
     return out;
   })();
-  const qaUpdatedAt = getLocalUpdatedAt('qaUpdatedAt');
+  // Same here for QA group. Missing timestamp should not be considered newer than remote
+  const qaUpdatedAt = getLocalUpdatedAt('qaUpdatedAt', false);
 
   // Compact articles before push to reduce payload
   const compactArticles = compactAnalyzedArticles(state.analyzedArticles);

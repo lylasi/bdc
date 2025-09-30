@@ -26,21 +26,14 @@ export function saveVocabularyBooks(options = {}) {
 
 /**
  * 從 localStorage 加載單詞本數據。
- * 如果沒有數據，則創建一個默認的單詞本。
+ * 注意：不再自動建立任何預設單詞本，保持為空以引導使用者自行「導入 / 新建」。
  * 同時包含一個數據遷移邏輯，用於清理舊數據格式。
  */
 export function loadVocabularyBooks() {
     const saved = localStorage.getItem('vocabularyBooks');
     let books = saved ? JSON.parse(saved) : [];
 
-    if (books.length === 0) {
-        // 如果沒有數據，創建一個預設的
-        books.push({
-            id: Date.now().toString(),
-            name: '我的第一個單詞本',
-            words: []
-        });
-    } else {
+    if (books.length > 0) {
         // 資料遷移和清理：遍歷所有單詞並標準化音標格式
         let dataWasModified = false;
         books.forEach(book => {
@@ -59,6 +52,7 @@ export function loadVocabularyBooks() {
         });
         // 如果資料被修改過，就立即存回localStorage
         if (dataWasModified) {
+            // 僅在資料被修正時才回寫，避免無謂的寫入
             localStorage.setItem('vocabularyBooks', JSON.stringify(books));
         }
     }
