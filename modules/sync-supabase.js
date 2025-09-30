@@ -57,14 +57,16 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
       const res2 = await pushSnapshot(latest?.version ?? 0, merged2);
       if (res2.conflict) throw new Error('同步衝突重試仍失敗');
       await applyMergedSnapshot({ payload: merged2 });
-      return;
+      return { version: res2.version ?? latest?.version ?? 0, updatedAt: res2.updatedAt ?? latest?.updated_at ?? null };
     }
     await applyMergedSnapshot({ payload: merged });
+    return { version: res.version ?? baseVersion + 1, updatedAt: res.updatedAt ?? null };
   } else {
     // If remote differs from local (remote newer), apply it locally
     if (JSON.stringify(local.payload) !== JSON.stringify(merged)) {
       await applyMergedSnapshot({ payload: merged });
     }
+    return { version: remote?.version ?? 0, updatedAt: remote?.updated_at ?? null };
   }
 }
 
