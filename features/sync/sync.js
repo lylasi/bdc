@@ -97,11 +97,12 @@ async function handleSync() {
     }
     if (info && info.restoredFromRemote) {
       updateStatus('已從雲端恢復（偵測到本機為空）');
-      try { alert('偵測到本機為空，已從雲端恢復'); } catch(_) {}
+      try { ui.displayMessage('偵測到本機為空，已自動從雲端恢復', 'warning', 5000); } catch(_) {}
     } else {
       updateStatus('已完成同步');
+      try { ui.displayMessage('同步完成', 'success', 2000); } catch(_) {}
     }
-    try { await backup.createBackup('post-sync'); } catch(_) {}
+    try { await backup.createBackup('手動同步後備份'); } catch(_) {}
   } catch (e) {
     console.warn(e);
     updateStatus('同步失敗');
@@ -260,7 +261,7 @@ function toggleGearMenu() {
   if (login) login.addEventListener('click', () => { showLoginModal(); m.remove(); });
   if (logout) logout.addEventListener('click', async () => { try { await auth.signOut(); } catch(_){} updateAuthButtons(null); updateStatus('已登出'); m.remove(); });
   if (settings) settings.addEventListener('click', () => { showGlobalSettingsModal(); m.remove(); });
-  if (backupNow) backupNow.addEventListener('click', async () => { try { await backup.createBackup('manual'); alert('已建立本機備份'); } catch(_) { alert('建立備份失敗'); } m.remove(); });
+  if (backupNow) backupNow.addEventListener('click', async () => { try { await backup.createBackup('手動建立'); try { ui.displayMessage('已建立本機備份', 'success'); } catch(_) {} } catch(_) { try { ui.displayMessage('建立備份失敗', 'error'); } catch(_) {} } m.remove(); });
   if (backupRestore) backupRestore.addEventListener('click', () => { showBackupRestoreModal(); m.remove(); });
   if (clearCache) clearCache.addEventListener('click', async () => { await clearLocalCaches(); alert('已清理本機快取'); m.remove(); });
 }
@@ -405,10 +406,12 @@ async function doAutoSync(reason) {
     }
     if (info && info.restoredFromRemote) {
       updateStatus('已從雲端恢復（自動偵測）');
+      try { ui.displayMessage('已從雲端恢復（自動偵測）', 'warning', 5000); } catch(_) {}
     } else {
       updateStatus('已完成同步');
+      try { ui.displayMessage('自動同步完成', 'success', 1500); } catch(_) {}
     }
-    try { await backup.createBackup('post-autosync'); } catch(_) {}
+    try { await backup.createBackup('自動同步後備份'); } catch(_) {}
   } catch (e) {
     console.warn('[sync] auto sync failed:', e);
     updateStatus('自動同步失敗');
@@ -463,10 +466,16 @@ function showBackupRestoreModal() {
   const listHtml = items.length ? items.map(it => {
     const timeStr = new Date(parseInt(it.ts,10)||Date.now()).toLocaleString();
     const sizeKB = Math.round((it.size||0)/102.4)/10; // 1 decimal
-    const note = it.note ? ` - ${escapeHtml(it.note)}` : '';
+    const mkBadge = (text, color) => `<span class="bk-badge" style="display:inline-block;padding:1px 6px;margin-left:6px;border-radius:999px;font-size:11px;background:${color.bg};color:${color.fg};border:1px solid ${color.bd};vertical-align:middle;">${escapeHtml(text)}</span>`;
+    let noteHtml = '';
+    if (it.note) {
+      if (/自動同步/.test(it.note)) noteHtml = mkBadge(it.note, { bg:'#f0f9ff', fg:'#075985', bd:'#7dd3fc' });
+      else if (/手動/.test(it.note)) noteHtml = mkBadge(it.note, { bg:'#ecfdf5', fg:'#065f46', bd:'#6ee7b7' });
+      else noteHtml = `<span style="margin-left:6px;color:#64748b;">${escapeHtml(it.note)}</span>`;
+    }
     return `<div class="backup-item" data-id="${it.id}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #eee;">
       <div class="bi-meta">
-        <div class="bi-title">${timeStr}${note}</div>
+        <div class="bi-title">${timeStr}${noteHtml}</div>
         <div class="bi-sub" style="color:#64748b;font-size:12px;">ID: ${it.id} · 約 ${sizeKB} KB</div>
       </div>
       <div class="bi-actions" style="display:flex;gap:6px;">
@@ -499,13 +508,14 @@ function showBackupRestoreModal() {
       const id = btn.getAttribute('data-id');
       try {
         const payload = backup.loadBackupPayload(id);
-        if (!payload) { alert('備份不存在或已損壞'); return; }
+        if (!payload) { try { ui.displayMessage('備份不存在或已損壞', 'error'); } catch(_) {} return; }
         await applyMergedSnapshot({ payload });
         try { lastSyncAt = Date.now(); localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
         updateStatus('已從備份還原（僅本機）');
+        try { ui.displayMessage('已從備份還原（僅本機）', 'success'); } catch(_) {}
         ui.closeModal();
       } catch (e) {
-        alert('還原失敗：' + (e?.message||''));
+        try { ui.displayMessage('還原失敗：' + (e?.message||''), 'error'); } catch(_) {}
       }
     });
   });
@@ -513,7 +523,7 @@ function showBackupRestoreModal() {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       const payload = backup.loadBackupPayload(id);
-      if (!payload) { alert('備份不存在或已損壞'); return; }
+      if (!payload) { try { ui.displayMessage('備份不存在或已損壞', 'error'); } catch(_) {} return; }
       try {
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
@@ -521,13 +531,14 @@ function showBackupRestoreModal() {
         a.download = `bdc-backup-${id}.json`;
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      } catch (_) { alert('匯出失敗'); }
+        try { ui.displayMessage('已匯出備份', 'success'); } catch(_) {}
+      } catch (_) { try { ui.displayMessage('匯出失敗', 'error'); } catch(_) {} }
     });
   });
   dom.modalBody.querySelectorAll('.bi-delete').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
-      try { backup.deleteBackup(id); showBackupRestoreModal(); } catch (_) { alert('刪除失敗'); }
+      try { backup.deleteBackup(id); showBackupRestoreModal(); try { ui.displayMessage('已刪除備份', 'success'); } catch(_) {} } catch (_) { try { ui.displayMessage('刪除失敗', 'error'); } catch(_) {} }
     });
   });
 }
