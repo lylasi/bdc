@@ -82,8 +82,11 @@ async function handleSync() {
   try {
     setBusy(true);
     updateStatus('同步中...');
-    await syncNow(buildLocalSnapshot, applyMergedSnapshot);
+    const info = await syncNow(buildLocalSnapshot, applyMergedSnapshot);
     lastSyncAt = Date.now();
+    if (info && typeof info.version === 'number') {
+      try { localStorage.setItem('lastSnapshotVersion', String(info.version)); } catch(_) {}
+    }
     updateStatus('已完成同步');
   } catch (e) {
     console.warn(e);
@@ -102,7 +105,8 @@ function setBusy(b) {
 
 function updateStatus(text) {
   if (dom.syncStatus) {
-    const ts = lastSyncAt ? `（上次：${new Date(lastSyncAt).toLocaleTimeString()}）` : '';
+    const ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
+    const ts = lastSyncAt ? `（上次：${new Date(lastSyncAt).toLocaleTimeString()}，v${ver}）` : (ver ? `（v${ver}）` : '');
     dom.syncStatus.textContent = (text || '') + ' ' + ts;
   }
 }
@@ -339,8 +343,11 @@ async function doAutoSync(reason) {
   try {
     syncInFlight = true;
     updateStatus('自動同步中...');
-    await syncNow(buildLocalSnapshot, applyMergedSnapshot);
+    const info = await syncNow(buildLocalSnapshot, applyMergedSnapshot);
     lastSyncAt = Date.now();
+    if (info && typeof info.version === 'number') {
+      try { localStorage.setItem('lastSnapshotVersion', String(info.version)); } catch(_) {}
+    }
     updateStatus('已完成同步');
   } catch (e) {
     console.warn('[sync] auto sync failed:', e);
