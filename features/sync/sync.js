@@ -206,10 +206,11 @@ function toggleGearMenu() {
   m.id = 'gear-menu';
   m.className = 'gear-menu';
   const email = (window.__supabase_user && window.__supabase_user.email) || '';
+  const ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
   const status = dom.syncStatus?.textContent || '';
   const loggedIn = !!email;
   m.innerHTML = `
-    <div class="menu-item" id="gm-sync"><span>🔄</span><span>立即同步</span><span class="meta"></span></div>
+    <div class="menu-item" id="gm-sync"><span>🔄</span><span>立即同步</span><span class="meta">${ver ? 'v'+ver : ''}</span></div>
     ${loggedIn ? '' : '<div class="menu-item" id="gm-login"><span>🔐</span><span>登入 / 註冊</span></div>'}
     ${loggedIn ? '<div class="menu-item" id="gm-logout"><span>🚪</span><span>登出</span><span class="meta">'+escapeHtml(email)+'</span></div>' : ''}
     <div class="menu-divider"></div>
