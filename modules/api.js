@@ -727,6 +727,43 @@ export async function fetchArticleFromUrlStructured(url, opts = {}) {
     return { title: '', content: String(raw || ''), publishedAt: '', url };
 }
 
+// =================================
+// AI 清洗與格式優化（Markdown 保留）
+// =================================
+
+/**
+ * 讓 AI 清洗已抽取的 Markdown 文章，保留結構與圖片；移除站點噪音；不翻譯內容。
+ * 返回乾淨的 Markdown 純文字。
+ */
+export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
+    const { timeoutMs = 25000, temperature = 0.1, signal } = opts;
+    const s = loadGlobalSettings();
+    const model = (s?.ai?.models && (s.ai.models.articleCleanup || s.ai.models.articleAnalysis)) || AI_MODELS.articleAnalysis;
+
+    const prompt = `你會收到一篇以 Markdown 表示的英文文章（可能含標題、清單、表格、圖片）。請清洗並輸出更適合閱讀的 Markdown：
+- 僅保留正文與必要的標題/段落/清單/表格；移除網站導航、語言切換、社交按鈕、推薦卡片、廣告、版權宣告、留言模組、追蹤用圖片或計數器。
+- 保留 Markdown 圖片行（例如：![alt](URL)），不要翻譯或改寫 alt，也不要內嵌說明；若圖片非內容相關或為社交/追蹤橫幅，請移除。
+- 保持原文語言與內容，不要翻譯、不新增解說；僅做結構整理、去噪聲、合併多餘空行，統一為合理段落。
+- 若沒有明確主標題而開頭存在明顯標題，轉為一行 ATX 標題（# Title）。
+- 嚴禁輸出任何額外解釋或代碼區塊標記；只輸出清洗後的 Markdown 純文字。`;
+
+    const data = await requestAI({
+        model,
+        messages: [
+            { role: 'system', content: 'You are a precise Markdown editor that preserves structure and removes noise without translating.' },
+            { role: 'user', content: `${prompt}\n\n=== 原文開始 ===\n${markdownText}\n=== 原文結束 ===` }
+        ],
+        temperature,
+        maxTokens: 1400,
+        timeoutMs,
+        signal
+    });
+    let content = (data?.choices?.[0]?.message?.content || '').trim();
+    // 去掉偶發的 ``` 標記
+    content = content.replace(/^```(?:markdown)?\n/, '').replace(/\n```\s*$/, '').trim();
+    return content;
+}
+
 function normalizeImportedText(text) {
     const t = (text || '').replace(/\u00A0/g, ' ');
     // 將 3+ 連續空行縮為 2 空行，避免過多間距
