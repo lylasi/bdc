@@ -535,6 +535,49 @@ function renderMarkdownTablePairHTML(engText, zhText, paraIdx) {
     return { eng: htmlE, zh: htmlZ, lastSentIndex: sIdx - 1 };
 }
 
+// Detect if a line is a standalone Markdown image: ![alt](url)
+function isMarkdownImageLine(line) {
+    if (!line) return false;
+    const s = String(line).trim();
+    return /^!\[[^\]]*\]\([^\)]+\)\s*$/i.test(s);
+}
+
+// If a paragraph consists solely of image lines (and blank lines), render them as <img> blocks
+function renderMarkdownImagesPairHTML(engText, zhText) {
+    const toLines = (t) => String(t || '').split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+    const engLines = toLines(engText);
+    if (!engLines.length || !engLines.every(isMarkdownImageLine)) return null;
+
+    const imgRe = /^!\[([^\]]*)\]\(([^\)]+)\)\s*$/i;
+    const parseImgs = (arr) => arr.map(l => {
+        const m = l.match(imgRe);
+        return m ? { alt: m[1] || '', url: m[2] || '' } : null;
+    }).filter(Boolean);
+    const engImgs = parseImgs(engLines);
+
+    // zh 側若也都是圖片，獨立解析；否則沿用英文側圖片（圖片不做翻譯/改寫）
+    let zhImgs = [];
+    const zhLines = toLines(zhText);
+    if (zhLines.length && zhLines.every(isMarkdownImageLine)) {
+        zhImgs = parseImgs(zhLines);
+    } else {
+        zhImgs = engImgs.slice();
+    }
+
+    const toHTML = (imgs) => {
+        if (!imgs.length) return '';
+        const blocks = imgs.map(({ alt, url }) => {
+            const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+            const a = esc(alt);
+            const u = esc(url);
+            return `<div class=\"md-image\"><img src=\"${u}\" alt=\"${a}\" loading=\"lazy\" referrerpolicy=\"no-referrer\"></div>`;
+        });
+        return `<div class=\"md-images\">${blocks.join('')}</div>`;
+    };
+
+    return { eng: toHTML(engImgs), zh: toHTML(zhImgs) };
+}
+
 async function analyzeArticle() {
     const articleText = dom.articleInput.value.trim();
     if (!articleText) {
@@ -1734,6 +1777,39 @@ function renderParagraph(index, englishPara, result) {
             if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = '重新獲取'; }
         }
         return;
+    }
+
+    // 若該段為純圖片（Markdown 圖片行），直接以 <img> 呈現，並跳過逐句標註與包字
+    {
+        const zhForImg = processedChinese || chinese || '';
+        const pairImgs = renderMarkdownImagesPairHTML(englishPara, zhForImg);
+        if (pairImgs) {
+            if (englishDiv) {
+                englishDiv.innerHTML = pairImgs.eng;
+                englishDiv.dataset.markdownImages = '1';
+                englishDiv.dataset.tokensWrapped = '1';
+            }
+            if (chineseDiv) {
+                chineseDiv.innerHTML = pairImgs.zh;
+                chineseDiv.dataset.markdownImages = '1';
+            }
+            if (statusDiv) {
+                const textSpan = statusDiv.querySelector('.status-text');
+                const iconSpan = statusDiv.querySelector('.status-icon');
+                const elapsedSpan = statusDiv.querySelector('.elapsed');
+                const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
+                if (elapsedSpan && paragraphElapsedMs[index] != null) {
+                    const ms = paragraphElapsedMs[index];
+                    const secs = (ms / 1000).toFixed(1);
+                    elapsedSpan.textContent = `(${secs}s)`;
+                }
+                statusDiv.dataset.status = 'done';
+                if (textSpan) textSpan.textContent = '完成 ✓';
+                if (iconSpan) iconSpan.textContent = '✅';
+                if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = '重新獲取'; }
+            }
+            return;
+        }
     }
 
     // Build sentence-by-sentence HTML for English to support per-sentence click
