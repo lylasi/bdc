@@ -3,6 +3,7 @@ import * as dom from '../../modules/dom.js';
 import * as audio from '../../modules/audio.js';
 import * as ui from '../../modules/ui.js';
 import * as platform from '../../modules/platform.js';
+import { initDictationGrader } from './dictation-grader.js';
 
 // =================================
 // Dictation Feature
@@ -27,6 +28,8 @@ export function initDictation() {
             checkDictation();
         }
     });
+    // 初始化 AI 批改
+    try { initDictationGrader(); } catch(_) {}
     
     // 加載保存的設置
     state.loadDictationSettings();

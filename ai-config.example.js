@@ -10,7 +10,9 @@ export const AI_MODELS = {
   // 單詞/短語分析
   wordAnalysis: 'gpt-4.1-mini',
   // 句子校對/評分
-  sentenceChecking: 'gpt-4.1-mini'
+  sentenceChecking: 'gpt-4.1-mini',
+  // 圖片 OCR（需支援視覺/圖像理解的模型，如 gpt-4o-mini/gpt-4o 等）
+  imageOCR: 'gpt-4o-mini'
 };
 
 // 問答集校對模型別名（缺省時回退到 sentenceChecking）
@@ -43,6 +45,22 @@ export const QA_CHECK = {
   includeAnalysis: true // 是否回傳錯誤分類分析
 };
 
+// 影像識別（OCR）專用覆蓋（示例）
+// - 若你希望 OCR 使用與其他功能不同的端點/金鑰/模型，可在此覆寫；
+// - 留空（undefined）則沿用全域 API_URL / API_KEY 與 AI_MODELS.imageOCR。
+export const OCR_CONFIG = {
+  API_URL: undefined,
+  API_KEY: undefined,
+  // 你可以只指定 MODEL，或提供 MODELS 與 DEFAULT_MODEL 給 UI 供選
+  MODEL: undefined, // e.g. 'gpt-4o-mini'
+  MODELS: [
+    // e.g. 'gemini-2.5-flash-nothinking', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'
+  ],
+  DEFAULT_MODEL: undefined,
+  maxTokens: 1500,
+  timeoutMs: 45000
+};
+
 // Supabase 設定（示例）
 // - url 例：'https://YOUR-PROJECT.supabase.co'
 // - anonKey 從 Supabase 控台 Project Settings → API 取得（anon public）
@@ -58,6 +76,7 @@ const __DEFAULT__ = {
   AI_MODELS,
   TTS_CONFIG,
   QA_CHECK,
+  OCR_CONFIG,
   SUPABASE
 };
 export default __DEFAULT__;
