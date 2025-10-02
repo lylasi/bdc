@@ -163,39 +163,28 @@ export async function checkUserSentence(word, userSentence, opts = {}) {
  * @returns {Promise<object>} - 包含段落分析結果的對象。
  */
 export async function analyzeParagraph(paragraph, opts = {}) {
-    const { timeoutMs = 45000, signal, level = 'standard', detailTopN = 12, noCache = false } = opts;
+    // Force the paragraph analyzer to always use the minimal output mode.
+    // We still respect the caller-provided "level" for cache keying to avoid repeated requests,
+    // but the effective behavior is always equivalent to 'quick'.
+    const { timeoutMs = 45000, signal, level: requestedLevel = 'standard', noCache = false } = opts;
+    const EFFECTIVE_LEVEL = 'quick';
     const s = loadGlobalSettings();
     const model = (s?.ai?.models && s.ai.models.articleAnalysis) || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
 
-    // local cache lookup
+    // local cache lookup (keyed by requestedLevel so UI won't keep re-triggering)
     if (!noCache) {
         try {
-            const cached = await cache.getParagraphAnalysisCached(paragraph, level, model);
+            const cached = await cache.getParagraphAnalysisCached(paragraph, requestedLevel, model);
             if (cached) return cached;
         } catch (e) { /* ignore cache errors */ }
     }
 
-    // Compose instructions by level
-    let instructions = '';
-    if (level === 'quick') {
-        instructions = `只返回 JSON：{"chinese_translation":"..."}
+    // Minimal instruction: translation only, HK Traditional Chinese wording, no alignment or details
+    const instructions = `只返回 JSON：{"chinese_translation":"..."}
 要求：
-- 翻譯請使用繁體中文（香港），語氣自然流暢；
+- 翻譯請使用繁體中文符合香港中文習慣，不要廣東話。 英文姓名不用翻譯；
 - 用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。
 - 不要返回 word_alignment 與 detailed_analysis。`;
-    } else if (level === 'standard') {
-        instructions = `只返回 JSON：{"chinese_translation":"...","detailed_analysis":[...]} 
-detailed_analysis 僅針對本段最關鍵的 ${detailTopN} 個詞，格式：
-{"word":"單詞","sentence":"所在完整句子","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思（香港繁體中文用字）","role":"在句中的語法作用（簡潔）"}}
-要求：
-- 中文請使用繁體中文（香港），用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。`;
-    } else {
-        instructions = `只返回 JSON：{"chinese_translation":"...","detailed_analysis":[...]} 
-detailed_analysis 應覆蓋段落中的所有詞（或主要詞），按出現順序，同詞多次出現需分條。每條格式：
-{"word":"單詞","sentence":"所在完整句子","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思（香港繁體中文用字）","role":"在句中的語法作用（具體）"}}
-要求：
-- 中文請使用繁體中文（香港），用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。`;
-    }
 
     const prompt = `請對以下英文段落進行分析並返回嚴格有效的 JSON（不允許代碼塊或額外解釋）：
 
@@ -205,12 +194,12 @@ ${paragraph}
 
 ${instructions}`;
 
-    const maxTokens = level === 'quick' ? 600 : level === 'standard' ? 1000 : 1500;
+    const maxTokens = 600; // minimal output
     try {
         const data = await requestAI({
             model,
             messages: [{ role: 'user', content: prompt }],
-            temperature: 0.3,
+            temperature: 0.2,
             maxTokens,
             timeoutMs,
             signal,
@@ -219,29 +208,29 @@ ${instructions}`;
         let content = (data?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
         try {
             const parsed = JSON.parse(content);
-            if (!validate.validateArticleAnalysis(parsed, level)) {
+            if (!validate.validateArticleAnalysis(parsed, EFFECTIVE_LEVEL)) {
                 throw new Error('Schema validation failed');
             }
             try {
-                // store in cache (TTL varies by level)
-                const ttlMs = level === 'quick' ? 14*24*60*60*1000 : level === 'standard' ? 21*24*60*60*1000 : 30*24*60*60*1000;
-                await cache.setParagraphAnalysisCached(paragraph, level, model, parsed, ttlMs);
+                // Cache using the requested level key to prevent redundant calls from UI
+                const ttlMs = 14*24*60*60*1000; // 14 days for minimal mode
+                await cache.setParagraphAnalysisCached(paragraph, requestedLevel, model, parsed, ttlMs);
             } catch(_) {}
             return parsed;
         } catch (e) {
             const fixed = content.replace(/,\s*([}\]])/g, '$1').replace(/(\{|\[)\s*,/g, '$1');
             const parsed = JSON.parse(fixed);
-            if (!validate.validateArticleAnalysis(parsed, level)) {
+            if (!validate.validateArticleAnalysis(parsed, EFFECTIVE_LEVEL)) {
                 throw new Error('Schema validation failed after fix');
             }
-            try { const ttlMs = level === 'quick' ? 14*24*60*60*1000 : level === 'standard' ? 21*24*60*60*1000 : 30*24*60*60*1000; await cache.setParagraphAnalysisCached(paragraph, level, model, parsed, ttlMs);} catch(_){}
+            try { const ttlMs = 14*24*60*60*1000; await cache.setParagraphAnalysisCached(paragraph, requestedLevel, model, parsed, ttlMs);} catch(_){}
             return parsed;
         }
     } catch (err) {
         console.warn('段落分析失敗，回退到最小輸出。', err);
         // 最小回退：僅翻譯
         const fbPrompt = `只返回 JSON：{"chinese_translation":"..."}
-請使用繁體中文（香港）進行翻譯，用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。
+請使用繁體中文符合香港中文習慣，不要廣東話。
 段落:"""
 ${paragraph}
 """`;
@@ -257,7 +246,7 @@ ${paragraph}
         let content = (fb?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
         const base = JSON.parse(content);
         const parsed = { chinese_translation: base.chinese_translation || '', word_alignment: [], detailed_analysis: [] };
-        try { const ttlMs = 7*24*60*60*1000; await cache.setParagraphAnalysisCached(paragraph, level, model, parsed, ttlMs);} catch(_){}
+        try { const ttlMs = 7*24*60*60*1000; await cache.setParagraphAnalysisCached(paragraph, requestedLevel, model, parsed, ttlMs);} catch(_){}
         return parsed;
     }
 }
@@ -274,7 +263,7 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
         const cached = await cache.getWordAnalysisCached(word, sentence, model);
         if (cached) return cached;
     } catch (_) {}
-    const prompt = `請針對下列句子中的目標詞進行語音/詞性/語義與句法作用的簡潔分析，返回嚴格 JSON（中文用香港繁體用字）：
+    const prompt = `請針對下列句子中的目標詞進行語音/詞性/語義與句法作用的簡潔分析，返回嚴格 JSON（中文請使用繁體中文符合香港中文習慣，不要廣東話。）：
 詞: "${word}"
 句: "${sentence}"
 只返回：{"word":"...","sentence":"...","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思","role":"語法作用（簡潔）"}}`;
@@ -336,7 +325,7 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
         try { await cache.setSentenceAnalysisCached(sentence, contextHash, model, parsed, 21*24*60*60*1000); } catch(_){}
         return parsed;
     } catch (e) {
-        const fbPrompt = `僅翻譯下列句子並提煉 2-3 條關鍵點（JSON，中文請使用香港繁體中文）：\n{\"sentence\":\"${sentence}\",\"translation\":\"...\",\"key_points\":[\"...\"]}`;
+        const fbPrompt = `僅翻譯下列句子並提煉 2-3 條關鍵點（JSON，中文請使用繁體中文符合香港中文習慣，不要廣東話。）：\n{\"sentence\":\"${sentence}\",\"translation\":\"...\",\"key_points\":[\"...\"]}`;
         const fb = await requestAI({
             model,
             messages: [{ role: 'user', content: fbPrompt }],
@@ -366,7 +355,7 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
         const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, model);
         if (cached) return cached;
     }
-    const prompt = `針對句子中的選中片語給出簡潔解析（JSON，中文請使用香港繁體中文）。\n請同時提供該片語的國際音標 IPA：若能提供片語整體讀音則給整體讀音；若無可靠整體讀音，可用逐詞 IPA 串接（用空格分隔）。\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n只返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
+    const prompt = `針對句子中的選中片語給出簡潔解析（JSON，中文請使用繁體中文符合香港中文習慣，不要廣東話。）。\n請同時提供該片語的國際音標 IPA：若能提供片語整體讀音則給整體讀音；若無可靠整體讀音，可用逐詞 IPA 串接（用空格分隔）。\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n只返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
     const data = await requestAI({
         model,
         messages: [{ role: 'user', content: prompt }],
@@ -468,7 +457,7 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
     const defaultPrompt = `這是一張默寫單詞的相片。請直接在圖片中擷取學生書寫內容並進行批改：
 - 請忽略被手寫劃掉（刪去線）的詞字；
 - 逐行擷取學生書寫的英文單詞或短語，保留順序與原始大小寫；若某行同時有中文，請一併擷取；
-- 以提供的「標準詞表」作為唯一正確答案來源，逐行判斷英文拼寫是否正確；若該行含中文，檢查中文是否與詞表意思一致（語義相符即可，可容許常見同義詞：如“的士/計程車”）；
+- 以提供的「標準詞表」作為唯一正確答案來源，逐行判斷英文拼寫是否正確；若該行含中文，檢查中文是否書寫正確；
 - 僅對錯誤的部分逐點指出（英/中），並給出建議修正；
 - 請返回嚴格 JSON 格式，不要任何多餘說明或程式碼框。JSON 需為：
 {

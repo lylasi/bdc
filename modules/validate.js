@@ -29,13 +29,14 @@ export function validateDetailedAnalysis(arr) {
 export function validateArticleAnalysis(obj, level = 'standard') {
   if (!isObject(obj)) return false;
   if (!isString(obj.chinese_translation)) return false;
-  // word_alignment 在 quick 與 standard/complete 都是可選；存在時需結構正確
+  // word_alignment 可選；存在時需結構正確
   if (obj.word_alignment != null && !validateWordAlignment(obj.word_alignment)) return false;
-  // quick 僅要求翻譯存在即可
-  if (level === 'quick') return true;
-  // 非 quick 需要 detailed_analysis，且需通過結構校驗
-  if (obj.detailed_analysis == null) return false;
-  return validateDetailedAnalysis(obj.detailed_analysis);
+  // 自 2025-10 起：允許所有等級採用最小輸出（僅翻譯）。
+  // 若提供 detailed_analysis，需通過結構校驗；未提供亦視為合法。
+  if (obj.detailed_analysis != null) {
+    return validateDetailedAnalysis(obj.detailed_analysis);
+  }
+  return true;
 }
 
 export function validateWordInSentence(obj) {
