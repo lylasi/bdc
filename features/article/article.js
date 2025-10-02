@@ -142,12 +142,16 @@ function openArticleImportModal() {
                 <input id="imp-url" type="url" placeholder="https://example.com/article" style="flex:1;">
                 <button id="imp-fetch" class="btn-primary">擷取</button>
             </div>
+            <label class="checkbox-inline" style="margin-top:8px;display:inline-flex;gap:6px;align-items:center;">
+                <input id="imp-ai-clean" type="checkbox"> <span>AI 清洗內容（更適合閱讀）</span>
+            </label>
             <p style="font-size:12px;opacity:.8;margin-top:6px;">將透過 r.jina.ai 嘗試擷取閱讀版內容；若失敗則改為簡易抽取。</p>
         `;
         panel.appendChild(wrap);
         const $ = (sel) => wrap.querySelector(sel);
         const urlInput = $('#imp-url');
         const fetchBtn = $('#imp-fetch');
+        const aiCleanChk = $('#imp-ai-clean');
         fetchBtn.addEventListener('click', async () => {
             const url = (urlInput.value || '').trim();
             if (!url) { alert('請輸入網址'); return; }
@@ -155,7 +159,11 @@ function openArticleImportModal() {
             try {
                 // 優先使用結構化抽取，將標題與正文分離；失敗則回退純文字
                 const res = await api.fetchArticleFromUrlStructured(url, { timeoutMs: 22000 });
-                const combined = (res.title ? (`# ${res.title}\n\n`) : '') + (res.content || '');
+                let combined = (res.title ? (`# ${res.title}\n\n`) : '') + (res.content || '');
+                if (aiCleanChk && aiCleanChk.checked) {
+                    fetchBtn.textContent = 'AI 清洗中...';
+                    try { combined = await api.aiCleanArticleMarkdown(combined, { timeoutMs: 25000 }); } catch (_) {}
+                }
                 if (dom.articleInput) dom.articleInput.value = combined.trim();
                 try { ui.closeModal(); } catch(_) {}
                 // 導入後自動聚焦輸入框，方便直接分析
@@ -1812,21 +1820,118 @@ function renderParagraph(index, englishPara, result) {
         }
     }
 
-    // Build sentence-by-sentence HTML for English to support per-sentence click
+    // 支援混合段：行內若混有圖片與文字，圖片以 <img> 呈現，其餘文字保持逐句互動
+    const toLines = (t) => String(t || '').split(/\n/);
+    const engLines = toLines(englishPara || '');
+    const zhLinesAll = toLines(processedChinese || chinese || '');
+    const hasAnyImageLine = engLines.some(isMarkdownImageLine);
+    if (hasAnyImageLine) {
+        const imgRe = /^!\[([^\]]*)\]\(([^\)]+)\)\s*$/i;
+        const engBlocks = [];
+        let buf = '';
+        let sentIdxCounter = 0;
+        const flushText = () => {
+            const segment = buf.trim();
+            buf = '';
+            if (!segment) return;
+            const sentences = sentenceSplit(segment);
+            const htmlParts = [];
+            sentences.forEach((s) => {
+                const curIdx = sentIdxCounter++;
+                let sHtml = s;
+                const sAlign = alignment.filter(p => s.includes(p.en) && (processedChinese || '').includes(p.zh));
+                const sSorted = [...sAlign].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
+                sSorted.forEach((pair) => {
+                    const pairId = `para-${index}-pair-${curIdx}-${pair.en}-${pair.zh}`.replace(/[^a-zA-Z0-9_-]/g,'_');
+                    sHtml = sHtml.replace(new RegExp(`\\b(${escapeRegex(pair.en)})\\b`, 'g'), `<span class=\"interactive-word\" data-pair-id=\"${pairId}\" data-word=\"${esc(pair.en)}\">$1</span>`);
+                });
+                const sWords = (result?.detailed_analysis || []).filter(w => w.word && s.includes(w.word)).map(w => w.word);
+                const sUnique = Array.from(new Set(sWords));
+                sUnique.forEach(word => {
+                    const marker = `data-word=\"${esc(word)}\"`;
+                    if (sHtml.includes(marker)) return;
+                    const re = new RegExp(`\\b(${escapeRegex(word)})\\b`, 'g');
+                    sHtml = sHtml.replace(re, `<span class=\"interactive-word\" data-word=\"${esc(word)}\">$1</span>`);
+                });
+                htmlParts.push(`<span class=\"sentence-wrap\">` +
+                    `<span class=\"interactive-sentence\" data-para-index=\"${index}\" data-sent-index=\"${curIdx}\" data-sentence=\"${esc(s)}\">${sHtml}</span>` +
+                    `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${curIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
+                    `<span class=\"sentence-hotzone\" data-para-index=\"${index}\" data-sent-index=\"${curIdx}\" title=\"展開/收合\"></span>` +
+                    `</span>`);
+            });
+            engBlocks.push(`<div class=\"text-block\">${htmlParts.join(' ')}</div>`);
+        };
+        engLines.forEach((l) => {
+            const m = l.trim().match(imgRe);
+            if (m) {
+                flushText();
+                const a = (m[1] || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+                const u = (m[2] || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+                engBlocks.push(`<div class=\"md-image\"><img src=\"${u}\" alt=\"${a}\" loading=\"lazy\" referrerpolicy=\"no-referrer\"></div>`);
+            } else {
+                buf += (buf ? '\n' : '') + l;
+            }
+        });
+        flushText();
+        englishDiv.innerHTML = engBlocks.join('');
+        wrapWordsInElementOnce(englishDiv);
+
+        // 中文側：將圖片行也轉為 <img>，文字走分句包裝
+        const zhBlocks = [];
+        let zhBuf = '';
+        const flushZh = () => {
+            const seg = zhBuf.trim();
+            zhBuf = '';
+            if (!seg) return;
+            const parts = sentenceSplitZh(seg);
+            const html = parts.map((z, i) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${index}\" data-sent-index=\"${i}\">${esc(z)}</span>`).join(' ');
+            zhBlocks.push(`<div class=\"text-block\">${html}</div>`);
+        };
+        zhLinesAll.forEach((l) => {
+            const m = l.trim().match(imgRe);
+            if (m) {
+                flushZh();
+                const a = (m[1] || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+                const u = (m[2] || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+                zhBlocks.push(`<div class=\"md-image\"><img src=\"${u}\" alt=\"${a}\" loading=\"lazy\" referrerpolicy=\"no-referrer\"></div>`);
+            } else {
+                zhBuf += (zhBuf ? '\n' : '') + l;
+            }
+        });
+        flushZh();
+        chineseDiv.innerHTML = zhBlocks.join('') || '<em>分析失敗</em>';
+
+        if (statusDiv) {
+            const textSpan = statusDiv.querySelector('.status-text');
+            const iconSpan = statusDiv.querySelector('.status-icon');
+            const elapsedSpan = statusDiv.querySelector('.elapsed');
+            const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
+            if (elapsedSpan && paragraphElapsedMs[index] != null) {
+                const ms = paragraphElapsedMs[index];
+                const secs = (ms / 1000).toFixed(1);
+                elapsedSpan.textContent = `(${secs}s)`;
+            }
+            statusDiv.dataset.status = 'done';
+            if (textSpan) textSpan.textContent = '完成 ✓';
+            if (iconSpan) iconSpan.textContent = '✅';
+            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = '重新獲取'; }
+        }
+        return;
+    }
+
+    // Build sentence-by-sentence HTML for English to support per-sentence click（原有路徑）
     const sentences = sentenceSplit(englishPara || '');
     const htmlParts = [];
     const paraWords = (result && Array.isArray(result.detailed_analysis)) ? result.detailed_analysis : [];
 
     sentences.forEach((s, sIdx) => {
         let sHtml = s;
-        // alignment limited to this sentence
         const sAlign = alignment.filter(p => s.includes(p.en) && (processedChinese || '').includes(p.zh));
         const sSorted = [...sAlign].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
         sSorted.forEach((pair) => {
             const pairId = `para-${index}-pair-${sIdx}-${pair.en}-${pair.zh}`.replace(/[^a-zA-Z0-9_-]/g,'_');
             sHtml = sHtml.replace(new RegExp(`\\b(${escapeRegex(pair.en)})\\b`, 'g'), `<span class=\"interactive-word\" data-pair-id=\"${pairId}\" data-word=\"${esc(pair.en)}\">$1</span>`);
         });
-        // fallback mark words from detailed_analysis
         const sWords = paraWords.filter(w => w.word && s.includes(w.word)).map(w => w.word);
         const sUnique = Array.from(new Set(sWords));
         sUnique.forEach(word => {
@@ -1837,15 +1942,13 @@ function renderParagraph(index, englishPara, result) {
         });
         htmlParts.push(`<span class=\"sentence-wrap\">` +
             `<span class=\"interactive-sentence\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" data-sentence=\"${esc(s)}\">${sHtml}</span>` +
-            `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
+            `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
             `<span class=\"sentence-hotzone\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"展開/收合\"></span>` +
             `</span>`);
     });
 
     englishDiv.innerHTML = htmlParts.join(' ');
-    // 將英文句子中的純文字 token 包成可點的 interactive-word（不影響已存在的 span）
     wrapWordsInElementOnce(englishDiv);
-    // Chinese sentence wrapping
     const zhSentences = sentenceSplitZh(processedChinese || chinese || '');
     const zhHtml = zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\">${esc(z)}</span>`).join(' ');
     const failed = processedChinese ? false : true;
