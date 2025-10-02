@@ -74,6 +74,7 @@ export function initArticle() {
         }
     });
 
+    if (dom.importArticleBtn) dom.importArticleBtn.addEventListener('click', openArticleImportModal);
     dom.showArticleLibraryBtn.addEventListener('click', openArticleLibrary);
     dom.articleLibraryModal.querySelector('.modal-close-btn').addEventListener('click', closeArticleLibrary);
     dom.articleLibraryModal.addEventListener('click', (e) => {
@@ -104,6 +105,149 @@ export function initArticle() {
 
     // 選字快速加入生詞本（文章詳解區）
     try { initArticleSelectionToWordbook(); } catch (_) {}
+}
+
+// 導入文章（網址/圖片OCR）— 使用一顆按鈕彈窗，避免佔版面
+function openArticleImportModal() {
+    const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+    const body = dom.modalBody;
+    if (!body) return;
+    body.innerHTML = '';
+
+    // 簡易標籤切換
+    const tabs = document.createElement('div');
+    tabs.style.display = 'flex';
+    tabs.style.gap = '6px';
+    tabs.style.marginBottom = '8px';
+    const btnUrl = document.createElement('button');
+    btnUrl.className = 'btn-ghost btn-mini';
+    btnUrl.textContent = '網址導入';
+    btnUrl.dataset.tab = 'url';
+    const btnOcr = document.createElement('button');
+    btnOcr.className = 'btn-ghost btn-mini';
+    btnOcr.textContent = '圖片 OCR';
+    btnOcr.dataset.tab = 'ocr';
+    tabs.appendChild(btnUrl); tabs.appendChild(btnOcr);
+    const panel = document.createElement('div');
+    panel.style.minHeight = '120px';
+    body.appendChild(tabs);
+    body.appendChild(panel);
+
+    const renderUrl = () => {
+        panel.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
+            <label for="imp-url" style="display:block;margin-bottom:6px;">貼上網址：</label>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <input id="imp-url" type="url" placeholder="https://example.com/article" style="flex:1;">
+                <button id="imp-fetch" class="btn-primary">擷取</button>
+            </div>
+            <p style="font-size:12px;opacity:.8;margin-top:6px;">將透過 r.jina.ai 嘗試擷取閱讀版內容；若失敗則改為簡易抽取。</p>
+        `;
+        panel.appendChild(wrap);
+        const $ = (sel) => wrap.querySelector(sel);
+        const urlInput = $('#imp-url');
+        const fetchBtn = $('#imp-fetch');
+        fetchBtn.addEventListener('click', async () => {
+            const url = (urlInput.value || '').trim();
+            if (!url) { alert('請輸入網址'); return; }
+            fetchBtn.disabled = true; fetchBtn.textContent = '擷取中...';
+            try {
+                // 優先使用結構化抽取，將標題與正文分離；失敗則回退純文字
+                const res = await api.fetchArticleFromUrlStructured(url, { timeoutMs: 22000 });
+                const combined = (res.title ? (`# ${res.title}\n\n`) : '') + (res.content || '');
+                if (dom.articleInput) dom.articleInput.value = combined.trim();
+                try { ui.closeModal(); } catch(_) {}
+                // 導入後自動聚焦輸入框，方便直接分析
+                try { dom.articleInput.focus(); } catch (_) {}
+            } catch (e) {
+                alert('擷取失敗：' + (e?.message || e));
+            } finally {
+                fetchBtn.disabled = false; fetchBtn.textContent = '擷取';
+            }
+        });
+    };
+
+    const renderOcr = () => {
+        panel.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
+            <label for="imp-img" style="display:block;margin-bottom:6px;">選擇圖片（可多張）：</label>
+            <input id="imp-img" type="file" accept="image/*" multiple capture="environment">
+            <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
+                <button id="imp-ocr" class="btn-primary">擷取圖片文字</button>
+                <label class="checkbox-inline"><input id="imp-merge" type="checkbox" checked> <span>合併輸出</span></label>
+            </div>
+            <p style="font-size:12px;opacity:.8;margin-top:6px;">使用 AI 視覺模型擷取圖片中文本，保留原始換行與標點。</p>
+        `;
+        panel.appendChild(wrap);
+        const $ = (sel) => wrap.querySelector(sel);
+        const fileInput = $('#imp-img');
+        const runBtn = $('#imp-ocr');
+        const mergeChk = $('#imp-merge');
+        runBtn.addEventListener('click', async () => {
+            const files = Array.from(fileInput.files || []);
+            if (!files.length) { alert('請先選擇圖片'); return; }
+            runBtn.disabled = true; runBtn.textContent = '擷取中...';
+            try {
+                const texts = [];
+                for (const f of files) {
+                    if (!f.type || !f.type.startsWith('image/')) continue;
+                    const dataUrl = await fileToDataURL(f);
+                    const resized = await downscaleImage(dataUrl, { maxW: 1600, maxH: 1600, quality: 0.9 });
+                    const text = await api.ocrExtractTextFromImage(resized || dataUrl, { temperature: 0.0 });
+                    texts.push(text || '');
+                }
+                const finalText = mergeChk.checked ? texts.join('\n\n') : texts.map((t, i) => `--- 圖片 ${i+1} ---\n${t}`).join('\n\n');
+                if (dom.articleInput) dom.articleInput.value = finalText;
+                try { ui.closeModal(); } catch(_) {}
+                try { dom.articleInput.focus(); } catch (_) {}
+            } catch (e) {
+                alert('OCR 失敗：' + (e?.message || e));
+            } finally {
+                runBtn.disabled = false; runBtn.textContent = '擷取圖片文字';
+            }
+        });
+    };
+
+    const activate = (name) => {
+        if (name === 'ocr') { btnOcr.classList.add('active'); btnUrl.classList.remove('active'); renderOcr(); }
+        else { btnUrl.classList.add('active'); btnOcr.classList.remove('active'); renderUrl(); }
+    };
+    btnUrl.addEventListener('click', () => activate('url'));
+    btnOcr.addEventListener('click', () => activate('ocr'));
+    activate('url');
+
+    try { dom.modalTitle.textContent = '導入文章'; } catch (_) {}
+    ui.openModal();
+}
+
+// 小工具：讀檔/縮圖（避免引入整個 OCR 模組以保持彈窗輕量）
+function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (e) => reject(e);
+        reader.readAsDataURL(file);
+    });
+}
+
+function downscaleImage(dataUrl, { maxW = 1600, maxH = 1600, quality = 0.9 } = {}) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            let { width, height } = img;
+            const ratio = Math.min(maxW / width, maxH / height, 1);
+            if (ratio < 1) { width = Math.round(width * ratio); height = Math.round(height * ratio); }
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            try { resolve(canvas.toDataURL('image/jpeg', quality)); } catch (_) { resolve(dataUrl); }
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+    });
 }
 
 
@@ -198,15 +342,197 @@ function persistPhraseAnalysis(selection, sentence, context, data) {
     } catch (_) { /* ignore */ }
 }
 
-function parseTitleAndParagraphs(text) {
-    const paras = text.split(/\n+/).filter(p => p.trim() !== '');
-    if (paras.length === 0) return { title: '', paragraphs: [] };
-    const first = paras[0].trim();
-    const m = first.match(/^#+\s*(.+)$/); // support '# Title' or '## Title'
-    if (m) {
-        return { title: m[1].trim(), paragraphs: paras.slice(1) };
+// Markdown helpers: detect and group table blocks so they are treated as a single paragraph.
+function isMdTableAlignLine(line) {
+    if (!line) return false;
+    // e.g. | :--- | ---: | :---: |
+    const s = line.trim();
+    const re = /^\|?\s*:?-{3,}\s*(\|\s*:?-{3,}\s*)+\|?$/;
+    return re.test(s);
+}
+
+function isMdTableStart(lines, i) {
+    // A table starts when a header row with '|' is followed by an alignment row
+    const cur = (lines[i] || '').trim();
+    const nxt = (lines[i + 1] || '').trim();
+    if (!cur || !nxt) return false;
+    // Require at least one pipe bar and at least two columns
+    if (!/\|/.test(cur)) return false;
+    const colCount = (cur.match(/\|/g) || []).length;
+    if (colCount < 2) return false;
+    return isMdTableAlignLine(nxt);
+}
+
+function collectMdTable(lines, i) {
+    const buf = [];
+    // header + align line are guaranteed by caller
+    buf.push(lines[i]);
+    buf.push(lines[i + 1]);
+    let j = i + 2;
+    while (j < lines.length) {
+        const ln = lines[j];
+        if (ln == null) break;
+        const t = ln.trim();
+        if (!t) break; // blank line ends the table
+        // Continue while the line still looks like a table row (contains at least one pipe)
+        if (/\|/.test(t)) { buf.push(ln); j += 1; continue; }
+        break;
     }
-    return { title: '', paragraphs: paras };
+    return { text: buf.join('\n'), nextIndex: j };
+}
+
+function parseTitleAndParagraphs(text) {
+    const lines = (text || '').split(/\n/);
+    const paragraphs = [];
+    let title = '';
+    // First, detect title in the very first non-empty line
+    let idx = 0;
+    while (idx < lines.length && !lines[idx].trim()) idx += 1;
+    if (idx < lines.length) {
+        const first = lines[idx].trim();
+        const m = first.match(/^#+\s*(.+)$/);
+        if (m) {
+            title = m[1].trim();
+            idx += 1;
+        }
+    }
+
+    // Walk remaining lines and group into paragraphs and table blocks
+    let i = idx;
+    while (i < lines.length) {
+        // skip consecutive blank lines
+        while (i < lines.length && !lines[i].trim()) i += 1;
+        if (i >= lines.length) break;
+        if (isMdTableStart(lines, i)) {
+            const { text: tableBlock, nextIndex } = collectMdTable(lines, i);
+            paragraphs.push(tableBlock);
+            i = nextIndex;
+            continue;
+        }
+        // Normal paragraph: collect until blank line OR until a table start
+        const buf = [];
+        while (i < lines.length) {
+            // stop when next non-empty line begins a table
+            if (isMdTableStart(lines, i)) break;
+            const ln = lines[i];
+            if (ln == null) break;
+            const t = ln.trim();
+            if (!t) { i += 1; break; }
+            buf.push(ln);
+            i += 1;
+        }
+        const p = buf.join('\n').trim();
+        if (p) paragraphs.push(p);
+    }
+    return { title, paragraphs };
+}
+
+// Detect if a multi-line text itself begins with a Markdown table (header + align row)
+function isMarkdownTableStart(text) {
+    if (!text) return false;
+    const lines = String(text).split(/\n/);
+    // find first non-empty
+    let i = 0; while (i < lines.length && !lines[i].trim()) i += 1;
+    if (i >= lines.length) return false;
+    return isMdTableStart(lines, i);
+}
+
+function splitMdRowCells(line) {
+    if (!line) return [];
+    let arr = line.split('|');
+    // drop leading/trailing empty caused by edge pipes
+    if (arr.length && arr[0].trim() === '') arr = arr.slice(1);
+    if (arr.length && arr[arr.length - 1].trim() === '') arr = arr.slice(0, -1);
+    return arr.map(s => s.trim());
+}
+
+function parseMarkdownTableFromText(text) {
+    const lines = String(text).split(/\n/).filter(l => l.trim() !== '');
+    if (lines.length < 2) return null;
+    if (!isMarkdownTableStart(text)) return null;
+    const header = splitMdRowCells(lines[0]);
+    // Skip align line at index 1
+    const rows = [];
+    for (let i = 2; i < lines.length; i++) {
+        const t = lines[i].trim();
+        if (!t || !/\|/.test(t)) continue;
+        rows.push(splitMdRowCells(lines[i]));
+    }
+    return { headers: header, rows };
+}
+
+function escapeHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+}
+
+// Return HTML that wraps words in a string with <span class="interactive-word" ...>
+function wrapWordsInTextHTML(text) {
+    const wordRe = /[A-Za-z][A-Za-z'’-]*/g;
+    if (!text || !wordRe.test(text)) return escapeHtml(text || '');
+    wordRe.lastIndex = 0;
+    let out = '';
+    let idx = 0;
+    let m;
+    while ((m = wordRe.exec(text))) {
+        const before = text.slice(idx, m.index);
+        if (before) out += escapeHtml(before);
+        const w = m[0];
+        const escW = escapeHtml(w);
+        out += `<span class=\"interactive-word\" data-word=\"${escW}\">${escW}</span>`;
+        idx = m.index + w.length;
+    }
+    const tail = text.slice(idx);
+    if (tail) out += escapeHtml(tail);
+    return out;
+}
+
+// 將 Markdown 表格成對渲染（英/中），並在英文單元格內提供句/詞互動標記。
+function renderMarkdownTablePairHTML(engText, zhText, paraIdx) {
+    const te = parseMarkdownTableFromText(engText);
+    if (!te) {
+        return {
+            eng: `<div class=\"md-fallback\">${escapeHtml(engText || '')}</div>`,
+            zh: `<div>${escapeHtml(zhText || '')}</div>`,
+            lastSentIndex: -1
+        };
+    }
+    const tz = parseMarkdownTableFromText(zhText);
+    const headE = `<thead><tr>${te.headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
+    let sIdx = 0;
+    const bodyE = `<tbody>${te.rows.map((r) => {
+        const tds = r.map((cell) => {
+            const sentence = String(cell || '').trim();
+            const inner = `<span class=\"sentence-wrap\">`
+                + `<span class=\"interactive-sentence\" data-para-index=\"${paraIdx}\" data-sent-index=\"${sIdx}\" data-sentence=\"${escapeHtml(sentence)}\">${wrapWordsInTextHTML(sentence)}</span>`
+                + `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${paraIdx}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>`
+                + `</span>`;
+            const html = `<td>${inner}</td>`;
+            sIdx += 1;
+            return html;
+        }).join('');
+        return `<tr>${tds}</tr>`;
+    }).join('')}</tbody>`;
+    const htmlE = `<div class=\"md-table\"><table>${headE}${bodyE}</table></div>`;
+
+    // 中文表格若可解析，按相同單元格順序對齊 sent-index；否則顯示純文字
+    let htmlZ = `<div>${escapeHtml(zhText || '')}</div>`;
+    if (tz && tz.rows && tz.rows.length) {
+        let zi = 0;
+        const headZ = `<thead><tr>${tz.headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
+        const bodyZ = `<tbody>${tz.rows.map((r) => {
+            const tds = r.map((cell) => {
+                const sentence = String(cell || '').trim();
+                const inner = `<span class=\"interactive-sentence-zh\" data-para-index=\"${paraIdx}\" data-sent-index=\"${zi}\">${escapeHtml(sentence)}</span>`;
+                const html = `<td>${inner}</td>`;
+                zi += 1;
+                return html;
+            }).join('');
+            return `<tr>${tds}</tr>`;
+        }).join('')}</tbody>`;
+        htmlZ = `<div class=\"md-table\"><table>${headZ}${bodyZ}</table></div>`;
+    }
+
+    return { eng: htmlE, zh: htmlZ, lastSentIndex: sIdx - 1 };
 }
 
 async function analyzeArticle() {
@@ -376,7 +702,8 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
 
     const { title, paragraphs: englishParagraphsRaw } = parseTitleAndParagraphs(originalArticle);
     const englishParagraphs = title ? [title, ...englishParagraphsRaw] : englishParagraphsRaw;
-    const chineseParagraphs = (chinese_translation || '').split(/\n+/).filter(p => p.trim() !== '');
+    // 與英文段落一一對齊，優先使用 paragraph_analysis 的逐段結果，避免表格被拆行
+    const chineseParagraphs = englishParagraphs.map((_, i) => (paragraph_analysis && paragraph_analysis[i] && paragraph_analysis[i].chinese_translation) || '');
     const escapeRegex = (string) => string ? string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') : '';
     const stripSpanTags = (s) => (s || '').replace(/<\/?span[^>]*>/g, '');
     const escapeAttr = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
@@ -413,7 +740,21 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             processedChinese = processedChinese.replace(new RegExp(`(${escapeRegex(pair.zh)})`, 'g'), `<span class=\"interactive-word\" data-pair-id=\"${pairId}\">$1</span>`);
         });
 
-        // sentence-level wrapping for full render
+        // 若是 Markdown 表格段落，直接以表格渲染
+        if (isMarkdownTableStart(englishPara)) {
+            const pair = renderMarkdownTablePairHTML(englishPara, chinesePara, i);
+            const engTableHtml = pair.eng;
+            const zhTableHtml = pair.zh;
+            const isTitle = !!title && i === 0;
+            htmlContent += `
+                <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}\" data-paragraph-index=\"${i}\" data-english=\"${escapeAttr(englishPara)}\">
+                    <div class=\"paragraph-english\" data-markdown-table=\"1\">${engTableHtml}</div>
+                    <div class=\"paragraph-chinese\" data-markdown-table=\"1\">${zhTableHtml}</div>
+                </div>`;
+            continue;
+        }
+
+        // sentence-level wrapping for full render（非表格）
         const sentences = sentenceSplit(englishPara || '');
         const paraWords = (paragraph_analysis && paragraph_analysis[i]?.detailed_analysis) || [];
         const englishHtml = sentences.map((sText, sIdx) => {
@@ -453,7 +794,11 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
     
     dom.articleAnalysisContainer.innerHTML = htmlContent;
     // 包裝英文單詞為可點 token（一次性）
-    dom.articleAnalysisContainer.querySelectorAll('.paragraph-english').forEach(wrapWordsInElementOnce);
+    dom.articleAnalysisContainer.querySelectorAll('.paragraph-english').forEach(el => {
+        // 表格不做 token 包裝以免破壞結構
+        if (el.querySelector('table') || el.dataset.markdownTable === '1') { el.dataset.tokensWrapped = '1'; return; }
+        wrapWordsInElementOnce(el);
+    });
     dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(detailed_analysis || []);
 }
 
@@ -897,13 +1242,20 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
     const isHotzone = rawTarget?.closest && rawTarget.closest('.sentence-hotzone');
     const isWord = rawTarget?.closest && rawTarget.closest('.interactive-word');
     if (wrap && !isIcon && !isWord) {
-        // 若點擊來源位於已展開的句卡內部，則不觸發句子層級的開合
-        // 這能避免在卡片中選字或操作時誤收合
-        if (rawTarget.closest && rawTarget.closest('.sentence-card')) return;
-        // 如果正在選字，避免誤觸
-        try { const sel = window.getSelection && window.getSelection(); if (sel && sel.toString && sel.toString().trim()) return; } catch(_) {}
-        const sent = wrap.querySelector('.interactive-sentence');
-        if (sent) { ev.stopPropagation(); await toggleSentenceCard(sent); return; }
+        // 若點擊來源位於已展開的句卡內部，則不觸發句子層級的開合。
+        // 注意：這裡不要 `return` 整個處理函式，否則卡片內的委派按鈕（如「詳解」）會失效。
+        const insideCard = rawTarget.closest && rawTarget.closest('.sentence-card');
+        if (!insideCard) {
+            // 非卡片內點擊 → 視為點擊句子本身，進行開合。
+            // 如果正在選字，避免誤觸
+            try {
+                const sel = window.getSelection && window.getSelection();
+                if (sel && sel.toString && sel.toString().trim()) return; // 仍允許提前返回（僅針對句子開合）
+            } catch (_) {}
+            const sent = wrap.querySelector('.interactive-sentence');
+            if (sent) { ev.stopPropagation(); await toggleSentenceCard(sent); return; }
+        }
+        // insideCard: 繼續往下讓委派邏輯處理（例如 .chunk-explain「詳解」按鈕）
     }
     if (isHotzone) {
         const paraIdx = parseInt(rawTarget.getAttribute('data-para-index'), 10) || 0;
@@ -968,6 +1320,57 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
     const el = dom.articleAnalysisContainer.querySelector(`.interactive-sentence[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
     if (el) await toggleSentenceCard(el);
 });
+
+// 句子詳解在「彈窗模式」下也需要支援片語「詳解」按鈕的委派處理
+try {
+    dom.appModal.addEventListener('click', async (ev) => {
+        const rawTarget = ev.target && ev.target.nodeType === 3 ? ev.target.parentElement : ev.target;
+        const chunkBtn = rawTarget?.closest && rawTarget.closest('.chunk-explain');
+        if (!chunkBtn) return;
+        ev.stopPropagation();
+        ev.preventDefault();
+        const card = chunkBtn.closest('.sentence-card');
+        if (!card) return;
+        const phrase = chunkBtn.getAttribute('data-phrase') || '';
+        if (!phrase) return;
+        const sentence = card.dataset.sentence || '';
+        const context = card.dataset.context || '';
+        const paraIdx = parseInt(card.dataset.paraIdx, 10) || 0;
+        const sentIdx = parseInt(card.dataset.sentIdx, 10) || 0;
+        chunkBtn.disabled = true; chunkBtn.textContent = '詳解中...';
+        try {
+            const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
+            const box = document.createElement('div');
+            box.className = 'phrase-explain-box';
+            box.style.margin = '4px 0 4px 50px';
+            box.style.fontSize = '12px';
+            const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+            const ex = [];
+            try { const arr = res?.analysis?.examples; if (Array.isArray(arr)) arr.slice(0,2).forEach(x => ex.push(x)); } catch (_) {}
+            box.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+                               <div><strong>${esc(res.selection || phrase)}</strong>：${esc(res.analysis?.meaning || '')}
+                                   ${res.analysis?.usage ? `<div>用法：${esc(res.analysis.usage)}</div>`:''}
+                                   ${ex.length? '<div>' + ex.map(x=>`<div>• ${esc(x.en)} — ${esc(x.zh)}</div>`).join('') + '</div>' : ''}
+                               </div>
+                               <button class="phrase-close" style="font-size:12px;">關閉</button>
+                             </div>`;
+            const chunkItem = chunkBtn.closest('.chunk-item');
+            if (chunkItem) chunkItem.after(box); else card.appendChild(box);
+            try { persistPhraseAnalysis(phrase, sentence, context, res); } catch (_) {}
+            applySentenceDim(paraIdx, sentIdx, true);
+            const closeBtn = box.querySelector('.phrase-close');
+            if (closeBtn) closeBtn.addEventListener('click', () => {
+                box.remove();
+                if (!card.querySelector('.phrase-explain-box')) applySentenceDim(paraIdx, sentIdx, false);
+            });
+        } catch (err) {
+            console.warn('片語詳解請求失敗(Modal):', err);
+            alert('解析失敗，稍後再試');
+        } finally {
+            chunkBtn.disabled = false; chunkBtn.textContent = '詳解';
+        }
+    });
+} catch (_) {}
 
 // Tooltip actions delegation: phrase analysis buttons
 dom.analysisTooltip.addEventListener('click', async (e) => {
@@ -1298,6 +1701,40 @@ function renderParagraph(index, englishPara, result) {
 
     const stripSpanTags = (s) => (s || '').replace(/<\/?span[^>]*>/g, '');
     let processedChinese = stripSpanTags(chinese || '');
+
+    // 若是 Markdown 表格，直接以表格方式渲染並跳過逐句標註
+    if (isMarkdownTableStart(englishPara)) {
+        if (englishDiv || chineseDiv) {
+            const zh = cleanChinese(stripSpanTags(chinese || ''));
+            const pair = renderMarkdownTablePairHTML(englishPara, zh, index);
+            if (englishDiv) {
+                englishDiv.innerHTML = pair.eng;
+                englishDiv.dataset.markdownTable = '1';
+                englishDiv.dataset.tokensWrapped = '1';
+            }
+            if (chineseDiv) {
+                chineseDiv.innerHTML = pair.zh;
+                chineseDiv.dataset.markdownTable = '1';
+            }
+        }
+        // 更新狀態列
+        if (statusDiv) {
+            const textSpan = statusDiv.querySelector('.status-text');
+            const iconSpan = statusDiv.querySelector('.status-icon');
+            const elapsedSpan = statusDiv.querySelector('.elapsed');
+            const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
+            if (elapsedSpan && paragraphElapsedMs[index] != null) {
+                const ms = paragraphElapsedMs[index];
+                const secs = (ms / 1000).toFixed(1);
+                elapsedSpan.textContent = `(${secs}s)`;
+            }
+            statusDiv.dataset.status = 'done';
+            if (textSpan) textSpan.textContent = '完成 ✓';
+            if (iconSpan) iconSpan.textContent = '✅';
+            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = '重新獲取'; }
+        }
+        return;
+    }
 
     // Build sentence-by-sentence HTML for English to support per-sentence click
     const sentences = sentenceSplit(englishPara || '');

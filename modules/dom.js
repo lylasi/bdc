@@ -79,6 +79,7 @@ export const analysisTooltip = document.getElementById('word-analysis-tooltip');
 // --- 文章详解页面 ---
 export const articleInput = document.getElementById('article-input');
 export const analyzeArticleBtn = document.getElementById('analyze-article-btn');
+export const importArticleBtn = document.getElementById('import-article-btn');
 export const retryFailedParagraphsBtn = document.getElementById('retry-failed-paragraphs-btn');
 export const articleAnalysisContainer = document.getElementById('article-analysis-container');
 export const articleHistorySelect = document.getElementById('article-history-select');
@@ -129,6 +130,7 @@ export const ocrCaptureBtn = document.getElementById('ocr-capture-btn');
 export const ocrCloseCameraBtn = document.getElementById('ocr-close-camera-btn');
 export const ocrVideo = document.getElementById('ocr-video');
 export const ocrCanvas = document.getElementById('ocr-canvas');
+// 預覽大圖已移除（點縮圖直接 lightbox），保留此選擇器將為 null
 export const ocrPreview = document.getElementById('ocr-preview');
 export const ocrRunBtn = document.getElementById('ocr-run-btn');
 export const ocrClearBtn = document.getElementById('ocr-clear-btn');
