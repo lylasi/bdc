@@ -550,6 +550,22 @@ function isMarkdownImageLine(line) {
     return /^!\[[^\]]*\]\([^\)]+\)\s*$/i.test(s);
 }
 
+// Detect if the whole paragraph is composed only of Markdown image lines (or blank lines)
+function isPureMarkdownImageParagraph(text) {
+    const lines = String(text || '').split(/\n/).map(l => l.trim());
+    const nonEmpty = lines.filter(l => l.length > 0);
+    if (!nonEmpty.length) return false;
+    return nonEmpty.every(isMarkdownImageLine);
+}
+
+// Strip image lines from paragraph when sending to AI (keep text only)
+function stripMarkdownImagesFromText(text) {
+    const lines = String(text || '').split(/\n/);
+    const kept = lines.filter(l => !isMarkdownImageLine(l));
+    // collapse 3+ blank lines to 2
+    return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 // If a paragraph consists solely of image lines (and blank lines), render them as <img> blocks
 function renderMarkdownImagesPairHTML(engText, zhText) {
     const toLines = (t) => String(t || '').split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
@@ -651,7 +667,16 @@ async function analyzeArticle() {
                 // start timing for this paragraph
                 paragraphStartTime[idx] = Date.now();
                 const cached = paragraphCache.get(text);
-                const result = cached || await api.analyzeParagraph(text, { timeoutMs, signal: currentAnalysisAbort.signal, level: 'quick' });
+                let result;
+                if (cached) {
+                    result = cached;
+                } else if (isPureMarkdownImageParagraph(text)) {
+                    // 純圖片段落：不送 AI；中文留空，僅顯示一次圖片
+                    result = { chinese_translation: '', word_alignment: [], detailed_analysis: [] };
+                } else {
+                    const textForAI = stripMarkdownImagesFromText(text);
+                    result = await api.analyzeParagraph(textForAI || text, { timeoutMs, signal: currentAnalysisAbort.signal, level: 'quick' });
+                }
                 if (!cached) paragraphCache.set(text, result);
                 paragraphAnalyses[idx] = result;
                 // Incremental DOM update
@@ -1797,8 +1822,9 @@ function renderParagraph(index, englishPara, result) {
                 englishDiv.dataset.markdownImages = '1';
                 englishDiv.dataset.tokensWrapped = '1';
             }
+            // 圖片只顯示一次；中文側不重複顯示
             if (chineseDiv) {
-                chineseDiv.innerHTML = pairImgs.zh;
+                chineseDiv.innerHTML = '';
                 chineseDiv.dataset.markdownImages = '1';
             }
             if (statusDiv) {
@@ -1876,7 +1902,7 @@ function renderParagraph(index, englishPara, result) {
         englishDiv.innerHTML = engBlocks.join('');
         wrapWordsInElementOnce(englishDiv);
 
-        // 中文側：將圖片行也轉為 <img>，文字走分句包裝
+        // 中文側：不重複顯示圖片；僅對文字分句包裝
         const zhBlocks = [];
         let zhBuf = '';
         const flushZh = () => {
@@ -1890,10 +1916,8 @@ function renderParagraph(index, englishPara, result) {
         zhLinesAll.forEach((l) => {
             const m = l.trim().match(imgRe);
             if (m) {
+                // 忽略圖片；不在中文側重複顯示
                 flushZh();
-                const a = (m[1] || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-                const u = (m[2] || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-                zhBlocks.push(`<div class=\"md-image\"><img src=\"${u}\" alt=\"${a}\" loading=\"lazy\" referrerpolicy=\"no-referrer\"></div>`);
             } else {
                 zhBuf += (zhBuf ? '\n' : '') + l;
             }
