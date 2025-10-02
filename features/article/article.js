@@ -77,10 +77,20 @@ export function initArticle() {
         // 文章圖片：點擊開啟燈箱（沿用 OCR lightbox overlay）
         const img = rawTarget?.closest && rawTarget.closest('.md-image img');
         if (img) {
+            const sources = Array.from(dom.articleAnalysisContainer.querySelectorAll('.md-image img')).map(x => x.src);
+            const uniq = Array.from(new Set(sources));
+            let idx = Math.max(0, uniq.indexOf(img.src));
             const overlay = document.createElement('div');
             overlay.className = 'lightbox-overlay';
-            overlay.innerHTML = `<img src="${img.src}" alt="preview">`;
-            overlay.addEventListener('click', () => overlay.remove());
+            overlay.innerHTML = `<img src="${uniq[idx]}" alt="preview">`;
+            const onClose = () => { document.removeEventListener('keydown', onKey); overlay.remove(); };
+            const onKey = (ev) => {
+                if (ev.key === 'Escape') { onClose(); }
+                else if (ev.key === 'ArrowLeft') { idx = (idx - 1 + uniq.length) % uniq.length; overlay.querySelector('img').src = uniq[idx]; }
+                else if (ev.key === 'ArrowRight') { idx = (idx + 1) % uniq.length; overlay.querySelector('img').src = uniq[idx]; }
+            };
+            overlay.addEventListener('click', onClose);
+            document.addEventListener('keydown', onKey);
             document.body.appendChild(overlay);
             return;
         }
@@ -169,6 +179,9 @@ function openArticleImportModal() {
                 <label class="checkbox-inline" style="display:inline-flex;gap:6px;align-items:center;">
                     <input id="imp-ai-clean" type="checkbox"> <span>AI 清洗內容（更適合閱讀）</span>
                 </label>
+                <label class="checkbox-inline" style="display:inline-flex;gap:6px;align-items:center;">
+                    <input id="imp-ai-keep-images" type="checkbox" checked> <span>清洗時保留圖片</span>
+                </label>
                 <div id="imp-ai-model-row" style="display:inline-flex;gap:6px;align-items:center;">
                     <label for="imp-ai-clean-model" style="white-space:nowrap;">清洗模型:</label>
                     <select id="imp-ai-clean-model" style="max-width:360px;">
@@ -199,6 +212,7 @@ function openArticleImportModal() {
         const fetchBtn = $('#imp-fetch');
         const aiCleanChk = $('#imp-ai-clean');
         const modelSelect = $('#imp-ai-clean-model');
+        const keepImagesChk = $('#imp-ai-keep-images');
         if (modelSelect) modelSelect.value = defaultModel || '';
         const previewBox = $('#imp-preview');
         const beforeEl = $('#imp-before');
@@ -224,7 +238,7 @@ function openArticleImportModal() {
                     fetchBtn.textContent = 'AI 清洗中...';
                     let after = before;
                     try {
-                        after = await api.aiCleanArticleMarkdown(before, { timeoutMs: 25000, model: modelSelect && modelSelect.value });
+                        after = await api.aiCleanArticleMarkdown(before, { timeoutMs: 25000, model: modelSelect && modelSelect.value, keepImages: keepImagesChk ? !!keepImagesChk.checked : true });
                     } catch (_) { /* keep before */ }
                     if (beforeEl) beforeEl.textContent = before;
                     if (afterEl) afterEl.textContent = after;

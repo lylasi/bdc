@@ -300,6 +300,7 @@ function showGlobalSettingsModal() {
           <input id="gs-model-word" type="text" placeholder="wordAnalysis，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.wordAnalysis)||'')}">
           <input id="gs-model-sentence" type="text" placeholder="sentenceChecking，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.sentenceChecking)||'')}">
           <input id="gs-model-article" type="text" placeholder="articleAnalysis，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.articleAnalysis)||'')}">
+          <input id="gs-model-clean" type="text" placeholder="articleCleanup（AI 清洗），例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.articleCleanup)||'')}">
           <input id="gs-model-example" type="text" placeholder="exampleGeneration，例如 gpt-4.1-nano" value="${escapeHtml((settings.models&&settings.models.exampleGeneration)||'')}">
         </div>
       </div>
@@ -324,6 +325,7 @@ function showGlobalSettingsModal() {
         wordAnalysis: $('#gs-model-word').value.trim(),
         sentenceChecking: $('#gs-model-sentence').value.trim(),
         articleAnalysis: $('#gs-model-article').value.trim(),
+        articleCleanup: $('#gs-model-clean').value.trim(),
         exampleGeneration: $('#gs-model-example').value.trim()
       };
       // 移除空鍵，避免污染設置
