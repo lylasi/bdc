@@ -736,7 +736,7 @@ export async function fetchArticleFromUrlStructured(url, opts = {}) {
  * 返回乾淨的 Markdown 純文字。
  */
 export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
-    const { timeoutMs = 25000, temperature = 0.1, signal, model: modelOverride } = opts;
+    const { timeoutMs = 25000, temperature = 0.1, signal, model: modelOverride, keepImages = true } = opts;
     const s = loadGlobalSettings();
     const model = modelOverride
       || (s?.ai?.models && (s.ai.models.articleCleanup || s.ai.models.articleAnalysis))
@@ -744,7 +744,7 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
 
     const prompt = `你會收到一篇以 Markdown 表示的英文文章（可能含標題、清單、表格、圖片）。請清洗並輸出更適合閱讀的 Markdown：
 - 僅保留正文與必要的標題/段落/清單/表格；移除網站導航、語言切換、社交按鈕、推薦卡片、廣告、版權宣告、留言模組、追蹤用圖片或計數器。
-- 保留 Markdown 圖片行（例如：![alt](URL)），不要翻譯或改寫 alt，也不要內嵌說明；若圖片非內容相關或為社交/追蹤橫幅，請移除。
+- ${keepImages ? '保留 Markdown 圖片行（例如：![alt](URL)），不要翻譯或改寫 alt，也不要內嵌說明；若圖片非內容相關或為社交/追蹤橫幅，請移除。' : '移除所有 Markdown 圖片行（例如：![alt](URL)），不要以連結或描述替代圖片。'}
 - 保持原文語言與內容，不要翻譯、不新增解說；僅做結構整理、去噪聲、合併多餘空行，統一為合理段落。
 - 若沒有明確主標題而開頭存在明顯標題，轉為一行 ATX 標題（# Title）。
 - 嚴禁輸出任何額外解釋或代碼區塊標記；只輸出清洗後的 Markdown 純文字。`;
