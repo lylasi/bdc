@@ -52,6 +52,7 @@ export const dictationResult = document.getElementById('dictation-result');
 export const dictationBookSelector = document.getElementById('dictation-book-selector');
 export const listenOnlyMode = document.getElementById('listen-only-mode');
 export const dictationPractice = document.querySelector('.dictation-practice');
+export const dictationAIGradeBtn = document.getElementById('dictation-ai-grade-btn');
 export const dictationProgressContainer = document.getElementById('dictation-progress-container');
 export const dictationProgressBar = document.getElementById('dictation-progress-bar');
 export const dictationProgressText = document.getElementById('dictation-progress-text');
@@ -120,6 +121,25 @@ export const learningSection = document.getElementById('learning-section');
 export const dictationSection = document.getElementById('dictation-section');
 export const quizSection = document.getElementById('quiz-section');
 export const articleSection = document.getElementById('article-section');
+// --- 圖片 OCR 頁面 ---
+export const ocrSection = document.getElementById('ocr-section');
+export const ocrImageInput = document.getElementById('ocr-image-input');
+export const ocrOpenCameraBtn = document.getElementById('ocr-open-camera-btn');
+export const ocrCaptureBtn = document.getElementById('ocr-capture-btn');
+export const ocrCloseCameraBtn = document.getElementById('ocr-close-camera-btn');
+export const ocrVideo = document.getElementById('ocr-video');
+export const ocrCanvas = document.getElementById('ocr-canvas');
+export const ocrPreview = document.getElementById('ocr-preview');
+export const ocrRunBtn = document.getElementById('ocr-run-btn');
+export const ocrClearBtn = document.getElementById('ocr-clear-btn');
+export const ocrCameraArea = document.getElementById('ocr-camera-area');
+export const ocrResult = document.getElementById('ocr-result');
+export const ocrPreviewList = document.getElementById('ocr-preview-list');
+export const ocrHint = document.getElementById('ocr-hint');
+export const ocrMergeOutput = document.getElementById('ocr-merge-output');
+export const ocrHintPreset = document.getElementById('ocr-hint-preset');
+export const ocrPreferCamera = document.getElementById('ocr-prefer-camera');
+export const ocrModelSelect = document.getElementById('ocr-model-select');
 
 // --- 通用 Modal ---
 export const appModal = document.getElementById('app-modal');

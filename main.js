@@ -8,6 +8,7 @@ import { initLearning, populateLearningBookSelector, populateWordSelect } from '
 import { initDictation, populateDictationBookSelector, togglePauseDictation } from './features/dictation/dictation.js';
 import { initQuiz, populateQuizBookSelector } from './features/quiz/quiz.js';
 import { initArticle } from './features/article/article.js';
+import { initOCR } from './features/ocr/ocr.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
 import { initSync } from './features/sync/sync.js';
 
@@ -25,7 +26,10 @@ const MODULE_ALIAS_TO_BUTTON_ID = {
     quiz: 'quiz-btn',
     a: 'article-btn',
     article: 'article-btn',
-    qa: 'qa-btn'
+    qa: 'qa-btn',
+    i: 'ocr-btn',
+    img: 'ocr-btn',
+    ocr: 'ocr-btn'
 };
 
 const BUTTON_ID_TO_PRIMARY_ALIAS = {
@@ -34,7 +38,8 @@ const BUTTON_ID_TO_PRIMARY_ALIAS = {
     'dictation-btn': 'd',
     'quiz-btn': 'q',
     'article-btn': 'a',
-    'qa-btn': 'qa'
+    'qa-btn': 'qa',
+    'ocr-btn': 'ocr'
 };
 
 function setupNavigation() {
@@ -77,6 +82,9 @@ function setupNavigation() {
                     break;
                 case 'qa-btn':
                     showQAModule();
+                    break;
+                case 'ocr-btn':
+                    dom.ocrSection.classList.add('active');
                     break;
             }
 
@@ -127,6 +135,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initDictation();
     initQuiz();
     initArticle();
+    initOCR();
     await initQA();
     initSync();
     

@@ -31,6 +31,10 @@
                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-text" viewBox="0 0 16 16"><path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>
                    <span class="nav-text" data-full-text="文章詳解" data-short-text="文">文章詳解</span>
                </button>
+               <button id="ocr-btn" class="nav-btn">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 2a.5.5 0 0 1 .416.223L11.5 3h2A1.5 1.5 0 0 1 15 4.5v7A1.5 1.5 0 0 1 13.5 13h-11A1.5 1.5 0 0 1 1 11.5v-7A1.5 1.5 0 0 1 2.5 3h2l.584-.777A.5.5 0 0 1 5.5 2h5z"/><path d="M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+                   <span class="nav-text" data-full-text="圖片識別" data-short-text="圖">圖片識別</span>
+               </button>
                <button id="quiz-btn" class="nav-btn">
                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2-square" viewBox="0 0 16 16"><path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5H3z"/><path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/></svg>
                    <span class="nav-text" data-full-text="隨堂測驗" data-short-text="測">隨堂測驗</span>
@@ -183,18 +187,19 @@
                                     <button id="replay-dictation-btn" class="btn-secondary" style="display: none;">重播</button>
                                     <button id="prev-dictation-btn" class="btn-secondary nav-large" style="display: none;">⬅️ 上一個</button>
                                     <button id="next-dictation-btn" class="btn-secondary nav-large" style="display: none;">下一個 ➡️</button>
+                                    <button id="dictation-ai-grade-btn" class="btn-secondary">AI 批改手寫</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="dictation-practice">
-                            <h3>默寫練習</h3>
-                            <div id="dictation-word-display" class="word-display-box"></div>
-                            <div class="input-group">
-                                <input type="text" id="dictation-input" class="input-field" placeholder="請輸入聽到的單詞">
-                                <button id="check-dictation-btn" class="btn-primary">檢查</button>
+                            <div class="dictation-practice">
+                                <h3>默寫練習</h3>
+                                <div id="dictation-word-display" class="word-display-box"></div>
+                                <div class="input-group">
+                                    <input type="text" id="dictation-input" class="input-field" placeholder="請輸入聽到的單詞">
+                                    <button id="check-dictation-btn" class="btn-primary">檢查</button>
+                                </div>
+                                <div id="dictation-result" class="result-box"></div>
                             </div>
-                            <div id="dictation-result" class="result-box"></div>
-                        </div>
                     </div>
                 </div>
             </section>
@@ -235,6 +240,89 @@
                             <button id="check-sentence-btn">檢查</button>
                         </div>
                         <div id="sentence-feedback"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 圖片 OCR 頁面 -->
+            <section id="ocr-section" class="section">
+                <h2>圖片文字識別（OCR）</h2>
+                <div class="ocr-layout">
+                    <div class="ocr-left">
+                        <div class="ocr-form">
+                            <div class="form-row">
+                                <label for="ocr-image-input">上傳圖片：</label>
+                                <div class="field-inline">
+                                    <input id="ocr-image-input" type="file" accept="image/*" multiple>
+                                    <label class="checkbox-inline">
+                                        <input type="checkbox" id="ocr-prefer-camera">
+                                        <span>使用相機優先</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-row actions">
+                                <span class="label-spacer"></span>
+                                <div class="btn-row">
+                                    <button id="ocr-open-camera-btn" class="btn-secondary">開啟相機</button>
+                                    <button id="ocr-run-btn" class="btn-primary">識別文字</button>
+                                    <button id="ocr-clear-btn" class="btn-secondary">清除</button>
+                                </div>
+                            </div>
+
+                            <details class="ocr-advanced">
+                                <summary>進階選項</summary>
+                                <div class="adv-grid">
+                                    <div class="form-row">
+                                        <label for="ocr-hint">提示詞：</label>
+                                        <textarea id="ocr-hint" rows="3" placeholder="例：只擷取右下角藍色對話框文字；或：只輸出圖片中的英文單字與數字，不要其它UI元素"></textarea>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="ocr-hint-preset">常用模板：</label>
+                                        <div class="field-inline">
+                                            <select id="ocr-hint-preset">
+                                                <option value="">常用模板...</option>
+                                                <option value="只擷取圖片中右下角藍色對話框的所有文字，按原有換行輸出；忽略其它區域與UI元素。">只擷取：右下角藍色對話框</option>
+                                                <option value="僅輸出圖片中的英文與阿拉伯數字，保留原始換行；忽略圖示、按鈕、介面元素與背景雜訊。">只擷取：英文與數字</option>
+                                                <option value="請將正文完整轉寫為純文字，保留原始換行與標點；刪除頁碼、分隔線、圖示與介面文字。">正文轉寫，移除UI/雜訊</option>
+                                                <option value="若是題目圖片，僅擷取題幹與選項文字，依序以 A)、B)、C)、D) 標示；不要輸出解析或多餘內容。">試題模式：題幹+選項</option>
+                                                <option value="輸出為 Markdown 清單：每個段落作為一個條目，若有小標題請使用二級標題。">輸出格式：Markdown 清單</option>
+                                                <option value="這是一張默寫單詞的相片。請先逐行擷取學生書寫的英文單詞或短語，保留順序與原始大小寫。接著檢查每行拼寫是否正確，如果有中文意思，也要檢查中文是否書寫正確：若正確請在該行末標註 (正確)；若錯誤請在該行末標註 (錯→建議：correct)。只輸出純文字清單，如：1) word (正確)；2) wrd (錯→建議：word)。不要翻譯，不要加入多餘解釋或格式。">小學生默寫單詞：檢查拼寫</option>
+                                            </select>
+                                            <span class="hint">選擇模板會附加到提示詞</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="ocr-model-select">OCR 模型：</label>
+                                        <select id="ocr-model-select"></select>
+                                    </div>
+                                    <div class="form-row">
+                                        <label>&nbsp;</label>
+                                        <label class="checkbox-inline"><input type="checkbox" id="ocr-merge-output"> 合併輸出為一段（多張圖片時）</label>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <div id="ocr-camera-area" class="camera-area hidden">
+                                <video id="ocr-video" autoplay playsinline></video>
+                                <div class="btn-row">
+                                    <button id="ocr-capture-btn" class="btn-primary">拍照</button>
+                                    <button id="ocr-close-camera-btn" class="btn-secondary">關閉相機</button>
+                                </div>
+                                <canvas id="ocr-canvas" class="hidden"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ocr-right">
+                        <div class="preview-pane">
+                            <div class="thumbs" id="ocr-preview-list"></div>
+                            <img id="ocr-preview" alt="預覽" class="hidden" />
+                        </div>
+                        <div class="result-pane">
+                            <label for="ocr-result">識別結果</label>
+                            <textarea id="ocr-result" class="mono" rows="12" placeholder="識別後的文字會顯示在此處"></textarea>
+                        </div>
                     </div>
                 </div>
             </section>

@@ -122,6 +122,40 @@ export function loadAnalyzedArticles() {
     state.setAnalyzedArticles(articles);
 }
 
+// --- 默寫 AI 批改歷史（LocalStorage） ---
+const GRADING_HISTORY_KEY = 'dictationGradingHistory';
+
+export function getGradingHistory() {
+    try {
+        const raw = localStorage.getItem(GRADING_HISTORY_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch (_) { return []; }
+}
+
+export function saveGradingRecord(record) {
+    const list = getGradingHistory();
+    // ensure id
+    const id = record && record.id ? record.id : `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    const createdAt = record && record.createdAt ? record.createdAt : new Date().toISOString();
+    const normalized = { id, createdAt, ...record };
+    list.unshift(normalized);
+    try { localStorage.setItem(GRADING_HISTORY_KEY, JSON.stringify(list.slice(0, 200))); } catch (_) {}
+    try { syncTouch('dictation'); } catch (_) {}
+    return normalized;
+}
+
+export function deleteGradingRecord(id) {
+    const list = getGradingHistory();
+    const next = list.filter(x => x.id !== id);
+    try { localStorage.setItem(GRADING_HISTORY_KEY, JSON.stringify(next)); } catch (_) {}
+    try { syncTouch('dictation'); } catch (_) {}
+}
+
+export function clearGradingHistory() {
+    try { localStorage.removeItem(GRADING_HISTORY_KEY); } catch (_) {}
+    try { syncTouch('dictation'); } catch (_) {}
+}
+
 /**
  * 保存單個文章的分析結果。
  * 如果已存在，則更新；否則，新增。

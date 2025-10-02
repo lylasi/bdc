@@ -5,6 +5,7 @@ import * as dom from '../../modules/dom.js';
 import { buildLocalSnapshot, applyMergedSnapshot } from '../../modules/sync-core.js';
 import { syncNow, auth, subscribeSnapshotChanges, unsubscribeChannel } from '../../modules/sync-supabase.js';
 import * as ui from '../../modules/ui.js';
+import { openDictationGradingHistory } from '../dictation/dictation-grader.js';
 import * as backup from '../../modules/local-backup.js';
 
 export function initSync() {
@@ -245,6 +246,7 @@ function toggleGearMenu() {
     ${loggedIn ? `<div class="menu-item" id="gm-logout"><span class="mi-icon">${svgLogout()}</span><span class="mi-text">登出</span><span class="meta">${escapeHtml(email)}</span></div>` : ''}
     <div class="menu-divider"></div>
     <div class="menu-item" id="gm-settings"><span class="mi-icon">${svgGear()}</span><span class="mi-text">全局設定</span></div>
+    <div class="menu-item" id="gm-grading-history"><span class="mi-icon">${svgHistory()}</span><span class="mi-text">默寫批改歷史</span></div>
     <div class="menu-item" id="gm-backup-now"><span class="mi-icon">${svgSave()}</span><span class="mi-text">建立本機備份</span></div>
     <div class="menu-item" id="gm-backup-restore"><span class="mi-icon">${svgRestore()}</span><span class="mi-text">從本機備份還原</span></div>
     <div class="menu-item" id="gm-clear-cache"><span class="mi-icon">${svgTrash()}</span><span class="mi-text">清理本機快取</span></div>
@@ -254,6 +256,7 @@ function toggleGearMenu() {
   const login = m.querySelector('#gm-login');
   const logout = m.querySelector('#gm-logout');
   const settings = m.querySelector('#gm-settings');
+  const gradingHistory = m.querySelector('#gm-grading-history');
   const clearCache = m.querySelector('#gm-clear-cache');
   const backupNow = m.querySelector('#gm-backup-now');
   const backupRestore = m.querySelector('#gm-backup-restore');
@@ -261,6 +264,7 @@ function toggleGearMenu() {
   if (login) login.addEventListener('click', () => { showLoginModal(); m.remove(); });
   if (logout) logout.addEventListener('click', async () => { try { await auth.signOut(); } catch(_){} updateAuthButtons(null); updateStatus('已登出'); m.remove(); });
   if (settings) settings.addEventListener('click', () => { showGlobalSettingsModal(); m.remove(); });
+  if (gradingHistory) gradingHistory.addEventListener('click', () => { try { openDictationGradingHistory(); } catch(_) {} m.remove(); });
   if (backupNow) backupNow.addEventListener('click', async () => { try { await backup.createBackup('手動建立'); try { ui.displayMessage('已建立本機備份', 'success'); } catch(_) {} } catch(_) { try { ui.displayMessage('建立備份失敗', 'error'); } catch(_) {} } m.remove(); });
   if (backupRestore) backupRestore.addEventListener('click', () => { showBackupRestoreModal(); m.remove(); });
   if (clearCache) clearCache.addEventListener('click', async () => { await clearLocalCaches(); alert('已清理本機快取'); m.remove(); });
@@ -432,6 +436,9 @@ function svgLogout(){
 }
 function svgGear(){
   return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1 1 0 0 1-.52.63l-.31.15c-1.283.62-1.283 2.39 0 3.01l.31.15a1 1 0 0 1 .52.63l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1 1 0 0 1 .52-.63l.31-.15c1.283-.62 1.283-2.39 0-3.01l-.31-.15a1 1 0 0 1-.52-.63zM8 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M4.754 9.036a1 1 0 0 0-.417 1.341l.176.352a1 1 0 0 1 0 .542l-.176.352a1 1 0 0 0 .417 1.341l.352.176a1 1 0 0 1 .352.293l.243.303c.936 1.166 2.764.58 2.764-.954V12.5a1 1 0 0 1 .293-.707l.303-.243a1 1 0 0 1 .352-.293l.352-.176a1 1 0 0 0 .417-1.341l-.176-.352a1 1 0 0 1 0-.542l.176-.352a1 1 0 0 0-.417-1.341l-.352-.176a1 1 0 0 1-.352-.293l-.303-.243A1 1 0 0 1 8.5 7h-.5a1 1 0 0 1-.707.293l-.303.243a1 1 0 0 1-.352.293z"/></svg>';
+}
+function svgHistory(){
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/><path d="M7.5 8V5h1v3h2v1h-3z"/></svg>';
 }
 function svgTrash(){
   return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 1h3a.5.5 0 0 1 .5.5V3h3a.5.5 0 0 1 0 1H3a.5.5 0 0 1 0-1h3V1.5a.5.5 0 0 1 .5-.5z"/><path d="M5.5 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5z"/><path d="M4.118 4.5 4 14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l-.118-9.5H4.118z"/></svg>';

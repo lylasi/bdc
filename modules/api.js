@@ -1,4 +1,4 @@
-import { API_URL, API_KEY, AI_MODELS } from '../ai-config.js';
+import { API_URL, API_KEY, AI_MODELS, OCR_CONFIG } from '../ai-config.js';
 import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
@@ -8,7 +8,7 @@ import * as validate from './validate.js';
 // =================================
 
 // Small, reusable AI request helper with timeout and retry.
-async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat }) {
+async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat, apiUrl, apiKey }) {
     // AbortController per request; chain with external signal if provided
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
@@ -33,8 +33,9 @@ async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeou
     const fetchOnce = async () => {
         const s = loadGlobalSettings();
         const sec = loadGlobalSecrets();
-        const endpoint = (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
-        const key = (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
+        // allow per-call override by passing apiUrl/apiKey; otherwise fall back to global settings, then static config
+        const endpoint = (apiUrl && String(apiUrl).trim()) || (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
+        const key = (apiKey && String(apiKey).trim()) || (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
         const resp = await fetch(endpoint, {
             method: 'POST',
             headers: {
@@ -380,4 +381,141 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
     if (!validate.validateSelectionAnalysis(parsed)) throw new Error('Schema validation failed');
     try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, model, parsed, 30*24*60*60*1000); } catch(_){}
     return parsed;
+}
+
+// =================================
+// Image OCR (Vision) API
+// =================================
+
+/**
+ * 將圖片中的文字抽取為純文字。
+ * imageDataUrl: Data URL（data:image/...;base64,...），建議經過壓縮/縮放。
+ */
+export async function ocrExtractTextFromImage(imageDataUrl, opts = {}) {
+    const {
+        promptHint = '請將圖片中的文字內容完整擷取為純文字，保留原始換行與標點；不要翻譯或改寫。若為截圖，請忽略 UI 按鈕與雜訊，只輸出正文。',
+        temperature = 0.0,
+        maxTokens,
+        timeoutMs,
+        signal,
+        model: modelOverride
+    } = opts;
+
+    const s = loadGlobalSettings();
+    const model = modelOverride
+      || (s?.ai?.models && (s.ai.models.imageOCR || s.ai.models.ocr))
+      || (OCR_CONFIG && (OCR_CONFIG.DEFAULT_MODEL || OCR_CONFIG.MODEL))
+      || AI_MODELS.imageOCR || AI_MODELS.articleAnalysis;
+
+    const endpoint = (OCR_CONFIG && OCR_CONFIG.API_URL && String(OCR_CONFIG.API_URL).trim()) || undefined; // fallback to global in requestAI
+    const overrideKey = (OCR_CONFIG && OCR_CONFIG.API_KEY && String(OCR_CONFIG.API_KEY).trim()) || undefined;
+    const finalMaxTokens = typeof maxTokens === 'number' ? maxTokens : (OCR_CONFIG?.maxTokens || 1500);
+    const finalTimeout = typeof timeoutMs === 'number' ? timeoutMs : (OCR_CONFIG?.timeoutMs || 45000);
+
+    const data = await requestAI({
+        apiUrl: endpoint,
+        apiKey: overrideKey,
+        model,
+        temperature,
+        maxTokens: finalMaxTokens,
+        timeoutMs: finalTimeout,
+        signal,
+        messages: [{
+            role: 'user',
+            content: [
+                { type: 'text', text: promptHint },
+                { type: 'image_url', image_url: { url: imageDataUrl, detail: 'high' } }
+            ]
+        }]
+    });
+
+    const content = (data?.choices?.[0]?.message?.content || '').trim();
+    return content;
+}
+
+// =================================
+// AI Grading: Vision + Expected List
+// =================================
+
+/**
+ * 以視覺模型直接對相片中的默寫內容進行批改。
+ * @param {string[]} imageDataUrls - data URLs of images
+ * @param {Array<{word:string, meaning?:string}>} expectedList - 標準答案清單
+ * @param {object} opts
+ *  - model: 指定模型（預設取 OCR_CONFIG.DEFAULT_MODEL/ MODEL）
+ *  - prompt: 自訂提示詞
+ *  - timeoutMs, temperature
+ */
+export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], opts = {}) {
+    const {
+        model: modelOverride,
+        prompt: userPrompt,
+        temperature = 0.0,
+        timeoutMs,
+        format = 'json' // 'json' | 'markdown'
+    } = opts;
+
+    const s = loadGlobalSettings();
+    const model = modelOverride
+      || (s?.ai?.models && (s.ai.models.imageOCR || s.ai.models.ocr))
+      || (OCR_CONFIG && (OCR_CONFIG.DEFAULT_MODEL || OCR_CONFIG.MODEL))
+      || AI_MODELS.imageOCR || AI_MODELS.articleAnalysis;
+
+    const endpoint = (OCR_CONFIG && OCR_CONFIG.API_URL && String(OCR_CONFIG.API_URL).trim()) || undefined;
+    const overrideKey = (OCR_CONFIG && OCR_CONFIG.API_KEY && String(OCR_CONFIG.API_KEY).trim()) || undefined;
+    const finalTimeout = typeof timeoutMs === 'number' ? timeoutMs : (OCR_CONFIG?.timeoutMs || 60000);
+
+    const defaultPrompt = `這是一張默寫單詞的相片。請直接在圖片中擷取學生書寫內容並進行批改：
+- 請忽略被手寫劃掉（刪去線）的詞字；
+- 逐行擷取學生書寫的英文單詞或短語，保留順序與原始大小寫；若某行同時有中文，請一併擷取；
+- 以提供的「標準詞表」作為唯一正確答案來源，逐行判斷英文拼寫是否正確；若該行含中文，檢查中文是否與詞表意思一致（語義相符即可，可容許常見同義詞：如“的士/計程車”）；
+- 僅對錯誤的部分逐點指出（英/中），並給出建議修正；
+- 請返回嚴格 JSON 格式，不要任何多餘說明或程式碼框。JSON 需為：
+{
+  "items": [
+    {"line": "原始行文字", "english": "擷取到的英文", "chinese": "擷取到的中文(可空)", "correct": true|false,
+     "errors": [ {"type": "english|chinese", "expected": "標準答案或正確語義", "got": "書寫內容", "suggestion": "修正建議"} ]}
+  ],
+  "summary": {"total": 總行數, "correct": 正確行數, "wrong": 錯誤行數}
+}`;
+
+    const content = [];
+    content.push({ type: 'text', text: String(userPrompt || defaultPrompt) });
+    // 附上標準詞表
+    try {
+        const compact = expectedList.map(x => ({ word: String(x.word||''), meaning: String(x.meaning||'') }));
+        if (format === 'markdown') {
+            const md = ['標準詞表（僅供比對，請不要逐行列出於表格中）：'];
+            for (const it of compact) md.push(`- ${it.word}${it.meaning ? ' — ' + it.meaning : ''}`);
+            content.push({ type: 'text', text: md.join('\n') });
+        } else {
+            content.push({ type: 'text', text: `標準詞表（JSON）:\n${JSON.stringify(compact)}` });
+        }
+    } catch (_) { /* ignore */ }
+    // 附上多張圖片
+    for (const url of (imageDataUrls||[])) {
+        content.push({ type: 'image_url', image_url: { url, detail: 'high' } });
+    }
+
+    const req = {
+        apiUrl: endpoint,
+        apiKey: overrideKey,
+        model,
+        messages: [{ role: 'user', content }],
+        temperature,
+        timeoutMs: finalTimeout
+    };
+    if (format === 'json') {
+        req.responseFormat = { type: 'json_object' };
+    }
+    const data = await requestAI(req);
+    const raw = (data?.choices?.[0]?.message?.content || '').trim();
+    if (format === 'markdown') {
+        return raw;
+    }
+    try {
+        return JSON.parse(raw);
+    } catch (_) {
+        return JSON.parse(raw.replace(/^```json\n/, '').replace(/\n```$/, ''));
+    }
 }
