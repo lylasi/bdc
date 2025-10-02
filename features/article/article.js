@@ -4,6 +4,8 @@ import * as storage from '../../modules/storage.js';
 import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
+import { AI_MODELS } from '../../ai-config.js';
+import { loadGlobalSettings } from '../../modules/settings.js';
 
 // =================================
 // Article Analysis Feature
@@ -72,6 +74,16 @@ export function initArticle() {
             const idx = parseInt(btn.getAttribute('data-index'), 10);
             if (!Number.isNaN(idx)) retrySingleParagraph(idx, { force: true });
         }
+        // 文章圖片：點擊開啟燈箱（沿用 OCR lightbox overlay）
+        const img = rawTarget?.closest && rawTarget.closest('.md-image img');
+        if (img) {
+            const overlay = document.createElement('div');
+            overlay.className = 'lightbox-overlay';
+            overlay.innerHTML = `<img src="${img.src}" alt="preview">`;
+            overlay.addEventListener('click', () => overlay.remove());
+            document.body.appendChild(overlay);
+            return;
+        }
     });
 
     if (dom.importArticleBtn) dom.importArticleBtn.addEventListener('click', openArticleImportModal);
@@ -136,15 +148,49 @@ function openArticleImportModal() {
     const renderUrl = () => {
         panel.innerHTML = '';
         const wrap = document.createElement('div');
+        // 準備模型清單（去重）
+        const s = loadGlobalSettings();
+        const suggestions = [];
+        const push = (v) => { if (v && typeof v === 'string' && !suggestions.includes(v)) suggestions.push(v); };
+        push(s?.ai?.models?.articleCleanup);
+        push(s?.ai?.models?.articleAnalysis);
+        push(AI_MODELS?.articleAnalysis);
+        push(AI_MODELS?.wordAnalysis);
+        ['gpt-4.1-nano','gpt-4.1-mini','gpt-4o-mini','gemini-2.5-flash-nothinking'].forEach(push);
+        const defaultModel = s?.ai?.models?.articleCleanup || s?.ai?.models?.articleAnalysis || AI_MODELS?.articleAnalysis || suggestions[0] || '';
+
         wrap.innerHTML = `
             <label for="imp-url" style="display:block;margin-bottom:6px;">貼上網址：</label>
             <div style="display:flex;gap:6px;align-items:center;">
                 <input id="imp-url" type="url" placeholder="https://example.com/article" style="flex:1;">
                 <button id="imp-fetch" class="btn-primary">擷取</button>
             </div>
-            <label class="checkbox-inline" style="margin-top:8px;display:inline-flex;gap:6px;align-items:center;">
-                <input id="imp-ai-clean" type="checkbox"> <span>AI 清洗內容（更適合閱讀）</span>
-            </label>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;">
+                <label class="checkbox-inline" style="display:inline-flex;gap:6px;align-items:center;">
+                    <input id="imp-ai-clean" type="checkbox"> <span>AI 清洗內容（更適合閱讀）</span>
+                </label>
+                <div id="imp-ai-model-row" style="display:inline-flex;gap:6px;align-items:center;">
+                    <label for="imp-ai-clean-model" style="white-space:nowrap;">清洗模型:</label>
+                    <select id="imp-ai-clean-model" style="max-width:360px;">
+                        ${suggestions.map(m => `<option value="${m}">${m}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+            <div id="imp-preview" style="display:none;margin-top:10px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <div style="display:flex;gap:0;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:280px;border-right:1px solid #e5e7eb;">
+                        <div style="background:#f8fafc;padding:6px 8px;font-weight:600;">清洗前</div>
+                        <pre id="imp-before" style="margin:0;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;"></pre>
+                    </div>
+                    <div style="flex:1;min-width:280px;">
+                        <div style="background:#f8fafc;padding:6px 8px;font-weight:600;">清洗後</div>
+                        <pre id="imp-after" style="margin:0;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;"></pre>
+                    </div>
+                </div>
+                <div style="padding:8px;display:flex;gap:8px;justify-content:flex-end;">
+                    <button id="imp-apply" class="btn-primary">套用到輸入框</button>
+                </div>
+            </div>
             <p style="font-size:12px;opacity:.8;margin-top:6px;">將透過 r.jina.ai 嘗試擷取閱讀版內容；若失敗則改為簡易抽取。</p>
         `;
         panel.appendChild(wrap);
@@ -152,6 +198,20 @@ function openArticleImportModal() {
         const urlInput = $('#imp-url');
         const fetchBtn = $('#imp-fetch');
         const aiCleanChk = $('#imp-ai-clean');
+        const modelSelect = $('#imp-ai-clean-model');
+        if (modelSelect) modelSelect.value = defaultModel || '';
+        const previewBox = $('#imp-preview');
+        const beforeEl = $('#imp-before');
+        const afterEl = $('#imp-after');
+        const applyBtn = $('#imp-apply');
+        if (applyBtn) applyBtn.addEventListener('click', () => {
+            const md = (afterEl && afterEl.textContent && afterEl.textContent.trim()) || (beforeEl && beforeEl.textContent) || '';
+            if (md && dom.articleInput) {
+                dom.articleInput.value = md;
+                try { ui.closeModal(); } catch(_) {}
+                try { dom.articleInput.focus(); } catch (_) {}
+            }
+        });
         fetchBtn.addEventListener('click', async () => {
             const url = (urlInput.value || '').trim();
             if (!url) { alert('請輸入網址'); return; }
@@ -159,15 +219,22 @@ function openArticleImportModal() {
             try {
                 // 優先使用結構化抽取，將標題與正文分離；失敗則回退純文字
                 const res = await api.fetchArticleFromUrlStructured(url, { timeoutMs: 22000 });
-                let combined = (res.title ? (`# ${res.title}\n\n`) : '') + (res.content || '');
+                const before = ((res.title ? (`# ${res.title}\n\n`) : '') + (res.content || '')).trim();
                 if (aiCleanChk && aiCleanChk.checked) {
                     fetchBtn.textContent = 'AI 清洗中...';
-                    try { combined = await api.aiCleanArticleMarkdown(combined, { timeoutMs: 25000 }); } catch (_) {}
+                    let after = before;
+                    try {
+                        after = await api.aiCleanArticleMarkdown(before, { timeoutMs: 25000, model: modelSelect && modelSelect.value });
+                    } catch (_) { /* keep before */ }
+                    if (beforeEl) beforeEl.textContent = before;
+                    if (afterEl) afterEl.textContent = after;
+                    if (previewBox) previewBox.style.display = 'block';
+                } else {
+                    if (dom.articleInput) dom.articleInput.value = before;
+                    try { ui.closeModal(); } catch(_) {}
+                    // 導入後自動聚焦輸入框，方便直接分析
+                    try { dom.articleInput.focus(); } catch (_) {}
                 }
-                if (dom.articleInput) dom.articleInput.value = combined.trim();
-                try { ui.closeModal(); } catch(_) {}
-                // 導入後自動聚焦輸入框，方便直接分析
-                try { dom.articleInput.focus(); } catch (_) {}
             } catch (e) {
                 alert('擷取失敗：' + (e?.message || e));
             } finally {
