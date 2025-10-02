@@ -179,11 +179,15 @@ export async function analyzeParagraph(paragraph, opts = {}) {
         } catch (e) { /* ignore cache errors */ }
     }
 
-    // Minimal instruction: translation only, HK Traditional Chinese wording, no alignment or details
+    // Minimal instruction: translation only, HK Traditional Chinese wording, and preserve Markdown structures
     const instructions = `只返回 JSON：{"chinese_translation":"..."}
 要求：
 - 翻譯請使用繁體中文符合香港中文習慣，不要廣東話。 英文姓名不用翻譯；
 - 用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。
+- 若段落包含 Markdown 結構（如表格、清單、標題），請完整保留原始 Markdown 標記與行結構：
+  * 表格：保留每行的管線符號與對齊行（如 | --- |），不要將表格展平成普通句子。
+  * 清單：保留項目前綴（-、*、1. 等）與每項一行。
+  * 圖片：對於 Markdown 圖片標記（例如：![](URL) 或 ![alt](URL)），請保持原樣在輸出中，不要翻譯或改寫其中的 alt 文字，也不要移除；若圖片單獨成段，保留為同一 Markdown 行。
 - 不要返回 word_alignment 與 detailed_analysis。`;
 
     const prompt = `請對以下英文段落進行分析並返回嚴格有效的 JSON（不允許代碼塊或額外解釋）：
@@ -506,5 +510,250 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
         return JSON.parse(raw);
     } catch (_) {
         return JSON.parse(raw.replace(/^```json\n/, '').replace(/\n```$/, ''));
+    }
+}
+
+// =================================
+// URL 文章擷取（輕量可攜）
+// =================================
+
+/**
+ * 從網址提取可閱讀正文（盡量保留段落與標題）。
+ * 策略：
+ * 1) 優先使用 r.jina.ai 轉換（避免跨域與複雜解析成本，CORS 友好）；
+ * 2) 若失敗再嘗試直接抓取（僅在目標網站允許 CORS 時可用），並做極簡抽取；
+ * 3) 全程限制超時，避免卡住 UI。
+ * 注意：這是前端純靜態策略，品質依賴對方站點與轉換服務；若需要高品質抽取，建議配合後端 Readability 服務。
+ */
+export async function fetchArticleFromUrl(url, opts = {}) {
+    const { timeoutMs = 20000, signal } = opts;
+    let u;
+    try { u = new URL(url, window.location.href); } catch (_) { throw new Error('URL 無效'); }
+    if (!/^https?:$/i.test(u.protocol)) throw new Error('僅支援 http/https');
+
+    // 1) r.jina.ai 轉換（常見站點可直接得到「純文字」正文）
+    const jina = `https://r.jina.ai/${u.protocol}//${u.host}${u.pathname}${u.search}`;
+    try {
+        const ac = new AbortController();
+        const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
+        const resp = await fetch(jina, { signal: signal || ac.signal, headers: { 'Accept': 'text/plain' } });
+        clearTimeout(timer);
+        if (resp.ok) {
+            const text = await resp.text();
+            const norm = normalizeImportedText(text);
+            if (norm && norm.trim()) return norm;
+        }
+    } catch (_) { /* fallthrough */ }
+
+    // 2) 直接抓取（若對方允許 CORS）+ 極簡抽取
+    try {
+        const ac = new AbortController();
+        const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
+        const resp = await fetch(u.toString(), { signal: signal || ac.signal, headers: { 'Accept': 'text/html, text/plain;q=0.9,*/*;q=0.1' } });
+        clearTimeout(timer);
+        if (resp.ok) {
+            const html = await resp.text();
+            const text = extractReadableFallback(html);
+            const norm = normalizeImportedText(text);
+            if (norm && norm.trim()) return norm;
+        }
+    } catch (_) { /* ignore */ }
+
+    throw new Error('無法擷取此網址內容（可能被目標站點或網路限制）');
+}
+
+/**
+ * 將 r.jina.ai（或其它來源）的純文字/Markdown 嘗試抽取成「標題 + 正文」。
+ * 返回 { title, content, publishedAt? }，content 維持 Markdown 段落與基本格式。
+ * 注意：這是啟發式抽取，對不同站點會有誤差。
+ */
+export function extractArticleTitleAndBody(rawText, url = '') {
+    const text = String(rawText || '').replace(/\r/g, '');
+    const lines = text.split('\n');
+
+    // 1) 優先從 r.jina.ai 標頭解析（Title / Published Time / Markdown Content）
+    let title = '';
+    let publishedAt = '';
+    let mdStart = -1;
+    for (let i = 0; i < Math.min(lines.length, 100); i++) {
+        const l = lines[i].trim();
+        if (!title) {
+            const m = l.match(/^Title:\s*(.+)$/i);
+            if (m) { title = m[1].trim(); continue; }
+        }
+        if (!publishedAt) {
+            const p = l.match(/^Published\s+Time:\s*(.+)$/i);
+            if (p) { publishedAt = p[1].trim(); continue; }
+        }
+        if (mdStart < 0 && /^Markdown\s+Content:\s*$/i.test(l)) {
+            mdStart = i + 1; break;
+        }
+    }
+
+    let md = '';
+    if (mdStart >= 0) {
+        md = lines.slice(mdStart).join('\n');
+    } else {
+        md = text;
+    }
+
+    // 2) 若未得到標題，嘗試從 Markdown 第一個 H1 解析（ATX 或 Setext）
+    if (!title) {
+        const mdLines = md.split('\n');
+        for (let i = 0; i < Math.min(mdLines.length, 80); i++) {
+            const a = mdLines[i] || '';
+            const b = mdLines[i + 1] || '';
+            // ATX: # Heading
+            const atx = a.trim().match(/^#{1,2}\s+(.+?)\s*#*$/);
+            if (atx) { title = atx[1].trim(); break; }
+            // Setext: Heading + =====
+            if (a.trim() && /^=+\s*$/.test(b)) { title = a.trim(); break; }
+        }
+    }
+
+    // 3) 針對正文做噪音過濾與截斷（保留段落/標題/圖片，但移除站點導航/社交/推薦）
+    const stopHeadings = [
+        'top stories', 'subscribe', 'rt features', 'podcasts', 'where to watch',
+        'schedule', 'applications', 'live', 'more', 'sponsored content',
+        'rt news app', 'question more'
+    ];
+    const noiseRegexes = [
+        /^\s*\[.*?\]\(.*?\)\s*$/i,                     // 單純連結行 [text](link)
+        /^\s*\*\s*\[.*?\]\(.*?\)\s*$/i,               // * [text](link)
+        /^\s*\*\s*$/,
+        /^\s*Follow RT on/i,
+        /^\s*You can share this story/i,
+        /^\s*Add to home screen/i,
+        /^\s*Show comments/i,
+        /^\s*Subscribe to RT newsletter/i,
+        /^\s*This website uses cookies/i,
+        /^\s*©\s+Autonomous Nonprofit Organization/i
+    ];
+    const bannedImageHosts = [
+        'counter.yadro.ru', // 流量統計
+    ];
+    const bannedImagePathHints = [
+        '/static/img/telegram_banners/', '/static/img/social-banners/', '/telegram_banners/', '/social-banners/'
+    ];
+    const isBannedImageUrl = (url) => {
+        try {
+            const u = new URL(url, 'https://example.com');
+            if (bannedImageHosts.includes(u.hostname)) return true;
+            return bannedImagePathHints.some(h => u.pathname.includes(h));
+        } catch (_) { return true; }
+    };
+    // 將 [![alt](img)](link) 規整化為 ![alt](img)
+    const normalizeWrappedImage = (s) => {
+        const m = s.match(/^\s*\[\!\[(.*?)\]\((.*?)\)\s*(?:.*?)\]\((.*?)\)\s*$/i);
+        if (m) {
+            const alt = m[1] || '';
+            const img = m[2] || '';
+            // 若包含 Read more 之類字樣，視為推薦卡片，丟棄
+            if (/read\s+more/i.test(s)) return '';
+            if (!img || isBannedImageUrl(img)) return '';
+            return `![${alt}](${img})`;
+        }
+        return s;
+    };
+    const headingRe = /^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/; // ATX heading
+
+    const out = [];
+    let reachedTail = false;
+    md.split('\n').some((ln, idx, arr) => {
+        const t = ln.trim();
+        // 偵測切斷點（標題行）
+        if (t) {
+            // ATX heading
+            const m = t.match(headingRe);
+            if (m) {
+                const head = (m[2] || '').toLowerCase();
+                if (stopHeadings.some(h => head.includes(h))) { reachedTail = true; return true; }
+            }
+            // Setext heading: 看下一行是 ---/===
+            if (idx + 1 < arr.length && (/^[-=]{3,}\s*$/.test(arr[idx + 1] || ''))) {
+                const head = t.toLowerCase();
+                if (stopHeadings.some(h => head.includes(h))) { reachedTail = true; return true; }
+            }
+        }
+        if (!t) { out.push(''); return false; }
+        // 規整化被外層連結包裹的圖片
+        let line = normalizeWrappedImage(t);
+
+        // 噪音行（單純連結、追蹤宣告、訂閱等）
+        if (noiseRegexes.some(re => re.test(line))) return false;
+
+        // 圖片處理：保留 Markdown 圖片，禁止追蹤/社交素材
+        const img = line.match(/^\s*\!\[(.*?)\]\((.*?)\)\s*$/i);
+        if (img) {
+            const url = img[2] || '';
+            if (isBannedImageUrl(url)) return false; // 丟棄站點宣傳/社交/追蹤圖
+            // 保留內容圖片（要求：保留為 Markdown，不做解析/翻譯）
+            out.push(line);
+            return false;
+        }
+        // 過濾純語言/導航聚合：多語列表、Home/Breadcrumb
+        if (/^(home|world news|news|analysis|opinion|shows|projects)\b/i.test(line)) return false;
+        if (/^(العربية|esp|рус|de|fr|rs)\b/i.test(line)) return false;
+        // 過濾重複空鏈接列
+        if (/^\[\]\(.*?\)\s*$/.test(line)) return false;
+        // 過濾時間戳噪音（如 0:00 行）
+        if (/^\d{1,2}:\d{2}\s*$/.test(line)) return false;
+
+        out.push(line === t ? ln : line);
+        return false;
+    });
+
+    const content = out.join('\n')
+        // 清理 3+ 空行
+        .replace(/\n{3,}/g, '\n\n')
+        // 清理文首殘餘站名標語
+        .replace(/^\s*Question more\s*\n?/i, '')
+        .trim();
+
+    return { title: title || '', content, publishedAt: publishedAt || '', url };
+}
+
+/**
+ * 直接獲取「標題+正文」結構；若抽取失敗，回傳以原文為正文。
+ */
+export async function fetchArticleFromUrlStructured(url, opts = {}) {
+    const raw = await fetchArticleFromUrl(url, opts);
+    try {
+        const parsed = extractArticleTitleAndBody(raw, url);
+        // 至少要有較像文章的正文（>100 字元或有段落）
+        const okLen = (parsed.content || '').replace(/\s+/g, '').length >= 100;
+        if (parsed.title || okLen) return parsed;
+    } catch (_) { /* ignore */ }
+    return { title: '', content: String(raw || ''), publishedAt: '', url };
+}
+
+function normalizeImportedText(text) {
+    const t = (text || '').replace(/\u00A0/g, ' ');
+    // 將 3+ 連續空行縮為 2 空行，避免過多間距
+    return t.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function extractReadableFallback(html) {
+    // 超輕量抽取：刪除 script/style，保留常見正文區域
+    try {
+        const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+        doc.querySelectorAll('script,style,noscript,iframe').forEach(n => n.remove());
+        const target = doc.querySelector('article, main, [role="main"], #content, .post, .article, .entry, .story') || doc.body;
+        const walker = doc.createTreeWalker(target, NodeFilter.SHOW_TEXT, null);
+        const lines = [];
+        let node;
+        while ((node = walker.nextNode())) {
+            const s = (node.nodeValue || '').replace(/[\t\r]+/g, ' ').replace(/\s+/g, ' ').trim();
+            if (!s) continue;
+            // 跳過導航/頁尾等常見噪音
+            const p = node.parentElement;
+            if (p && /nav|footer|header|menu|aside|breadcrumb/i.test(p.tagName)) continue;
+            lines.push(s);
+        }
+        // 粗略分段：遇到句末標點或原始換行
+        const joined = lines.join('\n');
+        return joined.replace(/\n{2,}/g, '\n\n');
+    } catch (_) {
+        return (html || '').replace(/<[^>]+>/g, '\n');
     }
 }

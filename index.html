@@ -275,7 +275,7 @@
                                 <div class="adv-grid">
                                     <div class="form-row">
                                         <label for="ocr-hint">提示詞：</label>
-                                        <textarea id="ocr-hint" rows="3" placeholder="例：只擷取右下角藍色對話框文字；或：只輸出圖片中的英文單字與數字，不要其它UI元素"></textarea>
+                                        <textarea id="ocr-hint" rows="6" placeholder="例：只擷取右下角藍色對話框文字；或：只輸出圖片中的英文單字與數字，不要其它UI元素"></textarea>
                                     </div>
                                     <div class="form-row">
                                         <label for="ocr-hint-preset">常用模板：</label>
@@ -317,11 +317,10 @@
                     <div class="ocr-right">
                         <div class="preview-pane">
                             <div class="thumbs" id="ocr-preview-list"></div>
-                            <img id="ocr-preview" alt="預覽" class="hidden" />
                         </div>
                         <div class="result-pane">
                             <label for="ocr-result">識別結果</label>
-                            <textarea id="ocr-result" class="mono" rows="12" placeholder="識別後的文字會顯示在此處"></textarea>
+                            <textarea id="ocr-result" class="mono" rows="16" placeholder="識別後的文字會顯示在此處"></textarea>
                         </div>
                     </div>
                 </div>
@@ -405,6 +404,7 @@
                         <textarea id="article-input" placeholder="在這裡輸入或粘貼您想分析的文章..."></textarea>
                         <div class="button-group">
                             <button id="analyze-article-btn">分析文章</button>
+                            <button id="import-article-btn" class="secondary" title="從網址或圖片導入文章">導入...</button>
                             <button id="retry-failed-paragraphs-btn" class="secondary" style="display:none;">重試失敗段</button>
                             <button id="clear-article-btn">清除重寫</button>
                             <button id="show-article-library-btn">從文章庫選取</button>

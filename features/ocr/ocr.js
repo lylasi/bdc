@@ -21,16 +21,26 @@ export function initOCR() {
     dom.ocrCloseCameraBtn?.addEventListener('click', closeCamera);
     dom.ocrRunBtn?.addEventListener('click', runOCR);
     dom.ocrClearBtn?.addEventListener('click', clearOCR);
-    // 縮圖刪除事件委派
+    // 縮圖事件委派：點右上角 × 刪除；點縮圖直接彈出大圖（無右側預覽區）
     dom.ocrPreviewList?.addEventListener('click', (e) => {
-        const btn = e.target.closest && e.target.closest('[data-action="remove"]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-id');
-        if (!id) return;
-        const idx = images.findIndex(x => x.id === id);
-        if (idx >= 0) {
-            images.splice(idx, 1);
-            renderPreviewList();
+        const rmBtn = e.target.closest && e.target.closest('[data-action="remove"]');
+        if (rmBtn) {
+            const id = rmBtn.getAttribute('data-id');
+            if (!id) return;
+            const idx = images.findIndex(x => x.id === id);
+            if (idx >= 0) {
+                images.splice(idx, 1);
+                renderPreviewList();
+            }
+            return;
+        }
+        const img = e.target && e.target.tagName === 'IMG' ? e.target : null;
+        if (img) {
+            const overlay = document.createElement('div');
+            overlay.className = 'lightbox-overlay';
+            overlay.innerHTML = `<img src="${img.src}" alt="preview">`;
+            overlay.addEventListener('click', () => overlay.remove());
+            document.body.appendChild(overlay);
         }
     });
     // 常用模板 → 附加到提示詞
@@ -58,6 +68,28 @@ export function initOCR() {
             }
         } catch (_) {}
     });
+
+    // 自適應高度（提示詞、識別結果）
+    try {
+        const autoGrow = (el, { min = 0, max } = {}) => {
+            if (!el) return;
+            el.style.height = 'auto';
+            const target = Math.max(min, el.scrollHeight + 2);
+            const applied = (typeof max === 'number' && max > 0) ? Math.min(target, max) : target;
+            el.style.height = applied + 'px';
+        };
+        const minHint = 132;
+        const minResult = 320;
+        let maxResult = Math.floor(window.innerHeight * 0.7);
+        autoGrow(dom.ocrHint, { min: minHint });
+        autoGrow(dom.ocrResult, { min: minResult, max: maxResult });
+        dom.ocrHint?.addEventListener('input', () => autoGrow(dom.ocrHint, { min: minHint }));
+        dom.ocrResult?.addEventListener('input', () => autoGrow(dom.ocrResult, { min: minResult, max: maxResult }));
+        window.addEventListener('resize', () => {
+            maxResult = Math.floor(window.innerHeight * 0.7);
+            autoGrow(dom.ocrResult, { min: minResult, max: maxResult });
+        }, { passive: true });
+    } catch (_) {}
 }
 
 async function handleFileSelect(e) {
@@ -73,13 +105,6 @@ async function handleFileSelect(e) {
         renderPreviewList();
     } catch (err) {
         alert('讀取圖片失敗：' + (err?.message || err));
-    }
-}
-
-function setPreview(dataUrl) {
-    if (dom.ocrPreview) {
-        dom.ocrPreview.src = dataUrl;
-        dom.ocrPreview.classList.remove('hidden');
     }
 }
 
@@ -153,7 +178,6 @@ async function captureFromCamera() {
         const finalUrl = resized || dataUrl;
         const name = `camera-${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
         addImage(finalUrl, name);
-        setPreview(finalUrl);
         renderPreviewList();
         // 可視需要關閉相機
         // closeCamera();
@@ -199,6 +223,13 @@ async function runOCR() {
         }
         if (dom.ocrResult) {
             dom.ocrResult.value = pieces.join('\n\n');
+            // 識別完成後根據內容自適應高度
+            try {
+                const minResult = 320;
+                const maxResult = Math.floor(window.innerHeight * 0.7);
+                dom.ocrResult.style.height = 'auto';
+                dom.ocrResult.style.height = Math.min(Math.max(minResult, dom.ocrResult.scrollHeight + 2), maxResult) + 'px';
+            } catch (_) {}
         }
     } catch (err) {
         alert('識別失敗：' + (err?.message || err));
@@ -210,10 +241,6 @@ async function runOCR() {
 function clearOCR() {
     lastImageDataUrl = '';
     images.splice(0, images.length);
-    if (dom.ocrPreview) {
-        dom.ocrPreview.src = '';
-        dom.ocrPreview.classList.add('hidden');
-    }
     if (dom.ocrResult) dom.ocrResult.value = '';
     if (dom.ocrImageInput) dom.ocrImageInput.value = '';
     renderPreviewList();

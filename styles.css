@@ -1394,6 +1394,18 @@ button:disabled {
     font-style: italic;
 }
 
+/* Markdown 表格（文章詳解） */
+#article-analysis-container .md-table { overflow-x: auto; }
+#article-analysis-container .md-table table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+#article-analysis-container .md-table th,
+#article-analysis-container .md-table td { border: 1px solid var(--border-color, #ddd); padding: 6px 8px; text-align: left; vertical-align: top; word-break: break-word; }
+#article-analysis-container .md-table th { background: #f8fafc; font-weight: 600; }
+#article-analysis-container .md-fallback { background: #f8f9fa; padding: 8px 10px; border: 1px dashed #e5e7eb; border-radius: 6px; }
+
+/* 表格內的句子與按鈕大小微調 */
+#article-analysis-container .md-table .sentence-wrap { display: inline-flex; align-items: center; gap: 6px; }
+#article-analysis-container .md-table .sent-analyze-btn { padding: 2px 4px; font-size: 11px; }
+
 .highlight-reading {
     background-color: #fff3cd;
     border-radius: 3px;
@@ -4088,6 +4100,18 @@ mark.punc-err-space {
 .ocr-advanced .adv-grid { display:grid; gap: 8px; }
 .ocr-advanced .hint { font-size: .85em; opacity: .7; }
 
+/* OCR: 提示詞與結果區塊尺寸優化 */
+#ocr-hint {
+    min-height: 132px; /* 比原本高，便於長提示詞 */
+    resize: vertical;
+}
+
+#ocr-result {
+    min-height: 320px; /* 更高的初始高度 */
+    max-height: 70vh;  /* 自適應但不超過視窗 70% */
+    resize: vertical;  /* 仍可手動調整 */
+}
+
 .camera-area { margin-top: 8px; }
 .camera-area video { width: 100%; max-height: 260px; object-fit: cover; border: 1px solid var(--border-color,#ddd); border-radius: 6px; }
 
@@ -4095,8 +4119,9 @@ mark.punc-err-space {
 .preview-pane .thumbs { display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap:8px; }
 .preview-pane .thumbs > div { position:relative; border:1px solid var(--border-color,#ddd); border-radius:4px; overflow:hidden; }
 .preview-pane .thumbs img { width:100%; height:80px; object-fit:cover; display:block; }
+.preview-pane .thumbs img { cursor: pointer; }
 .preview-pane .thumbs button { position:absolute; right:2px; top:2px; background:#0008; color:#fff; border:none; border-radius:2px; font-size:12px; cursor:pointer; }
-.preview-pane > img { width:100%; max-height: 260px; object-fit: contain; border: 1px solid var(--border-color,#ddd); border-radius:6px; }
+/* 取消右側預覽大圖，僅保留縮圖清單，因此移除對 preview 圖片的樣式（若不存在則不影響） */
 
 .result-pane { margin-top: 8px; display:grid; gap:6px; }
 .result-pane label { font-weight:600; }
