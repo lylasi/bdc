@@ -1225,7 +1225,8 @@ async function retrySingleParagraph(idx, options = {}) {
     const { title, paragraphs } = parseTitleAndParagraphs(articleText);
     const all = title ? [title, ...paragraphs] : paragraphs;
     if (idx < 0 || idx >= all.length) return;
-    const level = (dom.analysisLevelSelect && dom.analysisLevelSelect.value) || 'standard';
+    // 統一為最小輸出模式
+    const level = 'quick';
     const timeoutMs = level === 'quick' ? 30000 : (level === 'standard' ? 45000 : 60000);
     const text = all[idx];
     const statusDiv = document.querySelector(`.paragraph-pair[data-paragraph-index="${idx}"] .para-status`);
@@ -1373,7 +1374,8 @@ async function retryFailedParagraphs() {
     const { title, paragraphs } = parseTitleAndParagraphs(articleText);
     const all = title ? [title, ...paragraphs] : paragraphs;
     const total = lastFailedIndices.length;
-    const level = (dom.analysisLevelSelect && dom.analysisLevelSelect.value) || 'standard';
+    // 統一為最小輸出模式
+    const level = 'quick';
     const timeoutMs = level === 'quick' ? 30000 : (level === 'standard' ? 45000 : 60000);
     let done = 0;
     const CONCURRENCY = Math.min(2, total);
