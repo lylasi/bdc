@@ -736,9 +736,11 @@ export async function fetchArticleFromUrlStructured(url, opts = {}) {
  * 返回乾淨的 Markdown 純文字。
  */
 export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
-    const { timeoutMs = 25000, temperature = 0.1, signal } = opts;
+    const { timeoutMs = 25000, temperature = 0.1, signal, model: modelOverride } = opts;
     const s = loadGlobalSettings();
-    const model = (s?.ai?.models && (s.ai.models.articleCleanup || s.ai.models.articleAnalysis)) || AI_MODELS.articleAnalysis;
+    const model = modelOverride
+      || (s?.ai?.models && (s.ai.models.articleCleanup || s.ai.models.articleAnalysis))
+      || AI_MODELS.articleAnalysis;
 
     const prompt = `你會收到一篇以 Markdown 表示的英文文章（可能含標題、清單、表格、圖片）。請清洗並輸出更適合閱讀的 Markdown：
 - 僅保留正文與必要的標題/段落/清單/表格；移除網站導航、語言切換、社交按鈕、推薦卡片、廣告、版權宣告、留言模組、追蹤用圖片或計數器。
