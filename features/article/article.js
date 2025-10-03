@@ -190,6 +190,8 @@ function openArticleImportModal() {
             <div style="display:flex;gap:6px;align-items:center;">
                 <input id="imp-url" type="url" placeholder="https://example.com/article" style="flex:1;">
                 <button id="imp-fetch" class="btn-primary">擷取</button>
+                <input id="imp-url-file" type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" multiple style="display:none">
+                <button id="imp-url-pick" class="btn-secondary" type="button" title="從本機檔案導入 .md/.txt">選擇檔案</button>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;">
                 <label class="checkbox-inline" style="display:inline-flex;gap:6px;align-items:center;">
@@ -220,12 +222,17 @@ function openArticleImportModal() {
                     <button id="imp-apply" class="btn-primary">套用到輸入框</button>
                 </div>
             </div>
+            <div class="dropzone" id="imp-url-dropzone" aria-label="拖放 .md / .txt 檔，或直接貼上全文">
+                拖放 .md / .txt 檔到此，或直接貼上全文內容
+            </div>
             <p style="font-size:12px;opacity:.8;margin-top:6px;">將透過 r.jina.ai 嘗試擷取閱讀版內容；若失敗則改為簡易抽取。</p>
         `;
         panel.appendChild(wrap);
         const $ = (sel) => wrap.querySelector(sel);
         const urlInput = $('#imp-url');
         const fetchBtn = $('#imp-fetch');
+        const fileInput = $('#imp-url-file');
+        const pickBtn = $('#imp-url-pick');
         const aiCleanChk = $('#imp-ai-clean');
         const modelSelect = $('#imp-ai-clean-model');
         const keepImagesChk = $('#imp-ai-keep-images');
@@ -241,6 +248,7 @@ function openArticleImportModal() {
         const beforeEl = $('#imp-before');
         const afterEl = $('#imp-after');
         const applyBtn = $('#imp-apply');
+        const dropzone = $('#imp-url-dropzone');
         if (applyBtn) applyBtn.addEventListener('click', () => {
             const md = (afterEl && afterEl.textContent && afterEl.textContent.trim()) || (beforeEl && beforeEl.textContent) || '';
             if (md && dom.articleInput) {
@@ -248,6 +256,69 @@ function openArticleImportModal() {
                 try { ui.closeModal(); } catch(_) {}
                 try { dom.articleInput.focus(); } catch (_) {}
             }
+        });
+
+        // 本機檔案導入（.md/.txt）
+        function acceptLocalTextFiles(list) {
+            const files = Array.from(list || []);
+            const allowed = files.filter(f => {
+                if (!f) return false;
+                const name = (f.name||'').toLowerCase();
+                const okExt = name.endsWith('.md') || name.endsWith('.markdown') || name.endsWith('.txt');
+                const okType = /^text\/(plain|markdown)/.test(f.type||'');
+                return okExt || okType;
+            });
+            if (!allowed.length) return;
+            Promise.all(allowed.map(f => f.text())).then(async texts => {
+                const merged = texts.join('\n\n').trim();
+                if (!merged) return;
+                if (aiCleanChk && aiCleanChk.checked) {
+                    fetchBtn.textContent = 'AI 清洗中...'; fetchBtn.disabled = true;
+                    let after = merged;
+                    try { after = await api.aiCleanArticleMarkdown(merged, { timeoutMs: 25000, model: modelSelect && modelSelect.value, keepImages: keepImagesChk ? !!keepImagesChk.checked : true }); } catch(_) {}
+                    if (beforeEl) beforeEl.textContent = merged;
+                    if (afterEl) afterEl.textContent = after;
+                    if (previewBox) previewBox.style.display = 'block';
+                    fetchBtn.disabled = false; fetchBtn.textContent = '擷取';
+                } else {
+                    if (beforeEl) beforeEl.textContent = merged;
+                    if (afterEl) afterEl.textContent = '';
+                    if (previewBox) previewBox.style.display = 'block';
+                }
+            });
+        }
+        if (pickBtn) pickBtn.addEventListener('click', () => { fileInput && fileInput.click(); });
+        if (fileInput) fileInput.addEventListener('change', () => { acceptLocalTextFiles(fileInput.files); try { fileInput.value=''; } catch(_){} });
+
+        // 拖放與貼上純文字或檔案
+        if (dropzone) {
+            ;['dragenter','dragover','dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+            dropzone.addEventListener('dragover', () => dropzone.classList.add('dragover'));
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+            dropzone.addEventListener('drop', (e) => {
+                dropzone.classList.remove('dragover');
+                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+                    acceptLocalTextFiles(e.dataTransfer.files);
+                }
+            });
+        }
+        wrap.addEventListener('paste', (e) => {
+            try {
+                const text = (e.clipboardData && e.clipboardData.getData && e.clipboardData.getData('text/plain')) || '';
+                if (text && text.trim()) {
+                    e.preventDefault();
+                    if (aiCleanChk && aiCleanChk.checked) {
+                        // 走上面的清洗流程（共用按鈕行為避免重複）
+                        beforeEl.textContent = text.trim();
+                        afterEl.textContent = '';
+                        previewBox.style.display = 'block';
+                    } else {
+                        beforeEl.textContent = text.trim();
+                        afterEl.textContent = '';
+                        previewBox.style.display = 'block';
+                    }
+                }
+            } catch(_) {}
         });
         fetchBtn.addEventListener('click', async () => {
             const url = (urlInput.value || '').trim();
