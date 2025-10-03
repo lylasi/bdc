@@ -1026,6 +1026,15 @@ button:disabled {
 /* Make text/image blocks in mixed paragraphs breathe a bit */
 .paragraph-pair .text-block { margin: 6px 0; }
 
+/* Import modal lightweight styling */
+.modal-content .btn-primary, .modal-content .btn-secondary {
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.modal-content .btn-secondary {
+  background: #f3f4f6; border: 1px solid #e5e7eb;
+}
+
 /* 文章標題（來自文本中以 # 開頭的行） */
 .article-title {
     text-align: center;

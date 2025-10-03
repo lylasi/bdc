@@ -4,7 +4,7 @@ import * as storage from '../../modules/storage.js';
 import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
-import { AI_MODELS } from '../../ai-config.js';
+import { AI_MODELS, OCR_CONFIG } from '../../ai-config.js';
 import { loadGlobalSettings } from '../../modules/settings.js';
 
 // =================================
@@ -260,12 +260,48 @@ function openArticleImportModal() {
     const renderOcr = () => {
         panel.innerHTML = '';
         const wrap = document.createElement('div');
+        // OCR 模型清單
+        const ocrModels = Array.isArray(OCR_CONFIG?.MODELS) && OCR_CONFIG.MODELS.length
+          ? OCR_CONFIG.MODELS
+          : [OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || 'gpt-4o-mini'];
+        const defaultOcrModel = OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || ocrModels[0];
+
         wrap.innerHTML = `
-            <label for="imp-img" style="display:block;margin-bottom:6px;">選擇圖片（可多張）：</label>
-            <input id="imp-img" type="file" accept="image/*" multiple capture="environment">
-            <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
-                <button id="imp-ocr" class="btn-primary">擷取圖片文字</button>
-                <label class="checkbox-inline"><input id="imp-merge" type="checkbox" checked> <span>合併輸出</span></label>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+                <div style="flex:1;min-width:240px;">
+                    <label for="imp-img" style="display:block;margin-bottom:6px;">選擇圖片（可多張）：</label>
+                    <input id="imp-img" type="file" accept="image/*" multiple>
+                    <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
+                        <label class="checkbox-inline" style="display:inline-flex;gap:6px;align-items:center;">
+                            <input id="imp-prefer-camera" type="checkbox"> <span>使用相機優先</span>
+                        </label>
+                        <button id="imp-add-files" class="btn-secondary" type="button">新增圖片</button>
+                        <button id="imp-clear-files" class="btn-secondary" type="button">清空</button>
+                    </div>
+                </div>
+                <div style="min-width:240px;max-width:360px;">
+                    <label for="imp-ocr-model" style="display:block;margin-bottom:6px;">OCR 模型：</label>
+                    <select id="imp-ocr-model" style="min-width:240px;">
+                        ${ocrModels.map(m => `<option value="${m}">${m}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">
+                <div style="flex:1;min-width:280px;">
+                    <label for="imp-ocr-hint" style="display:block;margin-bottom:6px;">提示詞（可選）：</label>
+                    <textarea id="imp-ocr-hint" rows="3" placeholder="例：僅輸出圖片中文章正文，保留原始換行；忽略UI元素與雜訊" style="width:100%;"></textarea>
+                </div>
+                <div style="min-width:220px;display:flex;gap:10px;align-items:flex-end;">
+                    <button id="imp-ocr" class="btn-primary">擷取圖片文字</button>
+                    <label class="checkbox-inline"><input id="imp-merge" type="checkbox" checked> <span>合併輸出</span></label>
+                </div>
+            </div>
+            <div id="imp-ocr-preview" style="display:none;margin-top:10px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <div style="background:#f8fafc;padding:6px 8px;font-weight:600;">OCR 結果預覽</div>
+                <pre id="imp-ocr-result" style="margin:0;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow:auto;"></pre>
+                <div style="padding:8px;display:flex;gap:8px;justify-content:flex-end;">
+                    <button id="imp-ocr-apply" class="btn-primary">套用到輸入框</button>
+                </div>
             </div>
             <p style="font-size:12px;opacity:.8;margin-top:6px;">使用 AI 視覺模型擷取圖片中文本，保留原始換行與標點。</p>
         `;
@@ -274,6 +310,33 @@ function openArticleImportModal() {
         const fileInput = $('#imp-img');
         const runBtn = $('#imp-ocr');
         const mergeChk = $('#imp-merge');
+        const preferCam = $('#imp-prefer-camera');
+        const addBtn = $('#imp-add-files');
+        const clearBtn = $('#imp-clear-files');
+        const modelSel = $('#imp-ocr-model');
+        const hintInput = $('#imp-ocr-hint');
+        const previewBox = $('#imp-ocr-preview');
+        const resultPre = $('#imp-ocr-result');
+        const applyBtn = $('#imp-ocr-apply');
+        if (modelSel) modelSel.value = defaultOcrModel;
+        if (preferCam) {
+            preferCam.addEventListener('change', () => {
+                try {
+                    if (preferCam.checked) fileInput.setAttribute('capture', 'environment');
+                    else fileInput.removeAttribute('capture');
+                } catch(_) {}
+            });
+        }
+        if (addBtn) addBtn.addEventListener('click', () => { fileInput && fileInput.click(); });
+        if (clearBtn) clearBtn.addEventListener('click', () => { if (fileInput) fileInput.value = ''; if (previewBox) previewBox.style.display = 'none'; if (resultPre) resultPre.textContent = ''; });
+        if (applyBtn) applyBtn.addEventListener('click', () => {
+            const text = (resultPre && resultPre.textContent) || '';
+            if (text && dom.articleInput) {
+                dom.articleInput.value = text;
+                try { ui.closeModal(); } catch(_) {}
+                try { dom.articleInput.focus(); } catch(_) {}
+            }
+        });
         runBtn.addEventListener('click', async () => {
             const files = Array.from(fileInput.files || []);
             if (!files.length) { alert('請先選擇圖片'); return; }
@@ -284,13 +347,12 @@ function openArticleImportModal() {
                     if (!f.type || !f.type.startsWith('image/')) continue;
                     const dataUrl = await fileToDataURL(f);
                     const resized = await downscaleImage(dataUrl, { maxW: 1600, maxH: 1600, quality: 0.9 });
-                    const text = await api.ocrExtractTextFromImage(resized || dataUrl, { temperature: 0.0 });
+                    const text = await api.ocrExtractTextFromImage(resized || dataUrl, { temperature: 0.0, promptHint: (hintInput && hintInput.value) || undefined, model: modelSel && modelSel.value });
                     texts.push(text || '');
                 }
                 const finalText = mergeChk.checked ? texts.join('\n\n') : texts.map((t, i) => `--- 圖片 ${i+1} ---\n${t}`).join('\n\n');
-                if (dom.articleInput) dom.articleInput.value = finalText;
-                try { ui.closeModal(); } catch(_) {}
-                try { dom.articleInput.focus(); } catch (_) {}
+                if (resultPre) resultPre.textContent = finalText.trim();
+                if (previewBox) previewBox.style.display = 'block';
             } catch (e) {
                 alert('OCR 失敗：' + (e?.message || e));
             } finally {
