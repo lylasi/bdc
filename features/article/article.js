@@ -136,17 +136,15 @@ function openArticleImportModal() {
     if (!body) return;
     body.innerHTML = '';
 
-    // 簡易標籤切換
+    // 分頁切換（樣式化）
     const tabs = document.createElement('div');
-    tabs.style.display = 'flex';
-    tabs.style.gap = '6px';
-    tabs.style.marginBottom = '8px';
+    tabs.className = 'import-tabbar';
     const btnUrl = document.createElement('button');
-    btnUrl.className = 'btn-ghost btn-mini';
+    btnUrl.className = 'tab-btn';
     btnUrl.textContent = '網址導入';
     btnUrl.dataset.tab = 'url';
     const btnOcr = document.createElement('button');
-    btnOcr.className = 'btn-ghost btn-mini';
+    btnOcr.className = 'tab-btn';
     btnOcr.textContent = '圖片 OCR';
     btnOcr.dataset.tab = 'ocr';
     tabs.appendChild(btnUrl); tabs.appendChild(btnOcr);
@@ -186,47 +184,43 @@ function openArticleImportModal() {
         const defaultModel = rememberedModel || s?.ai?.models?.articleCleanup || s?.ai?.models?.articleAnalysis || AI_MODELS?.articleAnalysis || suggestions[0] || '';
 
         wrap.innerHTML = `
-            <label for="imp-url" style="display:block;margin-bottom:6px;">貼上網址：</label>
-            <div style="display:flex;gap:6px;align-items:center;">
-                <input id="imp-url" type="url" placeholder="https://example.com/article" style="flex:1;">
-                <button id="imp-fetch" class="btn-primary">擷取</button>
-                <input id="imp-url-file" type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" multiple style="display:none">
-                <button id="imp-url-pick" class="btn-secondary" type="button" title="從本機檔案導入 .md/.txt">選擇檔案</button>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;">
-                <label class="checkbox-inline" style="display:inline-flex;gap:6px;align-items:center;">
-                    <input id="imp-ai-clean" type="checkbox"> <span>AI 清洗內容（更適合閱讀）</span>
-                </label>
-                <label class="checkbox-inline" style="display:inline-flex;gap:6px;align-items:center;">
-                    <input id="imp-ai-keep-images" type="checkbox" checked> <span>清洗時保留圖片</span>
-                </label>
-                <div id="imp-ai-model-row" style="display:inline-flex;gap:6px;align-items:center;">
-                    <label for="imp-ai-clean-model" style="white-space:nowrap;">清洗模型:</label>
-                    <select id="imp-ai-clean-model" style="max-width:360px;">
-                        ${suggestions.map(m => `<option value="${m}">${m}</option>`).join('')}
-                    </select>
-                </div>
-            </div>
-            <div id="imp-preview" style="display:none;margin-top:10px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-                <div style="display:flex;gap:0;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:280px;border-right:1px solid #e5e7eb;">
-                        <div style="background:#f8fafc;padding:6px 8px;font-weight:600;">清洗前</div>
-                        <pre id="imp-before" style="margin:0;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;"></pre>
+            <div class="import-form">
+                <div class="form-row">
+                    <label class="label" for="imp-url">貼上網址</label>
+                    <div class="controls">
+                        <input id="imp-url" class="import-input" type="url" placeholder="https://example.com/article">
                     </div>
-                    <div style="flex:1;min-width:280px;">
-                        <div style="background:#f8fafc;padding:6px 8px;font-weight:600;">清洗後</div>
-                        <pre id="imp-after" style="margin:0;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;"></pre>
+                    <div class="form-actions">
+                        <button id="imp-fetch" class="btn-primary">擷取</button>
+                        <input id="imp-url-file" type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" multiple style="display:none">
+                        <button id="imp-url-pick" class="btn-secondary" type="button" title="從本機檔案導入 .md/.txt">選擇檔案</button>
                     </div>
                 </div>
-                <div style="padding:8px;display:flex;gap:8px;justify-content:flex-end;">
-                    <button id="imp-apply" class="btn-primary">套用到輸入框</button>
+                <div class="form-row wrap">
+                    <span class="label">清洗選項</span>
+                    <div class="controls">
+                        <label class="checkbox-inline"><input id="imp-ai-clean" type="checkbox"> <span>AI 清洗內容（更適合閱讀）</span></label>
+                        <label class="checkbox-inline"><input id="imp-ai-keep-images" type="checkbox" checked> <span>保留圖片</span></label>
+                        <span class="model-label">清洗模型</span>
+                        <select id="imp-ai-clean-model" class="import-input short">${suggestions.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
+                    </div>
                 </div>
-            </div>
-            <div class="dropzone" id="imp-url-dropzone" aria-label="拖放 .md / .txt 檔，或直接貼上全文">
-                拖放 .md / .txt 檔到此，或直接貼上全文內容
-            </div>
-            <p style="font-size:12px;opacity:.8;margin-top:6px;">將透過 r.jina.ai 嘗試擷取閱讀版內容；若失敗則改為簡易抽取。</p>
-        `;
+                <div class="dropzone" id="imp-url-dropzone" aria-label="拖放 .md / .txt 檔，或直接貼上全文">拖放 .md / .txt 到此，或直接貼上全文</div>
+                <div id="imp-preview" class="import-preview" style="display:none;">
+                    <div class="split">
+                        <div class="pane">
+                            <div class="import-preview-head">清洗前</div>
+                            <pre id="imp-before" class="import-preview-body"></pre>
+                        </div>
+                        <div class="pane">
+                            <div class="import-preview-head">清洗後</div>
+                            <pre id="imp-after" class="import-preview-body"></pre>
+                        </div>
+                    </div>
+                    <div class="import-preview-actions"><button id="imp-apply" class="btn-primary">套用到輸入框</button></div>
+                </div>
+                <p class="import-hint">將透過 r.jina.ai 嘗試擷取閱讀版內容；若失敗則改為簡易抽取。</p>
+            </div>`;
         panel.appendChild(wrap);
         const $ = (sel) => wrap.querySelector(sel);
         const urlInput = $('#imp-url');
@@ -361,50 +355,41 @@ function openArticleImportModal() {
         const defaultOcrModel = OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || ocrModels[0];
 
         wrap.innerHTML = `
-            <div class="import-grid">
-                <div class="import-col">
-                    <label for="imp-img" class="import-label">選擇圖片（可多張）：</label>
-                    <input id="imp-img" type="file" accept="image/*" multiple class="import-input">
-                    <div class="import-actions">
-                        <label class="checkbox-inline"><input id="imp-prefer-camera" type="checkbox"> <span>使用相機優先</span></label>
-                        <button id="imp-add-files" class="btn-secondary" type="button">新增圖片</button>
-                        <button id="imp-clear-files" class="btn-secondary" type="button">清空</button>
+            <div class="import-form">
+                <div class="form-row wrap">
+                    <label for="imp-img" class="label">選擇圖片</label>
+                    <div class="controls">
+                        <input id="imp-img" type="file" accept="image/*" multiple class="import-input">
+                        <div class="import-actions">
+                            <label class="checkbox-inline"><input id="imp-prefer-camera" type="checkbox"> <span>使用相機優先</span></label>
+                            <button id="imp-add-files" class="btn-secondary" type="button">新增圖片</button>
+                            <button id="imp-clear-files" class="btn-secondary" type="button">清空</button>
+                        </div>
+                    </div>
+                    <div class="controls right">
+                        <span class="model-label">OCR 模型</span>
+                        <select id="imp-ocr-model" class="import-input short">${ocrModels.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
                     </div>
                 </div>
-                <div class="import-col">
-                    <label for="imp-ocr-model" class="import-label">OCR 模型：</label>
-                    <select id="imp-ocr-model" class="import-input">
-                        ${ocrModels.map(m => `<option value="${m}">${m}</option>`).join('')}
-                    </select>
+                <div class="dropzone" id="imp-dropzone" aria-label="拖放圖片到此或貼上截圖">拖放圖片到此，或在此視窗貼上截圖</div>
+                <div id="imp-ocr-thumbs" class="thumbs-grid" aria-live="polite"></div>
+                <div class="form-row wrap">
+                    <label for="imp-ocr-hint" class="label">提示詞</label>
+                    <div class="controls">
+                        <textarea id="imp-ocr-hint" rows="3" class="import-input" placeholder="例：僅輸出圖片中文章正文，保留原始換行；忽略UI元素與雜訊"></textarea>
+                    </div>
+                    <div class="controls right">
+                        <button id="imp-ocr" class="btn-primary">擷取圖片文字</button>
+                        <label class="checkbox-inline"><input id="imp-merge" type="checkbox" checked> <span>合併輸出</span></label>
+                    </div>
                 </div>
-            </div>
-
-            <div class="dropzone" id="imp-dropzone" aria-label="拖放圖片到此或貼上截圖">
-                拖放圖片到此，或在此視窗直接貼上截圖
-            </div>
-
-            <div id="imp-ocr-thumbs" class="thumbs-grid" aria-live="polite"></div>
-
-            <div class="import-grid" style="margin-top:8px;">
-                <div class="import-col">
-                    <label for="imp-ocr-hint" class="import-label">提示詞（可選）：</label>
-                    <textarea id="imp-ocr-hint" rows="3" class="import-input" placeholder="例：僅輸出圖片中文章正文，保留原始換行；忽略UI元素與雜訊"></textarea>
+                <div id="imp-ocr-preview" class="import-preview" style="display:none;">
+                    <div class="import-preview-head">OCR 結果預覽</div>
+                    <pre id="imp-ocr-result" class="import-preview-body"></pre>
+                    <div class="import-preview-actions"><button id="imp-ocr-apply" class="btn-primary">套用到輸入框</button></div>
                 </div>
-                <div class="import-col import-col-right">
-                    <button id="imp-ocr" class="btn-primary">擷取圖片文字</button>
-                    <label class="checkbox-inline"><input id="imp-merge" type="checkbox" checked> <span>合併輸出</span></label>
-                </div>
-            </div>
-
-            <div id="imp-ocr-preview" class="import-preview" style="display:none;">
-                <div class="import-preview-head">OCR 結果預覽</div>
-                <pre id="imp-ocr-result" class="import-preview-body"></pre>
-                <div class="import-preview-actions">
-                    <button id="imp-ocr-apply" class="btn-primary">套用到輸入框</button>
-                </div>
-            </div>
-            <p class="import-hint">使用 AI 視覺模型擷取圖片中文本，保留原始換行與標點。</p>
-        `;
+                <p class="import-hint">使用 AI 視覺模型擷取圖片中文本，保留原始換行與標點。</p>
+            </div>`;
         panel.appendChild(wrap);
         const $ = (sel) => wrap.querySelector(sel);
         const fileInput = $('#imp-img');
