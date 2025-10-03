@@ -416,13 +416,39 @@ function openArticleImportModal() {
                 const url = URL.createObjectURL(f);
                 const cell = document.createElement('div');
                 cell.className = 'thumb-cell';
+                cell.setAttribute('draggable', 'true');
+                cell.dataset.index = String(i);
                 cell.innerHTML = `<img src="${url}" alt="image ${i+1}"><button type="button" class="thumb-remove" data-i="${i}" aria-label="移除">×</button>`;
                 thumbs.appendChild(cell);
                 cell.querySelector('.thumb-remove').addEventListener('click', () => {
                     selectedFiles.splice(i, 1);
                     refreshThumbs();
                 });
+                attachDnD(cell);
             });
+        }
+        // drag-and-drop reorder for thumbnails
+        let dragIndex = -1;
+        function attachDnD(el) {
+            el.addEventListener('dragstart', (e) => {
+                dragIndex = parseInt(el.dataset.index||'-1', 10);
+                el.classList.add('dragging');
+                try { e.dataTransfer.effectAllowed = 'move'; } catch(_) {}
+            });
+            el.addEventListener('dragend', () => { dragIndex = -1; el.classList.remove('dragging'); clearDropHighlights(); });
+            el.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; el.classList.add('drop-target'); });
+            el.addEventListener('dragleave', () => el.classList.remove('drop-target'));
+            el.addEventListener('drop', (e) => {
+                e.preventDefault();
+                el.classList.remove('drop-target');
+                const to = parseInt(el.dataset.index||'-1', 10);
+                if (dragIndex < 0 || to < 0 || dragIndex === to) return;
+                const item = selectedFiles.splice(dragIndex, 1)[0];
+                selectedFiles.splice(to, 0, item);
+                refreshThumbs();
+            });
+        }
+        function clearDropHighlights() { try { thumbs.querySelectorAll('.drop-target').forEach(n=>n.classList.remove('drop-target')); } catch(_) {}
         }
         function acceptFiles(list) {
             const arr = Array.from(list || []);
