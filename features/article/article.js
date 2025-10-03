@@ -135,6 +135,11 @@ function openArticleImportModal() {
     const body = dom.modalBody;
     if (!body) return;
     body.innerHTML = '';
+    // 使導入視窗採用較寬/較高版面，避免內容擁擠與被裁切
+    try {
+        const mc = dom.appModal.querySelector('.modal-content');
+        if (mc) mc.classList.add('modal-large');
+    } catch(_) {}
 
     // 分頁切換（樣式化）
     const tabs = document.createElement('div');
@@ -508,6 +513,27 @@ function openArticleImportModal() {
                 try { dom.articleInput.focus(); } catch(_) {}
             }
         });
+        // 點擊縮圖 → Lightbox 放大預覽（可左右切換）
+        if (thumbs) {
+            thumbs.addEventListener('click', (e) => {
+                const img = e.target && e.target.tagName === 'IMG' ? e.target : null;
+                if (!img) return;
+                const imgs = Array.from(thumbs.querySelectorAll('img')).map(x => x.src);
+                let idx = Math.max(0, imgs.indexOf(img.src));
+                const overlay = document.createElement('div');
+                overlay.className = 'lightbox-overlay';
+                overlay.innerHTML = `<img src="${imgs[idx]}" alt="preview">`;
+                const onClose = () => { document.removeEventListener('keydown', onKey); overlay.remove(); };
+                const onKey = (ev) => {
+                    if (ev.key === 'Escape') onClose();
+                    else if (ev.key === 'ArrowLeft') { idx = (idx - 1 + imgs.length) % imgs.length; overlay.querySelector('img').src = imgs[idx]; }
+                    else if (ev.key === 'ArrowRight') { idx = (idx + 1) % imgs.length; overlay.querySelector('img').src = imgs[idx]; }
+                };
+                overlay.addEventListener('click', onClose);
+                document.addEventListener('keydown', onKey);
+                document.body.appendChild(overlay);
+            });
+        }
         runBtn.addEventListener('click', async () => {
             const files = selectedFiles.length ? selectedFiles.slice() : Array.from(fileInput.files || []);
             if (!files.length) { alert('請先選擇圖片'); return; }
