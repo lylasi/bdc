@@ -210,7 +210,7 @@ function openArticleImportModal() {
                         <select id="imp-ai-clean-model" class="import-input short">${suggestions.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
                     </div>
                 </div>
-                <div class="dropzone" id="imp-url-dropzone" aria-label="拖放 .md / .txt 檔，或直接貼上全文">拖放 .md / .txt 到此，或直接貼上全文</div>
+                <div class="dropzone" id="imp-url-dropzone" tabindex="0" aria-label="拖放 .md / .txt 檔，或直接貼上全文">拖放 .md / .txt 到此，或直接貼上全文</div>
                 <div id="imp-preview" class="import-preview" style="display:none;">
                     <div class="split">
                         <div class="pane">
@@ -300,25 +300,27 @@ function openArticleImportModal() {
                     acceptLocalTextFiles(e.dataTransfer.files);
                 }
             });
-        }
-        wrap.addEventListener('paste', (e) => {
-            try {
-                const text = (e.clipboardData && e.clipboardData.getData && e.clipboardData.getData('text/plain')) || '';
-                if (text && text.trim()) {
-                    e.preventDefault();
-                    if (aiCleanChk && aiCleanChk.checked) {
-                        // 走上面的清洗流程（共用按鈕行為避免重複）
-                        beforeEl.textContent = text.trim();
-                        afterEl.textContent = '';
-                        previewBox.style.display = 'block';
-                    } else {
-                        beforeEl.textContent = text.trim();
-                        afterEl.textContent = '';
-                        previewBox.style.display = 'block';
+            // 僅在 dropzone 聚焦或貼於其上時攔截貼上全文；避免覆蓋網址輸入框的貼上
+            dropzone.addEventListener('paste', (e) => {
+                try {
+                    // 若焦點在網址輸入框則不處理
+                    if (document.activeElement === urlInput || e.target === urlInput) return;
+                    const text = (e.clipboardData && e.clipboardData.getData && e.clipboardData.getData('text/plain')) || '';
+                    if (text && text.trim()) {
+                        e.preventDefault();
+                        if (aiCleanChk && aiCleanChk.checked) {
+                            beforeEl.textContent = text.trim();
+                            afterEl.textContent = '';
+                            previewBox.style.display = 'block';
+                        } else {
+                            beforeEl.textContent = text.trim();
+                            afterEl.textContent = '';
+                            previewBox.style.display = 'block';
+                        }
                     }
-                }
-            } catch(_) {}
-        });
+                } catch(_) {}
+            });
+        }
         fetchBtn.addEventListener('click', async () => {
             const url = (urlInput.value || '').trim();
             if (!url) { alert('請輸入網址'); return; }
