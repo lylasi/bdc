@@ -155,6 +155,21 @@ function openArticleImportModal() {
     body.appendChild(tabs);
     body.appendChild(panel);
 
+    // --- localStorage helpers for remembering user preferences ---
+    const LS = {
+        get(key, def) { try { const v = localStorage.getItem(key); if (v == null) return def; return JSON.parse(v); } catch(_) { return def; } },
+        set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(_) {} }
+    };
+    const LS_KEYS = {
+        activeTab: 'importArticle.activeTab',
+        cleanEnabled: 'importArticle.clean.enabled',
+        cleanKeepImages: 'importArticle.clean.keepImages',
+        cleanModel: 'importArticle.clean.model',
+        ocrModel: 'importArticle.ocr.model',
+        ocrPreferCamera: 'importArticle.ocr.preferCamera',
+        ocrMerge: 'importArticle.ocr.merge'
+    };
+
     const renderUrl = () => {
         panel.innerHTML = '';
         const wrap = document.createElement('div');
@@ -167,7 +182,8 @@ function openArticleImportModal() {
         push(AI_MODELS?.articleAnalysis);
         push(AI_MODELS?.wordAnalysis);
         ['gpt-4.1-nano','gpt-4.1-mini','gpt-4o-mini','gemini-2.5-flash-nothinking'].forEach(push);
-        const defaultModel = s?.ai?.models?.articleCleanup || s?.ai?.models?.articleAnalysis || AI_MODELS?.articleAnalysis || suggestions[0] || '';
+        const rememberedModel = LS.get(LS_KEYS.cleanModel, '');
+        const defaultModel = rememberedModel || s?.ai?.models?.articleCleanup || s?.ai?.models?.articleAnalysis || AI_MODELS?.articleAnalysis || suggestions[0] || '';
 
         wrap.innerHTML = `
             <label for="imp-url" style="display:block;margin-bottom:6px;">貼上網址：</label>
@@ -214,6 +230,13 @@ function openArticleImportModal() {
         const modelSelect = $('#imp-ai-clean-model');
         const keepImagesChk = $('#imp-ai-keep-images');
         if (modelSelect) modelSelect.value = defaultModel || '';
+        // restore toggles
+        if (aiCleanChk) aiCleanChk.checked = !!LS.get(LS_KEYS.cleanEnabled, false);
+        if (keepImagesChk) keepImagesChk.checked = LS.get(LS_KEYS.cleanKeepImages, true);
+        // persist on change
+        if (aiCleanChk) aiCleanChk.addEventListener('change', () => LS.set(LS_KEYS.cleanEnabled, !!aiCleanChk.checked));
+        if (keepImagesChk) keepImagesChk.addEventListener('change', () => LS.set(LS_KEYS.cleanKeepImages, !!keepImagesChk.checked));
+        if (modelSelect) modelSelect.addEventListener('change', () => LS.set(LS_KEYS.cleanModel, modelSelect.value));
         const previewBox = $('#imp-preview');
         const beforeEl = $('#imp-before');
         const afterEl = $('#imp-after');
@@ -430,10 +453,14 @@ function openArticleImportModal() {
     const activate = (name) => {
         if (name === 'ocr') { btnOcr.classList.add('active'); btnUrl.classList.remove('active'); renderOcr(); }
         else { btnUrl.classList.add('active'); btnOcr.classList.remove('active'); renderUrl(); }
+        try { localStorage.setItem('importArticle.activeTab', JSON.stringify(name)); } catch(_) {}
     };
     btnUrl.addEventListener('click', () => activate('url'));
     btnOcr.addEventListener('click', () => activate('ocr'));
-    activate('url');
+    try {
+        const saved = JSON.parse(localStorage.getItem('importArticle.activeTab') || '"url"');
+        activate(saved === 'ocr' ? 'ocr' : 'url');
+    } catch(_) { activate('url'); }
 
     try { dom.modalTitle.textContent = '導入文章'; } catch (_) {}
     ui.openModal();
