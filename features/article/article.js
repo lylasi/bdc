@@ -267,43 +267,49 @@ function openArticleImportModal() {
         const defaultOcrModel = OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || ocrModels[0];
 
         wrap.innerHTML = `
-            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
-                <div style="flex:1;min-width:240px;">
-                    <label for="imp-img" style="display:block;margin-bottom:6px;">選擇圖片（可多張）：</label>
-                    <input id="imp-img" type="file" accept="image/*" multiple>
-                    <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
-                        <label class="checkbox-inline" style="display:inline-flex;gap:6px;align-items:center;">
-                            <input id="imp-prefer-camera" type="checkbox"> <span>使用相機優先</span>
-                        </label>
+            <div class="import-grid">
+                <div class="import-col">
+                    <label for="imp-img" class="import-label">選擇圖片（可多張）：</label>
+                    <input id="imp-img" type="file" accept="image/*" multiple class="import-input">
+                    <div class="import-actions">
+                        <label class="checkbox-inline"><input id="imp-prefer-camera" type="checkbox"> <span>使用相機優先</span></label>
                         <button id="imp-add-files" class="btn-secondary" type="button">新增圖片</button>
                         <button id="imp-clear-files" class="btn-secondary" type="button">清空</button>
                     </div>
                 </div>
-                <div style="min-width:240px;max-width:360px;">
-                    <label for="imp-ocr-model" style="display:block;margin-bottom:6px;">OCR 模型：</label>
-                    <select id="imp-ocr-model" style="min-width:240px;">
+                <div class="import-col">
+                    <label for="imp-ocr-model" class="import-label">OCR 模型：</label>
+                    <select id="imp-ocr-model" class="import-input">
                         ${ocrModels.map(m => `<option value="${m}">${m}</option>`).join('')}
                     </select>
                 </div>
             </div>
-            <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">
-                <div style="flex:1;min-width:280px;">
-                    <label for="imp-ocr-hint" style="display:block;margin-bottom:6px;">提示詞（可選）：</label>
-                    <textarea id="imp-ocr-hint" rows="3" placeholder="例：僅輸出圖片中文章正文，保留原始換行；忽略UI元素與雜訊" style="width:100%;"></textarea>
+
+            <div class="dropzone" id="imp-dropzone" aria-label="拖放圖片到此或貼上截圖">
+                拖放圖片到此，或在此視窗直接貼上截圖
+            </div>
+
+            <div id="imp-ocr-thumbs" class="thumbs-grid" aria-live="polite"></div>
+
+            <div class="import-grid" style="margin-top:8px;">
+                <div class="import-col">
+                    <label for="imp-ocr-hint" class="import-label">提示詞（可選）：</label>
+                    <textarea id="imp-ocr-hint" rows="3" class="import-input" placeholder="例：僅輸出圖片中文章正文，保留原始換行；忽略UI元素與雜訊"></textarea>
                 </div>
-                <div style="min-width:220px;display:flex;gap:10px;align-items:flex-end;">
+                <div class="import-col import-col-right">
                     <button id="imp-ocr" class="btn-primary">擷取圖片文字</button>
                     <label class="checkbox-inline"><input id="imp-merge" type="checkbox" checked> <span>合併輸出</span></label>
                 </div>
             </div>
-            <div id="imp-ocr-preview" style="display:none;margin-top:10px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-                <div style="background:#f8fafc;padding:6px 8px;font-weight:600;">OCR 結果預覽</div>
-                <pre id="imp-ocr-result" style="margin:0;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow:auto;"></pre>
-                <div style="padding:8px;display:flex;gap:8px;justify-content:flex-end;">
+
+            <div id="imp-ocr-preview" class="import-preview" style="display:none;">
+                <div class="import-preview-head">OCR 結果預覽</div>
+                <pre id="imp-ocr-result" class="import-preview-body"></pre>
+                <div class="import-preview-actions">
                     <button id="imp-ocr-apply" class="btn-primary">套用到輸入框</button>
                 </div>
             </div>
-            <p style="font-size:12px;opacity:.8;margin-top:6px;">使用 AI 視覺模型擷取圖片中文本，保留原始換行與標點。</p>
+            <p class="import-hint">使用 AI 視覺模型擷取圖片中文本，保留原始換行與標點。</p>
         `;
         panel.appendChild(wrap);
         const $ = (sel) => wrap.querySelector(sel);
@@ -318,7 +324,69 @@ function openArticleImportModal() {
         const previewBox = $('#imp-ocr-preview');
         const resultPre = $('#imp-ocr-result');
         const applyBtn = $('#imp-ocr-apply');
+        const dropzone = $('#imp-dropzone');
+        const thumbs = $('#imp-ocr-thumbs');
         if (modelSel) modelSel.value = defaultOcrModel;
+
+        // 內部檔案池（支援拖放/貼上）
+        const selectedFiles = [];
+        function refreshThumbs() {
+            if (!thumbs) return;
+            thumbs.innerHTML = '';
+            selectedFiles.forEach((f, i) => {
+                const url = URL.createObjectURL(f);
+                const cell = document.createElement('div');
+                cell.className = 'thumb-cell';
+                cell.innerHTML = `<img src="${url}" alt="image ${i+1}"><button type="button" class="thumb-remove" data-i="${i}" aria-label="移除">×</button>`;
+                thumbs.appendChild(cell);
+                cell.querySelector('.thumb-remove').addEventListener('click', () => {
+                    selectedFiles.splice(i, 1);
+                    refreshThumbs();
+                });
+            });
+        }
+        function acceptFiles(list) {
+            const arr = Array.from(list || []);
+            let added = 0;
+            arr.forEach(file => {
+                if (!file || !file.type || !file.type.startsWith('image/')) return;
+                selectedFiles.push(file);
+                added++;
+            });
+            if (added) refreshThumbs();
+        }
+
+        if (fileInput) fileInput.addEventListener('change', () => { acceptFiles(fileInput.files); try { fileInput.value = ''; } catch(_){} });
+        if (addBtn) addBtn.addEventListener('click', () => { fileInput && fileInput.click(); });
+        if (clearBtn) clearBtn.addEventListener('click', () => { selectedFiles.splice(0, selectedFiles.length); refreshThumbs(); if (previewBox) previewBox.style.display = 'none'; if (resultPre) resultPre.textContent = ''; });
+
+        // 拖放
+        if (dropzone) {
+            ;['dragenter','dragover','dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+            dropzone.addEventListener('dragover', () => dropzone.classList.add('dragover'));
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+            dropzone.addEventListener('drop', (e) => {
+                dropzone.classList.remove('dragover');
+                acceptFiles(e.dataTransfer && e.dataTransfer.files);
+            });
+        }
+
+        // 貼上剪貼簿
+        wrap.addEventListener('paste', async (e) => {
+            try {
+                const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
+                const imgs = items.filter(it => it.kind === 'file' && /^image\//.test(it.type));
+                if (!imgs.length) return;
+                e.preventDefault();
+                const files = await Promise.all(imgs.map(async it => {
+                    const blob = it.getAsFile();
+                    if (!blob) return null;
+                    const name = `paste-${Date.now()}-${Math.random().toString(36).slice(2,8)}.${(blob.type.split('/')[1]||'png')}`;
+                    try { return new File([blob], name, { type: blob.type }); } catch(_) { blob.name = name; return blob; }
+                }));
+                acceptFiles(files.filter(Boolean));
+            } catch(_) {}
+        });
         if (preferCam) {
             preferCam.addEventListener('change', () => {
                 try {
@@ -327,8 +395,6 @@ function openArticleImportModal() {
                 } catch(_) {}
             });
         }
-        if (addBtn) addBtn.addEventListener('click', () => { fileInput && fileInput.click(); });
-        if (clearBtn) clearBtn.addEventListener('click', () => { if (fileInput) fileInput.value = ''; if (previewBox) previewBox.style.display = 'none'; if (resultPre) resultPre.textContent = ''; });
         if (applyBtn) applyBtn.addEventListener('click', () => {
             const text = (resultPre && resultPre.textContent) || '';
             if (text && dom.articleInput) {
@@ -338,7 +404,7 @@ function openArticleImportModal() {
             }
         });
         runBtn.addEventListener('click', async () => {
-            const files = Array.from(fileInput.files || []);
+            const files = selectedFiles.length ? selectedFiles.slice() : Array.from(fileInput.files || []);
             if (!files.length) { alert('請先選擇圖片'); return; }
             runBtn.disabled = true; runBtn.textContent = '擷取中...';
             try {

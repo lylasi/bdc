@@ -1026,6 +1026,27 @@ button:disabled {
 /* Make text/image blocks in mixed paragraphs breathe a bit */
 .paragraph-pair .text-block { margin: 6px 0; }
 
+/* Import modal layout tuning */
+.import-grid { display: grid; grid-template-columns: 1fr minmax(240px, 360px); gap: 12px; align-items: end; }
+.import-col { display: flex; flex-direction: column; gap: 6px; }
+.import-col-right { justify-content: flex-end; align-items: flex-start; gap: 10px; }
+.import-label { display: block; font-weight: 600; }
+.import-input { width: 100%; }
+.import-actions { display:flex; gap:10px; align-items:center; }
+.import-hint { font-size: 12px; opacity: .8; margin-top: 6px; }
+
+.dropzone { margin-top: 10px; padding: 14px; border: 2px dashed #d1d5db; border-radius: 8px; text-align: center; color: #6b7280; background:#fafafa; }
+.dropzone.dragover { background: #eef2ff; border-color: #93c5fd; color:#374151; }
+
+.thumbs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 10px; }
+.thumb-cell { position: relative; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+.thumb-cell img { width: 100%; height: 80px; object-fit: cover; display:block; }
+.thumb-remove { position:absolute; top: 2px; right:2px; background:#0008; color:#fff; border:none; border-radius:2px; font-size:12px; cursor:pointer; padding:0 4px; }
+
+.import-preview { margin-top:10px; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
+.import-preview-head { background:#f8fafc; padding:6px 8px; font-weight:600; }
+.import-preview-body { margin:0; padding:8px; white-space:pre-wrap; word-break:break-word; max-height:320px; overflow:auto; }
+.import-preview-actions { padding:8px; display:flex; gap:8px; justify-content:flex-end; }
 /* Import modal lightweight styling */
 .modal-content .btn-primary, .modal-content .btn-secondary {
   padding: 6px 10px;
