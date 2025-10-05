@@ -210,7 +210,7 @@ function openArticleImportModal() {
                         <select id="imp-ai-clean-model" class="import-input short">${suggestions.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
                     </div>
                 </div>
-                <div class="dropzone" id="imp-url-dropzone" tabindex="0" aria-label="拖放 .md / .txt 檔，或直接貼上全文">拖放 .md / .txt 到此，或直接貼上全文</div>
+                <div class="dropzone" id="imp-url-dropzone" tabindex="0" aria-label="拖放 .md / .txt 檔，或直接貼上全文">拖放 .md / .txt 到此，或聚焦後按 Ctrl+V 貼上全文</div>
                 <div id="imp-preview" class="import-preview" style="display:none;">
                     <div class="split">
                         <div class="pane">
@@ -300,6 +300,8 @@ function openArticleImportModal() {
                     acceptLocalTextFiles(e.dataTransfer.files);
                 }
             });
+            dropzone.addEventListener('focus', () => dropzone.classList.add('focused'));
+            dropzone.addEventListener('blur', () => dropzone.classList.remove('focused'));
             // 僅在 dropzone 聚焦或貼於其上時攔截貼上全文；避免覆蓋網址輸入框的貼上
             dropzone.addEventListener('paste', (e) => {
                 try {

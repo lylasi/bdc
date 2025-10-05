@@ -1060,8 +1060,9 @@ button:disabled {
 .import-form .controls > * { flex:0 0 auto; }
 .import-form .form-actions { display:flex; gap:8px; align-items:center; }
 
-.dropzone { margin-top: 10px; padding: 14px; border: 2px dashed #d1d5db; border-radius: 8px; text-align: center; color: #6b7280; background:#fafafa; }
-.dropzone.dragover { background: #eef2ff; border-color: #93c5fd; color:#374151; }
+.dropzone { margin-top: 10px; padding: 14px; border: 2px dashed #d1d5db; border-radius: 8px; text-align: center; color: #6b7280; background:#fafafa; outline:none; transition:border-color .15s, background .15s, color .15s; }
+.dropzone.dragover, .dropzone.focused { background: #eef2ff; border-color: #93c5fd; color:#374151; }
+.dropzone:focus-visible { background: #eef2ff; border-color:#60a5fa; color:#1f2937; box-shadow:0 0 0 2px rgba(96,165,250,0.35); }
 
 .thumbs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 10px; }
 .thumb-cell { position: relative; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; background:#fff; }
