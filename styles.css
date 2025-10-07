@@ -4195,6 +4195,7 @@ mark.punc-err-space {
 .ocr-actions .btn-secondary:disabled { background:#f6f7fb; color:#a5b4d6; }
 .btn-icon { width:36px; height:36px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
 .btn-icon svg { display:block; }
+.btn-icon.active { background:#eaf2ff; border-color:#93c5fd; color:#1d4ed8; box-shadow: 0 0 0 1px #dbeafe inset; }
 .ocr-progress { display:flex; align-items:center; gap:10px; width:100%; }
 .ocr-progress-bar { flex:1; height:8px; background: var(--border-color,#e5e7eb); border-radius:6px; overflow:hidden; }
 .ocr-progress-bar > span { display:block; height:100%; width:0%; background:#3b82f6; transition: width .25s ease; }

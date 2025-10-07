@@ -254,21 +254,20 @@
                                 <label for="ocr-image-input">上傳圖片：</label>
                                 <div class="field-inline">
                                     <input id="ocr-image-input" type="file" accept="image/*" multiple>
-                                    <label class="checkbox-inline compact" title="使用相機優先">
-                                        <input type="checkbox" id="ocr-prefer-camera">
-                                        <span class="cb-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" focusable="false" aria-hidden="true">
-                                                <path d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
-                                            </svg>
-                                        </span>
-                                        <span class="sr-only">使用相機優先</span>
-                                    </label>
+                                    <!-- 相機優先切換移至下方動作列；保留位置簡潔 -->
                                 </div>
                             </div>
 
                             <div class="form-row actions">
                                 <span class="label-spacer"></span>
                                 <div class="btn-row ocr-actions">
+                                    <input type="checkbox" id="ocr-prefer-camera" class="sr-only" aria-hidden="true">
+                                    <button id="ocr-prefer-toggle" class="btn-secondary btn-icon" title="使用相機優先">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                            <path d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="currentColor"/>
+                                        </svg>
+                                        <span class="sr-only">使用相機優先</span>
+                                    </button>
                                     <button id="ocr-open-camera-btn" class="btn-secondary btn-icon" title="開啟相機">
                                         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                                             <path d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="currentColor"/>

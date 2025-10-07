@@ -142,6 +142,7 @@ export const ocrDisplayMode = document.getElementById('ocr-display-mode');
 export const ocrPreviewList = document.getElementById('ocr-preview-list');
 export const ocrProgressBar = document.getElementById('ocr-progress-bar');
 export const ocrProgressText = document.getElementById('ocr-progress-text');
+export const ocrPreferToggle = document.getElementById('ocr-prefer-toggle');
 export const ocrHint = document.getElementById('ocr-hint');
 export const ocrMergeOutput = document.getElementById('ocr-merge-output');
 export const ocrHintPreset = document.getElementById('ocr-hint-preset');
