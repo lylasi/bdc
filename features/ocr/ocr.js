@@ -1,6 +1,7 @@
 import * as dom from '../../modules/dom.js';
 import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
+import { markdownToHtml } from '../../modules/markdown.js';
 import { OCR_CONFIG } from '../../ai-config.js';
 
 // =================================
@@ -10,7 +11,10 @@ import { OCR_CONFIG } from '../../ai-config.js';
 let mediaStream = null; // 相機串流
 let lastImageDataUrl = '';
 // 目前待識別的圖片清單
-const images = []; // { id, dataUrl, name }
+const images = []; // { id, dataUrl, name, hash? }
+let dragSourceIndex = -1;
+let currentRun = null; // { abort, cancelled, perItem: Map, counters }
+const imageHashes = new Set();
 
 export function initOCR() {
     if (!dom.ocrSection) return; // 安全保護：若頁面未放置 OCR 區塊則跳過
@@ -21,6 +25,39 @@ export function initOCR() {
     dom.ocrCloseCameraBtn?.addEventListener('click', closeCamera);
     dom.ocrRunBtn?.addEventListener('click', runOCR);
     dom.ocrClearBtn?.addEventListener('click', clearOCR);
+    // 停止/取消
+    dom.ocrStopBtn?.addEventListener('click', stopOCR);
+    // 區域貼上（在 OCR 區塊內有效）
+    dom.ocrSection?.addEventListener('paste', handleClipboardPaste);
+    // 縮圖區域拖放上傳
+    if (dom.ocrPreviewList) {
+        ;['dragenter','dragover'].forEach(ev => dom.ocrPreviewList.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dom.ocrPreviewList.classList.add('dragover'); }));
+        ;['dragleave','drop'].forEach(ev => dom.ocrPreviewList.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dom.ocrPreviewList.classList.remove('dragover'); }));
+        dom.ocrPreviewList.addEventListener('drop', async (e) => {
+            try {
+                const files = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : [];
+                const added = await addImagesFromFiles(files);
+                if (added > 0) ui.displayMessage(`已加入 ${added} 張圖片`, 'success', 1800);
+            } catch (err) {
+                ui.displayMessage(`加入圖片失敗：${err?.message || err}`, 'error');
+            }
+        });
+    }
+    // 顯示模式切換（純文本/Markdown 預覽）
+    dom.ocrDisplayMode?.addEventListener('change', () => {
+        const mode = dom.ocrDisplayMode.value;
+        if (mode === 'md') {
+            dom.ocrResult?.classList.add('hidden');
+            dom.ocrResultPreview?.classList.remove('hidden');
+            renderResultPreview();
+        } else {
+            dom.ocrResult?.classList.remove('hidden');
+            dom.ocrResultPreview?.classList.add('hidden');
+        }
+    });
+    dom.ocrResult?.addEventListener('input', () => {
+        if (dom.ocrDisplayMode && dom.ocrDisplayMode.value === 'md') renderResultPreview();
+    });
     // 縮圖事件委派：點右上角 × 刪除；點縮圖直接彈出大圖（無右側預覽區）
     dom.ocrPreviewList?.addEventListener('click', (e) => {
         const rmBtn = e.target.closest && e.target.closest('[data-action="remove"]');
@@ -29,9 +66,16 @@ export function initOCR() {
             if (!id) return;
             const idx = images.findIndex(x => x.id === id);
             if (idx >= 0) {
-                images.splice(idx, 1);
+                const removed = images.splice(idx, 1)[0];
+                try { if (removed && removed.hash) imageHashes.delete(removed.hash); } catch(_) {}
                 renderPreviewList();
             }
+            return;
+        }
+        const retryBtn = e.target.closest && e.target.closest('.thumb-status[data-action="retry"]');
+        if (retryBtn) {
+            const id = retryBtn.getAttribute('data-id');
+            if (id) retrySingleImage(id);
             return;
         }
         const img = e.target && e.target.tagName === 'IMG' ? e.target : null;
@@ -96,13 +140,7 @@ async function handleFileSelect(e) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     try {
-        for (const file of files) {
-            if (!file.type || !file.type.startsWith('image/')) continue;
-            const dataUrl = await fileToDataURL(file);
-            const resized = await downscaleImage(dataUrl, { maxW: 1600, maxH: 1600, quality: 0.9 });
-            addImage(resized || dataUrl, file.name || 'image');
-        }
-        renderPreviewList();
+        await addImagesFromFiles(files);
     } catch (err) {
         alert('讀取圖片失敗：' + (err?.message || err));
     }
@@ -177,7 +215,16 @@ async function captureFromCamera() {
         const resized = await downscaleImage(dataUrl, { maxW: 1600, maxH: 1600, quality: 0.9 });
         const finalUrl = resized || dataUrl;
         const name = `camera-${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
-        addImage(finalUrl, name);
+        try {
+            const hash = await hashDataUrl(finalUrl);
+            if (imageHashes.has(hash)) {
+                ui.displayMessage('略過重複圖片', 'info', 1500);
+            } else {
+                addImage(finalUrl, name, hash);
+            }
+        } catch (_) {
+            addImage(finalUrl, name);
+        }
         renderPreviewList();
         // 可視需要關閉相機
         // closeCamera();
@@ -197,16 +244,58 @@ async function runOCR() {
     const merge = !!(dom.ocrMergeOutput && dom.ocrMergeOutput.checked);
 
     try {
-        setBusy(true, `正在識別 ${list.length} 張圖片...`);
-        const tasks = list.map(async (it, idx) => {
+        if (currentRun) { alert('任務進行中，請先停止或等候完成'); return; }
+        currentRun = { abort: new AbortController(), cancelled: false, perItem: new Map(), counters: { total: list.length, success: 0, failed: 0, cancelled: 0, completed: 0 } };
+        setControlsRunning(true);
+        const MAX = Math.max(1, parseInt(OCR_CONFIG?.maxConcurrency ?? 5, 10) || 5);
+        const total = list.length; let completed = 0;
+        setBusy(true, `正在識別 0/${total} 張圖片...`);
+        updateProgressUI();
+        list.forEach(it => setThumbStatus(it.id, '待處理'));
+        const results = new Array(total);
+        async function worker(idx) {
+            const it = list[idx]; if (!it) return;
+            setThumbStatus(it.id, '處理中');
             try {
-                const text = await api.ocrExtractTextFromImage(it.dataUrl, { temperature: 0.0, promptHint: hint, model });
-                return { ok: true, id: it.id, name: it.name, text };
-            } catch (e) {
-                return { ok: false, id: it.id, name: it.name, error: e };
+                const ac = new AbortController();
+                currentRun.perItem.set(it.id, ac);
+                const text = await api.ocrExtractTextFromImage(it.dataUrl, { temperature: 0.0, promptHint: hint, model, signal: ac.signal });
+                results[idx] = { ok: true, id: it.id, name: it.name, text };
+                setThumbStatus(it.id, '完成');
+                currentRun.counters.success += 1;
+            } catch (e1) {
+                if (currentRun?.cancelled || e1?.name === 'AbortError') {
+                    results[idx] = { ok: false, id: it.id, name: it.name, error: e1 };
+                    setThumbStatus(it.id, '已取消');
+                    currentRun.counters.cancelled += 1;
+                } else {
+                    try {
+                        const ac2 = new AbortController();
+                        currentRun.perItem.set(it.id, ac2);
+                        const text = await api.ocrExtractTextFromImage(it.dataUrl, { temperature: 0.0, promptHint: hint, model, signal: ac2.signal });
+                        results[idx] = { ok: true, id: it.id, name: it.name, text };
+                        setThumbStatus(it.id, '完成');
+                        currentRun.counters.success += 1;
+                    } catch (e2) {
+                        results[idx] = { ok: false, id: it.id, name: it.name, error: e2 };
+                        setThumbStatus(it.id, '失敗');
+                        currentRun.counters.failed += 1;
+                    }
+                }
+            } finally {
+                completed += 1; currentRun.counters.completed = completed;
+                setBusy(true, `正在識別 ${completed}/${total} 張圖片...`);
+                updateProgressUI();
             }
-        });
-        const results = await Promise.all(tasks);
+        }
+        const runners = []; let next = 0;
+        for (let c = 0; c < Math.min(MAX, total); c++) {
+            runners.push((async function loop(){
+                while (next < total && !(currentRun && currentRun.cancelled)) { const cur = next++; await worker(cur); }
+            })());
+        }
+        await Promise.all(runners);
+        if (currentRun?.cancelled) { for (let i=0;i<total;i++){ if (!results[i]) { setThumbStatus(list[i].id, '已取消'); currentRun.counters.cancelled += 1; } } }
         const pieces = [];
         for (let i = 0; i < results.length; i++) {
             const r = results[i];
@@ -230,11 +319,17 @@ async function runOCR() {
                 dom.ocrResult.style.height = 'auto';
                 dom.ocrResult.style.height = Math.min(Math.max(minResult, dom.ocrResult.scrollHeight + 2), maxResult) + 'px';
             } catch (_) {}
+            if (dom.ocrDisplayMode && dom.ocrDisplayMode.value === 'md') renderResultPreview();
         }
+        try { ui.displayMessage(`識別完成：${currentRun?.counters?.total||list.length} 張（成功 ${currentRun?.counters?.success||0}，失敗 ${currentRun?.counters?.failed||0}，取消 ${currentRun?.counters?.cancelled||0}）`, 'success', 2200); } catch(_) {}
+        try { setBusy(true, '完成！'); setTimeout(() => setBusy(false), 1000); } catch(_) {}
     } catch (err) {
         alert('識別失敗：' + (err?.message || err));
     } finally {
         setBusy(false);
+        setControlsRunning(false);
+        currentRun = null;
+        updateProgressUI(true);
     }
 }
 
@@ -243,6 +338,9 @@ function clearOCR() {
     images.splice(0, images.length);
     if (dom.ocrResult) dom.ocrResult.value = '';
     if (dom.ocrImageInput) dom.ocrImageInput.value = '';
+    if (dom.ocrResultPreview) dom.ocrResultPreview.innerHTML = '';
+    try { imageHashes.clear(); } catch(_) {}
+    updateProgressUI(true);
     renderPreviewList();
 }
 
@@ -251,11 +349,12 @@ function setBusy(busy, text = '') {
         if (!dom.ocrRunBtn) return;
         dom.ocrRunBtn.disabled = !!busy;
         if (busy) {
-            dom.ocrRunBtn.dataset._label = dom.ocrRunBtn.textContent;
+            if (!dom.ocrRunBtn.dataset._label) dom.ocrRunBtn.dataset._label = dom.ocrRunBtn.textContent || '識別文字';
             dom.ocrRunBtn.textContent = text || '處理中...';
         } else {
             const restore = dom.ocrRunBtn.dataset._label || '識別文字';
             dom.ocrRunBtn.textContent = restore;
+            try { delete dom.ocrRunBtn.dataset._label; } catch(_) {}
         }
     } catch (_) {}
 }
@@ -298,47 +397,174 @@ async function downscaleImage(dataUrl, { maxW = 1600, maxH = 1600, quality = 0.9
     });
 }
 
-function addImage(dataUrl, name = 'image') {
+function addImage(dataUrl, name = 'image', hash) {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    images.push({ id, dataUrl, name });
+    const it = { id, dataUrl, name };
+    if (hash) { it.hash = hash; imageHashes.add(hash); }
+    images.push(it);
 }
 
 function renderPreviewList() {
     if (!dom.ocrPreviewList) return;
+    clearDropHighlights();
+    dragSourceIndex = -1;
     const frag = document.createDocumentFragment();
-    for (const it of images) {
+    images.forEach((it, index) => {
         const cell = document.createElement('div');
-        cell.style.position = 'relative';
-        cell.style.border = '1px solid var(--border-color)';
-        cell.style.borderRadius = '4px';
-        cell.style.overflow = 'hidden';
+        cell.className = 'thumb-cell ocr-thumb-cell';
+        cell.dataset.index = String(index);
+        cell.dataset.id = it.id;
+        cell.setAttribute('draggable', 'true');
         const img = document.createElement('img');
-        img.src = it.dataUrl;
-        img.alt = it.name || '';
-        img.style.width = '100%';
-        img.style.height = '80px';
-        img.style.objectFit = 'cover';
-        const rm = document.createElement('button');
-        rm.textContent = '×';
-        rm.setAttribute('type', 'button');
-        rm.setAttribute('aria-label', '移除');
-        rm.dataset.action = 'remove';
-        rm.dataset.id = it.id;
-        rm.style.position = 'absolute';
-        rm.style.top = '2px';
-        rm.style.right = '2px';
-        rm.style.background = '#0008';
-        rm.style.color = '#fff';
-        rm.style.border = 'none';
-        rm.style.borderRadius = '2px';
-        rm.style.cursor = 'pointer';
-        rm.style.fontSize = '12px';
-        cell.appendChild(img);
-        cell.appendChild(rm);
+        img.src = it.dataUrl; img.alt = it.name || ''; img.draggable = false;
+        const rm = document.createElement('button'); rm.textContent = '×'; rm.type='button'; rm.setAttribute('aria-label','移除'); rm.dataset.action='remove'; rm.dataset.id=it.id;
+        cell.appendChild(img); cell.appendChild(rm);
+        cell.addEventListener('dragstart', (ev) => { dragSourceIndex = index; cell.classList.add('dragging'); try{ ev.dataTransfer.effectAllowed='move'; }catch(_){}});
+        cell.addEventListener('dragend', () => { dragSourceIndex=-1; cell.classList.remove('dragging'); clearDropHighlights(); });
+        cell.addEventListener('dragover', (ev) => { if (dragSourceIndex===-1 || dragSourceIndex===index) return; ev.preventDefault(); try{ ev.dataTransfer.dropEffect='move'; }catch(_){ } cell.classList.add('drop-target'); });
+        cell.addEventListener('dragleave', () => cell.classList.remove('drop-target'));
+        cell.addEventListener('drop', (ev) => { if (dragSourceIndex===-1 || dragSourceIndex===index) return; ev.preventDefault(); cell.classList.remove('drop-target'); const from=dragSourceIndex, to=index; if (from<0||to<0||from===to) return; const [moved]=images.splice(from,1); images.splice(to,0,moved); dragSourceIndex=-1; clearDropHighlights(); renderPreviewList(); });
         frag.appendChild(cell);
-    }
+    });
     dom.ocrPreviewList.innerHTML = '';
     dom.ocrPreviewList.appendChild(frag);
+}
+
+function clearDropHighlights() {
+    if (!dom.ocrPreviewList) return; try { dom.ocrPreviewList.querySelectorAll('.drop-target, .dragging').forEach(el => el.classList.remove('drop-target','dragging')); } catch(_) {}
+}
+
+function renderResultPreview() {
+    try {
+        if (!dom.ocrResultPreview) return;
+        const md = (dom.ocrResult && dom.ocrResult.value) || '';
+        dom.ocrResultPreview.innerHTML = markdownToHtml(md);
+    } catch (_) {}
+}
+
+// ---------- 進度與取消 ----------
+function setControlsRunning(running) {
+    try {
+        if (dom.ocrRunBtn) dom.ocrRunBtn.disabled = !!running;
+        if (dom.ocrStopBtn) dom.ocrStopBtn.disabled = !running;
+        if (dom.ocrOpenCameraBtn) dom.ocrOpenCameraBtn.disabled = !!running;
+        if (dom.ocrClearBtn) dom.ocrClearBtn.disabled = !!running;
+        if (dom.ocrImageInput) dom.ocrImageInput.disabled = !!running;
+        if (dom.ocrModelSelect) dom.ocrModelSelect.disabled = !!running;
+    } catch (_) {}
+}
+
+function updateProgressUI(finalize = false) {
+    try {
+        const c = currentRun?.counters; const total = c?.total || 0; const done = c?.completed || 0;
+        if (dom.ocrProgressBar) dom.ocrProgressBar.style.width = (total>0 ? Math.round(done/total*100) : 0) + '%';
+        if (dom.ocrProgressText) {
+            if (!total) dom.ocrProgressText.textContent = finalize ? '已完成' : '尚未開始';
+            else dom.ocrProgressText.textContent = `${done}/${total} 完成（成功 ${c?.success||0}，失敗 ${c?.failed||0}，取消 ${c?.cancelled||0}）`;
+        }
+    } catch (_) {}
+}
+
+function stopOCR() {
+    if (!currentRun) return;
+    try {
+        currentRun.cancelled = true;
+        for (const ac of currentRun.perItem.values()) { try { ac.abort(new DOMException('User cancelled','AbortError')); } catch(_) {} }
+        try { currentRun.abort.abort(new DOMException('User cancelled','AbortError')); } catch(_) {}
+        ui.displayMessage('已停止，未完成的將標記為取消', 'warning', 1800);
+    } catch (_) {}
+}
+
+// ---------- 加圖/貼上/去重 ----------
+async function addImagesFromFiles(files = []) {
+    const arr = Array.from(files || []);
+    const valid = arr.filter(f => f && typeof f.type === 'string' && f.type.startsWith('image/'));
+    if (!valid.length) return 0;
+    let added = 0, skippedDup = 0, lastErr = null;
+    for (const file of valid) {
+        try {
+            const name = file.name || 'image';
+            const dataUrl = await fileToDataURL(file);
+            const resized = await downscaleImage(dataUrl, { maxW: 1600, maxH: 1600, quality: 0.9 });
+            const finalUrl = resized || dataUrl;
+            const hash = await hashDataUrl(finalUrl);
+            if (imageHashes.has(hash)) { skippedDup += 1; continue; }
+            addImage(finalUrl, name, hash);
+            added += 1;
+        } catch (e) { lastErr = e; }
+    }
+    if (added) renderPreviewList();
+    if (skippedDup) try { ui.displayMessage(`略過 ${skippedDup} 張重複圖片`, 'info', 1500); } catch(_) {}
+    if (!added && lastErr) throw lastErr;
+    return added;
+}
+
+function setThumbStatus(id, label) {
+    try {
+        if (!dom.ocrPreviewList || !id) return;
+        const esc = (s) => { try { return (window.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/"/g,'\\"'); } catch(_) { return String(s); } };
+        const cell = dom.ocrPreviewList.querySelector(`[data-id="${esc(id)}"]`);
+        if (!cell) return;
+        let badge = cell.querySelector('.thumb-status');
+        if (!badge) { badge = document.createElement('div'); badge.className = 'thumb-status'; cell.appendChild(badge); }
+        badge.textContent = String(label || '');
+        if (label === '失敗' || label === '已取消') { badge.dataset.action='retry'; badge.dataset.id=id; badge.title='點擊重試'; }
+        else { delete badge.dataset.action; delete badge.dataset.id; badge.removeAttribute('title'); }
+        if (!label) badge.remove();
+    } catch (_) {}
+}
+
+async function retrySingleImage(id) {
+    if (!id) return; if (currentRun) { ui.displayMessage('任務執行中，請先停止或等待完成','warning'); return; }
+    const it = images.find(x => x.id === id); if (!it) return;
+    const hint = (dom.ocrHint && dom.ocrHint.value && dom.ocrHint.value.trim()) || undefined;
+    const model = dom.ocrModelSelect && dom.ocrModelSelect.value ? dom.ocrModelSelect.value : undefined;
+    setThumbStatus(id, '處理中');
+    try {
+        const text = await api.ocrExtractTextFromImage(it.dataUrl, { temperature:0.0, promptHint: hint, model });
+        setThumbStatus(id, '完成');
+        const header = `--- 單張重試：${it.name} ---`;
+        if (dom.ocrResult) { const prev = dom.ocrResult.value || ''; const add = `${header}\n${text || ''}`; dom.ocrResult.value = prev ? (prev+'\n\n'+add) : add; if (dom.ocrDisplayMode && dom.ocrDisplayMode.value === 'md') renderResultPreview(); }
+        ui.displayMessage('重試完成','success',1500);
+    } catch (e) { setThumbStatus(id,'失敗'); ui.displayMessage(`重試失敗：${e?.message || e}`,'error'); }
+}
+
+// 穩健雜湊：優先使用 WebCrypto；若不可用（非安全來源或舊瀏覽器），改用輕量 32-bit FNV-1a
+async function hashDataUrl(dataUrl) {
+    const str = String(dataUrl || '');
+    try {
+        if (typeof crypto !== 'undefined' && crypto && crypto.subtle && typeof TextEncoder !== 'undefined') {
+            const enc = new TextEncoder();
+            const buf = enc.encode(str);
+            const digest = await crypto.subtle.digest('SHA-256', buf);
+            const bytes = new Uint8Array(digest);
+            let hex = '';
+            for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, '0');
+            return hex;
+        }
+    } catch (_) { /* fall through to fallback */ }
+    // Fallback: FNV-1a 32-bit（足夠用於去重；非安全用途）
+    let h = 0x811c9dc5 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0; // *16777619
+    }
+    return 'fnv1a-' + h.toString(16).padStart(8, '0');
+}
+
+// 貼上（區域）
+async function handleClipboardPaste(event) {
+    if (!dom.ocrSection || !dom.ocrSection.classList.contains('active')) return;
+    const t = event.target;
+    if (t && (t === dom.ocrHint || t === dom.ocrResult || t.isContentEditable || (/^(INPUT|TEXTAREA)$/).test(t.tagName))) return;
+    const cd = event.clipboardData; if (!cd || !cd.items || !cd.items.length) return;
+    const imgs = Array.from(cd.items).filter(it => it.kind === 'file' && /^image\//.test(it.type)); if (!imgs.length) return;
+    event.preventDefault();
+    try {
+        const files = imgs.map(it => it.getAsFile()).filter(Boolean);
+        const added = await addImagesFromFiles(files);
+        if (added > 0) ui.displayMessage(`已加入 ${added} 張圖片`, 'success', 1800);
+    } catch (err) { alert('貼上圖片失敗：' + (err?.message || err)); }
 }
 
 function initModelSelect() {
