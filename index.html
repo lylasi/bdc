@@ -254,9 +254,14 @@
                                 <label for="ocr-image-input">上傳圖片：</label>
                                 <div class="field-inline">
                                     <input id="ocr-image-input" type="file" accept="image/*" multiple>
-                                    <label class="checkbox-inline">
+                                    <label class="checkbox-inline compact" title="使用相機優先">
                                         <input type="checkbox" id="ocr-prefer-camera">
-                                        <span>使用相機優先</span>
+                                        <span class="cb-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" focusable="false" aria-hidden="true">
+                                                <path d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
+                                            </svg>
+                                        </span>
+                                        <span class="sr-only">使用相機優先</span>
                                     </label>
                                 </div>
                             </div>
@@ -264,10 +269,25 @@
                             <div class="form-row actions">
                                 <span class="label-spacer"></span>
                                 <div class="btn-row ocr-actions">
-                                    <button id="ocr-open-camera-btn" class="btn-secondary">開啟相機</button>
+                                    <button id="ocr-open-camera-btn" class="btn-secondary btn-icon" title="開啟相機">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                            <path d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="currentColor"/>
+                                        </svg>
+                                        <span class="sr-only">開啟相機</span>
+                                    </button>
                                     <button id="ocr-run-btn" class="btn-primary">識別文字</button>
-                                    <button id="ocr-stop-btn" class="btn-secondary" disabled>停止</button>
-                                    <button id="ocr-clear-btn" class="btn-secondary">清除</button>
+                                    <button id="ocr-stop-btn" class="btn-secondary btn-icon" title="停止" disabled>
+                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                            <rect x="7" y="7" width="10" height="10" rx="2" ry="2" fill="currentColor"/>
+                                        </svg>
+                                        <span class="sr-only">停止</span>
+                                    </button>
+                                    <button id="ocr-clear-btn" class="btn-secondary btn-icon" title="清除">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                            <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 7h2v7h-2v-7zm4 0h2v7h-2v-7zM8 10h2v7H8v-7z" fill="currentColor"/>
+                                        </svg>
+                                        <span class="sr-only">清除</span>
+                                    </button>
                                 </div>
                             <div class="form-row actions">
                                 <span class="label-spacer"></span>
