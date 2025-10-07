@@ -58,6 +58,18 @@ export function initOCR() {
     dom.ocrResult?.addEventListener('input', () => {
         if (dom.ocrDisplayMode && dom.ocrDisplayMode.value === 'md') renderResultPreview();
     });
+    // 相機優先：切換按鈕與 checkbox 同步
+    if (dom.ocrPreferToggle) {
+        dom.ocrPreferToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!dom.ocrPreferCamera) return;
+            dom.ocrPreferCamera.checked = !dom.ocrPreferCamera.checked;
+            dom.ocrPreferCamera.dispatchEvent(new Event('change'));
+            updatePreferToggleUI();
+        });
+        // 初始化按鈕外觀
+        updatePreferToggleUI();
+    }
     // 縮圖事件委派：點右上角 × 刪除；點縮圖直接彈出大圖（無右側預覽區）
     dom.ocrPreviewList?.addEventListener('click', (e) => {
         const rmBtn = e.target.closest && e.target.closest('[data-action="remove"]');
@@ -110,6 +122,7 @@ export function initOCR() {
             } else {
                 dom.ocrImageInput.removeAttribute('capture');
             }
+            updatePreferToggleUI();
         } catch (_) {}
     });
 
@@ -440,6 +453,13 @@ function renderResultPreview() {
         const md = (dom.ocrResult && dom.ocrResult.value) || '';
         dom.ocrResultPreview.innerHTML = markdownToHtml(md);
     } catch (_) {}
+}
+
+function updatePreferToggleUI() {
+    try {
+        if (!dom.ocrPreferToggle) return;
+        dom.ocrPreferToggle.classList.toggle('active', !!(dom.ocrPreferCamera && dom.ocrPreferCamera.checked));
+    } catch(_) {}
 }
 
 // ---------- 進度與取消 ----------
