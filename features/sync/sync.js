@@ -273,6 +273,7 @@ function toggleGearMenu() {
 function showGlobalSettingsModal() {
   try { ui.openModal(); } catch(_) {}
   try { dom.modalTitle.textContent = '全局設定'; } catch(_) {}
+  try { const mc = dom.appModal.querySelector('.modal-content'); if (mc) mc.classList.add('modal-large'); } catch(_) {}
   // read existing
   let settings, secrets;
   try { const mod = requireOrImportSettings(); settings = mod.settings; secrets = mod.secrets; } catch(_) { settings = {}; secrets = {}; }

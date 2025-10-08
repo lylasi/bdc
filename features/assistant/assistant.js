@@ -7,8 +7,9 @@ import { API_URL, API_KEY, AI_MODELS } from '../../ai-config.js';
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 import * as cache from '../../modules/cache.js';
 
-const LS_KEY = 'assistantConversations';
+const LS_KEY = 'assistantConversations'; // legacy（含所有訊息）
 const LS_UPDATED_AT = 'assistantUpdatedAt';
+const IDX_KEY = 'assistantConvIndex'; // 新索引：[{id, articleKey, title, updatedAt}]
 
 function getDefaultModel() {
   const s = loadGlobalSettings();
@@ -20,6 +21,7 @@ export function initAiAssistant() {
   // 僅在設定啟用時工作
   const s = loadGlobalSettings();
   if (s?.assistant && s.assistant.enabled === false) return;
+  try { migrateLegacyStore(); } catch(_) {}
   injectScopedStyles();
   mountUi();
   setupVisibilityLogic();
@@ -137,15 +139,24 @@ function wirePanel(panel) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
 }
 
-function loadConversations() {
-  try { const raw = localStorage.getItem(LS_KEY); const obj = raw ? JSON.parse(raw) : { conversations: [] }; return Array.isArray(obj.conversations)? obj.conversations: []; } catch(_) { return []; }
+// --------- 新：索引 + IndexedDB 儲存（cache.kv） ---------
+function readIndex() {
+  try { const raw = localStorage.getItem(IDX_KEY); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr)? arr: []; } catch(_) { return []; }
 }
-function saveConversations(list) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify({ conversations: list }));
-    localStorage.setItem(LS_UPDATED_AT, new Date().toISOString());
-    syncTouch('assistant');
-  } catch(_) {}
+function writeIndex(arr) {
+  try { localStorage.setItem(IDX_KEY, JSON.stringify(arr)); localStorage.setItem(LS_UPDATED_AT, new Date().toISOString()); syncTouch('assistant'); } catch(_) {}
+}
+async function idbGetConv(convId) {
+  try { const rec = await cache.getItem('assistant:conv:'+convId); return rec && rec.messages ? rec.messages : []; } catch(_) { return []; }
+}
+async function idbSetConv(convId, messages) {
+  try { await cache.setItem('assistant:conv:'+convId, { messages }); return true; } catch(_) { return false; }
+}
+function ensureMeta(articleKey, title) {
+  const idx = readIndex();
+  let m = idx.find(x => x.articleKey === articleKey);
+  if (!m) { m = { id: `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`, articleKey, title: title||'文章', updatedAt: new Date().toISOString() }; idx.unshift(m); writeIndex(idx); }
+  return m;
 }
 
 function extractArticleTitle() {
@@ -166,15 +177,13 @@ function restoreConversation(panel) {
   const box = panel.querySelector('#assistant-messages');
   if (!box) return;
   box.innerHTML = '';
-  const { articleKey } = { articleKey: '' };
-  // 重建當前 key（同步）
-  // eslint-disable-next-line no-async-promise-executor
   (async () => {
     const ctx = await buildContext();
-    const list = loadConversations();
-    const conv = list.find(c => c.articleKey === ctx.articleKey);
-    if (!conv) return;
-    for (const m of (conv.messages || [])) appendMessage(box, m.role, m.content);
+    const idx = readIndex();
+    const meta = idx.find(x => x.articleKey === ctx.articleKey);
+    if (!meta) return;
+    const messages = await idbGetConv(meta.id);
+    for (const m of messages) appendMessage(box, m.role, m.content);
     box.scrollTop = box.scrollHeight;
   })();
 }
@@ -214,8 +223,8 @@ async function ask(panel, userText) {
   const placeholder = appendMessage(box, 'assistant', '');
   box.scrollTop = box.scrollHeight;
 
-  // 保存 user 訊息
-  upsertConversation(articleKey, extractArticleTitle(), { role: 'user', content: userText, ts: Date.now() });
+  // 保存 user 訊息（IDB）
+  await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'user', content: userText, ts: Date.now() });
 
   const ac = new AbortController();
   const stopBtn = document.createElement('button');
@@ -242,21 +251,35 @@ async function ask(panel, userText) {
     }
   } finally {
     stopBtn.remove();
-    upsertConversation(articleKey, extractArticleTitle(), { role: 'assistant', content: buffer, ts: Date.now() });
+    await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'assistant', content: buffer, ts: Date.now() });
   }
 }
+async function appendMessageToConv(articleKey, title, message) {
+  const meta = ensureMeta(articleKey, title);
+  const list = await idbGetConv(meta.id);
+  list.push(message);
+  await idbSetConv(meta.id, list);
+  const idx = readIndex().map(x => x.id === meta.id ? { ...x, title, updatedAt: new Date().toISOString() } : x);
+  writeIndex(idx);
+}
 
-function upsertConversation(articleKey, title, message) {
-  const list = loadConversations();
-  let c = list.find(x => x.articleKey === articleKey);
-  if (!c) {
-    c = { id: `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`, articleKey, title: title||'文章', messages: [], updatedAt: new Date().toISOString() };
-    list.unshift(c);
-  }
-  c.messages = c.messages || [];
-  c.messages.push(message);
-  c.updatedAt = new Date().toISOString();
-  saveConversations(list);
+// 向後相容：若發現舊格式（assistantConversations），搬遷到新索引 + IDB
+function migrateLegacyStore() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    const convs = Array.isArray(obj.conversations) ? obj.conversations : [];
+    const idx = readIndex();
+    const exist = new Set(idx.map(x => x.id));
+    for (const c of convs) {
+      const id = c.id || `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+      if (!exist.has(id)) idx.unshift({ id, articleKey: c.articleKey, title: c.title || '文章', updatedAt: c.updatedAt || new Date().toISOString() });
+      try { if (Array.isArray(c.messages)) cache.setItem('assistant:conv:'+id, { messages: c.messages }); } catch(_) {}
+    }
+    writeIndex(idx);
+    localStorage.removeItem(LS_KEY);
+  } catch(_) {}
 }
 
 async function onceCompletions(messages, signal) {
@@ -370,4 +393,3 @@ const SYSTEM_PROMPT = `你是「PEN子背單詞」前端網頁中的英語學習
 
 [錯誤處理]
 - 若文章不足或未提供，請提示使用者先在文章詳解頁輸入內容，或指定段落。`;
-
