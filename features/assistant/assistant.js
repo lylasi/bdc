@@ -369,7 +369,7 @@ function injectScopedStyles() {
   style.textContent = `
   .assistant-fab{position:fixed;right:16px;bottom:16px;width:48px;height:48px;border-radius:50%;background:#3b82f6;color:#fff;border:none;box-shadow:0 8px 24px rgba(59,130,246,.35);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:2400}
   .assistant-fab:hover{transform:translateY(-1px)}
-  .assistant-panel{position:fixed;right:16px;bottom:76px;width:min(420px,92vw);max-height:min(75vh,640px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 14px 38px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;z-index:2400}
+  .assistant-panel{position:fixed;right:16px;bottom:76px;width:min(420px,92vw);max-height:min(75vh,640px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 14px 38px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;z-index:4000;pointer-events:auto}
   .assistant-hidden{display:none}
   .assistant-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eef2f7;background:#f8fafc}
   .assistant-title{font-weight:700;color:#111827;font-size:14px}
@@ -403,7 +403,7 @@ function injectScopedStyles() {
   /* Dock 模式 */
   .assistant-panel.assistant-dock{right:16px;left:auto;top:16px;bottom:16px;border-radius:12px;max-height:calc(100vh - 32px)}
   /* Modal 模式 */
-  .assistant-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:2399;backdrop-filter:saturate(120%) blur(2px)}
+  .assistant-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:3999;backdrop-filter:saturate(120%) blur(2px);}
   .assistant-panel.assistant-modal{left:50%;right:auto;top:5vh;bottom:auto;transform:translateX(-50%);width:min(960px,94vw);height:min(90vh,880px);border-radius:14px}
   `;
   if (!exist) document.head.appendChild(style);
