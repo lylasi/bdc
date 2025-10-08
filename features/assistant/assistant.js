@@ -85,6 +85,12 @@ function renderPanelHtml() {
     <div class="assistant-head">
       <div class="assistant-title">AI 助手 · ${escapeHtml(title || '文章')}</div>
       <div class="assistant-actions">
+        <div class="assistant-sizes" role="group" aria-label="面板尺寸">
+          <button class="assistant-size-btn" data-size="s" title="小"></button>
+          <button class="assistant-size-btn" data-size="m" title="中"></button>
+          <button class="assistant-size-btn" data-size="l" title="大"></button>
+          <button class="assistant-size-btn" data-size="xl" title="特大"></button>
+        </div>
         <button class="assistant-icon" id="assistant-refresh" title="刷新上下文">${svgRefresh()}</button>
         <button class="assistant-icon" id="assistant-min" title="最小化">${svgMin()}</button>
         <button class="assistant-icon" id="assistant-close" title="關閉">${svgClose()}</button>
@@ -109,6 +115,14 @@ function wirePanel(panel) {
   $('#assistant-close').addEventListener('click', () => panel.classList.add('assistant-hidden'));
   $('#assistant-min').addEventListener('click', () => panel.classList.add('assistant-hidden'));
   $('#assistant-refresh').addEventListener('click', () => addHint(panel, '已刷新文章上下文，下次提問將以最新內容為準'));
+  // 面板尺寸：按鈕/雙擊標題切換
+  const applySize = (sz) => setPanelSize(panel, sz);
+  panel.querySelectorAll('.assistant-size-btn').forEach(btn => {
+    btn.addEventListener('click', () => applySize(btn.getAttribute('data-size')));
+  });
+  panel.querySelector('.assistant-head').addEventListener('dblclick', () => cyclePanelSize(panel));
+  // 首次套用儲存尺寸
+  applySize(getSavedPanelSize());
   $('#assistant-clear').addEventListener('click', () => {
     const { articleKey } = buildContext();
     if (!confirm('確定清空本文章的對話？')) return;
@@ -345,11 +359,14 @@ function injectScopedStyles() {
   style.textContent = `
   .assistant-fab{position:fixed;right:16px;bottom:16px;width:48px;height:48px;border-radius:50%;background:#3b82f6;color:#fff;border:none;box-shadow:0 8px 24px rgba(59,130,246,.35);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:2400}
   .assistant-fab:hover{transform:translateY(-1px)}
-  .assistant-panel{position:fixed;right:16px;bottom:76px;width:min(420px,92vw);max-height:min(70vh,520px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 14px 38px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;z-index:2400}
+  .assistant-panel{position:fixed;right:16px;bottom:76px;width:min(420px,92vw);max-height:min(75vh,640px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 14px 38px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;z-index:2400}
   .assistant-hidden{display:none}
   .assistant-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eef2f7;background:#f8fafc}
   .assistant-title{font-weight:700;color:#111827;font-size:14px}
-  .assistant-actions{display:flex;gap:6px}
+  .assistant-actions{display:flex;gap:6px;align-items:center}
+  .assistant-sizes{display:none;gap:6px;margin-right:6px}
+  .assistant-size-btn{width:18px;height:18px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer}
+  .assistant-size-btn.active{background:#eaf2ff;border-color:#93c5fd;box-shadow:0 0 0 1px #dbeafe inset}
   .assistant-icon{width:28px;height:28px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
   .assistant-messages{padding:12px;overflow:auto;flex:1;background:#fff}
   .assistant-msg{white-space:pre-wrap;word-break:break-word;padding:10px 12px;border-radius:10px;margin:8px 0}
@@ -364,8 +381,37 @@ function injectScopedStyles() {
   .assistant-switch{display:flex;align-items:center;gap:6px}
   .assistant-link{background:none;border:none;color:#2563eb;cursor:pointer}
   .assistant-stop{position:absolute;right:8px;bottom:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
+
+  /* 桌面：提供多種寬度尺寸 */
+  @media (min-width: 1024px){
+    .assistant-sizes{display:inline-flex}
+    .assistant-panel.assistant-size-s{width:420px}
+    .assistant-panel.assistant-size-m{width:560px}
+    .assistant-panel.assistant-size-l{width:720px}
+    .assistant-panel.assistant-size-xl{width:900px}
+    .assistant-panel{max-height:85vh}
+  }
   `;
   document.head.appendChild(style);
+}
+
+// ---------- 尺寸控制（桌面端） ----------
+function getSavedPanelSize() { try { return localStorage.getItem('assistantPanelSize') || 'm'; } catch(_) { return 'm'; } }
+function savePanelSize(sz) { try { localStorage.setItem('assistantPanelSize', sz); } catch(_) {} }
+function setPanelSize(panel, sz) {
+  const sizes = ['s','m','l','xl'];
+  if (!sizes.includes(sz)) sz = 'm';
+  panel.classList.remove('assistant-size-s','assistant-size-m','assistant-size-l','assistant-size-xl');
+  panel.classList.add('assistant-size-'+sz);
+  savePanelSize(sz);
+  // 高亮按鈕
+  panel.querySelectorAll('.assistant-size-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-size') === sz));
+}
+function cyclePanelSize(panel) {
+  const order = ['s','m','l','xl'];
+  const cur = getSavedPanelSize();
+  const next = order[(order.indexOf(cur)+1)%order.length];
+  setPanelSize(panel, next);
 }
 
 function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
