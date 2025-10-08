@@ -295,6 +295,17 @@ function showGlobalSettingsModal() {
         <input id="gs-tts-key" type="password" placeholder="..." value="${escapeHtml(secrets.ttsKey||'')}">
       </div>
       <div class="auth-field">
+        <label style="display:block;font-weight:700;margin-bottom:6px;">AI 助手</label>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <input id="gs-assistant-enabled" type="checkbox" ${settings.assistantEnabled ? 'checked' : ''}>
+          <span>啟用 AI 助手（右下角懸浮入口）</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input id="gs-assistant-stream" type="checkbox" ${settings.assistantStream === false ? '' : 'checked'}>
+          <span>串流回應（減少等待）</span>
+        </label>
+      </div>
+      <div class="auth-field">
         <label>AI 模型覆蓋（留空則使用預設）</label>
         <div style="display:grid;grid-template-columns:1fr;gap:8px;">
           <input id="gs-model-word" type="text" placeholder="wordAnalysis，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.wordAnalysis)||'')}">
@@ -330,7 +341,9 @@ function showGlobalSettingsModal() {
       };
       // 移除空鍵，避免污染設置
       Object.keys(models).forEach(k => { if (!models[k]) delete models[k]; });
-      saveGlobalSettings({ ai: { apiUrl: aiUrl, models }, tts: { baseUrl: ttsUrl } });
+      const asstEnabled = dom.modalBody.querySelector('#gs-assistant-enabled')?.checked ? true : false;
+      const asstStream = dom.modalBody.querySelector('#gs-assistant-stream')?.checked !== false;
+      saveGlobalSettings({ ai: { apiUrl: aiUrl, models }, tts: { baseUrl: ttsUrl }, assistant: { enabled: asstEnabled, stream: asstStream } });
       saveGlobalSecrets({ aiApiKey: aiKey, ttsApiKey: ttsKey });
       $('#gs-msg').textContent = '已儲存（僅本機）';
       setTimeout(()=> ui.closeModal(), 500);
@@ -369,7 +382,17 @@ function escapeHtml(s){
 function requireOrImportSettings() {
   // Read current values synchronously from localStorage
   let settings = {}, secrets = {};
-  try { const raw = localStorage.getItem('pen_global_settings'); if (raw) { const s = JSON.parse(raw); settings.aiUrl = s?.ai?.apiUrl || ''; settings.ttsUrl = s?.tts?.baseUrl || ''; } } catch(_) {}
+  try {
+    const raw = localStorage.getItem('pen_global_settings');
+    if (raw) {
+      const s = JSON.parse(raw);
+      settings.aiUrl = s?.ai?.apiUrl || '';
+      settings.ttsUrl = s?.tts?.baseUrl || '';
+      settings.models = (s?.ai && s.ai.models) || {};
+      settings.assistantEnabled = (s?.assistant && s.assistant.enabled !== false);
+      settings.assistantStream = (s?.assistant && s.assistant.stream !== false);
+    }
+  } catch(_) {}
   try { const raw = localStorage.getItem('pen_global_secrets'); if (raw) { const s = JSON.parse(raw); secrets.aiKey = s?.aiApiKey || ''; secrets.ttsKey = s?.ttsApiKey || ''; } } catch(_) {}
   return { settings, secrets };
 }

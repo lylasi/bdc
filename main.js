@@ -11,6 +11,7 @@ import { initArticle } from './features/article/article.js';
 import { initOCR } from './features/ocr/ocr.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
 import { initSync } from './features/sync/sync.js';
+import { initAiAssistant } from './features/assistant/assistant.js';
 
 const MODULE_ALIAS_TO_BUTTON_ID = {
     v: 'vocabulary-btn',
@@ -138,6 +139,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     initOCR();
     await initQA();
     initSync();
+    // 僅注入 UI，不修改全局 DOM/CSS
+    try { initAiAssistant(); } catch (_) {}
     
     // 5. 填充初始视图
     // 确保在导航设置前，为默认显示的模块（如此处为学习模块）填充内容

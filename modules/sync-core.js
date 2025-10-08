@@ -99,6 +99,22 @@ export async function buildLocalSnapshot() {
   // Same here for QA group. Missing timestamp should not be considered newer than remote
   const qaUpdatedAt = getLocalUpdatedAt('qaUpdatedAt', false);
 
+  // Assistant（對話）
+  const assistantPayload = (() => {
+    try {
+      const raw = localStorage.getItem('assistantConversations');
+      if (!raw) return { conversations: [] };
+      const obj = JSON.parse(raw);
+      const convs = Array.isArray(obj.conversations) ? obj.conversations.map(c => ({
+        id: c.id, articleKey: c.articleKey, title: c.title,
+        messages: Array.isArray(c.messages) ? c.messages.slice(-50) : [],
+        updatedAt: c.updatedAt
+      })) : [];
+      return { conversations: convs };
+    } catch (_) { return { conversations: [] }; }
+  })();
+  const assistantUpdatedAt = getLocalUpdatedAt('assistantUpdatedAt', false);
+
   // Compact articles before push to reduce payload
   const compactArticles = compactAnalyzedArticles(state.analyzedArticles);
 
@@ -122,6 +138,10 @@ export async function buildLocalSnapshot() {
         updatedAt: qaUpdatedAt,
         manifest: qaManifest,
         sets: qaSets
+      },
+      assistant: {
+        updatedAt: assistantUpdatedAt,
+        ...assistantPayload
       }
     }
   };
@@ -210,6 +230,21 @@ export async function applyMergedSnapshot(snapshot) {
       } catch (_) {}
     }
   }
+
+  // Assistant（LWW by updatedAt）
+  const remoteAsst = remote?.assistant;
+  if (remoteAsst && typeof remoteAsst === 'object') {
+    const la = getLocalUpdatedAt('assistantUpdatedAt', false);
+    const rts = String(remoteAsst.updatedAt || '');
+    const lts = String(la || '');
+    if (!lts || rts > lts) {
+      try {
+        const payload = { conversations: Array.isArray(remoteAsst.conversations) ? remoteAsst.conversations : [] };
+        localStorage.setItem('assistantConversations', JSON.stringify(payload));
+        localStorage.setItem('assistantUpdatedAt', remoteAsst.updatedAt || new Date().toISOString());
+      } catch(_) {}
+    }
+  }
 }
 
 // Trivial LWW for dictation group (placeholder for future per-key merge)
@@ -250,6 +285,15 @@ export function lwwMerge(localPayload, remotePayload) {
   const rqts = String(rq?.updatedAt || '');
   if (lq && (!rq || lqts > rqts)) {
     out.qa = lq;
+  }
+
+  // assistant group-level LWW
+  const las = localPayload?.assistant;
+  const ras = remotePayload?.assistant;
+  const lasts = String(las?.updatedAt || '');
+  const rasts = String(ras?.updatedAt || '');
+  if (las && (!ras || lasts > rasts)) {
+    out.assistant = las;
   }
   return out;
 }
