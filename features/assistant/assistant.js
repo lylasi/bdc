@@ -6,6 +6,7 @@ import { loadGlobalSettings, loadGlobalSecrets } from '../../modules/settings.js
 import { API_URL, API_KEY, AI_MODELS } from '../../ai-config.js';
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 import * as cache from '../../modules/cache.js';
+import { markdownToHtml } from '../../modules/markdown.js';
 
 const LS_KEY = 'assistantConversations'; // legacy（含所有訊息）
 const LS_UPDATED_AT = 'assistantUpdatedAt';
@@ -83,22 +84,14 @@ function renderPanelHtml() {
   const title = extractArticleTitle();
   return `
     <div class="assistant-head">
-      <div class="assistant-title">AI 助手 · ${escapeHtml(title || '文章')}</div>
+      <div class="assistant-title">AI 助手 · ${escapeHtml(title || '文章')} <span id="assistant-session-label" class="assistant-session"></span></div>
       <div class="assistant-actions">
-        <button class="assistant-icon" id="assistant-dock" title="靠右停靠/浮動切換">${svgPin()}</button>
-        <button class="assistant-icon" id="assistant-full" title="全高/適中高度">${svgFull()}</button>
-        <div class="assistant-sizes" role="group" aria-label="面板尺寸">
-          <button class="assistant-size-btn" data-size="s" data-label="S" title="小">S</button>
-          <button class="assistant-size-btn" data-size="m" data-label="M" title="中">M</button>
-          <button class="assistant-size-btn" data-size="l" data-label="L" title="大">L</button>
-          <button class="assistant-size-btn" data-size="xl" data-label="XL" title="特大">XL</button>
-        </div>
-        <div class="assistant-percents" role="group" aria-label="面板寬度（%）">
-          <button class="assistant-percent-btn" data-pct="35">35%</button>
-          <button class="assistant-percent-btn" data-pct="40">40%</button>
-          <button class="assistant-percent-btn" data-pct="50">50%</button>
-          <button class="assistant-percent-btn" data-pct="60">60%</button>
-        </div>
+        <button class="assistant-icon" id="assistant-small" title="小視窗（右下角）">${svgSmall()}</button>
+        <button class="assistant-icon" id="assistant-dock" title="靠右全高">${svgPin()}</button>
+        <button class="assistant-icon" id="assistant-modal" title="居中大視窗">${svgMax()}</button>
+        <span class="assistant-divider"></span>
+        <button class="assistant-icon" id="assistant-new" title="新建會話">${svgPlus()}</button>
+        <button class="assistant-icon" id="assistant-history" title="查看會話">${svgList()}</button>
         <button class="assistant-icon" id="assistant-refresh" title="刷新上下文">${svgRefresh()}</button>
         <button class="assistant-icon" id="assistant-min" title="最小化">${svgMin()}</button>
         <button class="assistant-icon" id="assistant-close" title="關閉">${svgClose()}</button>
@@ -123,25 +116,18 @@ function wirePanel(panel) {
   $('#assistant-close').addEventListener('click', () => panel.classList.add('assistant-hidden'));
   $('#assistant-min').addEventListener('click', () => panel.classList.add('assistant-hidden'));
   $('#assistant-refresh').addEventListener('click', () => addHint(panel, '已刷新文章上下文，下次提問將以最新內容為準'));
-  // 面板尺寸：按鈕/雙擊標題切換
-  const applySize = (sz) => setPanelSize(panel, sz);
-  panel.querySelectorAll('.assistant-size-btn').forEach(btn => {
-    btn.addEventListener('click', () => applySize(btn.getAttribute('data-size')));
-  });
-  panel.querySelector('.assistant-head').addEventListener('dblclick', () => cyclePanelSize(panel));
-  // 首次套用儲存尺寸
-  applySize(getSavedPanelSize());
-
-  // Dock 模式與全高
-  $('#assistant-dock').addEventListener('click', () => togglePanelMode(panel));
-  $('#assistant-full').addEventListener('click', () => togglePanelFull(panel));
-  panel.querySelectorAll('.assistant-percent-btn').forEach(btn => {
-    btn.addEventListener('click', () => { setDockWidth(panel, parseInt(btn.getAttribute('data-pct'),10)||40); });
-  });
-  // 初次套用 dock 狀態
+  // 模式切換（精簡版）：小視窗/靠右全高/居中彈窗
+  $('#assistant-small').addEventListener('click', () => setPanelMode(panel,'floating'));
+  $('#assistant-dock').addEventListener('click', () => setPanelMode(panel,'dock'));
+  $('#assistant-modal').addEventListener('click', () => setPanelMode(panel,'modal'));
+  // 初始化模式與尺寸
   setPanelMode(panel, getSavedPanelMode());
-  setDockWidth(panel, getSavedDockWidth());
+  if (getSavedPanelMode()==='dock') setDockWidth(panel, getSavedDockWidth());
   window.addEventListener('resize', () => { if (getSavedPanelMode()==='dock') setDockWidth(panel, getSavedDockWidth()); });
+
+  // 會話：新建 / 歷史
+  $('#assistant-new').addEventListener('click', () => newConversation(panel));
+  $('#assistant-history').addEventListener('click', () => toggleHistory(panel));
   $('#assistant-clear').addEventListener('click', () => {
     const { articleKey } = buildContext();
     if (!confirm('確定清空本文章的對話？')) return;
@@ -232,7 +218,12 @@ function addHint(panel, text) {
 function appendMessage(container, role, text) {
   const el = document.createElement('div');
   el.className = 'assistant-msg ' + (role === 'user' ? 'assistant-user' : 'assistant-assistant');
-  el.textContent = text || '';
+  if (role === 'assistant') {
+    try { el.innerHTML = markdownToHtml(text || ''); }
+    catch(_) { el.textContent = text || ''; }
+  } else {
+    el.textContent = text || '';
+  }
   container.appendChild(el);
   return el;
 }
@@ -383,12 +374,8 @@ function injectScopedStyles() {
   .assistant-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eef2f7;background:#f8fafc}
   .assistant-title{font-weight:700;color:#111827;font-size:14px}
   .assistant-actions{display:flex;gap:6px;align-items:center}
-  .assistant-sizes{display:none;gap:6px;margin-right:6px}
-  .assistant-size-btn{min-width:28px;height:22px;padding:0 6px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#475569}
-  .assistant-size-btn.active{background:#eaf2ff;border-color:#93c5fd;color:#1d4ed8;box-shadow:0 0 0 1px #dbeafe inset}
-  .assistant-percents{display:none;gap:6px;margin-right:6px}
-  .assistant-percent-btn{min-width:42px;height:24px;padding:0 8px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#475569}
-  .assistant-percent-btn.active{background:#eef2ff;border-color:#93c5fd;color:#1d4ed8;box-shadow:0 0 0 1px #dbeafe inset}
+  .assistant-divider{width:1px;height:18px;background:#e5e7eb;margin:0 4px}
+  .assistant-session{font-size:12px;color:#64748b;margin-left:4px}
   .assistant-icon{width:28px;height:28px;border:1px solid #d1d5db;border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
   .assistant-icon:hover{border-color:#93c5fd;color:#1d4ed8;background:#f8fbff}
   .assistant-icon svg{width:16px;height:16px;display:block;fill:currentColor}
@@ -407,18 +394,12 @@ function injectScopedStyles() {
   .assistant-stop{position:absolute;right:8px;bottom:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
 
   /* 桌面：提供多種寬度尺寸 */
-  @media (min-width: 1024px){
-    .assistant-sizes{display:inline-flex}
-    .assistant-panel.assistant-size-s{width:420px}
-    .assistant-panel.assistant-size-m{width:560px}
-    .assistant-panel.assistant-size-l{width:720px}
-    .assistant-panel.assistant-size-xl{width:900px}
-    .assistant-panel{max-height:85vh}
-    /* Dock 模式 */
-    .assistant-panel.assistant-dock{right:16px;left:auto;top:16px;bottom:16px;border-radius:12px;max-height:calc(100vh - 32px)}
-    .assistant-panel.assistant-dock .assistant-percents{display:inline-flex}
-    .assistant-panel.assistant-dock .assistant-sizes{display:none}
-  }
+  @media (min-width: 1024px){ .assistant-panel{max-height:85vh} }
+  /* Dock 模式 */
+  .assistant-panel.assistant-dock{right:16px;left:auto;top:16px;bottom:16px;border-radius:12px;max-height:calc(100vh - 32px)}
+  /* Modal 模式 */
+  .assistant-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:2399;backdrop-filter:saturate(120%) blur(2px)}
+  .assistant-panel.assistant-modal{left:50%;right:auto;top:5vh;bottom:auto;transform:translateX(-50%);width:min(960px,94vw);height:min(90vh,880px);border-radius:14px}
   `;
   if (!exist) document.head.appendChild(style);
 }
@@ -451,17 +432,14 @@ function getSavedFull(){ try { return localStorage.getItem('assistantPanelFull')
 function saveFull(v){ try { localStorage.setItem('assistantPanelFull', v?'1':'0'); } catch(_){} }
 
 function setPanelMode(panel, mode){
-  if (mode !== 'dock') mode = 'floating';
+  if (!['floating','dock','modal'].includes(mode)) mode = 'floating';
   panel.classList.toggle('assistant-dock', mode==='dock');
   panel.classList.toggle('assistant-floating', mode!=='dock');
+  panel.classList.toggle('assistant-modal', mode==='modal');
   savePanelMode(mode);
   // 切換控件顯示
-  const sizes = panel.querySelector('.assistant-sizes');
-  const pcts = panel.querySelector('.assistant-percents');
-  if (sizes && pcts){
-    sizes.style.display = (mode==='dock' ? 'none' : 'inline-flex');
-    pcts.style.display = (mode==='dock' ? 'inline-flex' : 'none');
-  }
+  // 背景遮罩
+  toggleBackdrop(mode==='modal');
   // 浮動模式時清除 dock 尺寸，避免殘留造成 1px 線
   if (mode !== 'dock') panel.style.width = '';
 }
@@ -485,6 +463,66 @@ function setDockWidth(panel, pct){
 
 function togglePanelFull(panel){ const v = !getSavedFull(); panel.classList.toggle('assistant-full', v); saveFull(v); }
 
+function toggleBackdrop(show){
+  let bd = document.getElementById('assistant-backdrop');
+  if (show){
+    if (!bd){ bd = document.createElement('div'); bd.id = 'assistant-backdrop'; bd.className='assistant-backdrop'; bd.addEventListener('click', ()=> setPanelMode(document.getElementById('assistant-panel'),'floating')); document.body.appendChild(bd);} 
+  } else { if (bd) bd.remove(); }
+}
+
+// 會話：索引輔助（每文章可有多會話）
+function getCurrentMap(){ try { return JSON.parse(localStorage.getItem('assistantCurrentMap')||'{}'); } catch(_) { return {}; } }
+function setCurrentMap(m){ try { localStorage.setItem('assistantCurrentMap', JSON.stringify(m)); } catch(_){} }
+function getCurrentConvId(articleKey){ const m=getCurrentMap(); return m[articleKey]||''; }
+function setCurrentConvId(articleKey,id){ const m=getCurrentMap(); m[articleKey]=id; setCurrentMap(m); updateSessionLabel(); }
+
+async function newConversation(panel){
+  const ctx = await buildContext();
+  const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  const meta = ensureMetaWithId(ctx.articleKey, extractArticleTitle(), id);
+  await idbSetConv(meta.id, []);
+  setCurrentConvId(ctx.articleKey, meta.id);
+  const box = panel.querySelector('#assistant-messages'); if (box) box.innerHTML='';
+}
+
+function ensureMetaWithId(articleKey, title, id){
+  const idx = readIndex();
+  const exist = idx.find(x => x.id === id);
+  if (exist) return exist;
+  const m = { id, articleKey, title: title||'新會話', updatedAt: new Date().toISOString() };
+  idx.unshift(m); writeIndex(idx); return m;
+}
+
+async function toggleHistory(panel){
+  const ctx = await buildContext();
+  const idx = readIndex().filter(x => x.articleKey===ctx.articleKey);
+  let pop = document.getElementById('assistant-history-panel');
+  if (pop) { pop.remove(); return; }
+  pop = document.createElement('div');
+  pop.id='assistant-history-panel';
+  pop.style.cssText='position:absolute; right:12px; top:44px; z-index:2401; background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14); min-width:260px; max-height:60vh; overflow:auto;';
+  pop.innerHTML = idx.length ? idx.map(m=>`<div class="ah-item" data-id="${m.id}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;">
+    <div style="flex:1;min-width:0;"><div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.title||'會話')}</div>
+    <div style="font-size:12px;color:#64748b;">${new Date(m.updatedAt||Date.now()).toLocaleString()}</div></div>
+    <button class="assistant-icon" data-act="open" title="切換">${svgOpen()}</button>
+  </div>`).join('') : '<div style="padding:12px;color:#64748b;">尚無會話</div>';
+  panel.appendChild(pop);
+  pop.querySelectorAll('.ah-item').forEach(it => {
+    it.addEventListener('click', async () => {
+      const id = it.getAttribute('data-id'); setCurrentConvId(ctx.articleKey, id);
+      const box = panel.querySelector('#assistant-messages'); if (box) { box.innerHTML=''; const msgs = await idbGetConv(id); msgs.forEach(m=>appendMessage(box,m.role,m.content)); box.scrollTop=box.scrollHeight; }
+      pop.remove();
+    });
+  });
+}
+
+function updateSessionLabel(){
+  try {
+    const el = document.getElementById('assistant-session-label');
+    if (!el) return; const map = getCurrentMap(); const ak = (dom.articleInput && dom.articleInput.value) ? null : null; // label 僅顯示當前會話 ID 簡碼
+  } catch(_){}
+}
+
 function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
 function svgChat(){return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 3C6.477 3 2 6.94 2 11.8c0 1.946.72 3.746 1.934 5.19L3 21l4.2-1.758c1.362.515 2.87.8 4.5.8 5.523 0 10-3.94 10-8.8S17.523 3 12 3z"/></svg>'}
@@ -493,6 +531,11 @@ function svgMin(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="
 function svgRefresh(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 3a5 5 0 1 0 3.905 8.12.5.5 0 1 1 .79.612A6 6 0 1 1 8 2v1z"/><path d="M8 0a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 1 1 .708.708L8.354 5.71a.5.5 0 0 1-.708 0L5.646 3.854a.5.5 0 1 1 .708-.708L7.5 4.293V.5A.5.5 0 0 1 8 0z"/></svg>'}
 function svgPin(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4.146 2.146a.5.5 0 0 1 .708 0L7.5 4.793l1.646-1.647a.5.5 0 0 1 .708.708L8.207 5.5l2.147 2.146a.5.5 0 1 1-.708.708L7.5 6.207 5.354 8.354a.5.5 0 1 1-.708-.708L6.793 5.5 4.146 2.854a.5.5 0 0 1 0-.708z"/></svg>'}
 function svgFull(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 1h5v1H2v4H1V1zm8 0h6v6h-1V2H9V1zM1 9h1v5h5v1H1V9zm13 0h1v7H9v-1h5V9z"/></svg>'}
+function svgSmall(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><rect x="9" y="9" width="6" height="6" rx="2"/><rect x="1" y="1" width="10" height="10" rx="2" fill="none" stroke="currentColor"/></svg>'}
+function svgMax(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 4a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3z"/></svg>'}
+function svgPlus(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 1a.5.5 0 0 1 .5.5v6h6a.5.5 0 0 1 0 1h-6v6a.5.5 0 0 1-1 0v-6h-6a.5.5 0 0 1 0-1h6v-6A.5.5 0 0 1 8 1z"/></svg>'}
+function svgList(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M2 2.5a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2zm0 5a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2zm0 5a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2z"/></svg>'}
+function svgOpen(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4 4h6v1H5v6H4V4zm3 3h5v5H7V7z"/></svg>'}
 
 const SYSTEM_PROMPT = `你是「PEN子背單詞」前端網頁中的英語學習助教。請始終以繁體中文（香港用字）回答，用字例：網上、上載、電郵、的士、巴士、軟件、網絡、連結、相片。不要使用粵語口語。
 
