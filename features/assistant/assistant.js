@@ -462,6 +462,8 @@ function setPanelMode(panel, mode){
     sizes.style.display = (mode==='dock' ? 'none' : 'inline-flex');
     pcts.style.display = (mode==='dock' ? 'inline-flex' : 'none');
   }
+  // 浮動模式時清除 dock 尺寸，避免殘留造成 1px 線
+  if (mode !== 'dock') panel.style.width = '';
 }
 function togglePanelMode(panel){ const cur = getSavedPanelMode(); const next = (cur==='dock'?'floating':'dock'); setPanelMode(panel,next); if (next==='dock') setDockWidth(panel,getSavedDockWidth()); }
 
@@ -470,8 +472,10 @@ function setDockWidth(panel, pct){
   saveDockWidth(pct);
   // 以分析容器寬度為基準，找不到則用 viewport
   const baseEl = document.querySelector('.analysis-container') || document.querySelector('#article-analysis-container') || document.body;
-  const baseWidth = baseEl.getBoundingClientRect ? baseEl.getBoundingClientRect().width : window.innerWidth;
-  const width = Math.round(baseWidth * pct / 100);
+  let baseWidth = window.innerWidth;
+  try { const r = baseEl.getBoundingClientRect && baseEl.getBoundingClientRect(); if (r && r.width) baseWidth = r.width; } catch(_) {}
+  // 保障：最小面板寬度 360px，避免只剩下 1px 邊框
+  const width = Math.max(360, Math.round(baseWidth * pct / 100));
   if (getSavedPanelMode()==='dock') {
     panel.style.width = width + 'px';
     // 高亮百分比按鈕
