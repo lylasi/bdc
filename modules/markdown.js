@@ -4,24 +4,58 @@
 
 export function markdownToHtml(md) {
   const esc = (s) => String(s).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
-  const lines = String(md || '').split(/\r?\n/);
+  const L = String(md || '').replace(/\r\n/g,'\n').split('\n');
   const out = [];
   let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
+  while (i < L.length) {
+    const line = L[i];
+    // 圖片
+    const img = line.match(/^!\[([^\]]*)\]\(([^\)]+)\)/);
+    if (img) { out.push(`<p><img src="${esc(img[2])}" alt="${esc(img[1])}"></p>`); i++; continue; }
+    // 水平線
+    if (/^\s*---+\s*$/.test(line)) { out.push('<hr>'); i++; continue; }
+    // 程式碼區塊
+    if (/^\s*```/.test(line)) {
+      const buf = []; i++;
+      while (i < L.length && !/^\s*```/.test(L[i])) { buf.push(L[i]); i++; }
+      if (i < L.length) i++; // skip closing ```
+      out.push(`<pre><code>${esc(buf.join('\n'))}</code></pre>`);
+      continue;
+    }
+    // 區塊引用
+    if (/^\s*>\s?/.test(line)) {
+      const buf = [line.replace(/^\s*>\s?/, '')]; i++;
+      while (i < L.length && /^\s*>\s?/.test(L[i])) { buf.push(L[i].replace(/^\s*>\s?/, '')); i++; }
+      out.push(`<blockquote>${buf.map(p=>`<p>${inlineMd(p)}</p>`).join('')}</blockquote>`);
+      continue;
+    }
     // 表格：第二行為分隔線
-    if (line.includes('|') && i + 1 < lines.length && /^\s*\|?\s*:?-{3,}/.test(lines[i+1])) {
+    if (line.includes('|') && i + 1 < L.length && /^\s*\|?\s*:?-{3,}/.test(L[i+1])) {
       const rows = [line];
       i++;
-      while (i < lines.length && lines[i].includes('|')) { rows.push(lines[i]); i++; }
+      while (i < L.length && L[i].includes('|')) { rows.push(L[i]); i++; }
       out.push(tableMarkdownToHtml(rows.join('\n')));
       continue;
     }
+    // 有序清單
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const items = [];
+      while (i < L.length && /^\s*\d+\.\s+/.test(L[i])) { items.push(L[i].replace(/^\s*\d+\.\s+/, '')); i++; }
+      out.push('<ol>' + items.map(x=>`<li>${inlineMd(x)}</li>`).join('') + '</ol>');
+      continue;
+    }
+    // 無序清單
+    if (/^\s*[-\*]\s+/.test(line)) {
+      const items = [];
+      while (i < L.length && /^\s*[-\*]\s+/.test(L[i])) { items.push(L[i].replace(/^\s*[-\*]\s+/, '')); i++; }
+      out.push('<ul>' + items.map(x=>`<li>${inlineMd(x)}</li>`).join('') + '</ul>');
+      continue;
+    }
+    // 標題
     const m = line.match(/^(#{1,6})\s+(.*)/);
     if (m) { out.push(`<h${m[1].length}>${inlineMd(m[2])}</h${m[1].length}>`); i++; continue; }
     if (!line.trim()) { out.push(''); i++; continue; }
-    out.push(`<p>${inlineMd(line)}</p>`);
-    i++;
+    out.push(`<p>${inlineMd(line)}</p>`); i++;
   }
   return out.join('\n');
 
@@ -43,4 +77,3 @@ export function markdownToHtml(md) {
   }
   function splitRow(r) { return r.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(s => s.trim()); }
 }
-

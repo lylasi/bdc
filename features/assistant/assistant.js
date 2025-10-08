@@ -424,10 +424,16 @@ function cyclePanelSize(panel) {
 }
 
 // 模式: floating | dock；寬度百分比與全高
-function getSavedPanelMode(){ try { return localStorage.getItem('assistantPanelMode') || 'floating'; } catch(_) { return 'floating'; } }
-function savePanelMode(m){ try { localStorage.setItem('assistantPanelMode', m); } catch(_){} }
-function getSavedDockWidth(){ try { return parseInt(localStorage.getItem('assistantPanelDockWidth')||'40',10) || 40; } catch(_) { return 40; } }
-function saveDockWidth(p){ try { localStorage.setItem('assistantPanelDockWidth', String(p)); } catch(_){} }
+function getSavedPanelMode(){
+  const ak = getCurrentArticleKeySync();
+  try { const map = JSON.parse(localStorage.getItem('assistantModeMap')||'{}'); return map[ak] || 'floating'; } catch(_) { return 'floating'; }
+}
+function savePanelMode(m){
+  const ak = getCurrentArticleKeySync();
+  try { const map = JSON.parse(localStorage.getItem('assistantModeMap')||'{}'); map[ak]=m; localStorage.setItem('assistantModeMap', JSON.stringify(map)); } catch(_){}
+}
+function getSavedDockWidth(){ const ak=getCurrentArticleKeySync(); try { const map=JSON.parse(localStorage.getItem('assistantDockWidthMap')||'{}'); return parseInt(map[ak]||'40',10)||40; } catch(_) { return 40; } }
+function saveDockWidth(p){ const ak=getCurrentArticleKeySync(); try { const map=JSON.parse(localStorage.getItem('assistantDockWidthMap')||'{}'); map[ak]=String(p); localStorage.setItem('assistantDockWidthMap', JSON.stringify(map)); } catch(_){} }
 function getSavedFull(){ try { return localStorage.getItem('assistantPanelFull')==='1'; } catch(_) { return false; } }
 function saveFull(v){ try { localStorage.setItem('assistantPanelFull', v?'1':'0'); } catch(_){} }
 
