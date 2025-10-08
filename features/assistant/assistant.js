@@ -269,7 +269,9 @@ async function ask(panel, userText) {
       });
     } else {
       buffer = await onceCompletions(messages, ac.signal);
-      placeholder.textContent = buffer;
+      // 非串流：直接以 Markdown 渲染
+      try { placeholder.innerHTML = markdownToHtml(buffer || ''); }
+      catch(_) { placeholder.textContent = buffer; }
     }
   } catch (e) {
     if (e?.name !== 'AbortError') {
@@ -277,6 +279,11 @@ async function ask(panel, userText) {
     }
   } finally {
     stopBtn.remove();
+    // 串流完成：把純文字轉為 Markdown（避免要第二次載入才渲染）
+    if (streamPref) {
+      try { placeholder.innerHTML = markdownToHtml(buffer || ''); }
+      catch(_) { /* ignore，保留純文字 */ }
+    }
     await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'assistant', content: buffer, ts: Date.now() });
   }
 }
@@ -381,6 +388,11 @@ function injectScopedStyles() {
   .assistant-icon svg{width:16px;height:16px;display:block;fill:currentColor}
   .assistant-messages{padding:12px;overflow:auto;flex:1;background:#fff}
   .assistant-msg{white-space:pre-wrap;word-break:break-word;padding:10px 12px;border-radius:10px;margin:8px 0}
+  .assistant-msg img{max-width:100%;height:auto;display:block;border-radius:6px}
+  .assistant-msg table{width:100%;border-collapse:collapse;table-layout:auto;margin:6px 0}
+  .assistant-msg th,.assistant-msg td{border:1px solid #e5e7eb;padding:6px 8px;vertical-align:top}
+  .assistant-msg code{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:0 3px;font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+  .assistant-msg pre{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px;overflow:auto}
   .assistant-user{background:#eef2ff;color:#1e293b;align-self:flex-end}
   .assistant-assistant{background:#f1f5f9;color:#111827;align-self:flex-start;position:relative}
   .assistant-hint{background:#fef3c7;color:#78350f}
