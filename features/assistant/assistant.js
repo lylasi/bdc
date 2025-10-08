@@ -372,8 +372,8 @@ async function streamCompletions(messages, signal, onDelta) {
 }
 
 function injectScopedStyles() {
-  if (document.getElementById('assistant-style')) return;
-  const style = document.createElement('style');
+  const exist = document.getElementById('assistant-style');
+  const style = exist || document.createElement('style');
   style.id = 'assistant-style';
   style.textContent = `
   .assistant-fab{position:fixed;right:16px;bottom:16px;width:48px;height:48px;border-radius:50%;background:#3b82f6;color:#fff;border:none;box-shadow:0 8px 24px rgba(59,130,246,.35);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:2400}
@@ -389,7 +389,9 @@ function injectScopedStyles() {
   .assistant-percents{display:none;gap:6px;margin-right:6px}
   .assistant-percent-btn{min-width:42px;height:24px;padding:0 8px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#475569}
   .assistant-percent-btn.active{background:#eef2ff;border-color:#93c5fd;color:#1d4ed8;box-shadow:0 0 0 1px #dbeafe inset}
-  .assistant-icon{width:28px;height:28px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+  .assistant-icon{width:28px;height:28px;border:1px solid #d1d5db;border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
+  .assistant-icon:hover{border-color:#93c5fd;color:#1d4ed8;background:#f8fbff}
+  .assistant-icon svg{width:16px;height:16px;display:block;fill:currentColor}
   .assistant-messages{padding:12px;overflow:auto;flex:1;background:#fff}
   .assistant-msg{white-space:pre-wrap;word-break:break-word;padding:10px 12px;border-radius:10px;margin:8px 0}
   .assistant-user{background:#eef2ff;color:#1e293b;align-self:flex-end}
@@ -418,7 +420,7 @@ function injectScopedStyles() {
     .assistant-panel.assistant-dock .assistant-sizes{display:none}
   }
   `;
-  document.head.appendChild(style);
+  if (!exist) document.head.appendChild(style);
 }
 
 // ---------- 尺寸控制（桌面端） ----------
