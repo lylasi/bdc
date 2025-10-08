@@ -394,7 +394,12 @@ function injectScopedStyles() {
   .assistant-stop{position:absolute;right:8px;bottom:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
 
   /* 桌面：提供多種寬度尺寸 */
-  @media (min-width: 1024px){ .assistant-panel{max-height:85vh} }
+  @media (min-width: 1024px){
+    .assistant-panel{max-height:85vh}
+    /* 桌面：加大工具圖示按鈕與圖標尺寸，避免過小難以辨識 */
+    .assistant-icon{width:36px;height:36px}
+    .assistant-icon svg{width:18px;height:18px}
+  }
   /* Dock 模式 */
   .assistant-panel.assistant-dock{right:16px;left:auto;top:16px;bottom:16px;border-radius:12px;max-height:calc(100vh - 32px)}
   /* Modal 模式 */
