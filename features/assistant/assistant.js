@@ -386,8 +386,11 @@ function injectScopedStyles() {
   .assistant-icon{width:28px;height:28px;border:1px solid #d1d5db;border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
   .assistant-icon:hover{border-color:#93c5fd;color:#1d4ed8;background:#f8fbff}
   .assistant-icon svg{width:16px;height:16px;display:block;fill:currentColor}
-  .assistant-messages{padding:12px;overflow:auto;flex:1;background:#fff}
-  .assistant-msg{white-space:pre-wrap;word-break:break-word;padding:10px 12px;border-radius:10px;margin:8px 0}
+  .assistant-messages{padding:12px 16px;overflow:auto;flex:1;background:#fff}
+  .assistant-msg{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:10px 14px;border-radius:10px;margin:8px 0;box-sizing:border-box}
+  .assistant-msg p{margin:6px 0}
+  .assistant-msg ol,.assistant-msg ul{margin:4px 0 8px 0;padding-left:1.25em}
+  .assistant-msg li{margin:2px 0}
   .assistant-msg img{max-width:100%;height:auto;display:block;border-radius:6px}
   .assistant-msg table{width:100%;border-collapse:collapse;table-layout:auto;margin:6px 0}
   .assistant-msg th,.assistant-msg td{border:1px solid #e5e7eb;padding:6px 8px;vertical-align:top}
