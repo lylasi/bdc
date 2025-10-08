@@ -214,9 +214,11 @@ async function ask(panel, userText) {
   // messages：系統 + 上下文 + 近幾輪 + 本輪
   const system = { role: 'system', content: SYSTEM_PROMPT };
   const context = { role: 'user', content: `以下是目前文章內容，僅作為上下文：\n\n"""\n${articleText}\n"""` };
-  const list = loadConversations();
-  const conv = list.find(c => c.articleKey === articleKey);
-  const history = conv ? (conv.messages || []).slice(-8).map(m => ({ role: m.role, content: m.content })) : [];
+  // 讀取最近 N 輪歷史（透過索引 + IDB）
+  const idx = readIndex();
+  const meta = idx.find(x => x.articleKey === articleKey);
+  const prev = meta ? await idbGetConv(meta.id) : [];
+  const history = prev.slice(-8).map(m => ({ role: m.role, content: m.content }));
   const messages = [system, context, ...history, { role: 'user', content: userText }];
 
   appendMessage(box, 'user', userText);
