@@ -4189,17 +4189,21 @@ mark.punc-err-space {
 .ocr-form .checkbox-inline.compact input:checked + .cb-icon { background:#eaf2ff; border-color:#93c5fd; color:#1d4ed8; box-shadow: 0 0 0 2px #eaf2ff inset; }
 .ocr-form .btn-row { display:flex; gap:8px; flex-wrap:wrap; }
 /* OCR 行動列：突出主要按鈕，其餘緊湊不佔位 */
-.ocr-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-.ocr-actions .btn-primary { padding: 9px 16px; box-shadow: 0 8px 18px rgba(58,123,213,0.18); }
-.ocr-actions .btn-secondary { padding: 6px 10px; font-size: .92em; border-radius: 6px; background:#f7f9ff; }
-.ocr-actions .btn-secondary:disabled { background:#f6f7fb; color:#a5b4d6; }
+/* OCR 工具列 */
+.ocr-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-start; background:#f8fafc; border:1px solid var(--border-color,#e5e7eb); border-radius:10px; padding:8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04) inset; }
+.ocr-toolbar .btn-primary { padding: 9px 16px; box-shadow: 0 8px 18px rgba(58,123,213,0.18); }
+.ocr-toolbar .btn-secondary { padding: 6px 10px; font-size: .92em; border-radius: 8px; background:#ffffff; }
+.ocr-toolbar .btn-secondary:disabled { background:#f6f7fb; color:#a5b4d6; }
 .btn-icon { width:36px; height:36px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
 .btn-icon svg { display:block; }
 .btn-icon.active { background:#eaf2ff; border-color:#93c5fd; color:#1d4ed8; box-shadow: 0 0 0 1px #dbeafe inset; }
 .ocr-progress { display:flex; align-items:center; gap:10px; width:100%; }
 .ocr-progress-bar { flex:1; height:8px; background: var(--border-color,#e5e7eb); border-radius:6px; overflow:hidden; }
 .ocr-progress-bar > span { display:block; height:100%; width:0%; background:#3b82f6; transition: width .25s ease; }
-.ocr-progress-text { min-width: 160px; font-size: .9em; color: var(--text-muted,#666); text-align:right; }
+.ocr-progress-text { min-width: 160px; font-size: .9em; color: var(--text-muted,#666); text-align:right; white-space: nowrap; }
+.form-row.actions.compact .ocr-progress { gap:8px; }
+.ocr-progress.slim .ocr-progress-bar { height:6px; }
+.ocr-progress.slim .ocr-progress-text { min-width:auto; font-size:.85em; color:#94a3b8; }
 
 .ocr-advanced { margin-top: 4px; border-top: 1px dashed var(--border-color,#ddd); padding-top: 6px; }
 .ocr-advanced > summary { cursor:pointer; list-style:none; font-weight:600; margin-bottom:6px; }
