@@ -530,8 +530,19 @@ async function toggleHistory(panel){
 function updateSessionLabel(){
   try {
     const el = document.getElementById('assistant-session-label');
-    if (!el) return; const map = getCurrentMap(); const ak = (dom.articleInput && dom.articleInput.value) ? null : null; // label 僅顯示當前會話 ID 簡碼
+    if (!el) return;
+    const ak = getCurrentArticleKeySync();
+    const id = getCurrentConvId(ak);
+    if (!id){ el.textContent=''; return; }
+    const m = readIndex().find(x => x.id===id);
+    el.textContent = m ? `· ${m.title||'會話'}` : '';
   } catch(_){}
+}
+
+// 以文章文字作為同步鍵（避免 async 雜湊在 UI 中不好用）；
+// 足以區分不同文章，且對話切換時可做 per-article 記憶。
+function getCurrentArticleKeySync(){
+  try { const raw = (dom.articleInput && dom.articleInput.value) || ''; return String(raw).slice(0, 64) || 'global'; } catch(_) { return 'global'; }
 }
 
 function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
