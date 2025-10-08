@@ -253,14 +253,8 @@
                             <div class="form-row">
                                 <label for="ocr-image-input">上傳圖片：</label>
                                 <div class="field-inline">
-                                    <input id="ocr-image-input" type="file" accept="image/*" multiple>
-                                    <!-- 相機優先切換移至下方動作列；保留位置簡潔 -->
-                                </div>
-                            </div>
-
-                            <div class="form-row actions">
-                                <span class="label-spacer"></span>
-                                <div class="btn-row ocr-actions">
+                                    <input id="ocr-image-input" type="file" accept="image/*" multiple capture="environment">
+                                    <!-- 相機優先切換：緊貼檔案選擇，節省空間且直覺 -->
                                     <input type="checkbox" id="ocr-prefer-camera" class="sr-only" aria-hidden="true">
                                     <button id="ocr-prefer-toggle" class="btn-secondary btn-icon" title="使用相機優先">
                                         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
@@ -268,29 +262,27 @@
                                         </svg>
                                         <span class="sr-only">使用相機優先</span>
                                     </button>
+                                    <!-- 操作按鈕改為同行，節省垂直空間 -->
                                     <button id="ocr-open-camera-btn" class="btn-secondary btn-icon" title="開啟相機">
                                         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                                             <path d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="currentColor"/>
                                         </svg>
                                         <span class="sr-only">開啟相機</span>
                                     </button>
-                                    <button id="ocr-run-btn" class="btn-primary">識別文字</button>
-                                    <button id="ocr-stop-btn" class="btn-secondary btn-icon" title="停止" disabled>
+                                    <button id="ocr-clear-btn" class="btn-secondary" title="清除已加入的圖片與結果">清除</button>
+                                    <button id="ocr-stop-btn" class="btn-secondary btn-icon hidden" title="停止" disabled>
                                         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                                             <rect x="7" y="7" width="10" height="10" rx="2" ry="2" fill="currentColor"/>
                                         </svg>
                                         <span class="sr-only">停止</span>
                                     </button>
-                                    <button id="ocr-clear-btn" class="btn-secondary btn-icon" title="清除">
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-                                            <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 7h2v7h-2v-7zm4 0h2v7h-2v-7zM8 10h2v7H8v-7z" fill="currentColor"/>
-                                        </svg>
-                                        <span class="sr-only">清除</span>
-                                    </button>
+                                    <button id="ocr-run-btn" class="btn-primary">識別文字</button>
                                 </div>
-                            <div class="form-row actions">
+                            </div>
+
+                            <div id="ocr-progress-row" class="form-row actions compact hidden">
                                 <span class="label-spacer"></span>
-                                <div class="ocr-progress">
+                                <div class="ocr-progress slim">
                                     <div class="ocr-progress-bar"><span id="ocr-progress-bar"></span></div>
                                     <div class="ocr-progress-text" id="ocr-progress-text">尚未開始</div>
                                 </div>

@@ -125,6 +125,14 @@ export function initOCR() {
             updatePreferToggleUI();
         } catch (_) {}
     });
+    // Mobile 預設：若為觸控/行動裝置，預設相機優先（不覆蓋使用者已勾選的情況）
+    try {
+        const looksMobile = (('ontouchstart' in window) || (navigator.maxTouchPoints > 1) || (window.matchMedia && matchMedia('(pointer:coarse)').matches));
+        if (looksMobile && dom.ocrPreferCamera && !dom.ocrPreferCamera.checked) {
+            dom.ocrPreferCamera.checked = true;
+            dom.ocrPreferCamera.dispatchEvent(new Event('change'));
+        }
+    } catch (_) {}
 
     // 自適應高度（提示詞、識別結果）
     try {
@@ -466,11 +474,17 @@ function updatePreferToggleUI() {
 function setControlsRunning(running) {
     try {
         if (dom.ocrRunBtn) dom.ocrRunBtn.disabled = !!running;
-        if (dom.ocrStopBtn) dom.ocrStopBtn.disabled = !running;
+        if (dom.ocrStopBtn) {
+            dom.ocrStopBtn.disabled = !running;
+            // 停止按鈕僅在任務進行中顯示
+            dom.ocrStopBtn.classList.toggle('hidden', !running);
+        }
         if (dom.ocrOpenCameraBtn) dom.ocrOpenCameraBtn.disabled = !!running;
         if (dom.ocrClearBtn) dom.ocrClearBtn.disabled = !!running;
         if (dom.ocrImageInput) dom.ocrImageInput.disabled = !!running;
         if (dom.ocrModelSelect) dom.ocrModelSelect.disabled = !!running;
+        // 在執行時顯示進度列，結束/未執行則隱藏，避免「尚未開始」占位
+        if (dom.ocrProgressRow) dom.ocrProgressRow.classList.toggle('hidden', !running);
     } catch (_) {}
 }
 
