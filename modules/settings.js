@@ -6,13 +6,20 @@ const SECRETS_KEY = 'pen_global_secrets';
 const defaults = {
   ai: { apiUrl: '', models: {} }, // request endpoint & per-feature model override
   tts: { baseUrl: '' },
+  assistant: { enabled: true, stream: true },
   updatedAt: null
 };
 
 export function loadGlobalSettings() {
   try { const raw = localStorage.getItem(SETTINGS_KEY); if (!raw) return { ...defaults };
     const s = JSON.parse(raw);
-    return { ...defaults, ...s, ai: { ...defaults.ai, ...(s.ai||{}) }, tts: { ...defaults.tts, ...(s.tts||{}) } };
+    return {
+      ...defaults,
+      ...s,
+      ai: { ...defaults.ai, ...(s.ai||{}) },
+      tts: { ...defaults.tts, ...(s.tts||{}) },
+      assistant: { ...defaults.assistant, ...(s.assistant||{}) }
+    };
   } catch(_) { return { ...defaults }; }
 }
 
@@ -23,6 +30,7 @@ export function saveGlobalSettings(partial) {
     ...partial,
     ai: { ...cur.ai, ...(partial?.ai || {}) },
     tts: { ...cur.tts, ...(partial?.tts || {}) },
+    assistant: { ...cur.assistant, ...(partial?.assistant || {}) },
     updatedAt: new Date().toISOString()
   };
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); return next; } catch(_) { return cur; }
