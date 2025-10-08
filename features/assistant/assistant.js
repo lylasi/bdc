@@ -85,11 +85,19 @@ function renderPanelHtml() {
     <div class="assistant-head">
       <div class="assistant-title">AI 助手 · ${escapeHtml(title || '文章')}</div>
       <div class="assistant-actions">
+        <button class="assistant-icon" id="assistant-dock" title="靠右停靠/浮動切換">${svgPin()}</button>
+        <button class="assistant-icon" id="assistant-full" title="全高/適中高度">${svgFull()}</button>
         <div class="assistant-sizes" role="group" aria-label="面板尺寸">
-          <button class="assistant-size-btn" data-size="s" title="小"></button>
-          <button class="assistant-size-btn" data-size="m" title="中"></button>
-          <button class="assistant-size-btn" data-size="l" title="大"></button>
-          <button class="assistant-size-btn" data-size="xl" title="特大"></button>
+          <button class="assistant-size-btn" data-size="s" data-label="S" title="小">S</button>
+          <button class="assistant-size-btn" data-size="m" data-label="M" title="中">M</button>
+          <button class="assistant-size-btn" data-size="l" data-label="L" title="大">L</button>
+          <button class="assistant-size-btn" data-size="xl" data-label="XL" title="特大">XL</button>
+        </div>
+        <div class="assistant-percents" role="group" aria-label="面板寬度（%）">
+          <button class="assistant-percent-btn" data-pct="35">35%</button>
+          <button class="assistant-percent-btn" data-pct="40">40%</button>
+          <button class="assistant-percent-btn" data-pct="50">50%</button>
+          <button class="assistant-percent-btn" data-pct="60">60%</button>
         </div>
         <button class="assistant-icon" id="assistant-refresh" title="刷新上下文">${svgRefresh()}</button>
         <button class="assistant-icon" id="assistant-min" title="最小化">${svgMin()}</button>
@@ -123,6 +131,17 @@ function wirePanel(panel) {
   panel.querySelector('.assistant-head').addEventListener('dblclick', () => cyclePanelSize(panel));
   // 首次套用儲存尺寸
   applySize(getSavedPanelSize());
+
+  // Dock 模式與全高
+  $('#assistant-dock').addEventListener('click', () => togglePanelMode(panel));
+  $('#assistant-full').addEventListener('click', () => togglePanelFull(panel));
+  panel.querySelectorAll('.assistant-percent-btn').forEach(btn => {
+    btn.addEventListener('click', () => { setDockWidth(panel, parseInt(btn.getAttribute('data-pct'),10)||40); });
+  });
+  // 初次套用 dock 狀態
+  setPanelMode(panel, getSavedPanelMode());
+  setDockWidth(panel, getSavedDockWidth());
+  window.addEventListener('resize', () => { if (getSavedPanelMode()==='dock') setDockWidth(panel, getSavedDockWidth()); });
   $('#assistant-clear').addEventListener('click', () => {
     const { articleKey } = buildContext();
     if (!confirm('確定清空本文章的對話？')) return;
@@ -365,8 +384,11 @@ function injectScopedStyles() {
   .assistant-title{font-weight:700;color:#111827;font-size:14px}
   .assistant-actions{display:flex;gap:6px;align-items:center}
   .assistant-sizes{display:none;gap:6px;margin-right:6px}
-  .assistant-size-btn{width:18px;height:18px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer}
-  .assistant-size-btn.active{background:#eaf2ff;border-color:#93c5fd;box-shadow:0 0 0 1px #dbeafe inset}
+  .assistant-size-btn{min-width:28px;height:22px;padding:0 6px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#475569}
+  .assistant-size-btn.active{background:#eaf2ff;border-color:#93c5fd;color:#1d4ed8;box-shadow:0 0 0 1px #dbeafe inset}
+  .assistant-percents{display:none;gap:6px;margin-right:6px}
+  .assistant-percent-btn{min-width:42px;height:24px;padding:0 8px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#475569}
+  .assistant-percent-btn.active{background:#eef2ff;border-color:#93c5fd;color:#1d4ed8;box-shadow:0 0 0 1px #dbeafe inset}
   .assistant-icon{width:28px;height:28px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
   .assistant-messages{padding:12px;overflow:auto;flex:1;background:#fff}
   .assistant-msg{white-space:pre-wrap;word-break:break-word;padding:10px 12px;border-radius:10px;margin:8px 0}
@@ -390,6 +412,10 @@ function injectScopedStyles() {
     .assistant-panel.assistant-size-l{width:720px}
     .assistant-panel.assistant-size-xl{width:900px}
     .assistant-panel{max-height:85vh}
+    /* Dock 模式 */
+    .assistant-panel.assistant-dock{right:16px;left:auto;top:16px;bottom:16px;border-radius:12px;max-height:calc(100vh - 32px)}
+    .assistant-panel.assistant-dock .assistant-percents{display:inline-flex}
+    .assistant-panel.assistant-dock .assistant-sizes{display:none}
   }
   `;
   document.head.appendChild(style);
@@ -414,12 +440,53 @@ function cyclePanelSize(panel) {
   setPanelSize(panel, next);
 }
 
+// 模式: floating | dock；寬度百分比與全高
+function getSavedPanelMode(){ try { return localStorage.getItem('assistantPanelMode') || 'floating'; } catch(_) { return 'floating'; } }
+function savePanelMode(m){ try { localStorage.setItem('assistantPanelMode', m); } catch(_){} }
+function getSavedDockWidth(){ try { return parseInt(localStorage.getItem('assistantPanelDockWidth')||'40',10) || 40; } catch(_) { return 40; } }
+function saveDockWidth(p){ try { localStorage.setItem('assistantPanelDockWidth', String(p)); } catch(_){} }
+function getSavedFull(){ try { return localStorage.getItem('assistantPanelFull')==='1'; } catch(_) { return false; } }
+function saveFull(v){ try { localStorage.setItem('assistantPanelFull', v?'1':'0'); } catch(_){} }
+
+function setPanelMode(panel, mode){
+  if (mode !== 'dock') mode = 'floating';
+  panel.classList.toggle('assistant-dock', mode==='dock');
+  panel.classList.toggle('assistant-floating', mode!=='dock');
+  savePanelMode(mode);
+  // 切換控件顯示
+  const sizes = panel.querySelector('.assistant-sizes');
+  const pcts = panel.querySelector('.assistant-percents');
+  if (sizes && pcts){
+    sizes.style.display = (mode==='dock' ? 'none' : 'inline-flex');
+    pcts.style.display = (mode==='dock' ? 'inline-flex' : 'none');
+  }
+}
+function togglePanelMode(panel){ const cur = getSavedPanelMode(); const next = (cur==='dock'?'floating':'dock'); setPanelMode(panel,next); if (next==='dock') setDockWidth(panel,getSavedDockWidth()); }
+
+function setDockWidth(panel, pct){
+  pct = Math.min(70, Math.max(30, pct||40));
+  saveDockWidth(pct);
+  // 以分析容器寬度為基準，找不到則用 viewport
+  const baseEl = document.querySelector('.analysis-container') || document.querySelector('#article-analysis-container') || document.body;
+  const baseWidth = baseEl.getBoundingClientRect ? baseEl.getBoundingClientRect().width : window.innerWidth;
+  const width = Math.round(baseWidth * pct / 100);
+  if (getSavedPanelMode()==='dock') {
+    panel.style.width = width + 'px';
+    // 高亮百分比按鈕
+    panel.querySelectorAll('.assistant-percent-btn').forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-pct'),10)===pct));
+  }
+}
+
+function togglePanelFull(panel){ const v = !getSavedFull(); panel.classList.toggle('assistant-full', v); saveFull(v); }
+
 function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
 function svgChat(){return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 3C6.477 3 2 6.94 2 11.8c0 1.946.72 3.746 1.934 5.19L3 21l4.2-1.758c1.362.515 2.87.8 4.5.8 5.523 0 10-3.94 10-8.8S17.523 3 12 3z"/></svg>'}
 function svgClose(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>'}
 function svgMin(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M3 9.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/></svg>'}
 function svgRefresh(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 3a5 5 0 1 0 3.905 8.12.5.5 0 1 1 .79.612A6 6 0 1 1 8 2v1z"/><path d="M8 0a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 1 1 .708.708L8.354 5.71a.5.5 0 0 1-.708 0L5.646 3.854a.5.5 0 1 1 .708-.708L7.5 4.293V.5A.5.5 0 0 1 8 0z"/></svg>'}
+function svgPin(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4.146 2.146a.5.5 0 0 1 .708 0L7.5 4.793l1.646-1.647a.5.5 0 0 1 .708.708L8.207 5.5l2.147 2.146a.5.5 0 1 1-.708.708L7.5 6.207 5.354 8.354a.5.5 0 1 1-.708-.708L6.793 5.5 4.146 2.854a.5.5 0 0 1 0-.708z"/></svg>'}
+function svgFull(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 1h5v1H2v4H1V1zm8 0h6v6h-1V2H9V1zM1 9h1v5h5v1H1V9zm13 0h1v7H9v-1h5V9z"/></svg>'}
 
 const SYSTEM_PROMPT = `你是「PEN子背單詞」前端網頁中的英語學習助教。請始終以繁體中文（香港用字）回答，用字例：網上、上載、電郵、的士、巴士、軟件、網絡、連結、相片。不要使用粵語口語。
 
