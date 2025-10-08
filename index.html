@@ -287,7 +287,6 @@
                                     <div class="ocr-progress-text" id="ocr-progress-text">尚未開始</div>
                                 </div>
                             </div>
-                            </div>
 
                             <details class="ocr-advanced">
                                 <summary>進階選項</summary>
@@ -330,8 +329,8 @@
                                 </div>
                                 <canvas id="ocr-canvas" class="hidden"></canvas>
                             </div>
-                        </div>
-                    </div>
+                        </div> <!-- .ocr-form end -->
+                    </div> <!-- .ocr-left end -->
 
                     <div class="ocr-right">
                         <div class="preview-pane">
@@ -474,8 +473,8 @@
                                 </div>
                             </div>
                             <div class="settings-group">
-                                <label for="reading-speed">語速:</label>
-                                <div id="speed-control-group" class="speed-control">
+                                <span class="field-label" id="reading-speed-label">語速:</span>
+                                <div id="speed-control-group" class="speed-control" role="group" aria-labelledby="reading-speed-label">
                                     <button class="speed-btn" data-speed="-100">x0.5</button>
                                     <button class="speed-btn" data-speed="-50">x0.75</button>
                                     <button class="speed-btn active" data-speed="0">x1.0</button>
