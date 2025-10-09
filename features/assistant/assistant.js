@@ -526,19 +526,47 @@ async function toggleHistory(panel){
   if (pop) { pop.remove(); return; }
   pop = document.createElement('div');
   pop.id='assistant-history-panel';
-  pop.style.cssText='position:absolute; right:12px; top:44px; z-index:2401; background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14); min-width:260px; max-height:60vh; overflow:auto;';
+  pop.style.cssText='position:absolute; right:12px; top:44px; z-index:2401; background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14); min-width:300px; max-height:60vh; overflow:auto;';
   pop.innerHTML = idx.length ? idx.map(m=>`<div class="ah-item" data-id="${m.id}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;">
-    <div style="flex:1;min-width:0;"><div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.title||'會話')}</div>
-    <div style="font-size:12px;color:#64748b;">${new Date(m.updatedAt||Date.now()).toLocaleString()}</div></div>
+    <div class="ah-meta" style="flex:1;min-width:0;">
+      <div class="ah-title" style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.title||'會話')}</div>
+      <div class="ah-time" style="font-size:12px;color:#64748b;">${new Date(m.updatedAt||Date.now()).toLocaleString()}</div>
+    </div>
     <button class="assistant-icon" data-act="open" title="切換">${svgOpen()}</button>
+    <button class="assistant-icon" data-act="rename" title="重命名">${svgEdit()}</button>
+    <button class="assistant-icon" data-act="delete" title="刪除">${svgTrash()}</button>
   </div>`).join('') : '<div style="padding:12px;color:#64748b;">尚無會話</div>';
   panel.appendChild(pop);
-  pop.querySelectorAll('.ah-item').forEach(it => {
-    it.addEventListener('click', async () => {
-      const id = it.getAttribute('data-id'); setCurrentConvId(ctx.articleKey, id);
-      const box = panel.querySelector('#assistant-messages'); if (box) { box.innerHTML=''; const msgs = await idbGetConv(id); msgs.forEach(m=>appendMessage(box,m.role,m.content)); box.scrollTop=box.scrollHeight; }
-      pop.remove();
-    });
+  pop.addEventListener('click', async (ev) => {
+    const item = ev.target.closest('.ah-item');
+    if (!item) return;
+    const id = item.getAttribute('data-id');
+    const actBtn = ev.target.closest('button[data-act]');
+    const act = actBtn ? actBtn.getAttribute('data-act') : 'open';
+    if (act === 'rename') {
+      ev.stopPropagation();
+      const titleEl = item.querySelector('.ah-title');
+      const newTitle = prompt('輸入新的會話名稱：', titleEl?.textContent || '');
+      if (newTitle && newTitle.trim()) {
+        const list = readIndex().map(x => x.id===id? { ...x, title:newTitle.trim(), updatedAt:new Date().toISOString() }: x);
+        writeIndex(list); titleEl.textContent = newTitle.trim(); updateSessionLabel();
+      }
+      return;
+    }
+    if (act === 'delete') {
+      ev.stopPropagation();
+      if (!confirm('確定刪除此會話？')) return;
+      const list = readIndex().filter(x => x.id!==id); writeIndex(list);
+      try { await cache.setItem('assistant:conv:'+id, { messages: [] }); } catch(_) {}
+      item.remove();
+      if (getCurrentConvId(ctx.articleKey)===id){ setCurrentConvId(ctx.articleKey, ''); const box=panel.querySelector('#assistant-messages'); if (box) box.innerHTML=''; updateSessionLabel(); }
+      return;
+    }
+    // open 切換
+    setCurrentConvId(ctx.articleKey, id);
+    const box = panel.querySelector('#assistant-messages');
+    if (box) { box.innerHTML=''; const msgs = await idbGetConv(id); msgs.forEach(m=>appendMessage(box,m.role,m.content)); box.scrollTop=box.scrollHeight; }
+    updateSessionLabel(); pop.remove();
   });
 }
 
@@ -573,6 +601,8 @@ function svgMax(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="
 function svgPlus(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 1a.5.5 0 0 1 .5.5v6h6a.5.5 0 0 1 0 1h-6v6a.5.5 0 0 1-1 0v-6h-6a.5.5 0 0 1 0-1h6v-6A.5.5 0 0 1 8 1z"/></svg>'}
 function svgList(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M2 2.5a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2zm0 5a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2zm0 5a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2z"/></svg>'}
 function svgOpen(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4 4h6v1H5v6H4V4zm3 3h5v5H7V7z"/></svg>'}
+function svgEdit(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-9.5 9.5L4 14l.646-2.354 9.5-9.5z"/></svg>'}
+function svgTrash(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M6.5 1h3a.5.5 0 0 1 .5.5V3h3a.5.5 0 0 1 0 1H3a.5.5 0 0 1 0-1h3V1.5a.5.5 0 0 1 .5-.5z"/><path d="M5.5 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5z"/><path d="M4.118 4.5 4 14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l-.118-9.5H4.118z"/></svg>'}
 
 const SYSTEM_PROMPT = `你是「PEN子背單詞」前端網頁中的英語學習助教。請始終以繁體中文（香港用字）回答，用字例：網上、上載、電郵、的士、巴士、軟件、網絡、連結、相片。不要使用粵語口語。
 
