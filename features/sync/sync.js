@@ -7,6 +7,8 @@ import { syncNow, auth, subscribeSnapshotChanges, unsubscribeChannel } from '../
 import * as ui from '../../modules/ui.js';
 import { openDictationGradingHistory } from '../dictation/dictation-grader.js';
 import * as backup from '../../modules/local-backup.js';
+import * as cache from '../../modules/cache.js';
+import { markdownToHtml } from '../../modules/markdown.js';
 
 export function initSync() {
   try {
@@ -247,9 +249,8 @@ function toggleGearMenu() {
     <div class="menu-divider"></div>
     <div class="menu-item" id="gm-settings"><span class="mi-icon">${svgGear()}</span><span class="mi-text">全局設定</span></div>
     <div class="menu-item" id="gm-grading-history"><span class="mi-icon">${svgHistory()}</span><span class="mi-text">默寫批改歷史</span></div>
-    <div class="menu-item" id="gm-backup-now"><span class="mi-icon">${svgSave()}</span><span class="mi-text">建立本機備份</span></div>
-    <div class="menu-item" id="gm-backup-restore"><span class="mi-icon">${svgRestore()}</span><span class="mi-text">從本機備份還原</span></div>
-    <div class="menu-item" id="gm-clear-cache"><span class="mi-icon">${svgTrash()}</span><span class="mi-text">清理本機快取</span></div>
+    <div class="menu-item" id="gm-assistant"><span class="mi-icon">${svgChat()}</span><span class="mi-text">AI 會話</span></div>
+    <div class="menu-item" id="gm-backup-panel"><span class="mi-icon">${svgRestore()}</span><span class="mi-text">備份與還原</span></div>
     <div class="menu-status">${status}</div>`;
   document.body.appendChild(m);
   const sync = m.querySelector('#gm-sync');
@@ -257,23 +258,31 @@ function toggleGearMenu() {
   const logout = m.querySelector('#gm-logout');
   const settings = m.querySelector('#gm-settings');
   const gradingHistory = m.querySelector('#gm-grading-history');
-  const clearCache = m.querySelector('#gm-clear-cache');
-  const backupNow = m.querySelector('#gm-backup-now');
-  const backupRestore = m.querySelector('#gm-backup-restore');
+  const assistantSessions = m.querySelector('#gm-assistant');
+  const backupPanel = m.querySelector('#gm-backup-panel');
   if (sync) sync.addEventListener('click', () => { handleSync(); m.remove(); });
   if (login) login.addEventListener('click', () => { showLoginModal(); m.remove(); });
   if (logout) logout.addEventListener('click', async () => { try { await auth.signOut(); } catch(_){} updateAuthButtons(null); updateStatus('已登出'); m.remove(); });
   if (settings) settings.addEventListener('click', () => { showGlobalSettingsModal(); m.remove(); });
   if (gradingHistory) gradingHistory.addEventListener('click', () => { try { openDictationGradingHistory(); } catch(_) {} m.remove(); });
-  if (backupNow) backupNow.addEventListener('click', async () => { try { await backup.createBackup('手動建立'); try { ui.displayMessage('已建立本機備份', 'success'); } catch(_) {} } catch(_) { try { ui.displayMessage('建立備份失敗', 'error'); } catch(_) {} } m.remove(); });
-  if (backupRestore) backupRestore.addEventListener('click', () => { showBackupRestoreModal(); m.remove(); });
-  if (clearCache) clearCache.addEventListener('click', async () => { await clearLocalCaches(); alert('已清理本機快取'); m.remove(); });
+  if (assistantSessions) assistantSessions.addEventListener('click', () => { showAssistantSessions(); m.remove(); });
+  if (backupPanel) backupPanel.addEventListener('click', () => { showBackupRestoreModal(); m.remove(); });
 }
 
 function showGlobalSettingsModal() {
   try { ui.openModal(); } catch(_) {}
   try { dom.modalTitle.textContent = '全局設定'; } catch(_) {}
   try { const mc = dom.appModal.querySelector('.modal-content'); if (mc) mc.classList.add('modal-large'); } catch(_) {}
+  // 注入本面板私有樣式（避免全局污染）
+  (function injectGsStyle(){
+    const id = 'gs-asst-style'; if (document.getElementById(id)) return;
+    const st = document.createElement('style'); st.id = id; st.textContent = `
+      .gs-asst-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+      .gs-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;font-size:12px;background:#fff;cursor:pointer}
+      .gs-chip input{width:14px;height:14px}
+      .gs-hint{color:#64748b;font-size:12px}
+    `; document.head.appendChild(st);
+  })();
   // read existing
   let settings, secrets;
   try { const mod = requireOrImportSettings(); settings = mod.settings; secrets = mod.secrets; } catch(_) { settings = {}; secrets = {}; }
@@ -296,15 +305,18 @@ function showGlobalSettingsModal() {
         <input id="gs-tts-key" type="password" placeholder="..." value="${escapeHtml(secrets.ttsKey||'')}">
       </div>
       <div class="auth-field">
-        <label style="display:block;font-weight:700;margin-bottom:6px;">AI 助手</label>
-        <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <input id="gs-assistant-enabled" type="checkbox" ${settings.assistantEnabled ? 'checked' : ''}>
-          <span>啟用 AI 助手（右下角懸浮入口）</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;">
-          <input id="gs-assistant-stream" type="checkbox" ${settings.assistantStream === false ? '' : 'checked'}>
-          <span>串流回應（減少等待）</span>
-        </label>
+        <label>AI 助手</label>
+        <div class="gs-asst-row">
+          <label class="gs-chip" title="右下角浮窗入口">
+            <input id="gs-assistant-enabled" type="checkbox" ${settings.assistantEnabled ? 'checked' : ''}>
+            <span>啟用</span>
+          </label>
+          <label class="gs-chip" title="串流回應可減少等待">
+            <input id="gs-assistant-stream" type="checkbox" ${settings.assistantStream === false ? '' : 'checked'}>
+            <span>串流</span>
+          </label>
+          <span class="gs-hint">右下角入口 · 串流更順暢</span>
+        </div>
       </div>
       <div class="auth-field">
         <label>AI 模型覆蓋（留空則使用預設）</label>
@@ -399,6 +411,161 @@ function requireOrImportSettings() {
 }
 
 // -----------------
+// Assistant Sessions Modal
+// -----------------
+async function showAssistantSessions(){
+  try { ui.openModal(); } catch(_) {}
+  try { dom.modalTitle.textContent = 'AI 會話'; } catch(_) {}
+  try { const mc = dom.appModal.querySelector('.modal-content'); if (mc) mc.classList.add('modal-large'); } catch(_) {}
+
+  // 單次注入樣式（避免全局污染）
+  (function injectStyle(){
+    const id = 'assistant-sessions-style';
+    if (document.getElementById(id)) return;
+    const st = document.createElement('style'); st.id = id; st.textContent = `
+      /* 左右兩欄的總容器固定高度，確保內部出現滾動條 */
+      #as-layout{display:grid;grid-template-columns:280px 1fr;gap:12px;height:72vh;overflow:hidden}
+      #as-left-wrap{display:flex;flex-direction:column;gap:8px;height:100%}
+      #as-left{border:1px solid #e5e7eb;border-radius:10px;overflow:auto;background:#fff;flex:1}
+      #as-right{border:1px solid #e5e7eb;border-radius:10px;background:#fff;display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative}
+      #as-right-body{flex:1;padding:10px;overflow:auto;font-size:13px;display:flex;flex-direction:column;gap:2px}
+      #as-right-toolbar{position:sticky;bottom:0;background:#fff;border-top:1px solid #eef2f7;padding:8px;display:flex;gap:6px;align-items:center}
+      #as-right-toolbar .btn{padding:6px 10px;font-size:12px}
+      #as-left-toolbar .btn{padding:6px 8px;font-size:12px}
+      #as-question{flex:1;border:1px solid #d1d5db;border-radius:8px;padding:6px 8px;min-width:120px}
+      #as-left .as-item{padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer}
+      #as-left .as-item.active{background:#f1f5f9}
+      /* 預覽面板的 markdown 基本樣式（若未載入 assistant 風格時的降級樣式） */
+      #as-right-body .assistant-msg{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:10px 12px;border-radius:10px;margin:4px 0;box-sizing:border-box}
+      #as-right-body .assistant-user{background:#e6f0ff;color:#0f172a;border:1px solid #cfe0ff;align-self:flex-end;box-shadow:inset -3px 0 0 #60a5fa}
+      #as-right-body .assistant-assistant{background:#f6f8fb;color:#0f172a;border:1px solid #e5e7eb;align-self:flex-start;box-shadow:inset 3px 0 0 #cbd5e1}
+      #as-right-body .assistant-msg{max-width:86%}
+      #as-right-body .assistant-msg pre{background:#0b1220;color:#e5e7eb;border:1px solid #0b1220;border-radius:10px;padding:12px 14px;overflow:auto;position:relative}
+      #as-right-body .assistant-msg .assistant-copy{position:absolute;top:8px;right:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#cbd5e1;opacity:.85;cursor:pointer}
+      #as-right-body .assistant-msg .assistant-copy:hover{opacity:1}
+      @media (max-width: 768px){
+        #as-layout{grid-template-columns:1fr;height:70vh}
+        #as-right{order:1;height:100%}
+        #as-left-wrap{order:2}
+        #as-left{max-height:30vh}
+      }
+    `; document.head.appendChild(st);
+  })();
+
+  // 讀取索引
+  let index = [];
+  try { const raw = localStorage.getItem('assistantConvIndex'); index = raw ? JSON.parse(raw) : []; } catch(_) {}
+  if (!Array.isArray(index)) index = [];
+
+  const layout = document.createElement('div');
+  layout.id = 'as-layout';
+  const leftWrap = document.createElement('div'); leftWrap.id = 'as-left-wrap';
+  const leftToolbar = document.createElement('div'); leftToolbar.id = 'as-left-toolbar'; leftToolbar.style.cssText='display:flex;gap:6px;';
+  leftToolbar.innerHTML = `<button id="as-new" class="btn primary" style="padding:6px 8px;font-size:12px;">新建</button>
+  <input id="as-import" type="file" accept="application/json" style="display:none"><button id="as-import-btn" class="btn secondary" style="padding:6px 8px;font-size:12px;">匯入</button>`;
+  const left = document.createElement('div'); left.id = 'as-left';
+  leftWrap.appendChild(leftToolbar); leftWrap.appendChild(left);
+  const right = document.createElement('div'); right.id = 'as-right';
+
+  left.innerHTML = index.length ? index.map(m => {
+    const title = (m.articleKey==='global' ? '全局 · ' : '') + (m.title || '會話');
+    const time = new Date(m.updatedAt || Date.now()).toLocaleString();
+    return `<div class="as-item" data-id="${m.id}" title="點擊預覽，雙擊直接在助手中開啟">
+      <div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(title)}</div>
+      <div style="font-size:12px;color:#64748b;">${time}</div>
+    </div>`;
+  }).join('') : '<div style="padding:12px;color:#64748b;">尚無會話</div>';
+
+  layout.appendChild(leftWrap); layout.appendChild(right);
+  dom.modalBody.innerHTML=''; dom.modalBody.appendChild(layout);
+
+  let currentId = '';
+  let currentArticleKey = '';
+  const rightBody = document.createElement('div'); rightBody.id = 'as-right-body';
+  const rightToolbar = document.createElement('div'); rightToolbar.id = 'as-right-toolbar';
+  rightToolbar.innerHTML = `<button id="as-open" class="btn primary" style="padding:6px 10px;font-size:12px;">在助手中繼續</button>
+  <button id="as-export" class="btn secondary" style="padding:6px 10px;font-size:12px;">匯出</button>
+  <input id="as-question" type="text" placeholder="輸入問題…" style="flex:1;border:1px solid #d1d5db;border-radius:8px;padding:6px 8px;">
+  <button id="as-send" class="btn primary" style="padding:6px 10px;font-size:12px;">發送</button>`;
+  right.appendChild(rightBody); right.appendChild(rightToolbar);
+
+  async function renderConversation(id){
+    currentId = id; const meta = index.find(x=>x.id===id) || {}; currentArticleKey = meta.articleKey || 'global';
+    rightBody.innerHTML = '<div style="padding:8px;color:#64748b;">載入中...</div>';
+    try {
+      const rec = await cache.getItem('assistant:conv:'+id);
+      const msgs = (rec && rec.messages) ? rec.messages : [];
+      const html = msgs.map(m => {
+        if (m.role === 'assistant') return `<div class=\"assistant-msg assistant-assistant\">${markdownToHtml(m.content||'')}</div>`;
+        return `<div class=\"assistant-msg assistant-user\">${escapeHtml(m.content||'')}</div>`;
+      }).join('');
+      rightBody.innerHTML = html || '<div style="padding:8px;color:#64748b;">此會話暫無訊息</div>';
+      // 為預覽面板中的程式碼塊補上複製按鈕
+      try { rightBody.querySelectorAll('pre').forEach(pre => {
+        if (pre.querySelector('.assistant-copy')) return;
+        const code = pre.querySelector('code');
+        const btn = document.createElement('button');
+        btn.className = 'assistant-copy'; btn.textContent = '複製';
+        btn.addEventListener('click', async () => {
+          try { const txt = code ? code.innerText : pre.innerText; await navigator.clipboard.writeText(txt); btn.textContent='已複製'; setTimeout(()=> btn.textContent='複製', 1200); } catch(_) {}
+        });
+        pre.appendChild(btn);
+      }); } catch(_) {}
+    } catch(e) { rightBody.innerHTML = '<div style="padding:8px;color:#ef4444;">載入失敗</div>'; }
+  }
+
+  left.addEventListener('click', (ev) => {
+    const it = ev.target.closest('.as-item'); if (!it) return; const id = it.getAttribute('data-id');
+    // 高亮選中項（避免逐一寫 style）
+    left.querySelectorAll('.as-item').forEach(x => x.classList.remove('active')); it.classList.add('active');
+    renderConversation(id);
+  });
+
+  // 需求：直接點擊開啟助手彈窗。為保留左側預覽體驗，採用「雙擊」打開；單擊仍為預覽。
+  left.addEventListener('dblclick', (ev) => {
+    const it = ev.target.closest('.as-item'); if (!it) return; const id = it.getAttribute('data-id');
+    const meta = index.find(x=>x.id===id)||{};
+    try { window.__assistant && window.__assistant.open('modal'); window.__assistant && window.__assistant.switch(meta.articleKey||'global', id); } catch(_){}
+  });
+
+  const first = left.querySelector('.as-item'); if (first) first.click();
+
+  // 新建
+  leftToolbar.querySelector('#as-new').addEventListener('click', async () => {
+    const ak = prompt('請輸入文章鍵（留空為全局）','') || '';
+    const articleKey = ak.trim() ? ak.trim() : 'global';
+    const title = prompt('會話名稱','新會話') || '新會話';
+    const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+    try {
+      const raw = localStorage.getItem('assistantConvIndex'); const arr = raw? JSON.parse(raw):[]; arr.unshift({ id, articleKey, title, updatedAt:new Date().toISOString() }); localStorage.setItem('assistantConvIndex', JSON.stringify(arr));
+      await cache.setItem('assistant:conv:'+id, { messages: [] });
+      index = arr; left.innerHTML += `<div class=\"as-item\" data-id=\"${id}\" style=\"padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;\"><div style=\"font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\">${escapeHtml((articleKey==='global'?'全局 · ':'')+title)}</div><div style=\"font-size:12px;color:#64748b;\">${new Date().toLocaleString()}</div></div>`;
+    } catch(_) {}
+  });
+  // 匯入
+  leftToolbar.querySelector('#as-import-btn').addEventListener('click', ()=> leftToolbar.querySelector('#as-import').click());
+  leftToolbar.querySelector('#as-import').addEventListener('change', async (ev) => {
+    const f = ev.target.files && ev.target.files[0]; if (!f) return;
+    try {
+      const text = await f.text(); const json = JSON.parse(text||'{}');
+      const articleKey = json.articleKey || 'global'; const title = json.title || '匯入會話'; const messages = Array.isArray(json.messages)? json.messages: [];
+      const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+      const raw = localStorage.getItem('assistantConvIndex'); const arr = raw? JSON.parse(raw):[]; arr.unshift({ id, articleKey, title, updatedAt:new Date().toISOString() }); localStorage.setItem('assistantConvIndex', JSON.stringify(arr));
+      await cache.setItem('assistant:conv:'+id, { messages }); index = arr; left.innerHTML += `<div class=\"as-item\" data-id=\"${id}\" style=\"padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;\"><div style=\"font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\">${escapeHtml((articleKey==='global'?'全局 · ':'')+title)}</div><div style=\"font-size:12px;color:#64748b;\">${new Date().toLocaleString()}</div></div>`;
+    } catch(e) { alert('匯入失敗：' + (e?.message||'')); }
+  });
+  // 匯出
+  rightToolbar.querySelector('#as-export').addEventListener('click', async () => {
+    if (!currentId) return;
+    const meta = index.find(x=>x.id===currentId) || { articleKey:'global', title:'會話' };
+    try { const rec = await cache.getItem('assistant:conv:'+currentId); const messages = (rec&&rec.messages)||[]; const blob = new Blob([JSON.stringify({ articleKey: meta.articleKey, title: meta.title, messages }, null, 2)], { type:'application/json' }); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download = `assistant-conv-${currentId}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);} catch(_){}
+  });
+  // 在助手中繼續 + 直接發送
+  rightToolbar.querySelector('#as-open').addEventListener('click', () => { if (!currentId) return; const meta = index.find(x=>x.id===currentId)||{}; try { window.__assistant && window.__assistant.open('modal'); window.__assistant && window.__assistant.switch(meta.articleKey||'global', currentId); } catch(_){} });
+  rightToolbar.querySelector('#as-send').addEventListener('click', () => { if (!currentId) return; const q = rightToolbar.querySelector('#as-question').value.trim(); if (!q) return; const meta=index.find(x=>x.id===currentId)||{}; try { window.__assistant && window.__assistant.send(q, meta.articleKey||'global', currentId); } catch(_){} });
+}
+
+// -----------------
 // Auto sync & Realtime
 // -----------------
 let autoTimer = null;
@@ -475,6 +642,9 @@ function svgSave(){
 function svgRestore(){
   return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3a5 5 0 1 0 3.905 8.12.5.5 0 1 1 .79.612A6 6 0 1 1 8 2v1z"/><path d="M8 0a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 0 1 .708.708L8.354 5.71a.5.5 0 0 1-.708 0L5.646 3.854a.5.5 0 1 1 .708-.708L7.5 4.293V.5A.5.5 0 0 1 8 0z"/></svg>';
 }
+function svgChat(){
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.5 3 2 6.8 2 11.6c0 1.9.7 3.7 1.9 5.2L3 21l4.2-1.8c1.4.5 3 .8 4.8.8 5.5 0 10-3.8 10-8.6S17.5 3 12 3z"/></svg>';
+}
 
 function attachRealtime(user) {
   try { if (rtChannel) { unsubscribeChannel(rtChannel); rtChannel = null; } } catch(_) {}
@@ -522,9 +692,10 @@ function showBackupRestoreModal() {
   const html = `
     <div class="backup-modal" style="min-width:340px;">
       <div class="backup-list">${listHtml}</div>
-      <div class="auth-actions" style="margin-top:8px;display:flex;gap:8px;">
+      <div class="auth-actions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <button id="bk-close" class="btn-secondary">關閉</button>
         <button id="bk-create" class="btn-primary">建立新備份</button>
+        <button id="bk-clear-cache" class="btn-tertiary">清理本機快取</button>
       </div>
       <div id="bk-msg" class="auth-msg"></div>
     </div>`;
@@ -534,6 +705,10 @@ function showBackupRestoreModal() {
   $('#bk-create').onclick = async () => {
     const msg = $('#bk-msg');
     try { await backup.createBackup('manual'); msg.textContent = '已建立備份'; setTimeout(()=> showBackupRestoreModal(), 300); } catch (e) { msg.textContent = '建立備份失敗：' + (e?.message||''); }
+  };
+  $('#bk-clear-cache').onclick = async () => {
+    const msg = $('#bk-msg');
+    try { await clearLocalCaches(); msg.textContent = '已清理本機快取'; } catch (e) { msg.textContent = '清理失敗：' + (e?.message||''); }
   };
   // actions
   dom.modalBody.querySelectorAll('.bi-restore').forEach(btn => {
