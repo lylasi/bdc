@@ -3,7 +3,7 @@
 
 import * as dom from '../../modules/dom.js';
 import { loadGlobalSettings, loadGlobalSecrets } from '../../modules/settings.js';
-import { API_URL, API_KEY, AI_MODELS, AI_PROFILES as __AI_PROFILES__ } from '../../ai-config.js';
+import { API_URL, API_KEY, AI_MODELS, AI_PROFILES as __AI_PROFILES__, ASSISTANT as __ASSISTANT__ } from '../../ai-config.js';
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 import * as cache from '../../modules/cache.js';
 import { markdownToHtml } from '../../modules/markdown.js';
@@ -12,10 +12,32 @@ const LS_KEY = 'assistantConversations'; // legacy（含所有訊息）
 const LS_UPDATED_AT = 'assistantUpdatedAt';
 const IDX_KEY = 'assistantConvIndex'; // 新索引：[{id, articleKey, title, updatedAt}]
 
+const ASSISTANT = __ASSISTANT__ || {};
+
 function getDefaultModel() {
   const s = loadGlobalSettings();
   const models = s?.ai?.models || {};
-  return models.assistant || models.articleAnalysis || AI_MODELS?.articleAnalysis || 'gpt-4.1-mini';
+  return models.assistant
+    || ASSISTANT?.DEFAULT_MODEL
+    || ASSISTANT?.MODEL
+    || models.articleAnalysis
+    || AI_MODELS?.articleAnalysis
+    || 'gpt-4.1-mini';
+}
+
+function getAssistantSuggestions() {
+  const seen = new Set();
+  const out = [];
+  const push = (v) => {
+    const s = (typeof v === 'object') ? (v.profile ? `${v.profile}:${v.model||''}` : (v.model||'')) : String(v||'');
+    if (!s) return; if (seen.has(s)) return; seen.add(s); out.push(s);
+  };
+  if (Array.isArray(ASSISTANT?.MODELS)) ASSISTANT.MODELS.forEach(push);
+  push(ASSISTANT?.DEFAULT_MODEL);
+  push(ASSISTANT?.MODEL);
+  push(AI_MODELS?.articleAnalysis);
+  push(loadGlobalSettings()?.ai?.models?.assistant);
+  return out;
 }
 
 // Profiles：若未定義，回退為僅 default 指向全域
@@ -101,8 +123,15 @@ function setupVisibilityLogic() {
 
 function renderPanelHtml() {
   const modelSpec = getDefaultModel();
-  const model = (typeof modelSpec === 'object') ? (modelSpec.model || '')
-               : (String(modelSpec||'').includes(':') ? String(modelSpec).split(':',2)[1] : String(modelSpec||''));
+  const toSelect = (typeof modelSpec === 'object')
+    ? (modelSpec.profile ? `${modelSpec.profile}:${modelSpec.model||''}` : (modelSpec.model||''))
+    : String(modelSpec||'');
+  const suggestions = getAssistantSuggestions();
+  const selectHtml = `<label class="assistant-switch" style="gap:6px;">模型：
+    <select id=\"assistant-model-select\" style=\"border:1px solid #d1d5db;border-radius:8px;padding:4px 6px;background:#fff;color:#334155;\">
+      ${suggestions.map(m => `<option value=\"${escapeHtml(m)}\" ${m===toSelect? 'selected':''}>${escapeHtml(m)}</option>`).join('')}
+    </select>
+  </label>`;
   const title = extractArticleTitle();
   const headerTitle = isGlobalArticle() ? '全局' : (title || '文章');
   return `
@@ -125,14 +154,13 @@ function renderPanelHtml() {
         <input id="assistant-input" type="text" class="assistant-input" placeholder="輸入與本文相關的問題，Enter 送出">
         <button id="assistant-send" class="assistant-send">發送</button>
       </div>
-      <div class="assistant-sub">
+       <div class="assistant-sub">
         <label class="assistant-switch"><input id="assistant-stream" type="checkbox" ${loadGlobalSettings()?.assistant?.stream === false ? '' : 'checked'}> 串流回應</label>
-        <span class="assistant-model">模型：<code>${escapeHtml(model)}</code></span>
+        ${selectHtml}
         <span class="assistant-font">字級：
           <button class="assistant-font-btn" data-size="s" title="11px">小</button>
           <button class="assistant-font-btn" data-size="l" title="13px">大</button>
         </span>
-        <button id="assistant-clear" class="assistant-link">清空此文章對話</button>
       </div>
     </div>`;
 }
@@ -157,17 +185,24 @@ function wirePanel(panel) {
     btn.addEventListener('click', () => setFontSize(panel, btn.getAttribute('data-size')));
   });
 
+  // 模型選擇（保存至本機設定）
+  const modelSel = panel.querySelector('#assistant-model-select');
+  if (modelSel) {
+    modelSel.addEventListener('change', async () => {
+      try {
+        const { saveGlobalSettings } = await import('../../modules/settings.js');
+        const selected = modelSel.value || '';
+        const s0 = loadGlobalSettings();
+        const nextModels = { ...(s0?.ai?.models || {}) };
+        if (selected) nextModels.assistant = selected; else delete nextModels.assistant;
+        saveGlobalSettings({ ai: { models: nextModels } });
+      } catch(_) {}
+    });
+  }
+
   // 會話：新建 / 歷史
   $('#assistant-new').addEventListener('click', () => newConversation(panel));
   $('#assistant-history').addEventListener('click', () => toggleHistory(panel));
-  $('#assistant-clear').addEventListener('click', () => {
-    const { articleKey } = buildContext();
-    if (!confirm('確定清空本文章的對話？')) return;
-    const all = loadConversations();
-    saveConversations(all.filter(c => c.articleKey !== articleKey));
-    const box = $('#assistant-messages');
-    if (box) box.innerHTML = '';
-  });
   $('#assistant-stream').addEventListener('change', (ev) => {
     const st = loadGlobalSettings();
     try {
@@ -474,7 +509,8 @@ function injectScopedStyles() {
   .assistant-row{display:flex;gap:8px}
   .assistant-input{flex:1;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px}
   .assistant-send{padding:10px 14px;background:#3b82f6;color:#fff;border:none;border-radius:10px;cursor:pointer}
-  .assistant-sub{display:flex;align-items:center;gap:12px;justify-content:space-between;color:#6b7280;font-size:12px}
+  /* 底部第二行：改為 3 欄網格（串流、模型、字級）在桌面更整齊；行動裝置自動換行 */
+  .assistant-sub{display:grid;grid-template-columns: auto minmax(140px,1fr) auto;align-items:center;gap:10px;color:#6b7280;font-size:12px}
   .assistant-switch{display:flex;align-items:center;gap:6px}
   .assistant-link{background:none;border:none;color:#2563eb;cursor:pointer}
   .assistant-stop{position:absolute;right:8px;bottom:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}

@@ -111,6 +111,7 @@ const __DEFAULT__ = {
   API_KEY,
   AI_PROFILES,
   AI_MODELS,
+  ASSISTANT,
   TTS_CONFIG,
   QA_CHECK,
   OCR_CONFIG,
@@ -118,3 +119,10 @@ const __DEFAULT__ = {
   SUPABASE
 };
 export default __DEFAULT__;
+// AI 助手（聊天）模型清單（示例）
+// - 可用：純字串、'profile:model'、或 { profile, model }
+export const ASSISTANT = {
+  MODEL: 'gpt-4.1-mini',
+  MODELS: [ 'gpt-4.1-mini', 'gpt-4.1-nano' ],
+  DEFAULT_MODEL: undefined
+};

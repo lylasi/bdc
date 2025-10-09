@@ -277,10 +277,16 @@ function showGlobalSettingsModal() {
   (function injectGsStyle(){
     const id = 'gs-asst-style'; if (document.getElementById(id)) return;
     const st = document.createElement('style'); st.id = id; st.textContent = `
-      .gs-asst-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-      .gs-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:999px;padding:4px 8px;font-size:12px;background:#fff;cursor:pointer}
-      .gs-chip input{width:14px;height:14px}
-      .gs-hint{color:#64748b;font-size:12px}
+      /* AI 助手設定：更輕量的開關樣式 */
+      .gs-asst-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 12px;border:1px solid #e5e7eb;background:#f8fafc;border-radius:12px}
+      .gs-toggle{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#fff;border:1px solid #e5e7eb;cursor:pointer}
+      .gs-visually-hidden{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+      .gs-switch{position:relative;width:38px;height:22px;border-radius:999px;background:#e5e7eb;border:1px solid #d1d5db;display:inline-block;vertical-align:middle;transition:background .2s,border-color .2s}
+      .gs-switch::after{content:'';position:absolute;top:1px;left:1px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:transform .2s}
+      .gs-toggle input:checked + .gs-switch{background:#3b82f6;border-color:#3b82f6}
+      .gs-toggle input:checked + .gs-switch::after{transform:translateX(16px)}
+      .gs-toggle .gs-label{font-size:13px;color:#0f172a}
+      .gs-hint{color:#64748b;font-size:12px;margin-left:auto}
     `; document.head.appendChild(st);
   })();
   // read existing
@@ -307,13 +313,15 @@ function showGlobalSettingsModal() {
       <div class="auth-field">
         <label>AI 助手</label>
         <div class="gs-asst-row">
-          <label class="gs-chip" title="右下角浮窗入口">
-            <input id="gs-assistant-enabled" type="checkbox" ${settings.assistantEnabled ? 'checked' : ''}>
-            <span>啟用</span>
+          <label class="gs-toggle" title="右下角浮窗入口">
+            <input id="gs-assistant-enabled" class="gs-visually-hidden" type="checkbox" ${settings.assistantEnabled ? 'checked' : ''}>
+            <span class="gs-switch" aria-hidden="true"></span>
+            <span class="gs-label">啟用助手</span>
           </label>
-          <label class="gs-chip" title="串流回應可減少等待">
-            <input id="gs-assistant-stream" type="checkbox" ${settings.assistantStream === false ? '' : 'checked'}>
-            <span>串流</span>
+          <label class="gs-toggle" title="串流回應可減少等待">
+            <input id="gs-assistant-stream" class="gs-visually-hidden" type="checkbox" ${settings.assistantStream === false ? '' : 'checked'}>
+            <span class="gs-switch" aria-hidden="true"></span>
+            <span class="gs-label">串流回應</span>
           </label>
           <span class="gs-hint">右下角入口 · 串流更順暢</span>
         </div>
@@ -460,9 +468,12 @@ async function showAssistantSessions(){
   const layout = document.createElement('div');
   layout.id = 'as-layout';
   const leftWrap = document.createElement('div'); leftWrap.id = 'as-left-wrap';
-  const leftToolbar = document.createElement('div'); leftToolbar.id = 'as-left-toolbar'; leftToolbar.style.cssText='display:flex;gap:6px;';
+  const leftToolbar = document.createElement('div'); leftToolbar.id = 'as-left-toolbar'; leftToolbar.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
   leftToolbar.innerHTML = `<button id="as-new" class="btn primary" style="padding:6px 8px;font-size:12px;">新建</button>
-  <input id="as-import" type="file" accept="application/json" style="display:none"><button id="as-import-btn" class="btn secondary" style="padding:6px 8px;font-size:12px;">匯入</button>`;
+  <input id="as-import" type="file" accept="application/json" style="display:none"><button id="as-import-btn" class="btn secondary" style="padding:6px 8px;font-size:12px;">匯入</button>
+  <span style="flex:1"></span>
+  <button id="as-rename" class="btn tertiary" title="修改標題" style="padding:6px 8px;font-size:12px;">重命名</button>
+  <button id="as-delete" class="btn danger" title="刪除目前會話" style="padding:6px 8px;font-size:12px;">刪除</button>`;
   const left = document.createElement('div'); left.id = 'as-left';
   leftWrap.appendChild(leftToolbar); leftWrap.appendChild(left);
   const right = document.createElement('div'); right.id = 'as-right';
@@ -553,6 +564,39 @@ async function showAssistantSessions(){
       const raw = localStorage.getItem('assistantConvIndex'); const arr = raw? JSON.parse(raw):[]; arr.unshift({ id, articleKey, title, updatedAt:new Date().toISOString() }); localStorage.setItem('assistantConvIndex', JSON.stringify(arr));
       await cache.setItem('assistant:conv:'+id, { messages }); index = arr; left.innerHTML += `<div class=\"as-item\" data-id=\"${id}\" style=\"padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;\"><div style=\"font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\">${escapeHtml((articleKey==='global'?'全局 · ':'')+title)}</div><div style=\"font-size:12px;color:#64748b;\">${new Date().toLocaleString()}</div></div>`;
     } catch(e) { alert('匯入失敗：' + (e?.message||'')); }
+  });
+  // 重命名
+  leftToolbar.querySelector('#as-rename').addEventListener('click', () => {
+    const active = left.querySelector('.as-item.active');
+    const id = active ? active.getAttribute('data-id') : (currentId || '');
+    if (!id) { alert('請先選擇一個會話'); return; }
+    const meta = index.find(x => x.id === id) || null; if (!meta) return;
+    const newTitle = prompt('輸入新的會話名稱：', meta.title || '會話');
+    if (!newTitle || !newTitle.trim()) return;
+    const title = newTitle.trim();
+    index = index.map(x => x.id === id ? { ...x, title, updatedAt: new Date().toISOString() } : x);
+    try { localStorage.setItem('assistantConvIndex', JSON.stringify(index)); } catch(_) {}
+    const item = left.querySelector(`.as-item[data-id="${id}"]`);
+    if (item) {
+      const titleDiv = item.querySelector('div');
+      if (titleDiv) titleDiv.textContent = (meta.articleKey==='global' ? '全局 · ' : '') + title;
+    }
+  });
+  // 刪除
+  leftToolbar.querySelector('#as-delete').addEventListener('click', async () => {
+    const active = left.querySelector('.as-item.active');
+    const id = active ? active.getAttribute('data-id') : (currentId || '');
+    if (!id) { alert('請先選擇一個會話'); return; }
+    if (!confirm('確定刪除此會話？此操作無法復原。')) return;
+    try {
+      index = index.filter(x => x.id !== id);
+      localStorage.setItem('assistantConvIndex', JSON.stringify(index));
+      try { await cache.setItem('assistant:conv:'+id, { messages: [] }); } catch(_) {}
+      const node = left.querySelector(`.as-item[data-id="${id}"]`);
+      if (node) node.remove();
+      if (!left.querySelector('.as-item')) left.innerHTML = '<div style="padding:12px;color:#64748b;">尚無會話</div>';
+      if (currentId === id) { currentId = ''; rightBody.innerHTML = '<div style="padding:8px;color:#64748b;">未選擇會話</div>'; }
+    } catch (e) { alert('刪除失敗：' + (e?.message || '')); }
   });
   // 匯出
   rightToolbar.querySelector('#as-export').addEventListener('click', async () => {
