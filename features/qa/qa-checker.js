@@ -152,9 +152,36 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
   if (!aiConfig) { await loadAIConfig(); }
   // 讀取 QA 專用組態
   const qaCfg = aiConfig?.QA_CHECK || {};
-  const __apiUrl = qaCfg.API_URL || aiConfig.API_URL;
-  const __apiKey = qaCfg.API_KEY || aiConfig.API_KEY;
-  const __model = qaCfg.MODEL || (aiConfig.AI_MODELS?.answerChecking || 'gpt-4.1-mini');
+  // 端點：PROFILE > API_URL/API_KEY > 全域
+  let __apiUrl = qaCfg.API_URL || '';
+  let __apiKey = qaCfg.API_KEY || '';
+  if (!__apiUrl && qaCfg.PROFILE && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[qaCfg.PROFILE]) {
+    __apiUrl = aiConfig.AI_PROFILES[qaCfg.PROFILE].apiUrl || '';
+    __apiKey = aiConfig.AI_PROFILES[qaCfg.PROFILE].apiKey || __apiKey;
+  }
+  if (!__apiUrl) __apiUrl = aiConfig.API_URL;
+  if (!__apiKey) __apiKey = aiConfig.API_KEY;
+  // 模型：支援 'profile:model' 或 {profile, model}
+  let __model = qaCfg.MODEL || (aiConfig.AI_MODELS?.answerChecking || 'gpt-4.1-mini');
+  // 若模型帶有前綴或物件，解析出最終模型與可能的 profile 端點
+  try {
+    if (__model && typeof __model === 'object') {
+      const pid = __model.profile || '';
+      if (!__apiUrl && pid && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[pid]) {
+        __apiUrl = aiConfig.AI_PROFILES[pid].apiUrl || __apiUrl;
+        __apiKey = aiConfig.AI_PROFILES[pid].apiKey || __apiKey;
+      }
+      __model = String(__model.model || '');
+    } else if (typeof __model === 'string' && __model.includes(':')) {
+      const pid = __model.slice(0, __model.indexOf(':'));
+      const m = __model.slice(__model.indexOf(':') + 1);
+      if (!__apiUrl && pid && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[pid]) {
+        __apiUrl = aiConfig.AI_PROFILES[pid].apiUrl || __apiUrl;
+        __apiKey = aiConfig.AI_PROFILES[pid].apiKey || __apiKey;
+      }
+      __model = m;
+    }
+  } catch(_) {}
   const __temperature = (qaCfg.temperature ?? 0.2);
   const __maxTokens = (qaCfg.maxTokens ?? 1500);
 

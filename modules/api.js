@@ -1,4 +1,4 @@
-import { API_URL, API_KEY, AI_MODELS, OCR_CONFIG } from '../ai-config.js';
+import { API_URL, API_KEY, AI_MODELS, OCR_CONFIG, AI_PROFILES as __AI_PROFILES__ } from '../ai-config.js';
 import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
@@ -6,6 +6,25 @@ import * as validate from './validate.js';
 // =================================
 // AI API 服務
 // =================================
+
+// Profiles: 若未定義，回退為僅 default → 指向全域
+const AI_PROFILES = __AI_PROFILES__ || { default: { apiUrl: API_URL, apiKey: API_KEY } };
+
+// 將模型規格（string / 'profile:model' / {profile, model, apiUrl?, apiKey?}）正規化
+function normalizeModelSpec(spec) {
+    if (spec && typeof spec === 'object') {
+        const model = String(spec.model || '');
+        const pid = spec.profile || null;
+        const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
+        return { model, apiUrl: spec.apiUrl || prof.apiUrl || null, apiKey: spec.apiKey || prof.apiKey || null };
+    }
+    const s = String(spec || '');
+    const hasPrefix = s.includes(':');
+    const pid = hasPrefix ? s.slice(0, s.indexOf(':')) : null;
+    const model = hasPrefix ? s.slice(s.indexOf(':') + 1) : s;
+    const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
+    return { model, apiUrl: prof.apiUrl || null, apiKey: prof.apiKey || null };
+}
 
 // Small, reusable AI request helper with timeout and retry.
 async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat, apiUrl, apiKey }) {
@@ -20,8 +39,12 @@ async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeou
         composed.signal.addEventListener('abort', () => ac.abort(composed.signal.reason), { once: true });
     }
 
+    // 解析模型與端點
+    const resolved = normalizeModelSpec(model);
+    const finalModel = resolved.model;
+
     const body = {
-        model,
+        model: finalModel,
         messages,
         temperature,
     };
@@ -33,9 +56,11 @@ async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeou
     const fetchOnce = async () => {
         const s = loadGlobalSettings();
         const sec = loadGlobalSecrets();
-        // allow per-call override by passing apiUrl/apiKey; otherwise fall back to global settings, then static config
-        const endpoint = (apiUrl && String(apiUrl).trim()) || (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
-        const key = (apiKey && String(apiKey).trim()) || (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
+        // allow per-call override, then profile/model 解析，再到 localStorage 與全域
+        const endpoint = (apiUrl && String(apiUrl).trim()) || (resolved.apiUrl && String(resolved.apiUrl).trim())
+          || (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
+        const key = (apiKey && String(apiKey).trim()) || (resolved.apiKey && String(resolved.apiKey).trim())
+          || (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
         const resp = await fetch(endpoint, {
             method: 'POST',
             headers: {
@@ -400,8 +425,13 @@ export async function ocrExtractTextFromImage(imageDataUrl, opts = {}) {
       || (OCR_CONFIG && (OCR_CONFIG.DEFAULT_MODEL || OCR_CONFIG.MODEL))
       || AI_MODELS.imageOCR || AI_MODELS.articleAnalysis;
 
-    const endpoint = (OCR_CONFIG && OCR_CONFIG.API_URL && String(OCR_CONFIG.API_URL).trim()) || undefined; // fallback to global in requestAI
-    const overrideKey = (OCR_CONFIG && OCR_CONFIG.API_KEY && String(OCR_CONFIG.API_KEY).trim()) || undefined;
+    // 端點：PROFILE > API_URL/API_KEY > 其餘回退由 requestAI 處理
+    let endpoint = (OCR_CONFIG && OCR_CONFIG.API_URL && String(OCR_CONFIG.API_URL).trim()) || undefined; // fallback to global in requestAI
+    let overrideKey = (OCR_CONFIG && OCR_CONFIG.API_KEY && String(OCR_CONFIG.API_KEY).trim()) || undefined;
+    if (!endpoint && OCR_CONFIG && OCR_CONFIG.PROFILE && AI_PROFILES[OCR_CONFIG.PROFILE]) {
+        endpoint = AI_PROFILES[OCR_CONFIG.PROFILE].apiUrl || endpoint;
+        overrideKey = AI_PROFILES[OCR_CONFIG.PROFILE].apiKey || overrideKey;
+    }
     const finalMaxTokens = typeof maxTokens === 'number' ? maxTokens : (OCR_CONFIG?.maxTokens || 1500);
     const finalTimeout = typeof timeoutMs === 'number' ? timeoutMs : (OCR_CONFIG?.timeoutMs || 45000);
 
@@ -454,8 +484,12 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
       || (OCR_CONFIG && (OCR_CONFIG.DEFAULT_MODEL || OCR_CONFIG.MODEL))
       || AI_MODELS.imageOCR || AI_MODELS.articleAnalysis;
 
-    const endpoint = (OCR_CONFIG && OCR_CONFIG.API_URL && String(OCR_CONFIG.API_URL).trim()) || undefined;
-    const overrideKey = (OCR_CONFIG && OCR_CONFIG.API_KEY && String(OCR_CONFIG.API_KEY).trim()) || undefined;
+    let endpoint = (OCR_CONFIG && OCR_CONFIG.API_URL && String(OCR_CONFIG.API_URL).trim()) || undefined;
+    let overrideKey = (OCR_CONFIG && OCR_CONFIG.API_KEY && String(OCR_CONFIG.API_KEY).trim()) || undefined;
+    if (!endpoint && OCR_CONFIG && OCR_CONFIG.PROFILE && AI_PROFILES[OCR_CONFIG.PROFILE]) {
+        endpoint = AI_PROFILES[OCR_CONFIG.PROFILE].apiUrl || endpoint;
+        overrideKey = AI_PROFILES[OCR_CONFIG.PROFILE].apiKey || overrideKey;
+    }
     const finalTimeout = typeof timeoutMs === 'number' ? timeoutMs : (OCR_CONFIG?.timeoutMs || 60000);
 
     const defaultPrompt = `這是一張默寫單詞的相片。請直接在圖片中擷取學生書寫內容並進行批改：

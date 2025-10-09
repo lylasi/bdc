@@ -3,7 +3,7 @@
 
 import * as dom from '../../modules/dom.js';
 import { loadGlobalSettings, loadGlobalSecrets } from '../../modules/settings.js';
-import { API_URL, API_KEY, AI_MODELS } from '../../ai-config.js';
+import { API_URL, API_KEY, AI_MODELS, AI_PROFILES as __AI_PROFILES__ } from '../../ai-config.js';
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 import * as cache from '../../modules/cache.js';
 import { markdownToHtml } from '../../modules/markdown.js';
@@ -16,6 +16,25 @@ function getDefaultModel() {
   const s = loadGlobalSettings();
   const models = s?.ai?.models || {};
   return models.assistant || models.articleAnalysis || AI_MODELS?.articleAnalysis || 'gpt-4.1-mini';
+}
+
+// Profiles：若未定義，回退為僅 default 指向全域
+const AI_PROFILES = __AI_PROFILES__ || { default: { apiUrl: API_URL, apiKey: API_KEY } };
+
+// 與 modules/api.js 對齊：解析模型規格（string / 'profile:model' / {profile, model, apiUrl?, apiKey?}）
+function normalizeModelSpec(spec) {
+  if (spec && typeof spec === 'object') {
+    const model = String(spec.model || '');
+    const pid = spec.profile || null;
+    const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
+    return { model, apiUrl: spec.apiUrl || prof.apiUrl || null, apiKey: spec.apiKey || prof.apiKey || null };
+  }
+  const s = String(spec || '');
+  const hasPrefix = s.includes(':');
+  const pid = hasPrefix ? s.slice(0, s.indexOf(':')) : null;
+  const model = hasPrefix ? s.slice(s.indexOf(':') + 1) : s;
+  const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
+  return { model, apiUrl: prof.apiUrl || null, apiKey: prof.apiKey || null };
 }
 
 export function initAiAssistant() {
@@ -81,7 +100,9 @@ function setupVisibilityLogic() {
 }
 
 function renderPanelHtml() {
-  const model = getDefaultModel();
+  const modelSpec = getDefaultModel();
+  const model = (typeof modelSpec === 'object') ? (modelSpec.model || '')
+               : (String(modelSpec||'').includes(':') ? String(modelSpec).split(':',2)[1] : String(modelSpec||''));
   const title = extractArticleTitle();
   const headerTitle = isGlobalArticle() ? '全局' : (title || '文章');
   return `
@@ -364,9 +385,11 @@ function migrateLegacyStore() {
 async function onceCompletions(messages, signal) {
   const s = loadGlobalSettings();
   const sec = loadGlobalSecrets();
-  const endpoint = (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
-  const key = (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
-  const model = getDefaultModel();
+  const modelSpec = getDefaultModel();
+  const resolved = normalizeModelSpec(modelSpec);
+  const endpoint = (resolved.apiUrl && String(resolved.apiUrl).trim()) || (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
+  const key = (resolved.apiKey && String(resolved.apiKey).trim()) || (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
+  const model = resolved.model;
   const resp = await fetch(endpoint, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
     body: JSON.stringify({ model, messages, temperature: 0.2 }), signal
@@ -379,9 +402,11 @@ async function onceCompletions(messages, signal) {
 async function streamCompletions(messages, signal, onDelta) {
   const s = loadGlobalSettings();
   const sec = loadGlobalSecrets();
-  const endpoint = (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
-  const key = (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
-  const model = getDefaultModel();
+  const modelSpec = getDefaultModel();
+  const resolved = normalizeModelSpec(modelSpec);
+  const endpoint = (resolved.apiUrl && String(resolved.apiUrl).trim()) || (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
+  const key = (resolved.apiKey && String(resolved.apiKey).trim()) || (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
+  const model = resolved.model;
   const resp = await fetch(endpoint, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
     body: JSON.stringify({ model, messages, temperature: 0.2, stream: true }), signal

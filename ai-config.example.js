@@ -3,16 +3,27 @@ export const API_URL = 'https://YOUR-ENDPOINT/v1/chat/completions';
 // API 金鑰（請自行填入；此檔僅作為示例，不應提交真實金鑰）
 export const API_KEY = '';
 
+// 多端點 Profiles（新增）：根據供應商/環境切換 baseUrl 與 key
+// - default 指向全域（維持相容）
+// - 你可以新增如 tbai/openrouter/local 等 profile
+export const AI_PROFILES = {
+  default: { apiUrl: API_URL, apiKey: API_KEY },
+  // 範例：
+  tbai: { apiUrl: 'https://tbai.xin/v1/chat/completions', apiKey: '' },
+  openrouter: { apiUrl: 'https://openrouter.ai/api/v1/chat/completions', apiKey: '' },
+  local: { apiUrl: 'http://localhost:11434/v1/chat/completions', apiKey: '' } // Ollama 之類的相容服務
+};
+
 // AI 模型清單（示例）
 export const AI_MODELS = {
-  // 範例產生
-  exampleGeneration: 'gpt-4.1-nano',
-  // 單詞/短語分析
-  wordAnalysis: 'gpt-4.1-mini',
-  // 句子校對/評分
-  sentenceChecking: 'gpt-4.1-mini',
-  // 圖片 OCR（需支援視覺/圖像理解的模型，如 gpt-4o-mini/gpt-4o 等）
-  imageOCR: 'gpt-4o-mini'
+  // 你可以使用以下三種寫法指定模型對應的端點：
+  // 1) 純字串：'gpt-4.1-mini'（走全域 API_URL/API_KEY）
+  // 2) 前綴字串：'tbai:gpt-4.1-mini'（走 AI_PROFILES.tbai）
+  // 3) 物件：{ profile:'tbai', model:'gpt-4.1-mini' }（可加覆蓋 apiUrl/apiKey）
+  exampleGeneration: 'tbai:gpt-4.1-nano',
+  wordAnalysis: { profile: 'tbai', model: 'gpt-4.1-mini' },
+  sentenceChecking: 'gpt-4.1-mini', // 沒前綴 → 用全域
+  imageOCR: { profile: 'openrouter', model: 'gpt-4o-mini' }
 };
 
 // 問答集校對模型別名（缺省時回退到 sentenceChecking）
@@ -35,6 +46,8 @@ export const TTS_CONFIG = {
 // 若需與其他功能使用不同端點/金鑰/模型，可在此覆寫；
 // 留空（undefined）則沿用上方全域 API_URL/API_KEY 與 AI_MODELS.answerChecking。
 export const QA_CHECK = {
+  // 可用 PROFILE 指向 AI_PROFILES 中的某個端點；或直接填 API_URL/API_KEY 覆蓋。
+  PROFILE: undefined,
   API_URL: undefined,
   API_KEY: undefined,
   MODEL: 'gpt-4.1-mini',
@@ -49,10 +62,12 @@ export const QA_CHECK = {
 // - 若你希望 OCR 使用與其他功能不同的端點/金鑰/模型，可在此覆寫；
 // - 留空（undefined）則沿用全域 API_URL / API_KEY 與 AI_MODELS.imageOCR。
 export const OCR_CONFIG = {
+  // 指定單獨的 OCR 端點（擇一）：PROFILE 或 API_URL/API_KEY
+  PROFILE: undefined,
   API_URL: undefined,
   API_KEY: undefined,
   // 你可以只指定 MODEL，或提供 MODELS 與 DEFAULT_MODEL 給 UI 供選
-  MODEL: undefined, // e.g. 'gpt-4o-mini'
+  MODEL: undefined, // e.g. 'gpt-4o-mini' 或 'openrouter:gpt-4o-mini'
   MODELS: [
     // e.g. 'gemini-2.5-flash-nothinking', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'
   ],
@@ -73,6 +88,7 @@ export const SUPABASE = {
 const __DEFAULT__ = {
   API_URL,
   API_KEY,
+  AI_PROFILES,
   AI_MODELS,
   TTS_CONFIG,
   QA_CHECK,
