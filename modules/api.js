@@ -771,10 +771,8 @@ export async function fetchArticleFromUrlStructured(url, opts = {}) {
  */
 export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
     const { timeoutMs: toMs, temperature: temp, signal, model: modelOverride, keepImages: keepImgs } = opts;
-    const s = loadGlobalSettings();
-    // 模型解析：優先 opts → localStorage → ARTICLE_IMPORT → AI_MODELS
+    // 模型解析：優先 opts → ai-config（ARTICLE_IMPORT）→ 全域（AI_MODELS）
     const model = modelOverride
-      || (s?.ai?.models && (s.ai.models.articleCleanup || s.ai.models.articleAnalysis))
       || (ARTICLE_IMPORT && (ARTICLE_IMPORT.DEFAULT_MODEL || ARTICLE_IMPORT.MODEL))
       || AI_MODELS.articleAnalysis;
 
