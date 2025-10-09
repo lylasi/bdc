@@ -178,18 +178,27 @@ function openArticleImportModal() {
         const wrap = document.createElement('div');
         // 準備模型清單（去重）
         const s = loadGlobalSettings();
+        // 僅以 ai-config（ARTICLE_IMPORT）為準，不再合併其他來源
         const suggestions = [];
-        const push = (v) => { if (!v) return; const s = String(typeof v === 'object' ? (v.model||'') : v); if (s && !suggestions.includes(s)) suggestions.push(s); };
-        push(s?.ai?.models?.articleCleanup);
-        push(s?.ai?.models?.articleAnalysis);
-        if (Array.isArray(ARTICLE_IMPORT?.MODELS)) ARTICLE_IMPORT.MODELS.forEach(push);
-        push(ARTICLE_IMPORT?.DEFAULT_MODEL);
-        push(ARTICLE_IMPORT?.MODEL);
-        push(AI_MODELS?.articleAnalysis);
-        push(AI_MODELS?.wordAnalysis);
-        ['gpt-4.1-nano','gpt-4.1-mini','gpt-4o-mini','gemini-2.5-flash-nothinking'].forEach(push);
-        const rememberedModel = LS.get(LS_KEYS.cleanModel, '');
-        const defaultModel = rememberedModel || s?.ai?.models?.articleCleanup || s?.ai?.models?.articleAnalysis || ARTICLE_IMPORT?.DEFAULT_MODEL || ARTICLE_IMPORT?.MODEL || AI_MODELS?.articleAnalysis || suggestions[0] || '';
+        const push = (v) => {
+            if (!v) return;
+            let sVal = '';
+            if (typeof v === 'object') {
+                const pid = (v.profile && String(v.profile).trim()) || '';
+                const m = String(v.model || '').trim();
+                sVal = pid ? `${pid}:${m}` : m;
+            } else {
+                sVal = String(v).trim();
+            }
+            if (sVal && !suggestions.includes(sVal)) suggestions.push(sVal);
+        };
+        if (Array.isArray(ARTICLE_IMPORT?.MODELS) && ARTICLE_IMPORT.MODELS.length) {
+            ARTICLE_IMPORT.MODELS.forEach(push);
+        } else {
+            push(ARTICLE_IMPORT?.DEFAULT_MODEL);
+            push(ARTICLE_IMPORT?.MODEL);
+        }
+        const defaultModel = ARTICLE_IMPORT?.DEFAULT_MODEL || ARTICLE_IMPORT?.MODEL || suggestions[0] || '';
 
         wrap.innerHTML = `
             <div class="import-form">
@@ -238,7 +247,7 @@ function openArticleImportModal() {
         const aiCleanChk = $('#imp-ai-clean');
         const modelSelect = $('#imp-ai-clean-model');
         const keepImagesChk = $('#imp-ai-keep-images');
-        if (modelSelect) modelSelect.value = (typeof defaultModel === 'object') ? (defaultModel.model || '') : String(defaultModel || '');
+        if (modelSelect) modelSelect.value = String(defaultModel || '');
         // restore toggles
         if (aiCleanChk) aiCleanChk.checked = !!LS.get(LS_KEYS.cleanEnabled, false);
         if (keepImagesChk) keepImagesChk.checked = LS.get(LS_KEYS.cleanKeepImages, true);
