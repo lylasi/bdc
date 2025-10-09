@@ -76,6 +76,25 @@ export const OCR_CONFIG = {
   timeoutMs: 45000
 };
 
+// 文章導入與 AI 清洗（新增）
+// - 若你希望文章清洗（去雜訊、整理 Markdown）使用與全域不同的端點/金鑰/模型，可於此覆蓋；
+// - 留空（undefined）則沿用全域 API_URL / API_KEY 與 AI_MODELS.articleAnalysis。
+export const ARTICLE_IMPORT = {
+  // 指定單獨端點（擇一）：PROFILE 或 API_URL/API_KEY
+  PROFILE: undefined,
+  API_URL: undefined,
+  API_KEY: undefined,
+  // 模型：可用 'profile:model'、物件或純字串（走全域）
+  MODEL: 'gpt-4.1-mini',
+  MODELS: [ 'gpt-4.1-mini', 'gpt-4o-mini' ],
+  DEFAULT_MODEL: undefined,
+  // 推論參數與預設清洗選項
+  temperature: 0.1,
+  maxTokens: 1400,
+  timeoutMs: 25000,
+  keepImagesDefault: true
+};
+
 // Supabase 設定（示例）
 // - url 例：'https://YOUR-PROJECT.supabase.co'
 // - anonKey 從 Supabase 控台 Project Settings → API 取得（anon public）
@@ -93,6 +112,7 @@ const __DEFAULT__ = {
   TTS_CONFIG,
   QA_CHECK,
   OCR_CONFIG,
+  ARTICLE_IMPORT,
   SUPABASE
 };
 export default __DEFAULT__;

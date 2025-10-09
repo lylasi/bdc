@@ -1,4 +1,4 @@
-import { API_URL, API_KEY, AI_MODELS, OCR_CONFIG, AI_PROFILES as __AI_PROFILES__ } from '../ai-config.js';
+import { API_URL, API_KEY, AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT, AI_PROFILES as __AI_PROFILES__ } from '../ai-config.js';
 import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
@@ -770,11 +770,26 @@ export async function fetchArticleFromUrlStructured(url, opts = {}) {
  * 返回乾淨的 Markdown 純文字。
  */
 export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
-    const { timeoutMs = 25000, temperature = 0.1, signal, model: modelOverride, keepImages = true } = opts;
+    const { timeoutMs: toMs, temperature: temp, signal, model: modelOverride, keepImages: keepImgs } = opts;
     const s = loadGlobalSettings();
+    // 模型解析：優先 opts → localStorage → ARTICLE_IMPORT → AI_MODELS
     const model = modelOverride
       || (s?.ai?.models && (s.ai.models.articleCleanup || s.ai.models.articleAnalysis))
+      || (ARTICLE_IMPORT && (ARTICLE_IMPORT.DEFAULT_MODEL || ARTICLE_IMPORT.MODEL))
       || AI_MODELS.articleAnalysis;
+
+    // 端點解析：PROFILE > API_URL/API_KEY > 其餘回退由 requestAI 處理
+    let endpoint = (ARTICLE_IMPORT && ARTICLE_IMPORT.API_URL && String(ARTICLE_IMPORT.API_URL).trim()) || undefined;
+    let overrideKey = (ARTICLE_IMPORT && ARTICLE_IMPORT.API_KEY && String(ARTICLE_IMPORT.API_KEY).trim()) || undefined;
+    if (!endpoint && ARTICLE_IMPORT && ARTICLE_IMPORT.PROFILE && AI_PROFILES[ARTICLE_IMPORT.PROFILE]) {
+        endpoint = AI_PROFILES[ARTICLE_IMPORT.PROFILE].apiUrl || endpoint;
+        overrideKey = AI_PROFILES[ARTICLE_IMPORT.PROFILE].apiKey || overrideKey;
+    }
+
+    const temperature = (typeof temp === 'number') ? temp : (ARTICLE_IMPORT?.temperature ?? 0.1);
+    const maxTokens = ARTICLE_IMPORT?.maxTokens ?? 1400;
+    const timeoutMs = (typeof toMs === 'number') ? toMs : (ARTICLE_IMPORT?.timeoutMs ?? 25000);
+    const keepImages = (typeof keepImgs === 'boolean') ? keepImgs : (ARTICLE_IMPORT?.keepImagesDefault ?? true);
 
     const prompt = `你會收到一篇以 Markdown 表示的英文文章（可能含標題、清單、表格、圖片）。請清洗並輸出更適合閱讀的 Markdown：
 - 僅保留正文與必要的標題/段落/清單/表格；移除網站導航、語言切換、社交按鈕、推薦卡片、廣告、版權宣告、留言模組、追蹤用圖片或計數器。
@@ -784,13 +799,15 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
 - 嚴禁輸出任何額外解釋或代碼區塊標記；只輸出清洗後的 Markdown 純文字。`;
 
     const data = await requestAI({
+        apiUrl: endpoint,
+        apiKey: overrideKey,
         model,
         messages: [
             { role: 'system', content: 'You are a precise Markdown editor that preserves structure and removes noise without translating.' },
             { role: 'user', content: `${prompt}\n\n=== 原文開始 ===\n${markdownText}\n=== 原文結束 ===` }
         ],
         temperature,
-        maxTokens: 1400,
+        maxTokens,
         timeoutMs,
         signal
     });
