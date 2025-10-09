@@ -34,6 +34,8 @@ if (!AI_MODELS.answerChecking) {
 // 文本轉語音（示例）
 export const TTS_CONFIG = {
   baseUrl: 'https://your-tts.example.com',
+  // 可選：提供一個可查詢可用音色/模型清單的端點（例如 /voices）
+  voicesUrl: 'https://your-tts.example.com/voices',
   apiKey: '',
   voices: {
     english: 'en-US-JennyNeural',
