@@ -82,9 +82,10 @@ function setupVisibilityLogic() {
 function renderPanelHtml() {
   const model = getDefaultModel();
   const title = extractArticleTitle();
+  const headerTitle = isGlobalArticle() ? '全局' : (title || '文章');
   return `
     <div class="assistant-head">
-      <div class="assistant-title">AI 助手 · ${escapeHtml(title || '文章')} <span id="assistant-session-label" class="assistant-session"></span></div>
+      <div class="assistant-title">AI 助手 · ${escapeHtml(headerTitle)} <span id="assistant-session-label" class="assistant-session"></span></div>
       <div class="assistant-actions">
         <button class="assistant-icon" id="assistant-small" title="小視窗（右下角）">${svgSmall()}</button>
         <button class="assistant-icon" id="assistant-dock" title="靠右全高">${svgPin()}</button>
@@ -174,7 +175,11 @@ async function idbSetConv(convId, messages) {
 function ensureMeta(articleKey, title) {
   const idx = readIndex();
   let m = idx.find(x => x.articleKey === articleKey);
-  if (!m) { m = { id: `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`, articleKey, title: title||'文章', updatedAt: new Date().toISOString() }; idx.unshift(m); writeIndex(idx); }
+  if (!m) {
+    const defaultTitle = articleKey === 'global' ? '全局會話' : '文章';
+    m = { id: `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`, articleKey, title: title||defaultTitle, updatedAt: new Date().toISOString() };
+    idx.unshift(m); writeIndex(idx);
+  }
   return m;
 }
 
@@ -186,8 +191,16 @@ function extractArticleTitle() {
   } catch(_) { return ''; }
 }
 
+function isGlobalArticle(){
+  try { const raw = (dom.articleInput && dom.articleInput.value) || ''; return !String(raw).trim(); } catch(_) { return true; }
+}
+
 async function buildContext() {
-  const text = (dom.articleInput && dom.articleInput.value) || '';
+  const raw = (dom.articleInput && dom.articleInput.value) || '';
+  const text = String(raw);
+  if (!text.trim()) {
+    return { articleKey: 'global', text: '' };
+  }
   const articleKey = await cache.makeKey('assistant-article', text);
   return { articleKey, text };
 }
@@ -237,13 +250,13 @@ async function ask(panel, userText) {
 
   // messages：系統 + 上下文 + 近幾輪 + 本輪
   const system = { role: 'system', content: SYSTEM_PROMPT };
-  const context = { role: 'user', content: `以下是目前文章內容，僅作為上下文：\n\n"""\n${articleText}\n"""` };
+  const context = articleText && articleText.trim() ? { role: 'user', content: `以下是目前文章內容，僅作為上下文：\n\n"""\n${articleText}\n"""` } : null;
   // 讀取最近 N 輪歷史（透過索引 + IDB）
   const idx = readIndex();
   const meta = idx.find(x => x.articleKey === articleKey);
   const prev = meta ? await idbGetConv(meta.id) : [];
   const history = prev.slice(-8).map(m => ({ role: m.role, content: m.content }));
-  const messages = [system, context, ...history, { role: 'user', content: userText }];
+  const messages = [system, ...(context ? [context] : []), ...history, { role: 'user', content: userText }];
 
   appendMessage(box, 'user', userText);
   const placeholder = appendMessage(box, 'assistant', '');
@@ -515,7 +528,8 @@ function ensureMetaWithId(articleKey, title, id){
   const idx = readIndex();
   const exist = idx.find(x => x.id === id);
   if (exist) return exist;
-  const m = { id, articleKey, title: title||'新會話', updatedAt: new Date().toISOString() };
+  const defaultTitle = articleKey === 'global' ? '全局會話' : '新會話';
+  const m = { id, articleKey, title: title||defaultTitle, updatedAt: new Date().toISOString() };
   idx.unshift(m); writeIndex(idx); return m;
 }
 
