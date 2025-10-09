@@ -26,6 +26,7 @@ export function initAiAssistant() {
   injectScopedStyles();
   mountUi();
   setupVisibilityLogic();
+  exposeGlobalAPI();
 }
 
 function mountUi() {
@@ -94,7 +95,6 @@ function renderPanelHtml() {
         <button class="assistant-icon" id="assistant-new" title="新建會話">${svgPlus()}</button>
         <button class="assistant-icon" id="assistant-history" title="查看會話">${svgList()}</button>
         <button class="assistant-icon" id="assistant-refresh" title="刷新上下文">${svgRefresh()}</button>
-        <button class="assistant-icon" id="assistant-min" title="最小化">${svgMin()}</button>
         <button class="assistant-icon" id="assistant-close" title="關閉">${svgClose()}</button>
       </div>
     </div>
@@ -107,6 +107,10 @@ function renderPanelHtml() {
       <div class="assistant-sub">
         <label class="assistant-switch"><input id="assistant-stream" type="checkbox" ${loadGlobalSettings()?.assistant?.stream === false ? '' : 'checked'}> 串流回應</label>
         <span class="assistant-model">模型：<code>${escapeHtml(model)}</code></span>
+        <span class="assistant-font">字級：
+          <button class="assistant-font-btn" data-size="s" title="11px">小</button>
+          <button class="assistant-font-btn" data-size="l" title="13px">大</button>
+        </span>
         <button id="assistant-clear" class="assistant-link">清空此文章對話</button>
       </div>
     </div>`;
@@ -114,8 +118,8 @@ function renderPanelHtml() {
 
 function wirePanel(panel) {
   const $ = (sel) => panel.querySelector(sel);
+  // 關閉按鈕：隱藏面板（移除重複的最小化按鈕，以免與關閉重覆）
   $('#assistant-close').addEventListener('click', () => panel.classList.add('assistant-hidden'));
-  $('#assistant-min').addEventListener('click', () => panel.classList.add('assistant-hidden'));
   $('#assistant-refresh').addEventListener('click', () => addHint(panel, '已刷新文章上下文，下次提問將以最新內容為準'));
   // 模式切換（精簡版）：小視窗/靠右全高/居中彈窗
   $('#assistant-small').addEventListener('click', () => setPanelMode(panel,'floating'));
@@ -125,6 +129,12 @@ function wirePanel(panel) {
   setPanelMode(panel, getSavedPanelMode());
   if (getSavedPanelMode()==='dock') setDockWidth(panel, getSavedDockWidth());
   window.addEventListener('resize', () => { if (getSavedPanelMode()==='dock') setDockWidth(panel, getSavedDockWidth()); });
+
+  // 字級
+  setFontSize(panel, getSavedFontSize());
+  panel.querySelectorAll('.assistant-font-btn').forEach(btn => {
+    btn.addEventListener('click', () => setFontSize(panel, btn.getAttribute('data-size')));
+  });
 
   // 會話：新建 / 歷史
   $('#assistant-new').addEventListener('click', () => newConversation(panel));
@@ -232,7 +242,7 @@ function appendMessage(container, role, text) {
   const el = document.createElement('div');
   el.className = 'assistant-msg ' + (role === 'user' ? 'assistant-user' : 'assistant-assistant');
   if (role === 'assistant') {
-    try { el.innerHTML = markdownToHtml(text || ''); }
+    try { el.innerHTML = markdownToHtml(text || ''); try { enhanceMarkdown(el); } catch(_){} }
     catch(_) { el.textContent = text || ''; }
   } else {
     el.textContent = text || '';
@@ -283,7 +293,7 @@ async function ask(panel, userText) {
     } else {
       buffer = await onceCompletions(messages, ac.signal);
       // 非串流：直接以 Markdown 渲染
-      try { placeholder.innerHTML = markdownToHtml(buffer || ''); }
+      try { placeholder.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(placeholder); } catch(_){} }
       catch(_) { placeholder.textContent = buffer; }
     }
   } catch (e) {
@@ -294,7 +304,7 @@ async function ask(panel, userText) {
     stopBtn.remove();
     // 串流完成：把純文字轉為 Markdown（避免要第二次載入才渲染）
     if (streamPref) {
-      try { placeholder.innerHTML = markdownToHtml(buffer || ''); }
+      try { placeholder.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(placeholder); } catch(_){} }
       catch(_) { /* ignore，保留純文字 */ }
     }
     await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'assistant', content: buffer, ts: Date.now() });
@@ -307,6 +317,29 @@ async function appendMessageToConv(articleKey, title, message) {
   await idbSetConv(meta.id, list);
   const idx = readIndex().map(x => x.id === meta.id ? { ...x, title, updatedAt: new Date().toISOString() } : x);
   writeIndex(idx);
+}
+
+// 美化 markdown：為程式碼區塊加上「複製」按鈕，改善可讀性與操作手感。
+function enhanceMarkdown(root){
+  try {
+    const pres = root.querySelectorAll('pre');
+    pres.forEach(pre => {
+      if (pre.querySelector('.assistant-copy')) return;
+      const code = pre.querySelector('code');
+      const btn = document.createElement('button');
+      btn.className = 'assistant-copy';
+      btn.textContent = '複製';
+      btn.addEventListener('click', async () => {
+        try {
+          const txt = code ? code.innerText : pre.innerText;
+          await navigator.clipboard.writeText(txt);
+          btn.textContent = '已複製';
+          setTimeout(()=> btn.textContent = '複製', 1200);
+        } catch(_) {}
+      });
+      pre.appendChild(btn);
+    });
+  } catch(_) {}
 }
 
 // 向後相容：若發現舊格式（assistantConversations），搬遷到新索引 + IDB
@@ -399,9 +432,9 @@ function injectScopedStyles() {
   .assistant-icon{width:28px;height:28px;border:1px solid #d1d5db;border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
   .assistant-icon:hover{border-color:#93c5fd;color:#1d4ed8;background:#f8fbff}
   .assistant-icon svg{width:16px;height:16px;display:block;fill:currentColor}
-  .assistant-messages{padding:12px 16px;overflow:auto;flex:1;background:#fff}
-  .assistant-msg{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:10px 14px;border-radius:10px;margin:8px 0;box-sizing:border-box}
-  .assistant-msg p{margin:6px 0}
+  .assistant-messages{padding:12px 16px;overflow:auto;flex:1;background:#fff;display:flex;flex-direction:column;gap:2px}
+  .assistant-msg{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:10px 14px;border-radius:12px;margin:4px 0;box-sizing:border-box;max-width:86%}
+  .assistant-msg p{margin:3px 0}
   .assistant-msg ol,.assistant-msg ul{margin:4px 0 8px 0;padding-left:1.25em}
   .assistant-msg li{margin:2px 0}
   .assistant-msg img{max-width:100%;height:auto;display:block;border-radius:6px}
@@ -409,8 +442,8 @@ function injectScopedStyles() {
   .assistant-msg th,.assistant-msg td{border:1px solid #e5e7eb;padding:6px 8px;vertical-align:top}
   .assistant-msg code{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:0 3px;font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
   .assistant-msg pre{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px;overflow:auto}
-  .assistant-user{background:#eef2ff;color:#1e293b;align-self:flex-end}
-  .assistant-assistant{background:#f1f5f9;color:#111827;align-self:flex-start;position:relative}
+  .assistant-user{background:#e6f0ff;color:#0f172a;align-self:flex-end;border:1px solid #cfe0ff;box-shadow:inset -3px 0 0 #60a5fa}
+  .assistant-assistant{background:#f6f8fb;color:#0f172a;align-self:flex-start;position:relative;border:1px solid #e5e7eb;box-shadow:inset 3px 0 0 #cbd5e1}
   .assistant-hint{background:#fef3c7;color:#78350f}
   .assistant-foot{border-top:1px solid #eef2f7;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:#fff}
   .assistant-row{display:flex;gap:8px}
@@ -420,6 +453,13 @@ function injectScopedStyles() {
   .assistant-switch{display:flex;align-items:center;gap:6px}
   .assistant-link{background:none;border:none;color:#2563eb;cursor:pointer}
   .assistant-stop{position:absolute;right:8px;bottom:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
+
+  /* 字級控制 */
+  .assistant-panel.assistant-font-s .assistant-messages{font-size:11px}
+  .assistant-panel.assistant-font-l .assistant-messages{font-size:13px}
+  .assistant-font{display:flex;align-items:center;gap:4px}
+  .assistant-font-btn{border:1px solid #d1d5db;background:#fff;border-radius:6px;padding:2px 6px;font-size:12px;color:#334155;cursor:pointer}
+  .assistant-font-btn.active{border-color:#93c5fd;background:#f0f7ff;color:#1d4ed8}
 
   /* 桌面：提供多種寬度尺寸 */
   @media (min-width: 1024px){
@@ -433,6 +473,40 @@ function injectScopedStyles() {
   /* Modal 模式 */
   .assistant-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:3999;backdrop-filter:saturate(120%) blur(2px);}
   .assistant-panel.assistant-modal{left:50%;right:auto;top:5vh;bottom:auto;transform:translateX(-50%);width:min(960px,94vw);height:min(90vh,880px);border-radius:14px}
+  
+  /* --- Markdown 美化（僅限對話氣泡作用域）--- */
+  .assistant-msg{padding:12px 14px;border-radius:12px;margin:4px 0;line-height:1.58}
+  .assistant-msg a{color:#2563eb;text-decoration:none}
+  .assistant-msg a:hover{text-decoration:underline}
+  .assistant-msg h1,.assistant-msg h2,.assistant-msg h3,.assistant-msg h4,.assistant-msg h5,.assistant-msg h6{line-height:1.3;margin:10px 0 6px 0;color:#0f172a}
+  .assistant-msg h1{font-size:20px;font-weight:800}
+  .assistant-msg h2{font-size:18px;font-weight:700;border-bottom:1px dashed #e5e7eb;padding-bottom:4px}
+  .assistant-msg h3{font-size:16px;font-weight:700}
+  .assistant-msg h4{font-size:15px;font-weight:600}
+  .assistant-msg ol,.assistant-msg ul{margin:3px 0 6px 0;padding-left:1.3em}
+  .assistant-msg li{margin:3px 0}
+  .assistant-msg hr{border:0;border-top:1px solid #e5e7eb;margin:6px 0}
+  .assistant-msg blockquote{margin:6px 0;padding:8px 10px;border-left:3px solid #93c5fd;background:#f8fbff;color:#0f172a;border-radius:6px}
+  .assistant-msg img{max-width:100%;height:auto;display:block;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+  .assistant-msg table{width:100%;border-collapse:separate;border-spacing:0;table-layout:auto;margin:6px 0;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+  .assistant-msg thead th{background:#f8fafc;font-weight:700}
+  .assistant-msg th,.assistant-msg td{border-bottom:1px solid #e5e7eb;padding:8px 10px;vertical-align:top}
+  .assistant-msg tr:last-child td{border-bottom:none}
+  .assistant-msg code{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:0 4px;font-size:90%;font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+  .assistant-msg pre{background:#0b1220;color:#e5e7eb;border:1px solid #0b1220;border-radius:10px;padding:12px 14px;overflow:auto;position:relative}
+  .assistant-msg pre code{background:transparent;border:none;padding:0;color:inherit}
+  .assistant-msg .assistant-copy{position:absolute;top:8px;right:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#cbd5e1;opacity:.85;cursor:pointer}
+  .assistant-msg .assistant-copy:hover{opacity:1}
+  .assistant-assistant{background:#f8fafc;color:#0f172a;border:1px solid #e5e7eb}
+  /* 歷史彈窗：右上角簡潔關閉 */
+  #assistant-history-panel{position:absolute}
+  /* 標題列（含關閉） */
+  #assistant-history-panel .ah-head{position:sticky; top:0; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 8px 8px 12px; background:#fff; border-bottom:1px solid #eef2f7; z-index:2}
+  #assistant-history-panel .ah-titlebar{font-weight:700;color:#0f172a}
+  /* 右上角關閉（24x24），清晰不遮擋 */
+  #assistant-history-panel .ah-close{width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; color:#111827; background:#ffffff; border:1px solid #e5e7eb; box-shadow:0 2px 6px rgba(0,0,0,.06); cursor:pointer; font-size:16px; font-weight:700; line-height:1}
+  #assistant-history-panel .ah-close:hover{background:#f8fafc; color:#1d4ed8; border-color:#93c5fd}
+  @media (max-width: 600px){ .assistant-msg{ max-width:94%; } }
   `;
   if (!exist) document.head.appendChild(style);
 }
@@ -454,6 +528,24 @@ function cyclePanelSize(panel) {
   const cur = getSavedPanelSize();
   const next = order[(order.indexOf(cur)+1)%order.length];
   setPanelSize(panel, next);
+}
+
+// 字級：s / m / l
+function getSavedFontSize(){
+  try {
+    const v = localStorage.getItem('assistantFontSize') || 'l';
+    return (v==='s'||v==='l') ? v : 'l'; // 兼容舊值（m -> l）
+  } catch(_) { return 'l'; }
+}
+function saveFontSize(sz){ try { localStorage.setItem('assistantFontSize', sz); } catch(_){} }
+function setFontSize(panel, sz){
+  const opts = ['s','l'];
+  if (!opts.includes(sz)) sz = 'l';
+  panel.classList.remove('assistant-font-s','assistant-font-m','assistant-font-l');
+  panel.classList.add('assistant-font-' + sz);
+  saveFontSize(sz);
+  // 高亮按鈕
+  panel.querySelectorAll('.assistant-font-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-size') === sz));
 }
 
 // 模式: floating | dock；寬度百分比與全高
@@ -540,8 +632,9 @@ async function toggleHistory(panel){
   if (pop) { pop.remove(); return; }
   pop = document.createElement('div');
   pop.id='assistant-history-panel';
-  pop.style.cssText='position:absolute; right:12px; top:44px; z-index:2401; background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14); min-width:300px; max-height:60vh; overflow:auto;';
-  pop.innerHTML = idx.length ? idx.map(m=>`<div class="ah-item" data-id="${m.id}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;">
+  // 帶標題與關閉鈕的頭部
+  pop.style.cssText='position:absolute; right:12px; top:44px; z-index:2401; background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14); min-width:320px; max-height:60vh; overflow:auto;';
+  pop.innerHTML = `<div class=\"ah-head\"><div class=\"ah-titlebar\">歷史會話</div><button class=\"ah-close\" title=\"關閉\" aria-label=\"關閉\">×</button></div>` + (idx.length ? idx.map(m=>`<div class="ah-item" data-id="${m.id}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;">
     <div class="ah-meta" style="flex:1;min-width:0;">
       <div class="ah-title" style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.title||'會話')}</div>
       <div class="ah-time" style="font-size:12px;color:#64748b;">${new Date(m.updatedAt||Date.now()).toLocaleString()}</div>
@@ -549,9 +642,25 @@ async function toggleHistory(panel){
     <button class="assistant-icon" data-act="open" title="切換">${svgOpen()}</button>
     <button class="assistant-icon" data-act="rename" title="重命名">${svgEdit()}</button>
     <button class="assistant-icon" data-act="delete" title="刪除">${svgTrash()}</button>
-  </div>`).join('') : '<div style="padding:12px;color:#64748b;">尚無會話</div>';
+  </div>`).join('') : '<div style="padding:12px;color:#64748b;">尚無會話</div>');
   panel.appendChild(pop);
+  // 外部點擊與 Esc 關閉（選項 1+3）
+  const histBtn = panel.querySelector('#assistant-history');
+  const closeHistory = () => {
+    try { document.removeEventListener('keydown', onKeydown, true); } catch(_){}
+    try { document.removeEventListener('mousedown', onDocDown, true); } catch(_){}
+    try { pop.remove(); } catch(_){}
+  };
+  const onKeydown = (e) => { if (e.key === 'Escape') closeHistory(); };
+  const onDocDown = (e) => {
+    const t = e.target;
+    if (!pop.contains(t) && !(histBtn && histBtn.contains(t))) closeHistory();
+  };
+  document.addEventListener('keydown', onKeydown, true);
+  document.addEventListener('mousedown', onDocDown, true);
+
   pop.addEventListener('click', async (ev) => {
+    if (ev.target.closest('.ah-close')) { ev.stopPropagation(); closeHistory(); return; }
     const item = ev.target.closest('.ah-item');
     if (!item) return;
     const id = item.getAttribute('data-id');
@@ -580,7 +689,7 @@ async function toggleHistory(panel){
     setCurrentConvId(ctx.articleKey, id);
     const box = panel.querySelector('#assistant-messages');
     if (box) { box.innerHTML=''; const msgs = await idbGetConv(id); msgs.forEach(m=>appendMessage(box,m.role,m.content)); box.scrollTop=box.scrollHeight; }
-    updateSessionLabel(); pop.remove();
+    updateSessionLabel(); closeHistory();
   });
 }
 
@@ -602,13 +711,50 @@ function getCurrentArticleKeySync(){
   try { const raw = (dom.articleInput && dom.articleInput.value) || ''; return String(raw).slice(0, 64) || 'global'; } catch(_) { return 'global'; }
 }
 
+// 對外 API（供齒輪→AI 會話視窗調用）
+function exposeGlobalAPI(){
+  try {
+    if (window.__assistant && window.__assistant.__ready) return;
+    const api = {
+      __ready: true,
+      open: (mode) => {
+        const panel = document.getElementById('assistant-panel');
+        if (!panel) return; panel.classList.remove('assistant-hidden'); if (mode) setPanelMode(panel, mode);
+      },
+      switch: async (articleKey, convId) => {
+        const panel = document.getElementById('assistant-panel'); if (!panel) return;
+        if (articleKey && convId) { setCurrentConvId(articleKey, convId); }
+        panel.classList.remove('assistant-hidden'); restoreConversation(panel); updateSessionLabel();
+      },
+      send: async (text, articleKey, convId) => {
+        const panel = document.getElementById('assistant-panel'); if (!panel) return;
+        if (articleKey && convId) { setCurrentConvId(articleKey, convId); }
+        panel.classList.remove('assistant-hidden');
+        if (text && text.trim()) { await ask(panel, text.trim()); }
+      },
+      create: async (articleKey, title) => {
+        const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+        ensureMetaWithId(articleKey||'global', title||'新會話', id);
+        await idbSetConv(id, []);
+        return id;
+      }
+    };
+    window.__assistant = api;
+  } catch(_) {}
+}
+
 function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
 function svgChat(){return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 3C6.477 3 2 6.94 2 11.8c0 1.946.72 3.746 1.934 5.19L3 21l4.2-1.758c1.362.515 2.87.8 4.5.8 5.523 0 10-3.94 10-8.8S17.523 3 12 3z"/></svg>'}
 function svgClose(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>'}
-function svgMin(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M3 9.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/></svg>'}
 function svgRefresh(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 3a5 5 0 1 0 3.905 8.12.5.5 0 1 1 .79.612A6 6 0 1 1 8 2v1z"/><path d="M8 0a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 1 1 .708.708L8.354 5.71a.5.5 0 0 1-.708 0L5.646 3.854a.5.5 0 1 1 .708-.708L7.5 4.293V.5A.5.5 0 0 1 8 0z"/></svg>'}
-function svgPin(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4.146 2.146a.5.5 0 0 1 .708 0L7.5 4.793l1.646-1.647a.5.5 0 0 1 .708.708L8.207 5.5l2.147 2.146a.5.5 0 1 1-.708.708L7.5 6.207 5.354 8.354a.5.5 0 1 1-.708-.708L6.793 5.5 4.146 2.854a.5.5 0 0 1 0-.708z"/></svg>'}
+// 「靠右全高 / 側欄模式」：以外框 + 右側實心欄位呈現，較直觀
+function svgPin(){
+  return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">'
+       + '<rect x="1" y="2" width="14" height="12" rx="2" fill="none" stroke="currentColor"/>'
+       + '<rect x="10" y="2" width="5" height="12" rx="2"/>'
+       + '</svg>';
+}
 function svgFull(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 1h5v1H2v4H1V1zm8 0h6v6h-1V2H9V1zM1 9h1v5h5v1H1V9zm13 0h1v7H9v-1h5V9z"/></svg>'}
 function svgSmall(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><rect x="9" y="9" width="6" height="6" rx="2"/><rect x="1" y="1" width="10" height="10" rx="2" fill="none" stroke="currentColor"/></svg>'}
 function svgMax(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 4a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3z"/></svg>'}
