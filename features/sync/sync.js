@@ -303,12 +303,73 @@ function showGlobalSettingsModal() {
         <input id="gs-ai-key" type="password" placeholder="sk-..." value="${escapeHtml(secrets.aiKey||'')}">
       </div>
       <div class="auth-field">
-        <label>TTS 基礎 URL</label>
-        <input id="gs-tts-url" type="text" placeholder="https://tts.example.com" value="${escapeHtml(settings.ttsUrl||'')}">
+        <label>TTS 來源</label>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <label class="gs-toggle"><input id="gs-tts-use-remote" class="gs-visually-hidden" type="radio" name="gs-tts-use" checked><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">遠程</span></label>
+          <label class="gs-toggle"><input id="gs-tts-use-local" class="gs-visually-hidden" type="radio" name="gs-tts-use"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">本地</span></label>
+          <label class="gs-toggle"><input id="gs-tts-use-custom" class="gs-visually-hidden" type="radio" name="gs-tts-use"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">自定義</span></label>
+          <span class="gs-hint">一般用戶只需選擇來源；需要自定義再輸入 URL</span>
+        </div>
+      </div>
+      <div class="auth-field" id="gs-tts-custom-wrap" style="display:none">
+        <label>自定義 TTS 基礎 URL</label>
+        <input id="gs-tts-url-custom" type="text" placeholder="https://your-tts.example.com" value="${escapeHtml(settings.ttsUrlCustom||'')}">
       </div>
       <div class="auth-field">
         <label>TTS API Key（僅保存在本機）</label>
         <input id="gs-tts-key" type="password" placeholder="..." value="${escapeHtml(secrets.ttsKey||'')}">
+      </div>
+      <div class="auth-field">
+        <label>英語朗讀首選</label>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <label class="gs-toggle"><input id="gs-read-en-gb" class="gs-visually-hidden" name="gs-read-en" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">英音 en‑GB</span></label>
+          <label class="gs-toggle"><input id="gs-read-en-us" class="gs-visually-hidden" name="gs-read-en" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">美音 en‑US</span></label>
+          <span class="gs-hint">未指定時預設英音</span>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>中文朗讀首選</label>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <label class="gs-toggle"><input id="gs-read-zh-cn" class="gs-visually-hidden" name="gs-read-zh" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">普通話 zh‑CN</span></label>
+          <label class="gs-toggle"><input id="gs-read-zh-hk" class="gs-visually-hidden" name="gs-read-zh" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">粵語 zh‑HK</span></label>
+        </div>
+      </div>
+      <div class="auth-field">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap">
+          <label style="margin:0">TTS 聲音（僅顯示：美音、英音、廣東話、普通話）</label>
+          <button id="gs-tts-reload" type="button" class="btn" style="margin-left:auto">重新載入清單</button>
+        </div>
+        <div id="gs-voice-box" style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+              <div style="font-size:12px;color:#64748b">英語（美音 en-US）</div>
+              <button id="gs-test-en-us" type="button" class="btn-secondary" style="padding:4px 8px">試聽</button>
+            </div>
+            <select id="gs-voice-en-us" style="width:100%"><option value="">正在載入...</option></select>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+              <div style="font-size:12px;color:#64748b">英語（英音 en-GB）</div>
+              <button id="gs-test-en-gb" type="button" class="btn-secondary" style="padding:4px 8px">試聽</button>
+            </div>
+            <select id="gs-voice-en-gb" style="width:100%"><option value="">正在載入...</option></select>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+              <div style="font-size:12px;color:#64748b">粵語（廣東話 zh-HK）</div>
+              <button id="gs-test-zh-hk" type="button" class="btn-secondary" style="padding:4px 8px">試聽</button>
+            </div>
+            <select id="gs-voice-zh-hk" style="width:100%"><option value="">正在載入...</option></select>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+              <div style="font-size:12px;color:#64748b">中文（普通話 zh-CN）</div>
+              <button id="gs-test-zh-cn" type="button" class="btn-secondary" style="padding:4px 8px">試聽</button>
+            </div>
+            <select id="gs-voice-zh-cn" style="width:100%"><option value="">正在載入...</option></select>
+          </div>
+        </div>
+        <div id="gs-voice-hint" class="gs-hint">若載入失敗，請確認 TTS 基礎 URL 或 ai-config.js 的 voicesUrl 可存取。</div>
       </div>
       <div class="auth-field">
         <label>AI 助手</label>
@@ -345,12 +406,46 @@ function showGlobalSettingsModal() {
   dom.modalBody.innerHTML = html;
   const $ = (id)=> dom.modalBody.querySelector(id);
   $('#gs-cancel').onclick = ()=> ui.closeModal();
+  // 初始化預設單選狀態
+  try {
+    const { settings } = requireOrImportSettings();
+    const use = settings?.ttsUse || 'remote';
+    dom.modalBody.querySelector('#gs-tts-use-remote').checked = use !== 'local';
+    dom.modalBody.querySelector('#gs-tts-use-local').checked = use === 'local';
+    dom.modalBody.querySelector('#gs-tts-use-custom').checked = use === 'custom';
+    const en = settings?.readEn || 'en-GB';
+    dom.modalBody.querySelector('#gs-read-en-gb').checked = (en === 'en-GB');
+    dom.modalBody.querySelector('#gs-read-en-us').checked = (en === 'en-US');
+    const zh = settings?.readZh || 'zh-CN';
+    dom.modalBody.querySelector('#gs-read-zh-cn').checked = (zh === 'zh-CN');
+    dom.modalBody.querySelector('#gs-read-zh-hk').checked = (zh === 'zh-HK');
+  } catch(_) {}
+
+  // 若使用自定義，顯示輸入框
+  (function wireCustomToggle(){
+    const wrap = dom.modalBody.querySelector('#gs-tts-custom-wrap');
+    const onChange = ()=>{ const c = dom.modalBody.querySelector('#gs-tts-use-custom')?.checked; if (wrap) wrap.style.display = c ? '' : 'none'; };
+    ['#gs-tts-use-remote','#gs-tts-use-local','#gs-tts-use-custom'].forEach(id=>{ const el=dom.modalBody.querySelector(id); if(el) el.addEventListener('change', onChange); });
+    onChange();
+  })();
+
+  // 若自定義輸入框為空，從 ai-config.js 補上預設（若提供）
+  (async ()=>{
+    try {
+      const cfg = await import('../../ai-config.js');
+      const custom = '';
+      const inCustom = dom.modalBody.querySelector('#gs-tts-url-custom');
+      if (inCustom && !inCustom.value) inCustom.value = custom;
+    } catch(_) {}
+  })();
+
   $('#gs-save').onclick = async ()=>{
     try {
       const { saveGlobalSettings, saveGlobalSecrets } = await import('../../modules/settings.js');
       const aiUrl = $('#gs-ai-url').value.trim();
       const aiKey = $('#gs-ai-key').value.trim();
-      const ttsUrl = $('#gs-tts-url').value.trim();
+      const ttsUse = dom.modalBody.querySelector('#gs-tts-use-custom')?.checked ? 'custom' : (dom.modalBody.querySelector('#gs-tts-use-local')?.checked ? 'local' : 'remote');
+      const ttsUrlCustom = (dom.modalBody.querySelector('#gs-tts-url-custom')?.value || '').trim();
       const ttsKey = $('#gs-tts-key').value.trim();
       // 模型覆蓋（空值表示清除）
       const models = {
@@ -364,7 +459,22 @@ function showGlobalSettingsModal() {
       Object.keys(models).forEach(k => { if (!models[k]) delete models[k]; });
       const asstEnabled = dom.modalBody.querySelector('#gs-assistant-enabled')?.checked ? true : false;
       const asstStream = dom.modalBody.querySelector('#gs-assistant-stream')?.checked !== false;
-      saveGlobalSettings({ ai: { apiUrl: aiUrl, models }, tts: { baseUrl: ttsUrl }, assistant: { enabled: asstEnabled, stream: asstStream } });
+      // voice selections
+      const sv = {
+        'en-US': (dom.modalBody.querySelector('#gs-voice-en-us')?.value || '').trim(),
+        'en-GB': (dom.modalBody.querySelector('#gs-voice-en-gb')?.value || '').trim(),
+        'zh-HK': (dom.modalBody.querySelector('#gs-voice-zh-hk')?.value || '').trim(),
+        'zh-CN': (dom.modalBody.querySelector('#gs-voice-zh-cn')?.value || '').trim()
+      };
+      Object.keys(sv).forEach(k => { if (!sv[k]) delete sv[k]; });
+      const readEn = dom.modalBody.querySelector('#gs-read-en-us')?.checked ? 'en-US' : 'en-GB';
+      const readZh = dom.modalBody.querySelector('#gs-read-zh-hk')?.checked ? 'zh-HK' : 'zh-CN';
+      saveGlobalSettings({
+        ai: { apiUrl: aiUrl, models },
+        tts: { use: ttsUse, baseUrlCustom: ttsUrlCustom, selectedVoices: sv },
+        reading: { englishVariant: readEn, chineseVariant: readZh },
+        assistant: { enabled: asstEnabled, stream: asstStream }
+      });
       saveGlobalSecrets({ aiApiKey: aiKey, ttsApiKey: ttsKey });
       $('#gs-msg').textContent = '已儲存（僅本機）';
       setTimeout(()=> ui.closeModal(), 500);
@@ -372,6 +482,127 @@ function showGlobalSettingsModal() {
       $('#gs-msg').textContent = '儲存失敗：' + (e?.message || '');
     }
   };
+
+  // 初始化聲音清單
+  (async function initVoices(){
+    const $ = (sel) => dom.modalBody.querySelector(sel);
+    const btn = $('#gs-tts-reload');
+    const selects = ['#gs-voice-en-us','#gs-voice-en-gb','#gs-voice-zh-hk','#gs-voice-zh-cn'].map(s=>$(s));
+    const testBtns = {
+      'en-US': $('#gs-test-en-us'),
+      'en-GB': $('#gs-test-en-gb'),
+      'zh-HK': $('#gs-test-zh-hk'),
+      'zh-CN': $('#gs-test-zh-cn')
+    };
+    const setLoading = (on) => { selects.forEach(sel => { if (!sel) return; sel.innerHTML = `<option value="">${on?'正在載入...':'無可用選項'}</option>`; sel.disabled = on; }); };
+    const ensureOptions = (sel, arr, savedVal) => {
+        if (!sel) return;
+        sel.innerHTML = '';
+        if (!arr || !arr.length) { sel.innerHTML = '<option value="">無可用選項</option>'; sel.disabled = false; return; }
+        arr.forEach(v => { const o=document.createElement('option'); o.value=v.id; o.textContent=v.__label||v.id; sel.appendChild(o); });
+        // 若有保存值且存在於清單，選中；否則預設第一項
+        if (savedVal && Array.from(sel.options).some(o => o.value === savedVal)) sel.value = savedVal;
+        if (!sel.value && sel.options.length) sel.selectedIndex = 0;
+    };
+    const fillAll = (groups, saved) => {
+        const mk = (arr) => (arr||[]).map(v => ({ ...v, __label: v.__label || v.id }));
+        ensureOptions($('#gs-voice-en-us'), mk(groups['en-US']), saved['en-US']);
+        ensureOptions($('#gs-voice-en-gb'), mk(groups['en-GB']), saved['en-GB']);
+        ensureOptions($('#gs-voice-zh-hk'), mk(groups['zh-HK']), saved['zh-HK']);
+        ensureOptions($('#gs-voice-zh-cn'), mk(groups['zh-CN']), saved['zh-CN']);
+    };
+    const loadAndPopulate = async (refresh=false) => {
+      setLoading(true);
+      try {
+        const { fetchVoicesList, groupVoices, formatVoiceLabel, pickDefaultVoiceId } = await import('../../modules/voices.js');
+        // 允許使用者不先儲存也能以當前面板的選項載入清單
+        const preferUse = dom.modalBody.querySelector('#gs-tts-use-custom')?.checked ? 'custom' : (dom.modalBody.querySelector('#gs-tts-use-local')?.checked ? 'local' : 'remote');
+        const overrideBaseUrls = preferUse === 'custom' ? { custom: (dom.modalBody.querySelector('#gs-tts-url-custom')?.value || '').trim() } : undefined;
+        const list = await fetchVoicesList({ refresh, overrideUse: preferUse, overrideBaseUrls });
+        list.forEach(v => { v.__label = formatVoiceLabel(v); });
+        const groups = groupVoices(list);
+        let saved = {};
+        try { const raw = localStorage.getItem('pen_global_settings'); if (raw) { const js = JSON.parse(raw); saved = (js?.tts && js.tts.selectedVoices) || {}; } } catch(_) {}
+        // fill defaults if empty
+        const ensure = (k) => { if (!saved[k] && groups[k] && groups[k].length) saved[k] = pickDefaultVoiceId(groups[k]); };
+        ['en-US','en-GB','zh-HK','zh-CN'].forEach(ensure);
+        fillAll(groups, saved);
+        // 啟用試聽按鈕
+        Object.keys(testBtns).forEach(k => { if (testBtns[k]) testBtns[k].disabled = false; });
+        const hint = $('#gs-voice-hint'); if (hint) hint.textContent = '已載入，共 ' + list.length + ' 個聲音';
+      } catch (e) {
+        selects.forEach(sel => { if (!sel) return; sel.innerHTML = '<option value="">載入失敗</option>'; sel.disabled = false; });
+        const hint = $('#gs-voice-hint'); if (hint) hint.textContent = '載入失敗：' + (e?.message || '');
+      } finally {
+        selects.forEach(sel => { if (!sel) return; sel.disabled = false; });
+      }
+    };
+    if (btn) btn.addEventListener('click', () => loadAndPopulate(true));
+    loadAndPopulate(false);
+
+    // 綁定試聽事件
+    const playSamples = async (group) => {
+      const hint = $('#gs-voice-hint');
+      try {
+        const { stopCurrentAudio, speakText, buildTTSUrl } = await import('../../modules/audio.js');
+        stopCurrentAudio();
+        const sel = {
+          'en-US': $('#gs-voice-en-us'),
+          'en-GB': $('#gs-voice-en-gb'),
+          'zh-HK': $('#gs-voice-zh-hk'),
+          'zh-CN': $('#gs-voice-zh-cn')
+        }[group];
+        // 優先用當前下拉的值；若沒有，退到本機保存或 ai-config 預設
+        let id = (sel && sel.value) ? sel.value : '';
+        if (!id) {
+          try { const raw = localStorage.getItem('pen_global_settings'); if (raw) { const js = JSON.parse(raw); id = (js?.tts?.selectedVoices||{})[group] || ''; } } catch(_) {}
+        }
+        if (!id) {
+          try { const cfg = await import('../../ai-config.js');
+            if (group === 'zh-HK') id = cfg?.TTS_CONFIG?.voices?.cantonese || '';
+            else if (group === 'zh-CN') id = cfg?.TTS_CONFIG?.voices?.chinese || '';
+            else id = cfg?.TTS_CONFIG?.voices?.english || '';
+          } catch(_) {}
+        }
+        if (!id) { if (hint) hint.textContent = '沒有可用的聲音可試聽'; return; }
+        let text;
+        if (group === 'en-US') text = 'This is a test voice.';
+        else if (group === 'en-GB') text = 'This is a British English test voice.';
+        else if (group === 'zh-HK') text = '呢個係測試語音。';
+        else text = '這是一段測試語音。';
+        const ok = await speakText(text, id, 0);
+        if (!ok) {
+          const url = buildTTSUrl(text, id, 0);
+          try { console.debug('[TTS test]', group, id, url.replace(/(api_key=)[^&]+/, '$1***')); } catch(_) {}
+          if (hint) hint.textContent = '播放失敗，已輸出測試 URL 於 Console，請檢查回應格式與 voice 代碼。';
+        }
+      } catch(e) {
+        console.error('試聽失敗', e);
+        // 後備：若該 id 不被後端支援，嘗試使用 ai-config 的預設粵/普語音
+        try {
+          const cfg = await import('../../ai-config.js');
+          const { speakText } = await import('../../modules/audio.js');
+          let fb = '';
+          if (group === 'zh-HK') fb = cfg?.TTS_CONFIG?.voices?.cantonese || '';
+          if (group === 'zh-CN') fb = cfg?.TTS_CONFIG?.voices?.chinese || '';
+          if (group === 'en-US') fb = cfg?.TTS_CONFIG?.voices?.english || '';
+          if (group === 'en-GB') {
+            // 若未提供英音預設，回退到 english 也可接受
+            fb = cfg?.TTS_CONFIG?.voices?.english || '';
+          }
+          if (fb) {
+            let text = (group === 'zh-HK') ? '呢個係測試語音。' : (group === 'zh-CN' ? '這是一段測試語音。' : 'This is a test voice.');
+            await speakText(text, fb, 0);
+            if (hint) hint.textContent = '提示：該聲音可能不被後端支援，已用預設後備語音試聽。';
+          }
+        } catch(_) {}
+      }
+    };
+    if (testBtns['en-US']) testBtns['en-US'].addEventListener('click', () => playSamples('en-US'));
+    if (testBtns['en-GB']) testBtns['en-GB'].addEventListener('click', () => playSamples('en-GB'));
+    if (testBtns['zh-HK']) testBtns['zh-HK'].addEventListener('click', () => playSamples('zh-HK'));
+    if (testBtns['zh-CN']) testBtns['zh-CN'].addEventListener('click', () => playSamples('zh-CN'));
+  })();
 }
 
 function setGearLoginState(isLoggedIn, email) {
@@ -402,17 +633,24 @@ function escapeHtml(s){
 
 function requireOrImportSettings() {
   // Read current values synchronously from localStorage
-  let settings = {}, secrets = {};
-  try {
-    const raw = localStorage.getItem('pen_global_settings');
-    if (raw) {
-      const s = JSON.parse(raw);
-      settings.aiUrl = s?.ai?.apiUrl || '';
-      settings.ttsUrl = s?.tts?.baseUrl || '';
-      settings.models = (s?.ai && s.ai.models) || {};
-      settings.assistantEnabled = (s?.assistant && s.assistant.enabled !== false);
-      settings.assistantStream = (s?.assistant && s.assistant.stream !== false);
-    }
+    let settings = {}, secrets = {};
+    try {
+      const raw = localStorage.getItem('pen_global_settings');
+      if (raw) {
+        const s = JSON.parse(raw);
+        settings.aiUrl = s?.ai?.apiUrl || '';
+        settings.ttsUrl = s?.tts?.baseUrl || '';
+      settings.ttsUrlRemote = s?.tts?.baseUrlRemote || '';
+      settings.ttsUrlLocal = s?.tts?.baseUrlLocal || '';
+      settings.ttsUrlCustom = s?.tts?.baseUrlCustom || '';
+      settings.ttsUse = s?.tts?.use || 'remote';
+        settings.readEn = (s?.reading && s.reading.englishVariant) || 'en-GB';
+        settings.readZh = (s?.reading && s.reading.chineseVariant) || 'zh-CN';
+        settings.selectedVoices = (s?.tts && s.tts.selectedVoices) || {};
+        settings.models = (s?.ai && s.ai.models) || {};
+        settings.assistantEnabled = (s?.assistant && s.assistant.enabled !== false);
+        settings.assistantStream = (s?.assistant && s.assistant.stream !== false);
+      }
   } catch(_) {}
   try { const raw = localStorage.getItem('pen_global_secrets'); if (raw) { const s = JSON.parse(raw); secrets.aiKey = s?.aiApiKey || ''; secrets.ttsKey = s?.ttsApiKey || ''; } } catch(_) {}
   return { settings, secrets };

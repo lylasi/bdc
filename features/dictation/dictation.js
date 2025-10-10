@@ -768,7 +768,8 @@ function playCurrentWord() {
                 }
             }
         };
-        audio.speakText(currentWord.word, 'en-US', 0, null, afterWordPlayed);
+        // 默寫英語：若未特別指定，遵從全局英語朗讀首選
+        audio.speakText(currentWord.word, 'english', 0, null, afterWordPlayed);
     }
     
     function scheduleNextWord() {

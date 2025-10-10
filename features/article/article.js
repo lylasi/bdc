@@ -1407,7 +1407,8 @@ function playCurrentChunk() {
             }
         }
     };
-    audio.speakText(chunk?.text || String(chunk || ''), 'en-US', state.currentSpeed, () => {
+    // 使用全局英語朗讀首選
+    audio.speakText(chunk?.text || String(chunk || ''), 'english', state.currentSpeed, () => {
         dom.stopReadArticleBtn.disabled = false;
         updateReadButtonUI('playing');
         updateChunkNav();
@@ -1537,7 +1538,7 @@ async function downloadAudio() {
     const base = title ? makeSlug(title) : makeSlug(textToDownload.slice(0, 40));
     const fname = `${base}-${mode === 'full' ? 'full' : mode}.mp3`;
     try {
-        await audio.downloadTextAsAudio(textToDownload, 'en-US', state.currentSpeed, fname, { pitch: 0, style: 'general', download: true });
+        await audio.downloadTextAsAudio(textToDownload, 'english', state.currentSpeed, fname, { pitch: 0, style: 'general', download: true });
     } catch (err) {
         console.error('下載音頻失敗:', err);
         alert('下載音頻失敗，可能是文字過長或網絡問題。請嘗試切換為句子/段落模式下載。');
@@ -1818,7 +1819,7 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
     const btnPlay = rawTarget?.closest && rawTarget.closest('.btn-play-word');
     if (btnPlay) {
         const w = btnPlay.getAttribute('data-word') || '';
-        if (w) audio.speakText(w, 'en-US', 0);
+        if (w) audio.speakText(w, 'english', 0);
         return;
     }
     const btnAdd = rawTarget?.closest && rawTarget.closest('.btn-add-to-book');

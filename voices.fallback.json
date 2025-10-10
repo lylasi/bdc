@@ -1,0 +1,11 @@
+[
+  { "id": "en-US-JennyNeural", "locale": "en-US", "gender": "Female", "localName": "Jenny" },
+  { "id": "en-US-GuyNeural",   "locale": "en-US", "gender": "Male",   "localName": "Guy" },
+  { "id": "en-GB-LibbyNeural",  "locale": "en-GB", "gender": "Female", "localName": "Libby" },
+  { "id": "en-GB-RyanNeural",  "locale": "en-GB", "gender": "Male",   "localName": "Ryan" },
+  { "id": "zh-HK-HiuGaaiNeural", "locale": "zh-HK", "gender": "Female", "localName": "曉佳" },
+  { "id": "zh-HK-WanLungNeural", "locale": "zh-HK", "gender": "Male",   "localName": "雲龍" },
+  { "id": "zh-CN-XiaoxiaoNeural", "locale": "zh-CN", "gender": "Female", "localName": "曉曉" },
+  { "id": "zh-CN-YunxiNeural",    "locale": "zh-CN", "gender": "Male",   "localName": "雲希" }
+]
+

@@ -5,7 +5,17 @@ const SECRETS_KEY = 'pen_global_secrets';
 
 const defaults = {
   ai: { apiUrl: '', models: {} }, // request endpoint & per-feature model override
-  tts: { baseUrl: '' },
+  // tts: baseUrl kept for backward compatibility; prefer baseUrlRemote/baseUrlLocal+use
+  tts: {
+    baseUrl: '',
+    baseUrlRemote: (TTS_CONFIG && (TTS_CONFIG.baseUrlRemote || TTS_CONFIG.baseUrl)) || '',
+    baseUrlLocal: (TTS_CONFIG && TTS_CONFIG.baseUrlLocal) || '',
+    use: (TTS_CONFIG && TTS_CONFIG.use) || 'remote',
+    baseUrlCustom: '',
+    selectedVoices: {}
+  },
+  // global reading preferences
+  reading: { englishVariant: 'en-GB', chineseVariant: 'zh-CN' },
   assistant: { enabled: true, stream: true },
   updatedAt: null
 };
@@ -18,6 +28,7 @@ export function loadGlobalSettings() {
       ...s,
       ai: { ...defaults.ai, ...(s.ai||{}) },
       tts: { ...defaults.tts, ...(s.tts||{}) },
+      reading: { ...defaults.reading, ...(s.reading||{}) },
       assistant: { ...defaults.assistant, ...(s.assistant||{}) }
     };
   } catch(_) { return { ...defaults }; }
@@ -30,6 +41,7 @@ export function saveGlobalSettings(partial) {
     ...partial,
     ai: { ...cur.ai, ...(partial?.ai || {}) },
     tts: { ...cur.tts, ...(partial?.tts || {}) },
+    reading: { ...cur.reading, ...(partial?.reading || {}) },
     assistant: { ...cur.assistant, ...(partial?.assistant || {}) },
     updatedAt: new Date().toISOString()
   };
@@ -45,3 +57,4 @@ export function saveGlobalSecrets(partial) {
   const next = { ...cur, ...(partial || {}), updatedAt: new Date().toISOString() };
   try { localStorage.setItem(SECRETS_KEY, JSON.stringify(next)); return next; } catch(_) { return cur; }
 }
+import { TTS_CONFIG } from '../ai-config.js';
