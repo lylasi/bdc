@@ -6,6 +6,7 @@ import { TTS_CONFIG } from '../ai-config.js';
 import { loadGlobalSettings } from './settings.js';
 
 // Local bundled static voices file (same-origin, no CORS). Update via scripts/update-voices.sh
+const STATIC_MIN_PATH = '/voices.min.json';
 const STATIC_VOICES_PATH = '/voices.json';
 
 const LS_KEY = 'pen_tts_voices_cache_v1';
@@ -87,7 +88,18 @@ export async function fetchVoicesList({ signal, refresh = false, allowCache = tr
 
     let lastErr = null;
 
-    // 1) 直接讀取本地靜態 voices（同源、無 CORS，且可由腳本更新），作為權威來源
+    // 1) 直接讀取本地精簡 voices（同源、無 CORS）
+    try {
+        const resp = await fetch(STATIC_MIN_PATH, { signal, cache: refresh ? 'no-store' : 'default' });
+        if (resp.ok) {
+            const data = await resp.json();
+            const arr = Array.isArray(data) ? data : (Array.isArray(data?.voices) ? data.voices : []);
+            const normalized = arr.map(normalizeVoice).filter(Boolean);
+            if (normalized.length) { writeCache(normalized); return normalized; }
+        }
+    } catch(_) {}
+
+    // 1.2) 回退讀取完整 voices（同源、無 CORS）
     try {
         const resp = await fetch(STATIC_VOICES_PATH, { signal, cache: refresh ? 'no-store' : 'default' });
         if (resp.ok) {
