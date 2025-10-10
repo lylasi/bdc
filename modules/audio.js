@@ -62,20 +62,11 @@ export function stopCurrentAudio() {
  * 構造 TTS 下載 URL（與播放相同邏輯）。
  */
 export function buildTTSUrl(text, langOrVoice = 'english', speed = 0) {
-    let voiceKey = 'english';
-    if (typeof langOrVoice === 'string') {
-        const value = langOrVoice.toLowerCase();
-        if (TTS_CONFIG.voices[value]) {
-            voiceKey = value;
-        } else if (value.startsWith('zh')) {
-            voiceKey = 'chinese';
-        }
-    }
     const s = loadGlobalSettings();
     const sec = loadGlobalSecrets();
-    const baseUrl = (s?.tts?.baseUrl && String(s.tts.baseUrl).trim()) || TTS_CONFIG.baseUrl;
+    const baseUrl = getEffectiveBaseUrl(s);
     const apiKey = (sec?.ttsApiKey && String(sec.ttsApiKey).trim()) || TTS_CONFIG.apiKey;
-    const voice = TTS_CONFIG.voices[voiceKey] || TTS_CONFIG.voices.english;
+    const voice = resolveVoiceId(langOrVoice, s) || TTS_CONFIG.voices.english;
     // 注意：保持與 speakText 同步
     return `${baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(apiKey)}`;
 }
@@ -123,21 +114,11 @@ export async function downloadTextAsAudio(text, langOrVoice = 'english', speed =
 export async function speakText(text, langOrVoice = 'english', speed = 0, onStart, onEnd) {
     stopCurrentAudio();
 
-    let voiceKey = 'english';
-    if (typeof langOrVoice === 'string') {
-        const value = langOrVoice.toLowerCase();
-        if (TTS_CONFIG.voices[value]) {
-            voiceKey = value;
-        } else if (value.startsWith('zh')) {
-            voiceKey = 'chinese';
-        }
-    }
-
     const s = loadGlobalSettings();
     const sec = loadGlobalSecrets();
-    const baseUrl = (s?.tts?.baseUrl && String(s.tts.baseUrl).trim()) || TTS_CONFIG.baseUrl;
+    const baseUrl = getEffectiveBaseUrl(s);
     const apiKey = (sec?.ttsApiKey && String(sec.ttsApiKey).trim()) || TTS_CONFIG.apiKey;
-    const voice = TTS_CONFIG.voices[voiceKey] || TTS_CONFIG.voices.english;
+    const voice = resolveVoiceId(langOrVoice, s) || TTS_CONFIG.voices.english;
     const url = `${baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(apiKey)}`;
 
     try {
@@ -163,7 +144,7 @@ export async function speakText(text, langOrVoice = 'english', speed = 0, onStar
         };
         
         await state.globalAudioElement.play();
-        
+        return true;
     } catch (error) {
         if (error.name === 'AbortError') {
             console.log('Audio playback was aborted, which is expected on pause/stop.');
@@ -176,5 +157,64 @@ export async function speakText(text, langOrVoice = 'english', speed = 0, onStar
             }
         }
         if (!state.isDictationPaused && onEnd) onEnd();
+        return false;
     }
+}
+
+// ---------------------------------
+// Voice resolution
+// ---------------------------------
+
+// Map a semantic key or locale to a concrete voice id.
+// Supports:
+//  - full voice id (e.g., 'en-US-JennyNeural')
+//  - semantic keys: 'english', 'cantonese', 'chinese'
+//  - locale-style hints: 'en-US', 'en-GB', 'zh-HK', 'zh-CN', 'english-us', 'english-uk'
+function resolveVoiceId(langOrVoice, settingsObj) {
+    const s = settingsObj || loadGlobalSettings();
+    const map = (s?.tts && s.tts.selectedVoices) || {};
+    const raw = typeof langOrVoice === 'string' ? langOrVoice.trim() : '';
+    if (!raw) return fallbackByKey('english');
+    // If caller passes a concrete voice id (locale-prefixed). Accept 2–4 letter language tags like en, zh, yue, wuu.
+    if (/^[a-z]{2,4}-[a-z]{2}-/i.test(raw)) return raw;
+    const v = raw.toLowerCase();
+    // Locale hints
+    if (v === 'en-us' || v === 'us' || v === 'english-us' || v === 'american') {
+        return map['en-US'] || fallbackByKey('english');
+    }
+    if (v === 'en-gb' || v === 'gb' || v === 'uk' || v === 'english-uk' || v === 'british') {
+        return map['en-GB'] || map['en-US'] || fallbackByKey('english');
+    }
+    if (v === 'zh-hk' || v === 'yue' || v === 'cantonese' || v === '粤語' || v === '粵語' || v === '廣東話') {
+        return map['zh-HK'] || fallbackByKey('cantonese');
+    }
+    if (v.startsWith('zh') || v === 'mandarin' || v === '普通話' || v === '中文') {
+        return map['zh-CN'] || fallbackByKey('chinese');
+    }
+    if (v === 'english') {
+        const pref = (s?.reading && s.reading.englishVariant) || 'en-GB';
+        return map[pref] || map['en-US'] || fallbackByKey('english');
+    }
+    if (v === 'chinese') {
+        const pref = (s?.reading && s.reading.chineseVariant) || 'zh-CN';
+        return map[pref] || fallbackByKey(pref === 'zh-HK' ? 'cantonese' : 'chinese');
+    }
+    // default
+    return fallbackByKey('english');
+}
+
+function fallbackByKey(key) {
+    return TTS_CONFIG.voices[key] || TTS_CONFIG.voices.english;
+}
+
+function getEffectiveBaseUrl(s) {
+    const sel = (s?.tts && s.tts.use) || '';
+    const r = ((s?.tts && s.tts.baseUrlRemote && String(s.tts.baseUrlRemote).trim()) || (TTS_CONFIG.baseUrlRemote || TTS_CONFIG.baseUrl || '')).trim();
+    const l = ((s?.tts && s.tts.baseUrlLocal && String(s.tts.baseUrlLocal).trim()) || (TTS_CONFIG.baseUrlLocal || '')).trim();
+    const c = (s?.tts && s.tts.baseUrlCustom && String(s.tts.baseUrlCustom).trim()) || '';
+    if (sel === 'custom' && c) return c;
+    if (sel === 'local' && l) return l;
+    if (sel === 'remote' && r) return r;
+    // backward compatibility
+    return (s?.tts?.baseUrl && String(s.tts.baseUrl).trim()) || r || TTS_CONFIG.baseUrl;
 }

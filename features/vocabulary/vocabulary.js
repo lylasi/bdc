@@ -967,7 +967,8 @@ function playWordAndMeaning(word) {
 
     dom.wordList.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
 
-    audio.speakText(word.word, 'en-US', 0,
+    // 使用全局英語朗讀首選（'english' 會由 audio 模組決定 en-GB/en-US）
+    audio.speakText(word.word, 'english', 0,
         () => {
             if (wordElement) wordElement.classList.add('highlight');
         },
@@ -976,7 +977,8 @@ function playWordAndMeaning(word) {
             
             if (word.meaning) {
                 setTimeout(() => {
-                    audio.speakText(word.meaning, 'zh-TW', 0,
+                    // 使用全局中文朗讀首選（'chinese' 會由 audio 模組決定 zh-CN/zh-HK）
+                    audio.speakText(word.meaning, 'chinese', 0,
                         () => {
                             if (meaningElement) meaningElement.classList.add('highlight');
                         },
