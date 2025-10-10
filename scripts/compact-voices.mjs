@@ -34,11 +34,15 @@ const raw = JSON.parse(readFileSync(inFile, 'utf8'));
 const all = flatten(raw).map(norm).filter(Boolean);
 const keep = all.filter(v => {
   const l = (v.locale||'').toLowerCase();
-  return l.startsWith('en-us') || l.startsWith('en-gb') || l.startsWith('zh-cn') || l.startsWith('zh-hk') || l.startsWith('yue');
+  return l.startsWith('en-us')
+      || l.startsWith('en-gb')
+      || l.startsWith('zh-cn')
+      || l.startsWith('zh-hk')
+      || l.startsWith('zh-tw') // 將 zh-TW 視為普通話
+      || l.startsWith('yue');
 });
 
 // Deterministic sort
 keep.sort((a,b)=> (a.locale.localeCompare(b.locale) || a.id.localeCompare(b.id)));
 writeFileSync(outFile, JSON.stringify(keep), 'utf8');
 console.log(`compact voices written: ${outFile} (${keep.length} items)`);
-
