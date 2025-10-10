@@ -5,6 +5,9 @@
 import { TTS_CONFIG } from '../ai-config.js';
 import { loadGlobalSettings } from './settings.js';
 
+// Local bundled static voices file (same-origin, no CORS). Update via scripts/update-voices.sh
+const STATIC_VOICES_PATH = '/voices.json';
+
 const LS_KEY = 'pen_tts_voices_cache_v1';
 
 function readCache() {
@@ -84,7 +87,18 @@ export async function fetchVoicesList({ signal, refresh = false, allowCache = tr
 
     let lastErr = null;
 
-    // 1) 快取優先（非強制刷新時）：命中且未過期則直接返回，避免任何網路請求
+    // 1) 直接讀取本地靜態 voices（同源、無 CORS，且可由腳本更新），作為權威來源
+    try {
+        const resp = await fetch(STATIC_VOICES_PATH, { signal, cache: refresh ? 'no-store' : 'default' });
+        if (resp.ok) {
+            const data = await resp.json();
+            const arr = Array.isArray(data) ? data : (Array.isArray(data?.voices) ? data.voices : []);
+            const normalized = arr.map(normalizeVoice).filter(Boolean);
+            if (normalized.length) { writeCache(normalized); return normalized; }
+        }
+    } catch(_) {}
+
+    // 2) 快取優先（非強制刷新時）：命中且未過期則直接返回
     if (!refresh && allowCache) {
         try {
             const cached = getCachedVoicesList();
@@ -120,7 +134,7 @@ export async function fetchVoicesList({ signal, refresh = false, allowCache = tr
             }
         }
     } else {
-        // refresh=true: force remote attempt once; if it fails, continue to cache fallback
+        // 3) refresh=true 且本地靜態不可用：允許遠端抓取一次以回寫快取（可選）。
         for (const url of candidates) {
             try {
                 const resp = await fetch(url, { signal, cache: 'no-store' });
