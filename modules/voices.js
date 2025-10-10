@@ -54,7 +54,7 @@ export function formatVoiceLabel(v) {
 }
 
 // Try both configured voicesUrl and baseUrl/voices
-export async function fetchVoicesList({ signal, refresh = false, allowCache = true, overrideUse, overrideBaseUrls } = {}) {
+export async function fetchVoicesList({ signal, refresh = false, allowCache = true, overrideUse, overrideBaseUrls, ttlMs = 24*60*60*1000 } = {}) {
     const s = loadGlobalSettings();
     const explicit = (TTS_CONFIG && TTS_CONFIG.voicesUrl) ? String(TTS_CONFIG.voicesUrl).trim() : '';
     const use = overrideUse || (s?.tts && s.tts.use) || 'remote';
@@ -83,6 +83,16 @@ export async function fetchVoicesList({ signal, refresh = false, allowCache = tr
     }
 
     let lastErr = null;
+
+    // 1) 快取優先（非強制刷新時）：命中且未過期則直接返回，避免任何網路請求
+    if (!refresh && allowCache) {
+        try {
+            const cached = getCachedVoicesList();
+            if (cached.list && cached.list.length && (Date.now() - (cached.updatedAt||0) < ttlMs)) {
+                return cached.list;
+            }
+        } catch(_) {}
+    }
     if (!refresh) {
         for (const url of candidates) {
             try {
@@ -132,23 +142,13 @@ export async function fetchVoicesList({ signal, refresh = false, allowCache = tr
         }
     }
 
-    // Fallback: localStorage cache
+    // Fallback: localStorage cache（即使過期亦可作為最後回退）
     if (allowCache) {
         const cached = getCachedVoicesList();
         if (cached.list.length) return cached.list;
     }
-    // Fallback: static bundled file (same-origin, avoids CORS)
-    try {
-        const resp = await fetch('/voices.fallback.json', { signal });
-        if (resp.ok) {
-            const data = await resp.json();
-            const arr = Array.isArray(data) ? data : (Array.isArray(data?.voices) ? data.voices : []);
-            const normalized = arr.map(normalizeVoice).filter(Boolean);
-            if (normalized.length) { writeCache(normalized); return normalized; }
-        }
-    } catch(_) {}
 
-    throw lastErr || new Error('Failed to fetch voices (remote + cache + fallback all failed)');
+    throw lastErr || new Error('Failed to fetch voices (remote + cache all failed)');
 }
 
 // Group into desired categories
