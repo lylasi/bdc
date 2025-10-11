@@ -820,10 +820,13 @@ function exposeGlobalAPI(){
       },
       switch: async (articleKey, convId) => {
         const panel = document.getElementById('assistant-panel'); if (!panel) return;
+        // 僅切換上下文/會話，不主動開啟面板（避免「預設彈窗」）
         if (articleKey && convId) { setCurrentConvId(articleKey, convId); }
-        panel.classList.remove('assistant-hidden');
-        // 指定 articleKey 以避免在齒輪彈窗內切換時取到錯誤的上下文 key
-        restoreConversation(panel, articleKey); updateSessionLabel();
+        // 若面板已打開，才更新畫面；否則僅更新狀態，待下次開啟再載入
+        if (!panel.classList.contains('assistant-hidden')) {
+          restoreConversation(panel, articleKey);
+          updateSessionLabel();
+        }
       },
       send: async (text, articleKey, convId) => {
         const panel = document.getElementById('assistant-panel'); if (!panel) return;
