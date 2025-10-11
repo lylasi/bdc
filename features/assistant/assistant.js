@@ -271,14 +271,20 @@ async function buildContext() {
   return { articleKey, text };
 }
 
-function restoreConversation(panel) {
+function restoreConversation(panel, overrideArticleKey) {
+  // 優先使用「目前選中的會話」；若沒有，才回退到該文章的第一個會話
   const box = panel.querySelector('#assistant-messages');
   if (!box) return;
   box.innerHTML = '';
   (async () => {
-    const ctx = await buildContext();
+    const ctx0 = await buildContext();
+    const ctx = overrideArticleKey ? { ...ctx0, articleKey: overrideArticleKey } : ctx0;
     const idx = readIndex();
-    const meta = idx.find(x => x.articleKey === ctx.articleKey);
+    const curId = getCurrentConvId(ctx.articleKey);
+    // 先以當前會話 ID 尋找
+    let meta = curId ? idx.find(x => x.id === curId) : null;
+    // 若找不到（或尚未選過），退而找同文章的第一筆
+    if (!meta) meta = idx.find(x => x.articleKey === ctx.articleKey);
     if (!meta) return;
     const messages = await idbGetConv(meta.id);
     for (const m of messages) appendMessage(box, m.role, m.content);
@@ -307,19 +313,23 @@ function appendMessage(container, role, text) {
   return el;
 }
 
-async function ask(panel, userText) {
+async function ask(panel, userText, opts = {}) {
   const st = loadGlobalSettings();
   const streamPref = st?.assistant?.stream !== false;
   const box = panel.querySelector('#assistant-messages');
   const input = panel.querySelector('#assistant-input');
-  const { articleKey, text: articleText } = await buildContext();
+  const ctx0 = await buildContext();
+  const articleKey = opts.articleKey || ctx0.articleKey;
+  const articleText = ctx0.text;
 
   // messages：系統 + 上下文 + 近幾輪 + 本輪
   const system = { role: 'system', content: SYSTEM_PROMPT };
   const context = articleText && articleText.trim() ? { role: 'user', content: `以下是目前文章內容，僅作為上下文：\n\n"""\n${articleText}\n"""` } : null;
-  // 讀取最近 N 輪歷史（透過索引 + IDB）
+  // 讀取最近 N 輪歷史：優先使用「當前選中會話」ID；否則回退同文章下的第一筆
   const idx = readIndex();
-  const meta = idx.find(x => x.articleKey === articleKey);
+  const curId = opts.convId || getCurrentConvId(articleKey);
+  let meta = curId ? idx.find(x => x.id === curId) : null;
+  if (!meta) meta = idx.find(x => x.articleKey === articleKey) || null;
   const prev = meta ? await idbGetConv(meta.id) : [];
   const history = prev.slice(-8).map(m => ({ role: m.role, content: m.content }));
   const messages = [system, ...(context ? [context] : []), ...history, { role: 'user', content: userText }];
@@ -367,12 +377,35 @@ async function ask(panel, userText) {
   }
 }
 async function appendMessageToConv(articleKey, title, message) {
-  const meta = ensureMeta(articleKey, title);
+  // 合理性調整：
+  // - 若已透過 sessions 或歷史面板選定會話，則永遠寫入該會話；
+  // - 若尚未選定，才回退到該文章的第一個會話；
+  // - 如仍不存在會話，建立一個並指為當前。
+  let meta;
+  const idx = readIndex();
+  const curId = getCurrentConvId(articleKey);
+  if (curId) {
+    meta = idx.find(x => x.id === curId) || null;
+    if (!meta) {
+      // 映射有值但索引缺失：補建索引與空會話，避免寫入失敗
+      meta = ensureMetaWithId(articleKey, title, curId);
+      await idbSetConv(curId, []);
+    }
+  } else {
+    meta = idx.find(x => x.articleKey === articleKey) || null;
+    if (!meta) {
+      // 完全沒有：建立新會話並將其設為當前
+      const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+      meta = ensureMetaWithId(articleKey, title, id);
+      await idbSetConv(id, []);
+      setCurrentConvId(articleKey, id);
+    }
+  }
   const list = await idbGetConv(meta.id);
   list.push(message);
   await idbSetConv(meta.id, list);
-  const idx = readIndex().map(x => x.id === meta.id ? { ...x, title, updatedAt: new Date().toISOString() } : x);
-  writeIndex(idx);
+  const nextIdx = readIndex().map(x => x.id === meta.id ? { ...x, title, updatedAt: new Date().toISOString() } : x);
+  writeIndex(nextIdx);
 }
 
 // 美化 markdown：為程式碼區塊加上「複製」按鈕，改善可讀性與操作手感。
@@ -755,15 +788,18 @@ async function toggleHistory(panel){
 }
 
 function updateSessionLabel(){
-  try {
-    const el = document.getElementById('assistant-session-label');
-    if (!el) return;
-    const ak = getCurrentArticleKeySync();
-    const id = getCurrentConvId(ak);
-    if (!id){ el.textContent=''; return; }
-    const m = readIndex().find(x => x.id===id);
-    el.textContent = m ? `· ${m.title||'會話'}` : '';
-  } catch(_){}
+  // 使用與實際儲存一致的 articleKey（buildContext）避免標籤與實際會話不同步
+  (async () => {
+    try {
+      const el = document.getElementById('assistant-session-label');
+      if (!el) return;
+      const ctx = await buildContext();
+      const id = getCurrentConvId(ctx.articleKey);
+      if (!id){ el.textContent=''; return; }
+      const m = readIndex().find(x => x.id===id);
+      el.textContent = m ? `· ${m.title||'會話'}` : '';
+    } catch(_){}
+  })();
 }
 
 // 以文章文字作為同步鍵（避免 async 雜湊在 UI 中不好用）；
@@ -785,13 +821,15 @@ function exposeGlobalAPI(){
       switch: async (articleKey, convId) => {
         const panel = document.getElementById('assistant-panel'); if (!panel) return;
         if (articleKey && convId) { setCurrentConvId(articleKey, convId); }
-        panel.classList.remove('assistant-hidden'); restoreConversation(panel); updateSessionLabel();
+        panel.classList.remove('assistant-hidden');
+        // 指定 articleKey 以避免在齒輪彈窗內切換時取到錯誤的上下文 key
+        restoreConversation(panel, articleKey); updateSessionLabel();
       },
       send: async (text, articleKey, convId) => {
         const panel = document.getElementById('assistant-panel'); if (!panel) return;
         if (articleKey && convId) { setCurrentConvId(articleKey, convId); }
         panel.classList.remove('assistant-hidden');
-        if (text && text.trim()) { await ask(panel, text.trim()); }
+        if (text && text.trim()) { await ask(panel, text.trim(), { articleKey, convId }); }
       },
       create: async (articleKey, title) => {
         const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;

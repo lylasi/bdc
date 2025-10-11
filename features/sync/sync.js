@@ -844,7 +844,18 @@ async function showAssistantSessions(){
   });
   // 在助手中繼續 + 直接發送
   rightToolbar.querySelector('#as-open').addEventListener('click', () => { if (!currentId) return; const meta = index.find(x=>x.id===currentId)||{}; try { window.__assistant && window.__assistant.open('modal'); window.__assistant && window.__assistant.switch(meta.articleKey||'global', currentId); } catch(_){} });
-  rightToolbar.querySelector('#as-send').addEventListener('click', () => { if (!currentId) return; const q = rightToolbar.querySelector('#as-question').value.trim(); if (!q) return; const meta=index.find(x=>x.id===currentId)||{}; try { window.__assistant && window.__assistant.send(q, meta.articleKey||'global', currentId); } catch(_){} });
+  rightToolbar.querySelector('#as-send').addEventListener('click', () => {
+    if (!currentId) return;
+    const inputEl = rightToolbar.querySelector('#as-question');
+    const q = inputEl.value.trim();
+    if (!q) return;
+    const meta = index.find(x=>x.id===currentId)||{};
+    try {
+      window.__assistant && window.__assistant.send(q, meta.articleKey||'global', currentId);
+    } catch(_){}
+    // UX：發送之後清空輸入框
+    try { inputEl.value = ''; } catch(_){}
+  });
 }
 
 // -----------------
