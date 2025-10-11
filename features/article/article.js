@@ -5,11 +5,24 @@ import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
 import { AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT } from '../../ai-config.js';
+import * as cache from '../../modules/cache.js';
 import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
 
 // =================================
 // Article Analysis Feature
 // =================================
+
+// 對 AI 助手通報：文章內容已變更，請按新上下文切換對話（不覆寫使用者已選會話）。
+async function notifyAssistantArticleChanged() {
+    try {
+        const text = (dom.articleInput && dom.articleInput.value) || '';
+        const key = text.trim() ? await cache.makeKey('assistant-article', text) : 'global';
+        if (window.__assistant && window.__assistant.__ready) {
+            // convId 置空 → 由助手決定：已選的會話或該文章的第一筆
+            window.__assistant.switch(key, '');
+        }
+    } catch (_) { /* noop */ }
+}
 
 export function initArticle() {
     dom.analyzeArticleBtn.addEventListener('click', analyzeArticle);
@@ -323,6 +336,8 @@ function openArticleImportModal() {
                 dom.articleInput.value = md;
                 try { ui.closeModal(); } catch(_) {}
                 try { dom.articleInput.focus(); } catch (_) {}
+                // 通知 AI 助手：文章已切換
+                try { notifyAssistantArticleChanged(); } catch(_) {}
             }
         });
 
@@ -414,6 +429,8 @@ function openArticleImportModal() {
                     try { ui.closeModal(); } catch(_) {}
                     // 導入後自動聚焦輸入框，方便直接分析
                     try { dom.articleInput.focus(); } catch (_) {}
+                    // 通知 AI 助手：文章已切換
+                    try { notifyAssistantArticleChanged(); } catch(_) {}
                 }
             } catch (e) {
                 alert('擷取失敗：' + (e?.message || e));
@@ -584,6 +601,8 @@ function openArticleImportModal() {
                 dom.articleInput.value = text;
                 try { ui.closeModal(); } catch(_) {}
                 try { dom.articleInput.focus(); } catch(_) {}
+                // OCR 套用 → 通知助手切換上下文
+                try { notifyAssistantArticleChanged(); } catch(_) {}
             }
         });
         // 點擊縮圖 → Lightbox 放大預覽（可左右切換）
@@ -1302,6 +1321,8 @@ function clearArticleInput() {
     if (currentAnalysisAbort) {
         try { currentAnalysisAbort.abort('cancelled-by-clear'); } catch (_) { /* noop */ }
     }
+    // 文章清空 → 綁定到全局對話
+    try { notifyAssistantArticleChanged(); } catch(_) {}
     if (dom.retryFailedParagraphsBtn) dom.retryFailedParagraphsBtn.style.display = 'none';
 }
 
@@ -1325,6 +1346,8 @@ function loadSelectedArticle() {
     if (item) {
         dom.articleInput.value = item.article;
         displayArticleAnalysis(item.article, item.result);
+        // 從歷史載入 → 通知助手切換上下文
+        try { notifyAssistantArticleChanged(); } catch(_) {}
     }
 }
 
@@ -1672,6 +1695,8 @@ async function loadArticleFromLibrary(path) {
         // 將標題一併插入正文最前面，以 Markdown 風格 # 開頭展示
         const title = (article && article.title) ? `# ${article.title}\n\n` : '';
         dom.articleInput.value = `${title}${article.content || ''}`.trim();
+        // 從文章庫載入 → 通知助手切換上下文
+        try { notifyAssistantArticleChanged(); } catch(_) {}
         closeArticleLibrary();
     } catch (error) {
         console.error(`無法從 ${path} 加載文章:`, error);

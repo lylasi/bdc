@@ -1,0 +1,35 @@
+{
+  "id": "qa_unit3_when_grandma",
+  "name": "Unit 3 - When Grandma Was Young",
+  "category": "英語閱讀理解",
+  "description": "關於童年能力與經歷的問答",
+  "creator": "系統預置",
+  "questions": [
+    {
+      "qid": 1,
+      "question": "What could Anna do by herself when she was four?",
+      "answer": "She could comb her hair and put on her shoes by herself when she was four."
+    },
+    {
+      "qid": 2,
+      "question": "When could Anna button her own clothes by herself?",
+      "answer": "She could do it when she was five."
+    },
+    {
+      "qid": 3,
+      "question": "Why couldn't Grandma go to school when she was young?",
+      "answer": "It was because her family was too poor to send her to school."
+    },
+    {
+      "qid": 4,
+      "question": "What could you do when you were six?",
+      "answer": "I could carry my school bag when I was six."
+    },
+    {
+      "qid": 5,
+      "question": "What couldn't you do when you were two?",
+      "answer": "I couldn't have a bath when I was two."
+    }
+  ]
+}
+
