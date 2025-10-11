@@ -5,7 +5,7 @@ import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
 import { AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT } from '../../ai-config.js';
-import { loadGlobalSettings } from '../../modules/settings.js';
+import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
 
 // =================================
 // Article Analysis Feature
@@ -62,6 +62,9 @@ export function initArticle() {
         nextClickTime = now;
         playNextChunk();
     });
+    
+    // 中文翻譯遮罩（預設開啟；滑鼠移入/行動端按住顯示）
+    try { setupChineseTranslationMask(); } catch (_) {}
     
     // 移除 hover 行為：不再於滑過時自動高亮或補配對，改為點擊才觸發詳解
     // dom.articleAnalysisContainer.addEventListener('mouseover', handleWordHighlight);
@@ -127,6 +130,60 @@ export function initArticle() {
 
     // 選字快速加入生詞本（文章詳解區）
     try { initArticleSelectionToWordbook(); } catch (_) {}
+}
+
+// =============================
+// 中文翻譯模糊遮罩（文章詳解）
+// =============================
+function setupChineseTranslationMask() {
+    // 讀取全域設定，預設為 true（啟用遮罩）
+    const s = loadGlobalSettings();
+    const enabled = !!(s && s.reading ? s.reading.translationMask !== false : true);
+    applyCnMask(enabled);
+
+    if (dom.cnMaskToggle) {
+        dom.cnMaskToggle.checked = enabled;
+        dom.cnMaskToggle.addEventListener('change', () => {
+            const on = !!dom.cnMaskToggle.checked;
+            applyCnMask(on);
+            try { saveGlobalSettings({ reading: { translationMask: on } }); } catch(_) {}
+        });
+    }
+
+    // 行動端「按住顯示」邏輯：按下時揭示，鬆開即恢復
+    let revealingEl = null;
+    const getChineseContainer = (t) => t && t.closest ? t.closest('.paragraph-chinese') : null;
+    const beginReveal = (el) => { if (el) { revealingEl = el; revealingEl.classList.add('reveal'); } };
+    const endReveal = () => { if (revealingEl) { revealingEl.classList.remove('reveal'); revealingEl = null; } };
+    const shouldHandle = () => dom.articleSection && dom.articleSection.classList.contains('cn-mask-enabled');
+
+    // Pointer 事件（跨裝置）
+    dom.articleAnalysisContainer.addEventListener('pointerdown', (e) => {
+        if (!shouldHandle()) return;
+        const t = getChineseContainer(e.target);
+        if (t) beginReveal(t);
+    }, { passive: true });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => {
+        dom.articleAnalysisContainer.addEventListener(ev, endReveal, { passive: true });
+    });
+
+    // 備援：Touch 事件（舊機）
+    dom.articleAnalysisContainer.addEventListener('touchstart', (e) => {
+        if (!shouldHandle()) return;
+        const t = getChineseContainer(e.target);
+        if (t) beginReveal(t);
+    }, { passive: true });
+    ['touchend', 'touchcancel'].forEach(ev => {
+        dom.articleAnalysisContainer.addEventListener(ev, endReveal, { passive: true });
+    });
+}
+
+function applyCnMask(on) {
+    if (!dom.articleSection) return;
+    dom.articleSection.classList.toggle('cn-mask-enabled', !!on);
+    if (!on) {
+        try { dom.articleSection.querySelectorAll('.paragraph-chinese.reveal').forEach(el => el.classList.remove('reveal')); } catch(_) {}
+    }
 }
 
 // 導入文章（網址/圖片OCR）— 使用一顆按鈕彈窗，避免佔版面

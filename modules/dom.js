@@ -85,6 +85,8 @@ export const articleAnalysisContainer = document.getElementById('article-analysi
 export const articleHistorySelect = document.getElementById('article-history-select');
 export const deleteHistoryBtn = document.getElementById('delete-history-btn');
 export const clearArticleBtn = document.getElementById('clear-article-btn');
+// 中文翻譯遮罩開關（文章詳解頁，極簡設定）
+export const cnMaskToggle = document.getElementById('toggle-cn-mask');
 export const analysisLevelSelect = document.getElementById('analysis-level');
 export const readArticleBtn = document.getElementById('read-article-btn');
 export const stopReadArticleBtn = document.getElementById('stop-read-article-btn');
