@@ -398,8 +398,10 @@ async function ask(panel, userText, opts = {}) {
       try { placeholder.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(placeholder); } catch(_){} }
       catch(_) { /* ignore，保留純文字 */ }
     }
-    await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'assistant', content: buffer, ts: Date.now() });
-    // 若發生錯誤，提供重試按鈕（重送同一問題）
+    if (!hadError) {
+      await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'assistant', content: buffer, ts: Date.now() });
+    }
+    // 若發生錯誤，提供重試按鈕（重送同一問題；不寫入歷史，重試成功後再寫）
     if (hadError) {
       try {
         const retry = document.createElement('button');
