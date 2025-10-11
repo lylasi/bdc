@@ -15,7 +15,8 @@ const defaults = {
     selectedVoices: {}
   },
   // global reading preferences
-  reading: { englishVariant: 'en-GB', chineseVariant: 'zh-CN' },
+  // translationMask: 是否對「文章詳解」中的中文翻譯加上模糊遮罩（滑鼠移入/按住顯示）
+  reading: { englishVariant: 'en-GB', chineseVariant: 'zh-CN', translationMask: true },
   assistant: { enabled: true, stream: true },
   updatedAt: null
 };

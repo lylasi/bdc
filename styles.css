@@ -1146,6 +1146,19 @@ button:disabled {
     color: #495057;
 }
 
+/* 翻譯遮罩（文章詳解）：預設模糊中文段，滑鼠移入或行動端按住顯示 */
+.cn-mask-enabled .paragraph-chinese {
+    filter: blur(8px);
+    -webkit-filter: blur(8px);
+    transition: filter .15s ease, -webkit-filter .15s ease;
+}
+.cn-mask-enabled .paragraph-chinese:hover,
+.cn-mask-enabled .paragraph-chinese.reveal,
+.cn-mask-enabled .paragraph-chinese:focus-within {
+    filter: none;
+    -webkit-filter: none;
+}
+
 
 /* 文章分析進度條樣式 */
 .analysis-progress {
@@ -1229,6 +1242,21 @@ button:disabled {
     background-color: #f9f9f9;
     min-width: 0;
 }
+
+/* 文章詳解：結果區標題與極簡開關同列顯示 */
+.analysis-result .ar-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom: 8px; }
+.analysis-result .ar-head h3 { margin: 0; }
+.analysis-result .cn-mask-group { display:inline-flex; align-items:center; gap:6px; }
+.analysis-result .cn-mask-group .cn-mask-label { font-size: 12px; color:#6b7280; user-select:none; }
+
+/* 超迷你開關（32x18），不佔版面 */
+.cn-mask-mini { position: relative; display:inline-block; width: 32px; height: 18px; vertical-align: middle; cursor: pointer; }
+.cn-mask-mini input { position:absolute; opacity:0; width:0; height:0; }
+.cn-mask-mini .slider { position:absolute; inset:0; background:#d1d5db; border-radius: 999px; transition: .15s; box-shadow: inset 0 0 0 1px #cbd5e1; }
+.cn-mask-mini .slider::before { content:""; position:absolute; width:14px; height:14px; left:2px; top:2px; background:#fff; border-radius:50%; transition:.15s; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+.cn-mask-mini:hover .slider { background:#cbd5e1; }
+.cn-mask-mini input:checked + .slider { background:#60a5fa; box-shadow: inset 0 0 0 1px #3b82f6; }
+.cn-mask-mini input:checked + .slider::before { transform: translateX(14px); }
 
 /* 新增：表单组样式 */
 .form-group {
