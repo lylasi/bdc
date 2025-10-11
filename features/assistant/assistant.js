@@ -93,6 +93,12 @@ function mountUi() {
     if (s?.assistant && s.assistant.enabled === false) return;
     panel.classList.toggle('assistant-hidden');
     if (!panel.classList.contains('assistant-hidden')) {
+      // 重新套用當前文章的顯示模式，避免初始化時以舊文章鍵讀到 dock 寬度殘留
+      const mode = getSavedPanelMode();
+      setPanelMode(panel, mode);
+      if (mode === 'dock') setDockWidth(panel, getSavedDockWidth());
+      updateHeaderTitle();
+      updateSessionLabel();
       restoreConversation(panel);
       const input = panel.querySelector('#assistant-input');
       if (input) input.focus();
@@ -136,7 +142,7 @@ function renderPanelHtml() {
   const headerTitle = isGlobalArticle() ? '全局' : (title || '文章');
   return `
     <div class="assistant-head">
-      <div class="assistant-title">AI 助手 · ${escapeHtml(headerTitle)} <span id="assistant-session-label" class="assistant-session"></span></div>
+      <div class="assistant-title"><div class="assistant-article">AI 助手 · <span id="assistant-article-title">${escapeHtml(headerTitle)}</span></div><div id="assistant-session-label" class="assistant-session"></div></div>
       <div class="assistant-actions">
         <button class="assistant-icon" id="assistant-small" title="小視窗（右下角）">${svgSmall()}</button>
         <button class="assistant-icon" id="assistant-dock" title="靠右全高">${svgPin()}</button>
@@ -162,7 +168,7 @@ function renderPanelHtml() {
           <button class="assistant-font-btn" data-size="l" title="13px">大</button>
         </span>
       </div>
-    </div>`;
+  </div>`;
 }
 
 function wirePanel(panel) {
@@ -223,6 +229,15 @@ function wirePanel(panel) {
   };
   send.addEventListener('click', doSend);
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
+}
+
+function updateHeaderTitle(){
+  try {
+    const t = extractArticleTitle();
+    const el = document.getElementById('assistant-article-title');
+    if (!el) return;
+    el.textContent = isGlobalArticle() ? '全局' : (t || '文章');
+  } catch(_){}
 }
 
 // --------- 新：索引 + IndexedDB 儲存（cache.kv） ---------
@@ -318,6 +333,7 @@ async function ask(panel, userText, opts = {}) {
   const streamPref = st?.assistant?.stream !== false;
   const box = panel.querySelector('#assistant-messages');
   const input = panel.querySelector('#assistant-input');
+  const isRetry = opts && opts.mode === 'retry';
   const ctx0 = await buildContext();
   const articleKey = opts.articleKey || ctx0.articleKey;
   const articleText = ctx0.text;
@@ -334,12 +350,17 @@ async function ask(panel, userText, opts = {}) {
   const history = prev.slice(-8).map(m => ({ role: m.role, content: m.content }));
   const messages = [system, ...(context ? [context] : []), ...history, { role: 'user', content: userText }];
 
-  appendMessage(box, 'user', userText);
-  const placeholder = appendMessage(box, 'assistant', '');
+  // 使用者訊息：一般情況要新增訊息泡泡；重試時不重複新增
+  if (!isRetry) appendMessage(box, 'user', userText);
+  // 回覆泡泡：重試時重用舊的 placeholder，否則新建
+  let placeholder = (isRetry && opts.reuseEl) ? opts.reuseEl : appendMessage(box, 'assistant', '');
+  try { if (isRetry) { placeholder.innerHTML = ''; } } catch(_) {}
   box.scrollTop = box.scrollHeight;
 
   // 保存 user 訊息（IDB）
-  await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'user', content: userText, ts: Date.now() });
+  if (!isRetry) {
+    await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'user', content: userText, ts: Date.now() });
+  }
 
   const ac = new AbortController();
   const stopBtn = document.createElement('button');
@@ -349,7 +370,10 @@ async function ask(panel, userText, opts = {}) {
   placeholder.parentElement.appendChild(stopBtn);
 
   let buffer = '';
+  let hadError = false;
   try {
+    // 若之前錯誤留下重試按鈕，開跑前先清掉
+    try { const old = placeholder.querySelector('.assistant-retry'); if (old) old.remove(); } catch(_){}
     if (streamPref) {
       await streamCompletions(messages, ac.signal, (delta) => {
         buffer += delta;
@@ -364,6 +388,7 @@ async function ask(panel, userText, opts = {}) {
     }
   } catch (e) {
     if (e?.name !== 'AbortError') {
+      hadError = true;
       placeholder.textContent = (buffer || '') + `\n[錯誤] ${e?.message || '請稍後再試'}`;
     }
   } finally {
@@ -374,6 +399,20 @@ async function ask(panel, userText, opts = {}) {
       catch(_) { /* ignore，保留純文字 */ }
     }
     await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'assistant', content: buffer, ts: Date.now() });
+    // 若發生錯誤，提供重試按鈕（重送同一問題）
+    if (hadError) {
+      try {
+        const retry = document.createElement('button');
+        retry.className = 'assistant-retry';
+        retry.textContent = '重試';
+        retry.addEventListener('click', async () => {
+          retry.disabled = true;
+          await ask(panel, userText, { ...opts, mode: 'retry', reuseEl: placeholder });
+        });
+        placeholder.appendChild(document.createElement('br'));
+        placeholder.appendChild(retry);
+      } catch(_) {}
+    }
   }
 }
 async function appendMessageToConv(articleKey, title, message) {
@@ -518,10 +557,11 @@ function injectScopedStyles() {
   .assistant-panel{position:fixed;right:16px;bottom:76px;width:min(420px,92vw);max-height:min(75vh,640px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 14px 38px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;z-index:4000;pointer-events:auto}
   .assistant-hidden{display:none}
   .assistant-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eef2f7;background:#f8fafc}
-  .assistant-title{font-weight:700;color:#111827;font-size:14px}
-  .assistant-actions{display:flex;gap:6px;align-items:center}
+  .assistant-title{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+  .assistant-article{font-weight:700;color:#111827;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .assistant-actions{display:flex;gap:6px;align-items:center;margin-left:8px}
   .assistant-divider{width:1px;height:18px;background:#e5e7eb;margin:0 4px}
-  .assistant-session{font-size:12px;color:#64748b;margin-left:4px}
+  .assistant-session{font-size:12px;color:#64748b;margin-left:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .assistant-icon{width:28px;height:28px;border:1px solid #d1d5db;border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
   .assistant-icon:hover{border-color:#93c5fd;color:#1d4ed8;background:#f8fbff}
   .assistant-icon svg{width:16px;height:16px;display:block;fill:currentColor}
@@ -547,6 +587,8 @@ function injectScopedStyles() {
   .assistant-switch{display:flex;align-items:center;gap:6px}
   .assistant-link{background:none;border:none;color:#2563eb;cursor:pointer}
   .assistant-stop{position:absolute;right:8px;bottom:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
+  .assistant-retry{display:inline-block;margin-top:6px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
+  .assistant-retry:hover{border-color:#93c5fd;color:#1d4ed8}
 
   /* 字級控制 */
   .assistant-panel.assistant-font-s .assistant-messages{font-size:11px}
@@ -797,7 +839,16 @@ function updateSessionLabel(){
       const id = getCurrentConvId(ctx.articleKey);
       if (!id){ el.textContent=''; return; }
       const m = readIndex().find(x => x.id===id);
-      el.textContent = m ? `· ${m.title||'會話'}` : '';
+      const sessionTitle = (m && m.title) ? String(m.title).trim() : '';
+      // 若與文章標題相同或是通用名稱，則不顯示，避免重覆
+      const articleTitle = extractArticleTitle();
+      const norm = (s) => String(s||'').trim().toLowerCase();
+      const isGeneric = /^(會話|新會話|文章|article|conversation)$/i.test(sessionTitle);
+      if (!sessionTitle || norm(sessionTitle)===norm(articleTitle) || isGeneric) {
+        el.textContent = '';
+      } else {
+        el.textContent = `· ${sessionTitle}`;
+      }
     } catch(_){}
   })();
 }
@@ -824,6 +875,7 @@ function exposeGlobalAPI(){
         if (articleKey && convId) { setCurrentConvId(articleKey, convId); }
         // 若面板已打開，才更新畫面；否則僅更新狀態，待下次開啟再載入
         if (!panel.classList.contains('assistant-hidden')) {
+          updateHeaderTitle();
           restoreConversation(panel, articleKey);
           updateSessionLabel();
         }
