@@ -655,36 +655,46 @@ function setGearLoginState(isLoggedIn, email) {
 async function handleAuthCallbackIfAny() {
   try {
     const url = new URL(location.href);
-    const type = url.searchParams.get('type') || '';
-    const tokenHash = url.searchParams.get('token_hash') || '';
-    const code = url.searchParams.get('code') || '';
-    const hash = location.hash || '';
+    const hashRaw = (location.hash || '').replace(/^#/, '');
+    const hp = new URLSearchParams(hashRaw.includes('=') ? hashRaw : ''); // 若只是 #v 這種導航，不會被當成查詢字串
+    const sp = url.searchParams;
+    const get = (k) => sp.get(k) || hp.get(k) || '';
+
+    const type = (get('type') || '').toLowerCase();
+    const tokenHash = get('token_hash') || '';
+    const code = get('code') || '';
+    const hasAccessToken = !!get('access_token');
 
     // 優先處理密碼重設（recovery）
-    if (type === 'recovery') {
+    if (type === 'recovery' || tokenHash || hasAccessToken) {
       try {
         if (tokenHash) {
-          // Supabase v2 恢復郵件使用 token_hash
+          // 新版郵件常帶 token_hash，需要 verifyOtp 產生恢復 session
           await auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
-        } else if (code || /access_token=/.test(hash)) {
-          // 部分部署會帶 code 或 #access_token，需要交換 session
+        } else if (code) {
+          // 舊版或自訂回跳可能帶 code
           await auth.exchangeCodeForSession(url.href);
         }
-      } catch (_) { /* 忽略，稍後依事件再處理 */ }
+        // 若僅有 #access_token，supabase 會自動讀取並建立 session（在 createClient 時）
+      } catch (e) {
+        console.warn('[auth] recovery verify/exchange failed:', e);
+      }
 
-      // 移除敏感 query 參數，避免殘留在歷史紀錄
-      try { history.replaceState(null, '', location.pathname + location.hash); } catch(_) {}
+      // 移除敏感 query/hash 參數，避免殘留在歷史
+      try { history.replaceState(null, '', location.pathname); } catch(_) {}
       // 打開新密碼輸入對話框
-      showResetPasswordModal();
+      try { showResetPasswordModal(); } catch(_) {}
       return;
     }
 
-    // 魔術連結登入：若有 code 也嘗試交換以登入
-    if (code || /access_token=/.test(hash)) {
+    // 魔術連結登入：若帶 code 或 #access_token，盡量交換/建立 session
+    if (code || hasAccessToken) {
       try { await auth.exchangeCodeForSession(url.href); } catch (_) {}
-      try { history.replaceState(null, '', location.pathname + location.search + location.hash); } catch(_) {}
+      try { history.replaceState(null, '', location.pathname); } catch(_) {}
     }
-  } catch (_) {}
+  } catch (e) {
+    console.warn('[auth] handleAuthCallbackIfAny error:', e);
+  }
 }
 
 function showResetPasswordModal() {
