@@ -14,6 +14,8 @@ export function initSync() {
   try {
     console.log('[sync] initSync()');
     wireAuthUI();
+    // 嘗試處理從郵件回跳的 auth 參數（魔術連結 / 密碼重設）
+    handleAuthCallbackIfAny().catch(() => {});
     if (dom.syncNowBtn) {
       dom.syncNowBtn.addEventListener('click', handleSync);
     } else {
@@ -53,7 +55,7 @@ function wireAuthUI() {
     updateStatus('已登出');
   });
 
-  auth.onAuthStateChange((_e, session) => {
+  auth.onAuthStateChange((event, session) => {
     const user = session?.user || null;
     try { window.__supabase_user = user || null; } catch(_) {}
     updateAuthButtons(user);
@@ -62,6 +64,10 @@ function wireAuthUI() {
     setGearLoginState(!!user, user?.email || '');
     if (user) {
       try { scheduleAutoSync('login'); } catch(_) {}
+    }
+    // 密碼重設事件：彈出新密碼對話框
+    if (event === 'PASSWORD_RECOVERY') {
+      try { showResetPasswordModal(); } catch(_) {}
     }
   });
 
@@ -151,7 +157,17 @@ function showLoginModal() {
       </div>
       <div class="auth-field" id="auth-pass-wrap">
         <label for="auth-password">密碼</label>
-        <input id="auth-password" type="password" placeholder="至少 6 位">
+        <div class="auth-pass-row" style="display:flex;gap:8px;align-items:center;">
+          <input id="auth-password" type="password" placeholder="至少 6 位" style="flex:1;">
+          <button id="auth-password-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">顯示</button>
+        </div>
+      </div>
+      <div class="auth-field" id="auth-pass2-wrap" style="display:none;">
+        <label for="auth-password2">確認密碼</label>
+        <div class="auth-pass-row" style="display:flex;gap:8px;align-items:center;">
+          <input id="auth-password2" type="password" placeholder="再輸入一次" style="flex:1;">
+          <button id="auth-password2-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">顯示</button>
+        </div>
       </div>
       <div class="auth-actions">
         <button id="auth-forgot" class="btn-secondary" type="button">忘記密碼</button>
@@ -164,18 +180,36 @@ function showLoginModal() {
   const emailEl = dom.modalBody.querySelector('#auth-email');
   const passWrap = dom.modalBody.querySelector('#auth-pass-wrap');
   const passEl = dom.modalBody.querySelector('#auth-password');
+  const pass2Wrap = dom.modalBody.querySelector('#auth-pass2-wrap');
+  const pass2El = dom.modalBody.querySelector('#auth-password2');
   const submitBtn = dom.modalBody.querySelector('#auth-submit');
   const forgotBtn = dom.modalBody.querySelector('#auth-forgot');
   const msg = dom.modalBody.querySelector('#auth-msg');
+  const pwToggle = dom.modalBody.querySelector('#auth-password-toggle');
+  const pw2Toggle = dom.modalBody.querySelector('#auth-password2-toggle');
   let mode = 'password';
   const setMode = (m) => {
     mode = m;
     tabs.forEach(t => { const on = t.dataset.mode === m; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
     passWrap.style.display = (m === 'password' || m === 'signup') ? 'block' : 'none';
+    pass2Wrap.style.display = (m === 'signup') ? 'block' : 'none';
     forgotBtn.style.display = m === 'password' ? 'inline-block' : 'none';
   };
   tabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
   setMode('password');
+
+  // 顯示/隱藏密碼
+  if (pwToggle) pwToggle.onclick = () => {
+    const toText = passEl.type === 'password';
+    passEl.type = toText ? 'text' : 'password';
+    pwToggle.textContent = toText ? '隱藏' : '顯示';
+  };
+  if (pw2Toggle) pw2Toggle.onclick = () => {
+    if (!pass2El) return;
+    const toText = pass2El.type === 'password';
+    pass2El.type = toText ? 'text' : 'password';
+    pw2Toggle.textContent = toText ? '隱藏' : '顯示';
+  };
 
   submitBtn.onclick = async () => {
     const email = (emailEl.value || '').trim();
@@ -188,12 +222,15 @@ function showLoginModal() {
         if (error) throw error;
         msg.textContent = '登入成功'; ui.closeModal();
       } else if (mode === 'signup') {
+        const password2 = (pass2El?.value || '').trim();
+        if (!password || password.length < 6) { msg.textContent = '密碼至少 6 位'; return; }
+        if (password !== password2) { msg.textContent = '兩次輸入的密碼不一致'; return; }
         const { data, error } = await auth.signUp({ email, password });
         if (error) throw error;
         if (data?.user && !data?.session) { msg.textContent = '註冊成功，請至電郵完成驗證'; }
         else { msg.textContent = '註冊並登入成功'; ui.closeModal(); }
       } else {
-        const { error } = await auth.signInWithOtp({ email });
+        const { error } = await auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin } });
         if (error) throw error;
         msg.textContent = '已寄出登入連結，請至電郵確認';
       }
@@ -245,6 +282,7 @@ function toggleGearMenu() {
       <span class="meta">${ver ? 'v'+ver : ''}${t ? ' · ' + t.replace(/:\\d{2}$/, '') : ''}</span>
     </div>
     ${loggedIn ? '' : `<div class="menu-item" id="gm-login"><span class="mi-icon">${svgLogin()}</span><span class="mi-text">登入 / 註冊</span></div>`}
+    ${loggedIn ? `<div class="menu-item" id="gm-change-password"><span class="mi-icon">${svgKey()}</span><span class="mi-text">變更密碼</span></div>` : ''}
     ${loggedIn ? `<div class="menu-item" id="gm-logout"><span class="mi-icon">${svgLogout()}</span><span class="mi-text">登出</span><span class="meta">${escapeHtml(email)}</span></div>` : ''}
     <div class="menu-divider"></div>
     <div class="menu-item" id="gm-settings"><span class="mi-icon">${svgGear()}</span><span class="mi-text">全局設定</span></div>
@@ -255,6 +293,7 @@ function toggleGearMenu() {
   document.body.appendChild(m);
   const sync = m.querySelector('#gm-sync');
   const login = m.querySelector('#gm-login');
+  const changePassword = m.querySelector('#gm-change-password');
   const logout = m.querySelector('#gm-logout');
   const settings = m.querySelector('#gm-settings');
   const gradingHistory = m.querySelector('#gm-grading-history');
@@ -262,6 +301,7 @@ function toggleGearMenu() {
   const backupPanel = m.querySelector('#gm-backup-panel');
   if (sync) sync.addEventListener('click', () => { handleSync(); m.remove(); });
   if (login) login.addEventListener('click', () => { showLoginModal(); m.remove(); });
+  if (changePassword) changePassword.addEventListener('click', () => { showChangePasswordModal(); m.remove(); });
   if (logout) logout.addEventListener('click', async () => { try { await auth.signOut(); } catch(_){} updateAuthButtons(null); updateStatus('已登出'); m.remove(); });
   if (settings) settings.addEventListener('click', () => { showGlobalSettingsModal(); m.remove(); });
   if (gradingHistory) gradingHistory.addEventListener('click', () => { try { openDictationGradingHistory(); } catch(_) {} m.remove(); });
@@ -611,6 +651,146 @@ function setGearLoginState(isLoggedIn, email) {
   if (email) dom.appGearBtn.title = `設定（${email}）`; else dom.appGearBtn.title = '設定';
 }
 
+// --- 密碼重設/變更流程 ---
+async function handleAuthCallbackIfAny() {
+  try {
+    const url = new URL(location.href);
+    const type = url.searchParams.get('type') || '';
+    const tokenHash = url.searchParams.get('token_hash') || '';
+    const code = url.searchParams.get('code') || '';
+    const hash = location.hash || '';
+
+    // 優先處理密碼重設（recovery）
+    if (type === 'recovery') {
+      try {
+        if (tokenHash) {
+          // Supabase v2 恢復郵件使用 token_hash
+          await auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
+        } else if (code || /access_token=/.test(hash)) {
+          // 部分部署會帶 code 或 #access_token，需要交換 session
+          await auth.exchangeCodeForSession(url.href);
+        }
+      } catch (_) { /* 忽略，稍後依事件再處理 */ }
+
+      // 移除敏感 query 參數，避免殘留在歷史紀錄
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch(_) {}
+      // 打開新密碼輸入對話框
+      showResetPasswordModal();
+      return;
+    }
+
+    // 魔術連結登入：若有 code 也嘗試交換以登入
+    if (code || /access_token=/.test(hash)) {
+      try { await auth.exchangeCodeForSession(url.href); } catch (_) {}
+      try { history.replaceState(null, '', location.pathname + location.search + location.hash); } catch(_) {}
+    }
+  } catch (_) {}
+}
+
+function showResetPasswordModal() {
+  try { ui.openModal(); } catch(_) {}
+  try { dom.modalTitle.textContent = '重設密碼'; } catch(_) {}
+  const html = `
+    <div class="auth-modal" style="min-width:300px;">
+      <div class="auth-field">
+        <label for="npw1">新密碼</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="npw1" type="password" placeholder="至少 6 位" style="flex:1;">
+          <button id="npw1-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">顯示</button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label for="npw2">確認新密碼</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="npw2" type="password" placeholder="再輸入一次" style="flex:1;">
+          <button id="npw2-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">顯示</button>
+        </div>
+      </div>
+      <div class="auth-actions">
+        <button id="npw-submit" class="btn-primary" type="button">更新密碼</button>
+      </div>
+      <div id="npw-msg" class="auth-msg"></div>
+    </div>`;
+  dom.modalBody.innerHTML = html;
+  const pw1 = dom.modalBody.querySelector('#npw1');
+  const pw2 = dom.modalBody.querySelector('#npw2');
+  const btn = dom.modalBody.querySelector('#npw-submit');
+  const msg = dom.modalBody.querySelector('#npw-msg');
+  const t1 = dom.modalBody.querySelector('#npw1-toggle');
+  const t2 = dom.modalBody.querySelector('#npw2-toggle');
+  if (t1) t1.onclick = () => { const toText = pw1.type==='password'; pw1.type = toText?'text':'password'; t1.textContent = toText?'隱藏':'顯示'; };
+  if (t2) t2.onclick = () => { const toText = pw2.type==='password'; pw2.type = toText?'text':'password'; t2.textContent = toText?'隱藏':'顯示'; };
+  btn.onclick = async () => {
+    const a = (pw1.value || '').trim();
+    const b = (pw2.value || '').trim();
+    if (!a || a.length < 6) { msg.textContent = '請輸入至少 6 位的新密碼'; return; }
+    if (a !== b) { msg.textContent = '兩次輸入不一致'; return; }
+    btn.disabled = true; btn.textContent = '更新中...';
+    try {
+      const { error } = await auth.updateUser({ password: a });
+      if (error) throw error;
+      msg.textContent = '已更新密碼';
+      setTimeout(() => { try { ui.closeModal(); } catch(_) {} }, 600);
+    } catch (e) {
+      msg.textContent = '錯誤：' + (e?.message || '請稍後再試');
+    } finally {
+      btn.disabled = false; btn.textContent = '更新密碼';
+    }
+  };
+}
+
+function showChangePasswordModal() {
+  try { ui.openModal(); } catch(_) {}
+  try { dom.modalTitle.textContent = '變更密碼'; } catch(_) {}
+  const html = `
+    <div class="auth-modal" style="min-width:300px;">
+      <div class="auth-field">
+        <label for="cpw1">新密碼</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="cpw1" type="password" placeholder="至少 6 位" style="flex:1;">
+          <button id="cpw1-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">顯示</button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label for="cpw2">確認新密碼</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="cpw2" type="password" placeholder="再輸入一次" style="flex:1;">
+          <button id="cpw2-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">顯示</button>
+        </div>
+      </div>
+      <div class="auth-actions">
+        <button id="cpw-submit" class="btn-primary" type="button">更新密碼</button>
+      </div>
+      <div id="cpw-msg" class="auth-msg"></div>
+    </div>`;
+  dom.modalBody.innerHTML = html;
+  const pw1 = dom.modalBody.querySelector('#cpw1');
+  const pw2 = dom.modalBody.querySelector('#cpw2');
+  const btn = dom.modalBody.querySelector('#cpw-submit');
+  const msg = dom.modalBody.querySelector('#cpw-msg');
+  const t1 = dom.modalBody.querySelector('#cpw1-toggle');
+  const t2 = dom.modalBody.querySelector('#cpw2-toggle');
+  if (t1) t1.onclick = () => { const toText = pw1.type==='password'; pw1.type = toText?'text':'password'; t1.textContent = toText?'隱藏':'顯示'; };
+  if (t2) t2.onclick = () => { const toText = pw2.type==='password'; pw2.type = toText?'text':'password'; t2.textContent = toText?'隱藏':'顯示'; };
+  btn.onclick = async () => {
+    const a = (pw1.value || '').trim();
+    const b = (pw2.value || '').trim();
+    if (!a || a.length < 6) { msg.textContent = '請輸入至少 6 位的新密碼'; return; }
+    if (a !== b) { msg.textContent = '兩次輸入不一致'; return; }
+    btn.disabled = true; btn.textContent = '更新中...';
+    try {
+      const { error } = await auth.updateUser({ password: a });
+      if (error) throw error;
+      msg.textContent = '已更新密碼';
+      setTimeout(() => { try { ui.closeModal(); } catch(_) {} }, 600);
+    } catch (e) {
+      msg.textContent = '錯誤：' + (e?.message || '請稍後再試');
+    } finally {
+      btn.disabled = false; btn.textContent = '更新密碼';
+    }
+  };
+}
+
 async function clearLocalCaches() {
   try {
     // localStorage cache entries
@@ -937,6 +1117,11 @@ function svgRestore(){
 }
 function svgChat(){
   return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.5 3 2 6.8 2 11.6c0 1.9.7 3.7 1.9 5.2L3 21l4.2-1.8c1.4.5 3 .8 4.8.8 5.5 0 10-3.8 10-8.6S17.5 3 12 3z"/></svg>';
+}
+
+// Key icon for change password
+function svgKey(){
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 7a5 5 0 1 1-9.9 1H9L5 12v3H2v4h4v-3h3l4-4v-2.1A5 5 0 0 1 21 7Zm-3 0a2 2 0 1 0-4 0 2 2 0 0 0 4 0Z"/></svg>';
 }
 
 function attachRealtime(user) {
