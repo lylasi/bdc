@@ -1426,6 +1426,102 @@ function buildReadingChunks(mode) {
 }
 
 let _playToken = 0; // 用於避免競態：切段期間舊的 onEnd 不再推進
+// 浮動播放控制（避免捲動後看不到控制）
+let _floatingReader = null;
+let _englishOnly = false;   // 僅顯示英文
+let _followScroll = true;   // 是否跟隨朗讀自動捲動/淡化
+function ensureFloatingReader() {
+    if (_floatingReader) return _floatingReader;
+    const el = document.createElement('div');
+    el.className = 'floating-reader';
+    el.innerHTML = `
+        <span class="fr-handle" title="拖動" aria-hidden="true">⠿</span>
+        <button type="button" class="fr-btn fr-prev" title="上一句" aria-label="上一句">⬅︎</button>
+        <button type="button" class="fr-btn fr-toggle" title="暫停" aria-label="暫停">⏸</button>
+        <button type="button" class="fr-btn fr-next" title="下一句" aria-label="下一句">➡︎</button>
+        <button type="button" class="fr-btn fr-en" title="僅顯示英文" aria-label="僅顯示英文">EN</button>
+        <button type="button" class="fr-btn fr-follow" title="跟隨滾動" aria-label="跟隨滾動">跟</button>
+        <button type="button" class="fr-btn fr-stop" title="結束朗讀" aria-label="結束朗讀">結束</button>
+        <button type="button" class="fr-btn fr-close" title="關閉" aria-label="關閉">×</button>
+    `;
+    document.body.appendChild(el);
+    el.querySelector('.fr-prev').addEventListener('click', () => { try { playPrevChunk(); } catch(_) {} });
+    el.querySelector('.fr-next').addEventListener('click', () => { try { playNextChunk(); } catch(_) {} });
+    el.querySelector('.fr-toggle').addEventListener('click', () => { try { togglePauseResume(); updateFloatingToggle(); } catch(_) {} });
+    el.querySelector('.fr-stop').addEventListener('click', () => { try { stopReadArticle(); } catch(_) {} });
+    el.querySelector('.fr-close').addEventListener('click', () => { hideFloatingReader(); });
+    el.querySelector('.fr-en').addEventListener('click', () => {
+        _englishOnly = !_englishOnly;
+        try { dom.articleAnalysisContainer.classList.toggle('english-only', _englishOnly); } catch(_) {}
+        updateFloatingToggle();
+    });
+    el.querySelector('.fr-follow').addEventListener('click', () => {
+        _followScroll = !_followScroll;
+        if (!_followScroll) {
+            try { dom.articleAnalysisContainer.classList.remove('dim-others'); } catch(_) {}
+        }
+        updateFloatingToggle();
+    });
+    // 拖曳移動
+    const handle = el.querySelector('.fr-handle');
+    let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+    const onMove = (e) => {
+        if (!dragging) return;
+        const x = (e.clientX || (e.touches && e.touches[0]?.clientX) || 0);
+        const y = (e.clientY || (e.touches && e.touches[0]?.clientY) || 0);
+        const dx = x - startX; const dy = y - startY;
+        const left = Math.max(4, Math.min(window.innerWidth - el.offsetWidth - 4, startLeft + dx));
+        const top  = Math.max(4, Math.min(window.innerHeight - el.offsetHeight - 4, startTop + dy));
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+        el.style.bottom = 'auto';
+    };
+    const onUp = () => {
+        dragging = false;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onUp);
+    };
+    const onDown = (e) => {
+        e.preventDefault();
+        const rect = el.getBoundingClientRect();
+        dragging = true; startX = (e.clientX || (e.touches && e.touches[0]?.clientX) || 0); startY = (e.clientY || (e.touches && e.touches[0]?.clientY) || 0);
+        startLeft = rect.left; startTop = rect.top;
+        document.addEventListener('mousemove', onMove, { passive: true });
+        document.addEventListener('mouseup', onUp, { passive: true });
+        document.addEventListener('touchmove', onMove, { passive: true });
+        document.addEventListener('touchend', onUp, { passive: true });
+    };
+    handle.addEventListener('mousedown', onDown);
+    handle.addEventListener('touchstart', onDown, { passive: true });
+    _floatingReader = el;
+    return el;
+}
+
+function showFloatingReader() {
+    const el = ensureFloatingReader();
+    el.classList.add('is-visible');
+    updateFloatingToggle();
+}
+
+function hideFloatingReader() {
+    if (_floatingReader) _floatingReader.classList.remove('is-visible');
+}
+
+function updateFloatingToggle() {
+    if (!_floatingReader) return;
+    const btn = _floatingReader.querySelector('.fr-toggle');
+    const isPaused = state.isReadingChunkPaused || !!dom.stopReadArticleBtn.disabled;
+    btn.textContent = isPaused ? '▶' : '⏸';
+    btn.title = isPaused ? '繼續' : '暫停';
+    // EN-only 按鈕高亮
+    const enBtn = _floatingReader.querySelector('.fr-en');
+    if (enBtn) enBtn.classList.toggle('active', !!_englishOnly);
+    // 跟隨滾動按鈕高亮
+    const followBtn = _floatingReader.querySelector('.fr-follow');
+    if (followBtn) followBtn.classList.toggle('active', !!_followScroll);
+}
 
 function readArticle() {
     const text = dom.articleInput.value.trim();
@@ -1442,6 +1538,7 @@ function readArticle() {
         // 全文模式強制隱藏導航（雖然逐句朗讀，但視覺上仍視為全文）
         dom.chunkNavControls.classList.toggle('hidden', mode === 'full' || state.readingChunks.length <= 1);
         _playToken++; // 重置 token
+        showFloatingReader();
         playCurrentChunk();
     }
 }
@@ -1451,6 +1548,7 @@ function stopReadArticle() {
     state.setIsReadingChunkPaused(false);
     dom.stopReadArticleBtn.disabled = true;
     updateReadButtonUI('stopped');
+    hideFloatingReader();
     // 若片段數量 <= 1，隱藏切換控制
     try { dom.chunkNavControls.classList.toggle('hidden', (state.readingChunks || []).length <= 1); } catch (_) {}
     highlightCurrentChunk(null);
@@ -1545,6 +1643,7 @@ function togglePauseResume() {
         // 不在播放狀態時，移除整體淡化效果
         try { dom.articleAnalysisContainer.classList.remove('dim-others'); } catch (_) {}
     }
+    updateFloatingToggle();
 }
 
 function updateReadButtonUI(status) {
@@ -1555,6 +1654,8 @@ function updateReadButtonUI(status) {
     };
     icon.innerHTML = status === 'playing' ? icons.pause : icons.play;
     dom.readArticleBtn.title = status === 'playing' ? "暫停" : (status === 'paused' ? "繼續" : "朗讀文章");
+    // 同步更新浮動控制的暫停/播放按鈕
+    updateFloatingToggle();
 }
 
 function updateChunkNav() {
@@ -1576,18 +1677,16 @@ function highlightCurrentChunk(chunk) {
     if (chunk.type === 'sentence' && chunk.el) {
         chunk.el.classList.add('sentence-active');
         // 僅在實際播放時才啟用淡化（暫停或未播放時不淡化）
-        if (!state.isReadingChunkPaused) {
-            dom.articleAnalysisContainer.classList.add('dim-others');
-        }
-        // 確保可視
-        try { chunk.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+        if (!state.isReadingChunkPaused && _followScroll) { dom.articleAnalysisContainer.classList.add('dim-others'); }
+        // 確保可視：僅在跟隨滾動時置中，避免失去控制
+        if (_followScroll) { try { chunk.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {} }
     } else if (chunk.type === 'paragraph' && chunk.el) {
         chunk.el.classList.add('para-active');
-        try { chunk.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+        if (_followScroll) { try { chunk.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {} }
         dom.articleAnalysisContainer.classList.remove('dim-others');
     } else if (chunk.type === 'full') {
         // 已不再用 full 單片段，保留兼容，但遵循播放狀態
-        if (!state.isReadingChunkPaused) dom.articleAnalysisContainer.classList.add('dim-others');
+        if (!state.isReadingChunkPaused && _followScroll) dom.articleAnalysisContainer.classList.add('dim-others');
         try { dom.articleAnalysisContainer.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {}
     }
 }

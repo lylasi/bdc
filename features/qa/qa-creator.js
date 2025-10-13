@@ -4,36 +4,47 @@ import { displayMessage } from '../../modules/ui.js';
 
 // Q1:A1格式解析
 export function parseQAPairs(text) {
-  if (!text || typeof text !== 'string') {
-    return [];
-  }
+  if (!text || typeof text !== 'string') return [];
 
-  // 清理文本，移除多餘的空白行
-  const cleanText = text.trim().replace(/\n\s*\n/g, '\n');
+  // 標準化換行
+  const normalized = text.replace(/\r\n?/g, '\n');
 
-  // 正則表達式匹配 Q數字: 問題內容 A數字: 答案內容
-  const regex = /Q(\d+):\s*(.*?)\s*A\1:\s*(.*?)(?=Q\d+:|$)/gs;
+  // 先嘗試舊格式：Q1: ... A1: ...
+  const legacy = parseLegacyFormat(normalized);
+  if (legacy.length > 0) return legacy;
+
+  // 新格式：每兩行為一組（第一行=問題，第二行=答案），可夾雜空行
+  const lines = normalized
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
   const pairs = [];
-  let match;
-
-  while ((match = regex.exec(cleanText)) !== null) {
-    const qid = parseInt(match[1]);
-    const question = match[2].trim();
-    const answer = match[3].trim();
-
-    if (question && answer) {
-      pairs.push({
-        qid: qid,
-        question: question,
-        answer: answer
-      });
-    }
+  for (let i = 0; i + 1 < lines.length; i += 2) {
+    const q = stripLeadingLabel(lines[i]);
+    const a = stripLeadingLabel(lines[i + 1]);
+    if (q && a) pairs.push({ qid: pairs.length + 1, question: q, answer: a });
   }
-
-  // 按qid排序
-  pairs.sort((a, b) => a.qid - b.qid);
-
   return pairs;
+}
+
+function parseLegacyFormat(text) {
+  const cleanText = text.trim().replace(/\n\s*\n/g, '\n');
+  const regex = /Q(\d+):\s*(.*?)\s*A\1:\s*(.*?)(?=Q\d+:|$)/gis;
+  const pairs = [];
+  let m;
+  while ((m = regex.exec(cleanText)) !== null) {
+    const qid = parseInt(m[1], 10);
+    const question = stripLeadingLabel(m[2].trim());
+    const answer = stripLeadingLabel(m[3].trim());
+    if (question && answer) pairs.push({ qid, question, answer });
+  }
+  return pairs.sort((a, b) => a.qid - b.qid).map((p, i) => ({ ...p, qid: i + 1 }));
+}
+
+function stripLeadingLabel(s) {
+  // 去除可能的前綴：Q:, Q1:, A:, A1:
+  return s.replace(/^([QA])(\d+)?\s*:\s*/i, '').trim();
 }
 
 // 驗證解析結果
@@ -79,7 +90,7 @@ export function validateFormat(pairs) {
 // 生成預覽HTML
 export function generatePreviewHTML(pairs) {
   if (!pairs || pairs.length === 0) {
-    return '<p class="preview-empty">請輸入Q1:A1格式的問答對</p>';
+    return '<p class="preview-empty">請輸入：每兩行為一組（第一行為問題，第二行為答案）</p>';
   }
 
   const validation = validateFormat(pairs);
@@ -101,21 +112,38 @@ export function generatePreviewHTML(pairs) {
     html += '</div>';
   }
 
-  // 顯示問答對預覽
+  // 取消浮動提示，保持畫面緊湊（提示文案移除）
+
+  // 顯示問答對預覽（可直接編輯、複製、刪除）
   html += '<div class="qa-pairs-preview">';
-  pairs.forEach((pair, index) => {
+  pairs.forEach((pair) => {
     html += `
-      <div class="qa-pair-preview ${validation.isValid ? 'valid' : 'invalid'}">
+      <div class="qa-pair-preview ${validation.isValid ? 'valid' : 'invalid'}" data-qid="${pair.qid}">
+        <div class="qa-pair-header">
+          <div class="qa-header-left">
+            <span class="qa-qid-badge">${pair.qid}</span>
+            <span class="qa-drag-handle" draggable="true" title="拖拽排序" aria-label="拖拽排序">⠿</span>
+          </div>
+          <div class="qa-pair-toolbar">
+            <button type="button" class="qa-chip-btn qa-copy-pair" data-qid="${pair.qid}">複製</button>
+            <button type="button" class="qa-chip-btn qa-move-up" data-qid="${pair.qid}">上移</button>
+            <button type="button" class="qa-chip-btn qa-move-down" data-qid="${pair.qid}">下移</button>
+            <button type="button" class="qa-chip-btn danger qa-delete-pair" data-qid="${pair.qid}">刪除</button>
+          </div>
+        </div>
         <div class="qa-question">
-          <strong>Q${pair.qid}:</strong> ${escapeHtml(pair.question)}
+          <span class="qa-label">Q:</span>
+          <div class="qa-editable" contenteditable="true" tabindex="0" data-role="question" aria-label="編輯問題 Q${pair.qid}">${escapeHtml(pair.question)}</div>
         </div>
         <div class="qa-answer">
-          <strong>A${pair.qid}:</strong> ${escapeHtml(pair.answer)}
+          <span class="qa-label">A:</span>
+          <div class="qa-editable" contenteditable="true" tabindex="0" data-role="answer" aria-label="編輯答案 A${pair.qid}">${escapeHtml(pair.answer)}</div>
         </div>
       </div>
     `;
   });
   html += '</div>';
+  html += '<button type="button" class="qa-add-pair-btn" id="qa-add-pair-btn" title="新增問答">+</button>';
 
   return html;
 }
@@ -128,6 +156,7 @@ export function handleTextInputChange(textArea, previewContainer) {
 
   if (previewContainer) {
     previewContainer.innerHTML = previewHTML;
+    ensurePreviewInteractions(textArea, previewContainer);
   }
 
   return { pairs, isValid: validateFormat(pairs).isValid };
@@ -236,30 +265,30 @@ function generateTemplateName(baseName = '') {
 
 // 生成示例文本
 export function generateExampleText() {
-  // Beginner English Q&A (A1/A2) — simple daily topics
-  return `Q1: What's your name?
-A1: My name is Alex.
+  // 簡化格式：每兩行為一組（Q 在前、A 在後），中間可留空行
+  return `What's your name?
+My name is Alex.
 
-Q2: How old are you?
-A2: I am twelve years old.
+How old are you?
+I am twelve years old.
 
-Q3: Where are you from?
-A3: I am from Taiwan.
+Where are you from?
+I am from Taiwan.
 
-Q4: What is your favorite color?
-A4: My favorite color is blue.
+What is your favorite color?
+My favorite color is blue.
 
-Q5: How do you go to school?
-A5: I go to school by bus.
+How do you go to school?
+I go to school by bus.
 
-Q6: What time do you get up?
-A6: I get up at seven o'clock.
+What time do you get up?
+I get up at seven o'clock.
 
-Q7: What do you like to do after school?
-A7: I like to play basketball with my friends.
+What do you like to do after school?
+I like to play basketball with my friends.
 
-Q8: What do you want to be in the future?
-A8: I want to be a teacher.`;
+What do you want to be in the future?
+I want to be a teacher.`;
 }
 
 // 清空表單
@@ -272,7 +301,7 @@ export function clearForm() {
   if (nameInput) nameInput.value = '';
   if (descInput) descInput.value = '';
   if (pairsInput) pairsInput.value = '';
-  if (preview) preview.innerHTML = '<p class="preview-empty">請輸入Q1:A1格式的問答對</p>';
+  if (preview) preview.innerHTML = '<p class="preview-empty">請輸入：每兩行一組（第一行為問題，第二行為答案）</p>';
 }
 
 // 載入示例
@@ -308,6 +337,7 @@ export function initCreator() {
 
     // 初始化預覽
     handleTextInputChange(pairsInput, preview);
+    ensurePreviewInteractions(pairsInput, preview);
   }
 
   // 添加示例按鈕（如果需要）
@@ -345,7 +375,7 @@ export function qaSetToText(qaSet) {
   questions.sort((a, b) => (a.qid || 0) - (b.qid || 0));
 
   return questions
-    .map(q => `Q${q.qid}: ${q.question}\nA${q.qid}: ${q.answer}`)
+    .map(q => `${q.question}\n${q.answer}`)
     .join('\n\n');
 }
 
@@ -364,10 +394,226 @@ function addExampleButton() {
     dynamicButton.textContent = '載入示例';
     dynamicButton.onclick = loadExample;
 
+    const copyAllBtn = document.createElement('button');
+    copyAllBtn.id = 'qa-copy-all-btn';
+    copyAllBtn.type = 'button';
+    copyAllBtn.className = 'btn small secondary';
+    copyAllBtn.textContent = '複製全部';
+    copyAllBtn.onclick = () => copyAllPairsToClipboard(pairsInput.value);
+
+    const clearAllBtn = document.createElement('button');
+    clearAllBtn.id = 'qa-clear-all-btn';
+    clearAllBtn.type = 'button';
+    clearAllBtn.className = 'btn small secondary';
+    clearAllBtn.textContent = '清空全部';
+    clearAllBtn.onclick = () => {
+      if (confirm('確定要清空所有問答對嗎？')) {
+        pairsInput.value = '';
+        handleTextInputChange(pairsInput, document.getElementById('qa-preview'));
+      }
+    };
+
     container.appendChild(dynamicButton);
+    container.appendChild(copyAllBtn);
+    container.appendChild(clearAllBtn);
     return;
   }
 
   button.classList.remove('hidden');
   button.onclick = loadExample;
+}
+
+// 在預覽區提供互動：單題編輯/複製/刪除
+function ensurePreviewInteractions(textArea, previewContainer) {
+  if (!previewContainer || !textArea) return;
+  if (previewContainer.dataset.interactiveBound === '1') return;
+  previewContainer.dataset.interactiveBound = '1';
+
+  // 提交編輯：在失焦或 Cmd/Ctrl+Enter 時同步到輸入框
+  const commitEdited = (editableEl) => {
+    const pairEl = editableEl.closest('.qa-pair-preview');
+    if (!pairEl) return;
+    const qid = parseInt(pairEl.dataset.qid, 10);
+    const role = editableEl.dataset.role === 'answer' ? 'answer' : 'question';
+
+    const pairs = parseQAPairs(textArea.value);
+    const index = pairs.findIndex(p => p.qid === qid);
+    if (index >= 0) {
+      // 去掉前綴 Q/An，僅保留內容
+      const raw = editableEl.textContent || '';
+      const content = stripLeadingLabel(raw);
+      pairs[index][role] = content;
+      const normalized = normalizeQids(pairs);
+      textArea.value = pairsToText(normalized);
+      // 重新渲染預覽
+      handleTextInputChange(textArea, previewContainer);
+    }
+  };
+
+  previewContainer.addEventListener('blur', (e) => {
+    const editable = e.target?.closest('[contenteditable="true"][data-role]');
+    if (editable) {
+      commitEdited(editable);
+    }
+  }, true);
+
+  previewContainer.addEventListener('keydown', (e) => {
+    const editable = e.target?.closest('[contenteditable="true"][data-role]');
+    if (!editable) return;
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      editable.blur();
+    }
+  });
+
+  previewContainer.addEventListener('click', async (e) => {
+    const delBtn = e.target.closest('.qa-delete-pair');
+    const copyBtn = e.target.closest('.qa-copy-pair');
+    const addBtn = e.target.closest('#qa-add-pair-btn');
+    const upBtn = e.target.closest('.qa-move-up');
+    const downBtn = e.target.closest('.qa-move-down');
+
+    if (delBtn) {
+      const qid = parseInt(delBtn.dataset.qid || delBtn.closest('.qa-pair-preview')?.dataset.qid, 10);
+      if (!qid) return;
+      if (!confirm(`刪除第 ${qid} 題？`)) return;
+      const pairs = parseQAPairs(textArea.value);
+      const filtered = normalizeQids(pairs.filter(p => p.qid !== qid));
+      textArea.value = pairsToText(filtered);
+      handleTextInputChange(textArea, previewContainer);
+      displayMessage('已刪除該問答對', 'success');
+      return;
+    }
+
+    if (copyBtn) {
+      const qid = parseInt(copyBtn.dataset.qid || copyBtn.closest('.qa-pair-preview')?.dataset.qid, 10);
+      const pairs = parseQAPairs(textArea.value);
+      const p = pairs.find(x => x.qid === qid);
+      if (p) {
+        const text = `${p.question}\n${p.answer}`;
+        await writeToClipboard(text);
+        displayMessage('已複製該題到剪貼簿', 'info');
+      }
+      return;
+    }
+
+    if (addBtn) {
+      const pairs = parseQAPairs(textArea.value);
+      const nextId = pairs.length + 1;
+      const appended = `${textArea.value.trim()}${textArea.value.trim() ? '\n\n' : ''}（請輸入問題）\n（請輸入答案）`;
+      textArea.value = appended;
+      handleTextInputChange(textArea, previewContainer);
+      // 聚焦到新題目
+      setTimeout(() => {
+        const target = previewContainer.querySelector(`.qa-pair-preview[data-qid="${nextId}"] [data-role="question"]`);
+        if (target && target.focus) { target.scrollIntoView({ block: 'center' }); target.focus(); }
+      }, 0);
+      return;
+    }
+
+    // 觸控裝置排序備援：上移/下移
+    if (upBtn || downBtn) {
+      const pairs = parseQAPairs(textArea.value);
+      const qid = parseInt((upBtn || downBtn).dataset.qid || (upBtn || downBtn).closest('.qa-pair-preview')?.dataset.qid, 10);
+      const idx = pairs.findIndex(p => p.qid === qid);
+      if (idx < 0) return;
+      const delta = upBtn ? -1 : 1;
+      const newIdx = idx + delta;
+      if (newIdx < 0 || newIdx >= pairs.length) return;
+      const [moved] = pairs.splice(idx, 1);
+      pairs.splice(newIdx, 0, moved);
+      const normalized = normalizeQids(pairs);
+      textArea.value = pairsToText(normalized);
+      handleTextInputChange(textArea, previewContainer);
+      setTimeout(() => {
+        const selector = `.qa-pair-preview[data-qid="${normalized[newIdx].qid}"]`;
+        previewContainer.querySelector(selector)?.scrollIntoView({ block: 'center' });
+      }, 0);
+      return;
+    }
+  });
+
+  // 拖拽排序
+  let dragSrc = null;
+  previewContainer.addEventListener('dragstart', (e) => {
+    if (!e.target.closest('.qa-drag-handle')) return;
+    const item = e.target.closest('.qa-pair-preview');
+    if (!item) return;
+    dragSrc = item;
+    item.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', item.dataset.qid || ''); } catch(_) {}
+  });
+  previewContainer.addEventListener('dragend', (e) => {
+    const item = e.target.closest('.qa-pair-preview');
+    if (item) item.classList.remove('dragging');
+    previewContainer.querySelectorAll('.drop-before,.drop-after').forEach(el=>el.classList.remove('drop-before','drop-after'));
+    dragSrc = null;
+  });
+  previewContainer.addEventListener('dragover', (e) => {
+    if (!dragSrc) return;
+    e.preventDefault();
+    const over = e.target.closest('.qa-pair-preview');
+    if (!over || over === dragSrc) return;
+    const rect = over.getBoundingClientRect();
+    const before = (e.clientY - rect.top) < rect.height / 2;
+    previewContainer.querySelectorAll('.drop-before,.drop-after').forEach(el=>el.classList.remove('drop-before','drop-after'));
+    over.classList.add(before ? 'drop-before' : 'drop-after');
+  });
+  previewContainer.addEventListener('drop', (e) => {
+    if (!dragSrc) return;
+    e.preventDefault();
+    const over = e.target.closest('.qa-pair-preview');
+    if (!over || over === dragSrc) return;
+
+    const pairs = parseQAPairs(textArea.value);
+    const fromId = parseInt(dragSrc.dataset.qid, 10);
+    const toId = parseInt(over.dataset.qid, 10);
+    const fromIndex = pairs.findIndex(p => p.qid === fromId);
+    const toIndex = pairs.findIndex(p => p.qid === toId);
+    if (fromIndex < 0 || toIndex < 0) return;
+
+    const [moved] = pairs.splice(fromIndex, 1);
+    const rect = over.getBoundingClientRect();
+    const before = (e.clientY - rect.top) < rect.height / 2;
+    pairs.splice(before ? toIndex : toIndex + 1, 0, moved);
+
+    const normalized = normalizeQids(pairs);
+    textArea.value = pairsToText(normalized);
+    handleTextInputChange(textArea, previewContainer);
+  });
+}
+
+function pairsToText(pairs) {
+  return pairs.map(p => `${p.question}\n${p.answer}`).join('\n\n');
+}
+
+function normalizeQids(pairs) {
+  return pairs.map((p, i) => ({ ...p, qid: i + 1 }));
+}
+
+async function writeToClipboard(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (_) {}
+  // Fallback
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch(_) {}
+  document.body.removeChild(ta);
+  return true;
+}
+
+function copyAllPairsToClipboard(text) {
+  if (!text) return;
+  writeToClipboard(text);
+  displayMessage('已複製全部問答對', 'info');
 }

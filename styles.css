@@ -14,7 +14,7 @@ body {
 .floating-gear-btn {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 8px);
-  right: calc(env(safe-area-inset-right, 0px) + 8px);
+  left: calc(env(safe-area-inset-left, 0px) + 8px);
   width: 40px; height: 40px;
   border-radius: 50%;
   background: rgb(65 130 220); /* match .icon-btn */
@@ -33,13 +33,13 @@ body {
 
 @media (max-width: 520px) {
   .floating-gear-btn { width: 36px; height: 36px; }
-  .gear-menu { right: 8px; width: 240px; }
+  .gear-menu { left: 8px; width: 240px; }
 }
 
 .gear-menu {
   position: fixed;
   top: 62px;
-  right: 12px;
+  left: 12px;
   width: 260px;
   background: #fff;
   border: 1px solid #e5e7eb;
@@ -1506,6 +1506,11 @@ button:disabled {
     line-height: 1.8;
     font-size: 1.1em;
 }
+/* 英文專注模式：隱藏中文與雜項按鈕 */
+#article-analysis-container.english-only .paragraph-chinese,
+#article-analysis-container.english-only .interactive-sentence-zh,
+#article-analysis-container.english-only .sent-analyze-btn,
+#article-analysis-container.english-only .card-collapse-overlay { display: none !important; }
 
 #article-analysis-container p:first-child {
     color: #666;
@@ -1655,6 +1660,13 @@ button:disabled {
     background: rgba(56,189,248,0.18);
     border-radius: 4px;
     transition: background .15s ease;
+}
+/* 朗讀時避免活動句緊貼視窗底部/頂部：讓 scrollIntoView 保留視覺緩衝 */
+.interactive-sentence,
+.interactive-sentence-zh,
+.paragraph-english {
+    scroll-margin-top: 12vh;
+    scroll-margin-bottom: 18vh;
 }
 .interactive-sentence.sentence-active.sentence-dim,
 .interactive-sentence-zh.sentence-active.sentence-dim {
@@ -1901,7 +1913,7 @@ button:disabled {
 /* 句子詳解用較寬版彈窗 */
 .modal-content.modal-large {
   max-width: 860px;
-  max-height: 80vh;
+  max-height: 92vh; /* 更高的可視空間 */
   overflow: auto;
 }
 
@@ -3245,6 +3257,16 @@ button:disabled {
     align-items: center;
 }
 
+/* 讓「問答對」這一列的標籤上移，輸入區占滿寬度 */
+.qa-form-row.qa-pairs-row {
+    flex-direction: column;
+    align-items: stretch;
+}
+.qa-form-row.qa-pairs-row .qa-input-label {
+    width: 100%;
+    margin-bottom: 6px;
+}
+
 .qa-input-label {
     width: var(--qa-label-width);
     text-align: left;
@@ -3287,7 +3309,7 @@ button:disabled {
 }
 
 .qa-preview-wrapper {
-    margin-left: calc(var(--qa-label-width) + var(--qa-field-gap));
+    margin-left: 0; /* 讓預覽區全寬，與上方輸入對齊 */
 }
 
 .qa-preview-wrapper .qa-preview {
@@ -3367,8 +3389,10 @@ button:disabled {
     border-radius: 4px;
     padding: 15px;
     margin-top: 15px;
-    max-height: 400px;
-    overflow-y: auto;
+    max-height: 80vh;             /* 視窗夠大時可視更高 */
+    overflow: auto;
+    position: relative;           /* 讓新增按鈕可疊放且不佔高度 */
+    padding-bottom: 56px;         /* 為底部置中新增鈕預留空間 */
 }
 
 .preview-empty {
@@ -3418,15 +3442,82 @@ button:disabled {
 /* 問答對預覽 */
 .qa-pairs-preview {
     margin-top: 10px;
+    max-height: none;            /* 內容自適應高度，避免下方空白 */
+    overflow: visible;           /* 列表不再承擔滾動 */
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px;
 }
+.qa-pairs-preview > .qa-pair-preview:last-child { margin-bottom: 0; }
 
 .qa-pair-preview {
     background: white;
     border: 1px solid #dee2e6;
     border-radius: 4px;
-    padding: 10px;
+    padding: 10px 10px 10px 12px;
+    margin-bottom: 8px;
+    position: relative;
+}
+/* 拖拽把手圖示 */
+.qa-drag-handle { color: #9ca3af; cursor: grab; user-select: none; font-size: 18px; line-height: 1; }
+.qa-drag-handle:active { cursor: grabbing; }
+/* 拖拽排序視覺效果 */
+.qa-pair-preview.dragging { opacity: .6; }
+.qa-pair-preview.drop-before { box-shadow: 0 -4px 0 0 #3a7bd5 inset; }
+.qa-pair-preview.drop-after  { box-shadow: 0  4px 0 0 #3a7bd5 inset; }
+
+/* 預覽項操作列 */
+.qa-pair-toolbar { display: flex; gap: 6px; justify-content: flex-end; align-items: center; margin-bottom: 0; }
+.qa-chip-btn { border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 999px; padding: 0 10px; height: 28px; font-size: 12px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.qa-chip-btn:hover {
+    background: #f3f4f6;
+}
+.qa-move-up, .qa-move-down { display: inline-flex; }
+@media (pointer: coarse) { .qa-drag-handle { display: none; } }
+.qa-chip-btn.danger {
+    color: #b91c1c;
+    border-color: #fecaca;
+    background: #fff;
+}
+.qa-chip-btn.danger:hover {
+    background: #fee2e2;
+}
+
+/* 可編輯區塊的強調樣式 */
+.qa-pair-preview [contenteditable="true"] {
+    outline: 1px dashed #cbd5e1;
+    border-radius: 4px;
+    padding: 4px;
+}
+.qa-pair-preview [contenteditable="true"]:focus {
+    outline: 2px solid #3a7bd5;
+    background: #f0f6ff;
+}
+
+/* 預覽編輯提示與標籤樣式 */
+.qa-edit-hint {
+    position: sticky; top: 0; z-index: 2;
+    background: #eef2ff;
+    color: #1f2937;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
     margin-bottom: 8px;
 }
+.qa-qid-badge { width: 24px; height: 24px; border-radius: 50%; background: #e0e7ff; color: #1d4ed8; border: 1px solid #c7d2fe; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+.qa-question, .qa-answer { display: flex; gap: 8px; align-items: flex-start; }
+.qa-label { color:#1d4ed8; font-weight: 700; min-width: 20px; text-align: right; }
+.qa-editable { flex:1; min-height: 20px; }
+
+/* 新增問答按鈕（浮在預覽底部中央） */
+.qa-add-pair-btn {
+    position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 3;
+    display: inline-flex; align-items:center; justify-content:center;
+    width: 40px; height: 40px; border-radius: 9999px;
+    border: 1px dashed #a5b4fc; background: #fff; color: #1d4ed8;
+    cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.qa-add-pair-btn:hover { background:#eef2ff; }
 
 .qa-pair-preview.valid {
     border-left: 4px solid #28a745;
@@ -3457,8 +3548,12 @@ button:disabled {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    max-height: 70vh;
+    /* 讓 Modal 控制滾動，避免表單內多餘留白 */
+    max-height: none;
+    overflow-y: visible;
 }
+
+.qa-editor-modal .qa-preview { flex: 1; min-height: 0; max-height: 88vh; }
 
 .qa-editor-grid {
     display: grid;
@@ -4179,6 +4274,37 @@ mark.punc-err-space {
     background: rgba(30, 64, 175, 0.18);
 }
 
+/* ---- Floating reader controls (bottom-left) ---- */
+.floating-reader {
+  position: fixed;
+  left: calc(env(safe-area-inset-left, 0px) + 10px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: saturate(120%) blur(8px);
+  -webkit-backdrop-filter: saturate(120%) blur(8px);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+  padding: 6px;
+  display: none;
+  z-index: 2200;
+  gap: 6px;
+  align-items: center;
+}
+.floating-reader.is-visible { display: inline-flex; }
+.floating-reader .fr-btn {
+  min-width: 36px; height: 36px;
+  border: 1px solid #cbd5e1; border-radius: 10px; background:#fff; color:#111827;
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.floating-reader .fr-btn.active { background:#eef2ff; border-color:#93c5fd; color:#1d4ed8; }
+.floating-reader .fr-handle { margin-right:6px; cursor:grab; user-select:none; font-size:18px; line-height:1; color:#9ca3af; }
+.floating-reader .fr-handle:active { cursor:grabbing; }
+.floating-reader .fr-btn:active { transform: translateY(1px); }
+@media (max-width: 520px) {
+  .floating-reader .fr-btn { min-width: 32px; height: 32px; border-radius: 8px; }
+}
+
 /* 句子右側更大點按熱區（覆蓋整個句子高度） */
 .sentence-wrap .sentence-hotzone {
     position: absolute;
@@ -4332,3 +4458,6 @@ mark.punc-err-space {
 .dictation-grader-wrap .dg-actions .spacer { flex: 1; }
 .dictation-grader-wrap .dg-tools { display:flex; gap:8px; margin-bottom:8px; }
 .dg-history .dg-h-toolbar { display:flex; justify-content:flex-end; margin-bottom:8px; }
+.qa-pair-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.qa-header-left { display: flex; align-items: center; gap: 8px; }
+.qa-pair-toolbar { display: inline-flex; gap: 6px; }

@@ -484,9 +484,11 @@ function openQASetEditorModal(qaSet) {
             <label for="qa-edit-description">描述</label>
             <input id="qa-edit-description" type="text" placeholder="輸入問答集描述">
           </div>
-          <div class="form-group">
-            <label for="qa-edit-pairs">問答對 (Q1: 問題 A1: 答案)</label>
-            <textarea id="qa-edit-pairs" rows="10" placeholder="Q1: 問題1? A1: 答案1"></textarea>
+          <div class="qa-form-row qa-pairs-row">
+            <label class="qa-input-label" for="qa-edit-pairs">問答對（每兩行一組：上一行問題、下一行答案）</label>
+            <div class="qa-pairs-field">
+              <textarea id="qa-edit-pairs" rows="10" placeholder="問題1？\n答案1。"></textarea>
+            </div>
           </div>
         </div>
         <div id="qa-edit-preview" class="qa-preview"></div>
@@ -520,6 +522,12 @@ function openQASetEditorModal(qaSet) {
 
   updatePreview();
   pairsInput.addEventListener('input', updatePreview);
+
+  // 放大彈窗寬高以便預覽
+  try {
+    const mc = dom.appModal.querySelector('.modal-content');
+    mc && mc.classList.add('modal-large');
+  } catch (_) {}
 
   cancelBtn?.addEventListener('click', (event) => {
     event.preventDefault();
