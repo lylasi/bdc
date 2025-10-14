@@ -1407,6 +1407,9 @@ function buildReadingChunks(mode) {
         }
         // sentence / full mode：逐句
         paraEls.forEach(el => {
+            // 跳過純圖片段（避免朗讀 Markdown 或圖片連結）
+            if (el.dataset && el.dataset.markdownImages === '1') return;
+            if (el.querySelector && el.querySelector('img')) return;
             const sentEls = Array.from(el.querySelectorAll('.interactive-sentence'));
             if (sentEls.length) {
                 sentEls.forEach(s => {
