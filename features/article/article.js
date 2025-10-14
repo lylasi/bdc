@@ -1472,11 +1472,11 @@ function ensureFloatingReader() {
     el.innerHTML = `
         <span class="fr-handle" title="拖動" aria-hidden="true">⠿</span>
         <button type="button" class="fr-btn fr-prev" title="上一句" aria-label="上一句"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M10 2 L4 8 L10 14 Z"/></svg></button>
-        <button type="button" class="fr-btn fr-toggle" title="暫停" aria-label="暫停">⏸</button>
+        <button type="button" class="fr-btn fr-toggle" title="暫停" aria-label="暫停"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/></svg></button>
         <button type="button" class="fr-btn fr-next" title="下一句" aria-label="下一句"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6 2 L12 8 L6 14 Z"/></svg></button>
         <button type="button" class="fr-btn fr-en" title="僅顯示英文" aria-label="僅顯示英文">隱</button>
         <button type="button" class="fr-btn fr-follow" title="跟隨滾動" aria-label="跟隨滾動">跟</button>
-        <button type="button" class="fr-btn fr-stop" title="結束朗讀" aria-label="結束朗讀">關</button>
+        <button type="button" class="fr-btn fr-stop" title="結束朗讀" aria-label="結束朗讀"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z\"/></svg></button>
         <button type="button" class="fr-btn fr-close" title="關閉" aria-label="關閉">×</button>
     `;
     document.body.appendChild(el);
@@ -1548,8 +1548,13 @@ function updateFloatingToggle() {
     if (!_floatingReader) return;
     const btn = _floatingReader.querySelector('.fr-toggle');
     const isPaused = state.isReadingChunkPaused || !!dom.stopReadArticleBtn.disabled;
-    btn.textContent = isPaused ? '▶' : '⏸';
-    btn.title = isPaused ? '繼續' : '暫停';
+    // 使用與頂部控制一致的 SVG 圖示，避免字元在不同裝置字重不一
+    const playSvg = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>';
+    const pauseSvg = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/></svg>';
+    if (btn) {
+        btn.innerHTML = isPaused ? playSvg : pauseSvg;
+        btn.title = isPaused ? '繼續' : '暫停';
+    }
     // EN-only 按鈕高亮
     const enBtn = _floatingReader.querySelector('.fr-en');
     if (enBtn) enBtn.classList.toggle('active', !!_englishOnly);
