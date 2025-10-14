@@ -15,7 +15,7 @@ body {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 8px);
   left: calc(env(safe-area-inset-left, 0px) + 8px);
-  width: 40px; height: 40px;
+  width: 36px; height: 36px; /* 縮小以避免與導覽重疊 */
   border-radius: 50%;
   background: rgb(65 130 220); /* match .icon-btn */
   color: #fff;
@@ -32,13 +32,13 @@ body {
 }
 
 @media (max-width: 520px) {
-  .floating-gear-btn { width: 36px; height: 36px; }
+  .floating-gear-btn { width: 32px; height: 32px; }
   .gear-menu { left: 8px; width: 240px; }
 }
 
 .gear-menu {
   position: fixed;
-  top: 62px;
+  top: 56px; /* 與縮小後的齒輪距離更協調，避免視覺重疊 */
   left: 12px;
   width: 260px;
   background: #fff;
