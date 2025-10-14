@@ -790,11 +790,14 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
     const keepImages = (typeof keepImgs === 'boolean') ? keepImgs : (ARTICLE_IMPORT?.keepImagesDefault ?? true);
 
     const prompt = `你會收到一篇以 Markdown 表示的英文文章（可能含標題、清單、表格、圖片）。請清洗並輸出更適合閱讀的 Markdown：
-- 僅保留正文與必要的標題/段落/清單/表格；移除網站導航、語言切換、社交按鈕、推薦卡片、廣告、版權宣告、留言模組、追蹤用圖片或計數器。
-- ${keepImages ? '保留 Markdown 圖片行（例如：![alt](URL)），不要翻譯或改寫 alt，也不要內嵌說明；若圖片非內容相關或為社交/追蹤橫幅，請移除。' : '移除所有 Markdown 圖片行（例如：![alt](URL)），不要以連結或描述替代圖片。'}
+- 僅保留正文與必要的標題/段落/清單/表格/引用/程式碼（僅當確為程式碼）；移除網站導航、語言切換、社交按鈕、推薦卡片、廣告、版權宣告、留言模組、追蹤用圖片或計數器。
+- ${keepImages ? '保留正文相關的圖片為 Markdown 圖片行（例如：![alt](URL)）。不要翻譯或改寫 alt；若 alt 缺失可留空或取鄰近 caption。移除社交/追蹤/橫幅等非內容圖片。' : '移除所有 Markdown 圖片行（例如：![alt](URL)），不要以連結或描述替代圖片。'}
+- 不要新增任何強調或裝飾標記：嚴禁輸出由 * 或 _ 形成的粗斜體；除非原文已是 Markdown 且必須保留，否則不要加上 * 或 _。
+- 移除純裝飾符號與分隔線（如 -----、_______、****、====、••• 等）以及無意義圖示（▶︎◆•·►等）；清理標題或段落前後多餘符號。
+- 連結保留可讀文字與連結，並移除追蹤參數（如 utm_*、fbclid、ref 等）；相對連結不在此流程修正。
 - 保持原文語言與內容，不要翻譯、不新增解說；僅做結構整理、去噪聲、合併多餘空行，統一為合理段落。
 - 若沒有明確主標題而開頭存在明顯標題，轉為一行 ATX 標題（# Title）。
-- 嚴禁輸出任何額外解釋或代碼區塊標記；只輸出清洗後的 Markdown 純文字。`;
+- 嚴禁輸出任何額外解釋或程式碼區塊圍欄（使用三個反引號的圍欄）；只輸出清洗後的 Markdown 純文字。`;
 
     const data = await requestAI({
         apiUrl: endpoint,
@@ -813,6 +816,120 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
     // 去掉偶發的 ``` 標記
     content = content.replace(/^```(?:markdown)?\n/, '').replace(/\n```\s*$/, '').trim();
     return content;
+}
+
+/**
+ * 直接將完整 HTML 交給 AI 做正文抽取與清洗，輸出乾淨 Markdown。
+ * - 不翻譯、不新增解說；保留結構（標題/清單/表格/引用/程式碼）。
+ * - 依 base URL 嘗試將相對連結/圖片轉成絕對 URL。
+ * - 可選擇是否保留圖片（轉為 Markdown 圖片行）。
+ */
+export async function aiExtractArticleFromHtml(html, opts = {}) {
+    const { url = '', keepImages = true, timeoutMs: toMs, temperature: temp, signal, model: modelOverride } = opts;
+
+    // 模型與端點覆寫沿用 ARTICLE_IMPORT 設定
+    const model = modelOverride
+      || (ARTICLE_IMPORT && (ARTICLE_IMPORT.DEFAULT_MODEL || ARTICLE_IMPORT.MODEL))
+      || AI_MODELS.articleAnalysis;
+
+    let endpoint = (ARTICLE_IMPORT && ARTICLE_IMPORT.API_URL && String(ARTICLE_IMPORT.API_URL).trim()) || undefined;
+    let overrideKey = (ARTICLE_IMPORT && ARTICLE_IMPORT.API_KEY && String(ARTICLE_IMPORT.API_KEY).trim()) || undefined;
+    if (!endpoint && ARTICLE_IMPORT && ARTICLE_IMPORT.PROFILE && AI_PROFILES[ARTICLE_IMPORT.PROFILE]) {
+        endpoint = AI_PROFILES[ARTICLE_IMPORT.PROFILE].apiUrl || endpoint;
+        overrideKey = AI_PROFILES[ARTICLE_IMPORT.PROFILE].apiKey || overrideKey;
+    }
+
+    const temperature = (typeof temp === 'number') ? temp : (ARTICLE_IMPORT?.temperature ?? 0.1);
+    const maxTokens = ARTICLE_IMPORT?.maxTokens ?? 1800;
+    const timeoutMs = (typeof toMs === 'number') ? toMs : (ARTICLE_IMPORT?.timeoutMs ?? 30000);
+
+    // 指令：從 HTML 擷取正文並輸出 Markdown 純文字
+    const sys = 'You are a precise content extractor that outputs clean Markdown. Do not translate or add commentary.';
+    const rules = [
+        '- 保留正文的結構：# 標題、段落、清單、表格、區塊引用、程式碼區塊（僅當確為程式碼）。',
+        keepImages
+            ? '- 將與正文相關的圖片保留為 Markdown 圖片行（![]()）。避免社交/廣告/追蹤用圖；為保留的圖片填入 alt（沿用原 alt 或鄰近 caption；不要改寫），URL 轉為絕對路徑。'
+            : '- 移除所有圖片，不要以文字替代。',
+        '- 徹底移除網站導航、側欄、頁尾、Cookie 提示、語言切換、社交分享、推薦卡、廣告、留言模組、版權宣告。',
+        '- 不要新增任何強調或裝飾標記：嚴禁使用 * 或 _ 產生粗斜體；不要輸出純裝飾分隔線（-----、_______、****、====、••• 等）或無意義圖示（▶︎◆•·►等）。',
+        '- 僅輸出 Markdown 純文字，不要使用 ``` 程式碼圍欄，也不要額外解釋。',
+        '- 解析相對 URL（連結與圖片）為絕對 URL，基於提供的 Base URL。',
+        '- 對連結移除追蹤參數（utm_*、fbclid、ref 等），清理多餘空白，但不要改動正文語句與標點。'
+    ].join('\n');
+
+    const content = [
+        { role: 'system', content: sys },
+        { role: 'user', content: `Base URL: ${url || '(unknown)'}\n規則：\n${rules}\n\n=== HTML 開始 ===\n${String(html || '')}\n=== HTML 結束 ===` }
+    ];
+
+    const data = await requestAI({
+        apiUrl: endpoint,
+        apiKey: overrideKey,
+        model,
+        messages: content,
+        temperature,
+        maxTokens,
+        timeoutMs,
+        signal
+    });
+
+    let md = (data?.choices?.[0]?.message?.content || '').trim();
+    // 去掉偶發的 ``` 標記
+    md = md.replace(/^```(?:markdown)?\n/, '').replace(/\n```\s*$/, '').trim();
+    return md;
+}
+
+/**
+ * 直接抓取 HTML（若 CORS 允許），再交給 AI 產生乾淨 Markdown。
+ * - 若 noThirdPartyGateway 為 false，且直抓失敗，會回退到 r.jina.ai + 清洗。
+ * - 若為 true，直抓失敗則丟錯，避免觸發第三方服務。
+ */
+export async function fetchArticleCleanMarkdown(url, opts = {}) {
+    const { keepImages = true, noThirdPartyGateway = false, timeoutMs = 30000, signal, model } = opts;
+    let u;
+    try { u = new URL(url, window.location.href); } catch (_) { throw new Error('URL 無效'); }
+    if (!/^https?:$/i.test(u.protocol)) throw new Error('僅支援 http/https');
+
+    // 先嘗試直接抓取 HTML（受制於對方 CORS）
+    try {
+        const ac = new AbortController();
+        const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
+        const resp = await fetch(u.toString(), { signal: signal || ac.signal, headers: { 'Accept': 'text/html,application/xhtml+xml' } });
+        clearTimeout(timer);
+        if (resp.ok) {
+            const html = await resp.text();
+            const md = await aiExtractArticleFromHtml(html, { url: u.toString(), keepImages, timeoutMs, signal, model });
+            return md;
+        }
+    } catch (_) { /* fallthrough */ }
+
+    // 嘗試使用自有代理（若已配置）
+    try {
+        const proxy = ARTICLE_IMPORT && ARTICLE_IMPORT.PROXY_URL && String(ARTICLE_IMPORT.PROXY_URL).trim();
+        if (proxy) {
+            const pu = new URL(proxy);
+            // 允許 ?url= 形式；若使用路徑佔位，則直接拼接
+            if (!pu.searchParams.get('url')) pu.searchParams.set('url', u.toString());
+            const ac = new AbortController();
+            const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
+            const resp = await fetch(pu.toString(), { signal: signal || ac.signal, headers: { 'Accept': 'text/html,application/xhtml+xml' } });
+            clearTimeout(timer);
+            if (resp.ok) {
+                const html = await resp.text();
+                const md = await aiExtractArticleFromHtml(html, { url: u.toString(), keepImages, timeoutMs, signal, model });
+                return md;
+            }
+        }
+    } catch (_) { /* ignore */ }
+
+    if (noThirdPartyGateway) {
+        throw new Error('目標站點禁止直抓或網路受限。請允許第三方轉換，或貼上全文/HTML。');
+    }
+
+    // 回退：使用 r.jina.ai 取得可讀文本 → 再清洗
+    const raw = await fetchArticleFromUrl(u.toString(), { timeoutMs, signal });
+    const md = await aiCleanArticleMarkdown(raw, { timeoutMs, signal, keepImages, model });
+    return md;
 }
 
 function normalizeImportedText(text) {

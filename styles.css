@@ -4299,6 +4299,8 @@ mark.punc-err-space {
   display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
 }
 .floating-reader .fr-btn.active { background:#eef2ff; border-color:#93c5fd; color:#1d4ed8; }
+.floating-reader .fr-btn.fr-en.active { background:#f3e8ff; border-color:#d8b4fe; color:#7c3aed; }
+.floating-reader .fr-btn.fr-follow.active { background:#ecfeff; border-color:#a5f3fc; color:#0891b2; }
 .floating-reader .fr-handle { margin-right:6px; cursor:grab; user-select:none; font-size:18px; line-height:1; color:#9ca3af; }
 .floating-reader .fr-handle:active { cursor:grabbing; }
 .floating-reader .fr-btn:active { transform: translateY(1px); }

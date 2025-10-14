@@ -86,6 +86,8 @@ export const ARTICLE_IMPORT = {
   PROFILE: undefined,
   API_URL: undefined,
   API_KEY: undefined,
+  // 可選：你自己的 HTML 代理服務（例如 Cloudflare Worker），避免 CORS；格式例：'https://your-worker.example/fetch?url='
+  PROXY_URL: undefined,
   // 模型：可用 'profile:model'、物件或純字串（走全域）
   MODEL: 'gpt-4.1-mini',
   MODELS: [ 'gpt-4.1-mini', 'gpt-4o-mini' ],

@@ -238,6 +238,8 @@ function openArticleImportModal() {
         cleanEnabled: 'importArticle.clean.enabled',
         cleanKeepImages: 'importArticle.clean.keepImages',
         cleanModel: 'importArticle.clean.model',
+        cleanAutoApply: 'importArticle.clean.autoApply',
+        directOnly: 'importArticle.url.directOnly',
         ocrModel: 'importArticle.ocr.model',
         ocrPreferCamera: 'importArticle.ocr.preferCamera',
         ocrMerge: 'importArticle.ocr.merge'
@@ -288,6 +290,8 @@ function openArticleImportModal() {
                     <div class="controls">
                         <label class="checkbox-inline"><input id="imp-ai-clean" type="checkbox"> <span>AI 清洗內容（更適合閱讀）</span></label>
                         <label class="checkbox-inline"><input id="imp-ai-keep-images" type="checkbox" checked> <span>保留圖片</span></label>
+                        <label class="checkbox-inline"><input id="imp-auto-apply" type="checkbox"> <span>擷取後自動套用</span></label>
+                        <label class="checkbox-inline" title="跳過 r.jina.ai 等第三方轉換；僅嘗試直接抓取頁面 HTML 再交給 AI 清洗（可能受 CORS 限制）"><input id="imp-direct-only" type="checkbox"> <span>跳過第三方轉換</span></label>
                         <span class="model-label">清洗模型</span>
                         <select id="imp-ai-clean-model" class="import-input short">${suggestions.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
                     </div>
@@ -317,14 +321,20 @@ function openArticleImportModal() {
         const aiCleanChk = $('#imp-ai-clean');
         const modelSelect = $('#imp-ai-clean-model');
         const keepImagesChk = $('#imp-ai-keep-images');
+        const autoApplyChk = $('#imp-auto-apply');
+        const directOnlyChk = $('#imp-direct-only');
         if (modelSelect) modelSelect.value = String(defaultModel || '');
         // restore toggles
-        if (aiCleanChk) aiCleanChk.checked = !!LS.get(LS_KEYS.cleanEnabled, false);
+        if (aiCleanChk) aiCleanChk.checked = !!LS.get(LS_KEYS.cleanEnabled, true);
         if (keepImagesChk) keepImagesChk.checked = LS.get(LS_KEYS.cleanKeepImages, true);
+        if (autoApplyChk) autoApplyChk.checked = LS.get(LS_KEYS.cleanAutoApply, true);
+        if (directOnlyChk) directOnlyChk.checked = !!LS.get(LS_KEYS.directOnly, false);
         // persist on change
         if (aiCleanChk) aiCleanChk.addEventListener('change', () => LS.set(LS_KEYS.cleanEnabled, !!aiCleanChk.checked));
         if (keepImagesChk) keepImagesChk.addEventListener('change', () => LS.set(LS_KEYS.cleanKeepImages, !!keepImagesChk.checked));
+        if (autoApplyChk) autoApplyChk.addEventListener('change', () => LS.set(LS_KEYS.cleanAutoApply, !!autoApplyChk.checked));
         if (modelSelect) modelSelect.addEventListener('change', () => LS.set(LS_KEYS.cleanModel, modelSelect.value));
+        if (directOnlyChk) directOnlyChk.addEventListener('change', () => LS.set(LS_KEYS.directOnly, !!directOnlyChk.checked));
         const previewBox = $('#imp-preview');
         const beforeEl = $('#imp-before');
         const afterEl = $('#imp-after');
@@ -359,9 +369,16 @@ function openArticleImportModal() {
                     fetchBtn.textContent = 'AI 清洗中...'; fetchBtn.disabled = true;
                     let after = merged;
                     try { after = await api.aiCleanArticleMarkdown(merged, { timeoutMs: 25000, model: modelSelect && modelSelect.value, keepImages: keepImagesChk ? !!keepImagesChk.checked : true }); } catch(_) {}
-                    if (beforeEl) beforeEl.textContent = merged;
-                    if (afterEl) afterEl.textContent = after;
-                    if (previewBox) previewBox.style.display = 'block';
+                    if (autoApplyChk && autoApplyChk.checked) {
+                        if (dom.articleInput) dom.articleInput.value = after;
+                        try { ui.closeModal(); } catch(_) {}
+                        try { dom.articleInput.focus(); } catch(_) {}
+                        try { notifyAssistantArticleChanged(); } catch(_) {}
+                    } else {
+                        if (beforeEl) beforeEl.textContent = merged;
+                        if (afterEl) afterEl.textContent = after;
+                        if (previewBox) previewBox.style.display = 'block';
+                    }
                     fetchBtn.disabled = false; fetchBtn.textContent = '擷取';
                 } else {
                     if (beforeEl) beforeEl.textContent = merged;
@@ -387,22 +404,43 @@ function openArticleImportModal() {
             dropzone.addEventListener('focus', () => dropzone.classList.add('focused'));
             dropzone.addEventListener('blur', () => dropzone.classList.remove('focused'));
             // 僅在 dropzone 聚焦或貼於其上時攔截貼上全文；避免覆蓋網址輸入框的貼上
-            dropzone.addEventListener('paste', (e) => {
+            dropzone.addEventListener('paste', async (e) => {
                 try {
                     // 若焦點在網址輸入框則不處理
                     if (document.activeElement === urlInput || e.target === urlInput) return;
-                    const text = (e.clipboardData && e.clipboardData.getData && e.clipboardData.getData('text/plain')) || '';
-                    if (text && text.trim()) {
+                    const html = (e.clipboardData && e.clipboardData.getData && e.clipboardData.getData('text/html')) || '';
+                    const plain = (e.clipboardData && e.clipboardData.getData && e.clipboardData.getData('text/plain')) || '';
+                    if (html && html.trim()) {
                         e.preventDefault();
                         if (aiCleanChk && aiCleanChk.checked) {
-                            beforeEl.textContent = text.trim();
-                            afterEl.textContent = '';
-                            previewBox.style.display = 'block';
+                            fetchBtn.textContent = 'AI 清洗中...'; fetchBtn.disabled = true;
+                            try {
+                                const after = await api.aiExtractArticleFromHtml(html, { url: (urlInput && urlInput.value) || '', keepImages: keepImagesChk ? !!keepImagesChk.checked : true, model: modelSelect && modelSelect.value, timeoutMs: 30000 });
+                                if (autoApplyChk && autoApplyChk.checked) {
+                                    if (dom.articleInput) dom.articleInput.value = after;
+                                    try { ui.closeModal(); } catch(_) {}
+                                    try { dom.articleInput.focus(); } catch(_) {}
+                                    try { notifyAssistantArticleChanged(); } catch(_) {}
+                                } else {
+                                    if (beforeEl) beforeEl.textContent = '';
+                                    if (afterEl) afterEl.textContent = after;
+                                    if (previewBox) previewBox.style.display = 'block';
+                                }
+                            } catch(_) {}
+                            fetchBtn.disabled = false; fetchBtn.textContent = '擷取';
                         } else {
-                            beforeEl.textContent = text.trim();
-                            afterEl.textContent = '';
-                            previewBox.style.display = 'block';
+                            // 不清洗時，直接丟回純文字
+                            if (beforeEl) beforeEl.textContent = plain.trim() || '';
+                            if (afterEl) afterEl.textContent = '';
+                            if (previewBox) previewBox.style.display = 'block';
                         }
+                        return;
+                    }
+                    if (plain && plain.trim()) {
+                        e.preventDefault();
+                        beforeEl.textContent = plain.trim();
+                        afterEl.textContent = '';
+                        previewBox.style.display = 'block';
                     }
                 } catch(_) {}
             });
@@ -412,25 +450,58 @@ function openArticleImportModal() {
             if (!url) { alert('請輸入網址'); return; }
             fetchBtn.disabled = true; fetchBtn.textContent = '擷取中...';
             try {
-                // 優先使用結構化抽取，將標題與正文分離；失敗則回退純文字
-                const res = await api.fetchArticleFromUrlStructured(url, { timeoutMs: 22000 });
-                const before = ((res.title ? (`# ${res.title}\n\n`) : '') + (res.content || '')).trim();
-                if (aiCleanChk && aiCleanChk.checked) {
-                    fetchBtn.textContent = 'AI 清洗中...';
-                    let after = before;
+                const wantsAiClean = aiCleanChk && aiCleanChk.checked;
+                const wantsDirectOnly = directOnlyChk && directOnlyChk.checked;
+
+                if (wantsAiClean && wantsDirectOnly) {
+                    // 不經 r.jina.ai：僅嘗試直抓 HTML → AI 生成乾淨 Markdown
+                    let after = '';
                     try {
-                        after = await api.aiCleanArticleMarkdown(before, { timeoutMs: 25000, model: modelSelect && modelSelect.value, keepImages: keepImagesChk ? !!keepImagesChk.checked : true });
-                    } catch (_) { /* keep before */ }
-                    if (beforeEl) beforeEl.textContent = before;
-                    if (afterEl) afterEl.textContent = after;
-                    if (previewBox) previewBox.style.display = 'block';
+                        after = await api.fetchArticleCleanMarkdown(url, {
+                            noThirdPartyGateway: true,
+                            timeoutMs: 30000,
+                            model: modelSelect && modelSelect.value,
+                            keepImages: keepImagesChk ? !!keepImagesChk.checked : true
+                        });
+                    } catch (e) {
+                        throw new Error((e && e.message) ? e.message : '直抓失敗或受 CORS 限制');
+                    }
+                    if (autoApplyChk && autoApplyChk.checked) {
+                        if (dom.articleInput) dom.articleInput.value = after;
+                        try { ui.closeModal(); } catch(_) {}
+                        try { dom.articleInput.focus(); } catch (_) {}
+                        try { notifyAssistantArticleChanged(); } catch(_) {}
+                    } else {
+                        if (beforeEl) beforeEl.textContent = '';
+                        if (afterEl) afterEl.textContent = after;
+                        if (previewBox) previewBox.style.display = 'block';
+                    }
                 } else {
-                    if (dom.articleInput) dom.articleInput.value = before;
-                    try { ui.closeModal(); } catch(_) {}
-                    // 導入後自動聚焦輸入框，方便直接分析
-                    try { dom.articleInput.focus(); } catch (_) {}
-                    // 通知 AI 助手：文章已切換
-                    try { notifyAssistantArticleChanged(); } catch(_) {}
+                    // 既有流程：r.jina.ai → 文字 →（可選）AI 清洗
+                    const res = await api.fetchArticleFromUrlStructured(url, { timeoutMs: 22000 });
+                    const before = ((res.title ? (`# ${res.title}\n\n`) : '') + (res.content || '')).trim();
+                    if (wantsAiClean) {
+                        fetchBtn.textContent = 'AI 清洗中...';
+                        let after = before;
+                        try {
+                            after = await api.aiCleanArticleMarkdown(before, { timeoutMs: 25000, model: modelSelect && modelSelect.value, keepImages: keepImagesChk ? !!keepImagesChk.checked : true });
+                        } catch (_) { /* keep before */ }
+                        if (autoApplyChk && autoApplyChk.checked) {
+                            if (dom.articleInput) dom.articleInput.value = after;
+                            try { ui.closeModal(); } catch(_) {}
+                            try { dom.articleInput.focus(); } catch (_) {}
+                            try { notifyAssistantArticleChanged(); } catch(_) {}
+                        } else {
+                            if (beforeEl) beforeEl.textContent = before;
+                            if (afterEl) afterEl.textContent = after;
+                            if (previewBox) previewBox.style.display = 'block';
+                        }
+                    } else {
+                        if (dom.articleInput) dom.articleInput.value = before;
+                        try { ui.closeModal(); } catch(_) {}
+                        try { dom.articleInput.focus(); } catch (_) {}
+                        try { notifyAssistantArticleChanged(); } catch(_) {}
+                    }
                 }
             } catch (e) {
                 alert('擷取失敗：' + (e?.message || e));
