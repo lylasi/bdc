@@ -3392,7 +3392,7 @@ button:disabled {
     max-height: 80vh;             /* 視窗夠大時可視更高 */
     overflow: auto;
     position: relative;           /* 讓新增按鈕可疊放且不佔高度 */
-    padding-bottom: 56px;         /* 為底部置中新增鈕預留空間 */
+    padding-bottom: 12px;         /* 改為內容內按鈕，不需額外底部空間 */
 }
 
 .preview-empty {
@@ -3511,11 +3511,12 @@ button:disabled {
 
 /* 新增問答按鈕（浮在預覽底部中央） */
 .qa-add-pair-btn {
-    position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 3;
+    position: static; /* 不再懸浮，避免遮擋內容 */
     display: inline-flex; align-items:center; justify-content:center;
     width: 40px; height: 40px; border-radius: 9999px;
     border: 1px dashed #a5b4fc; background: #fff; color: #1d4ed8;
     cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin: 12px auto 0 auto; /* 置中顯示，隨內容滾動到最底 */
 }
 .qa-add-pair-btn:hover { background:#eef2ff; }
 
