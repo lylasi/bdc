@@ -1452,9 +1452,9 @@ function ensureFloatingReader() {
         <button type="button" class="fr-btn fr-prev" title="上一句" aria-label="上一句"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M10 2 L4 8 L10 14 Z"/></svg></button>
         <button type="button" class="fr-btn fr-toggle" title="暫停" aria-label="暫停">⏸</button>
         <button type="button" class="fr-btn fr-next" title="下一句" aria-label="下一句"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6 2 L12 8 L6 14 Z"/></svg></button>
-        <button type="button" class="fr-btn fr-en" title="僅顯示英文" aria-label="僅顯示英文">EN</button>
+        <button type="button" class="fr-btn fr-en" title="僅顯示英文" aria-label="僅顯示英文">隱</button>
         <button type="button" class="fr-btn fr-follow" title="跟隨滾動" aria-label="跟隨滾動">跟</button>
-        <button type="button" class="fr-btn fr-stop" title="結束朗讀" aria-label="結束朗讀">結束</button>
+        <button type="button" class="fr-btn fr-stop" title="結束朗讀" aria-label="結束朗讀">關</button>
         <button type="button" class="fr-btn fr-close" title="關閉" aria-label="關閉">×</button>
     `;
     document.body.appendChild(el);
