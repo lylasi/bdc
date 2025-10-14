@@ -1474,8 +1474,17 @@ function ensureFloatingReader() {
         <button type="button" class="fr-btn fr-prev" title="上一句" aria-label="上一句"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M10 2 L4 8 L10 14 Z"/></svg></button>
         <button type="button" class="fr-btn fr-toggle" title="暫停" aria-label="暫停"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/></svg></button>
         <button type="button" class="fr-btn fr-next" title="下一句" aria-label="下一句"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6 2 L12 8 L6 14 Z"/></svg></button>
-        <button type="button" class="fr-btn fr-en" title="僅顯示英文" aria-label="僅顯示英文">隱</button>
-        <button type="button" class="fr-btn fr-follow" title="跟隨滾動" aria-label="跟隨滾動">跟</button>
+        <button type="button" class="fr-btn fr-en" title="僅顯示英文" aria-label="僅顯示英文">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M1 8c2.2-4 11.8-4 14 0-2.2 4-11.8 4-14 0Z"/>
+                <circle cx="8" cy="8" r="2.5" fill="currentColor"/>
+            </svg>
+        </button>
+        <button type="button" class="fr-btn fr-follow" title="跟隨滾動" aria-label="跟隨滾動">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 1l2.5 2.5H9v3H7V3.5H5.5L8 1Zm0 14-2.5-2.5H7V9h2v3.5h1.5L8 15Z"/>
+            </svg>
+        </button>
         <button type="button" class="fr-btn fr-stop" title="結束朗讀" aria-label="結束朗讀"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z\"/></svg></button>
         <button type="button" class="fr-btn fr-close" title="關閉" aria-label="關閉">×</button>
     `;
