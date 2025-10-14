@@ -825,8 +825,21 @@ function collectMdTable(lines, i) {
     return { text: buf.join('\n'), nextIndex: j };
 }
 
+function normalizeInlineImages(text) {
+    if (!text) return '';
+    let t = String(text);
+    // Pattern A: Same line — Image 3: alt text https://url
+    t = t.replace(/(^|\n)\s*Image\s*\d*\s*:\s*([^\n]+?)\s+(https?:\/\/\S+)(?=\s|$)/gi, (m, p1, alt, url) => `${p1}![${alt.trim()}](${url.trim()})`);
+    // Pattern B: Two lines — Image 3: alt text\nhttps://url
+    t = t.replace(/(^|\n)\s*Image\s*\d*\s*:\s*([^\n]+?)\s*\n\s*(https?:\/\/\S+)(?=\s|$)/gi, (m, p1, alt, url) => `${p1}![${alt.trim()}](${url.trim()})`);
+    // Pattern C: generic "Image:" without number
+    t = t.replace(/(^|\n)\s*Image\s*:\s*([^\n]+?)\s+(https?:\/\/\S+)(?=\s|$)/gi, (m, p1, alt, url) => `${p1}![${alt.trim()}](${url.trim()})`);
+    return t;
+}
+
 function parseTitleAndParagraphs(text) {
-    const lines = (text || '').split(/\n/);
+    const normalized = normalizeInlineImages(text || '');
+    const lines = normalized.split(/\n/);
     const paragraphs = [];
     let title = '';
     // First, detect title in the very first non-empty line
@@ -1436,9 +1449,9 @@ function ensureFloatingReader() {
     el.className = 'floating-reader';
     el.innerHTML = `
         <span class="fr-handle" title="拖動" aria-hidden="true">⠿</span>
-        <button type="button" class="fr-btn fr-prev" title="上一句" aria-label="上一句">⬅︎</button>
+        <button type="button" class="fr-btn fr-prev" title="上一句" aria-label="上一句"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M10 2 L4 8 L10 14 Z"/></svg></button>
         <button type="button" class="fr-btn fr-toggle" title="暫停" aria-label="暫停">⏸</button>
-        <button type="button" class="fr-btn fr-next" title="下一句" aria-label="下一句">➡︎</button>
+        <button type="button" class="fr-btn fr-next" title="下一句" aria-label="下一句"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6 2 L12 8 L6 14 Z"/></svg></button>
         <button type="button" class="fr-btn fr-en" title="僅顯示英文" aria-label="僅顯示英文">EN</button>
         <button type="button" class="fr-btn fr-follow" title="跟隨滾動" aria-label="跟隨滾動">跟</button>
         <button type="button" class="fr-btn fr-stop" title="結束朗讀" aria-label="結束朗讀">結束</button>
