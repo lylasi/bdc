@@ -834,6 +834,11 @@ function normalizeInlineImages(text) {
     t = t.replace(/(^|\n)\s*Image\s*\d*\s*:\s*([^\n]+?)\s*\n\s*(https?:\/\/\S+)(?=\s|$)/gi, (m, p1, alt, url) => `${p1}![${alt.trim()}](${url.trim()})`);
     // Pattern C: generic "Image:" without number
     t = t.replace(/(^|\n)\s*Image\s*:\s*([^\n]+?)\s+(https?:\/\/\S+)(?=\s|$)/gi, (m, p1, alt, url) => `${p1}![${alt.trim()}](${url.trim()})`);
+    // Pattern D: Broken Markdown image across lines, e.g. "![\nImage 6(https://..)" or "![Image\n6(https...)" or with ']' missing
+    t = t.replace(/!\[\s*([\s\S]*?)\s*\(\s*(https?:\/\/[^\s)]+)\s*\)/gi, (m, alt, url) => {
+        const cleanAlt = String(alt || '').replace(/\]/g, ' ').replace(/\s+/g, ' ').trim();
+        return `![${cleanAlt}](${url.trim()})`;
+    });
     return t;
 }
 
@@ -1279,7 +1284,21 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             continue;
         }
 
-        // sentence-level wrapping for full render（非表格）
+        // 純圖片段（Markdown 圖片行）直接以 <img> 呈現
+        {
+            const pairImgs = renderMarkdownImagesPairHTML(englishPara, processedChinese || chinesePara || '');
+            if (pairImgs) {
+                const isTitle = !!title && i === 0;
+                htmlContent += `
+                    <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}\" data-paragraph-index=\"${i}\" data-english=\"${escapeAttr(englishPara)}\">
+                        <div class=\"paragraph-english\" data-markdown-images=\"1\">${pairImgs.eng}</div>
+                        <div class=\"paragraph-chinese\" data-markdown-images=\"1\"></div>
+                    </div>`;
+                continue;
+            }
+        }
+
+        // sentence-level wrapping for full render（非表格、非圖片）
         const sentences = sentenceSplit(englishPara || '');
         const paraWords = (paragraph_analysis && paragraph_analysis[i]?.detailed_analysis) || [];
         const englishHtml = sentences.map((sText, sIdx) => {
