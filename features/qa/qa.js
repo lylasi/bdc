@@ -346,6 +346,7 @@ function createQASetCard(qaSet) {
       </div>
       <div class="qa-set-description">${qaSet.description}</div>
       <div class="qa-set-actions">
+        <button class="btn small secondary view-btn">查看題目</button>
         <button class="btn small primary start-training-btn">開始訓練</button>
         ${!qaSet.isPreset ? '<button class="btn small secondary edit-btn">編輯</button>' : ''}
         <button class="btn small secondary export-btn">導出手默</button>
@@ -363,7 +364,9 @@ function handleQASetCardClick(event) {
   const qaId = card.dataset.qaId;
   const button = event.target;
 
-  if (button.classList.contains('start-training-btn')) {
+  if (button.classList.contains('view-btn')) {
+    handlePreviewQASet(qaId);
+  } else if (button.classList.contains('start-training-btn')) {
     startQATraining(qaId);
   } else if (button.classList.contains('edit-btn')) {
     handleEditQASet(qaId);
@@ -371,6 +374,199 @@ function handleQASetCardClick(event) {
     handleQASetExport(qaId);
   } else if (button.classList.contains('delete-btn')) {
     handleDeleteQASet(qaId);
+  }
+}
+
+// 查看問答集：彈窗顯示全部題目與答案
+async function handlePreviewQASet(qaId) {
+  try {
+    const qaSet = await loadQASet(qaId);
+    if (!qaSet) {
+      displayMessage('載入問答集失敗。', 'error');
+      return;
+    }
+    openQASetPreviewModal(qaSet);
+  } catch (error) {
+    console.error('預覽問答集時出錯:', error);
+    displayMessage('無法預覽問答集，請稍後再試。', 'error');
+  }
+}
+
+function openQASetPreviewModal(qaSet) {
+  openModal();
+
+  if (dom.modalTitle) {
+    dom.modalTitle.textContent = `查看問答集：${qaSet.name || ''}`;
+  }
+
+  if (!dom.modalBody) return;
+
+  const total = Array.isArray(qaSet.questions) ? qaSet.questions.length : 0;
+  const metaDesc = qaSet.description ? escapeHtml(qaSet.description) : '';
+
+  // 狀態：當前顯示順序（預設為原順序）
+  const original = Array.isArray(qaSet.questions) ? [...qaSet.questions] : [];
+  let current = [...original];
+
+  function renderPairs() {
+    const pairsHTML = current
+      .map((q, idx) => `
+        <div class="qa-pair-preview qa-view-item" data-qid="${q.qid}">
+          <div class="qa-view-number"><span class="qa-qid-badge">${idx + 1}</span></div>
+          <div class="qa-view-content">
+            <div class="qa-question">
+              <span class="qa-label">Q:</span>
+              <div class="qa-question-text">${escapeHtml(q.question || '')}</div>
+            </div>
+            <div class="qa-answer">
+              <span class="qa-label">A:</span>
+              <div class="qa-editable" tabindex="-1">${escapeHtml(q.answer || '')}</div>
+            </div>
+          </div>
+        </div>
+      `)
+      .join('');
+    const list = dom.modalBody.querySelector('#qa-view-list');
+    if (list) list.innerHTML = pairsHTML;
+  }
+
+  function shuffleInPlace(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  dom.modalBody.innerHTML = `
+    <div class="qa-view-modal">
+      <div class="qa-view-meta" style="margin-bottom:12px; color:#4b5563; font-size:13px;">
+        ${metaDesc ? `<div style="margin-bottom:4px;">${metaDesc}</div>` : ''}
+        <div>題目數量：${total}</div>
+      </div>
+      <div class="qa-view-toolbar" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
+        <button type="button" class="qa-chip-btn" id="qa-view-shuffle">隨機順序</button>
+        <button type="button" class="qa-chip-btn" id="qa-view-reset">重置</button>
+        <button type="button" class="qa-chip-btn" id="qa-view-copy-questions">複製內容</button>
+        <span style="margin-left:6px; color:#6b7280; font-size:12px;">每頁</span>
+        <input id="qa-view-qpp" type="number" min="4" max="12" value="8" style="width:54px; padding:4px 6px; border:1px solid #d1d5db; border-radius:6px; font-size:12px;" />
+        <span style="color:#6b7280; font-size:12px;">行數</span>
+        <input id="qa-view-lines" type="number" min="1" max="3" value="1" style="width:46px; padding:4px 6px; border:1px solid #d1d5db; border-radius:6px; font-size:12px;" />
+        <button type="button" class="qa-chip-btn" id="qa-view-export-questions">導出手默</button>
+        <button type="button" class="qa-chip-btn" id="qa-view-export-with-answers">導出答案</button>
+      </div>
+      <div class="qa-preview">
+        <div id="qa-view-list" class="qa-pairs-preview"></div>
+      </div>
+      <div class="qa-editor-actions" style="margin-top:12px;">
+        <button type="button" class="btn primary" id="qa-preview-start-training">開始訓練此問答集</button>
+        <button type="button" class="btn secondary" id="qa-preview-close">關閉</button>
+      </div>
+    </div>
+  `;
+
+  // 初始渲染
+  renderPairs();
+
+  // 事件：大亂順序
+  const shuffleBtn = dom.modalBody.querySelector('#qa-view-shuffle');
+  if (shuffleBtn) {
+    shuffleBtn.addEventListener('click', () => {
+      shuffleInPlace(current);
+      renderPairs();
+      displayMessage('已隨機打亂題目順序', 'info');
+    });
+  }
+
+  // 事件：重置原順序
+  const resetBtn = dom.modalBody.querySelector('#qa-view-reset');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      current = [...original];
+      renderPairs();
+      displayMessage('已重置為原順序', 'info');
+    });
+  }
+
+  // 事件：複製當前順序的題目
+  const copyBtn = dom.modalBody.querySelector('#qa-view-copy-questions');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      try {
+        const text = current
+          .map((q, i) => {
+            const qLine = `${i + 1}. Q: ${(q?.question || '').trim()}`;
+            const aLine = `   A: ${(q?.answer || '').trim()}`;
+            return `${qLine}\n${aLine}`;
+          })
+          .join('\n\n');
+        if (!text.trim()) { displayMessage('無可複製的內容', 'warning'); return; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = text; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+        }
+        displayMessage('內容已複製（含序號、Q/A）', 'success');
+      } catch (err) {
+        console.error('複製失敗:', err);
+        displayMessage('複製內容失敗', 'error');
+      }
+    });
+  }
+
+  // 事件：導出手默（僅題）
+  const exportQBtn = dom.modalBody.querySelector('#qa-view-export-questions');
+  if (exportQBtn) {
+    exportQBtn.addEventListener('click', async () => {
+      try {
+        const perPage = parseInt((dom.modalBody.querySelector('#qa-view-qpp')?.value || '8'), 10) || 8;
+        const lines = parseInt((dom.modalBody.querySelector('#qa-view-lines')?.value || '1'), 10) || 1;
+        await exportQASetForHandwriting(qaSet.id, {
+          includeAnswers: false,
+          shuffleQuestions: false,
+          answerLines: Math.max(1, Math.min(3, lines)),
+          questionsPerPage: Math.max(4, Math.min(12, perPage)),
+          currentQuestions: current
+        });
+      } catch (err) {
+        console.error('導出手默PDF失敗:', err);
+        displayMessage('導出手默PDF失敗', 'error');
+      }
+    });
+  }
+
+  // 事件：導出含答案PDF
+  const exportABtn = dom.modalBody.querySelector('#qa-view-export-with-answers');
+  if (exportABtn) {
+    exportABtn.addEventListener('click', async () => {
+      try {
+        const perPage = parseInt((dom.modalBody.querySelector('#qa-view-qpp')?.value || '8'), 10) || 8;
+        const lines = parseInt((dom.modalBody.querySelector('#qa-view-lines')?.value || '1'), 10) || 1;
+        await exportQASetForHandwriting(qaSet.id, {
+          includeAnswers: true,
+          shuffleQuestions: false,
+          answerLines: Math.max(1, Math.min(3, lines)),
+          questionsPerPage: Math.max(4, Math.min(12, perPage)),
+          currentQuestions: current
+        });
+      } catch (err) {
+        console.error('導出含答案PDF失敗:', err);
+        displayMessage('導出PDF失敗', 'error');
+      }
+    });
+  }
+
+  const startBtn = dom.modalBody.querySelector('#qa-preview-start-training');
+  const closeBtn = dom.modalBody.querySelector('#qa-preview-close');
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      closeModal();
+      startQATraining(qaSet.id);
+    });
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => closeModal());
   }
 }
 
