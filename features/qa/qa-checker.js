@@ -18,6 +18,16 @@ async function loadAIConfig() {
   return aiConfig;
 }
 
+// 小工具：簡易模板替換 ${name}
+function applyTemplate(tpl, vars = {}) {
+  if (!tpl) return '';
+  let s = String(tpl);
+  for (const k of Object.keys(vars)) {
+    try { s = s.split('${' + k + '}').join(String(vars[k])); } catch (_) {}
+  }
+  return s;
+}
+
 // 校對結果快取
 const checkResultsCache = new Map();
 
@@ -185,7 +195,11 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
   const __temperature = (qaCfg.temperature ?? 0.2);
   const __maxTokens = (qaCfg.maxTokens ?? 1500);
 
-  const prompt = `你是一位以繁體中文回覆的英語老師與審稿員。你只依據「題目 + 標準答案」來判定學生答案是否正確，並在必要時指出格式問題（大小寫、標點）。不要產生長篇說理，輸出務必簡潔、可機器解析。
+  const qaPrompts = aiConfig?.AI_PROMPTS?.qa?.checker || {};
+  const sysMsg = qaPrompts.system || '你是一位具有20年教學經驗的資深英語教師，擅長學生答案評估和教學指導。你的評價風格溫和而專業，既要指出問題，也要給予鼓勵，幫助學生建立學習信心。你特別關注學生的語言技能發展，能夠提供具體的改進建議和學習方向。';
+  const prompt = qaPrompts.template
+    ? applyTemplate(qaPrompts.template, { question, correctAnswer, userAnswer })
+    : `你是一位以繁體中文回覆的英語老師與審稿員。你只依據「題目 + 標準答案」來判定學生答案是否正確，並在必要時指出格式問題（大小寫、標點）。不要產生長篇說理，輸出務必簡潔、可機器解析。
 
 請回傳單一 JSON（不要加任何說明或程式碼圍欄），欄位如下：
 {
@@ -224,10 +238,7 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
     body: JSON.stringify({
       model: __model,
       messages: [
-        {
-          role: 'system',
-          content: '你是一位具有20年教學經驗的資深英語教師，擅長學生答案評估和教學指導。你的評價風格溫和而專業，既要指出問題，也要給予鼓勵，幫助學生建立學習信心。你特別關注學生的語言技能發展，能夠提供具體的改進建議和學習方向。'
-        },
+        { role: 'system', content: sysMsg },
         { role: 'user', content: prompt }
       ],
       temperature: __temperature,
