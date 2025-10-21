@@ -120,13 +120,17 @@ export async function exportQASetForHandwriting(qaSetId, options = {}) {
       shuffleQuestions = false,
       includeAnswers = false,
       answerLines = 1,
-      questionsPerPage = 8
+      questionsPerPage = 8,
+      currentQuestions = null
     } = options;
 
-    let questions = [...qaSet.questions];
+    // 若提供當前順序，優先使用（不再打亂）
+    let questions = Array.isArray(currentQuestions) && currentQuestions.length
+      ? [...currentQuestions]
+      : [...qaSet.questions];
 
-    // 如果需要亂序
-    if (shuffleQuestions) {
+    // 僅在未提供當前順序時，依需求亂序
+    if (!currentQuestions && shuffleQuestions) {
       questions = shuffleArray(questions);
     }
 
