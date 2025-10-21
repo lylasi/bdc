@@ -1,4 +1,4 @@
-import { API_URL, API_KEY, AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT, AI_PROFILES as __AI_PROFILES__ } from '../ai-config.js';
+import { API_URL, API_KEY, AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT, AI_PROFILES as __AI_PROFILES__, AI_PROMPTS } from '../ai-config.js';
 import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
@@ -9,6 +9,16 @@ import * as validate from './validate.js';
 
 // Profiles: 若未定義，回退為僅 default → 指向全域
 const AI_PROFILES = __AI_PROFILES__ || { default: { apiUrl: API_URL, apiKey: API_KEY } };
+
+// Simple template filler: replaces ${name} with provided vars
+function applyTemplate(tpl, vars = {}) {
+  if (!tpl) return '';
+  let s = String(tpl);
+  for (const k of Object.keys(vars)) {
+    try { s = s.split('${' + k + '}').join(String(vars[k])); } catch (_) {}
+  }
+  return s;
+}
 
 // 將模型規格（string / 'profile:model' / {profile, model, apiUrl?, apiKey?}）正規化
 function normalizeModelSpec(spec) {
@@ -147,7 +157,9 @@ async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTokens, ti
  */
 export async function getWordAnalysis(word) {
     try {
-        const prompt = `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Traditional Chinese (Hong Kong) meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}. Ensure the meaning is in Traditional Chinese (Hong Kong) vocabulary (e.g., 網上/上載/電郵/巴士/的士/單車/軟件/網絡/連結/相片).`;
+        const prompt = (AI_PROMPTS && AI_PROMPTS.dictionary && AI_PROMPTS.dictionary.wordAnalysis && AI_PROMPTS.dictionary.wordAnalysis.template)
+          ? applyTemplate(AI_PROMPTS.dictionary.wordAnalysis.template, { word })
+          : `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Traditional Chinese (Hong Kong) meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}. Ensure the meaning is in Traditional Chinese (Hong Kong) vocabulary (e.g., 網上/上載/電郵/巴士/的士/單車/軟件/網絡/連結/相片).`;
         const s = loadGlobalSettings();
         const model = (s?.ai?.models && s.ai.models.wordAnalysis) || AI_MODELS.wordAnalysis;
         return await fetchAIResponse(model, prompt, 0.2);
@@ -163,7 +175,10 @@ export async function getWordAnalysis(word) {
  * @returns {Promise<Array>} - 包含例句對象的數組。
  */
 export async function generateExamplesForWord(word, opts = {}) {
-    const prompt = `請為單詞 "${word.word}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯（使用香港繁體中文用字），以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
+    const w = (word && typeof word === 'object') ? (word.word || '') : String(word || '');
+    const prompt = (AI_PROMPTS && AI_PROMPTS.learning && AI_PROMPTS.learning.exampleGeneration && AI_PROMPTS.learning.exampleGeneration.template)
+      ? applyTemplate(AI_PROMPTS.learning.exampleGeneration.template, { word: w })
+      : `請為單詞 "${w}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯（使用香港繁體中文用字），以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
     const s = loadGlobalSettings();
     const model = (s?.ai?.models && s.ai.models.exampleGeneration) || AI_MODELS.exampleGeneration;
     return await fetchAIResponse(model, prompt, 0.7, { maxTokens: 600, timeoutMs: 20000, ...opts });
@@ -176,7 +191,9 @@ export async function generateExamplesForWord(word, opts = {}) {
  * @returns {Promise<string>} - AI 的反饋文本。
  */
 export async function checkUserSentence(word, userSentence, opts = {}) {
-    const prompt = `請判斷以下這個使用單詞 "${word}" 的句子在語法和用法上是否正確: "${userSentence}"。如果正確，請只回答 "正確"。如果不正確，請詳細指出錯誤並提供一個修改建議，格式為 "不正確。建議：[你的建議]"。並總結錯誤的知識點。`;
+    const prompt = (AI_PROMPTS && AI_PROMPTS.learning && AI_PROMPTS.learning.sentenceChecking && AI_PROMPTS.learning.sentenceChecking.template)
+      ? applyTemplate(AI_PROMPTS.learning.sentenceChecking.template, { word, userSentence })
+      : `請判斷以下這個使用單詞 "${word}" 的句子在語法和用法上是否正確: "${userSentence}"。如果正確，請只回答 "正確"。如果不正確，請詳細指出錯誤並提供一個修改建議，格式為 "不正確。建議：[你的建議]"。並總結錯誤的知識點。`;
     const s = loadGlobalSettings();
     const model = (s?.ai?.models && s.ai.models.sentenceChecking) || AI_MODELS.sentenceChecking;
     return await fetchAIResponse(model, prompt, 0.5, { maxTokens: 400, timeoutMs: 15000, ...opts });
@@ -204,8 +221,9 @@ export async function analyzeParagraph(paragraph, opts = {}) {
         } catch (e) { /* ignore cache errors */ }
     }
 
-    // Minimal instruction: translation only, HK Traditional Chinese wording, and preserve Markdown structures
-    const instructions = `只返回 JSON：{"chinese_translation":"..."}
+    // Minimal instruction: translation only (configurable via AI_PROMPTS)
+    const instructions = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.instructions)
+      || `只返回 JSON：{"chinese_translation":"..."}
 要求：
 - 翻譯請使用繁體中文符合香港中文習慣，不要廣東話。 英文姓名不用翻譯；
 - 用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。
@@ -215,7 +233,9 @@ export async function analyzeParagraph(paragraph, opts = {}) {
   * 圖片：對於 Markdown 圖片標記（例如：![](URL) 或 ![alt](URL)），請保持原樣在輸出中，不要翻譯或改寫其中的 alt 文字，也不要移除；若圖片單獨成段，保留為同一 Markdown 行。
 - 不要返回 word_alignment 與 detailed_analysis。`;
 
-    const prompt = `請對以下英文段落進行分析並返回嚴格有效的 JSON（不允許代碼塊或額外解釋）：
+    const prompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.user)
+      ? applyTemplate(AI_PROMPTS.article.paragraph.user, { paragraph, instructions })
+      : `請對以下英文段落進行分析並返回嚴格有效的 JSON（不允許代碼塊或額外解釋）：
 
 段落: """
 ${paragraph}
@@ -258,7 +278,9 @@ ${instructions}`;
     } catch (err) {
         console.warn('段落分析失敗，回退到最小輸出。', err);
         // 最小回退：僅翻譯
-        const fbPrompt = `只返回 JSON：{"chinese_translation":"..."}
+        const fbPrompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.fallback)
+          ? applyTemplate(AI_PROMPTS.article.paragraph.fallback, { paragraph })
+          : `只返回 JSON：{"chinese_translation":"..."}
 請使用繁體中文符合香港中文習慣，不要廣東話。
 段落:"""
 ${paragraph}
@@ -284,15 +306,21 @@ ${paragraph}
  * 懶載：針對單個詞（或短語）在其所在句子中的詳解。
  */
 export async function analyzeWordInSentence(word, sentence, opts = {}) {
+    // 用於「文章詳解」區點擊單詞彈出的詳解卡片。
+    // 優先順序：本功能專用覆蓋（settings.ai.models.articleWordTooltip）
+    // → 全域 AI_MODELS.articleWordTooltip → 通用 wordAnalysis（僅回退到此，不再回退 articleAnalysis）
     const { timeoutMs = 20000, signal } = opts;
     const s = loadGlobalSettings();
-    const model = (s?.ai?.models && s.ai.models.wordAnalysis) || AI_MODELS.wordAnalysis || AI_MODELS.articleAnalysis;
+    const model = (s?.ai?.models && (s.ai.models.articleWordTooltip || s.ai.models.wordAnalysis))
+      || AI_MODELS.articleWordTooltip || AI_MODELS.wordAnalysis;
     // local cache lookup
     try {
         const cached = await cache.getWordAnalysisCached(word, sentence, model);
         if (cached) return cached;
     } catch (_) {}
-    const prompt = `請針對下列句子中的目標詞進行語音/詞性/語義與句法作用的簡潔分析，返回嚴格 JSON（中文請使用繁體中文符合香港中文習慣，不要廣東話。）：
+    const prompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.wordTooltip && AI_PROMPTS.article.wordTooltip.template)
+      ? applyTemplate(AI_PROMPTS.article.wordTooltip.template, { word, sentence })
+      : `請針對下列句子中的目標詞進行語音/詞性/語義與句法作用的簡潔分析，返回嚴格 JSON（中文請使用繁體中文符合香港中文習慣，不要廣東話。）：
 詞: "${word}"
 句: "${sentence}"
 只返回：{"word":"...","sentence":"...","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思","role":"語法作用（簡潔）"}}`;
@@ -336,8 +364,12 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
     const keyPointRule = '請輸出 2-4 條最重要的關鍵點；避免與片語/結構重覆描述，偏向語義/語氣/結構/常見誤用等高階提示。中文請使用香港繁體中文用字。';
     const basePrompt = `上下文（僅供理解，不要逐句分析）: \"\"\"\n${context}\n\"\"\"\n目標句: \"\"\"\n${sentence}\n\"\"\"`;
     const prompt = includeStructure
-      ? `對下列英文句子進行分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  \"sentence\":\"...\",\n  \"translation\":\"...\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\n${keyPointRule}`
-      : `僅對下列英文句子進行精簡分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  \"sentence\":\"...\",\n  \"translation\":\"...\",\n  \"key_points\":[\"...\"]\n}\n${keyPointRule}`;
+      ? ((AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.sentence && AI_PROMPTS.article.sentence.withStructure)
+          ? applyTemplate(AI_PROMPTS.article.sentence.withStructure, { basePrompt, keyPointRule })
+          : `對下列英文句子進行分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  \"sentence\":\"...\",\n  \"translation\":\"...\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\n${keyPointRule}`)
+      : ((AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.sentence && AI_PROMPTS.article.sentence.concise)
+          ? applyTemplate(AI_PROMPTS.article.sentence.concise, { basePrompt, keyPointRule })
+          : `僅對下列英文句子進行精簡分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  \"sentence\":\"...\",\n  \"translation\":\"...\",\n  \"key_points\":[\"...\"]\n}\n${keyPointRule}`);
     try {
         const data = await requestAI({
             model,
@@ -354,7 +386,9 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
         try { await cache.setSentenceAnalysisCached(sentence, contextHash, model, parsed, 21*24*60*60*1000); } catch(_){}
         return parsed;
     } catch (e) {
-        const fbPrompt = `僅翻譯下列句子並提煉 2-3 條關鍵點（JSON，中文請使用繁體中文符合香港中文習慣，不要廣東話。）：\n{\"sentence\":\"${sentence}\",\"translation\":\"...\",\"key_points\":[\"...\"]}`;
+        const fbPrompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.sentence && AI_PROMPTS.article.sentence.fallback)
+          ? applyTemplate(AI_PROMPTS.article.sentence.fallback, { sentence })
+          : `僅翻譯下列句子並提煉 2-3 條關鍵點（JSON，中文請使用繁體中文符合香港中文習慣，不要廣東話。）：\n{\"sentence\":\"${sentence}\",\"translation\":\"...\",\"key_points\":[\"...\"]}`;
         const fb = await requestAI({
             model,
             messages: [{ role: 'user', content: fbPrompt }],
@@ -377,14 +411,18 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
 export async function analyzeSelection(selection, sentence, context = '', opts = {}) {
     const { timeoutMs = 15000, signal, noCache = false } = opts;
     const s = loadGlobalSettings();
-    const model = (s?.ai?.models && s.ai.models.wordAnalysis) || AI_MODELS.wordAnalysis || AI_MODELS.articleAnalysis;
+    // 模型優先序：本功能專用 → 通用詞分析（僅回退到此，不再回退 articleAnalysis）
+    const model = (s?.ai?.models && (s.ai.models.articlePhraseAnalysis || s.ai.models.wordAnalysis))
+      || AI_MODELS.articlePhraseAnalysis || AI_MODELS.wordAnalysis;
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {
         const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, model);
         if (cached) return cached;
     }
-    const prompt = `針對句子中的選中片語給出簡潔解析（JSON，中文請使用繁體中文符合香港中文習慣，不要廣東話。）。\n請同時提供該片語的國際音標 IPA：若能提供片語整體讀音則給整體讀音；若無可靠整體讀音，可用逐詞 IPA 串接（用空格分隔）。\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n只返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
+    const prompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.phraseAnalysis && AI_PROMPTS.article.phraseAnalysis.template)
+      ? applyTemplate(AI_PROMPTS.article.phraseAnalysis.template, { selection, sentence, context })
+      : `針對句子中的選中片語給出簡潔解析（JSON，中文請使用繁體中文符合香港中文習慣，不要廣東話。）。\n請同時提供該片語的國際音標 IPA：若能提供片語整體讀音則給整體讀音；若無可靠整體讀音，可用逐詞 IPA 串接（用空格分隔）。\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n只返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
     const data = await requestAI({
         model,
         messages: [{ role: 'user', content: prompt }],
@@ -411,7 +449,7 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
  */
 export async function ocrExtractTextFromImage(imageDataUrl, opts = {}) {
     const {
-        promptHint = '請將圖片中的文字內容完整擷取為純文字，保留原始換行與標點；不要翻譯或改寫。若為截圖，請忽略 UI 按鈕與雜訊，只輸出正文。',
+        promptHint,
         temperature = 0.0,
         maxTokens,
         timeoutMs,
@@ -446,7 +484,12 @@ export async function ocrExtractTextFromImage(imageDataUrl, opts = {}) {
         messages: [{
             role: 'user',
             content: [
-                { type: 'text', text: promptHint },
+                (function(){
+                    const defaultHint = (AI_PROMPTS && AI_PROMPTS.ocr && AI_PROMPTS.ocr.extract && AI_PROMPTS.ocr.extract.promptHint)
+                      || '請將圖片中的文字內容完整擷取為純文字，保留原始換行與標點；不要翻譯或改寫。若為截圖，請忽略 UI 按鈕與雜訊，只輸出正文。';
+                    const txt = (promptHint ?? defaultHint);
+                    return { type: 'text', text: txt };
+                })(),
                 { type: 'image_url', image_url: { url: imageDataUrl, detail: 'high' } }
             ]
         }]
@@ -492,7 +535,8 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
     }
     const finalTimeout = typeof timeoutMs === 'number' ? timeoutMs : (OCR_CONFIG?.timeoutMs || 60000);
 
-    const defaultPrompt = `這是一張默寫單詞的相片。請直接在圖片中擷取學生書寫內容並進行批改：
+    const defaultPrompt = (AI_PROMPTS && AI_PROMPTS.ocr && AI_PROMPTS.ocr.grading && AI_PROMPTS.ocr.grading.defaultPrompt)
+      || `這是一張默寫單詞的相片。請直接在圖片中擷取學生書寫內容並進行批改：
 - 請忽略被手寫劃掉（刪去線）的詞字；
 - 逐行擷取學生書寫的英文單詞或短語，保留順序與原始大小寫；若某行同時有中文，請一併擷取；
 - 以提供的「標準詞表」作為唯一正確答案來源，逐行判斷英文拼寫是否正確；若該行含中文，檢查中文是否書寫正確；
@@ -844,18 +888,27 @@ export async function aiExtractArticleFromHtml(html, opts = {}) {
     const timeoutMs = (typeof toMs === 'number') ? toMs : (ARTICLE_IMPORT?.timeoutMs ?? 30000);
 
     // 指令：從 HTML 擷取正文並輸出 Markdown 純文字
-    const sys = 'You are a precise content extractor that outputs clean Markdown. Do not translate or add commentary.';
-    const rules = [
-        '- 保留正文的結構：# 標題、段落、清單、表格、區塊引用、程式碼區塊（僅當確為程式碼）。',
-        keepImages
-            ? '- 將與正文相關的圖片保留為 Markdown 圖片行（![]()）。避免社交/廣告/追蹤用圖；為保留的圖片填入 alt（沿用原 alt 或鄰近 caption；不要改寫），URL 轉為絕對路徑。'
-            : '- 移除所有圖片，不要以文字替代。',
-        '- 徹底移除網站導航、側欄、頁尾、Cookie 提示、語言切換、社交分享、推薦卡、廣告、留言模組、版權宣告。',
-        '- 不要新增任何強調或裝飾標記：嚴禁使用 * 或 _ 產生粗斜體；不要輸出純裝飾分隔線（-----、_______、****、====、••• 等）或無意義圖示（▶︎◆•·►等）。',
-        '- 僅輸出 Markdown 純文字，不要使用 ``` 程式碼圍欄，也不要額外解釋。',
-        '- 解析相對 URL（連結與圖片）為絕對 URL，基於提供的 Base URL。',
-        '- 對連結移除追蹤參數（utm_*、fbclid、ref 等），清理多餘空白，但不要改動正文語句與標點。'
-    ].join('\n');
+    const sys = (AI_PROMPTS && AI_PROMPTS.import && AI_PROMPTS.import.extractor && AI_PROMPTS.import.extractor.system)
+      || 'You are a precise content extractor that outputs clean Markdown. Do not translate or add commentary.';
+    const rulesArr = (() => {
+        const p = AI_PROMPTS && AI_PROMPTS.import && AI_PROMPTS.import.extractor;
+        if (p) {
+            if (keepImages && Array.isArray(p.rulesKeepImages)) return p.rulesKeepImages;
+            if (!keepImages && Array.isArray(p.rulesNoImages)) return p.rulesNoImages;
+        }
+        return [
+            '- 保留正文的結構：# 標題、段落、清單、表格、區塊引用、程式碼區塊（僅當確為程式碼）。',
+            keepImages
+                ? '- 將與正文相關的圖片保留為 Markdown 圖片行（![]()）。避免社交/廣告/追蹤用圖；為保留的圖片填入 alt（沿用原 alt 或鄰近 caption；不要改寫），URL 轉為絕對路徑。'
+                : '- 移除所有圖片，不要以文字替代。',
+            '- 徹底移除網站導航、側欄、頁尾、Cookie 提示、語言切換、社交分享、推薦卡、廣告、留言模組、版權宣告。',
+            '- 不要新增任何強調或裝飾標記：嚴禁使用 * 或 _ 產生粗斜體；不要輸出純裝飾分隔線（-----、_______、****、====、••• 等）或無意義圖示（▶︎◆•·►等）。',
+            '- 僅輸出 Markdown 純文字，不要使用 ``` 程式碼圍欄，也不要額外解釋。',
+            '- 解析相對 URL（連結與圖片）為絕對 URL，基於提供的 Base URL。',
+            '- 對連結移除追蹤參數（utm_*、fbclid、ref 等），清理多餘空白，但不要改動正文語句與標點。'
+        ];
+    })();
+    const rules = rulesArr.join('\n');
 
     const content = [
         { role: 'system', content: sys },
