@@ -3449,7 +3449,7 @@ button:disabled {
 }
 .qa-pairs-preview > .qa-pair-preview:last-child { margin-bottom: 0; }
 
-.qa-pair-preview {
+.qa-pair-preview { 
     background: white;
     border: 1px solid #dee2e6;
     border-radius: 4px;
@@ -3457,6 +3457,12 @@ button:disabled {
     margin-bottom: 8px;
     position: relative;
 }
+/* 查看題目彈窗：序號在左、內容在右 */
+.qa-view-item { display: grid; grid-template-columns: 32px 1fr; gap: 8px; align-items: center; }
+.qa-view-number { display: flex; justify-content: center; align-items: center; height: 100%; }
+.qa-view-content .qa-question { margin-bottom: 4px; }
+.qa-view-content .qa-question-text { flex: 1; }
+.qa-view-modal .qa-qid-badge { margin-top: 0; }
 /* 拖拽把手圖示 */
 .qa-drag-handle { color: #9ca3af; cursor: grab; user-select: none; font-size: 18px; line-height: 1; }
 .qa-drag-handle:active { cursor: grabbing; }
@@ -3506,6 +3512,9 @@ button:disabled {
 }
 .qa-qid-badge { width: 24px; height: 24px; border-radius: 50%; background: #e0e7ff; color: #1d4ed8; border: 1px solid #c7d2fe; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
 .qa-question, .qa-answer { display: flex; gap: 8px; align-items: flex-start; }
+.qa-question-row { display: flex; gap: 8px; align-items: flex-start; }
+.qa-question-row .qa-question-text { flex: 1; }
+.qa-view-modal .qa-qid-badge { margin-top: 1px; }
 .qa-label { color:#1d4ed8; font-weight: 700; min-width: 20px; text-align: right; }
 .qa-editable { flex:1; min-height: 20px; }
 
