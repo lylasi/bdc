@@ -5,6 +5,7 @@ import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
 import { AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT } from '../../ai-config.js';
+import { getAllQASets, loadQASet } from '../qa/qa-storage.js';
 import * as cache from '../../modules/cache.js';
 import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
 
@@ -222,7 +223,11 @@ function openArticleImportModal() {
     btnOcr.className = 'tab-btn';
     btnOcr.textContent = '圖片 OCR';
     btnOcr.dataset.tab = 'ocr';
-    tabs.appendChild(btnUrl); tabs.appendChild(btnOcr);
+    const btnQa = document.createElement('button');
+    btnQa.className = 'tab-btn';
+    btnQa.textContent = '問答集';
+    btnQa.dataset.tab = 'qa';
+    tabs.appendChild(btnUrl); tabs.appendChild(btnOcr); tabs.appendChild(btnQa);
     const panel = document.createElement('div');
     panel.style.minHeight = '120px';
     body.appendChild(tabs);
@@ -721,20 +726,90 @@ function openArticleImportModal() {
         });
     };
 
+    // 問答集導入分頁
+    const renderQa = async () => {
+        panel.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
+            <div class=\"import-form\">\n                <div class=\"form-row wrap\">\n                    <label class=\"label\" for=\"qa-import-select\">選擇問答集</label>\n                    <div class=\"controls\">\n                        <select id=\"qa-import-select\" class=\"import-input\" style=\"min-width:240px\"></select>\n                        <button id=\"qa-import-apply\" class=\"btn-primary\" type=\"button\">導入為文章</button>\n                    </div>\n                </div>\n                <div id=\"qa-import-preview\" class=\"import-preview\" style=\"display:none;\">\n                    <div class=\"import-preview-head\">預覽</div>\n                    <pre id=\"qa-import-preview-body\" class=\"import-preview-body\"></pre>\n                </div>\n            </div>\n        `;
+        panel.appendChild(wrap);
+
+        const select = wrap.querySelector('#qa-import-select');
+        const applyBtn = wrap.querySelector('#qa-import-apply');
+        const previewBox = wrap.querySelector('#qa-import-preview');
+        const previewBody = wrap.querySelector('#qa-import-preview-body');
+
+        // 載入所有問答集
+        let list = [];
+        try { list = await getAllQASets(); } catch(_) { list = []; }
+        const collator = new Intl.Collator('zh-Hant', { sensitivity: 'base' });
+        list.sort((a, b) => collator.compare(a.name || '', b.name || ''));
+        // 下拉選項
+        (list || []).forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = `${item.name}${item.isPreset ? '（預置）' : ''}`;
+            select.appendChild(opt);
+        });
+
+        async function refreshPreview() {
+            const id = select.value;
+            if (!id) { previewBox.style.display = 'none'; previewBody.textContent = ''; return; }
+            const qaSet = await loadQASet(id);
+            if (!qaSet) { previewBox.style.display = 'none'; previewBody.textContent = ''; return; }
+            const md = qaSetToMarkdownForArticle(qaSet);
+            previewBody.textContent = md;
+            previewBox.style.display = 'block';
+        }
+
+        select.addEventListener('change', refreshPreview);
+        if (select.options.length) { select.selectedIndex = 0; refreshPreview(); }
+
+        applyBtn.addEventListener('click', async () => {
+            const id = select.value;
+            if (!id) { alert('請先選擇問答集'); return; }
+            const qaSet = await loadQASet(id);
+            if (!qaSet) { alert('載入問答集失敗'); return; }
+            const md = qaSetToMarkdownForArticle(qaSet);
+            if (dom.articleInput) dom.articleInput.value = md;
+            try { ui.closeModal(); } catch(_) {}
+            try { dom.articleInput.focus(); } catch(_) {}
+            try { notifyAssistantArticleChanged(); } catch(_) {}
+        });
+    };
+
     const activate = (name) => {
-        if (name === 'ocr') { btnOcr.classList.add('active'); btnUrl.classList.remove('active'); renderOcr(); }
-        else { btnUrl.classList.add('active'); btnOcr.classList.remove('active'); renderUrl(); }
+        btnUrl.classList.remove('active');
+        btnOcr.classList.remove('active');
+        btnQa.classList.remove('active');
+        if (name === 'ocr') { btnOcr.classList.add('active'); renderOcr(); }
+        else if (name === 'qa') { btnQa.classList.add('active'); renderQa(); }
+        else { btnUrl.classList.add('active'); renderUrl(); }
         try { localStorage.setItem('importArticle.activeTab', JSON.stringify(name)); } catch(_) {}
     };
     btnUrl.addEventListener('click', () => activate('url'));
     btnOcr.addEventListener('click', () => activate('ocr'));
+    btnQa.addEventListener('click', () => activate('qa'));
     try {
         const saved = JSON.parse(localStorage.getItem('importArticle.activeTab') || '"url"');
-        activate(saved === 'ocr' ? 'ocr' : 'url');
+        activate(saved === 'ocr' ? 'ocr' : (saved === 'qa' ? 'qa' : 'url'));
     } catch(_) { activate('url'); }
 
     try { dom.modalTitle.textContent = '導入文章'; } catch (_) {}
-    ui.openModal();
+        ui.openModal();
+}
+
+// 將問答集轉為適合文章詳解的 Markdown
+function qaSetToMarkdownForArticle(qaSet) {
+    if (!qaSet || !Array.isArray(qaSet.questions)) return '';
+    const header = `# ${qaSet.name || '問答集'}\n\n` + (qaSet.description ? `${qaSet.description}\n\n` : '');
+    const body = qaSet.questions.map((q, i) => {
+        const num = i + 1;
+        const qq = (q?.question || '').trim();
+        const aa = (q?.answer || '').trim();
+        return `${num}. Q: ${qq}\nA: ${aa}`;
+    }).join('\n\n');
+    return header + body + '\n';
 }
 
 // 小工具：讀檔/縮圖（避免引入整個 OCR 模組以保持彈窗輕量）
