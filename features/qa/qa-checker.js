@@ -195,39 +195,29 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
   const __temperature = (qaCfg.temperature ?? 0.2);
   const __maxTokens = (qaCfg.maxTokens ?? 1500);
 
+  // 詳盡提示（本地後備）：要求回傳錯誤點、改進與學習重點
   const qaPrompts = aiConfig?.AI_PROMPTS?.qa?.checker || {};
-  const sysMsg = qaPrompts.system || '你是一位具有20年教學經驗的資深英語教師，擅長學生答案評估和教學指導。你的評價風格溫和而專業，既要指出問題，也要給予鼓勵，幫助學生建立學習信心。你特別關注學生的語言技能發展，能夠提供具體的改進建議和學習方向。';
+  const sysMsg = qaPrompts.system || '你是英文問答的判題器。務必使用繁體中文回覆，且只輸出嚴格 JSON。';
   const prompt = qaPrompts.template
     ? applyTemplate(qaPrompts.template, { question, correctAnswer, userAnswer })
-    : `你是一位以繁體中文回覆的英語老師與審稿員。你只依據「題目 + 標準答案」來判定學生答案是否正確，並在必要時指出格式問題（大小寫、標點）。不要產生長篇說理，輸出務必簡潔、可機器解析。
-
-請回傳單一 JSON（不要加任何說明或程式碼圍欄），欄位如下：
-{
-  "isCorrect": true/false,                    // 僅判定是否正確
-  "teacherFeedback": "<=50字，指出是否答題、不足之處與核心差異", 
-  "improvementSuggestions": ["<=2條，每條<=30字，提供最小修改方向"],
-  "errors": {                                 // 指出具體可定位的問題
-    "punctuation": ["標點或格式問題，如：句首需大寫/句末缺標點/Yes 後需逗號"],
-    "grammar": ["文法錯誤（可留空）"],
-    "spelling": ["拼寫錯誤（可留空）"],
-    "vocabulary": ["選詞不當（可留空）"],
-    "structure": ["語序/邏輯問題（可留空）"]
-  },
-  "aiFeedbackOk": true/false,                 // 你對自己本次評語品質的自檢
-  "aiFeedbackIssues": ["若你的評語可能有誤或不完滿，簡短列出原因（如：未檢查大小寫、錯把附和句視為正確等）"]
-}
-
-資料（請務必結合三者比對）：
-題目: ${question}
-標準答案: ${correctAnswer}
+    : `題目: ${question}
+參考答案: ${correctAnswer}
 學生答案: ${userAnswer}
 
-評估規則：
-- 嚴禁把附和或評述句視為正確答案；若出現，isCorrect應為false，並在 teacherFeedback 指明「未直接回答題目」。
-- 嚴格檢查大小寫與標點：句首需大寫、句末需 . ? !；Yes/No 後建議加逗號；若有問題請放入 errors.punctuation。
-- 當學生語義正確但表述不同：isCorrect=true，teacherFeedback 簡述與標準答案差異（<=20字）。
-- 若你對自己的評語不完全確定或可能遺漏某類錯誤，aiFeedbackOk=false 並在 aiFeedbackIssues 中列出原因。
-- 僅輸出 JSON。`;
+請只輸出嚴格 JSON：
+{
+  "isCorrect": true/false,
+  "teacherFeedback": "精確給出所有錯誤的地方，包括所有出現的錯誤。如果回答在英文中是正確，也要對比上下文指出不同的地方。",
+  "improvementSuggestions": ["參考上下文，給出改進建議。"],
+  "studyFocus": ["結合錯誤，給學生提出需要加強的知識點（例：時態、主謂一致、代詞指代）"],
+  "errors": {
+    "grammar": ["文法錯誤（若無可留空）"],
+    "spelling": ["拼寫錯誤（若無可留空）"],
+    "vocabulary": ["用字/搭配不當（若無可留空）"],
+    "structure": ["語序/句構問題（若無可留空）"],
+    "punctuation": ["大小寫/標點問題（若無可留空）"]
+  }
+}`;
 
   const response = await fetch(__apiUrl, {
     method: 'POST',
@@ -284,8 +274,9 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
     // 保持向後兼容
     feedback: aiResult.teacherFeedback || aiResult.feedback || '',
     aiSuggestions: aiResult.improvementSuggestions || aiResult.suggestions || [],
-    aiFeedbackIssues: aiResult.aiFeedbackIssues || aiResult.feedbackIssues || [],
-    aiFeedbackOk: typeof aiResult.aiFeedbackOk === 'boolean' ? aiResult.aiFeedbackOk : (Array.isArray(aiResult.aiFeedbackIssues) ? aiResult.aiFeedbackIssues.length === 0 : true)
+    // 若簡化提示詞未返回自檢欄位，則保持為 undefined，避免 UI 顯示「無明顯問題」
+    aiFeedbackIssues: aiResult.aiFeedbackIssues || aiResult.feedbackIssues || undefined,
+    aiFeedbackOk: (typeof aiResult.aiFeedbackOk === 'boolean' ? aiResult.aiFeedbackOk : undefined)
   };
 }
 
