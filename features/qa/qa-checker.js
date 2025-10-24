@@ -400,7 +400,8 @@ function calculateEditDistance(str1, str2) {
 // 生成校對總結
 function generateCheckingSummary(checkedAnswers) {
   const totalAnswers = checkedAnswers.length;
-  const correctAnswers = checkedAnswers.filter(a => a.isCorrect).length;
+  // 嚴格判斷：僅計入布林 true，避免 'true' 字串等被當作真
+  const correctAnswers = checkedAnswers.filter(a => a.isCorrect === true).length;
   const averageScore = checkedAnswers.reduce((sum, a) => sum + a.score, 0) / totalAnswers;
 
   // 錯誤類型統計
