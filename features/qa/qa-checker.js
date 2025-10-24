@@ -135,6 +135,16 @@ async function checkSingleAnswer(answer) {
     return checkResultsCache.get(cacheKey);
   }
 
+  // 先走本地快速前置檢查，攔截明顯錯誤/空白/敷衍回覆，避免模型誤判
+  try {
+    const pre = ruleBasedPrecheck(question, correctAnswer, userAnswer);
+    if (pre && pre.intercept) {
+      const preResult = { ...answer, ...pre.payload, checkMethod: 'precheck' };
+      checkResultsCache.set(cacheKey, preResult);
+      return preResult;
+    }
+  } catch (_) {}
+
   // 本地不做過多限制與評分，統一交由 AI 判定
 
   // AI語義分析
@@ -250,9 +260,18 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
   // 解析JSON回應
   const aiResult = JSON.parse(content);
 
+  // 兼容模型偶爾把布林輸出為字串的情況
+  const toBool = (v) => {
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'string') return v.trim().toLowerCase() === 'true';
+    if (typeof v === 'number') return v > 0;
+    return false;
+  };
+  const isCorrect = toBool(aiResult.isCorrect);
+
   return {
-    isCorrect: aiResult.isCorrect,
-    score: (typeof aiResult.overallScore === 'number' ? Math.round(aiResult.overallScore) : (typeof aiResult.score === 'number' ? Math.round(aiResult.score) : 0)),
+    isCorrect,
+    score: (typeof aiResult.overallScore === 'number' ? Math.round(aiResult.overallScore) : (typeof aiResult.score === 'number' ? Math.round(aiResult.score) : (isCorrect ? 100 : 0))),
     accuracy: Math.round(aiResult.accuracy || 0),
     grammar: Math.round(aiResult.grammar || 0),
     vocabulary: Math.round(aiResult.vocabulary || 0),
@@ -417,6 +436,17 @@ function generateCheckingSummary(checkedAnswers) {
     averageScore: Math.round(averageScore),
     errorTypes,
     scoreDistribution,
+    // 新增：列出所有錯題（題號與原因）供頁面整體報告顯示
+    incorrectDetails: checkedAnswers
+      .map((a, idx) => ({
+        isCorrect: !!a.isCorrect,
+        displayIndex: typeof a.displayIndex === 'number' ? a.displayIndex : idx,
+        qid: a.qid,
+        reason: a.teacherFeedback || a.feedback || '與參考答案不一致',
+        userAnswer: a.userAnswer || '',
+        correctAnswer: a.correctAnswer || ''
+      }))
+      .filter(it => !it.isCorrect),
     recommendedActions: generateRecommendations(checkedAnswers)
   };
 }

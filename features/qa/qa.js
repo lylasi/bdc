@@ -1799,6 +1799,20 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
           </div>
         </div>
 
+        ${Array.isArray(summary.incorrectDetails) && summary.incorrectDetails.length > 0 ? `
+          <div class="error-overview">
+            <h5>❌ 錯題總覽（${summary.incorrectDetails.length}）</h5>
+            <ul>
+              ${summary.incorrectDetails.map(it => `
+                <li>Q${(it.displayIndex ?? 0) + 1}：${escapeHtml(it.reason)}
+                  ${it.userAnswer ? `<div class="mini-line"><em>您的答案</em>：${escapeHtml(it.userAnswer)}</div>` : ''}
+                  ${it.correctAnswer ? `<div class="mini-line"><em>參考答案</em>：${escapeHtml(it.correctAnswer)}</div>` : ''}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
         ${summary.recommendedActions && summary.recommendedActions.length > 0 ? `
           <div class="recommendations">
             <h5>📝 學習建議</h5>
