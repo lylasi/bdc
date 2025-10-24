@@ -616,21 +616,23 @@ function computeKeywordRecall(userAnswer = '', keywords = []) {
 
 function ruleBasedPrecheck(question = '', correctAnswer = '', userAnswer = '') {
   const ua = (userAnswer || '').trim();
-  if (!ua) {
+  // 1) 空白或超短/無字母（例如純數字如 11、符號、......）一律攔截
+  const hasAlpha = /[A-Za-z]/.test(ua);
+  if (!ua || ua.length < 3 || !hasAlpha) {
     return {
       intercept: true,
       payload: {
         isCorrect: false,
         score: 0,
-        teacherFeedback: '未作答或內容為空',
-        improvementSuggestions: ['請直接作答問題', '可參考標準答案要點進行回答'],
+        teacherFeedback: '未作答或內容無效（需英文作答）',
+        improvementSuggestions: ['請用英文直接回答問題', '參考參考答案的要點作答'],
         errorAnalysis: { punctuation: [], grammar: [], vocabulary: [], structure: ['未直接回應題目'] }
       }
     };
   }
 
   // 攔截明顯的元回覆/敷衍回覆
-  const metaPattern = /^(yes|no|yeah|yep|ok|okay|agree|i think|maybe|you are right|that'?s right|correct|right\.?|sure|fine)\b/i;
+  const metaPattern = /^(yes|no|yeah|yep|ok|okay|agree|i think|maybe|you are right|that'?s right|correct|right\.?|sure|fine|i don't know|idk|no idea|不知道)\b/i;
   const onlyAcknowledgement = metaPattern.test(ua);
 
   const keywords = extractKeywordList(correctAnswer);
@@ -639,6 +641,7 @@ function ruleBasedPrecheck(question = '', correctAnswer = '', userAnswer = '') {
   const punc = analyzePunctuationDifferences(ua, correctAnswer);
   const missing = keywords.filter(k => !new Set(tokenizeWords(ua)).has(k)).slice(0, 5);
 
+  // 3) 關鍵詞覆蓋率過低 → 視為未回應題意
   if (onlyAcknowledgement || recall < 0.3) {
     const suggestions = [];
     if (missing.length) suggestions.push('補充關鍵資訊：' + missing.join(', '));
