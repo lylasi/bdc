@@ -852,12 +852,24 @@ function showTrainingOptions() {
               description: '隨機打亂問題順序'
             }
           ]
+        },
+        {
+          key: 'layout',
+          type: 'radio',
+          label: '練習呈現',
+          description: '是否分題練習',
+          // 預設：不分題（一次列出全部）
+          default: 'list',
+          choices: [
+            { value: 'list', label: '列表模式（默認）', description: '一次列出全部題目，逐題輸入；每題可單獨 AI 校驗' },
+            { value: 'single', label: '分題模式', description: '一題一題作答，逐題切換' }
+          ]
         }
       ],
       onConfirm: (result) => {
         resolve({
           mode: result.mode,
-          submitMode: 'single'
+          submitMode: result.layout === 'list' ? 'batch' : 'single'
         });
       },
       onCancel: () => {
@@ -951,10 +963,18 @@ async function handleQASetExport(qaId) {
 function showTrainingView() {
   setActiveView('training');
   qaModuleState.currentView = 'training';
+  // 若是列表模式，初始化一次渲染
+  try { updateTrainingInterface(); } catch (_) {}
 }
 
 // 更新訓練界面
 function updateTrainingInterface() {
+  const session = getSessionState();
+  if (session.submitMode === 'batch') {
+    renderBatchTrainingInterface();
+    return;
+  }
+
   const question = getCurrentQuestion();
   const answer = getCurrentAnswer();
   const progress = getTrainingProgress();
@@ -963,6 +983,12 @@ function updateTrainingInterface() {
     console.error('無法獲取訓練數據');
     return;
   }
+
+  // 單題模式：顯示單題區域，隱藏批次區域
+  const batchList = document.getElementById('qa-batch-list');
+  if (batchList) batchList.style.display = 'none';
+  const singleArea = dom.qaModule?.querySelector('.qa-question-area');
+  if (singleArea) singleArea.style.display = '';
 
   // 更新問題顯示
   const questionElement = dom.qaModule?.querySelector('#qa-current-question');
@@ -991,6 +1017,143 @@ function updateTrainingInterface() {
   updateTrainingButtons();
 
   renderInstantFeedbackForQuestion(question);
+}
+
+// 列表模式渲染：一次列出全部題目，每題可獨立 AI 校驗；底部提供一次性「提交 AI 校對」
+async function renderBatchTrainingInterface() {
+  const trainingArea = document.getElementById('qa-training-area');
+  if (!trainingArea) return;
+
+  // 隱藏單題區域
+  const singleArea = trainingArea.querySelector('.qa-question-area');
+  if (singleArea) singleArea.style.display = 'none';
+
+  // 準備容器
+  let list = document.getElementById('qa-batch-list');
+  if (!list) {
+    list = document.createElement('div');
+    list.id = 'qa-batch-list';
+    list.className = 'qa-batch-list';
+    trainingArea.insertBefore(list, trainingArea.querySelector('.qa-training-actions'));
+  }
+  list.style.display = '';
+
+  // 取題目與現有答案
+  const progress = getTrainingProgress();
+  if (!progress) return;
+  const total = progress.totalQuestions;
+
+  // 構建清單
+  const items = [];
+  const trainer = await import('./qa-trainer.js');
+  const prevIndex = progress.currentIndex;
+  for (let i = 0; i < total; i++) {
+    try { if (trainer.goToQuestion) trainer.goToQuestion(i); } catch (_) {}
+    const q = getCurrentQuestion();
+    const a = getCurrentAnswer();
+    items.push({ index: i, qid: q?.qid, question: q?.question || '', correctAnswer: q?.answer || '', userAnswer: a || '' });
+  }
+  // 還原當前索引
+  try { if (trainer.goToQuestion) trainer.goToQuestion(prevIndex); } catch (_) {}
+
+  // 渲染
+  list.innerHTML = items.map(it => `
+    <div class="qa-batch-item" data-question-index="${it.index}">
+      <div class="qa-batch-q"><span class="qa-qid-badge">${it.index + 1}</span> ${escapeHtml(it.question)}</div>
+      <div class="qa-batch-a">
+        <textarea class="qa-batch-input" rows="2" placeholder="輸入答案...">${escapeHtml(it.userAnswer || '')}</textarea>
+        <button type="button" class="btn small primary btn-ai-check">AI校驗</button>
+      </div>
+      <div class="qa-batch-feedback"></div>
+    </div>
+  `).join('');
+
+  // 底部一次性提交按鈕
+  let checkAll = document.getElementById('qa-batch-check-all');
+  if (!checkAll) {
+    checkAll = document.createElement('button');
+    checkAll.id = 'qa-batch-check-all';
+    checkAll.className = 'btn primary';
+    checkAll.textContent = '提交AI 校對';
+    const actions = trainingArea.querySelector('.qa-training-actions');
+    if (actions) actions.insertBefore(checkAll, actions.firstChild);
+  }
+  checkAll.style.display = '';
+
+  // 事件：單題 AI 校驗
+  list.onclick = async (e) => {
+    const btn = e.target.closest('.btn-ai-check');
+    if (!btn) return;
+    const item = btn.closest('.qa-batch-item');
+    const idx = parseInt(item?.dataset.questionIndex || '0', 10) || 0;
+    const ta = item.querySelector('.qa-batch-input');
+    const val = (ta && ta.value) ? ta.value.trim() : '';
+    // 將答案寫回 session
+    const mod = await import('./qa-trainer.js');
+    if (mod.submitAnswer) mod.submitAnswer(val, idx);
+    // 準備 payload 並校驗
+    const q = getCurrentQuestion();
+    const progress2 = getTrainingProgress();
+    try { const m = await import('./qa-trainer.js'); if (m.goToQuestion) m.goToQuestion(idx); } catch (_) {}
+    const p = getCurrentQuestion();
+    const payload = {
+      qid: p?.qid || idx + 1,
+      question: p?.question || '',
+      correctAnswer: p?.answer || '',
+      userAnswer: val,
+      isSubmitted: true
+    };
+    const r = await (await import('./qa-checker.js')).recheckAnswer(payload);
+    const holder = item.querySelector('.qa-batch-feedback');
+    if (holder) {
+      holder.innerHTML = generateSingleCheckResultHTML(r);
+    }
+    // 返回原索引
+    try { const m = await import('./qa-trainer.js'); if (m.goToQuestion) m.goToQuestion(progress2.currentIndex); } catch(_) {}
+  };
+
+  // 事件：一次性全部校對
+  checkAll.onclick = async () => {
+    // 先把當前列表答案寫回 session
+    const allItems = Array.from(list.querySelectorAll('.qa-batch-item'));
+    for (const it of allItems) {
+      const idx = parseInt(it.dataset.questionIndex || '0', 10) || 0;
+      const val = (it.querySelector('.qa-batch-input')?.value || '').trim();
+      const m = await import('./qa-trainer.js'); if (m.submitAnswer) m.submitAnswer(val, idx);
+    }
+
+    // 構建臨時 trainingResult（全題皆標記 isSubmitted=true）
+    const progress3 = getTrainingProgress();
+    const total3 = progress3?.totalQuestions || allItems.length;
+    const answers = [];
+    for (let i = 0; i < total3; i++) {
+      try { const m = await import('./qa-trainer.js'); if (m.goToQuestion) m.goToQuestion(i); } catch (_) {}
+      const q = getCurrentQuestion();
+      const a = getCurrentAnswer();
+      answers.push({
+        qid: q?.qid || i + 1,
+        question: q?.question || '',
+        correctAnswer: q?.answer || '',
+        userAnswer: a || '',
+        isSubmitted: true
+      });
+    }
+    const trainingResult = {
+      qaSetId: getSessionState().qaSetId,
+      qaSetName: getSessionState().qaSetName || '問答訓練',
+      totalQuestions: answers.length,
+      answeredQuestions: answers.length,
+      answers,
+      mode: getSessionState().mode,
+      submitMode: 'batch',
+      startTime: new Date(),
+      endTime: new Date(),
+      duration: 0
+    };
+    // 顯示報告頁並自動進行 AI 校對
+    showReportView(trainingResult);
+    await handleAIChecking();
+  };
 }
 
 // 更新訓練按鈕狀態
@@ -1264,20 +1427,9 @@ function showReportView(trainingResult) {
 
 // 更新報告界面
 function updateReportInterface(trainingResult) {
-  // 計算準確率（暫時基於回答數量，後續會加入AI校對）
-  const accuracy = Math.round((trainingResult.answeredQuestions / trainingResult.totalQuestions) * 100);
-
-  // 更新準確率顯示
-  const accuracyElement = dom.qaModule?.querySelector('#qa-accuracy');
-  if (accuracyElement) {
-    accuracyElement.textContent = `${accuracy}%`;
-  }
-
-  // 更新得分顯示
-  const scoreElement = dom.qaModule?.querySelector('#qa-score');
-  if (scoreElement) {
-    scoreElement.textContent = `${trainingResult.answeredQuestions}/${trainingResult.totalQuestions}`;
-  }
+  // 報告頁不再顯示「準確率/得分」
+  const reportSummary = dom.qaModule?.querySelector('.report-summary');
+  if (reportSummary) reportSummary.style.display = 'none';
 
   // 更新詳細結果
   const detailedResults = dom.qaModule?.querySelector('#qa-detailed-results');
@@ -1716,10 +1868,7 @@ async function handleAIChecking() {
         statusSpan.textContent = `AI校對完成！處理了 ${checkingResult.checkedAnswers.length} 個答案`;
       }
       if (detailsDiv) {
-        detailsDiv.innerHTML = `
-          <div>✅ 校對完成</div>
-          <div>📊 準確率: ${checkingResult.summary?.accuracy || 0}%</div>
-        `;
+        detailsDiv.innerHTML = `<div>✅ 校對完成</div>`;
       }
     } else {
       throw new Error('AI校對返回無效結果');
@@ -1759,18 +1908,7 @@ function updateReportWithAIResults(checkingResult) {
   // 存儲AI校對結果供PDF導出使用
   currentAICheckingResult = checkingResult;
 
-  // 更新準確率和得分
-  if (summary) {
-    const accuracyElement = dom.qaModule?.querySelector('#qa-accuracy');
-    if (accuracyElement) {
-      accuracyElement.textContent = `${summary.accuracy}%`;
-    }
-
-    const scoreElement = dom.qaModule?.querySelector('#qa-score');
-    if (scoreElement) {
-      scoreElement.textContent = `${summary.correctAnswers}/${summary.totalAnswers}`;
-    }
-  }
+  // 報告頁不再顯示「準確率/得分」；僅渲染詳細與錯題總覽
 
   // 更新詳細結果顯示
   const detailedResults = dom.qaModule?.querySelector('#qa-detailed-results');
@@ -1788,17 +1926,6 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
     html += `
       <div class="ai-summary">
         <h4>🤖 AI校對總結</h4>
-        <div class="summary-stats">
-          <div class="stat-item">
-            <span class="stat-label">準確率</span>
-            <span class="stat-value">${summary.accuracy}%</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">正確答案</span>
-            <span class="stat-value">${summary.correctAnswers}/${summary.totalAnswers}</span>
-          </div>
-        </div>
-
         ${Array.isArray(summary.incorrectDetails) && summary.incorrectDetails.length > 0 ? `
           <div class="error-overview">
             <h5>❌ 錯題總覽（${summary.incorrectDetails.length}）</h5>
@@ -1851,8 +1978,8 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
       issues = issues.concat(localPuncIssues.map(m => `【標點/格式】${m}`));
     }
     const hasIssues = issues.length > 0;
-    const isExact = Boolean(answer.isCorrect) && !hasIssues && (!difference || !difference.hasDifferences);
-    const resultClass = isExact ? 'ai-checked-result' : (answer.isCorrect ? 'ai-checked-result partial' : 'ai-checked-result incorrect');
+    const isExact = (answer.isCorrect === true) && !hasIssues && (!difference || !difference.hasDifferences);
+    const resultClass = isExact ? 'ai-checked-result' : (answer.isCorrect === true ? 'ai-checked-result partial' : 'ai-checked-result incorrect');
 
     const differenceSection = difference ? `
           <div class="difference-analysis">
@@ -1880,7 +2007,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
       <div class="result-item ${resultClass}">
         <div class="result-header">
           <span class="question-number">Q${questionNumber}</span>
-          <span class="result-status">${answer.isCorrect ? '正確' : '需改進'}</span>
+          <span class="result-status">${answer.isCorrect === true ? '正確' : '需改進'}</span>
         </div>
 
         <div class="result-question">
