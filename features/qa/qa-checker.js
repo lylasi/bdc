@@ -28,8 +28,14 @@ function applyTemplate(tpl, vars = {}) {
   return s;
 }
 
-// 校對結果快取
+// 校對結果快取（可關閉）
 const checkResultsCache = new Map();
+
+function useCacheEnabled() {
+  try {
+    return !!(aiConfig && aiConfig.QA_CHECK && aiConfig.QA_CHECK.cache === true);
+  } catch (_) { return false; }
+}
 
 // 开始AI校对
 export async function startAIChecking(trainingResult, options = {}) {
@@ -135,9 +141,9 @@ async function processSequentialChecking(answers, __timeout) {
 async function checkSingleAnswer(answer) {
   const { qid, question, correctAnswer, userAnswer } = answer;
 
-  // 檢查快取
+  // 依設定決定是否使用快取（默認關閉）
   const cacheKey = `${qid}_${userAnswer}`;
-  if (checkResultsCache.has(cacheKey)) {
+  if (useCacheEnabled() && checkResultsCache.has(cacheKey)) {
     console.log(`使用快取結果: Q${qid}`);
     return checkResultsCache.get(cacheKey);
   }
@@ -165,7 +171,9 @@ async function checkSingleAnswer(answer) {
 
     // 本地不再主動合併格式/標點檢查，完全交給 AI 回傳
 
-    checkResultsCache.set(cacheKey, result);
+    if (useCacheEnabled()) {
+      checkResultsCache.set(cacheKey, result);
+    }
     return result;
 
   } catch (error) {
@@ -214,7 +222,7 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
 
   // 詳盡提示（本地後備）：要求回傳錯誤點、改進與學習重點
   const qaPrompts = aiConfig?.AI_PROMPTS?.qa?.checker || {};
-  const sysMsg = qaPrompts.system || '你是英文問答的判題器。務必使用繁體中文回覆，且只輸出嚴格 JSON。';
+  const sysMsg = qaPrompts.system || '你是英文問答的判題器，完全符合才算正確。務必使用繁體中文回覆，且只輸出嚴格 JSON。';
   const prompt = qaPrompts.template
     ? applyTemplate(qaPrompts.template, { question, correctAnswer, userAnswer })
     : `題目: ${question}
@@ -523,7 +531,7 @@ export async function recheckAnswer(answer, forceAI = false) {
   await loadAIConfig();
   const cacheKey = `${answer.qid}_${answer.userAnswer}`;
 
-  if (forceAI) {
+  if (forceAI || !useCacheEnabled()) {
     checkResultsCache.delete(cacheKey);
   }
 
