@@ -47,7 +47,9 @@ export async function startAIChecking(trainingResult, options = {}) {
   const __timeout = (options.timeout ?? (aiConfig?.QA_CHECK?.timeoutMs ?? 30000));
   const __includeAnalysis = (options.includeAnalysis ?? (aiConfig?.QA_CHECK?.includeAnalysis ?? true));
 
+  const totalQuestions = Array.isArray(trainingResult.answers) ? trainingResult.answers.length : 0;
   const answers = trainingResult.answers.filter(a => a.isSubmitted);
+  const unansweredCount = Math.max(0, totalQuestions - answers.length);
 
   if (answers.length === 0) {
     displayMessage('沒有已提交的答案需要校對', 'info');
@@ -67,6 +69,11 @@ export async function startAIChecking(trainingResult, options = {}) {
 
     // 生成校對總結
     const summary = (__includeAnalysis) ? generateCheckingSummary(checkedAnswers) : null;
+    if (summary) {
+      summary.totalQuestions = totalQuestions;
+      summary.unanswered = unansweredCount;
+      summary.incorrectCount = Array.isArray(summary.incorrectDetails) ? summary.incorrectDetails.length : (summary.totalAnswers - summary.correctAnswers);
+    }
 
     console.log(`AI校對完成，處理了 ${checkedAnswers.length} 個答案`);
 

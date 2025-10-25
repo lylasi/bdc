@@ -4473,3 +4473,12 @@ mark.punc-err-space {
 .qa-pair-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .qa-header-left { display: flex; align-items: center; gap: 8px; }
 .qa-pair-toolbar { display: inline-flex; gap: 6px; }
+/* ===== QA 列表模式緊湊樣式 ===== */
+.qa-batch-list { display: grid; gap: 10px; margin: 8px 0 12px; }
+.qa-batch-item { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; background:#fff; }
+.qa-batch-q { font-weight: 600; color:#111827; margin-bottom:6px; }
+.qa-batch-a { display:flex; gap:8px; align-items:flex-start; }
+.qa-batch-input.compact { flex:1; font-size:14px; padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; }
+.qa-batch-feedback { margin-top:6px; }
+.ai-check-result.compact { border:1px dashed #e5e7eb; padding:8px; border-radius:6px; background:#f9fafb; }
+.ai-summary .stat-item { color:#374151; }

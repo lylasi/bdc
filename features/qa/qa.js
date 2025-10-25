@@ -1061,7 +1061,7 @@ async function renderBatchTrainingInterface() {
     <div class="qa-batch-item" data-question-index="${it.index}">
       <div class="qa-batch-q"><span class="qa-qid-badge">${it.index + 1}</span> ${escapeHtml(it.question)}</div>
       <div class="qa-batch-a">
-        <textarea class="qa-batch-input" rows="2" placeholder="輸入答案...">${escapeHtml(it.userAnswer || '')}</textarea>
+        <textarea class="qa-batch-input compact" rows="1" style="min-height:34px;line-height:1.4;margin:4px 0;" placeholder="輸入答案...">${escapeHtml(it.userAnswer || '')}</textarea>
         <button type="button" class="btn small primary btn-ai-check">AI校驗</button>
       </div>
       <div class="qa-batch-feedback"></div>
@@ -1402,7 +1402,9 @@ function handleFinishTraining() {
     if (trainingResult) {
       // 切換到報告視圖
       showReportView(trainingResult);
-      displayMessage('訓練完成！', 'success');
+      // 自動執行 AI 校對，直接產出報告內容
+      setTimeout(() => { handleAIChecking().catch(()=>{}); }, 50);
+      displayMessage('訓練完成！正在生成AI校對報告...', 'success');
     }
   } catch (error) {
     console.error('完成訓練時出錯:', error);
@@ -1926,6 +1928,11 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
     html += `
       <div class="ai-summary">
         <h4>🤖 AI校對總結</h4>
+        <div class="summary-stats" style="display:flex;gap:16px;margin:6px 0 8px 0;">
+          <div class="stat-item"><span class="stat-label">錯題</span> <span class="stat-value">${summary.incorrectCount ?? (Array.isArray(summary.incorrectDetails) ? summary.incorrectDetails.length : 0)}</span></div>
+          <div class="stat-item"><span class="stat-label">未作答</span> <span class="stat-value">${summary.unanswered ?? 0}</span></div>
+          ${summary.totalQuestions ? `<div class=\"stat-item\"><span class=\"stat-label\">總題數</span> <span class=\"stat-value\">${summary.totalQuestions}</span></div>` : ''}
+        </div>
         ${Array.isArray(summary.incorrectDetails) && summary.incorrectDetails.length > 0 ? `
           <div class="error-overview">
             <h5>❌ 錯題總覽（${summary.incorrectDetails.length}）</h5>
@@ -2263,96 +2270,33 @@ function updateSingleQuestionResult(questionIndex, checkResult) {
 
 // 生成單題校驗結果HTML
 function generateSingleCheckResultHTML(result) {
-  const difference = !result.isCorrect ? createDifferenceAnalysis(result.userAnswer, result.correctAnswer) : null;
+  // 精簡版單題卡：狀態徽章 + 兩行對照 + 可選簡述與差異標籤
+  const difference = result.isCorrect === true ? null : createDifferenceAnalysis(result.userAnswer, result.correctAnswer);
 
-  const userAnswerContent = result.userAnswer
-    ? (difference ? difference.userHighlighted : escapeHtml(result.userAnswer))
-    : '<span class="no-answer">未作答</span>';
-  const correctAnswerContent = result.correctAnswer
-    ? (difference ? difference.correctHighlighted : escapeHtml(result.correctAnswer))
-    : '<span class="no-answer">尚無標準答案</span>';
+  const badge = result.isCorrect === true
+    ? '<span class="badge" style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:9999px;font-size:12px;">正確</span>'
+    : '<span class="badge" style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:9999px;font-size:12px;">錯誤</span>';
 
-  const differenceSection = difference ? `
-        <div class="difference-analysis">
-          <h5>差異提示</h5>
-          <div class="difference-highlight">
-            <div>
-              <strong>您的答案：</strong>
-              <p class="difference-text">${userAnswerContent}</p>
-            </div>
-            <div>
-              <strong>標準答案：</strong>
-              <p class="difference-text">${correctAnswerContent}</p>
-            </div>
-          </div>
-          ${(difference.missingTokens.length || difference.extraTokens.length) ? `
-            <div class="difference-tags">
-              ${difference.missingTokens.length ? `<span class="difference-tag missing">缺少：${difference.missingTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}
-              ${difference.extraTokens.length ? `<span class="difference-tag extra">多出：${difference.extraTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}
-            </div>
-          ` : ''}
-        </div>
-      ` : '';
+  const ua = result.userAnswer ? escapeHtml(result.userAnswer) : '<span class="no-answer">未作答</span>';
+  const ca = result.correctAnswer ? escapeHtml(result.correctAnswer) : '<span class="no-answer">尚無標準答案</span>';
+
+  const tags = difference && (difference.missingTokens.length || difference.extraTokens.length)
+    ? `<div class="difference-tags" style="margin-top:6px;">${difference.missingTokens.length ? `<span class="difference-tag missing">缺少：${difference.missingTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}${difference.extraTokens.length ? `<span class="difference-tag extra" style="margin-left:8px;">多出：${difference.extraTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}</div>`
+    : '';
+
+  const feedback = result.teacherFeedback ? `<div class="mini-line" style="margin-top:6px;color:#374151;">${escapeHtml(result.teacherFeedback)}</div>` : '';
 
   return `
-    <div class="ai-check-result">
-      <div class="result-header">
-        <span class="result-status">${result.isCorrect ? '正確' : '需改進'}</span>
+    <div class="ai-check-result compact">
+      <div class="result-header" style="display:flex;align-items:center;gap:8px;">
+        ${badge}
       </div>
-
-      <div class="result-answers">
-        <div class="user-answer">
-          <strong>您的答案:</strong> ${userAnswerContent}
-        </div>
-        <div class="correct-answer">
-          <strong>標準答案:</strong> ${correctAnswerContent}
-        </div>
+      <div class="result-answers" style="margin-top:6px;">
+        <div class="user-answer"><strong>你的答案：</strong> ${ua}</div>
+        <div class="correct-answer" style="margin-top:2px;"><strong>參考：</strong> ${ca}</div>
       </div>
-
-      ${differenceSection}
-
-      ${result.teacherFeedback ? `
-        <div class="teacher-feedback">
-          <h5>教師回饋</h5>
-          <p>${escapeHtml(result.teacherFeedback)}</p>
-        </div>
-      ` : ''}
-
-      ${result.strengths && result.strengths.length > 0 ? `
-        <div class="strengths">
-          <h5>亮點表現</h5>
-          <ul>
-            ${result.strengths.map(strength => `<li>${escapeHtml(strength)}</li>`).join('')}
-          </ul>
-        </div>
-      ` : ''}
-
-      ${result.improvementSuggestions && result.improvementSuggestions.length > 0 ? `
-        <div class="improvements">
-          <h5>改進建議</h5>
-          <ul>
-            ${result.improvementSuggestions.map(suggestion => `<li>${escapeHtml(suggestion)}</li>`).join('')}
-          </ul>
-        </div>
-      ` : ''}
-
-      ${(() => { const issues = collectIssueList(result.errorAnalysis); return issues.length ? `
-        <div class="issue-list">
-          <h5>需要修正</h5>
-          <ul>
-            ${issues.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
-          </ul>
-        </div>
-      ` : '' })()}
-
-      ${Array.isArray(result.aiFeedbackIssues) && result.aiFeedbackIssues.length > 0 ? `
-        <div class="ai-feedback-review">
-          <h5>AI 評語自檢</h5>
-          <ul>
-            ${result.aiFeedbackIssues.map(issue => `<li>${escapeHtml(issue)}</li>`).join('')}
-          </ul>
-        </div>
-      ` : (result.aiFeedbackOk === true ? `<div class="ai-feedback-review ok">AI 評語檢查：無明顯問題</div>` : '')}
+      ${feedback}
+      ${tags}
     </div>
   `;
 }

@@ -536,20 +536,25 @@ function addTrainingSummary(doc, trainingResult, aiCheckingResult, yPosition) {
   doc.setTextColor(PDF_CONFIG.colors.text);
 
   if (aiCheckingResult && aiCheckingResult.summary) {
-    const summary = aiCheckingResult.summary;
-    doc.text(`AI評估準確率: ${summary.accuracy}%`, PDF_CONFIG.margin.left, yPosition);
-    yPosition += 8;
-    doc.text(`平均得分: ${summary.averageScore}/100`, PDF_CONFIG.margin.left, yPosition);
-    yPosition += 8;
-
-    if (summary.correctCount !== undefined) {
-      doc.text(`完全正確: ${summary.correctCount}題`, PDF_CONFIG.margin.left, yPosition);
-      yPosition += 8;
-    }
+    const s = aiCheckingResult.summary;
+    const incorrect = s.incorrectCount != null ? s.incorrectCount : (Array.isArray(s.incorrectDetails) ? s.incorrectDetails.length : 0);
+    const unanswered = s.unanswered != null ? s.unanswered : Math.max(0, (s.totalQuestions || trainingResult.totalQuestions || 0) - (s.totalAnswers || trainingResult.answeredQuestions || 0));
+    const total = s.totalQuestions || trainingResult.totalQuestions;
+    const answered = total - unanswered;
+    doc.text(`題目總數: ${total}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(`已作答: ${answered}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.setTextColor(incorrect > 0 ? PDF_CONFIG.colors.error : PDF_CONFIG.colors.success);
+    doc.text(`錯題數: ${incorrect}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.setTextColor(unanswered > 0 ? PDF_CONFIG.colors.warning : PDF_CONFIG.colors.success);
+    doc.text(`未作答: ${unanswered}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.setTextColor(PDF_CONFIG.colors.text);
   } else {
-    const completionRate = Math.round((trainingResult.answeredQuestions / trainingResult.totalQuestions) * 100);
-    doc.text(`完成率: ${completionRate}%`, PDF_CONFIG.margin.left, yPosition);
-    yPosition += 8;
+    const total = trainingResult.totalQuestions;
+    const answered = trainingResult.answeredQuestions;
+    const unanswered = Math.max(0, total - answered);
+    doc.text(`題目總數: ${total}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(`已作答: ${answered}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(`未作答: ${unanswered}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
   }
 
   return yPosition;
@@ -593,16 +598,24 @@ async function addDetailedAnswers(doc, trainingResult, aiCheckingResult, yPositi
     yPosition = addWrappedText(doc, `您的答案: ${userAnswerText}`, PDF_CONFIG.margin.left, yPosition, contentWidth);
     yPosition += 5;
 
-    // AI評分（如果有）
+    // AI 判定（如果有）
     if (aiResult) {
-      doc.setTextColor(getScoreColor(aiResult.score));
-      doc.text(`AI評分: ${aiResult.score}/100`, PDF_CONFIG.margin.left, yPosition);
+      const ok = aiResult.isCorrect === true;
+      doc.setTextColor(ok ? PDF_CONFIG.colors.success : PDF_CONFIG.colors.error);
+      doc.text(`判定: ${ok ? '正確' : '錯誤'}`, PDF_CONFIG.margin.left, yPosition);
       yPosition += 8;
-
-      if (aiResult.feedback) {
+      if (aiResult.teacherFeedback) {
         doc.setTextColor(PDF_CONFIG.colors.text);
-        yPosition = addWrappedText(doc, `AI點評: ${aiResult.feedback}`, PDF_CONFIG.margin.left, yPosition, contentWidth);
-        yPosition += 5;
+        yPosition = addWrappedText(doc, `回饋: ${aiResult.teacherFeedback}`, PDF_CONFIG.margin.left, yPosition, contentWidth);
+        yPosition += 4;
+      }
+      // 簡列差異或改進
+      const suggestions = aiResult.improvementSuggestions || aiResult.aiSuggestions || [];
+      if (suggestions.length) {
+        doc.setTextColor(PDF_CONFIG.colors.text);
+        const line = `建議: ${suggestions.slice(0, 2).join('；')}`;
+        yPosition = addWrappedText(doc, line, PDF_CONFIG.margin.left, yPosition, contentWidth);
+        yPosition += 4;
       }
     }
 
