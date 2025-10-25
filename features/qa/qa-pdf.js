@@ -330,7 +330,7 @@ function shuffleArray(array) {
 }
 
 // 導出問答訓練結果為PDF
-export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult = null) {
+export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult = null, options = {}) {
   try {
     console.log('開始生成PDF報告...');
 
@@ -392,6 +392,23 @@ export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult
     // 添加訓練總結
     yPosition = addTrainingSummary(doc, trainingResult, aiCheckingResult, yPosition);
     yPosition += 15;
+
+    // 若有錯誤重點文字，插入「錯誤點彙總（精簡）」區塊
+    if (options && options.errorText) {
+      doc.setFontSize(PDF_CONFIG.fontSize.subtitle);
+      doc.setTextColor(PDF_CONFIG.colors.primary);
+      addTextWithCJKImageFallback(doc, '錯誤點彙總（精簡）', PDF_CONFIG.margin.left, yPosition, {
+        fontSizePt: PDF_CONFIG.fontSize.subtitle,
+        color: PDF_CONFIG.colors.primary,
+        weight: '600'
+      });
+      yPosition += 10;
+      doc.setFontSize(PDF_CONFIG.fontSize.normal);
+      doc.setTextColor(PDF_CONFIG.colors.text);
+      const block = doc.splitTextToSize(options.errorText, contentWidth);
+      doc.text(block, PDF_CONFIG.margin.left, yPosition);
+      yPosition += block.length * 6 + 10;
+    }
 
     // 添加詳細答案分析
     yPosition = await addDetailedAnswers(doc, trainingResult, aiCheckingResult, yPosition, pageHeight, contentWidth);
