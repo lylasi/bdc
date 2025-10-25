@@ -266,6 +266,29 @@ function initEventListeners() {
       backToMenuBtn.addEventListener('click', handleBackToMenu);
     }
   }
+
+  // 全域：AI 詳解展開/收合（避免多次綁定）
+  if (dom.qaModule && !dom.qaModule.dataset.aiToggleInstalled) {
+    dom.qaModule.addEventListener('click', (e) => {
+      const btn = e.target.closest('.ai-toggle-details');
+      if (!btn) return;
+      const item = btn.closest('.result-item');
+      if (!item) return;
+      const details = item.querySelector('.ai-details');
+      if (!details) return;
+      const expanded = details.style.display !== 'none';
+      if (expanded) {
+        details.style.display = 'none';
+        btn.textContent = '顯示詳解';
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        details.style.display = '';
+        btn.textContent = '收合詳解';
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+    dom.qaModule.dataset.aiToggleInstalled = 'true';
+  }
 }
 
 // 載入問答集
@@ -1061,7 +1084,7 @@ async function renderBatchTrainingInterface() {
     <div class="qa-batch-item" data-question-index="${it.index}">
       <div class="qa-batch-q"><span class="qa-qid-badge">${it.index + 1}</span> ${escapeHtml(it.question)}</div>
       <div class="qa-batch-a">
-        <textarea class="qa-batch-input compact" rows="1" style="min-height:34px;line-height:1.4;margin:4px 0;" placeholder="輸入答案...">${escapeHtml(it.userAnswer || '')}</textarea>
+        <textarea class="qa-batch-input compact" rows="2" style="min-height:56px;line-height:1.4;margin:4px 0;" placeholder="輸入答案...">${escapeHtml(it.userAnswer || '')}</textarea>
         <button type="button" class="btn small primary btn-ai-check">AI校驗</button>
       </div>
       <div class="qa-batch-feedback"></div>
@@ -1088,6 +1111,20 @@ async function renderBatchTrainingInterface() {
     const idx = parseInt(item?.dataset.questionIndex || '0', 10) || 0;
     const ta = item.querySelector('.qa-batch-input');
     const val = (ta && ta.value) ? ta.value.trim() : '';
+    const holder = item.querySelector('.qa-batch-feedback');
+
+    // Loading 效果（與單題一致的體驗）
+    if (holder) {
+      holder.innerHTML = `
+        <div class="instant-feedback-status" style="padding:8px 10px;border:1px dashed #d1d5db;border-radius:8px;background:#f9fafb;">
+          <div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:#3b82f6;border-radius:9999px;margin-right:8px;vertical-align:-2px;animation:spin 0.8s linear infinite;"></div>
+          <span>AI 正在校對本題...</span>
+        </div>`;
+    }
+    const originalBtnText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'AI 校驗中...';
+
     // 將答案寫回 session
     const mod = await import('./qa-trainer.js');
     if (mod.submitAnswer) mod.submitAnswer(val, idx);
@@ -1103,13 +1140,23 @@ async function renderBatchTrainingInterface() {
       userAnswer: val,
       isSubmitted: true
     };
-    const r = await (await import('./qa-checker.js')).recheckAnswer(payload);
-    const holder = item.querySelector('.qa-batch-feedback');
-    if (holder) {
-      holder.innerHTML = generateSingleCheckResultHTML(r);
+    try {
+      const r = await (await import('./qa-checker.js')).recheckAnswer(payload);
+      // 與單題模式一致：使用完整詳解模板（列表預設收合）
+      if (holder) {
+        holder.innerHTML = generateAICheckedResultsHTML([r], null, { collapsible: true, collapsedByDefault: true });
+      }
+    } catch (err) {
+      if (holder) {
+        holder.innerHTML = `<div class="instant-feedback-status" style="padding:8px 10px;border:1px dashed #fecaca;border-radius:8px;background:#fff1f2;color:#991b1b;">AI 校對失敗：${escapeHtml(err?.message || '請稍後再試')}</div>`;
+      }
+    } finally {
+      // 返回原索引
+      try { const m = await import('./qa-trainer.js'); if (m.goToQuestion) m.goToQuestion(progress2.currentIndex); } catch(_) {}
+      // 還原按鈕
+      btn.disabled = false;
+      btn.textContent = originalBtnText || 'AI校驗';
     }
-    // 返回原索引
-    try { const m = await import('./qa-trainer.js'); if (m.goToQuestion) m.goToQuestion(progress2.currentIndex); } catch(_) {}
   };
 
   // 事件：一次性全部校對
@@ -1940,7 +1987,9 @@ function updateReportWithAIResults(checkingResult) {
 }
 
 // 生成AI校對結果HTML
-function generateAICheckedResultsHTML(checkedAnswers, summary) {
+function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
+  const collapsible = options.collapsible === true;
+  const collapsedByDefault = options.collapsedByDefault === true;
   let html = '';
 
   // 添加AI校對總結
@@ -2035,106 +2084,109 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
       <div class="result-item ${resultClass}">
         <div class="result-header">
           <span class="question-number">Q${questionNumber}</span>
-          <span class="result-status">${answer.isCorrect === true ? '正確' : '需改進'}</span>
+          <span class="result-status">${answer.isCorrect === true ? (hasIssues ? '部分正確' : '正確') : '需改進'}</span>
+          ${collapsible ? `<button type=\"button\" class=\"ai-toggle-details btn small secondary\" aria-expanded=\"${!collapsedByDefault}\">${collapsedByDefault ? '顯示詳解' : '收合詳解'}</button>` : ''}
         </div>
 
-        <div class="result-question">
-          <strong>題目:</strong> ${escapeHtml(answer.question)}
-        </div>
+        <div class="ai-details" style="${collapsible && collapsedByDefault ? 'display:none;' : ''}">
+          <div class="result-question">
+            <strong>題目:</strong> ${escapeHtml(answer.question)}
+          </div>
 
-        <div class="result-answers">
-          <div class="user-answer">
-            <strong>您的答案:</strong> ${userAnswerContent}
-          </div>
-          <div class="correct-answer">
-            <strong>標準答案:</strong> ${correctAnswerContent}
-          </div>
-        </div>
-
-        ${answer.teacherFeedback ? `
-          <div class="teacher-feedback">
-            <h5>教師回饋</h5>
-            <p class="feedback-content">${escapeHtml(answer.teacherFeedback)}</p>
-          </div>
-        ` : answer.feedback ? `
-          <div class="ai-feedback">
-            <strong>AI 回饋:</strong> ${escapeHtml(answer.feedback)}
-          </div>
-        ` : ''}
-
-        ${differenceSection}
-
-        ${answer.strengths && answer.strengths.length > 0 ? `
-          <div class="student-strengths">
-            <h5>亮點表現</h5>
-            <ul class="strengths-list">
-              ${answer.strengths.map(strength => `<li class="strength-item">${escapeHtml(strength)}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
-
-        ${Array.isArray(answer.aiFeedbackIssues) && answer.aiFeedbackIssues.length > 0 ? `
-          <div class="ai-feedback-review">
-            <h5>AI 評語自檢</h5>
-            <ul class="issues-list">
-              ${answer.aiFeedbackIssues.map(issue => `<li class="issue-item">${escapeHtml(issue)}</li>`).join('')}
-            </ul>
-          </div>
-        ` : (answer.aiFeedbackOk === true ? `
-          <div class="ai-feedback-review ok">AI 評語檢查：無明顯問題</div>
-        ` : '')}
-
-        ${answer.improvementSuggestions && answer.improvementSuggestions.length > 0 ? `
-          <div class="improvement-suggestions">
-            <h5>改進建議</h5>
-            <ul class="suggestions-list">
-              ${answer.improvementSuggestions.map(suggestion => `<li class="suggestion-item">${escapeHtml(suggestion)}</li>`).join('')}
-            </ul>
-          </div>
-        ` : answer.aiSuggestions && answer.aiSuggestions.length > 0 ? `
-          <div class="ai-suggestions">
-            <h5>改進建議</h5>
-            <ul>
-              ${answer.aiSuggestions.map(suggestion => `<li>${escapeHtml(suggestion)}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
-
-        ${answer.studyFocus && answer.studyFocus.length > 0 ? `
-          <div class="study-focus">
-            <h5>學習重點</h5>
-            <ul class="focus-list">
-              ${answer.studyFocus.map(focus => `<li class="focus-item">${escapeHtml(focus)}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
-
-        ${answer.improvedExamples && answer.improvedExamples.length > 0 ? `
-          <div class="improved-examples">
-            <h5>優化範例</h5>
-            <div class="examples-container">
-              ${answer.improvedExamples.map((example, itemIndex) => `
-                <div class="example-item">
-                  <strong>範例 ${itemIndex + 1}:</strong> ${escapeHtml(example)}
-                </div>
-              `).join('')}
+          <div class="result-answers">
+            <div class="user-answer">
+              <strong>您的答案:</strong> ${userAnswerContent}
             </div>
-            ${answer.explanation ? `
-              <div class="example-explanation">
-                <strong>解析:</strong> ${escapeHtml(answer.explanation)}
-              </div>
-            ` : ''}
+            <div class="correct-answer">
+              <strong>標準答案:</strong> ${correctAnswerContent}
+            </div>
           </div>
-        ` : ''}
 
-        ${issues.length ? `
-          <div class="issue-list">
-            <h5>需要修正</h5>
-            <ul class="issues">
-              ${issues.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
+          ${answer.teacherFeedback ? `
+            <div class="teacher-feedback">
+              <h5>教師回饋</h5>
+              <p class="feedback-content">${escapeHtml(answer.teacherFeedback)}</p>
+            </div>
+          ` : answer.feedback ? `
+            <div class="ai-feedback">
+              <strong>AI 回饋:</strong> ${escapeHtml(answer.feedback)}
+            </div>
+          ` : ''}
+
+          ${differenceSection}
+
+          ${answer.strengths && answer.strengths.length > 0 ? `
+            <div class="student-strengths">
+              <h5>亮點表現</h5>
+              <ul class="strengths-list">
+                ${answer.strengths.map(strength => `<li class="strength-item">${escapeHtml(strength)}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          ${Array.isArray(answer.aiFeedbackIssues) && answer.aiFeedbackIssues.length > 0 ? `
+            <div class="ai-feedback-review">
+              <h5>AI 評語自檢</h5>
+              <ul class="issues-list">
+                ${answer.aiFeedbackIssues.map(issue => `<li class="issue-item">${escapeHtml(issue)}</li>`).join('')}
+              </ul>
+            </div>
+          ` : (answer.aiFeedbackOk === true ? `
+            <div class="ai-feedback-review ok">AI 評語檢查：無明顯問題</div>
+          ` : '')}
+
+          ${answer.improvementSuggestions && answer.improvementSuggestions.length > 0 ? `
+            <div class="improvement-suggestions">
+              <h5>改進建議</h5>
+              <ul class="suggestions-list">
+                ${answer.improvementSuggestions.map(suggestion => `<li class="suggestion-item">${escapeHtml(suggestion)}</li>`).join('')}
+              </ul>
+            </div>
+          ` : answer.aiSuggestions && answer.aiSuggestions.length > 0 ? `
+            <div class="ai-suggestions">
+              <h5>改進建議</h5>
+              <ul>
+                ${answer.aiSuggestions.map(suggestion => `<li>${escapeHtml(suggestion)}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          ${answer.studyFocus && answer.studyFocus.length > 0 ? `
+            <div class="study-focus">
+              <h5>學習重點</h5>
+              <ul class="focus-list">
+                ${answer.studyFocus.map(focus => `<li class="focus-item">${escapeHtml(focus)}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          ${answer.improvedExamples && answer.improvedExamples.length > 0 ? `
+            <div class="improved-examples">
+              <h5>優化範例</h5>
+              <div class="examples-container">
+                ${answer.improvedExamples.map((example, itemIndex) => `
+                  <div class=\"example-item\">
+                    <strong>範例 ${itemIndex + 1}:</strong> ${escapeHtml(example)}
+                  </div>
+                `).join('')}
+              </div>
+              ${answer.explanation ? `
+                <div class="example-explanation">
+                  <strong>解析:</strong> ${escapeHtml(answer.explanation)}
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+
+          ${issues.length ? `
+            <div class="issue-list">
+              <h5>需要修正</h5>
+              <ul class="issues">
+                ${issues.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        </div>
       </div>
     `;
   });
