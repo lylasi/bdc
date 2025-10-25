@@ -1,5 +1,6 @@
 // AI智能校對模組
 import { displayMessage } from '../../modules/ui.js';
+import { loadGlobalSettings, loadGlobalSecrets } from '../../modules/settings.js';
 
 // AI配置检查
 let aiConfig = null;
@@ -221,15 +222,34 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
     __apiUrl = aiConfig.AI_PROFILES[qaCfg.PROFILE].apiUrl || '';
     __apiKey = aiConfig.AI_PROFILES[qaCfg.PROFILE].apiKey || __apiKey;
   }
+  // 若仍未決定端點，嘗試使用全局設定覆蓋（localStorage）
+  try {
+    const s = loadGlobalSettings();
+    const sec = loadGlobalSecrets();
+    if (!__apiUrl && s?.ai?.apiUrl) __apiUrl = String(s.ai.apiUrl).trim();
+    if (!__apiKey && sec?.aiApiKey) __apiKey = String(sec.aiApiKey).trim();
+  } catch(_) {}
   if (!__apiUrl) __apiUrl = aiConfig.API_URL;
   if (!__apiKey) __apiKey = aiConfig.API_KEY;
-  // 模型：支援 'profile:model' 或 {profile, model}
-  let __model = qaCfg.MODEL || (aiConfig.AI_MODELS?.answerChecking || 'gpt-4.1-mini');
+  // 模型：優先 UI 選擇與全局覆蓋；支援 'profile:model' 或 {profile, model}
+  let __model;
+  try {
+    const selA = document.getElementById('qa-model-select');
+    const selB = document.getElementById('qa-model-select-report');
+    const fromUi = (selA && selA.value) || (selB && selB.value) || '';
+    const s = loadGlobalSettings();
+    const fromSettings = (s?.ai?.models && (s.ai.models.qaChecking || s.ai.models.qaCheck)) || '';
+    __model = fromUi || fromSettings || qaCfg.DEFAULT_MODEL || qaCfg.MODEL || (aiConfig.AI_MODELS?.answerChecking || 'gpt-4.1-mini');
+  } catch(_) {
+    __model = qaCfg.DEFAULT_MODEL || qaCfg.MODEL || (aiConfig.AI_MODELS?.answerChecking || 'gpt-4.1-mini');
+  }
   // 若模型帶有前綴或物件，解析出最終模型與可能的 profile 端點
   try {
+    const hadExplicitQaUrl = !!(qaCfg && qaCfg.API_URL);
     if (__model && typeof __model === 'object') {
       const pid = __model.profile || '';
-      if (!__apiUrl && pid && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[pid]) {
+      // 選了 profile 就應該切到該端點；除非明確在 QA_CHECK.API_URL 指定端點
+      if (pid && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[pid] && !hadExplicitQaUrl) {
         __apiUrl = aiConfig.AI_PROFILES[pid].apiUrl || __apiUrl;
         __apiKey = aiConfig.AI_PROFILES[pid].apiKey || __apiKey;
       }
@@ -237,7 +257,8 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
     } else if (typeof __model === 'string' && __model.includes(':')) {
       const pid = __model.slice(0, __model.indexOf(':'));
       const m = __model.slice(__model.indexOf(':') + 1);
-      if (!__apiUrl && pid && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[pid]) {
+      // 選了 profile 就應該切到該端點；除非明確在 QA_CHECK.API_URL 指定端點
+      if (pid && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[pid] && !hadExplicitQaUrl) {
         __apiUrl = aiConfig.AI_PROFILES[pid].apiUrl || __apiUrl;
         __apiKey = aiConfig.AI_PROFILES[pid].apiKey || __apiKey;
       }
@@ -271,13 +292,9 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
   }
 }`;
 
-  const response = await fetch(__apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${__apiKey}`
-    },
-    body: JSON.stringify({
+  // 首選強制 JSON（大多數 OpenAI 兼容端點支援）；若 4xx 指出不支援，將回退一次
+  async function callOnce(includeJsonFormat) {
+    const body = {
       model: __model,
       messages: [
         { role: 'system', content: sysMsg },
@@ -285,22 +302,81 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
       ],
       temperature: __temperature,
       max_tokens: __maxTokens
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`AI API請求失敗: ${response.status}`);
+    };
+    if (includeJsonFormat) body.response_format = { type: 'json_object' };
+    const resp = await fetch(__apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${__apiKey}` },
+      body: JSON.stringify(body)
+    });
+    let payload = null;
+    try { payload = await resp.json(); } catch(_) {}
+    return { ok: resp.ok, status: resp.status, data: payload };
   }
 
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  let first = await callOnce(true);
+  if (!first.ok) {
+    const msg = JSON.stringify(first.data || {});
+    const mayNotSupport = /response_format|json_object|unsupported|unknown/i.test(msg) || (first.status === 400 || first.status === 422);
+    if (mayNotSupport) {
+      first = await callOnce(false);
+    }
+  }
+  if (!first.ok) {
+    const code = first.status || 0;
+    const detail = (first.data && (first.data.error?.message || first.data.message)) || '';
+    throw new Error(`AI API請求失敗: ${code}${detail ? ' - ' + detail : ''}`);
+  }
+
+  const data = first.data || {};
+  let content = data.choices?.[0]?.message?.content;
+  // 一些模型（如 GLM/Qwen/Gemini）可能把主要輸出放在 reasoning_content 或其他欄位
+  if (!content || (typeof content === 'string' && content.trim() === '')) {
+    content = data.choices?.[0]?.message?.reasoning_content
+      || data.choices?.[0]?.delta?.content
+      || data.output_text
+      || '';
+  }
 
   if (!content) {
     throw new Error('AI回應格式錯誤');
   }
 
-  // 解析JSON回應
-  const aiResult = JSON.parse(content);
+  // 有些模型會回傳 ```json\n...\n``` 或混入前後說明文字；這裡做健壯處理
+  const toText = (c) => {
+    if (!c) return '';
+    if (typeof c === 'string') return c;
+    if (Array.isArray(c)) { try { return c.map(x => (typeof x === 'string' ? x : (x?.text || ''))).join('\n'); } catch(_) { return String(c); } }
+    try { return String(c); } catch(_) { return ''; }
+  };
+  const extractJsonText = (raw) => {
+    let s = toText(raw).trim();
+    if (!s) return s;
+    // 去 BOM
+    s = s.replace(/^\uFEFF/, '');
+    // 去除圍欄 ```json ... ``` 或 ``` ... ```
+    if (/^```/m.test(s)) {
+      s = s.replace(/^```[a-zA-Z0-9_-]*\s*/m, '');
+      s = s.replace(/\s*```\s*$/m, '');
+    }
+    // 擷取第一個 { 到最後一個 } 區段
+    const i = s.indexOf('{');
+    const j = s.lastIndexOf('}');
+    if (i !== -1 && j !== -1 && j > i) s = s.slice(i, j + 1);
+    return s.trim();
+  };
+
+  let text = extractJsonText(content);
+  if (!text) throw new Error('AI回應為空');
+
+  // 解析JSON回應（帶自動修復尾逗號/多餘逗號）
+  let aiResult;
+  try {
+    aiResult = JSON.parse(text);
+  } catch (e1) {
+    const fixed = text.replace(/,\s*([}\]])/g, '$1').replace(/(\{|\[)\s*,/g, '$1');
+    aiResult = JSON.parse(fixed);
+  }
 
   // 兼容模型偶爾把布林輸出為字串的情況
   const toBool = (v) => {

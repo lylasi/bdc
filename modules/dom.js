@@ -151,6 +151,9 @@ export const ocrMergeOutput = document.getElementById('ocr-merge-output');
 export const ocrHintPreset = document.getElementById('ocr-hint-preset');
 export const ocrPreferCamera = document.getElementById('ocr-prefer-camera');
 export const ocrModelSelect = document.getElementById('ocr-model-select');
+// 問答校對模型選擇器（訓練/報告）
+export const qaModelSelect = document.getElementById('qa-model-select');
+export const qaModelSelectReport = document.getElementById('qa-model-select-report');
 
 // --- 通用 Modal ---
 export const appModal = document.getElementById('app-modal');

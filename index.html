@@ -587,6 +587,12 @@
                         </div>
                     </div>
 
+                    <!-- AI 校對模型選擇（問答訓練） -->
+                    <div class="settings-group" style="margin: 8px 0 12px; display:flex; align-items:center; gap:8px;">
+                        <label for="qa-model-select">校對模型：</label>
+                        <select id="qa-model-select"></select>
+                    </div>
+
                     <div class="qa-question-area">
                         <div class="question-card">
                             <h4>問題：</h4>
@@ -635,6 +641,8 @@
                     </div>
 
                     <div class="report-actions">
+                        <label for="qa-model-select-report" style="margin-right:6px;">校對模型：</label>
+                        <select id="qa-model-select-report" style="margin-right:12px;"></select>
                         <button id="ai-check-btn" class="btn primary">AI 校對全部題目</button>
                         <button id="export-pdf-btn" class="btn primary">導出PDF</button>
                         <button id="copy-report-btn" class="btn secondary">複製錯誤報告</button>
