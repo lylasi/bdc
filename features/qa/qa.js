@@ -254,6 +254,23 @@ function initEventListeners() {
       exportPdfBtn.addEventListener('click', handleExportPDF);
     }
 
+    // 複製錯誤報告（純文字）
+    const copyReportBtn = dom.qaModule.querySelector('#copy-report-btn');
+    if (copyReportBtn) {
+      copyReportBtn.addEventListener('click', handleCopyReportText);
+    }
+
+    // 一鍵展開/收合
+    const toggleAllBtn = dom.qaModule.querySelector('#toggle-all-details-btn');
+    if (toggleAllBtn) {
+      toggleAllBtn.addEventListener('click', () => {
+        const expanded = toggleAllBtn.dataset.expanded === 'true';
+        setAllAIDetailsExpanded(!expanded);
+        toggleAllBtn.dataset.expanded = (!expanded).toString();
+        toggleAllBtn.textContent = (!expanded) ? '收合全部' : '展開全部';
+      });
+    }
+
     // 重新訓練按鈕
     const retryTrainingBtn = dom.qaModule.querySelector('#retry-training-btn');
     if (retryTrainingBtn) {
@@ -289,6 +306,21 @@ function initEventListeners() {
     });
     dom.qaModule.dataset.aiToggleInstalled = 'true';
   }
+}
+
+// 設定全部詳解展開/收合
+function setAllAIDetailsExpanded(expand) {
+  const container = dom.qaModule?.querySelector('#qa-detailed-results');
+  if (!container) return;
+  const blocks = container.querySelectorAll('.ai-details');
+  blocks.forEach(el => {
+    el.style.display = expand ? '' : 'none';
+  });
+  const btns = container.querySelectorAll('.ai-toggle-details');
+  btns.forEach(btn => {
+    btn.textContent = expand ? '收合詳解' : '顯示詳解';
+    btn.setAttribute('aria-expanded', expand ? 'true' : 'false');
+  });
 }
 
 // 載入問答集
@@ -2218,8 +2250,10 @@ async function handleExportPDF() {
   }
 
   try {
+    // 產生錯誤重點的純文字報告，供 PDF 內嵌與複製共用
+    const errorText = buildErrorTextReport(currentAICheckingResult, currentTrainingResult);
     // 嘗試導出PDF，包含AI校對結果（如果有）
-    const success = await exportTrainingResultToPDF(currentTrainingResult, currentAICheckingResult);
+    const success = await exportTrainingResultToPDF(currentTrainingResult, currentAICheckingResult, { errorText });
 
     if (success) {
       displayMessage('PDF報告導出成功！', 'success');
@@ -2233,6 +2267,66 @@ async function handleExportPDF() {
       exportBtn.disabled = false;
       exportBtn.textContent = '導出PDF';
     }
+  }
+}
+
+// 產生錯誤重點的純文字報告（包含「錯誤」與「部分正確」）
+function buildErrorTextReport(checkingResult, trainingResult) {
+  const now = new Date();
+  const header = [
+    `問答集：${trainingResult?.qaSetName || ''}`,
+    `日期：${now.toLocaleString()}`
+  ];
+  const lines = [];
+  const answers = checkingResult?.checkedAnswers || [];
+  const total = trainingResult?.totalQuestions || answers.length || 0;
+  const unanswered = checkingResult?.summary?.unanswered ?? Math.max(0, total - (answers.length || 0));
+
+  answers.forEach((ans, i) => {
+    const diff = createDifferenceAnalysis(ans.userAnswer, ans.correctAnswer);
+    let issues = collectIssueList(ans.errorAnalysis);
+    const localPuncIssues = detectLocalPunctuationIssues(ans.userAnswer || '', ans.correctAnswer || '');
+    if (localPuncIssues.length) issues = issues.concat(localPuncIssues.map(m => `【標點/格式】${m}`));
+    const hasIssues = issues.length > 0 || (diff && (diff.missingTokens.length || diff.extraTokens.length));
+    const isExact = (ans.isCorrect === true) && !hasIssues && (!diff || !diff.hasDifferences);
+    if (isExact) return;
+
+    const qn = typeof ans.displayIndex === 'number' ? ans.displayIndex + 1 : (i + 1);
+    const qText = trainingResult?.answers?.[qn - 1]?.question || ans.question || '';
+    lines.push(`Q${qn} ${qText}`);
+    lines.push(`狀態：${ans.isCorrect === true ? '部分正確' : '錯誤'}`);
+    if (ans.userAnswer) lines.push(`你的答案：${ans.userAnswer}`);
+    if (ans.correctAnswer) lines.push(`參考答案：${ans.correctAnswer}`);
+    if (issues.length) lines.push(`需要修正：${issues.join('；')}`);
+    if (diff && (diff.missingTokens.length || diff.extraTokens.length)) {
+      const tags = [];
+      if (diff.missingTokens.length) tags.push(`缺少：${diff.missingTokens.join(', ')}`);
+      if (diff.extraTokens.length) tags.push(`多出：${diff.extraTokens.join(', ')}`);
+      lines.push(`差異：${tags.join('；')}`);
+    }
+    lines.push('');
+  });
+
+  const incorrectCount = lines.filter(l => l.startsWith('Q')).length;
+  const summary = [`錯題（含部分正確）：${incorrectCount} / ${total}`, `未作答：${unanswered}`];
+  return header.concat(summary, [''], lines).join('\n');
+}
+
+// 複製錯誤報告文字
+async function handleCopyReportText() {
+  if (!currentTrainingResult) { displayMessage('沒有可複製的報告', 'warning'); return; }
+  const text = buildErrorTextReport(currentAICheckingResult, currentTrainingResult);
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    }
+    displayMessage('已複製錯誤報告到剪貼簿', 'success');
+  } catch (err) {
+    console.error('複製報告失敗', err);
+    displayMessage('複製失敗，請稍後再試', 'error');
   }
 }
 
