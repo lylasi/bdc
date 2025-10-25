@@ -7,6 +7,8 @@ import { startTraining, getCurrentQuestion, getCurrentAnswer, getTrainingProgres
 import { startAIChecking, clearCheckingCache, getCheckingCacheStats, recheckAnswer } from './qa-checker.js';
 import { exportTrainingResultToPDF, exportQASetForHandwriting } from './qa-pdf.js';
 import { displayMessage, showOptionsModal, openModal, closeModal } from '../../modules/ui.js';
+import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
+import { AI_MODELS as __AI_MODELS__, QA_CHECK as __QA_CHECK__, ASSISTANT as __ASSISTANT__ } from '../../ai-config.js';
 
 // 問答模組狀態
 const qaModuleState = {
@@ -43,6 +45,9 @@ export async function init() {
 
   // 載入問答集
   await loadQASets();
+
+  // 準備 AI 校對模型選擇器（可在訓練與報告頁使用）
+  try { setupQAModelSelectors(); } catch(_) {}
 
   qaModuleState.isInitialized = true;
   console.log('問答訓練模組初始化完成');
@@ -714,6 +719,48 @@ function updateTemplateControlsState() {
   loadTemplateBtn.disabled = !select.value;
 }
 
+// 初始化/刷新：問答 AI 校對模型選擇器
+function setupQAModelSelectors() {
+  const QA_CHECK = __QA_CHECK__ || {};
+  const AI_MODELS = __AI_MODELS__ || {};
+  const ASSISTANT = __ASSISTANT__ || {};
+  const suggestions = [];
+  const seen = new Set();
+  const toStr = (v) => (typeof v === 'object') ? (v?.profile ? `${v.profile}:${v.model||''}` : (v?.model||'')) : String(v||'');
+  const push = (v) => { const s = toStr(v); if (!s) return; if (seen.has(s)) return; seen.add(s); suggestions.push(s); };
+  if (Array.isArray(QA_CHECK?.MODELS)) QA_CHECK.MODELS.forEach(push);
+  push(QA_CHECK?.DEFAULT_MODEL);
+  push(QA_CHECK?.MODEL);
+  push(AI_MODELS?.answerChecking);
+  push(AI_MODELS?.sentenceChecking);
+  if (Array.isArray(ASSISTANT?.MODELS)) ASSISTANT.MODELS.forEach(push);
+
+  const gs = loadGlobalSettings();
+  const selected = (gs?.ai?.models && (gs.ai.models.qaChecking || gs.ai.models.qaCheck))
+    || QA_CHECK?.DEFAULT_MODEL
+    || QA_CHECK?.MODEL
+    || AI_MODELS?.answerChecking
+    || AI_MODELS?.sentenceChecking
+    || suggestions[0]
+    || '';
+
+  const applyTo = (selEl) => {
+    if (!selEl) return;
+    const cur = selEl.value;
+    selEl.innerHTML = suggestions.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+    selEl.value = (cur && suggestions.includes(cur)) ? cur : selected;
+    selEl.addEventListener('change', () => {
+      const s0 = loadGlobalSettings();
+      const models = { ...(s0?.ai?.models || {}) };
+      const val = selEl.value || '';
+      if (val) models.qaChecking = val; else delete models.qaChecking;
+      saveGlobalSettings({ ai: { models } });
+    });
+  };
+  try { applyTo(document.getElementById('qa-model-select')); } catch(_) {}
+  try { applyTo(document.getElementById('qa-model-select-report')); } catch(_) {}
+}
+
 function openQASetEditorModal(qaSet) {
   openModal();
 
@@ -1018,6 +1065,7 @@ async function handleQASetExport(qaId) {
 function showTrainingView() {
   setActiveView('training');
   qaModuleState.currentView = 'training';
+  try { setupQAModelSelectors(); } catch(_) {}
   // 若是列表模式，初始化一次渲染
   try { updateTrainingInterface(); } catch (_) {}
 }
@@ -1514,6 +1562,7 @@ async function handleFinishTraining() {
 function showReportView(trainingResult) {
   setActiveView('report');
   qaModuleState.currentView = 'report';
+  try { setupQAModelSelectors(); } catch(_) {}
 
   instantAICheckResults.clear();
   clearInstantFeedbackArea();

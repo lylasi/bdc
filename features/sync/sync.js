@@ -432,6 +432,7 @@ function showGlobalSettingsModal() {
         <div style="display:grid;grid-template-columns:1fr;gap:8px;">
           <input id="gs-model-word" type="text" placeholder="wordAnalysis，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.wordAnalysis)||'')}">
           <input id="gs-model-sentence" type="text" placeholder="sentenceChecking，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.sentenceChecking)||'')}">
+          <input id="gs-model-qa" type="text" placeholder="qaChecking（問答校對），例如 tbai:gemini-2.5-flash-nothinking" value="${escapeHtml((settings.models&&(settings.models.qaChecking||settings.models.qaCheck))||'')}">
           <input id="gs-model-article" type="text" placeholder="articleAnalysis，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.articleAnalysis)||'')}">
           <input id="gs-model-clean" type="text" placeholder="articleCleanup（AI 清洗），例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.articleCleanup)||'')}">
           <input id="gs-model-example" type="text" placeholder="exampleGeneration，例如 gpt-4.1-nano" value="${escapeHtml((settings.models&&settings.models.exampleGeneration)||'')}">
@@ -491,6 +492,7 @@ function showGlobalSettingsModal() {
       const models = {
         wordAnalysis: $('#gs-model-word').value.trim(),
         sentenceChecking: $('#gs-model-sentence').value.trim(),
+        qaChecking: $('#gs-model-qa').value.trim(),
         articleAnalysis: $('#gs-model-article').value.trim(),
         articleCleanup: $('#gs-model-clean').value.trim(),
         exampleGeneration: $('#gs-model-example').value.trim()
