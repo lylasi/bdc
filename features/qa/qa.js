@@ -2015,6 +2015,10 @@ function updateReportWithAIResults(checkingResult) {
   const detailedResults = dom.qaModule?.querySelector('#qa-detailed-results');
   if (detailedResults) {
     detailedResults.innerHTML = generateAICheckedResultsHTML(checkedAnswers, summary);
+    // 根據一鍵收合狀態同步展開/收合
+    const toggleAllBtn = dom.qaModule?.querySelector('#toggle-all-details-btn');
+    const expanded = toggleAllBtn ? (toggleAllBtn.dataset.expanded === 'true') : true;
+    setAllAIDetailsExpanded(expanded);
   }
 }
 
