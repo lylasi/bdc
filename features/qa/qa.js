@@ -2006,8 +2006,8 @@ function generateAICheckedResultsHTML(checkedAnswers, summary) {
     }
     const hasIssues = issues.length > 0;
     const isExact = (answer.isCorrect === true) && !hasIssues && (!difference || !difference.hasDifferences);
-    // 單一色系：正確=綠，錯誤=紅。不再使用黃色「部分正確」。
-    const resultClass = (answer.isCorrect === true) ? 'ai-checked-result' : 'ai-checked-result incorrect';
+    // 三態：綠=完全正確；黃=部分正確（有瑕疵/差異）；紅=錯誤
+    const resultClass = isExact ? 'ai-checked-result' : (answer.isCorrect === true ? 'ai-checked-result partial' : 'ai-checked-result incorrect');
 
     const differenceSection = difference ? `
           <div class="difference-analysis">
@@ -2291,12 +2291,29 @@ function updateSingleQuestionResult(questionIndex, checkResult) {
 
 // 生成單題校驗結果HTML
 function generateSingleCheckResultHTML(result) {
-  // 精簡版（單題專用）：狀態徽章 + 兩行對照 + 精簡回饋/差異
+  // 精簡版（單題專用）：支援黃/綠/紅三態
   const difference = result.isCorrect === true ? null : createDifferenceAnalysis(result.userAnswer, result.correctAnswer);
 
-  const badge = result.isCorrect === true
-    ? '<span class="badge" style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:9999px;font-size:12px;">正確</span>'
-    : '<span class="badge" style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:9999px;font-size:12px;">錯誤</span>';
+  // 收集本地與AI的問題，作為「部分正確」的依據
+  let issues = collectIssueList(result.errorAnalysis);
+  const localPuncIssues = detectLocalPunctuationIssues(result.userAnswer || '', result.correctAnswer || '');
+  if (localPuncIssues.length) {
+    issues = issues.concat(localPuncIssues.map(m => `【標點/格式】${m}`));
+  }
+  const hasIssues = issues.length > 0 || (difference && (difference.missingTokens.length || difference.extraTokens.length));
+
+  // 三態徽章
+  let badgeHtml;
+  let containerClass = 'ai-check-result compact';
+  if (result.isCorrect === true && !hasIssues) {
+    badgeHtml = '<span class="badge" style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:9999px;font-size:12px;">正確</span>';
+  } else if (result.isCorrect === true && hasIssues) {
+    badgeHtml = '<span class="badge" style="background:#f59e0b;color:#111827;padding:2px 8px;border-radius:9999px;font-size:12px;">部分正確</span>';
+    containerClass += ' partial';
+  } else {
+    badgeHtml = '<span class="badge" style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:9999px;font-size:12px;">錯誤</span>';
+    containerClass += ' incorrect';
+  }
 
   const ua = result.userAnswer ? escapeHtml(result.userAnswer) : '<span class="no-answer">未作答</span>';
   const ca = result.correctAnswer ? escapeHtml(result.correctAnswer) : '<span class="no-answer">尚無標準答案</span>';
@@ -2308,9 +2325,9 @@ function generateSingleCheckResultHTML(result) {
   const feedback = result.teacherFeedback ? `<div class="mini-line" style="margin-top:6px;color:#374151;">${escapeHtml(result.teacherFeedback)}</div>` : '';
 
   return `
-    <div class="ai-check-result compact ${result.isCorrect === true ? '' : 'incorrect'}">
+    <div class="${containerClass}">
       <div class="result-header" style="display:flex;align-items:center;gap:8px;">
-        ${badge}
+        ${badgeHtml}
       </div>
       <div class="result-answers" style="margin-top:6px;">
         <div class="user-answer"><strong>你的答案：</strong> ${ua}</div>
