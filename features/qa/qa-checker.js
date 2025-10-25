@@ -28,6 +28,17 @@ function applyTemplate(tpl, vars = {}) {
   return s;
 }
 
+// 陣列去重（按字面大小寫比較）
+function dedupeArray(arr = []) {
+  const seen = new Set();
+  const out = [];
+  for (const it of (arr || [])) {
+    const k = String(it);
+    if (!seen.has(k)) { seen.add(k); out.push(it); }
+  }
+  return out;
+}
+
 // 校對結果快取（可關閉）
 const checkResultsCache = new Map();
 
@@ -153,7 +164,7 @@ async function checkSingleAnswer(answer) {
     const pre = ruleBasedPrecheck(question, correctAnswer, userAnswer);
     if (pre && pre.intercept) {
       const preResult = { ...answer, ...pre.payload, checkMethod: 'precheck' };
-      checkResultsCache.set(cacheKey, preResult);
+      if (useCacheEnabled()) { checkResultsCache.set(cacheKey, preResult); }
       return preResult;
     }
   } catch (_) {}
@@ -169,11 +180,27 @@ async function checkSingleAnswer(answer) {
       checkMethod: 'ai_analysis'
     };
 
-    // 本地不再主動合併格式/標點檢查，完全交給 AI 回傳
+    // 嚴格標點規則：與參考答案的標點不一致（缺少/多出/句末缺終止符）一律視為不正確
+    try {
+      const puncIssues = analyzePunctuationDifferences(userAnswer || '', correctAnswer || '');
+      if (/[.!?]$/.test(correctAnswer || '') && !/[.!?]$/.test((userAnswer || '').trim())) {
+        puncIssues.push('句末缺少終止符');
+      }
+      if (puncIssues.length > 0) {
+        result.isCorrect = false;
+        result.errorAnalysis = result.errorAnalysis || {};
+        const merged = Array.isArray(result.errorAnalysis.punctuation) ? result.errorAnalysis.punctuation.slice() : [];
+        result.errorAnalysis.punctuation = dedupeArray(merged.concat(puncIssues));
+        if (!result.teacherFeedback) {
+          result.teacherFeedback = '標點/格式需要修正';
+        }
+        const sug = Array.isArray(result.improvementSuggestions) ? result.improvementSuggestions.slice() : [];
+        if (puncIssues[0]) sug.unshift(puncIssues[0]);
+        result.improvementSuggestions = dedupeArray(sug).slice(0, 3);
+      }
+    } catch (_) {}
 
-    if (useCacheEnabled()) {
-      checkResultsCache.set(cacheKey, result);
-    }
+    if (useCacheEnabled()) { checkResultsCache.set(cacheKey, result); }
     return result;
 
   } catch (error) {
