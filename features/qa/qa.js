@@ -1395,9 +1395,28 @@ function handleNextQuestion() {
   }
 }
 
+async function syncBatchAnswersToSession() {
+  const list = document.getElementById('qa-batch-list');
+  if (!list) return;
+  const items = Array.from(list.querySelectorAll('.qa-batch-item'));
+  if (!items.length) return;
+  const trainer = await import('./qa-trainer.js');
+  for (const it of items) {
+    const idx = parseInt(it.dataset.questionIndex || '0', 10) || 0;
+    const val = (it.querySelector('.qa-batch-input')?.value || '').trim();
+    if (trainer.submitAnswer) trainer.submitAnswer(val, idx);
+  }
+}
+
 // 處理完成訓練
-function handleFinishTraining() {
+async function handleFinishTraining() {
   try {
+    // 若在列表模式，先同步當前輸入到會話
+    const session = getSessionState();
+    if (session.submitMode === 'batch') {
+      await syncBatchAnswersToSession();
+    }
+
     const trainingResult = finishTraining();
     if (trainingResult) {
       // 切換到報告視圖
@@ -1436,7 +1455,8 @@ function updateReportInterface(trainingResult) {
   // 更新詳細結果
   const detailedResults = dom.qaModule?.querySelector('#qa-detailed-results');
   if (detailedResults) {
-    detailedResults.innerHTML = generateResultsHTML(trainingResult);
+    const html = generateResultsHTML(trainingResult);
+    detailedResults.innerHTML = html && html.trim() ? html : '<div class="empty-hint">尚未有作答內容。請返回填寫答案或在列表模式下輸入後再完成訓練。</div>';
   }
 }
 
