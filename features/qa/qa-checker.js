@@ -180,14 +180,14 @@ async function checkSingleAnswer(answer) {
       checkMethod: 'ai_analysis'
     };
 
-    // 嚴格標點規則：與參考答案的標點不一致（缺少/多出/句末缺終止符）一律視為不正確
+    // 標點規則（放寬）：與參考答案的標點不一致（缺少/多出/句末缺終止符）
+    // 不再強制把 isCorrect 改為 false，而是標記為「部分正確」的依據（前端根據 issues 呈現黃態）
     try {
       const puncIssues = analyzePunctuationDifferences(userAnswer || '', correctAnswer || '');
       if (/[.!?]$/.test(correctAnswer || '') && !/[.!?]$/.test((userAnswer || '').trim())) {
         puncIssues.push('句末缺少終止符');
       }
       if (puncIssues.length > 0) {
-        result.isCorrect = false;
         result.errorAnalysis = result.errorAnalysis || {};
         const merged = Array.isArray(result.errorAnalysis.punctuation) ? result.errorAnalysis.punctuation.slice() : [];
         result.errorAnalysis.punctuation = dedupeArray(merged.concat(puncIssues));
