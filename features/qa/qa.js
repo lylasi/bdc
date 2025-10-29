@@ -3,7 +3,7 @@ import * as dom from '../../modules/dom.js';
 import * as state from '../../modules/state.js';
 import { getStoredQASets, getAllQASets, loadQASet, saveQASet, deleteQASet, importQASet, exportQASet, getQASetStats, cleanupExpiredCache } from './qa-storage.js';
 import { initCreator, parseQAPairs, saveNewSet, clearForm, handleTextInputChange, fillFormWithQASet, qaSetToText } from './qa-creator.js';
-import { startTraining, getCurrentQuestion, getCurrentAnswer, getTrainingProgress, getSessionState, submitAnswer, nextQuestion, previousQuestion, finishTraining, pauseTraining, resumeTraining, cancelTraining, restoreTrainingProgress, saveTrainingProgress } from './qa-trainer.js';
+import { startTraining, getCurrentQuestion, getCurrentAnswer, getTrainingProgress, getSessionState, submitAnswer, nextQuestion, previousQuestion, finishTraining, pauseTraining, resumeTraining, cancelTraining, restoreTrainingProgress, saveTrainingProgress, saveAnswerDraft } from './qa-trainer.js';
 import { startAIChecking, clearCheckingCache, getCheckingCacheStats, recheckAnswer } from './qa-checker.js';
 import { exportTrainingResultToPDF, exportQASetForHandwriting } from './qa-pdf.js';
 import { displayMessage, showOptionsModal, openModal, closeModal } from '../../modules/ui.js';
@@ -217,6 +217,8 @@ function initEventListeners() {
     const answerInput = dom.qaModule.querySelector('#qa-answer-input');
     if (answerInput) {
       answerInput.addEventListener('input', handleAnswerDraftChange);
+      // Cmd/Ctrl+Enter 快捷：保存並下一題
+      answerInput.addEventListener('keydown', handleAnswerKeydown);
     }
 
     const prevQABtn = dom.qaModule.querySelector('#prev-qa-btn');
@@ -1177,7 +1179,7 @@ async function renderBatchTrainingInterface() {
     checkAll = document.createElement('button');
     checkAll.id = 'qa-batch-check-all';
     checkAll.className = 'btn primary';
-    checkAll.textContent = '提交AI 校對';
+    checkAll.textContent = 'AI 校對全部';
     const actions = trainingArea.querySelector('.qa-training-actions');
     if (actions) actions.insertBefore(checkAll, actions.firstChild);
   }
@@ -1207,7 +1209,7 @@ async function renderBatchTrainingInterface() {
 
     // 將答案寫回 session
     const mod = await import('./qa-trainer.js');
-    if (mod.submitAnswer) mod.submitAnswer(val, idx);
+    if (mod.saveAnswerDraft) mod.saveAnswerDraft(val, idx);
     // 準備 payload 並校驗
     const q = getCurrentQuestion();
     const progress2 = getTrainingProgress();
@@ -1217,8 +1219,7 @@ async function renderBatchTrainingInterface() {
       qid: p?.qid || idx + 1,
       question: p?.question || '',
       correctAnswer: p?.answer || '',
-      userAnswer: val,
-      isSubmitted: true
+      userAnswer: val
     };
     try {
       const r = await (await import('./qa-checker.js')).recheckAnswer(payload);
@@ -1246,10 +1247,10 @@ async function renderBatchTrainingInterface() {
     for (const it of allItems) {
       const idx = parseInt(it.dataset.questionIndex || '0', 10) || 0;
       const val = (it.querySelector('.qa-batch-input')?.value || '').trim();
-      const m = await import('./qa-trainer.js'); if (m.submitAnswer) m.submitAnswer(val, idx);
+      const m = await import('./qa-trainer.js'); if (m.saveAnswerDraft) m.saveAnswerDraft(val, idx);
     }
 
-    // 構建臨時 trainingResult（全題皆標記 isSubmitted=true）
+    // 構建臨時 trainingResult（不再區分提交/保存）
     const progress3 = getTrainingProgress();
     const total3 = progress3?.totalQuestions || allItems.length;
     const answers = [];
@@ -1261,15 +1262,14 @@ async function renderBatchTrainingInterface() {
         qid: q?.qid || i + 1,
         question: q?.question || '',
         correctAnswer: q?.answer || '',
-        userAnswer: a || '',
-        isSubmitted: true
+        userAnswer: a || ''
       });
     }
     const trainingResult = {
       qaSetId: getSessionState().qaSetId,
       qaSetName: getSessionState().qaSetName || '問答訓練',
       totalQuestions: answers.length,
-      answeredQuestions: answers.length,
+      answeredQuestions: answers.filter(x => (x.userAnswer && x.userAnswer.trim().length > 0)).length,
       answers,
       mode: getSessionState().mode,
       submitMode: 'batch',
@@ -1326,7 +1326,7 @@ function handleSubmitAnswer() {
     // 保存進度
     saveTrainingProgress();
 
-    displayMessage('答案已提交', 'success');
+    displayMessage('答案已保存', 'success');
 
     // 自動進入下一題（可選）
     setTimeout(() => {
@@ -1370,7 +1370,8 @@ async function handleSubmitAndCheckCurrent(event) {
       return;
     }
 
-    submitAnswer(answer);
+    // 現在僅做保存，不做提交狀態區分
+    saveAnswerDraft(answer);
     saveTrainingProgress();
 
     const button = dom.qaModule?.querySelector('#submit-and-check-btn');
@@ -1386,8 +1387,7 @@ async function handleSubmitAndCheckCurrent(event) {
       qid: question.qid,
       question: question.question,
       correctAnswer: question.answer,
-      userAnswer: answer,
-      isSubmitted: true
+      userAnswer: answer
     };
 
     const checkResult = await recheckAnswer(answerPayload);
@@ -1399,13 +1399,13 @@ async function handleSubmitAndCheckCurrent(event) {
 
     displayMessage(`AI 已校對第 ${progress.currentNumber} 題`, 'success');
   } catch (error) {
-    console.error('提交並 AI 校對失敗:', error);
+    console.error('AI 校對失敗:', error);
     displayMessage('AI 校對失敗：' + (error.message || '請稍後再試'), 'error');
     showInstantFeedbackError(error.message || 'AI 校對失敗，請稍後再試。');
   } finally {
     const button = dom.qaModule?.querySelector('#submit-and-check-btn');
     if (button) {
-      const label = button.dataset.originalLabel || '提交並 AI 校對本題';
+      const label = button.dataset.originalLabel || 'AI 校對本題';
       button.textContent = label;
       button.disabled = false;
     }
@@ -1496,11 +1496,41 @@ function handleAnswerDraftChange() {
   clearInstantFeedbackArea();
 }
 
+// Cmd/Ctrl+Enter 快捷鍵：保存並跳到下一題
+// Cmd/Ctrl+Shift+Enter 快捷鍵：保存並跳到上一題
+function handleAnswerKeydown(e) {
+  try {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      // 先把目前輸入記為草稿，確保文字不丟
+      const input = e.currentTarget || e.target;
+      try { saveAnswerDraft((input?.value || '')); saveTrainingProgress(); } catch (_) {}
+      // Shift+Enter => 上一題；否則下一題
+      try {
+        if (e.shiftKey) {
+          if (previousQuestion()) { updateTrainingInterface(); }
+        } else {
+          if (nextQuestion()) { updateTrainingInterface(); }
+        }
+      } catch (_) {}
+    }
+  } catch (err) {
+    console.warn('快捷鍵處理失敗', err);
+  }
+}
+
 
 
 // 處理上一題
 function handlePreviousQuestion() {
   try {
+    // 僅保存草稿，不標記提交
+    const answerInput = dom.qaModule?.querySelector('#qa-answer-input');
+    if (answerInput) {
+      try { saveAnswerDraft(answerInput.value || ''); saveTrainingProgress(); } catch (_) {}
+    }
+
     if (previousQuestion()) {
       updateTrainingInterface();
     }
@@ -1513,6 +1543,12 @@ function handlePreviousQuestion() {
 // 處理下一題
 function handleNextQuestion() {
   try {
+    // 先保存當前輸入為草稿，避免切換題目後內容遺失
+    const answerInput = dom.qaModule?.querySelector('#qa-answer-input');
+    if (answerInput) {
+      try { saveAnswerDraft(answerInput.value || ''); saveTrainingProgress(); } catch (_) {}
+    }
+
     if (nextQuestion()) {
       updateTrainingInterface();
     }
@@ -1726,14 +1762,14 @@ function generateResultsHTML(trainingResult) {
   let html = '<div class="training-results">';
 
   trainingResult.answers.forEach((answer, index) => {
-    const isAnswered = answer.isSubmitted;
+    const isAnswered = !!(answer.userAnswer && String(answer.userAnswer).trim().length > 0);
     const statusClass = isAnswered ? 'answered' : 'unanswered';
 
     html += `
       <div class="result-item ${statusClass}">
         <div class="result-header">
           <span class="question-number">Q${index + 1}</span>
-          <span class="result-status">${isAnswered ? '已回答' : '未回答'}</span>
+          <span class="result-status">${isAnswered ? '已保存' : '未回答'}</span>
         </div>
         <div class="result-question">
           <strong>問題:</strong> ${escapeHtml(answer.question)}
@@ -2423,8 +2459,8 @@ export async function checkSingleQuestionWithAI(questionIndex) {
   }
 
   const answer = currentTrainingResult.answers[questionIndex];
-  if (!answer.isSubmitted) {
-    displayMessage('該題目尚未回答，無法進行校驗', 'warning');
+  if (!(answer.userAnswer && String(answer.userAnswer).trim().length > 0)) {
+    displayMessage('該題目尚未輸入答案，無法進行校驗', 'warning');
     return;
   }
 

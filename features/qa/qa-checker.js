@@ -66,11 +66,12 @@ export async function startAIChecking(trainingResult, options = {}) {
   const __includeAnalysis = (options.includeAnalysis ?? (aiConfig?.QA_CHECK?.includeAnalysis ?? true));
 
   const totalQuestions = Array.isArray(trainingResult.answers) ? trainingResult.answers.length : 0;
-  const answers = trainingResult.answers.filter(a => a.isSubmitted);
+  // 不再區分提交/保存：僅以是否有內容決定是否校對
+  const answers = trainingResult.answers.filter(a => (a.userAnswer && String(a.userAnswer).trim().length > 0));
   const unansweredCount = Math.max(0, totalQuestions - answers.length);
 
   if (answers.length === 0) {
-    displayMessage('沒有已提交的答案需要校對', 'info');
+    displayMessage('沒有可校對的答案（尚未輸入內容）', 'info');
     return { checkedAnswers: [], summary: null };
   }
 
@@ -443,7 +444,7 @@ function createFailbackResult(answer) {
 
 // 基本校對模式
 function performBasicChecking(trainingResult) {
-  const answers = trainingResult.answers.filter(a => a.isSubmitted);
+  const answers = trainingResult.answers.filter(a => (a.userAnswer && String(a.userAnswer).trim().length > 0));
 
   const checkedAnswers = answers.map(answer => {
     const { userAnswer, correctAnswer } = answer;
@@ -623,7 +624,7 @@ export async function batchCheckAnswers(answers, options = {}) {
   console.log(`開始批次校對 ${answers.length} 個答案...`);
 
   const trainingResult = {
-    answers: answers.map(a => ({ ...a, isSubmitted: true }))
+    answers: answers
   };
 
   return await startAIChecking(trainingResult, options);

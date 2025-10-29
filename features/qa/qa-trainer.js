@@ -77,6 +77,8 @@ export function shuffleQuestions() {
 }
 
 // 提交答案
+// 統一行為：保存答案（不區分提交/保存）。
+// 若內容非空，將 isSubmitted 派生為 true；否則為 false。
 export function submitAnswer(answer, questionIndex = null) {
   if (!currentSession.isActive) {
     throw new Error('沒有活動的訓練會話');
@@ -88,14 +90,41 @@ export function submitAnswer(answer, questionIndex = null) {
     throw new Error('無效的問題索引');
   }
 
-  // 更新答案
+  const text = String(answer ?? '').trim();
+  // 更新答案（派生 isSubmitted）
   currentSession.answers[index] = {
-    userAnswer: answer.trim(),
-    isSubmitted: true,
+    userAnswer: text,
+    isSubmitted: text.length > 0,
     timestamp: new Date()
   };
 
-  console.log(`已提交第 ${index + 1} 題答案`);
+  console.log(`已保存第 ${index + 1} 題答案`);
+  return true;
+}
+
+// 保存當前題目的「草稿」答案（與 submitAnswer 等價：都只是保存）。
+// 用途：在使用者切換上一題/下一題或其它操作時，保留輸入框內容，避免返回後遺失。
+export function saveAnswerDraft(answer, questionIndex = null) {
+  if (!currentSession.isActive) {
+    throw new Error('沒有活動的訓練會話');
+  }
+
+  const index = questionIndex !== null ? questionIndex : currentSession.currentIndex;
+
+  if (index < 0 || index >= currentSession.questions.length) {
+    throw new Error('無效的問題索引');
+  }
+
+  const prev = currentSession.answers[index] || { userAnswer: '', isSubmitted: false, timestamp: null };
+  const text = String(answer ?? '').trim();
+  // 更新使用者輸入內容；isSubmitted 由內容是否為空派生
+  currentSession.answers[index] = {
+    ...prev,
+    userAnswer: text,
+    isSubmitted: text.length > 0,
+    timestamp: prev.timestamp || new Date()
+  };
+
   return true;
 }
 
@@ -152,8 +181,8 @@ export function finishTraining() {
     throw new Error('沒有活動的訓練會話');
   }
 
-  // 檢查是否所有問題都已回答
-  const unansweredCount = currentSession.answers.filter(a => !a.isSubmitted).length;
+  // 檢查是否所有問題都已回答（以是否有內容判斷）
+  const unansweredCount = currentSession.answers.filter(a => !(a.userAnswer && a.userAnswer.trim().length > 0)).length;
 
   if (unansweredCount > 0) {
     const confirmed = confirm(`還有 ${unansweredCount} 題未回答，確定要完成訓練嗎？`);
@@ -171,13 +200,14 @@ export function finishTraining() {
     qaSetId: currentSession.qaSetId,
     qaSetName: currentSession.qaSet.name,
     totalQuestions: currentSession.questions.length,
-    answeredQuestions: currentSession.answers.filter(a => a.isSubmitted).length,
+    answeredQuestions: currentSession.answers.filter(a => (a.userAnswer && a.userAnswer.trim().length > 0)).length,
     answers: currentSession.questions.map((question, index) => ({
       qid: question.qid,
       question: question.question,
       correctAnswer: question.answer,
       userAnswer: currentSession.answers[index].userAnswer || '',
-      isSubmitted: currentSession.answers[index].isSubmitted
+      // 兼容欄位：有內容即視為已答
+      isSubmitted: !!(currentSession.answers[index].userAnswer && currentSession.answers[index].userAnswer.trim().length > 0)
     })),
     startTime: currentSession.startTime,
     endTime: endTime,
@@ -278,7 +308,7 @@ export function getTrainingProgress() {
     return null;
   }
 
-  const answeredCount = currentSession.answers.filter(a => a.isSubmitted).length;
+  const answeredCount = currentSession.answers.filter(a => (a.userAnswer && a.userAnswer.trim().length > 0)).length;
   const totalCount = currentSession.questions.length;
   const currentIndex = currentSession.currentIndex;
 
