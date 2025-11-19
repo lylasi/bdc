@@ -20,6 +20,39 @@ function applyTemplate(tpl, vars = {}) {
   return s;
 }
 
+function buildArticleImportUrl(base, targetUrl) {
+    if (!base) return null;
+    try {
+        const u = new URL(base);
+        u.searchParams.set('url', targetUrl);
+        return u.toString();
+    } catch (_) {
+        const hasParam = /[?&]url=/.test(base);
+        if (hasParam) return `${base}${encodeURIComponent(targetUrl)}`;
+        const sep = base.includes('?') ? (base.endsWith('?') || base.endsWith('&') ? '' : '&') : '?';
+        return `${base}${sep}url=${encodeURIComponent(targetUrl)}`;
+    }
+}
+
+async function fetchJsonWithTimeout(url, { timeoutMs = 20000, signal, headers } = {}) {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
+    const resp = await fetch(url, {
+        signal: signal || ac.signal,
+        headers: { 'Accept': 'application/json', ...(headers || {}) }
+    });
+    clearTimeout(timer);
+    if (!resp.ok) {
+        let payload = null;
+        try { payload = await resp.json(); } catch (_) {}
+        const err = new Error(`HTTP ${resp.status}`);
+        err.status = resp.status;
+        err.payload = payload;
+        throw err;
+    }
+    return resp.json();
+}
+
 // 將模型規格（string / 'profile:model' / {profile, model, apiUrl?, apiKey?}）正規化
 function normalizeModelSpec(spec) {
     if (spec && typeof spec === 'object') {
@@ -803,6 +836,108 @@ export async function fetchArticleFromUrlStructured(url, opts = {}) {
         if (parsed.title || okLen) return parsed;
     } catch (_) { /* ignore */ }
     return { title: '', content: String(raw || ''), publishedAt: '', url };
+}
+
+export async function fetchArticleViaWorker(url, opts = {}) {
+    const { timeoutMs = 20000, signal, keepImages = true, model, preferMarkdown = true } = opts;
+    const endpoint = ARTICLE_IMPORT?.EXTRACT_URL || ARTICLE_IMPORT?.PROXY_URL;
+    if (!endpoint) throw new Error('尚未設定文章擷取服務端點');
+    const base = buildArticleImportUrl(endpoint, url);
+    if (!base) throw new Error('無法建立文章擷取網址');
+    const u = new URL(base);
+    // 若 Worker 支援 format/includeMarkdown，優先要求 markdown
+    if (preferMarkdown) {
+        if (!u.searchParams.has('format')) u.searchParams.set('format', 'json');
+        if (!u.searchParams.has('includeMarkdown')) u.searchParams.set('includeMarkdown', 'true');
+        if (!u.searchParams.has('keepImages')) u.searchParams.set('keepImages', keepImages ? 'true' : 'false');
+    }
+    const data = await fetchJsonWithTimeout(u.toString(), { timeoutMs, signal });
+    const title = data?.title || data?.heading || '';
+    const byline = data?.byline || data?.author || '';
+    const publishedAt = data?.publishedAt || data?.date || '';
+    const sourceUrl = data?.sourceUrl || data?.source || url;
+    const markdownFromWorker = preferMarkdown ? (data?.markdown || data?.contentMarkdown) : '';
+    let markdown = markdownFromWorker || '';
+    if (!markdown) {
+        const html = data?.contentHtml || data?.rawHtml || '';
+        const text = data?.contentText || '';
+        if (html || text) {
+            const htmlInput = html || `<article>${text}</article>`;
+            markdown = await aiExtractArticleFromHtml(htmlInput, { url: sourceUrl, keepImages, timeoutMs, signal, model });
+        } else {
+            throw new Error('擷取結果缺少正文內容');
+        }
+    }
+    return { title, byline, publishedAt, markdown, raw: data, sourceUrl };
+}
+
+export async function listCuratedArticles(sourceId, opts = {}) {
+    const { timeoutMs = 15000, signal } = opts;
+    if (!sourceId) throw new Error('缺少來源代碼');
+    if (!ARTICLE_IMPORT?.FEED_URL) throw new Error('未設定新聞來源端點');
+    const base = ARTICLE_IMPORT.FEED_URL.replace(/\/$/, '');
+    const u = new URL(`${base}/${encodeURIComponent(sourceId)}`);
+    // 若 Worker 需要明確格式，指定 json
+    if (!u.searchParams.has('format')) u.searchParams.set('format', 'json');
+    const data = await fetchJsonWithTimeout(u.toString(), { timeoutMs, signal });
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    if (Array.isArray(data?.articles)) return data.articles;
+    return [];
+}
+
+export async function listArticleSources(opts = {}) {
+    const { timeoutMs = 12000, signal } = opts;
+    if (!ARTICLE_IMPORT?.FEED_URL) return [];
+    try {
+        const base = ARTICLE_IMPORT.FEED_URL.replace(/\/$/, '');
+        const u = new URL(base);
+        if (!u.searchParams.has('format')) u.searchParams.set('format', 'json');
+        const data = await fetchJsonWithTimeout(u.toString(), { timeoutMs, signal });
+        if (Array.isArray(data?.sources)) return data.sources;
+        if (Array.isArray(data)) return data;
+    } catch (_) { /* fallback */ }
+    return [];
+}
+
+export async function fetchCuratedArticle(sourceId, articleUrl, opts = {}) {
+    const { timeoutMs = 22000, signal, keepImages = true, model } = opts;
+    if (!articleUrl) throw new Error('缺少文章網址');
+    let lastErr = null;
+    if (ARTICLE_IMPORT?.FEED_URL && sourceId) {
+        try {
+            const base = ARTICLE_IMPORT.FEED_URL.replace(/\/$/, '');
+            const u = new URL(`${base}/${encodeURIComponent(sourceId)}/article`);
+            u.searchParams.set('url', articleUrl);
+            u.searchParams.set('format', 'json');
+            u.searchParams.set('includeMarkdown', 'true');
+            u.searchParams.set('keepImages', keepImages ? 'true' : 'false');
+            const data = await fetchJsonWithTimeout(u.toString(), { timeoutMs, signal });
+            const title = data?.title || '';
+            const byline = data?.byline || data?.author || '';
+            const publishedAt = data?.publishedAt || data?.date || '';
+            let markdown = data?.markdown || data?.contentMarkdown || '';
+            if (!markdown) {
+                const html = data?.contentHtml || data?.rawHtml || '';
+                if (html) {
+                    markdown = await aiExtractArticleFromHtml(html, { url: articleUrl, keepImages, timeoutMs, signal, model });
+                } else if (data?.contentText) {
+                    markdown = await aiCleanArticleMarkdown(String(data.contentText), { keepImages, timeoutMs, signal, model });
+                }
+            }
+            if (markdown) return { title, byline, publishedAt, markdown, raw: data, sourceId };
+        } catch (err) {
+            lastErr = err;
+        }
+    }
+    try {
+        const res = await fetchArticleViaWorker(articleUrl, { timeoutMs, signal, keepImages, model });
+        res.sourceId = sourceId;
+        return res;
+    } catch (err) {
+        if (lastErr) throw lastErr;
+        throw err;
+    }
 }
 
 // =================================

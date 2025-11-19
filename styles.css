@@ -1099,6 +1099,22 @@ button:disabled {
   background: #f3f4f6; border: 1px solid #e5e7eb;
 }
 
+.news-source-list { display:flex; flex-wrap:wrap; gap:8px; }
+.news-source-btn {
+  padding:8px 10px; border:1px solid #d1d5db; border-radius:8px; background:#f9fafb;
+  cursor:pointer; font-weight:600; color:#374151; transition:background .15s, border-color .15s, color .15s;
+}
+.news-source-btn:hover { background:#e5e7eb; }
+.news-source-btn.active { background:#eef2ff; border-color:#93c5fd; color:#111827; }
+.news-feed { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+.news-card { border:1px solid #e5e7eb; border-radius:8px; padding:10px 12px; background:#fff; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.news-head { flex:1; min-width:200px; }
+.news-title { font-weight:700; color:#111827; margin-bottom:4px; }
+.news-meta { color:#6b7280; font-size:12px; }
+.news-actions { display:flex; gap:8px; align-items:center; }
+.news-actions .btn-primary, .news-actions .btn-secondary { text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+.news-empty { padding:16px; text-align:center; color:#6b7280; background:#f9fafb; border:1px dashed #e5e7eb; border-radius:8px; }
+
 /* 文章標題（來自文本中以 # 開頭的行） */
 .article-title {
     text-align: center;
