@@ -219,6 +219,10 @@ function openArticleImportModal() {
     btnUrl.className = 'tab-btn';
     btnUrl.textContent = '網址導入';
     btnUrl.dataset.tab = 'url';
+    const btnNews = document.createElement('button');
+    btnNews.className = 'tab-btn';
+    btnNews.textContent = '新聞來源';
+    btnNews.dataset.tab = 'news';
     const btnOcr = document.createElement('button');
     btnOcr.className = 'tab-btn';
     btnOcr.textContent = '圖片 OCR';
@@ -227,7 +231,7 @@ function openArticleImportModal() {
     btnQa.className = 'tab-btn';
     btnQa.textContent = '問答集';
     btnQa.dataset.tab = 'qa';
-    tabs.appendChild(btnUrl); tabs.appendChild(btnOcr); tabs.appendChild(btnQa);
+    tabs.appendChild(btnUrl); tabs.appendChild(btnNews); tabs.appendChild(btnOcr); tabs.appendChild(btnQa);
     const panel = document.createElement('div');
     panel.style.minHeight = '120px';
     body.appendChild(tabs);
@@ -247,16 +251,13 @@ function openArticleImportModal() {
         directOnly: 'importArticle.url.directOnly',
         ocrModel: 'importArticle.ocr.model',
         ocrPreferCamera: 'importArticle.ocr.preferCamera',
-        ocrMerge: 'importArticle.ocr.merge'
+        ocrMerge: 'importArticle.ocr.merge',
+        newsSource: 'importArticle.news.source'
     };
 
-    const renderUrl = () => {
-        panel.innerHTML = '';
-        const wrap = document.createElement('div');
-        // 準備模型清單（去重）
-        const s = loadGlobalSettings();
-        // 僅以 ai-config（ARTICLE_IMPORT）為準，不再合併其他來源
-        const suggestions = [];
+    // 準備模型清單（去重）
+    const modelSuggestions = (() => {
+        const arr = [];
         const push = (v) => {
             if (!v) return;
             let sVal = '';
@@ -267,7 +268,7 @@ function openArticleImportModal() {
             } else {
                 sVal = String(v).trim();
             }
-            if (sVal && !suggestions.includes(sVal)) suggestions.push(sVal);
+            if (sVal && !arr.includes(sVal)) arr.push(sVal);
         };
         if (Array.isArray(ARTICLE_IMPORT?.MODELS) && ARTICLE_IMPORT.MODELS.length) {
             ARTICLE_IMPORT.MODELS.forEach(push);
@@ -275,7 +276,13 @@ function openArticleImportModal() {
             push(ARTICLE_IMPORT?.DEFAULT_MODEL);
             push(ARTICLE_IMPORT?.MODEL);
         }
-        const defaultModel = ARTICLE_IMPORT?.DEFAULT_MODEL || ARTICLE_IMPORT?.MODEL || suggestions[0] || '';
+        return arr;
+    })();
+    const defaultCleanModel = ARTICLE_IMPORT?.DEFAULT_MODEL || ARTICLE_IMPORT?.MODEL || modelSuggestions[0] || '';
+
+    const renderUrl = () => {
+        panel.innerHTML = '';
+        const wrap = document.createElement('div');
 
         wrap.innerHTML = `
             <div class="import-form">
@@ -298,7 +305,7 @@ function openArticleImportModal() {
                         <label class="checkbox-inline"><input id="imp-auto-apply" type="checkbox"> <span>擷取後自動套用</span></label>
                         <label class="checkbox-inline" title="跳過 r.jina.ai 等第三方轉換；僅嘗試直接抓取頁面 HTML 再交給 AI 清洗（可能受 CORS 限制）"><input id="imp-direct-only" type="checkbox"> <span>跳過第三方轉換</span></label>
                         <span class="model-label">清洗模型</span>
-                        <select id="imp-ai-clean-model" class="import-input short">${suggestions.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
+                        <select id="imp-ai-clean-model" class="import-input short">${modelSuggestions.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
                     </div>
                 </div>
                 <div class="dropzone" id="imp-url-dropzone" tabindex="0" aria-label="拖放 .md / .txt 檔，或直接貼上全文">拖放 .md / .txt 到此，或聚焦後按 Ctrl+V 貼上全文</div>
@@ -328,7 +335,10 @@ function openArticleImportModal() {
         const keepImagesChk = $('#imp-ai-keep-images');
         const autoApplyChk = $('#imp-auto-apply');
         const directOnlyChk = $('#imp-direct-only');
-        if (modelSelect) modelSelect.value = String(defaultModel || '');
+        if (modelSelect) {
+            const savedModel = LS.get(LS_KEYS.cleanModel, defaultCleanModel);
+            modelSelect.value = String(savedModel || defaultCleanModel || '');
+        }
         // restore toggles
         if (aiCleanChk) aiCleanChk.checked = !!LS.get(LS_KEYS.cleanEnabled, true);
         if (keepImagesChk) keepImagesChk.checked = LS.get(LS_KEYS.cleanKeepImages, true);
@@ -514,6 +524,214 @@ function openArticleImportModal() {
                 fetchBtn.disabled = false; fetchBtn.textContent = '擷取';
             }
         });
+    };
+
+    const renderNews = async () => {
+        panel.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
+            <div class="import-form">
+                <div class="form-row wrap">
+                    <span class="label">來源列表</span>
+                    <div class="controls news-source-list" id="news-source-list"></div>
+                </div>
+                <div class="form-row wrap">
+                    <span class="label">清洗選項</span>
+                    <div class="controls">
+                        <label class="checkbox-inline"><input id="news-ai-clean" type="checkbox"> <span>AI 清洗內容</span></label>
+                        <label class="checkbox-inline"><input id="news-keep-images" type="checkbox" checked> <span>保留圖片</span></label>
+                        <label class="checkbox-inline"><input id="news-auto-apply" type="checkbox"> <span>導入後自動套用</span></label>
+                        <span class="model-label">清洗模型</span>
+                        <select id="news-clean-model" class="import-input short">${modelSuggestions.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
+                    </div>
+                </div>
+                <div id="news-feed" class="news-feed" aria-live="polite"></div>
+                <div id="news-preview" class="import-preview" style="display:none;">
+                    <div class="import-preview-head">預覽</div>
+                    <pre id="news-preview-body" class="import-preview-body"></pre>
+                    <div class="import-preview-actions"><button id="news-apply" class="btn-primary">套用到輸入框</button></div>
+                </div>
+            </div>
+        `;
+        panel.appendChild(wrap);
+
+        const sourceList = wrap.querySelector('#news-source-list');
+        const feedBox = wrap.querySelector('#news-feed');
+        const previewBox = wrap.querySelector('#news-preview');
+        const previewBody = wrap.querySelector('#news-preview-body');
+        const applyBtn = wrap.querySelector('#news-apply');
+        const aiCleanChk = wrap.querySelector('#news-ai-clean');
+        const keepImagesChk = wrap.querySelector('#news-keep-images');
+        const autoApplyChk = wrap.querySelector('#news-auto-apply');
+        const modelSel = wrap.querySelector('#news-clean-model');
+        if (aiCleanChk) aiCleanChk.checked = !!LS.get(LS_KEYS.cleanEnabled, true);
+        if (keepImagesChk) keepImagesChk.checked = LS.get(LS_KEYS.cleanKeepImages, true);
+        if (autoApplyChk) autoApplyChk.checked = LS.get(LS_KEYS.cleanAutoApply, false);
+        if (modelSel) modelSel.value = LS.get(LS_KEYS.cleanModel, defaultCleanModel);
+
+        // 來源列表：優先向 Worker 取得，若無則回退 ai-config.SOURCES
+        let sources = [];
+        try {
+            const fromApi = await api.listArticleSources({ timeoutMs: 12000 });
+            if (Array.isArray(fromApi) && fromApi.length) sources = fromApi;
+        } catch (_) {}
+        if (!sources.length && Array.isArray(ARTICLE_IMPORT?.SOURCES)) sources = ARTICLE_IMPORT.SOURCES;
+        if (!sources.length) {
+            feedBox.innerHTML = '<div class="news-empty">尚未設定新聞來源（請在 ai-config.js → ARTICLE_IMPORT.SOURCES 加入來源）</div>';
+            return;
+        }
+
+        let currentSource = LS.get(LS_KEYS.newsSource, sources[0]?.id || '');
+        let previewText = '';
+        const cacheFeeds = new Map();
+
+        const formatDate = (ds) => {
+            if (!ds) return '';
+            try {
+                const d = new Date(ds);
+                if (Number.isNaN(d.getTime())) return '';
+                return d.toLocaleString('zh-TW', { hour12: false });
+            } catch (_) { return ''; }
+        };
+
+        const renderSources = () => {
+            if (!sourceList) return;
+            sourceList.innerHTML = '';
+            sources.forEach(src => {
+                const btn = document.createElement('button');
+                btn.className = 'news-source-btn';
+                if (src.id === currentSource) btn.classList.add('active');
+                btn.dataset.id = src.id;
+                btn.textContent = src.label || src.id;
+                btn.addEventListener('click', () => {
+                    if (src.id === currentSource) return;
+                    currentSource = src.id;
+                    try { LS.set(LS_KEYS.newsSource, currentSource); } catch (_) {}
+                    renderSources();
+                    loadFeed(currentSource);
+                });
+                sourceList.appendChild(btn);
+            });
+        };
+
+        const renderFeed = (list, sourceId) => {
+            if (!feedBox) return;
+            feedBox.innerHTML = '';
+            if (!list || !list.length) {
+                feedBox.innerHTML = '<div class="news-empty">此來源暫無可用文章</div>';
+                return;
+            }
+            list.forEach(item => {
+                const title = item.title || '未命名文章';
+                const url = item.url || item.link || '';
+                const hasUrl = !!url;
+                const time = formatDate(item.publishedAt || item.pubDate || item.date);
+                const meta = [time, item.sourceId || sourceId].filter(Boolean).join(' · ');
+                const card = document.createElement('div');
+                card.className = 'news-card';
+                card.innerHTML = `
+                    <div class="news-head">
+                        <div class="news-title" title="${esc(title)}">${esc(title)}</div>
+                        <div class="news-meta">${esc(meta)}</div>
+                    </div>
+                    <div class="news-actions">
+                        ${hasUrl ? `<a class="btn-secondary news-origin-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer">原文</a>` : ''}
+                        <button class="btn-secondary news-preview-btn" data-url="${esc(url)}" data-source="${esc(sourceId)}">預覽</button>
+                        <button class="btn-primary news-import-btn" data-url="${esc(url)}" data-source="${esc(sourceId)}">導入</button>
+                    </div>
+                `;
+                feedBox.appendChild(card);
+            });
+        };
+
+        const loadFeed = async (sourceId) => {
+            if (!feedBox) return;
+            feedBox.innerHTML = '<div class="news-empty">載入中…</div>';
+            try {
+                if (cacheFeeds.has(sourceId)) {
+                    renderFeed(cacheFeeds.get(sourceId), sourceId);
+                    return;
+                }
+                const list = await api.listCuratedArticles(sourceId, { timeoutMs: 16000 });
+                cacheFeeds.set(sourceId, list || []);
+                renderFeed(list || [], sourceId);
+            } catch (err) {
+                feedBox.innerHTML = `<div class="news-empty">載入失敗：${esc(err?.message || err || '未知錯誤')}</div>`;
+            }
+        };
+
+        const applyMarkdown = (md, { forcePreview = false } = {}) => {
+            if (!md) return;
+            previewText = md;
+            if (!forcePreview && autoApplyChk && autoApplyChk.checked && dom.articleInput) {
+                dom.articleInput.value = md;
+                try { ui.closeModal(); } catch (_) {}
+                try { dom.articleInput.focus(); } catch (_) {}
+                try { notifyAssistantArticleChanged(); } catch (_) {}
+                return;
+            }
+            if (previewBody) previewBody.textContent = md;
+            if (previewBox) previewBox.style.display = 'block';
+            try { previewBox?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+        };
+
+        const importArticleFromNews = async (sourceId, articleUrl, triggerBtn, forcePreviewOnly = false) => {
+            if (!articleUrl) { alert('缺少文章網址'); return; }
+            const btnState = triggerBtn ? { el: triggerBtn, text: triggerBtn.textContent } : null;
+            if (btnState) { btnState.el.disabled = true; btnState.el.textContent = '處理中…'; }
+            try {
+                const keepImages = keepImagesChk ? !!keepImagesChk.checked : true;
+                const wantAiClean = aiCleanChk ? !!aiCleanChk.checked : true;
+                const model = modelSel ? modelSel.value : undefined;
+                const res = await api.fetchCuratedArticle(sourceId, articleUrl, { keepImages, timeoutMs: 22000, model });
+                let md = res?.markdown || '';
+                if (!md && res?.raw?.contentText) md = String(res.raw.contentText);
+                if (res?.title) {
+                    const firstLine = (md || '').split('\n')[0] || '';
+                    if (!/^#\s+/.test(firstLine.trim())) md = `# ${res.title}\n\n${md || ''}`;
+                }
+                if (wantAiClean && md) {
+                    try {
+                        md = await api.aiCleanArticleMarkdown(md, { keepImages, timeoutMs: 25000, model });
+                    } catch (_) { /* noop */ }
+                }
+                if (!md) throw new Error('未取得文章內容');
+                applyMarkdown(md.trim(), { forcePreview: forcePreviewOnly });
+            } catch (err) {
+                alert('導入失敗：' + (err?.message || err));
+            } finally {
+                if (btnState) { btnState.el.disabled = false; btnState.el.textContent = btnState.text; }
+            }
+        };
+
+        renderSources();
+        await loadFeed(currentSource);
+
+        if (feedBox) {
+            feedBox.addEventListener('click', (e) => {
+                const target = e.target && e.target.closest ? e.target.closest('button') : null;
+                if (!target) return;
+                const url = target.dataset.url || '';
+                const src = target.dataset.source || currentSource;
+                if (target.classList.contains('news-import-btn')) {
+                    importArticleFromNews(src, url, target, false);
+                } else if (target.classList.contains('news-preview-btn')) {
+                    importArticleFromNews(src, url, target, true);
+                }
+            });
+        }
+        if (applyBtn) applyBtn.addEventListener('click', () => {
+            if (previewText && dom.articleInput) {
+                dom.articleInput.value = previewText;
+                try { ui.closeModal(); } catch (_) {}
+                try { dom.articleInput.focus(); } catch (_) {}
+                try { notifyAssistantArticleChanged(); } catch (_) {}
+            }
+        });
+        if (aiCleanChk) aiCleanChk.addEventListener('change', () => LS.set(LS_KEYS.cleanEnabled, !!aiCleanChk.checked));
+        if (keepImagesChk) keepImagesChk.addEventListener('change', () => LS.set(LS_KEYS.cleanKeepImages, !!keepImagesChk.checked));
+        if (autoApplyChk) autoApplyChk.addEventListener('change', () => LS.set(LS_KEYS.cleanAutoApply, !!autoApplyChk.checked));
+        if (modelSel) modelSel.addEventListener('change', () => LS.set(LS_KEYS.cleanModel, modelSel.value));
     };
 
     const renderOcr = () => {
@@ -780,19 +998,25 @@ function openArticleImportModal() {
 
     const activate = (name) => {
         btnUrl.classList.remove('active');
+        btnNews.classList.remove('active');
         btnOcr.classList.remove('active');
         btnQa.classList.remove('active');
-        if (name === 'ocr') { btnOcr.classList.add('active'); renderOcr(); }
+        if (name === 'news') { btnNews.classList.add('active'); renderNews(); }
+        else if (name === 'ocr') { btnOcr.classList.add('active'); renderOcr(); }
         else if (name === 'qa') { btnQa.classList.add('active'); renderQa(); }
         else { btnUrl.classList.add('active'); renderUrl(); }
         try { localStorage.setItem('importArticle.activeTab', JSON.stringify(name)); } catch(_) {}
     };
     btnUrl.addEventListener('click', () => activate('url'));
+    btnNews.addEventListener('click', () => activate('news'));
     btnOcr.addEventListener('click', () => activate('ocr'));
     btnQa.addEventListener('click', () => activate('qa'));
     try {
         const saved = JSON.parse(localStorage.getItem('importArticle.activeTab') || '"url"');
-        activate(saved === 'ocr' ? 'ocr' : (saved === 'qa' ? 'qa' : 'url'));
+        if (saved === 'news') activate('news');
+        else if (saved === 'ocr') activate('ocr');
+        else if (saved === 'qa') activate('qa');
+        else activate('url');
     } catch(_) { activate('url'); }
 
     try { dom.modalTitle.textContent = '導入文章'; } catch (_) {}
