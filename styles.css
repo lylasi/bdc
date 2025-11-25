@@ -335,6 +335,7 @@ button:disabled {
 
 #word-list {
     list-style: none;
+    padding: 8px;
 }
 
 .word-item {
@@ -1735,13 +1736,14 @@ button:disabled {
     font-weight: 600;
     color: white;
     text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 #current-book-name {
-    white-space: nowrap;
+    white-space: normal;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 220px;
     font-weight: 500;
 }
 
@@ -1807,9 +1809,16 @@ button:disabled {
 }
 
 .vocab-book-item span {
-     white-space: nowrap;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.vocab-book-item .word-count {
+    flex: 0 0 auto;
+    margin-left: 8px;
+    font-size: 0.8em;
+    color: #6b7280;
 }
 
 
@@ -1818,6 +1827,79 @@ button:disabled {
     text-align: center;
     padding: 50px 20px;
     font-style: italic;
+}
+
+/* 單詞本：來源資訊橫幅 */
+#current-book-meta {
+    margin: 4px 0 10px;
+}
+
+.book-meta-banner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+.book-meta-info {
+    flex: 1 1 auto;
+    min-width: 200px;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+    color: #475569;
+}
+
+.book-meta-label {
+    font-size: 0.72em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.book-meta-text {
+    font-size: 0.85em;
+    color: #334155;
+    font-weight: 500;
+}
+
+.book-meta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.book-meta-actions .book-origin-link,
+.book-meta-actions .book-open-article-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    min-height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid #cbd5f5;
+    background: #fff;
+    color: #1d4ed8;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.85em;
+    line-height: 1;
+    box-shadow: none;
+}
+
+.book-meta-actions .book-origin-link:hover,
+.book-meta-actions .book-open-article-btn:hover {
+    background: #e2e8f0;
 }
 
 .word-panel-actions {
@@ -2452,26 +2534,27 @@ button:disabled {
 
 .word-item:hover {
     background: #f8f9fa;
-    border-color: #3a7bd5;
+    border-color: #93c5fd;
     transform: translateX(4px);
 }
 
 .word-item.current {
-    background: linear-gradient(135deg, #3a7bd5, #4ea5e0);
-    color: white;
-    border-color: #3a7bd5;
+    background: #f0f5ff;
+    color: #0f172a;
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.45);
     font-weight: 600;
 }
 
 .word-item.current::before {
-    content: "▶";
+    content: '';
     position: absolute;
-    left: -8px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #3a7bd5;
-    font-size: 12px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui;
+    left: -1px;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #3b82f6, #2563eb);
 }
 
 .word-header {
@@ -2505,7 +2588,7 @@ button:disabled {
 }
 
 .word-item.current .word-phonetic {
-    color: rgba(255, 255, 255, 0.9);
+    color: #1d4ed8;
 }
 
 .word-item[data-phonetic-only="true"] .word-header {
@@ -2528,7 +2611,7 @@ button:disabled {
 }
 
 .word-item.current .word-meaning {
-    color: rgba(255, 255, 255, 0.9);
+    color: #1e293b;
 }
 
 @media (max-width: 480px) {
