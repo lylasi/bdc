@@ -129,10 +129,21 @@ function renderVocabBookList() {
         const li = document.createElement('li');
         li.className = 'vocab-book-item';
         li.dataset.bookId = book.id;
+        li.title = book.name || '';
         if (book.id === state.activeBookId) {
             li.classList.add('active');
         }
-        li.innerHTML = `<span>${book.name}</span> <span class="word-count">${book.words.length}</span>`;
+        const count = Array.isArray(book.words) ? book.words.length : 0;
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = book.name;
+        nameSpan.title = book.name || '';
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'word-count';
+        countSpan.textContent = count;
+
+        li.appendChild(nameSpan);
+        li.appendChild(countSpan);
         dom.vocabBookList.appendChild(li);
     });
 }
@@ -178,10 +189,65 @@ function updateActiveBookView() {
     const activeBook = state.vocabularyBooks.find(b => b.id === state.activeBookId);
     if (activeBook) {
         dom.currentBookName.textContent = activeBook.name;
+        dom.currentBookName.title = activeBook.name || '';
         dom.editVocabBookBtn.disabled = false;
         dom.deleteVocabBookBtn.disabled = false;
         dom.exportVocabBookBtn.disabled = false;
         if (dom.completeMissingBtn) dom.completeMissingBtn.disabled = (activeBook.words.length === 0);
+        // 顯示當前單詞本的來源資訊（若為文章專屬生詞本，提供回到文章與原文連結）
+        if (dom.currentBookMeta) {
+            const isArticleBook = activeBook.sourceType === 'article' && activeBook.articleId;
+            if (isArticleBook && typeof storage.getArticleMetaById === 'function') {
+                let meta = null;
+                try { meta = storage.getArticleMetaById(activeBook.articleId); } catch (_) {}
+                const srcType = meta && meta.sourceType ? meta.sourceType : (activeBook.articleId ? 'url' : 'paste');
+                const rawUrl = meta && meta.sourceUrl ? String(meta.sourceUrl) : '';
+
+                let sourceText = '來源：文章詳解';
+                if (srcType === 'url') {
+                    sourceText = '來源：文章詳解（網頁 / 新聞）';
+                } else if (srcType === 'file') {
+                    sourceText = '來源：文章詳解（文章庫 / 檔案）';
+                } else if (srcType === 'ocr') {
+                    sourceText = '來源：文章詳解（圖片 OCR）';
+                }
+
+                const hasUrl = srcType === 'url' && rawUrl;
+                const escUrl = hasUrl ? rawUrl.replace(/"/g, '&quot;') : '';
+
+                dom.currentBookMeta.innerHTML = `
+                    <div class="book-meta-banner">
+                        <div class="book-meta-info">
+                            <span class="book-meta-label">文章來源</span>
+                            <span class="book-meta-text">${sourceText}</span>
+                        </div>
+                        <div class="book-meta-actions">
+                            ${hasUrl ? `<a href="${escUrl}" target="_blank" rel="noopener noreferrer" class="book-origin-link">開啟原文</a>` : ''}
+                            <button type="button" class="book-open-article-btn">回文章</button>
+                        </div>
+                    </div>
+                `;
+
+                const openBtn = dom.currentBookMeta.querySelector('.book-open-article-btn');
+                if (openBtn) {
+                    openBtn.onclick = () => {
+                        try {
+                            if (typeof state.setCurrentArticleId === 'function') state.setCurrentArticleId(activeBook.articleId);
+                            if (typeof state.setCurrentWordbookId === 'function') state.setCurrentWordbookId(activeBook.id);
+                        } catch (_) {}
+                        // 切換到文章詳解頁籤
+                        if (dom.articleNavBtn) {
+                            dom.articleNavBtn.click();
+                        } else {
+                            const btn = document.getElementById('article-btn');
+                            if (btn) btn.click();
+                        }
+                    };
+                }
+            } else {
+                dom.currentBookMeta.textContent = '';
+            }
+        }
         renderWordList();
     } else {
         dom.currentBookName.textContent = '請選擇一個單詞本';
@@ -190,6 +256,7 @@ function updateActiveBookView() {
         dom.exportVocabBookBtn.disabled = true;
         if (dom.completeMissingBtn) dom.completeMissingBtn.disabled = true;
         dom.wordList.innerHTML = '<li class="word-item-placeholder">請從左側選擇或創建一個單詞本</li>';
+        if (dom.currentBookMeta) dom.currentBookMeta.textContent = '';
     }
 }
 
@@ -355,6 +422,15 @@ function openModalForEditBook() {
     if (!book) return;
 
     dom.modalTitle.textContent = '編輯單詞本 - ' + book.name;
+    const isArticleBook = book.sourceType === 'article' && book.articleId;
+    let sourceUrl = '';
+    if (isArticleBook && typeof storage.getArticleMetaById === 'function') {
+        try {
+            const meta = storage.getArticleMetaById(book.articleId);
+            if (meta && meta.sourceUrl) sourceUrl = String(meta.sourceUrl);
+        } catch (_) { /* ignore */ }
+    }
+    const safeSourceUrl = sourceUrl.replace(/"/g, '&quot;');
     const wordsText = book.words.map(w => {
         const phonetic = (w.phonetic || '').replace(/^\/+|\/+$/g, '');
         return `${w.word}#${w.meaning || ''}@/${phonetic}/`;
@@ -364,6 +440,12 @@ function openModalForEditBook() {
             <label for="modal-book-name">單詞本名稱</label>
             <input type="text" id="modal-book-name" value="${book.name}">
         </div>
+        ${isArticleBook ? `
+        <div class="input-group">
+            <label for="modal-book-source-url">來源網址（可選）</label>
+            <input type="url" id="modal-book-source-url" value="${safeSourceUrl}" placeholder="https://example.com/article">
+            <small class="form-hint">若填寫網址，文章詳解與單詞本中的「開啟原文」會使用此連結；留空則不顯示原文連結。</small>
+        </div>` : ''}
         <div class="input-group">
             <label for="modal-vocab-content">單詞內容 (格式: 單詞#中文@音標)</label>
             <textarea id="modal-vocab-content">${wordsText}</textarea>
@@ -533,7 +615,13 @@ async function importVocabularySources(sources, options = {}) {
                 wordsWithDetails.push(parsedWord);
             }
 
-            const newBook = { id: Date.now().toString(), name: bookData.name, words: wordsWithDetails };
+            const newBook = {
+                id: Date.now().toString(),
+                name: bookData.name,
+                words: wordsWithDetails,
+                sourceType: 'custom',
+                createdAt: new Date().toISOString()
+            };
 
             if (existingBookIndex > -1) {
                 state.vocabularyBooks[existingBookIndex] = { ...state.vocabularyBooks[existingBookIndex], ...newBook };
@@ -644,6 +732,7 @@ async function saveBookWithAICompletion(bookId = null) {
     saveBtn.textContent = '處理中...';
 
     let book;
+    const isEditing = !!bookId;
     if (bookId) {
         book = state.vocabularyBooks.find(b => b.id === bookId);
         if (book) book.name = name;
@@ -651,12 +740,41 @@ async function saveBookWithAICompletion(bookId = null) {
         book = {
             id: Date.now().toString(),
             name: name,
-            words: []
+            words: [],
+            sourceType: 'custom',
+            createdAt: new Date().toISOString()
         };
     }
 
     const wordsText = document.getElementById('modal-vocab-content').value.trim();
     await processWordsWithAI(book, wordsText);
+
+    // 若為文章專屬單詞本，且編輯彈窗中提供了來源網址欄位，則同步更新 ArticleMeta
+    if (isEditing && book && book.sourceType === 'article' && book.articleId && document.getElementById('modal-book-source-url')) {
+        try {
+            const inputEl = document.getElementById('modal-book-source-url');
+            const rawUrl = (inputEl && inputEl.value ? inputEl.value.trim() : '');
+            let meta = null;
+            if (typeof storage.getArticleMetaById === 'function') {
+                try { meta = storage.getArticleMetaById(book.articleId); } catch (_) { meta = null; }
+            }
+            if (!meta) {
+                meta = { id: book.articleId };
+            }
+            meta.title = book.name;
+            if (rawUrl) {
+                meta.sourceType = 'url';
+                meta.sourceUrl = rawUrl;
+            } else {
+                // 移除網址，回退來源類型為貼上文字（除非原本已是 file/ocr 等）
+                if (meta.sourceUrl) delete meta.sourceUrl;
+                if (!meta.sourceType || meta.sourceType === 'url') {
+                    meta.sourceType = 'paste';
+                }
+            }
+            storage.saveArticleMeta(meta);
+        } catch (_) { /* ignore meta update error */ }
+    }
     
     if (!bookId) {
         state.vocabularyBooks.push(book);
@@ -912,7 +1030,9 @@ function mergeSelectedBooks() {
     const newBook = {
         id: Date.now().toString(),
         name: newBookName,
-        words: mergedWords
+        words: mergedWords,
+        sourceType: 'custom',
+        createdAt: new Date().toISOString()
     };
 
     state.vocabularyBooks.push(newBook);
