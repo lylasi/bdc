@@ -8,6 +8,9 @@
 export let vocabularyBooks = []; // { id: string, name: string, words: [...] }[]
 export let activeBookId = null;
 export let analyzedArticles = [];
+// 文章／生詞本當前上下文
+export let currentArticleId = null;
+export let currentWordbookId = null;
 
 // ---------------------------------
 // 默写模式状态
@@ -72,6 +75,23 @@ export function setActiveBookId(newId) {
 
 export function setAnalyzedArticles(newArticles) {
     analyzedArticles = newArticles;
+}
+
+// 文章／生詞本當前上下文更新函數
+export function setCurrentArticleId(articleId) {
+    currentArticleId = articleId;
+}
+
+export function getCurrentArticleId() {
+    return currentArticleId;
+}
+
+export function setCurrentWordbookId(wordbookId) {
+    currentWordbookId = wordbookId;
+}
+
+export function getCurrentWordbookId() {
+    return currentWordbookId;
 }
 
 export function setCurrentDictationIndex(index) {

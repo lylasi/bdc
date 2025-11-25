@@ -207,3 +207,80 @@ export async function addWordToDefaultBook(text, options = {}) {
     ui.displayMessage(`已加入「${raw}」到《${DEFAULT_BOOK_NAME}》。`, 'success');
     return { ok: true, id: entry.id };
 }
+
+/**
+ * 將選中的詞/片語加入「當前文章」所對應的生詞本。
+ * - 若 state.currentWordbookId 存在且指向文章專屬生詞本 → 加入該書
+ * - 否則回退到預設生詞本（行為等同 addWordToDefaultBook）
+ */
+export async function addWordToCurrentArticleBook(text, options = {}) {
+    const {
+        source = 'article',
+        sentence = '',
+        context = '',
+        meaning: hintMeaning = '',
+        phonetic: hintPhonetic = '',
+        pos: hintPos = ''
+    } = options;
+
+    const raw = (text || '').trim();
+    const key = normalizeWordKey(raw);
+    if (!key) {
+        ui.displayMessage('沒有可加入的文字。', 'warning');
+        return { ok: false, reason: 'empty' };
+    }
+
+    // 優先使用當前綁定的文章生詞本
+    let book = null;
+    const wbId = state.currentWordbookId;
+    if (wbId) {
+        try {
+            book = storage.getWordbookById(wbId);
+        } catch (_) { /* ignore */ }
+    }
+
+    // 若不存在或資料異常，回退到預設生詞本
+    if (!book) {
+        book = ensureDefaultWordbook();
+    }
+
+    const dup = findInBookByWord(book, key);
+    if (dup) {
+        const name = book.name || DEFAULT_BOOK_NAME;
+        ui.displayMessage(`「${cleanDisplayText(raw)}」已存在於《${name}》。`, 'info');
+        return { ok: true, reason: 'duplicate', id: dup.id, bookId: book.id };
+    }
+
+    const entry = {
+        id: nowId(),
+        word: cleanDisplayText(raw),
+        meaning: cleanDisplayText(hintMeaning) || '',
+        phonetic: (hintPhonetic || '').replace(/^\/|\/$/g, ''),
+        examples: [],
+        addedAt: new Date().toISOString(),
+        source,
+        context: sentence || context || ''
+    };
+    if (hintPos && !entry.pos) entry.pos = hintPos;
+
+    // 若有可用的文章 ID，附加在 entry 上（方便未來回溯）
+    const articleId = state.currentArticleId || (book && book.articleId) || null;
+    if (articleId) {
+        entry.sourceArticleId = articleId;
+    }
+
+    try {
+        const hasMeaning = entry.meaning && entry.meaning.trim();
+        const hasPhon = entry.phonetic && entry.phonetic.trim() && entry.phonetic !== 'n/a';
+        if (!hasMeaning || !hasPhon) {
+            await ensureWordDetails(entry, { sentence, context, allowDeferForPhrase: true });
+        }
+    } catch (_) { /* 忽略補全失敗，保持現有資料 */ }
+
+    const saved = storage.addWordToWordbook(book.id, entry);
+    const latestBook = storage.getWordbookById(book.id) || book;
+    const bookName = latestBook.name || DEFAULT_BOOK_NAME;
+
+    ui.displayMessage(`已加入「${raw}」到《${bookName}》。`, 'success');
+    return { ok: true, id: saved.id, bookId: latestBook.id };
+}

@@ -11,6 +11,7 @@ export const vocabBookList = document.getElementById('vocab-book-list');
 export const addVocabBookBtn = document.getElementById('add-vocab-book-btn');
 export const importVocabBookBtn = document.getElementById('import-vocab-book-btn');
 export const currentBookName = document.getElementById('current-book-name');
+export const currentBookMeta = document.getElementById('current-book-meta');
 export const editVocabBookBtn = document.getElementById('edit-vocab-book-btn');
 export const deleteVocabBookBtn = document.getElementById('delete-vocab-book-btn');
 export const exportVocabBookBtn = document.getElementById('export-vocab-book-btn');
@@ -101,6 +102,9 @@ export const chunkRepeatControls = document.getElementById('chunk-repeat-control
 export const chunkRepeatTimes = document.getElementById('chunk-repeat-times');
 export const currentSentenceDisplay = document.getElementById('current-sentence-display');
 export const dimmingIntensity = document.getElementById('dimming-intensity');
+export const articleSourceBar = document.getElementById('article-source-bar');
+export const articleSourceLabel = document.getElementById('article-source-label');
+export const articleSourceLink = document.getElementById('article-source-link');
 
 // --- 文章库 ---
 export const showArticleLibraryBtn = document.getElementById('show-article-library-btn');
@@ -124,6 +128,7 @@ export const learningSection = document.getElementById('learning-section');
 export const dictationSection = document.getElementById('dictation-section');
 export const quizSection = document.getElementById('quiz-section');
 export const articleSection = document.getElementById('article-section');
+export const articleNavBtn = document.getElementById('article-btn');
 // --- 圖片 OCR 頁面 ---
 export const ocrSection = document.getElementById('ocr-section');
 export const ocrImageInput = document.getElementById('ocr-image-input');

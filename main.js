@@ -7,7 +7,7 @@ import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView } fr
 import { initLearning, populateLearningBookSelector, populateWordSelect } from './features/learning/learning.js';
 import { initDictation, populateDictationBookSelector, togglePauseDictation } from './features/dictation/dictation.js';
 import { initQuiz, populateQuizBookSelector } from './features/quiz/quiz.js';
-import { initArticle } from './features/article/article.js';
+import { initArticle, showCurrentArticleIfAvailable } from './features/article/article.js';
 import { initOCR } from './features/ocr/ocr.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
 import { initSync } from './features/sync/sync.js';
@@ -80,6 +80,7 @@ function setupNavigation() {
                     break;
                 case 'article-btn':
                     dom.articleSection.classList.add('active');
+                    try { showCurrentArticleIfAvailable(); } catch (_) {}
                     break;
                 case 'qa-btn':
                     showQAModule();

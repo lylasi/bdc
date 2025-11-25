@@ -25,6 +25,108 @@ async function notifyAssistantArticleChanged() {
     } catch (_) { /* noop */ }
 }
 
+// 根據當前輸入框 dataset 更新「來源」資訊列
+function updateArticleSourceBarFromDataset() {
+    const input = dom.articleInput;
+    const bar = dom.articleSourceBar;
+    const label = dom.articleSourceLabel;
+    const link = dom.articleSourceLink;
+    if (!input || !bar || !label) return;
+
+    const ds = input.dataset || {};
+    const sourceType = (ds.sourceType || '').trim();
+    const rawUrl = (ds.sourceUrl || '').trim();
+
+    if (!sourceType) {
+        bar.style.display = 'none';
+        if (link) link.style.display = 'none';
+        return;
+    }
+
+    let text = '來源：';
+    switch (sourceType) {
+        case 'url':
+            text += '網頁 / 新聞';
+            break;
+        case 'file':
+            text += '文章庫 / 檔案';
+            break;
+        case 'ocr':
+            text += '圖片 OCR';
+            break;
+        case 'paste':
+        default:
+            text += '貼上文字';
+            break;
+    }
+    label.textContent = text;
+
+    if (link) {
+        if (sourceType === 'url' && rawUrl) {
+            link.href = rawUrl;
+            link.textContent = '開啟原文';
+            link.style.display = 'inline';
+        } else {
+            link.removeAttribute('href');
+            link.style.display = 'none';
+        }
+    }
+
+    bar.style.display = 'block';
+}
+
+// 紀錄當前文章來源 metadata（供後續建立文章專屬生詞本使用）
+function setCurrentArticleSourceMeta(meta = {}) {
+    const input = dom.articleInput;
+    if (!input || !input.dataset) return;
+    const ds = input.dataset;
+    if (meta.sourceType) {
+        ds.sourceType = meta.sourceType;
+    }
+    if (Object.prototype.hasOwnProperty.call(meta, 'sourceUrl')) {
+        const url = (meta.sourceUrl || '').trim();
+        if (url) ds.sourceUrl = url;
+        else delete ds.sourceUrl;
+    }
+    if (meta.title) {
+        ds.sourceTitle = meta.title;
+    }
+    updateArticleSourceBarFromDataset();
+}
+
+function clearCurrentArticleSourceMeta() {
+    const input = dom.articleInput;
+    if (!input || !input.dataset) return;
+    const ds = input.dataset;
+    delete ds.sourceType;
+    delete ds.sourceUrl;
+    delete ds.sourceTitle;
+    updateArticleSourceBarFromDataset();
+}
+
+// 依據目前輸入框與已解析標題，構建 ArticleMeta 輸入資料
+function buildArticleMetaInput(articleText, parsedTitle) {
+    const input = dom.articleInput;
+    const ds = (input && input.dataset) || {};
+    let sourceType = ds.sourceType || 'paste';
+    if (!['url', 'paste', 'file', 'ocr'].includes(sourceType)) {
+        sourceType = 'paste';
+    }
+    const rawUrl = (ds.sourceUrl || '').trim();
+    const title = (parsedTitle && parsedTitle.trim())
+        || (ds.sourceTitle && ds.sourceTitle.trim())
+        || (articleText || '').split('\n').find(line => line.trim())?.trim()
+        || '未命名文章';
+    const meta = {
+        title,
+        sourceType
+    };
+    if (sourceType === 'url' && rawUrl) {
+        meta.sourceUrl = rawUrl;
+    }
+    return meta;
+}
+
 export function initArticle() {
     dom.analyzeArticleBtn.addEventListener('click', analyzeArticle);
     dom.clearArticleBtn.addEventListener('click', clearArticleInput);
@@ -141,6 +243,7 @@ export function initArticle() {
     }
 
     populateArticleHistorySelect();
+    try { updateArticleSourceBarFromDataset(); } catch (_) {}
 
     // 選字快速加入生詞本（文章詳解區）
     try { initArticleSelectionToWordbook(); } catch (_) {}
@@ -359,6 +462,12 @@ function openArticleImportModal() {
             const md = (afterEl && afterEl.textContent && afterEl.textContent.trim()) || (beforeEl && beforeEl.textContent) || '';
             if (md && dom.articleInput) {
                 dom.articleInput.value = md;
+                const rawUrl = (urlInput && urlInput.value) ? urlInput.value.trim() : '';
+                if (rawUrl) {
+                    setCurrentArticleSourceMeta({ sourceType: 'url', sourceUrl: rawUrl });
+                } else {
+                    setCurrentArticleSourceMeta({ sourceType: 'paste' });
+                }
                 try { ui.closeModal(); } catch(_) {}
                 try { dom.articleInput.focus(); } catch (_) {}
                 // 通知 AI 助手：文章已切換
@@ -385,7 +494,10 @@ function openArticleImportModal() {
                     let after = merged;
                     try { after = await api.aiCleanArticleMarkdown(merged, { timeoutMs: 25000, model: modelSelect && modelSelect.value, keepImages: keepImagesChk ? !!keepImagesChk.checked : true }); } catch(_) {}
                     if (autoApplyChk && autoApplyChk.checked) {
-                        if (dom.articleInput) dom.articleInput.value = after;
+                        if (dom.articleInput) {
+                            dom.articleInput.value = after;
+                            setCurrentArticleSourceMeta({ sourceType: 'file' });
+                        }
                         try { ui.closeModal(); } catch(_) {}
                         try { dom.articleInput.focus(); } catch(_) {}
                         try { notifyAssistantArticleChanged(); } catch(_) {}
@@ -432,7 +544,15 @@ function openArticleImportModal() {
                             try {
                                 const after = await api.aiExtractArticleFromHtml(html, { url: (urlInput && urlInput.value) || '', keepImages: keepImagesChk ? !!keepImagesChk.checked : true, model: modelSelect && modelSelect.value, timeoutMs: 30000 });
                                 if (autoApplyChk && autoApplyChk.checked) {
-                                    if (dom.articleInput) dom.articleInput.value = after;
+                                    if (dom.articleInput) {
+                                        dom.articleInput.value = after;
+                                        const rawUrl = (urlInput && urlInput.value) ? urlInput.value.trim() : '';
+                                        if (rawUrl) {
+                                            setCurrentArticleSourceMeta({ sourceType: 'url', sourceUrl: rawUrl });
+                                        } else {
+                                            setCurrentArticleSourceMeta({ sourceType: 'paste' });
+                                        }
+                                    }
                                     try { ui.closeModal(); } catch(_) {}
                                     try { dom.articleInput.focus(); } catch(_) {}
                                     try { notifyAssistantArticleChanged(); } catch(_) {}
@@ -482,7 +602,10 @@ function openArticleImportModal() {
                         throw new Error((e && e.message) ? e.message : '直抓失敗或受 CORS 限制');
                     }
                     if (autoApplyChk && autoApplyChk.checked) {
-                        if (dom.articleInput) dom.articleInput.value = after;
+                        if (dom.articleInput) {
+                            dom.articleInput.value = after;
+                            setCurrentArticleSourceMeta({ sourceType: 'url', sourceUrl: url });
+                        }
                         try { ui.closeModal(); } catch(_) {}
                         try { dom.articleInput.focus(); } catch (_) {}
                         try { notifyAssistantArticleChanged(); } catch(_) {}
@@ -495,28 +618,42 @@ function openArticleImportModal() {
                     // 既有流程：r.jina.ai → 文字 →（可選）AI 清洗
                     const res = await api.fetchArticleFromUrlStructured(url, { timeoutMs: 22000 });
                     const before = ((res.title ? (`# ${res.title}\n\n`) : '') + (res.content || '')).trim();
-                    if (wantsAiClean) {
+                        if (wantsAiClean) {
                         fetchBtn.textContent = 'AI 清洗中...';
                         let after = before;
                         try {
                             after = await api.aiCleanArticleMarkdown(before, { timeoutMs: 25000, model: modelSelect && modelSelect.value, keepImages: keepImagesChk ? !!keepImagesChk.checked : true });
                         } catch (_) { /* keep before */ }
-                        if (autoApplyChk && autoApplyChk.checked) {
-                            if (dom.articleInput) dom.articleInput.value = after;
-                            try { ui.closeModal(); } catch(_) {}
-                            try { dom.articleInput.focus(); } catch (_) {}
-                            try { notifyAssistantArticleChanged(); } catch(_) {}
-                        } else {
+                            if (autoApplyChk && autoApplyChk.checked) {
+                                if (dom.articleInput) {
+                                    dom.articleInput.value = after;
+                                    setCurrentArticleSourceMeta({
+                                        sourceType: 'url',
+                                        sourceUrl: url,
+                                        title: res && res.title ? String(res.title) : ''
+                                    });
+                                }
+                                try { ui.closeModal(); } catch(_) {}
+                                try { dom.articleInput.focus(); } catch (_) {}
+                                try { notifyAssistantArticleChanged(); } catch(_) {}
+                            } else {
                             if (beforeEl) beforeEl.textContent = before;
                             if (afterEl) afterEl.textContent = after;
                             if (previewBox) previewBox.style.display = 'block';
                         }
-                    } else {
-                        if (dom.articleInput) dom.articleInput.value = before;
-                        try { ui.closeModal(); } catch(_) {}
-                        try { dom.articleInput.focus(); } catch (_) {}
-                        try { notifyAssistantArticleChanged(); } catch(_) {}
-                    }
+                        } else {
+                            if (dom.articleInput) {
+                                dom.articleInput.value = before;
+                                setCurrentArticleSourceMeta({
+                                    sourceType: 'url',
+                                    sourceUrl: url,
+                                    title: res && res.title ? String(res.title) : ''
+                                });
+                            }
+                            try { ui.closeModal(); } catch(_) {}
+                            try { dom.articleInput.focus(); } catch (_) {}
+                            try { notifyAssistantArticleChanged(); } catch(_) {}
+                        }
                 }
             } catch (e) {
                 alert('擷取失敗：' + (e?.message || e));
@@ -583,6 +720,8 @@ function openArticleImportModal() {
 
         let currentSource = LS.get(LS_KEYS.newsSource, sources[0]?.id || '');
         let previewText = '';
+        let previewUrl = '';
+        let previewTitle = '';
         const cacheFeeds = new Map();
 
         const formatDate = (ds) => {
@@ -665,6 +804,15 @@ function openArticleImportModal() {
             previewText = md;
             if (!forcePreview && autoApplyChk && autoApplyChk.checked && dom.articleInput) {
                 dom.articleInput.value = md;
+                if (previewUrl) {
+                    setCurrentArticleSourceMeta({
+                        sourceType: 'url',
+                        sourceUrl: previewUrl,
+                        title: previewTitle
+                    });
+                } else {
+                    setCurrentArticleSourceMeta({ sourceType: 'paste' });
+                }
                 try { ui.closeModal(); } catch (_) {}
                 try { dom.articleInput.focus(); } catch (_) {}
                 try { notifyAssistantArticleChanged(); } catch (_) {}
@@ -690,6 +838,8 @@ function openArticleImportModal() {
                     const firstLine = (md || '').split('\n')[0] || '';
                     if (!/^#\s+/.test(firstLine.trim())) md = `# ${res.title}\n\n${md || ''}`;
                 }
+                previewUrl = articleUrl || '';
+                previewTitle = res && res.title ? String(res.title) : '';
                 if (wantAiClean && md) {
                     try {
                         md = await api.aiCleanArticleMarkdown(md, { keepImages, timeoutMs: 25000, model });
@@ -723,6 +873,15 @@ function openArticleImportModal() {
         if (applyBtn) applyBtn.addEventListener('click', () => {
             if (previewText && dom.articleInput) {
                 dom.articleInput.value = previewText;
+                if (previewUrl) {
+                    setCurrentArticleSourceMeta({
+                        sourceType: 'url',
+                        sourceUrl: previewUrl,
+                        title: previewTitle
+                    });
+                } else {
+                    setCurrentArticleSourceMeta({ sourceType: 'paste' });
+                }
                 try { ui.closeModal(); } catch (_) {}
                 try { dom.articleInput.focus(); } catch (_) {}
                 try { notifyAssistantArticleChanged(); } catch (_) {}
@@ -893,6 +1052,7 @@ function openArticleImportModal() {
             const text = (resultPre && resultPre.textContent) || '';
             if (text && dom.articleInput) {
                 dom.articleInput.value = text;
+                setCurrentArticleSourceMeta({ sourceType: 'ocr' });
                 try { ui.closeModal(); } catch(_) {}
                 try { dom.articleInput.focus(); } catch(_) {}
                 // OCR 套用 → 通知助手切換上下文
@@ -1117,7 +1277,8 @@ function persistSentenceAnalysis(sentence, context, data) {
     try {
         const articleText = (dom.articleInput.value || '').trim();
         if (!articleText) return;
-        const rec = (state.analyzedArticles || []).find(it => it.article === articleText);
+        const currentArticleId = state.currentArticleId || null;
+        const rec = (state.analyzedArticles || []).find(it => (currentArticleId && it.articleId === currentArticleId) || it.article === articleText);
         if (!rec || !rec.result) return;
         const arr = Array.isArray(rec.result.sentence_analysis) ? rec.result.sentence_analysis : [];
         const keyOf = (s, c) => `${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
@@ -1125,7 +1286,8 @@ function persistSentenceAnalysis(sentence, context, data) {
         const normalized = { ...data, sentence, context, updatedAt: new Date().toISOString() };
         const idx = next.findIndex(x => keyOf(x.sentence, x.context || x._context) === keyOf(sentence, context));
         if (idx >= 0) next[idx] = normalized; else next.push(normalized);
-        storage.saveAnalysisResult(articleText, { ...rec.result, sentence_analysis: next });
+        const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
+        storage.saveAnalysisResult(articleText, { ...rec.result, sentence_analysis: next }, extra);
     } catch (_) { /* ignore */ }
 }
 
@@ -1133,7 +1295,8 @@ function persistPhraseAnalysis(selection, sentence, context, data) {
     try {
         const articleText = (dom.articleInput.value || '').trim();
         if (!articleText) return;
-        const rec = (state.analyzedArticles || []).find(it => it.article === articleText);
+        const currentArticleId = state.currentArticleId || null;
+        const rec = (state.analyzedArticles || []).find(it => (currentArticleId && it.articleId === currentArticleId) || it.article === articleText);
         if (!rec || !rec.result) return;
         const arr = Array.isArray(rec.result.phrase_analysis) ? rec.result.phrase_analysis : [];
         const keyOf = (sel, s, c) => `${_safeString(sel).trim()}||${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
@@ -1149,9 +1312,11 @@ function persistPhraseAnalysis(selection, sentence, context, data) {
             const others = next.filter(x => scKey(x.sentence, x.context || x._context) !== targetKey);
             group.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
             const trimmed = group.slice(0, 3);
-            storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: [...others, ...trimmed] });
+            const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
+            storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: [...others, ...trimmed] }, extra);
         } catch (_) {
-            storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: next });
+            const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
+            storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: next }, extra);
         }
     } catch (_) { /* ignore */ }
 }
@@ -1443,6 +1608,16 @@ async function analyzeArticle() {
     dom.analyzeArticleBtn.textContent = '分析中...';
     
     const { title, paragraphs } = parseTitleAndParagraphs(articleText);
+
+    // 在分析開始前，根據目前文章內容與來源建立/取得文章專屬生詞本
+    let articleMeta = null;
+    try {
+        const articleMetaInput = buildArticleMetaInput(articleText, title);
+        const res = storage.getOrCreateArticleWordbook(articleMetaInput);
+        articleMeta = res && res.articleMeta ? res.articleMeta : articleMetaInput;
+    } catch (err) {
+        console.warn('初始化文章生詞本失敗（將回退到預設生詞本）:', err);
+    }
     const items = title ? [title, ...paragraphs] : paragraphs; // 將標題也納入分析列表
     if (items.length === 0) {
         alert('請輸入有效的文章內容！');
@@ -1538,7 +1713,9 @@ async function analyzeArticle() {
 
         dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(finalResult.detailed_analysis || []);
         // 僅更新資料與歷史快取，不做全量重繪（保留逐段增量渲染）
-        storage.saveAnalysisResult(articleText, finalResult);
+        const currentArticleId = (articleMeta && articleMeta.id) || state.currentArticleId || null;
+        const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
+        storage.saveAnalysisResult(articleText, finalResult, extra);
         if (dom.retryFailedParagraphsBtn) {
             dom.retryFailedParagraphsBtn.style.display = lastFailedIndices.length > 0 ? 'inline-block' : 'none';
         }
@@ -1720,6 +1897,11 @@ function clearArticleInput() {
     dom.articleInput.value = '';
     dom.articleAnalysisContainer.innerHTML = '<p>請先輸入文章並點擊分析按鈕。</p>';
     dom.articleHistorySelect.value = '';
+    clearCurrentArticleSourceMeta();
+    try {
+        if (typeof state.setCurrentArticleId === 'function') state.setCurrentArticleId(null);
+        if (typeof state.setCurrentWordbookId === 'function') state.setCurrentWordbookId(null);
+    } catch (_) { /* ignore */ }
     if (currentAnalysisAbort) {
         try { currentAnalysisAbort.abort('cancelled-by-clear'); } catch (_) { /* noop */ }
     }
@@ -1747,6 +1929,27 @@ function loadSelectedArticle() {
     const item = state.analyzedArticles[selectedIndex];
     if (item) {
         dom.articleInput.value = item.article;
+        clearCurrentArticleSourceMeta();
+        // 若歷史記錄中帶有 articleId，嘗試從 ArticleMeta 還原來源資訊
+        const articleId = item.articleId || null;
+        if (articleId && typeof storage.getArticleMetaById === 'function') {
+            try {
+                const meta = storage.getArticleMetaById(articleId);
+                if (meta) {
+                    setCurrentArticleSourceMeta({
+                        sourceType: meta.sourceType || 'paste',
+                        sourceUrl: meta.sourceUrl || '',
+                        title: meta.title || ''
+                    });
+                } else {
+                    setCurrentArticleSourceMeta({ sourceType: 'paste' });
+                }
+            } catch (_) {
+                setCurrentArticleSourceMeta({ sourceType: 'paste' });
+            }
+        } else {
+            setCurrentArticleSourceMeta({ sourceType: 'paste' });
+        }
         displayArticleAnalysis(item.article, item.result);
         // 從歷史載入 → 通知助手切換上下文
         try { notifyAssistantArticleChanged(); } catch(_) {}
@@ -1767,6 +1970,43 @@ function deleteSelectedArticleHistory() {
         populateArticleHistorySelect();
         clearArticleInput();
     }
+}
+
+/**
+ * 依據 state.currentArticleId 嘗試載入對應文章與分析結果。
+ * 若找不到對應記錄，則不改變當前畫面。
+ */
+export function showCurrentArticleIfAvailable() {
+    const articleId = state.currentArticleId || null;
+    if (!articleId) {
+        ui.displayMessage('找不到對應的文章記錄，請先在文章詳解中載入或分析一篇文章。', 'info', 3500);
+        return false;
+    }
+    const list = state.analyzedArticles || [];
+    const rec = list.find(it => it && it.articleId === articleId);
+    if (!rec || !rec.article) {
+        ui.displayMessage('這篇文章的分析記錄已刪除，無法自動還原原文。請重新導入或貼上文章內容後再分析。', 'warning', 5000);
+        return false;
+    }
+
+    dom.articleInput.value = rec.article;
+    try {
+        const meta = (typeof storage.getArticleMetaById === 'function') ? storage.getArticleMetaById(articleId) : null;
+        if (meta) {
+            setCurrentArticleSourceMeta({
+                sourceType: meta.sourceType || 'paste',
+                sourceUrl: meta.sourceUrl || '',
+                title: meta.title || ''
+            });
+        } else {
+            setCurrentArticleSourceMeta({ sourceType: 'paste' });
+        }
+    } catch (_) {
+        setCurrentArticleSourceMeta({ sourceType: 'paste' });
+    }
+    displayArticleAnalysis(rec.article, rec.result);
+    try { notifyAssistantArticleChanged(); } catch (_) {}
+    return true;
 }
 
 // --- Article Reading ---
@@ -2214,8 +2454,16 @@ async function loadArticleFromLibrary(path) {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const article = await response.json();
         // 將標題一併插入正文最前面，以 Markdown 風格 # 開頭展示
-        const title = (article && article.title) ? `# ${article.title}\n\n` : '';
+        const titleText = (article && article.title) ? String(article.title) : '';
+        const title = titleText ? `# ${titleText}\n\n` : '';
         dom.articleInput.value = `${title}${article.content || ''}`.trim();
+        try {
+            setCurrentArticleSourceMeta({
+                sourceType: 'file',
+                sourceUrl: path,
+                title: titleText
+            });
+        } catch (_) {}
         // 從文章庫載入 → 通知助手切換上下文
         try { notifyAssistantArticleChanged(); } catch(_) {}
         closeArticleLibrary();
@@ -2440,7 +2688,7 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
             const meaning = btnAdd.getAttribute('data-meaning') || '';
             const phonetic = btnAdd.getAttribute('data-phonetic') || '';
             const pos = btnAdd.getAttribute('data-pos') || '';
-            const res = await mod.addWordToDefaultBook(w, { source: 'article', sentence, context, meaning, phonetic, pos });
+            const res = await mod.addWordToCurrentArticleBook(w, { source: 'article', sentence, context, meaning, phonetic, pos });
             btnAdd.textContent = res && res.reason === 'duplicate' ? '已存在' : '已加入';
         } catch (err) {
             console.warn('加入生詞本失敗:', err);
@@ -2581,13 +2829,15 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         try {
             const articleText = (dom.articleInput.value || '').trim();
             if (articleText) {
-                const current = (state.analyzedArticles || []).find(it => it.article === articleText);
+                const currentArticleId = state.currentArticleId || null;
+                const current = (state.analyzedArticles || []).find(it => (currentArticleId && it.articleId === currentArticleId) || it.article === articleText);
                 if (current && current.result) {
                     const updated = {
                         ...current.result,
                         detailed_analysis: mergeDetailedAnalyses(current.result.detailed_analysis || [], [normalized])
                     };
-                    storage.saveAnalysisResult(articleText, updated);
+                    const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
+                    storage.saveAnalysisResult(articleText, updated, extra);
                 }
             }
         } catch (_) { /* ignore persistence errors */ }
@@ -3109,7 +3359,7 @@ function initArticleSelectionToWordbook() {
             btn.disabled = true; btn.textContent = '加入中...'; btn.setAttribute('aria-busy','true');
             try {
                 const mod = await import('../../modules/vocab.js');
-                await mod.addWordToDefaultBook(text, { source: 'article', sentence, context });
+                await mod.addWordToCurrentArticleBook(text, { source: 'article', sentence, context });
             } catch (_) {}
             hideBtn();
             btn.removeAttribute('aria-busy'); btn.disabled = false; btn.textContent = prev || '加入生詞本';
@@ -3399,7 +3649,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         addBtn.disabled = true; addBtn.textContent = '加入中...'; addBtn.setAttribute('aria-busy','true');
         try {
             const mod = await import('../../modules/vocab.js');
-            const res = await mod.addWordToDefaultBook(text, { source: 'article', sentence, context });
+            const res = await mod.addWordToCurrentArticleBook(text, { source: 'article', sentence, context });
             addBtn.textContent = (res && res.reason === 'duplicate') ? '已存在' : '已加入';
         } catch (err) {
             console.warn('加入生詞本失敗:', err);
