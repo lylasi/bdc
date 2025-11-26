@@ -10,5 +10,11 @@
     "name": "Unit 3 - When Grandma Was Young",
     "path": "qa-sets/qa_unit3_when_grandma.json",
     "category": "五年級 Q & A"
+  },
+  {
+    "id": "qa_unit5_fantasy_farm",
+    "name": "Unit 5 - Fantasy Family Farm",
+    "path": "qa-sets/qa_unit5_fantasy_farm.json",
+    "category": "五年級 Q & A"
   }
 ]
