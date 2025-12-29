@@ -1,709 +1,1444 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>背單詞應用</title>
-    <link rel="stylesheet" href="styles.css?v=20240618">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>PEN子背單詞</h1>
-            <nav>
-               <button id="vocabulary-btn" class="nav-btn active">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-journal-text" viewBox="0 0 16 16"><path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/><path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"/><path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/></svg>
-                   <span class="nav-text" data-full-text="單詞本" data-short-text="詞">單詞本</span>
-               </button>
-               <button id="dictation-btn" class="nav-btn">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-earbuds" viewBox="0 0 16 16"><path d="M6.854 3.646a.5.5 0 0 1 0 .708L5.707 5.5h.793a2.5 2.5 0 0 1 2.5 2.5v1a.5.5 0 0 1-1 0v-1a1.5 1.5 0 0 0-1.5-1.5H5.707l1.147 1.146a.5.5 0 0 1-.708.708L4.5 5.854a.5.5 0 0 1 0-.708L6.146 3.5a.5.5 0 0 1 .708 0z"/><path d="M9.146 3.646a.5.5 0 0 0 0 .708L10.293 5.5h-.793A1.5 1.5 0 0 0 8 7v1a.5.5 0 0 0 1 0V7a2.5 2.5 0 0 1 2.5-2.5h.793l-1.147 1.146a.5.5 0 0 0 .708.708L11.5 5.854a.5.5 0 0 0 0-.708L9.854 3.5a.5.5 0 0 0-.708 0z"/><path fill-rule="evenodd" d="M8 3a4 4 0 0 0-4 4v3a4 4 0 0 0 4 4h1a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H8zm1 1a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1z"/></svg>
-                   <span class="nav-text" data-full-text="默寫模式" data-short-text="默">默寫模式</span>
-               </button>
-               <button id="learning-btn" class="nav-btn">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-lightbulb" viewBox="0 0 16 16"><path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A6 6 0 0 1 2 6zm6 8.5a.5.5 0 0 1 .5-.5h.5a.5.5 0 0 1 0 1h-.5a.5.5 0 0 1-.5-.5zM8 1a5 5 0 0 0-3.465 8.657.5.5 0 0 1-.23.193l-.338.253a.5.5 0 0 1-.428-.71A6 6 0 0 1 8 0a6 6 0 0 1 6 6 .5.5 0 0 1-1 0A5 5 0 0 0 8 1z"/></svg>
-                   <span class="nav-text" data-full-text="學習模式" data-short-text="學">學習模式</span>
-               </button>
-               <button id="qa-btn" class="nav-btn">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
-                   <span class="nav-text" data-full-text="問答訓練" data-short-text="問">問答訓練</span>
-               </button>
-               <button id="article-btn" class="nav-btn">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-text" viewBox="0 0 16 16"><path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>
-                   <span class="nav-text" data-full-text="文章詳解" data-short-text="文">文章詳解</span>
-               </button>
-               <button id="ocr-btn" class="nav-btn">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 2a.5.5 0 0 1 .416.223L11.5 3h2A1.5 1.5 0 0 1 15 4.5v7A1.5 1.5 0 0 1 13.5 13h-11A1.5 1.5 0 0 1 1 11.5v-7A1.5 1.5 0 0 1 2.5 3h2l.584-.777A.5.5 0 0 1 5.5 2h5z"/><path d="M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
-                   <span class="nav-text" data-full-text="圖片識別" data-short-text="圖">圖片識別</span>
-               </button>
-               <button id="quiz-btn" class="nav-btn">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2-square" viewBox="0 0 16 16"><path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5H3z"/><path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/></svg>
-                   <span class="nav-text" data-full-text="隨堂測驗" data-short-text="測">隨堂測驗</span>
-               </button>
-            </nav>
-            <div id="sync-controls" class="sync-controls" style="display:none;"></div>
-            <button id="app-gear-btn" class="floating-gear-btn" title="設定" aria-label="設定">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" fill="currentColor"/>
-                <path d="M19.43 12.98a7.9 7.9 0 0 0 .06-.98 7.9 7.9 0 0 0-.06-.98l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.6-.22l-2.49 1a7.97 7.97 0 0 0-1.7-.98l-.38-2.65A.5.5 0 0 0 12.5 2h-4a.5.5 0 0 0-.49.42l-.38 2.65c-.61.24-1.18.56-1.7.98l-2.49-1a.5.5 0 0 0-.6.22l-2 3.46a.5.5 0 0 0 .12.64L2.57 11c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46a.5.5 0 0 0 .6.22l2.49-1c.52.42 1.09.74 1.7.98l.38 2.65a.5.5 0 0 0 .49.42h4a.5.5 0 0 0 .49-.42l.38-2.65c.61-.24 1.18-.56 1.7-.98l2.49 1a.5.5 0 0 0 .6-.22l2-3.46a.5.5 0 0 0-.12-.64L19.43 12.98Z" fill="currentColor" opacity=".85"/>
-              </svg>
-            </button>
-        </header>
+    <link rel="stylesheet" href="styles.css?v=20240618" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <header>
+        <h1>PEN子背單詞</h1>
+        <nav>
+          <button id="vocabulary-btn" class="nav-btn active">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-journal-text"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"
+              />
+              <path
+                d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"
+              />
+              <path
+                d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"
+              />
+            </svg>
+            <span class="nav-text" data-full-text="單詞本" data-short-text="詞"
+              >單詞本</span
+            >
+          </button>
+          <button id="dictation-btn" class="nav-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-earbuds"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M6.854 3.646a.5.5 0 0 1 0 .708L5.707 5.5h.793a2.5 2.5 0 0 1 2.5 2.5v1a.5.5 0 0 1-1 0v-1a1.5 1.5 0 0 0-1.5-1.5H5.707l1.147 1.146a.5.5 0 0 1-.708.708L4.5 5.854a.5.5 0 0 1 0-.708L6.146 3.5a.5.5 0 0 1 .708 0z"
+              />
+              <path
+                d="M9.146 3.646a.5.5 0 0 0 0 .708L10.293 5.5h-.793A1.5 1.5 0 0 0 8 7v1a.5.5 0 0 0 1 0V7a2.5 2.5 0 0 1 2.5-2.5h.793l-1.147 1.146a.5.5 0 0 0 .708.708L11.5 5.854a.5.5 0 0 0 0-.708L9.854 3.5a.5.5 0 0 0-.708 0z"
+              />
+              <path
+                fill-rule="evenodd"
+                d="M8 3a4 4 0 0 0-4 4v3a4 4 0 0 0 4 4h1a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H8zm1 1a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1z"
+              />
+            </svg>
+            <span
+              class="nav-text"
+              data-full-text="默寫模式"
+              data-short-text="默"
+              >默寫模式</span
+            >
+          </button>
+          <button id="learning-btn" class="nav-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-lightbulb"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A6 6 0 0 1 2 6zm6 8.5a.5.5 0 0 1 .5-.5h.5a.5.5 0 0 1 0 1h-.5a.5.5 0 0 1-.5-.5zM8 1a5 5 0 0 0-3.465 8.657.5.5 0 0 1-.23.193l-.338.253a.5.5 0 0 1-.428-.71A6 6 0 0 1 8 0a6 6 0 0 1 6 6 .5.5 0 0 1-1 0A5 5 0 0 0 8 1z"
+              />
+            </svg>
+            <span
+              class="nav-text"
+              data-full-text="學習模式"
+              data-short-text="學"
+              >學習模式</span
+            >
+          </button>
+          <button id="qa-btn" class="nav-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-question-circle"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
+              />
+              <path
+                d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"
+              />
+            </svg>
+            <span
+              class="nav-text"
+              data-full-text="問答訓練"
+              data-short-text="問"
+              >問答訓練</span
+            >
+          </button>
+          <button id="article-btn" class="nav-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-file-earmark-text"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"
+              />
+              <path
+                d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"
+              />
+            </svg>
+            <span
+              class="nav-text"
+              data-full-text="文章詳解"
+              data-short-text="文"
+              >文章詳解</span
+            >
+          </button>
+          <button id="ocr-btn" class="nav-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M10.5 2a.5.5 0 0 1 .416.223L11.5 3h2A1.5 1.5 0 0 1 15 4.5v7A1.5 1.5 0 0 1 13.5 13h-11A1.5 1.5 0 0 1 1 11.5v-7A1.5 1.5 0 0 1 2.5 3h2l.584-.777A.5.5 0 0 1 5.5 2h5z"
+              />
+              <path d="M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+            </svg>
+            <span
+              class="nav-text"
+              data-full-text="圖片識別"
+              data-short-text="圖"
+              >圖片識別</span
+            >
+          </button>
+          <button id="quiz-btn" class="nav-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-check2-square"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5H3z"
+              />
+              <path
+                d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"
+              />
+            </svg>
+            <span
+              class="nav-text"
+              data-full-text="隨堂測驗"
+              data-short-text="測"
+              >隨堂測驗</span
+            >
+          </button>
+        </nav>
+        <div
+          id="sync-controls"
+          class="sync-controls"
+          style="display: none"
+        ></div>
+        <button
+          id="app-gear-btn"
+          class="floating-gear-btn"
+          title="設定"
+          aria-label="設定"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"
+              fill="currentColor"
+            />
+            <path
+              d="M19.43 12.98a7.9 7.9 0 0 0 .06-.98 7.9 7.9 0 0 0-.06-.98l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.6-.22l-2.49 1a7.97 7.97 0 0 0-1.7-.98l-.38-2.65A.5.5 0 0 0 12.5 2h-4a.5.5 0 0 0-.49.42l-.38 2.65c-.61.24-1.18.56-1.7.98l-2.49-1a.5.5 0 0 0-.6.22l-2 3.46a.5.5 0 0 0 .12.64L2.57 11c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46a.5.5 0 0 0 .6.22l2.49-1c.52.42 1.09.74 1.7.98l.38 2.65a.5.5 0 0 0 .49.42h4a.5.5 0 0 0 .49-.42l.38-2.65c.61-.24 1.18-.56 1.7-.98l2.49 1a.5.5 0 0 0 .6-.22l2-3.46a.5.5 0 0 0-.12-.64L19.43 12.98Z"
+              fill="currentColor"
+              opacity=".85"
+            />
+          </svg>
+        </button>
+      </header>
 
-        <main>
-            <!-- 單詞本頁面 -->
-            <section id="vocabulary-section" class="section active">
-                <div class="vocabulary-layout">
-                    <!-- 左側: 單詞本列表 -->
-                    <div id="vocab-books-panel" class="vocab-books-panel">
-                        <div class="panel-header">
-                            <h3>我的單詞本</h3>
-                            <button id="add-vocab-book-btn" class="icon-btn" title="新增單詞本">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
-                            </button>
-                            <button id="import-vocab-book-btn" class="icon-btn" title="導入單詞本">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-download" viewBox="0 0 16 16">
-                                    <path d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-4.242 3.15c-.337.042-.68.107-1.01.214-.491.156-1.05.42-1.52.825-.47.404-.841.96-1.066 1.631-.225.672-.25 1.39-.08 2.062.17 0.672.498 1.28.928 1.765.43.485.955.871 1.545 1.141.59.27 1.234.417 1.92.417a.5.5 0 0 1 0 1c-.742 0-1.492-.153-2.146-.456-1.288-.588-2.24-1.67-2.612-3.045-.372-1.375-.143-2.92.59-4.223.732-1.303 1.933-2.235 3.437-2.613.332-.085.676-.15.99-.196z"/>
-                                    <path d="M7.646 15.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 14.293V5.5a.5.5 0 0 0-1 0v8.793l-2.146-2.147a.5.5 0 0 0-.708.708l3 3z"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <ul id="vocab-book-list">
-                            <!-- JS動態生成 -->
-                        </ul>
-                    </div>
-                    <!-- 右側: 選定單詞本的內容 -->
-                    <div id="vocab-words-panel" class="vocab-words-panel">
-                        <div class="panel-header">
-                            <h3 id="current-book-name">請選擇一個單詞本</h3>
-                            <div class="word-panel-actions">
-                                <button id="complete-missing-btn" class="icon-btn" title="補完缺失" disabled>
-                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stars" viewBox="0 0 16 16">
-                                       <path d="M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a2.89 2.89 0 0 0 1.829 1.828l1.936.645c.33.11.33.576 0 .686l-1.937.645a2.89 2.89 0 0 0-1.828 1.829l-.645 1.936a.361.361 0 0 1-.686 0l-.645-1.937a2.89 2.89 0 0 0-1.828-1.828l-1.937-.645a.361.361 0 0 1 0-.686l1.937-.645a2.89 2.89 0 0 0 1.828-1.828zM3.794 1.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387A1.73 1.73 0 0 0 4.593 5.69l-.387 1.162a.217.217 0 0 1-.412 0L3.407 5.69A1.73 1.73 0 0 0 2.31 4.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387A1.73 1.73 0 0 0 3.407 2.31zM10.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732L9.1 2.137a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
-                                   </svg>
-                                </button>
-                                <button id="merge-vocab-books-btn" class="icon-btn" title="合併單詞本">
-                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-union" viewBox="0 0 16 16">
-                                       <path d="M0 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-2H2a2 2 0 0 1-2-2V2z"/>
-                                   </svg>
-                                </button>
-                                <button id="export-vocab-book-btn" class="icon-btn" title="導出單詞本" disabled>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
-                                        <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
-                                    </svg>
-                                </button>
-                                <button id="edit-vocab-book-btn" class="icon-btn" title="編輯單詞" disabled>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
-                                </button>
-                                <button id="delete-vocab-book-btn" class="icon-btn" title="刪除單詞本" disabled>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <p id="current-book-meta" class="form-hint" style="margin:4px 0 8px; opacity:.8;"></p>
-                        <div class="list-container">
-                            <ul id="word-list">
-                                <li class="word-item-placeholder">請從左側選擇或創建一個單詞本</li>
-                            </ul>
-                        </div>
-                    </div>
+<main>
+        <div class="container">
+        <!-- 單詞本頁面 -->
+        <section id="vocabulary-section" class="section active">
+          <div class="vocabulary-layout">
+            <!-- 左側: 單詞本列表 -->
+            <div id="vocab-books-panel" class="vocab-books-panel">
+              <div class="panel-header">
+                <h3>我的單詞本</h3>
+                <button
+                  id="add-vocab-book-btn"
+                  class="icon-btn"
+                  title="新增單詞本"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    class="bi bi-plus-circle"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
+                    />
+                    <path
+                      d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  id="import-vocab-book-btn"
+                  class="icon-btn"
+                  title="導入單詞本"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    class="bi bi-cloud-download"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-4.242 3.15c-.337.042-.68.107-1.01.214-.491.156-1.05.42-1.52.825-.47.404-.841.96-1.066 1.631-.225.672-.25 1.39-.08 2.062.17 0.672.498 1.28.928 1.765.43.485.955.871 1.545 1.141.59.27 1.234.417 1.92.417a.5.5 0 0 1 0 1c-.742 0-1.492-.153-2.146-.456-1.288-.588-2.24-1.67-2.612-3.045-.372-1.375-.143-2.92.59-4.223.732-1.303 1.933-2.235 3.437-2.613.332-.085.676-.15.99-.196z"
+                    />
+                    <path
+                      d="M7.646 15.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 14.293V5.5a.5.5 0 0 0-1 0v8.793l-2.146-2.147a.5.5 0 0 0-.708.708l3 3z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <ul id="vocab-book-list">
+                <!-- JS動態生成 -->
+              </ul>
+            </div>
+            <!-- 右側: 選定單詞本的內容 -->
+            <div id="vocab-words-panel" class="vocab-words-panel">
+              <div class="panel-header">
+                <h3 id="current-book-name">請選擇一個單詞本</h3>
+                <div class="word-panel-actions">
+                  <button
+                    id="complete-missing-btn"
+                    class="icon-btn"
+                    title="補完缺失"
+                    disabled
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-stars"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a2.89 2.89 0 0 0 1.829 1.828l1.936.645c.33.11.33.576 0 .686l-1.937.645a2.89 2.89 0 0 0-1.828 1.829l-.645 1.936a.361.361 0 0 1-.686 0l-.645-1.937a2.89 2.89 0 0 0-1.828-1.828l-1.937-.645a.361.361 0 0 1 0-.686l1.937-.645a2.89 2.89 0 0 0 1.828-1.828zM3.794 1.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387A1.73 1.73 0 0 0 4.593 5.69l-.387 1.162a.217.217 0 0 1-.412 0L3.407 5.69A1.73 1.73 0 0 0 2.31 4.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387A1.73 1.73 0 0 0 3.407 2.31zM10.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732L9.1 2.137a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    id="merge-vocab-books-btn"
+                    class="icon-btn"
+                    title="合併單詞本"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-union"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M0 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-2H2a2 2 0 0 1-2-2V2z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    id="export-vocab-book-btn"
+                    class="icon-btn"
+                    title="導出單詞本"
+                    disabled
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-box-arrow-up-right"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"
+                      />
+                      <path
+                        fill-rule="evenodd"
+                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    id="edit-vocab-book-btn"
+                    class="icon-btn"
+                    title="編輯單詞"
+                    disabled
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-pencil-square"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"
+                      />
+                      <path
+                        fill-rule="evenodd"
+                        d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    id="delete-vocab-book-btn"
+                    class="icon-btn"
+                    title="刪除單詞本"
+                    disabled
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-trash"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"
+                      />
+                      <path
+                        fill-rule="evenodd"
+                        d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"
+                      />
+                    </svg>
+                  </button>
                 </div>
-            </section>
+              </div>
+              <p
+                id="current-book-meta"
+                class="form-hint"
+                style="margin: 4px 0 8px; opacity: 0.8"
+              ></p>
+              <div class="list-container">
+                <ul id="word-list">
+                  <li class="word-item-placeholder">
+                    請從左側選擇或創建一個單詞本
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <!-- 默寫模式頁面 -->
-            <section id="dictation-section" class="section">
-                <h2>默寫模式</h2>
-                <div class="dictation-container">
-                    <div id="dictation-progress-container" class="progress-container hidden">
-                        <div id="dictation-progress-bar"></div>
-                        <span id="dictation-progress-text">0/0</span>
+        <!-- 默寫模式頁面 -->
+        <section id="dictation-section" class="section">
+          <h2>默寫模式</h2>
+          <div class="dictation-container">
+            <div
+              id="dictation-progress-container"
+              class="progress-container hidden"
+            >
+              <div id="dictation-progress-bar"></div>
+              <span id="dictation-progress-text">0/0</span>
+            </div>
+            <div class="dictation-main-content">
+              <div class="dictation-settings">
+                <h3>設置</h3>
+                <div id="dictation-settings-container">
+                  <div class="settings-grid">
+                    <div class="form-group settings-group full-width">
+                      <label>選擇單詞本:</label>
+                      <div id="dictation-book-selector" class="book-selector">
+                        <!-- JS動態生成 -->
+                      </div>
                     </div>
-                    <div class="dictation-main-content">
-                        <div class="dictation-settings">
-                            <h3>設置</h3>
-                            <div id="dictation-settings-container">
-                                <div class="settings-grid">
-                                    <div class="form-group settings-group full-width">
-                                        <label>選擇單詞本:</label>
-                                        <div id="dictation-book-selector" class="book-selector">
-                                            <!-- JS動態生成 -->
-                                        </div>
-                                    </div>
-                                    <div class="form-group settings-group">
-                                        <label for="repeat-times">重複:</label>
-                                        <div class="number-stepper" data-slider-max="30">
-                                            <input type="range" class="stepper-slider" min="1" max="30" step="1" value="2" aria-label="滑動設定重複次數">
-                                            <div class="stepper-field">
-                                                <input type="text" id="repeat-times" class="stepper-input" inputmode="numeric" pattern="[0-9]*" min="1" value="2">
-                                                <div class="stepper-buttons">
-                                                    <button type="button" class="stepper-arrow stepper-up" aria-label="增加"></button>
-                                                    <button type="button" class="stepper-arrow stepper-down" aria-label="減少"></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group settings-group">
-                                        <label for="word-interval">詞隔:</label>
-                                        <div class="number-stepper" data-slider-max="30">
-                                            <input type="range" class="stepper-slider" min="1" max="30" step="1" value="3" aria-label="滑動設定詞隔">
-                                            <div class="stepper-field">
-                                                <input type="text" id="word-interval" class="stepper-input" inputmode="numeric" pattern="[0-9]*" min="1" value="3">
-                                                <div class="stepper-buttons">
-                                                    <button type="button" class="stepper-arrow stepper-up" aria-label="增加"></button>
-                                                    <button type="button" class="stepper-arrow stepper-down" aria-label="減少"></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group settings-group chinese-voice-group">
-                                        <label>中文:</label>
-                                        <div class="chinese-voice-options">
-                                            <label class="voice-toggle">
-                                                <input type="checkbox" id="read-chinese-mandarin">
-                                                <span>普</span>
-                                            </label>
-                                            <label class="voice-toggle">
-                                                <input type="checkbox" id="read-chinese-cantonese">
-                                                <span>粵</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="form-group settings-group">
-                                        <label for="loop-mode">循環模式:</label>
-                                        <input type="checkbox" id="loop-mode">
-                                    </div>
-                                    <div class="form-group settings-group">
-                                        <label for="shuffle-mode">亂序播放:</label>
-                                        <input type="checkbox" id="shuffle-mode">
-                                    </div>
-                                    <div class="form-group settings-group">
-                                        <label for="listen-only-mode">只聽不練:</label>
-                                        <input type="checkbox" id="listen-only-mode" checked>
-                                    </div>
-                                </div>
-                                <div class="button-group">
-                                    <button id="start-dictation-btn" class="btn-primary">開始默寫</button>
-                                    <button id="stop-dictation-btn" class="btn-secondary" disabled>停止</button>
-                                    <button id="pause-dictation-btn" class="btn-secondary" disabled>暫停</button>
-                                    <button id="replay-dictation-btn" class="btn-secondary" style="display: none;">重播</button>
-                                    <button id="prev-dictation-btn" class="btn-secondary nav-large" style="display: none;">⬅️ 上一個</button>
-                                    <button id="next-dictation-btn" class="btn-secondary nav-large" style="display: none;">下一個 ➡️</button>
-                                    <button id="dictation-ai-grade-btn" class="btn-secondary">AI 批改手寫</button>
-                                </div>
-                            </div>
+                    <div class="form-group settings-group">
+                      <label for="repeat-times">重複:</label>
+                      <div class="number-stepper" data-slider-max="30">
+                        <input
+                          type="range"
+                          class="stepper-slider"
+                          min="1"
+                          max="30"
+                          step="1"
+                          value="2"
+                          aria-label="滑動設定重複次數"
+                        />
+                        <div class="stepper-field">
+                          <input
+                            type="text"
+                            id="repeat-times"
+                            class="stepper-input"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            min="1"
+                            value="2"
+                          />
+                          <div class="stepper-buttons">
+                            <button
+                              type="button"
+                              class="stepper-arrow stepper-up"
+                              aria-label="增加"
+                            ></button>
+                            <button
+                              type="button"
+                              class="stepper-arrow stepper-down"
+                              aria-label="減少"
+                            ></button>
+                          </div>
                         </div>
-                            <div class="dictation-practice">
-                                <h3>默寫練習</h3>
-                                <div id="dictation-word-display" class="word-display-box"></div>
-                                <div class="input-group">
-                                    <input type="text" id="dictation-input" class="input-field" placeholder="請輸入聽到的單詞">
-                                    <button id="check-dictation-btn" class="btn-primary">檢查</button>
-                                </div>
-                                <div id="dictation-result" class="result-box"></div>
-                            </div>
+                      </div>
                     </div>
+                    <div class="form-group settings-group">
+                      <label for="word-interval">詞隔:</label>
+                      <div class="number-stepper" data-slider-max="30">
+                        <input
+                          type="range"
+                          class="stepper-slider"
+                          min="1"
+                          max="30"
+                          step="1"
+                          value="3"
+                          aria-label="滑動設定詞隔"
+                        />
+                        <div class="stepper-field">
+                          <input
+                            type="text"
+                            id="word-interval"
+                            class="stepper-input"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            min="1"
+                            value="3"
+                          />
+                          <div class="stepper-buttons">
+                            <button
+                              type="button"
+                              class="stepper-arrow stepper-up"
+                              aria-label="增加"
+                            ></button>
+                            <button
+                              type="button"
+                              class="stepper-arrow stepper-down"
+                              aria-label="減少"
+                            ></button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group settings-group chinese-voice-group">
+                      <label>中文:</label>
+                      <div class="chinese-voice-options">
+                        <label class="voice-toggle">
+                          <input type="checkbox" id="read-chinese-mandarin" />
+                          <span>普</span>
+                        </label>
+                        <label class="voice-toggle">
+                          <input type="checkbox" id="read-chinese-cantonese" />
+                          <span>粵</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="form-group settings-group">
+                      <label for="loop-mode">循環模式:</label>
+                      <input type="checkbox" id="loop-mode" />
+                    </div>
+                    <div class="form-group settings-group">
+                      <label for="shuffle-mode">亂序播放:</label>
+                      <input type="checkbox" id="shuffle-mode" />
+                    </div>
+                    <div class="form-group settings-group">
+                      <label for="listen-only-mode">只聽不練:</label>
+                      <input type="checkbox" id="listen-only-mode" checked />
+                    </div>
+                  </div>
+                  <div class="button-group">
+                    <button id="start-dictation-btn" class="btn-primary">
+                      開始默寫
+                    </button>
+                    <button
+                      id="stop-dictation-btn"
+                      class="btn-secondary"
+                      disabled
+                    >
+                      停止
+                    </button>
+                    <button
+                      id="pause-dictation-btn"
+                      class="btn-secondary"
+                      disabled
+                    >
+                      暫停
+                    </button>
+                    <button
+                      id="replay-dictation-btn"
+                      class="btn-secondary"
+                      style="display: none"
+                    >
+                      重播
+                    </button>
+                    <button
+                      id="prev-dictation-btn"
+                      class="btn-secondary nav-large"
+                      style="display: none"
+                    >
+                      ⬅️ 上一個
+                    </button>
+                    <button
+                      id="next-dictation-btn"
+                      class="btn-secondary nav-large"
+                      style="display: none"
+                    >
+                      下一個 ➡️
+                    </button>
+                    <button id="dictation-ai-grade-btn" class="btn-secondary">
+                      AI 批改手寫
+                    </button>
+                  </div>
                 </div>
-            </section>
+              </div>
+              <div class="dictation-practice">
+                <h3>默寫練習</h3>
+                <div id="dictation-word-display" class="word-display-box"></div>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    id="dictation-input"
+                    class="input-field"
+                    placeholder="請輸入聽到的單詞"
+                  />
+                  <button id="check-dictation-btn" class="btn-primary">
+                    檢查
+                  </button>
+                </div>
+                <div id="dictation-result" class="result-box"></div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <!-- 學習模式頁面 -->
-            <section id="learning-section" class="section">
-                <h2>學習模式</h2>
-                <div class="learning-container">
-                    <div class="settings-group">
-                        <label>選擇單詞本:</label>
-                        <div id="learning-book-selector" class="book-selector">
-                            <!-- JS動態生成 -->
-                        </div>
+        <!-- 學習模式頁面 -->
+        <section id="learning-section" class="section">
+          <h2>學習模式</h2>
+          <div class="learning-container">
+            <div class="settings-group">
+              <label>選擇單詞本:</label>
+              <div id="learning-book-selector" class="book-selector">
+                <!-- JS動態生成 -->
+              </div>
+            </div>
+            <div class="word-selection">
+              <h3>選擇單詞</h3>
+              <select id="word-select">
+                <option value="">請先從上方選擇單詞本</option>
+              </select>
+            </div>
+            <div class="word-details">
+              <div id="word-detail-container">
+                <h3 id="detail-word"></h3>
+                <p id="detail-phonetic"></p>
+                <p id="detail-meaning"></p>
+                <button id="speak-word-btn">朗讀單詞</button>
+              </div>
+            </div>
+            <div class="example-sentences">
+              <h3>例句</h3>
+              <div id="examples-container"></div>
+              <button id="generate-examples-btn">生成AI例句</button>
+            </div>
+            <div class="practice-sentences">
+              <h3>造句練習</h3>
+              <div class="input-group">
+                <textarea
+                  id="sentence-input"
+                  placeholder="請使用此單詞造句"
+                ></textarea>
+                <button id="check-sentence-btn">檢查</button>
+              </div>
+              <div id="sentence-feedback"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 圖片 OCR 頁面 -->
+        <section id="ocr-section" class="section">
+          <h2>圖片文字識別（OCR）</h2>
+          <div class="ocr-layout">
+            <div class="ocr-left">
+              <div class="ocr-form">
+                <div class="form-row">
+                  <label for="ocr-image-input">上傳圖片：</label>
+                  <div class="field-inline">
+                    <input
+                      id="ocr-image-input"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      capture="environment"
+                    />
+                    <!-- 相機優先切換：緊貼檔案選擇，節省空間且直覺 -->
+                    <input
+                      type="checkbox"
+                      id="ocr-prefer-camera"
+                      class="sr-only"
+                      aria-hidden="true"
+                    />
+                    <button
+                      id="ocr-prefer-toggle"
+                      class="btn-secondary btn-icon"
+                      title="使用相機優先"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      <span class="sr-only">使用相機優先</span>
+                    </button>
+                    <!-- 操作按鈕改為同行，節省垂直空間 -->
+                    <button
+                      id="ocr-open-camera-btn"
+                      class="btn-secondary btn-icon"
+                      title="開啟相機"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      <span class="sr-only">開啟相機</span>
+                    </button>
+                    <button
+                      id="ocr-clear-btn"
+                      class="btn-secondary"
+                      title="清除已加入的圖片與結果"
+                    >
+                      清除
+                    </button>
+                    <button
+                      id="ocr-stop-btn"
+                      class="btn-secondary btn-icon hidden"
+                      title="停止"
+                      disabled
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <rect
+                          x="7"
+                          y="7"
+                          width="10"
+                          height="10"
+                          rx="2"
+                          ry="2"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      <span class="sr-only">停止</span>
+                    </button>
+                    <button id="ocr-run-btn" class="btn-primary">
+                      識別文字
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="ocr-progress-row"
+                  class="form-row actions compact hidden"
+                >
+                  <span class="label-spacer"></span>
+                  <div class="ocr-progress slim">
+                    <div class="ocr-progress-bar">
+                      <span id="ocr-progress-bar"></span>
                     </div>
-                    <div class="word-selection">
-                        <h3>選擇單詞</h3>
-                        <select id="word-select">
-                            <option value="">請先從上方選擇單詞本</option>
+                    <div class="ocr-progress-text" id="ocr-progress-text">
+                      尚未開始
+                    </div>
+                  </div>
+                </div>
+
+                <details class="ocr-advanced">
+                  <summary>進階選項</summary>
+                  <div class="adv-grid">
+                    <div class="form-row">
+                      <label for="ocr-hint">提示詞：</label>
+                      <textarea
+                        id="ocr-hint"
+                        rows="6"
+                        placeholder="例：只擷取右下角藍色對話框文字；或：只輸出圖片中的英文單字與數字，不要其它UI元素"
+                      ></textarea>
+                    </div>
+                    <div class="form-row">
+                      <label for="ocr-hint-preset">常用模板：</label>
+                      <div class="field-inline">
+                        <select id="ocr-hint-preset">
+                          <option value="">常用模板...</option>
+                          <option
+                            value="只擷取圖片中右下角藍色對話框的所有文字，按原有換行輸出；忽略其它區域與UI元素。"
+                          >
+                            只擷取：右下角藍色對話框
+                          </option>
+                          <option
+                            value="僅輸出圖片中的英文與阿拉伯數字，保留原始換行；忽略圖示、按鈕、介面元素與背景雜訊。"
+                          >
+                            只擷取：英文與數字
+                          </option>
+                          <option
+                            value="請將正文完整轉寫為純文字，保留原始換行與標點；刪除頁碼、分隔線、圖示與介面文字。"
+                          >
+                            正文轉寫，移除UI/雜訊
+                          </option>
+                          <option
+                            value="若是題目圖片，僅擷取題幹與選項文字，依序以 A)、B)、C)、D) 標示；不要輸出解析或多餘內容。"
+                          >
+                            試題模式：題幹+選項
+                          </option>
+                          <option
+                            value="輸出為 Markdown 清單：每個段落作為一個條目，若有小標題請使用二級標題。"
+                          >
+                            輸出格式：Markdown 清單
+                          </option>
+                          <option
+                            value="這是一張默寫單詞的相片。請先逐行擷取學生書寫的英文單詞或短語，保留順序與原始大小寫。接著檢查每行拼寫是否正確，如果有中文意思，也要檢查中文是否書寫正確：若正確請在該行末標註 (正確)；若錯誤請在該行末標註 (錯→建議：correct)。只輸出純文字清單，如：1) word (正確)；2) wrd (錯→建議：word)。不要翻譯，不要加入多餘解釋或格式。"
+                          >
+                            小學生默寫單詞：檢查拼寫
+                          </option>
                         </select>
+                        <span class="hint">選擇模板會附加到提示詞</span>
+                      </div>
                     </div>
-                    <div class="word-details">
-                        <div id="word-detail-container">
-                            <h3 id="detail-word"></h3>
-                            <p id="detail-phonetic"></p>
-                            <p id="detail-meaning"></p>
-                            <button id="speak-word-btn">朗讀單詞</button>
-                        </div>
+                    <div class="form-row">
+                      <label for="ocr-model-select">OCR 模型：</label>
+                      <select id="ocr-model-select"></select>
                     </div>
-                    <div class="example-sentences">
-                        <h3>例句</h3>
-                        <div id="examples-container"></div>
-                        <button id="generate-examples-btn">生成AI例句</button>
+                    <div class="form-row">
+                      <label>&nbsp;</label>
+                      <label class="checkbox-inline"
+                        ><input type="checkbox" id="ocr-merge-output" />
+                        合併輸出為一段（多張圖片時）</label
+                      >
                     </div>
-                    <div class="practice-sentences">
-                        <h3>造句練習</h3>
-                        <div class="input-group">
-                            <textarea id="sentence-input" placeholder="請使用此單詞造句"></textarea>
-                            <button id="check-sentence-btn">檢查</button>
-                        </div>
-                        <div id="sentence-feedback"></div>
-                    </div>
+                  </div>
+                </details>
+
+                <div id="ocr-camera-area" class="camera-area hidden">
+                  <video id="ocr-video" autoplay playsinline></video>
+                  <div class="btn-row">
+                    <button id="ocr-capture-btn" class="btn-primary">
+                      拍照
+                    </button>
+                    <button id="ocr-close-camera-btn" class="btn-secondary">
+                      關閉相機
+                    </button>
+                  </div>
+                  <canvas id="ocr-canvas" class="hidden"></canvas>
                 </div>
-            </section>
+              </div>
+              <!-- .ocr-form end -->
+            </div>
+            <!-- .ocr-left end -->
 
-            <!-- 圖片 OCR 頁面 -->
-            <section id="ocr-section" class="section">
-                <h2>圖片文字識別（OCR）</h2>
-                <div class="ocr-layout">
-                    <div class="ocr-left">
-                        <div class="ocr-form">
-                            <div class="form-row">
-                                <label for="ocr-image-input">上傳圖片：</label>
-                                <div class="field-inline">
-                                    <input id="ocr-image-input" type="file" accept="image/*" multiple capture="environment">
-                                    <!-- 相機優先切換：緊貼檔案選擇，節省空間且直覺 -->
-                                    <input type="checkbox" id="ocr-prefer-camera" class="sr-only" aria-hidden="true">
-                                    <button id="ocr-prefer-toggle" class="btn-secondary btn-icon" title="使用相機優先">
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-                                            <path d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="currentColor"/>
-                                        </svg>
-                                        <span class="sr-only">使用相機優先</span>
-                                    </button>
-                                    <!-- 操作按鈕改為同行，節省垂直空間 -->
-                                    <button id="ocr-open-camera-btn" class="btn-secondary btn-icon" title="開啟相機">
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-                                            <path d="M9 5h6l1 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="currentColor"/>
-                                        </svg>
-                                        <span class="sr-only">開啟相機</span>
-                                    </button>
-                                    <button id="ocr-clear-btn" class="btn-secondary" title="清除已加入的圖片與結果">清除</button>
-                                    <button id="ocr-stop-btn" class="btn-secondary btn-icon hidden" title="停止" disabled>
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-                                            <rect x="7" y="7" width="10" height="10" rx="2" ry="2" fill="currentColor"/>
-                                        </svg>
-                                        <span class="sr-only">停止</span>
-                                    </button>
-                                    <button id="ocr-run-btn" class="btn-primary">識別文字</button>
-                                </div>
-                            </div>
-
-                            <div id="ocr-progress-row" class="form-row actions compact hidden">
-                                <span class="label-spacer"></span>
-                                <div class="ocr-progress slim">
-                                    <div class="ocr-progress-bar"><span id="ocr-progress-bar"></span></div>
-                                    <div class="ocr-progress-text" id="ocr-progress-text">尚未開始</div>
-                                </div>
-                            </div>
-
-                            <details class="ocr-advanced">
-                                <summary>進階選項</summary>
-                                <div class="adv-grid">
-                                    <div class="form-row">
-                                        <label for="ocr-hint">提示詞：</label>
-                                        <textarea id="ocr-hint" rows="6" placeholder="例：只擷取右下角藍色對話框文字；或：只輸出圖片中的英文單字與數字，不要其它UI元素"></textarea>
-                                    </div>
-                                    <div class="form-row">
-                                        <label for="ocr-hint-preset">常用模板：</label>
-                                        <div class="field-inline">
-                                            <select id="ocr-hint-preset">
-                                                <option value="">常用模板...</option>
-                                                <option value="只擷取圖片中右下角藍色對話框的所有文字，按原有換行輸出；忽略其它區域與UI元素。">只擷取：右下角藍色對話框</option>
-                                                <option value="僅輸出圖片中的英文與阿拉伯數字，保留原始換行；忽略圖示、按鈕、介面元素與背景雜訊。">只擷取：英文與數字</option>
-                                                <option value="請將正文完整轉寫為純文字，保留原始換行與標點；刪除頁碼、分隔線、圖示與介面文字。">正文轉寫，移除UI/雜訊</option>
-                                                <option value="若是題目圖片，僅擷取題幹與選項文字，依序以 A)、B)、C)、D) 標示；不要輸出解析或多餘內容。">試題模式：題幹+選項</option>
-                                                <option value="輸出為 Markdown 清單：每個段落作為一個條目，若有小標題請使用二級標題。">輸出格式：Markdown 清單</option>
-                                                <option value="這是一張默寫單詞的相片。請先逐行擷取學生書寫的英文單詞或短語，保留順序與原始大小寫。接著檢查每行拼寫是否正確，如果有中文意思，也要檢查中文是否書寫正確：若正確請在該行末標註 (正確)；若錯誤請在該行末標註 (錯→建議：correct)。只輸出純文字清單，如：1) word (正確)；2) wrd (錯→建議：word)。不要翻譯，不要加入多餘解釋或格式。">小學生默寫單詞：檢查拼寫</option>
-                                            </select>
-                                            <span class="hint">選擇模板會附加到提示詞</span>
-                                        </div>
-                                    </div>
-                                    <div class="form-row">
-                                        <label for="ocr-model-select">OCR 模型：</label>
-                                        <select id="ocr-model-select"></select>
-                                    </div>
-                                    <div class="form-row">
-                                        <label>&nbsp;</label>
-                                        <label class="checkbox-inline"><input type="checkbox" id="ocr-merge-output"> 合併輸出為一段（多張圖片時）</label>
-                                    </div>
-                                </div>
-                            </details>
-
-                            <div id="ocr-camera-area" class="camera-area hidden">
-                                <video id="ocr-video" autoplay playsinline></video>
-                                <div class="btn-row">
-                                    <button id="ocr-capture-btn" class="btn-primary">拍照</button>
-                                    <button id="ocr-close-camera-btn" class="btn-secondary">關閉相機</button>
-                                </div>
-                                <canvas id="ocr-canvas" class="hidden"></canvas>
-                            </div>
-                        </div> <!-- .ocr-form end -->
-                    </div> <!-- .ocr-left end -->
-
-                    <div class="ocr-right">
-                        <div class="preview-pane">
-                            <div class="thumbs" id="ocr-preview-list" tabindex="0" aria-label="拖放或貼上圖片以加入 OCR"></div>
-                            <p class="ocr-clipboard-hint">提示：在此區域按 Ctrl+V 或 ⌘+V 可以直接貼上截圖，也可拖放圖片。</p>
-                        </div>
-                        <div class="result-pane">
-                            <div class="result-head">
-                                <label for="ocr-result">識別結果</label>
-                                <div class="result-mode">
-                                    <select id="ocr-display-mode" aria-label="顯示模式">
-                                        <option value="text">純文本</option>
-                                        <option value="md">Markdown 預覽</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <textarea id="ocr-result" class="mono" rows="16" placeholder="識別後的文字會顯示在此處"></textarea>
-                            <div id="ocr-result-preview" class="ocr-md hidden"></div>
-                        </div>
-                    </div>
+            <div class="ocr-right">
+              <div class="preview-pane">
+                <div
+                  class="thumbs"
+                  id="ocr-preview-list"
+                  tabindex="0"
+                  aria-label="拖放或貼上圖片以加入 OCR"
+                ></div>
+                <p class="ocr-clipboard-hint">
+                  提示：在此區域按 Ctrl+V 或 ⌘+V
+                  可以直接貼上截圖，也可拖放圖片。
+                </p>
+              </div>
+              <div class="result-pane">
+                <div class="result-head">
+                  <label for="ocr-result">識別結果</label>
+                  <div class="result-mode">
+                    <select id="ocr-display-mode" aria-label="顯示模式">
+                      <option value="text">純文本</option>
+                      <option value="md">Markdown 預覽</option>
+                    </select>
+                  </div>
                 </div>
-            </section>
+                <textarea
+                  id="ocr-result"
+                  class="mono"
+                  rows="16"
+                  placeholder="識別後的文字會顯示在此處"
+                ></textarea>
+                <div id="ocr-result-preview" class="ocr-md hidden"></div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <!-- 隨堂測驗頁面 -->
-            <section id="quiz-section" class="section">
-                <h2>隨堂測驗</h2>
-                <div class="quiz-container">
-                    <div id="quiz-settings-container">
-                        <div class="quiz-settings">
-                            <h3>測驗設置</h3>
-                            <div class="settings-group">
-                                <label>選擇單詞本:</label>
-                                <div id="quiz-book-selector" class="book-selector">
-                                    <!-- JS動態生成 -->
-                                </div>
-                            </div>
-                            <div class="settings-group hidden">
-                                <label for="quiz-count">題目數量:</label>
-                                <div class="number-stepper">
-                                    <input type="range" class="stepper-slider" min="5" max="20" step="1" value="10" aria-label="滑動設定題目數量">
-                                    <div class="stepper-field">
-                                        <input type="text" id="quiz-count" class="stepper-input" inputmode="numeric" pattern="[0-9]*" min="5" max="20" value="10">
-                                        <div class="stepper-buttons">
-                                            <button type="button" class="stepper-arrow stepper-up" aria-label="增加"></button>
-                                            <button type="button" class="stepper-arrow stepper-down" aria-label="減少"></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="settings-group">
-                                <label for="quiz-type">測驗類型:</label>
-                                <select id="quiz-type">
-                                    <option value="meaning">看英文選中文</option>
-                                    <option value="word">看中文選英文</option>
-                                    <option value="phonetic">看音標選單詞</option>
-                                    <option value="mixed">混合模式</option>
-                                </select>
-                            </div>
-                            <button id="start-quiz-btn" class="primary-btn">開始測驗</button>
-                        </div>
-                    </div>
-                    <div id="quiz-main-container" class="hidden">
-                        <div class="quiz-header">
-                            <div id="quiz-info">
-                                <span id="quiz-progress">題目 0/0</span>
-                                <span id="quiz-score">得分: 0/0</span>
-                            </div>
-                            <button id="stop-quiz-btn" disabled>結束測驗</button>
-                        </div>
-                        <div class="quiz-content">
-                            <div id="quiz-question-container">
-                                <h3 id="quiz-question"></h3>
-                                <div id="quiz-options"></div>
-                                <button id="next-question-btn" disabled>下一題</button>
-                            </div>
-                            <div id="quiz-result" class="quiz-result hidden">
-                                <h3>測驗完成！</h3>
-                                <div id="final-score"></div>
-                                <div id="quiz-summary"></div>
-                                <button id="restart-quiz-btn">重新測驗</button>
-                            </div>
-                        </div>
-                    </div>
+        <!-- 隨堂測驗頁面 -->
+        <section id="quiz-section" class="section">
+          <h2>隨堂測驗</h2>
+          <div class="quiz-container">
+            <div id="quiz-settings-container">
+              <div class="quiz-settings">
+                <h3>測驗設置</h3>
+                <div class="settings-group">
+                  <label>選擇單詞本:</label>
+                  <div id="quiz-book-selector" class="book-selector">
+                    <!-- JS動態生成 -->
+                  </div>
                 </div>
-            </section>
-
-            <!-- 文章詳解頁面 -->
-            <section id="article-section" class="section">
-                <h2>文章詳解</h2>
-                <div class="analysis-container">
-                    <div class="analysis-input">
-                        <h3>輸入文章</h3>
-                        <div class="history-controls">
-                            <select id="article-history-select">
-                                <option value="">讀取歷史記錄</option>
-                            </select>
-                            <button id="delete-history-btn" title="刪除選中的歷史記錄">刪除記錄</button>
-                        </div>
-                        <textarea id="article-input" placeholder="在這裡輸入或粘貼您想分析的文章..."></textarea>
-                        <div class="button-group">
-                            <button id="analyze-article-btn">分析文章</button>
-                            <button id="import-article-btn" class="secondary" title="從網址或圖片導入文章">導入...</button>
-                            <button id="retry-failed-paragraphs-btn" class="secondary" style="display:none;">重試失敗段</button>
-                            <button id="clear-article-btn">清除重寫</button>
-                            <button id="show-article-library-btn">從文章庫選取</button>
-                        </div>
-                        <p class="form-hint" style="margin: 8px 0 0; opacity:.8;">
-                            目前文章詳解採用精簡模式：僅輸出中文翻譯。
-                        </p>
-                        <div class="audio-controls">
-                            <h4>朗讀控制</h4>
-                            <div class="audio-main-buttons">
-                                <button id="read-article-btn" title="朗讀文章"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg></button>
-                                <button id="stop-read-article-btn" title="停止朗讀" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-stop-fill" viewBox="0 0 16 16"><path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/></svg></button>
-                                <button id="download-audio-btn" title="下載語音"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg></button>
-                            </div>
-                            <div class="settings-group">
-                                <label for="reading-mode">模式:</label>
-                                <select id="reading-mode">
-                                    <option value="full">全文</option>
-                                    <option value="paragraph">段落</option>
-                                    <option value="sentence">句子</option>
-                                </select>
-                            </div>
-                            <div class="settings-group" title="調整非當前句子的淡化程度">
-                                <label for="dimming-intensity">淡化強度:</label>
-                                <input type="range" id="dimming-intensity" min="0.1" max="0.9" step="0.05" value="0.45">
-                            </div>
-                            <div id="chunk-repeat-controls" class="settings-group hidden">
-                                <label for="chunk-repeat-times">重複:</label>
-                                <div class="number-stepper" title="設置段落/句子朗讀的重複次數">
-                                    <input type="range" class="stepper-slider" min="1" max="10" step="1" value="1" aria-label="滑動設定重複次數">
-                                    <div class="stepper-field">
-                                        <input type="text" id="chunk-repeat-times" class="stepper-input" inputmode="numeric" pattern="[0-9]*" min="1" max="10" value="1">
-                                        <div class="stepper-buttons">
-                                            <button type="button" class="stepper-arrow stepper-up" aria-label="增加"></button>
-                                            <button type="button" class="stepper-arrow stepper-down" aria-label="減少"></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="settings-group">
-                                <span class="field-label" id="reading-speed-label">語速:</span>
-                                <div id="speed-control-group" class="speed-control" role="group" aria-labelledby="reading-speed-label">
-                                    <button class="speed-btn" data-speed="-100">x0.5</button>
-                                    <button class="speed-btn" data-speed="-50">x0.75</button>
-                                    <button class="speed-btn active" data-speed="0">x1.0</button>
-                                    <button class="speed-btn" data-speed="50">x1.25</button>
-                                    <button class="speed-btn" data-speed="100">x1.5</button>
-                                </div>
-                            </div>
-                            <div id="chunk-nav-controls" class="settings-group hidden">
-                                <button id="prev-chunk-btn" disabled>上一句</button>
-                                <span id="chunk-progress">0 / 0</span>
-                                <button id="next-chunk-btn" disabled>下一句</button>
-                            </div>
-                            <div id="current-sentence-display" class="current-sentence"></div>
-                        </div>
+                <div class="settings-group hidden">
+                  <label for="quiz-count">題目數量:</label>
+                  <div class="number-stepper">
+                    <input
+                      type="range"
+                      class="stepper-slider"
+                      min="5"
+                      max="20"
+                      step="1"
+                      value="10"
+                      aria-label="滑動設定題目數量"
+                    />
+                    <div class="stepper-field">
+                      <input
+                        type="text"
+                        id="quiz-count"
+                        class="stepper-input"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        min="5"
+                        max="20"
+                        value="10"
+                      />
+                      <div class="stepper-buttons">
+                        <button
+                          type="button"
+                          class="stepper-arrow stepper-up"
+                          aria-label="增加"
+                        ></button>
+                        <button
+                          type="button"
+                          class="stepper-arrow stepper-down"
+                          aria-label="減少"
+                        ></button>
+                      </div>
                     </div>
-                    <div class="analysis-result">
-                        <div class="ar-head">
-                            <h3>分析結果</h3>
-                            <div class="cn-mask-group" aria-label="翻譯遮罩">
-                                <span class="cn-mask-label">迷霧</span>
-                                <label class="cn-mask-mini" title="翻譯遮罩：預設開啟；滑鼠移入/按住顯示">
-                                    <input type="checkbox" id="toggle-cn-mask" checked>
-                                    <span class="slider" aria-hidden="true"></span>
-                                    <span class="sr-only">翻譯遮罩</span>
-                                </label>
-                            </div>
-                            <div id="article-source-bar" class="form-hint" style="margin-left:auto; display:none; opacity:.85;">
-                                <span id="article-source-label">來源：—</span>
-                                <a id="article-source-link" href="#" target="_blank" rel="noopener noreferrer" style="margin-left:8px; display:none;">開啟原文</a>
-                            </div>
-                        </div>
-                        <div id="article-analysis-container">
-                            <p>請先輸入文章並點擊分析按鈕。</p>
-                        </div>
-                    </div>
+                  </div>
                 </div>
-            </section>
+                <div class="settings-group">
+                  <label for="quiz-type">測驗類型:</label>
+                  <select id="quiz-type">
+                    <option value="meaning">看英文選中文</option>
+                    <option value="word">看中文選英文</option>
+                    <option value="phonetic">看音標選單詞</option>
+                    <option value="mixed">混合模式</option>
+                  </select>
+                </div>
+                <button id="start-quiz-btn" class="primary-btn">
+                  開始測驗
+                </button>
+              </div>
+            </div>
+            <div id="quiz-main-container" class="hidden">
+              <div class="quiz-header">
+                <div id="quiz-info">
+                  <span id="quiz-progress">題目 0/0</span>
+                  <span id="quiz-score">得分: 0/0</span>
+                </div>
+                <button id="stop-quiz-btn" disabled>結束測驗</button>
+              </div>
+              <div class="quiz-content">
+                <div id="quiz-question-container">
+                  <h3 id="quiz-question"></h3>
+                  <div id="quiz-options"></div>
+                  <button id="next-question-btn" disabled>下一題</button>
+                </div>
+                <div id="quiz-result" class="quiz-result hidden">
+                  <h3>測驗完成！</h3>
+                  <div id="final-score"></div>
+                  <div id="quiz-summary"></div>
+                  <button id="restart-quiz-btn">重新測驗</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <!-- 問答訓練模組 -->
-            <section id="qa-module" class="section" style="display: none;">
-                <h2>問答訓練</h2>
+        <!-- 文章詳解頁面 -->
+        <section id="article-section" class="section">
+          <h2>文章詳解</h2>
+          <div class="analysis-container">
+            <div class="analysis-input">
+              <h3>輸入文章</h3>
+              <div class="history-controls">
+                <select id="article-history-select">
+                  <option value="">讀取歷史記錄</option>
+                </select>
+                <button id="delete-history-btn" title="刪除選中的歷史記錄">
+                  刪除記錄
+                </button>
+              </div>
+              <textarea
+                id="article-input"
+                placeholder="在這裡輸入或粘貼您想分析的文章..."
+              ></textarea>
+              <div class="button-group">
+                <button id="analyze-article-btn">分析文章</button>
+                <button
+                  id="import-article-btn"
+                  class="secondary"
+                  title="從網址或圖片導入文章"
+                >
+                  導入...
+                </button>
+                <button
+                  id="retry-failed-paragraphs-btn"
+                  class="secondary"
+                  style="display: none"
+                >
+                  重試失敗段
+                </button>
+                <button id="clear-article-btn">清除重寫</button>
+                <button id="show-article-library-btn">從文章庫選取</button>
+              </div>
+              <p class="form-hint" style="margin: 8px 0 0; opacity: 0.8">
+                目前文章詳解採用精簡模式：僅輸出中文翻譯。
+              </p>
+              <div class="audio-controls">
+                <h4>朗讀控制</h4>
+                <div class="audio-main-buttons">
+                  <button id="read-article-btn" title="朗讀文章">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-play-fill"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"
+                      />
+                    </svg>
+                  </button>
+                  <button id="stop-read-article-btn" title="停止朗讀" disabled>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-stop-fill"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"
+                      />
+                    </svg>
+                  </button>
+                  <button id="download-audio-btn" title="下載語音">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-download"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"
+                      />
+                      <path
+                        d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div class="settings-group">
+                  <label for="reading-mode">模式:</label>
+                  <select id="reading-mode">
+                    <option value="full">全文</option>
+                    <option value="paragraph">段落</option>
+                    <option value="sentence">句子</option>
+                  </select>
+                </div>
+                <div class="settings-group" title="調整非當前句子的淡化程度">
+                  <label for="dimming-intensity">淡化強度:</label>
+                  <input
+                    type="range"
+                    id="dimming-intensity"
+                    min="0.1"
+                    max="0.9"
+                    step="0.05"
+                    value="0.45"
+                  />
+                </div>
+                <div id="chunk-repeat-controls" class="settings-group hidden">
+                  <label for="chunk-repeat-times">重複:</label>
+                  <div
+                    class="number-stepper"
+                    title="設置段落/句子朗讀的重複次數"
+                  >
+                    <input
+                      type="range"
+                      class="stepper-slider"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value="1"
+                      aria-label="滑動設定重複次數"
+                    />
+                    <div class="stepper-field">
+                      <input
+                        type="text"
+                        id="chunk-repeat-times"
+                        class="stepper-input"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        min="1"
+                        max="10"
+                        value="1"
+                      />
+                      <div class="stepper-buttons">
+                        <button
+                          type="button"
+                          class="stepper-arrow stepper-up"
+                          aria-label="增加"
+                        ></button>
+                        <button
+                          type="button"
+                          class="stepper-arrow stepper-down"
+                          aria-label="減少"
+                        ></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <span class="field-label" id="reading-speed-label"
+                    >語速:</span
+                  >
+                  <div
+                    id="speed-control-group"
+                    class="speed-control"
+                    role="group"
+                    aria-labelledby="reading-speed-label"
+                  >
+                    <button class="speed-btn" data-speed="-100">x0.5</button>
+                    <button class="speed-btn" data-speed="-50">x0.75</button>
+                    <button class="speed-btn active" data-speed="0">
+                      x1.0
+                    </button>
+                    <button class="speed-btn" data-speed="50">x1.25</button>
+                    <button class="speed-btn" data-speed="100">x1.5</button>
+                  </div>
+                </div>
+                <div id="chunk-nav-controls" class="settings-group hidden">
+                  <button id="prev-chunk-btn" disabled>上一句</button>
+                  <span id="chunk-progress">0 / 0</span>
+                  <button id="next-chunk-btn" disabled>下一句</button>
+                </div>
+                <div
+                  id="current-sentence-display"
+                  class="current-sentence"
+                ></div>
+              </div>
+            </div>
+            <div class="analysis-result">
+              <div class="ar-head">
+                <h3>分析結果</h3>
+                <div class="cn-mask-group" aria-label="翻譯遮罩">
+                  <span class="cn-mask-label">迷霧</span>
+                  <label
+                    class="cn-mask-mini"
+                    title="翻譯遮罩：預設開啟；滑鼠移入/按住顯示"
+                  >
+                    <input type="checkbox" id="toggle-cn-mask" checked />
+                    <span class="slider" aria-hidden="true"></span>
+                    <span class="sr-only">翻譯遮罩</span>
+                  </label>
+                </div>
+                <div
+                  id="article-source-bar"
+                  class="form-hint"
+                  style="margin-left: auto; display: none; opacity: 0.85"
+                >
+                  <span id="article-source-label">來源：—</span>
+                  <a
+                    id="article-source-link"
+                    href="#"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="margin-left: 8px; display: none"
+                    >開啟原文</a
+                  >
+                </div>
+              </div>
+              <div id="article-analysis-container">
+                <p>請先輸入文章並點擊分析按鈕。</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-                <!-- 問答集管理區域 -->
-                <div id="qa-management-area" class="qa-management">
-                    <h3>我的問答集</h3>
-                    <div class="qa-buttons">
-                        <button id="create-qa-set-btn" class="btn primary">創建問答集</button>
-                        <button id="import-qa-set-btn" class="btn secondary">導入問答集</button>
-                    </div>
-                    <div id="qa-sets-list" class="qa-sets-list">
-                        <!-- 問答集列表將在這裡動態生成 -->
-                    </div>
+        <!-- 問答訓練模組 -->
+<section id="qa-module" class="section" style="display: none">
+          <h2>問答訓練</h2>
+
+          <!-- 問答集管理區域 -->
+          <div id="qa-management-area" class="qa-management">
+            <h3>我的問答集</h3>
+            <div class="qa-buttons">
+              <button id="create-qa-set-btn" class="btn primary">
+                創建問答集
+              </button>
+              <button id="import-qa-set-btn" class="btn secondary">
+                導入問答集
+              </button>
+            </div>
+            <div id="qa-sets-list" class="qa-sets-list">
+              <!-- 問答集列表將在這裡動態生成 -->
+            </div>
+          </div>
+
+          <!-- 問答集創建區域 -->
+          <div id="qa-creator-area" class="qa-creator" style="display: none">
+            <h3>創建問答集</h3>
+            <div class="qa-creator-form">
+              <div class="qa-creator-card">
+                <div class="qa-creator-header">
+                  <div class="qa-template-row">
+                    <select id="qa-template-select">
+                      <option value="">選擇既有問答集</option>
+                    </select>
+                    <button
+                      id="load-qa-template-btn"
+                      class="btn small secondary"
+                      disabled
+                    >
+                      套用範本
+                    </button>
+                  </div>
+                  <p class="form-hint">
+                    選擇問答集作為起點，仍可微調後另存新集。
+                  </p>
                 </div>
 
-                <!-- 問答集創建區域 -->
-                <div id="qa-creator-area" class="qa-creator" style="display: none;">
-                    <h3>創建問答集</h3>
-                    <div class="qa-creator-form">
-                        <div class="qa-creator-card">
-                            <div class="qa-creator-header">
-                                <div class="qa-template-row">
-                                    <select id="qa-template-select">
-                                        <option value="">選擇既有問答集</option>
-                                    </select>
-                                    <button id="load-qa-template-btn" class="btn small secondary" disabled>套用範本</button>
-                                </div>
-                                <p class="form-hint">選擇問答集作為起點，仍可微調後另存新集。</p>
-                            </div>
-
-                            <div class="qa-creator-body">
-                                <div class="qa-form-row">
-                                    <label class="qa-input-label" for="qa-set-name">名稱</label>
-                                    <input type="text" id="qa-set-name" placeholder="輸入問答集名稱">
-                                </div>
-                                <div class="qa-form-row">
-                                    <label class="qa-input-label" for="qa-set-description">描述</label>
-                                    <input type="text" id="qa-set-description" placeholder="輸入問答集描述">
-                                </div>
-                                <div class="qa-form-row qa-pairs-row">
-                                    <label class="qa-input-label" for="qa-pairs-input">問答對（每兩行一組：上一行問題、下一行答案）</label>
-                                    <div class="qa-pairs-field">
-                                        <textarea id="qa-pairs-input" rows="10" placeholder="問題1？
+                <div class="qa-creator-body">
+                  <div class="qa-form-row">
+                    <label class="qa-input-label" for="qa-set-name">名稱</label>
+                    <input
+                      type="text"
+                      id="qa-set-name"
+                      placeholder="輸入問答集名稱"
+                    />
+                  </div>
+                  <div class="qa-form-row">
+                    <label class="qa-input-label" for="qa-set-description"
+                      >描述</label
+                    >
+                    <input
+                      type="text"
+                      id="qa-set-description"
+                      placeholder="輸入問答集描述"
+                    />
+                  </div>
+                  <div class="qa-form-row qa-pairs-row">
+                    <label class="qa-input-label" for="qa-pairs-input"
+                      >問答對（每兩行一組：上一行問題、下一行答案）</label
+                    >
+                    <div class="qa-pairs-field">
+                      <textarea
+                        id="qa-pairs-input"
+                        rows="10"
+                        placeholder="問題1？
 答案1。
 
 問題2？
-答案2。"></textarea>
-                                        <div class="qa-pairs-actions">
-                                            <button id="load-example-btn" type="button" class="btn small secondary">載入示例</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="qa-preview-wrapper">
-                                    <div id="qa-preview" class="qa-preview"></div>
-                                </div>
-                            </div>
-
-                            <div class="qa-creator-actions">
-                                <button id="save-qa-set-btn" class="btn primary">保存問答集</button>
-                                <button id="cancel-qa-creator-btn" class="btn secondary">取消</button>
-                            </div>
-                        </div>
+答案2。"
+                      ></textarea>
+                      <div class="qa-pairs-actions">
+                        <button
+                          id="load-example-btn"
+                          type="button"
+                          class="btn small secondary"
+                        >
+                          載入示例
+                        </button>
+                      </div>
                     </div>
+                  </div>
+                  <div class="qa-preview-wrapper">
+                    <div id="qa-preview" class="qa-preview"></div>
+                  </div>
                 </div>
 
-                <!-- 問答訓練區域 -->
-                <div id="qa-training-area" class="qa-training" style="display: none;">
-                    <div class="qa-training-header">
-                        <h3 id="qa-training-title">問答訓練</h3>
-                        <div class="qa-progress">
-                            <span id="qa-progress-text">第 1 題 / 共 10 題</span>
-                            <div class="progress-bar">
-                                <div id="qa-progress-bar" class="progress-fill" style="width: 10%;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- AI 校對模型選擇（問答訓練） -->
-                    <div class="settings-group" style="margin: 8px 0 12px; display:flex; align-items:center; gap:8px;">
-                        <label for="qa-model-select">校對模型：</label>
-                        <select id="qa-model-select"></select>
-                    </div>
-
-                    <div class="qa-question-area">
-                        <div class="question-card">
-                            <h4>問題：</h4>
-                            <p id="qa-current-question">這裡將顯示當前問題</p>
-                        </div>
-
-                        <div class="answer-area">
-                            <label for="qa-answer-input">您的答案：</label>
-                            <textarea id="qa-answer-input" rows="4" placeholder="請輸入您的答案"></textarea>
-                        </div>
-
-                            <div class="qa-training-controls">
-                            <button id="prev-qa-btn" class="btn secondary">上一題</button>
-                            <button id="submit-and-check-btn" class="btn primary">AI 校對本題</button>
-                            <button id="next-qa-btn" class="btn secondary">下一題</button>
-                        </div>
-                        <div id="qa-instant-feedback" class="qa-instant-feedback" style="display: none;">
-                            <h4>本題 AI 回饋</h4>
-                            <div id="qa-instant-feedback-content" class="qa-instant-feedback-content"></div>
-                        </div>
-                    </div>
-
-                    <div class="qa-training-actions">
-                        <button id="finish-training-btn" class="btn warning">完成訓練</button>
-                        <button id="back-to-qa-list-btn" class="btn secondary">返回問答集</button>
-                    </div>
+                <div class="qa-creator-actions">
+                  <button id="save-qa-set-btn" class="btn primary">
+                    保存問答集
+                  </button>
+                  <button id="cancel-qa-creator-btn" class="btn secondary">
+                    取消
+                  </button>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <!-- 校對報告區域 -->
-                <div id="qa-report-area" class="qa-report" style="display: none;">
-                    <h3>AI校對報告</h3>
-                    <div class="report-summary" style="display:none"></div>
-
-                    <div id="qa-detailed-results" class="detailed-results">
-                        <!-- 詳細結果將在這裡顯示 -->
-                    </div>
-
-                    <!-- AI校對進度提示 -->
-                    <div id="ai-checking-progress" class="checking-progress" style="display: none;">
-                        <div class="progress-indicator">
-                            <div class="spinner"></div>
-                            <span id="checking-status">正在進行AI智能校對...</span>
-                        </div>
-                        <div id="checking-details" class="checking-details"></div>
-                    </div>
-
-                    <div class="report-actions">
-                        <label for="qa-model-select-report" style="margin-right:6px;">校對模型：</label>
-                        <select id="qa-model-select-report" style="margin-right:12px;"></select>
-                        <button id="ai-check-btn" class="btn primary">AI 校對全部題目</button>
-                        <button id="export-pdf-btn" class="btn primary">導出PDF</button>
-                        <button id="copy-report-btn" class="btn secondary">複製錯誤報告</button>
-                        <button id="toggle-all-details-btn" class="btn secondary" data-expanded="true">收合全部</button>
-                        <button id="retry-training-btn" class="btn secondary">重新訓練</button>
-                        <button id="back-to-qa-menu-btn" class="btn secondary">返回主選單</button>
-                    </div>
+          <!-- 問答訓練區域 -->
+          <div id="qa-training-area" class="qa-training" style="display: none">
+            <div class="qa-training-header">
+              <h3 id="qa-training-title">問答訓練</h3>
+              <div class="qa-progress">
+                <span id="qa-progress-text">第 1 題 / 共 10 題</span>
+                <div class="progress-bar">
+                  <div
+                    id="qa-progress-bar"
+                    class="progress-fill"
+                    style="width: 10%"
+                  ></div>
                 </div>
-            </section>
-        </main>
-    </div>
+              </div>
+            </div>
 
-    <div id="word-analysis-tooltip" class="tooltip"></div>
+            <!-- AI 校對模型選擇（問答訓練） -->
+            <div
+              class="settings-group"
+              style="
+                margin: 8px 0 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <label for="qa-model-select">校對模型：</label>
+              <select id="qa-model-select"></select>
+            </div>
 
-    <!-- Modal 結構 -->
-    <div id="app-modal" class="modal-overlay hidden">
+            <div class="qa-question-area">
+              <div class="question-card">
+                <h4>問題：</h4>
+                <p id="qa-current-question">這裡將顯示當前問題</p>
+              </div>
+
+              <div class="answer-area">
+                <label for="qa-answer-input">您的答案：</label>
+                <textarea
+                  id="qa-answer-input"
+                  rows="4"
+                  placeholder="請輸入您的答案"
+                ></textarea>
+              </div>
+
+              <div class="qa-training-controls">
+                <button id="prev-qa-btn" class="btn secondary">上一題</button>
+                <button id="submit-and-check-btn" class="btn primary">
+                  AI 校對本題
+                </button>
+                <button id="next-qa-btn" class="btn secondary">下一題</button>
+              </div>
+              <div
+                id="qa-instant-feedback"
+                class="qa-instant-feedback"
+                style="display: none"
+              >
+                <h4>本題 AI 回饋</h4>
+                <div
+                  id="qa-instant-feedback-content"
+                  class="qa-instant-feedback-content"
+                ></div>
+              </div>
+            </div>
+
+            <div class="qa-training-actions">
+              <button id="finish-training-btn" class="btn warning">
+                完成訓練
+              </button>
+              <button id="back-to-qa-list-btn" class="btn secondary">
+                返回問答集
+              </button>
+            </div>
+          </div>
+
+          <!-- 校對報告區域 -->
+          <div id="qa-report-area" class="qa-report" style="display: none">
+            <h3>AI校對報告</h3>
+            <div class="report-summary" style="display: none"></div>
+
+            <div id="qa-detailed-results" class="detailed-results">
+              <!-- 詳細結果將在這裡顯示 -->
+            </div>
+
+            <!-- AI校對進度提示 -->
+            <div
+              id="ai-checking-progress"
+              class="checking-progress"
+              style="display: none"
+            >
+              <div class="progress-indicator">
+                <div class="spinner"></div>
+                <span id="checking-status">正在進行AI智能校對...</span>
+              </div>
+              <div id="checking-details" class="checking-details"></div>
+            </div>
+
+            <div class="report-actions">
+              <label for="qa-model-select-report" style="margin-right: 6px"
+                >校對模型：</label
+              >
+              <select
+                id="qa-model-select-report"
+                style="margin-right: 12px"
+              ></select>
+              <button id="ai-check-btn" class="btn primary">
+                AI 校對全部題目
+              </button>
+              <button id="export-pdf-btn" class="btn primary">導出PDF</button>
+              <button id="copy-report-btn" class="btn secondary">
+                複製錯誤報告
+              </button>
+              <button
+                id="toggle-all-details-btn"
+                class="btn secondary"
+                data-expanded="true"
+              >
+                收合全部
+              </button>
+              <button id="retry-training-btn" class="btn secondary">
+                重新訓練
+              </button>
+              <button id="back-to-qa-menu-btn" class="btn secondary">
+                返回主選單
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+      </main>
+
+      <div id="word-analysis-tooltip" class="tooltip"></div>
+
+      <!-- Modal 結構 -->
+      <div id="app-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <div class="modal-layout">
-                <header id="modal-header">
-                    <h3 id="modal-title">Modal Title</h3>
-                </header>
-                <main id="modal-body">
-                    <!-- JS動態生成 -->
-                </main>
-                <footer id="modal-actions">
-                    <div class="modal-actions">
-                        <!-- 按鈕將由JS動態生成 -->
-                    </div>
-                </footer>
-            </div>
+          <button class="modal-close-btn">&times;</button>
+          <div class="modal-layout">
+            <header id="modal-header">
+              <h3 id="modal-title">Modal Title</h3>
+            </header>
+            <main id="modal-body">
+              <!-- JS動態生成 -->
+            </main>
+            <footer id="modal-actions">
+              <div class="modal-actions">
+                <!-- 按鈕將由JS動態生成 -->
+              </div>
+            </footer>
+          </div>
         </div>
-    </div>
 
-    <!-- 文章庫 Modal -->
-    <div id="article-library-modal" class="modal-overlay hidden">
+
+      <!-- 文章庫 Modal -->
+      <div id="article-library-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h3 id="modal-title">文章庫</h3>
-            <div id="article-library-controls" class="article-library-controls">
-                <label for="article-category-filter" class="sr-only">分類</label>
-                <select id="article-category-filter">
-                    <option value="">全部分類</option>
-                </select>
-                <span id="article-library-count" class="article-library-count"></span>
-            </div>
-            <div id="article-library-list" class="article-library">
-                <!-- JS動態生成 -->
-            </div>
+          <button class="modal-close-btn">&times;</button>
+          <h3 id="modal-title">文章庫</h3>
+          <div id="article-library-controls" class="article-library-controls">
+            <label for="article-category-filter" class="sr-only">分類</label>
+            <select id="article-category-filter">
+              <option value="">全部分類</option>
+            </select>
+            <span
+              id="article-library-count"
+              class="article-library-count"
+            ></span>
+          </div>
+          <div id="article-library-list" class="article-library">
+            <!-- JS動態生成 -->
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- 注入思源黑體與 Noto Sans TC（繁/簡/英文皆可顯示）。若偵測到 Noto 則優先使用 Noto。 -->
-    <!-- 優先載入 Noto Sans TC 子集，若不存在再載入完整 Noto 與 SC mini 作為保底 -->
-    <script src="modules/fonts/NotoSansTC-Subset.loader.js"></script>
-    <script src="modules/fonts/NotoSansTC-Regular.loader.js"></script>
-    <script src="modules/fonts/SourceHanSansSC-Normal-Min-normal.js"></script>
-    <script type="module" src="main.js"></script>
-</body>
+      <!-- 注入思源黑體與 Noto Sans TC（繁/簡/英文皆可顯示）。若偵測到 Noto 則優先使用 Noto。 -->
+      <!-- 優先載入 Noto Sans TC 子集，若不存在再載入完整 Noto 與 SC mini 作為保底 -->
+      <script src="modules/fonts/NotoSansTC-Subset.loader.js"></script>
+      <script src="modules/fonts/NotoSansTC-Regular.loader.js"></script>
+      <script src="modules/fonts/SourceHanSansSC-Normal-Min-normal.js"></script>
+      <script type="module" src="main.js"></script>
+    </div>
+  </body>
 </html>
