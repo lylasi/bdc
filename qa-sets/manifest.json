@@ -16,5 +16,11 @@
     "name": "Unit 5 - Fantasy Family Farm",
     "path": "qa-sets/qa_unit5_fantasy_farm.json",
     "category": "五年級 Q & A"
+  },
+  {
+    "id": "qa_unit6_housework",
+    "name": "Unit 6 - Housework",
+    "path": "qa-sets/qa_unit6_housework.json",
+    "category": "五年級 Q & A"
   }
 ]

@@ -1,0 +1,29 @@
+{
+  "id": "qa_unit6_housework",
+  "name": "Unit 6 - Housework",
+  "category": "五年級 Q & A",
+  "description": "關於家務的閱讀理解問答",
+  "creator": "系統預置",
+  "questions": [
+    {
+      "qid": 1,
+      "question": "Why did Karen's uncle make a to-do list?",
+      "answer": "It was because there was a lot of housework to do before her aunt got home."
+    },
+    {
+      "qid": 2,
+      "question": "What did Eva do wrong when she started washing the clothes?",
+      "answer": "She put in too much washing powder."
+    },
+    {
+      "qid": 3,
+      "question": "How long did it take Karen, her uncle and cousins to do the housework?",
+      "answer": "It took them almost one day to do it."
+    },
+    {
+      "qid": 4,
+      "question": "How do you help at home? Write one thing only. How often do you do this thing?",
+      "answer": "I tidy up the bedroom every day."
+    }
+  ]
+}
