@@ -822,11 +822,13 @@ async function processWordsWithAI(book, wordsText) {
 function deleteActiveVocabBook() {
     const book = state.vocabularyBooks.find(b => b.id === state.activeBookId);
     if (book && confirm(`確定要永久刪除單詞本 "${book.name}" 嗎？此操作無法撤銷。`)) {
-        const bookIndex = state.vocabularyBooks.findIndex(b => b.id === state.activeBookId);
-        if (bookIndex > -1) {
-            state.vocabularyBooks.splice(bookIndex, 1);
+        const removedId = state.activeBookId;
+        const nextBooks = state.vocabularyBooks.filter(b => b.id !== removedId);
+        state.setVocabularyBooks(nextBooks);
+        state.setActiveBookId(nextBooks.length > 0 ? nextBooks[0].id : null);
+        if (state.currentWordbookId === removedId) {
+            state.setCurrentWordbookId(null);
         }
-        state.setActiveBookId(state.vocabularyBooks.length > 0 ? state.vocabularyBooks[0].id : null);
         storage.saveVocabularyBooks();
         storage.saveAppState();
         renderVocabBookList();
@@ -942,6 +944,13 @@ function openModalForMergeBooks() {
                     <p><strong>去重後總詞數:</strong> <span id="merge-total-words">0</span></p>
                 </div>
                 <small class="form-hint">重複的單詞將會被自動去除。</small>
+                <div class="input-group" style="margin-top:10px;">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" id="merge-remove-sources">
+                        <span>合併後刪除已選單詞本</span>
+                    </label>
+                    <small class="form-hint">不勾選則保留原單詞本。</small>
+                </div>
             </div>
         </div>
         <div class="modal-actions">
@@ -1001,6 +1010,7 @@ function updateMergePreview() {
 function mergeSelectedBooks() {
     const selectedItems = document.querySelectorAll('.import-preset-item-wrapper.selected');
     const newBookName = document.getElementById('modal-merge-book-name').value.trim();
+    const removeSources = document.getElementById('merge-remove-sources')?.checked;
 
     if (selectedItems.length < 2 || !newBookName) {
         return;
@@ -1035,7 +1045,13 @@ function mergeSelectedBooks() {
         createdAt: new Date().toISOString()
     };
 
-    state.vocabularyBooks.push(newBook);
+    const selectedIds = Array.from(selectedItems).map(it => it.dataset.bookId);
+    let nextBooks = removeSources
+        ? state.vocabularyBooks.filter(b => !selectedIds.includes(b.id))
+        : [...state.vocabularyBooks];
+    nextBooks.push(newBook);
+
+    state.setVocabularyBooks(nextBooks);
     state.setActiveBookId(newBook.id);
 
     storage.saveVocabularyBooks();
@@ -1043,7 +1059,8 @@ function mergeSelectedBooks() {
     renderVocabBookList();
     updateActiveBookView();
     ui.closeModal();
-    alert(`成功合併 ${selectedItems.length} 個單詞本為 "${newBookName}"！`);
+    const suffix = removeSources ? '（已刪除來源單詞本）' : '';
+    alert(`成功合併 ${selectedItems.length} 個單詞本為 "${newBookName}"${suffix}！`);
 }
 
 function renderWordList() {

@@ -241,7 +241,19 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
 
     // 若不存在或資料異常，回退到預設生詞本
     if (!book) {
-        book = ensureDefaultWordbook();
+        const articleId = state.currentArticleId || null;
+        if (articleId && typeof storage.getArticleMetaById === 'function' && typeof storage.getOrCreateArticleWordbook === 'function') {
+            try {
+                const meta = storage.getArticleMetaById(articleId) || { id: articleId, title: '未命名文章', sourceType: 'paste' };
+                const res = storage.getOrCreateArticleWordbook(meta, { createWordbook: true });
+                if (res && res.wordbook) {
+                    book = res.wordbook;
+                }
+            } catch (_) { /* ignore and fall back */ }
+        }
+        if (!book) {
+            book = ensureDefaultWordbook();
+        }
     }
 
     const dup = findInBookByWord(book, key);

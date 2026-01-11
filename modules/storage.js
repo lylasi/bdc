@@ -277,7 +277,8 @@ export function removeWordFromWordbook(wordbookId, wordEntryId) {
  * - 更新當前文章 / 生詞本上下文
  * 回傳 { articleMeta, wordbook }
  */
-export function getOrCreateArticleWordbook(articleMetaInput) {
+export function getOrCreateArticleWordbook(articleMetaInput, options = {}) {
+    const createWordbook = options.createWordbook !== false;
     if (!articleMetaInput || !articleMetaInput.title || !articleMetaInput.sourceType) {
         throw new Error('getOrCreateArticleWordbook 需要有效的 articleMetaInput（至少包含 title 與 sourceType）');
     }
@@ -340,7 +341,7 @@ export function getOrCreateArticleWordbook(articleMetaInput) {
             name: existingBook.name || articleMeta.title,
             createdAt: existingBook.createdAt || nowIso
         };
-    } else {
+    } else if (createWordbook) {
         nextBook = {
             id: wordbookId,
             name: articleMeta.title || '未命名文章',
@@ -349,9 +350,11 @@ export function getOrCreateArticleWordbook(articleMetaInput) {
             articleId: articleMeta.id,
             createdAt: nowIso
         };
+    } else {
+        nextBook = null;
     }
 
-    const savedBook = saveWordbook(nextBook);
+    const savedBook = nextBook ? saveWordbook(nextBook) : null;
 
     // 3. 更新當前上下文
     try {
@@ -359,11 +362,12 @@ export function getOrCreateArticleWordbook(articleMetaInput) {
             state.setCurrentArticleId(articleMeta.id);
         }
         if (typeof state.setCurrentWordbookId === 'function') {
-            state.setCurrentWordbookId(savedBook.id);
+            const wbId = (savedBook || existingBook || {}).id || null;
+            state.setCurrentWordbookId(wbId);
         }
     } catch (_) { /* ignore */ }
 
-    return { articleMeta, wordbook: savedBook };
+    return { articleMeta, wordbook: savedBook || existingBook || null };
 }
 
 // --- 應用程序狀態存儲 ---

@@ -2280,7 +2280,8 @@ button:disabled {
 }
 
 /* 段落級高亮（用於朗讀模式：段落） */
-.paragraph-english.para-active {
+.paragraph-english.para-active,
+.paragraph-chinese.para-active {
   background: rgba(56, 189, 248, 0.1);
 }
 
