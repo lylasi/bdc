@@ -1613,7 +1613,7 @@ async function analyzeArticle() {
     let articleMeta = null;
     try {
         const articleMetaInput = buildArticleMetaInput(articleText, title);
-        const res = storage.getOrCreateArticleWordbook(articleMetaInput);
+        const res = storage.getOrCreateArticleWordbook(articleMetaInput, { createWordbook: false });
         articleMeta = res && res.articleMeta ? res.articleMeta : articleMetaInput;
     } catch (err) {
         console.warn('初始化文章生詞本失敗（將回退到預設生詞本）:', err);
@@ -2328,7 +2328,9 @@ function updateChunkNav() {
 
 function clearReadingHighlights() {
     dom.articleAnalysisContainer.querySelectorAll('.interactive-sentence.sentence-active').forEach(el => el.classList.remove('sentence-active'));
+    dom.articleAnalysisContainer.querySelectorAll('.interactive-sentence-zh.sentence-active').forEach(el => el.classList.remove('sentence-active'));
     dom.articleAnalysisContainer.querySelectorAll('.paragraph-english.para-active').forEach(el => el.classList.remove('para-active'));
+    dom.articleAnalysisContainer.querySelectorAll('.paragraph-chinese.para-active').forEach(el => el.classList.remove('para-active'));
     dom.articleAnalysisContainer.classList.remove('full-reading-active');
     dom.articleAnalysisContainer.classList.remove('dim-others');
 }
@@ -2337,13 +2339,23 @@ function highlightCurrentChunk(chunk) {
     clearReadingHighlights();
     if (!chunk) return;
     if (chunk.type === 'sentence' && chunk.el) {
+        const paraIdx = chunk.el.getAttribute('data-para-index');
+        const sentIdx = chunk.el.getAttribute('data-sent-index');
         chunk.el.classList.add('sentence-active');
+        if (paraIdx != null && sentIdx != null) {
+            const zh = dom.articleAnalysisContainer.querySelector(`.interactive-sentence-zh[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
+            if (zh) zh.classList.add('sentence-active');
+        }
         // 僅在實際播放時才啟用淡化（暫停或未播放時不淡化）
         if (!state.isReadingChunkPaused && _followScroll) { dom.articleAnalysisContainer.classList.add('dim-others'); }
         // 確保可視：僅在跟隨滾動時置中，避免失去控制
         if (_followScroll) { try { chunk.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {} }
     } else if (chunk.type === 'paragraph' && chunk.el) {
         chunk.el.classList.add('para-active');
+        try {
+            const zhPara = chunk.el.parentElement?.querySelector('.paragraph-chinese');
+            if (zhPara) zhPara.classList.add('para-active');
+        } catch (_) {}
         if (_followScroll) { try { chunk.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {} }
         dom.articleAnalysisContainer.classList.remove('dim-others');
     } else if (chunk.type === 'full') {
