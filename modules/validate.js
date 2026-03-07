@@ -44,7 +44,10 @@ export function validateWordInSentence(obj) {
   if (!isString(obj.word) || !isString(obj.sentence)) return false;
   if (!isObject(obj.analysis)) return false;
   const a = obj.analysis;
-  return isString(a.phonetic) && isString(a.pos) && isString(a.meaning) && isString(a.role);
+  return isString(a.meaning)
+    && (a.phonetic == null || isString(a.phonetic))
+    && (a.pos == null || isString(a.pos))
+    && (a.role == null || isString(a.role));
 }
 
 // Sentence-level analysis schema
@@ -57,7 +60,7 @@ export function validateSentenceAnalysis(obj) {
     for (const c of obj.chunks) {
       if (!isObject(c)) return false;
       if (!isString(c.text)) return false;
-      if (!isString(c.role)) return false;
+      if (c.role != null && !isString(c.role)) return false;
       if (c.note != null && !isString(c.note)) return false;
     }
   }
@@ -75,7 +78,8 @@ export function validateSelectionAnalysis(obj) {
   if (!isObject(obj.analysis)) return false;
   const a = obj.analysis;
   if (!isString(a.meaning)) return false;
-  if (a.usage && !isString(a.usage)) return false;
+  if (a.phonetic != null && !isString(a.phonetic)) return false;
+  if (a.usage != null && !isString(a.usage)) return false;
   if (a.examples) {
     if (!isArray(a.examples)) return false;
     for (const ex of a.examples) {
