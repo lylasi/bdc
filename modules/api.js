@@ -1,4 +1,4 @@
-import { API_URL, API_KEY, AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT, AI_PROFILES as __AI_PROFILES__, AI_PROMPTS } from '../ai-config.js';
+import { API_URL, API_KEY, AI_MODELS, AI_LIMITS, OCR_CONFIG, ARTICLE_IMPORT, AI_PROFILES as __AI_PROFILES__, AI_PROMPTS } from '../ai-config.js';
 import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
@@ -53,24 +53,173 @@ async function fetchJsonWithTimeout(url, { timeoutMs = 20000, signal, headers } 
     return resp.json();
 }
 
-// 將模型規格（string / 'profile:model' / {profile, model, apiUrl?, apiKey?}）正規化
 function normalizeModelSpec(spec) {
     if (spec && typeof spec === 'object') {
         const model = String(spec.model || '');
         const pid = spec.profile || null;
         const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
-        return { model, apiUrl: spec.apiUrl || prof.apiUrl || null, apiKey: spec.apiKey || prof.apiKey || null };
+        return { model, apiUrl: spec.apiUrl || prof.apiUrl || null, apiKey: spec.apiKey || prof.apiKey || null, profile: pid || null };
     }
     const s = String(spec || '');
     const hasPrefix = s.includes(':');
     const pid = hasPrefix ? s.slice(0, s.indexOf(':')) : null;
     const model = hasPrefix ? s.slice(s.indexOf(':') + 1) : s;
     const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
-    return { model, apiUrl: prof.apiUrl || null, apiKey: prof.apiKey || null };
+    return { model, apiUrl: prof.apiUrl || null, apiKey: prof.apiKey || null, profile: pid || null };
+}
+
+const __aiQueues = new Map();
+
+function getLimitConfig(taskType = 'default') {
+    const fallback = AI_LIMITS?.default || { maxConcurrency: 2, minIntervalMs: 150 };
+    const own = AI_LIMITS?.[taskType] || {};
+    return {
+        maxConcurrency: Math.max(1, Number(own.maxConcurrency || fallback.maxConcurrency || 1)),
+        minIntervalMs: Math.max(0, Number(own.minIntervalMs || fallback.minIntervalMs || 0))
+    };
+}
+
+function queueKeyForRequest({ endpoint, profile, model, taskType }) {
+    return [endpoint || 'default-endpoint', profile || 'default-profile', model || 'default-model', taskType || 'default'].join('::');
+}
+
+async function enqueueAIRequest(queueKey, runner, { maxConcurrency = 1, minIntervalMs = 0 } = {}) {
+    let state = __aiQueues.get(queueKey);
+    if (!state) {
+        state = { active: 0, lastStartedAt: 0, pending: [] };
+        __aiQueues.set(queueKey, state);
+    }
+    return await new Promise((resolve, reject) => {
+        const execute = async () => {
+            state.active += 1;
+            const now = Date.now();
+            const waitMs = Math.max(0, minIntervalMs - (now - state.lastStartedAt));
+            if (waitMs > 0) await new Promise(r => setTimeout(r, waitMs));
+            state.lastStartedAt = Date.now();
+            try {
+                const result = await runner();
+                resolve(result);
+            } catch (error) {
+                reject(error);
+            } finally {
+                state.active = Math.max(0, state.active - 1);
+                const next = state.pending.shift();
+                if (next) next();
+                else if (state.active === 0) __aiQueues.delete(queueKey);
+            }
+        };
+        if (state.active < maxConcurrency) execute();
+        else state.pending.push(execute);
+    });
+}
+
+function stripCodeFences(text = '') {
+    return String(text || '').replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+}
+
+function extractJSONObject(text = '') {
+    const s = stripCodeFences(text);
+    if (!s) return '';
+    const directStart = s.indexOf('{');
+    const directEnd = s.lastIndexOf('}');
+    if (directStart >= 0 && directEnd > directStart) return s.slice(directStart, directEnd + 1);
+    return s;
+}
+
+function safeJsonParse(text = '') {
+    const raw = extractJSONObject(text);
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (_) {
+        try {
+            const fixed = raw.replace(/,\s*([}\]])/g, '$1').replace(/(\{|\[)\s*,/g, '$1');
+            return JSON.parse(fixed);
+        } catch (_) {
+            return null;
+        }
+    }
+}
+
+function firstNonEmptyString(...vals) {
+    for (const val of vals) {
+        if (typeof val === 'string' && val.trim()) return val.trim();
+    }
+    return '';
+}
+
+function normalizeParagraphResponse(parsed, fallbackText = '') {
+    if (parsed && typeof parsed === 'object') {
+        return {
+            chinese_translation: firstNonEmptyString(parsed.chinese_translation, parsed.translation, parsed.translated_text, parsed.output, parsed.result, typeof parsed.text === 'string' ? parsed.text : ''),
+            word_alignment: Array.isArray(parsed.word_alignment) ? parsed.word_alignment : [],
+            detailed_analysis: Array.isArray(parsed.detailed_analysis) ? parsed.detailed_analysis : []
+        };
+    }
+    return { chinese_translation: firstNonEmptyString(fallbackText), word_alignment: [], detailed_analysis: [] };
+}
+
+function normalizeSentenceResponse(parsed, fallbackText = '', sentence = '') {
+    if (parsed && typeof parsed === 'object') {
+        return {
+            sentence: firstNonEmptyString(parsed.sentence, sentence),
+            translation: firstNonEmptyString(parsed.translation, parsed.chinese_translation, parsed.translated_text, parsed.output, parsed.result, typeof parsed.text === 'string' ? parsed.text : ''),
+            phrase_alignment: Array.isArray(parsed.phrase_alignment) ? parsed.phrase_alignment : [],
+            chunks: Array.isArray(parsed.chunks) ? parsed.chunks : [],
+            key_points: Array.isArray(parsed.key_points) ? parsed.key_points : []
+        };
+    }
+    return { sentence, translation: firstNonEmptyString(fallbackText), phrase_alignment: [], chunks: [], key_points: [] };
+}
+
+function normalizeWordInSentenceResponse(parsed, fallbackText = '', word = '', sentence = '') {
+    if (parsed && typeof parsed === 'object') {
+        const analysis = parsed.analysis && typeof parsed.analysis === 'object' ? parsed.analysis : parsed;
+        return {
+            word: firstNonEmptyString(parsed.word, word),
+            sentence: firstNonEmptyString(parsed.sentence, sentence),
+            analysis: {
+                phonetic: firstNonEmptyString(analysis.phonetic),
+                pos: firstNonEmptyString(analysis.pos, analysis.part_of_speech),
+                meaning: firstNonEmptyString(analysis.meaning, analysis.translation, analysis.gloss, parsed.meaning, parsed.translation, fallbackText),
+                role: firstNonEmptyString(analysis.role, analysis.usage, parsed.role)
+            }
+        };
+    }
+    return { word, sentence, analysis: { phonetic: '', pos: '', meaning: firstNonEmptyString(fallbackText), role: '' } };
+}
+
+function normalizeSelectionResponse(parsed, fallbackText = '', selection = '', sentence = '') {
+    if (parsed && typeof parsed === 'object') {
+        const analysis = parsed.analysis && typeof parsed.analysis === 'object' ? parsed.analysis : parsed;
+        return {
+            selection: firstNonEmptyString(parsed.selection, selection),
+            sentence: firstNonEmptyString(parsed.sentence, sentence),
+            analysis: {
+                phonetic: firstNonEmptyString(analysis.phonetic),
+                meaning: firstNonEmptyString(analysis.meaning, analysis.translation, analysis.gloss, parsed.meaning, parsed.translation, fallbackText),
+                usage: firstNonEmptyString(analysis.usage, analysis.role, parsed.usage),
+                examples: Array.isArray(analysis.examples) ? analysis.examples : []
+            }
+        };
+    }
+    return { selection, sentence, analysis: { phonetic: '', meaning: firstNonEmptyString(fallbackText), usage: '', examples: [] } };
+}
+
+function buildModelCandidates(primary, fallback) {
+    const out = [];
+    const seen = new Set();
+    for (const item of [primary, fallback]) {
+        const key = JSON.stringify(item);
+        if (!item || seen.has(key)) continue;
+        seen.add(key);
+        out.push(item);
+    }
+    return out;
 }
 
 // Small, reusable AI request helper with timeout and retry.
-async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat, apiUrl, apiKey }) {
+async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat, apiUrl, apiKey, taskType = 'default' }) {
     // AbortController per request; chain with external signal if provided
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
@@ -99,33 +248,36 @@ async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeou
     const fetchOnce = async () => {
         const s = loadGlobalSettings();
         const sec = loadGlobalSecrets();
-        // allow per-call override, then profile/model 解析，再到 localStorage 與全域
         const endpoint = (apiUrl && String(apiUrl).trim()) || (resolved.apiUrl && String(resolved.apiUrl).trim())
           || (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
         const key = (apiKey && String(apiKey).trim()) || (resolved.apiKey && String(resolved.apiKey).trim())
           || (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
-        const resp = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${key}`
-            },
-            body: JSON.stringify(body),
-            signal: ac.signal
-        });
-        if (!resp.ok) {
-            let errPayload = null;
-            try { errPayload = await resp.json(); } catch (_) { /* ignore */ }
-            const err = new Error(`AI request failed ${resp.status}`);
-            err.status = resp.status;
-            err.payload = errPayload;
-            try {
-                const ra = resp.headers.get && resp.headers.get('retry-after');
-                if (ra) err.retryAfter = parseFloat(ra);
-            } catch(_) {}
-            throw err;
-        }
-        return resp.json();
+        const { maxConcurrency, minIntervalMs } = getLimitConfig(taskType);
+        const queueKey = queueKeyForRequest({ endpoint, profile: resolved.profile, model: finalModel, taskType });
+        return await enqueueAIRequest(queueKey, async () => {
+            const resp = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${key}`
+                },
+                body: JSON.stringify(body),
+                signal: ac.signal
+            });
+            if (!resp.ok) {
+                let errPayload = null;
+                try { errPayload = await resp.json(); } catch (_) { /* ignore */ }
+                const err = new Error(`AI request failed ${resp.status}`);
+                err.status = resp.status;
+                err.payload = errPayload;
+                try {
+                    const ra = resp.headers.get && resp.headers.get('retry-after');
+                    if (ra) err.retryAfter = parseFloat(ra);
+                } catch(_) {}
+                throw err;
+            }
+            return resp.json();
+        }, { maxConcurrency, minIntervalMs });
     };
 
     const maxRetries = 2;
@@ -238,100 +390,82 @@ export async function checkUserSentence(word, userSentence, opts = {}) {
  * @returns {Promise<object>} - 包含段落分析結果的對象。
  */
 export async function analyzeParagraph(paragraph, opts = {}) {
-    // Force the paragraph analyzer to always use the minimal output mode.
-    // We still respect the caller-provided "level" for cache keying to avoid repeated requests,
-    // but the effective behavior is always equivalent to 'quick'.
     const { timeoutMs = 45000, signal, level: requestedLevel = 'standard', noCache = false } = opts;
-    const EFFECTIVE_LEVEL = 'quick';
     const s = loadGlobalSettings();
-    const model = (s?.ai?.models && s.ai.models.articleAnalysis) || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const primaryModel = (s?.ai?.models && (s.ai.models.articleParagraphTranslation || s.ai.models.articleAnalysis))
+      || AI_MODELS.articleParagraphTranslation || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const fallbackModel = (s?.ai?.models && s.ai.models.articleParagraphTranslationFallback)
+      || AI_MODELS.articleParagraphTranslationFallback || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const candidates = buildModelCandidates(primaryModel, fallbackModel);
 
-    // local cache lookup (keyed by requestedLevel so UI won't keep re-triggering)
     if (!noCache) {
-        try {
-            const cached = await cache.getParagraphAnalysisCached(paragraph, requestedLevel, model);
-            if (cached) return cached;
-        } catch (e) { /* ignore cache errors */ }
+        for (const modelSpec of candidates) {
+            const resolved = normalizeModelSpec(modelSpec);
+            try {
+                const cached = await cache.getParagraphAnalysisCached(paragraph, requestedLevel, resolved.model);
+                if (cached) return cached;
+            } catch (_) {}
+        }
     }
 
-    // Minimal instruction: translation only (configurable via AI_PROMPTS)
     const instructions = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.instructions)
-      || `只返回 JSON：{"chinese_translation":"..."}
-要求：
-- 翻譯請使用繁體中文符合香港中文習慣，不要廣東話。 英文姓名不用翻譯；
-- 用字遵從香港中文（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片）。
-- 若段落包含 Markdown 結構（如表格、清單、標題），請完整保留原始 Markdown 標記與行結構：
-  * 表格：保留每行的管線符號與對齊行（如 | --- |），不要將表格展平成普通句子。
-  * 清單：保留項目前綴（-、*、1. 等）與每項一行。
-  * 圖片：對於 Markdown 圖片標記（例如：![](URL) 或 ![alt](URL)），請保持原樣在輸出中，不要翻譯或改寫其中的 alt 文字，也不要移除；若圖片單獨成段，保留為同一 Markdown 行。
-- 不要返回 word_alignment 與 detailed_analysis。`;
-
+      || '請將以下英文段落翻譯成香港繁體中文，只返回 JSON。';
     const prompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.user)
       ? applyTemplate(AI_PROMPTS.article.paragraph.user, { paragraph, instructions })
-      : `請對以下英文段落進行分析並返回嚴格有效的 JSON（不允許代碼塊或額外解釋）：
-
+      : `請將以下英文段落翻譯成香港繁體中文，並只返回 JSON 物件。
+允許鍵名：chinese_translation 或 translation。
+不要使用 markdown code fence，不要加解釋。
 段落: """
 ${paragraph}
 """
-
 ${instructions}`;
 
-    const maxTokens = 600; // minimal output
-    try {
-        const data = await requestAI({
-            model,
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.2,
-            maxTokens,
-            timeoutMs,
-            signal,
-            responseFormat: { type: 'json_object' }
-        });
-        let content = (data?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+    let lastErr = null;
+    for (const modelSpec of candidates) {
+        const resolved = normalizeModelSpec(modelSpec);
         try {
-            const parsed = JSON.parse(content);
-            if (!validate.validateArticleAnalysis(parsed, EFFECTIVE_LEVEL)) {
-                throw new Error('Schema validation failed');
-            }
-            try {
-                // Cache using the requested level key to prevent redundant calls from UI
-                const ttlMs = 14*24*60*60*1000; // 14 days for minimal mode
-                await cache.setParagraphAnalysisCached(paragraph, requestedLevel, model, parsed, ttlMs);
-            } catch(_) {}
+            const data = await requestAI({
+                model: modelSpec,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.2,
+                maxTokens: requestedLevel === 'quick' ? 500 : 700,
+                timeoutMs,
+                signal,
+                responseFormat: { type: 'json_object' },
+                taskType: 'articleParagraphTranslation'
+            });
+            const content = data?.choices?.[0]?.message?.content || '';
+            const parsed = normalizeParagraphResponse(safeJsonParse(content), stripCodeFences(content));
+            if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw new Error('Schema validation failed');
+            try { await cache.setParagraphAnalysisCached(paragraph, requestedLevel, resolved.model, parsed, 14 * 24 * 60 * 60 * 1000); } catch (_) {}
             return parsed;
-        } catch (e) {
-            const fixed = content.replace(/,\s*([}\]])/g, '$1').replace(/(\{|\[)\s*,/g, '$1');
-            const parsed = JSON.parse(fixed);
-            if (!validate.validateArticleAnalysis(parsed, EFFECTIVE_LEVEL)) {
-                throw new Error('Schema validation failed after fix');
-            }
-            try { const ttlMs = 14*24*60*60*1000; await cache.setParagraphAnalysisCached(paragraph, requestedLevel, model, parsed, ttlMs);} catch(_){}
-            return parsed;
+        } catch (error) {
+            lastErr = error;
         }
-    } catch (err) {
-        console.warn('段落分析失敗，回退到最小輸出。', err);
-        // 最小回退：僅翻譯
+    }
+
+    try {
+        const fallbackModelSpec = candidates[0] || primaryModel;
         const fbPrompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.fallback)
           ? applyTemplate(AI_PROMPTS.article.paragraph.fallback, { paragraph })
-          : `只返回 JSON：{"chinese_translation":"..."}
-請使用繁體中文符合香港中文習慣，不要廣東話。
-段落:"""
-${paragraph}
-"""`;
+          : `請把這段英文翻譯成香港繁體中文，只輸出翻譯內容，不要其他文字：
+${paragraph}`;
         const fb = await requestAI({
-            model,
+            model: fallbackModelSpec,
             messages: [{ role: 'user', content: fbPrompt }],
             temperature: 0.2,
-            maxTokens: 500,
+            maxTokens: 450,
             timeoutMs,
             signal,
-            responseFormat: { type: 'json_object' }
+            taskType: 'articleParagraphTranslation'
         });
-        let content = (fb?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
-        const base = JSON.parse(content);
-        const parsed = { chinese_translation: base.chinese_translation || '', word_alignment: [], detailed_analysis: [] };
-        try { const ttlMs = 7*24*60*60*1000; await cache.setParagraphAnalysisCached(paragraph, requestedLevel, model, parsed, ttlMs);} catch(_){}
+        const raw = fb?.choices?.[0]?.message?.content || '';
+        const parsed = normalizeParagraphResponse(safeJsonParse(raw), stripCodeFences(raw));
+        if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw lastErr || new Error('Paragraph fallback failed');
         return parsed;
+    } catch (_) {
+        if (lastErr) console.warn('段落翻譯失敗，返回最小兜底。', lastErr);
+        return { chinese_translation: '', word_alignment: [], detailed_analysis: [] };
     }
 }
 
@@ -339,45 +473,71 @@ ${paragraph}
  * 懶載：針對單個詞（或短語）在其所在句子中的詳解。
  */
 export async function analyzeWordInSentence(word, sentence, opts = {}) {
-    // 用於「文章詳解」區點擊單詞彈出的詳解卡片。
-    // 優先順序：本功能專用覆蓋（settings.ai.models.articleWordTooltip）
-    // → 全域 AI_MODELS.articleWordTooltip → 通用 wordAnalysis（僅回退到此，不再回退 articleAnalysis）
     const { timeoutMs = 20000, signal } = opts;
     const s = loadGlobalSettings();
-    const model = (s?.ai?.models && (s.ai.models.articleWordTooltip || s.ai.models.wordAnalysis))
-      || AI_MODELS.articleWordTooltip || AI_MODELS.wordAnalysis;
-    // local cache lookup
-    try {
-        const cached = await cache.getWordAnalysisCached(word, sentence, model);
-        if (cached) return cached;
-    } catch (_) {}
+    const primaryModel = (s?.ai?.models && (s.ai.models.articleWordTranslation || s.ai.models.articleWordTooltip || s.ai.models.wordAnalysis))
+      || AI_MODELS.articleWordTranslation || AI_MODELS.articleWordTooltip || AI_MODELS.wordAnalysis;
+    const fallbackModel = (s?.ai?.models && s.ai.models.articleWordTranslationFallback)
+      || AI_MODELS.articleWordTranslationFallback || AI_MODELS.wordAnalysis;
+    const candidates = buildModelCandidates(primaryModel, fallbackModel);
+    for (const modelSpec of candidates) {
+        const resolved = normalizeModelSpec(modelSpec);
+        try {
+            const cached = await cache.getWordAnalysisCached(word, sentence, resolved.model);
+            if (cached) return cached;
+        } catch (_) {}
+    }
     const prompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.wordTooltip && AI_PROMPTS.article.wordTooltip.template)
       ? applyTemplate(AI_PROMPTS.article.wordTooltip.template, { word, sentence })
-      : `請針對下列句子中的目標詞進行語音/詞性/語義與句法作用的簡潔分析，返回嚴格 JSON（中文請使用繁體中文符合香港中文習慣，不要廣東話。）：
+      : `請解釋英文單詞在句中的意思，只返回 JSON。
+允許最少字段：{"word":"${word}","meaning":"..."}
 詞: "${word}"
-句: "${sentence}"
-只返回：{"word":"...","sentence":"...","analysis":{"phonetic":"IPA","pos":"詞性","meaning":"中文意思","role":"語法作用（簡潔）"}}`;
-    const data = await requestAI({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.2,
-        maxTokens: 300,
-        timeoutMs,
-        signal,
-        responseFormat: { type: 'json_object' }
-    });
-    let content = (data?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+句: "${sentence}"`;
+
+    let lastErr = null;
+    for (const modelSpec of candidates) {
+        const resolved = normalizeModelSpec(modelSpec);
+        try {
+            const data = await requestAI({
+                model: modelSpec,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.2,
+                maxTokens: 280,
+                timeoutMs,
+                signal,
+                responseFormat: { type: 'json_object' },
+                taskType: 'articleWordTranslation'
+            });
+            const raw = data?.choices?.[0]?.message?.content || '';
+            const parsed = normalizeWordInSentenceResponse(safeJsonParse(raw), stripCodeFences(raw), word, sentence);
+            if (!validate.validateWordInSentence(parsed)) throw new Error('Schema validation failed');
+            try { await cache.setWordAnalysisCached(word, sentence, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000); } catch (_) {}
+            return parsed;
+        } catch (error) {
+            lastErr = error;
+        }
+    }
+
     try {
-        const parsed = JSON.parse(content);
-        if (!validate.validateWordInSentence(parsed)) throw new Error('Schema validation failed');
-        try { await cache.setWordAnalysisCached(word, sentence, model, parsed, 30*24*60*60*1000);} catch(_){}
+        const fallbackModelSpec = candidates[0] || primaryModel;
+        const fb = await requestAI({
+            model: fallbackModelSpec,
+            messages: [{ role: 'user', content: `請只回答這個詞在句中的中文意思，不要解釋。
+詞: ${word}
+句: ${sentence}` }],
+            temperature: 0.2,
+            maxTokens: 120,
+            timeoutMs,
+            signal,
+            taskType: 'articleWordTranslation'
+        });
+        const raw = fb?.choices?.[0]?.message?.content || '';
+        const parsed = normalizeWordInSentenceResponse(null, stripCodeFences(raw), word, sentence);
+        if (!validate.validateWordInSentence(parsed)) throw lastErr || new Error('Word fallback failed');
         return parsed;
-    } catch (e) {
-        const fixed = content.replace(/,\s*([}\]])/g, '$1').replace(/(\{|\[)\s*,/g, '$1');
-        const parsed = JSON.parse(fixed);
-        if (!validate.validateWordInSentence(parsed)) throw e;
-        try { await cache.setWordAnalysisCached(word, sentence, model, parsed, 30*24*60*60*1000);} catch(_){}
-        return parsed;
+    } catch (_) {
+        if (lastErr) throw lastErr;
+        return normalizeWordInSentenceResponse(null, '', word, sentence);
     }
 }
 
@@ -385,58 +545,90 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
 export async function analyzeSentence(sentence, context = '', opts = {}) {
     const { timeoutMs = 20000, signal, noCache = false, conciseKeypoints = true, includeStructure = true } = opts;
     const s = loadGlobalSettings();
-    const model = (s?.ai?.models && s.ai.models.articleAnalysis) || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const primaryModel = (s?.ai?.models && (s.ai.models.articleSentenceTranslation || s.ai.models.articleAnalysis))
+      || AI_MODELS.articleSentenceTranslation || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const fallbackModel = (s?.ai?.models && s.ai.models.articleSentenceTranslationFallback)
+      || AI_MODELS.articleSentenceTranslationFallback || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const candidates = buildModelCandidates(primaryModel, fallbackModel);
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {
-        try {
-            const cached = await cache.getSentenceAnalysisCached(sentence, contextHash, model);
-            if (cached) return cached;
-        } catch (_) {}
+        for (const modelSpec of candidates) {
+            const resolved = normalizeModelSpec(modelSpec);
+            try {
+                const cached = await cache.getSentenceAnalysisCached(sentence, contextHash, resolved.model);
+                if (cached) return cached;
+            } catch (_) {}
+        }
     }
-    const keyPointRule = '請輸出 2-4 條最重要的關鍵點；避免與片語/結構重覆描述，偏向語義/語氣/結構/常見誤用等高階提示。中文請使用香港繁體中文用字。';
-    const basePrompt = `上下文（僅供理解，不要逐句分析）: \"\"\"\n${context}\n\"\"\"\n目標句: \"\"\"\n${sentence}\n\"\"\"`;
+    const keyPointRule = conciseKeypoints ? '請輸出 1-3 條簡短關鍵點；若模型不擅長結構化分析，可返回空陣列。' : '請輸出 2-4 條最重要的關鍵點。';
+    const basePrompt = `上下文（僅供理解）: """
+${context}
+"""
+目標句: """
+${sentence}
+"""`;
     const prompt = includeStructure
       ? ((AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.sentence && AI_PROMPTS.article.sentence.withStructure)
           ? applyTemplate(AI_PROMPTS.article.sentence.withStructure, { basePrompt, keyPointRule })
-          : `對下列英文句子進行分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  \"sentence\":\"...\",\n  \"translation\":\"...\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\n${keyPointRule}`)
+          : `請把下列英文句子翻譯成香港繁體中文，並盡量返回 JSON。
+允許最少字段：{"translation":"..."}
+若能穩定輸出，再補 key_points / phrase_alignment / chunks。
+${basePrompt}
+${keyPointRule}`)
       : ((AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.sentence && AI_PROMPTS.article.sentence.concise)
           ? applyTemplate(AI_PROMPTS.article.sentence.concise, { basePrompt, keyPointRule })
-          : `僅對下列英文句子進行精簡分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  \"sentence\":\"...\",\n  \"translation\":\"...\",\n  \"key_points\":[\"...\"]\n}\n${keyPointRule}`);
+          : `請把下列英文句子翻譯成香港繁體中文，只返回 JSON。
+允許字段：translation, key_points
+${basePrompt}
+${keyPointRule}`);
+
+    let lastErr = null;
+    for (const modelSpec of candidates) {
+        const resolved = normalizeModelSpec(modelSpec);
+        try {
+            const data = await requestAI({
+                model: modelSpec,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.2,
+                maxTokens: includeStructure ? 650 : 380,
+                timeoutMs,
+                signal,
+                responseFormat: { type: 'json_object' },
+                taskType: 'articleSentenceTranslation'
+            });
+            const raw = data?.choices?.[0]?.message?.content || '';
+            const parsed = normalizeSentenceResponse(safeJsonParse(raw), stripCodeFences(raw), sentence);
+            if (!validate.validateSentenceAnalysis(parsed)) throw new Error('Schema validation failed');
+            try { await cache.setSentenceAnalysisCached(sentence, contextHash, resolved.model, parsed, 21 * 24 * 60 * 60 * 1000); } catch (_) {}
+            return parsed;
+        } catch (error) {
+            lastErr = error;
+        }
+    }
+
     try {
-        const data = await requestAI({
-            model,
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.2,
-            maxTokens: includeStructure ? 650 : 450,
-            timeoutMs,
-            signal,
-            responseFormat: { type: 'json_object' }
-        });
-        const content = (data?.choices?.[0]?.message?.content || '').trim();
-        const parsed = JSON.parse(content);
-        if (!validate.validateSentenceAnalysis(parsed)) throw new Error('Schema validation failed');
-        try { await cache.setSentenceAnalysisCached(sentence, contextHash, model, parsed, 21*24*60*60*1000); } catch(_){}
-        return parsed;
-    } catch (e) {
+        const fallbackModelSpec = candidates[0] || primaryModel;
         const fbPrompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.sentence && AI_PROMPTS.article.sentence.fallback)
           ? applyTemplate(AI_PROMPTS.article.sentence.fallback, { sentence })
-          : `僅翻譯下列句子並提煉 2-3 條關鍵點（JSON，中文請使用繁體中文符合香港中文習慣，不要廣東話。）：\n{\"sentence\":\"${sentence}\",\"translation\":\"...\",\"key_points\":[\"...\"]}`;
+          : `請把這句英文翻譯成香港繁體中文；若可以，再附 1-2 條關鍵點。只返回 JSON 或純翻譯內容。
+${sentence}`;
         const fb = await requestAI({
-            model,
+            model: fallbackModelSpec,
             messages: [{ role: 'user', content: fbPrompt }],
             temperature: 0.2,
-            maxTokens: 300,
+            maxTokens: 260,
             timeoutMs,
             signal,
-            responseFormat: { type: 'json_object' }
+            taskType: 'articleSentenceTranslation'
         });
-        const content = (fb?.choices?.[0]?.message?.content || '').trim();
-        const parsed = JSON.parse(content);
-        if (!parsed.translation) parsed.translation = '';
-        if (!parsed.key_points) parsed.key_points = [];
-        try { await cache.setSentenceAnalysisCached(sentence, contextHash, model, parsed, 7*24*60*60*1000); } catch(_){}
+        const raw = fb?.choices?.[0]?.message?.content || '';
+        const parsed = normalizeSentenceResponse(safeJsonParse(raw), stripCodeFences(raw), sentence);
+        if (!validate.validateSentenceAnalysis(parsed)) throw lastErr || new Error('Sentence fallback failed');
         return parsed;
+    } catch (_) {
+        if (lastErr) throw lastErr;
+        return normalizeSentenceResponse(null, '', sentence);
     }
 }
 
@@ -444,32 +636,75 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
 export async function analyzeSelection(selection, sentence, context = '', opts = {}) {
     const { timeoutMs = 15000, signal, noCache = false } = opts;
     const s = loadGlobalSettings();
-    // 模型優先序：本功能專用 → 通用詞分析（僅回退到此，不再回退 articleAnalysis）
-    const model = (s?.ai?.models && (s.ai.models.articlePhraseAnalysis || s.ai.models.wordAnalysis))
-      || AI_MODELS.articlePhraseAnalysis || AI_MODELS.wordAnalysis;
+    const primaryModel = (s?.ai?.models && (s.ai.models.articlePhraseTranslation || s.ai.models.articlePhraseAnalysis || s.ai.models.wordAnalysis))
+      || AI_MODELS.articlePhraseTranslation || AI_MODELS.articlePhraseAnalysis || AI_MODELS.wordAnalysis;
+    const fallbackModel = (s?.ai?.models && s.ai.models.articlePhraseTranslationFallback)
+      || AI_MODELS.articlePhraseTranslationFallback || AI_MODELS.wordAnalysis;
+    const candidates = buildModelCandidates(primaryModel, fallbackModel);
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {
-        const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, model);
-        if (cached) return cached;
+        for (const modelSpec of candidates) {
+            const resolved = normalizeModelSpec(modelSpec);
+            try {
+                const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, resolved.model);
+                if (cached) return cached;
+            } catch (_) {}
+        }
     }
     const prompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.phraseAnalysis && AI_PROMPTS.article.phraseAnalysis.template)
       ? applyTemplate(AI_PROMPTS.article.phraseAnalysis.template, { selection, sentence, context })
-      : `針對句子中的選中片語給出簡潔解析（JSON，中文請使用繁體中文符合香港中文習慣，不要廣東話。）。\n請同時提供該片語的國際音標 IPA：若能提供片語整體讀音則給整體讀音；若無可靠整體讀音，可用逐詞 IPA 串接（用空格分隔）。\n選中: \"${selection}\"\n句子: \"${sentence}\"\n上下文: \"${context}\"\n只返回：{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}`;
-    const data = await requestAI({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.2,
-        maxTokens: 300,
-        timeoutMs,
-        signal,
-        responseFormat: { type: 'json_object' }
-    });
-    const content = (data?.choices?.[0]?.message?.content || '').trim();
-    const parsed = JSON.parse(content);
-    if (!validate.validateSelectionAnalysis(parsed)) throw new Error('Schema validation failed');
-    try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, model, parsed, 30*24*60*60*1000); } catch(_){}
-    return parsed;
+      : `請解釋下列片語在句中的意思，只返回 JSON。
+允許最少字段：{"selection":"${selection}","meaning":"..."}
+選中: "${selection}"
+句子: "${sentence}"
+上下文: "${context}"`;
+
+    let lastErr = null;
+    for (const modelSpec of candidates) {
+        const resolved = normalizeModelSpec(modelSpec);
+        try {
+            const data = await requestAI({
+                model: modelSpec,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.2,
+                maxTokens: 260,
+                timeoutMs,
+                signal,
+                responseFormat: { type: 'json_object' },
+                taskType: 'articlePhraseTranslation'
+            });
+            const raw = data?.choices?.[0]?.message?.content || '';
+            const parsed = normalizeSelectionResponse(safeJsonParse(raw), stripCodeFences(raw), selection, sentence);
+            if (!validate.validateSelectionAnalysis(parsed)) throw new Error('Schema validation failed');
+            try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000); } catch (_) {}
+            return parsed;
+        } catch (error) {
+            lastErr = error;
+        }
+    }
+
+    try {
+        const fallbackModelSpec = candidates[0] || primaryModel;
+        const fb = await requestAI({
+            model: fallbackModelSpec,
+            messages: [{ role: 'user', content: `請只回答這個片語在句中的中文意思，不要解釋。
+片語: ${selection}
+句子: ${sentence}` }],
+            temperature: 0.2,
+            maxTokens: 140,
+            timeoutMs,
+            signal,
+            taskType: 'articlePhraseTranslation'
+        });
+        const raw = fb?.choices?.[0]?.message?.content || '';
+        const parsed = normalizeSelectionResponse(null, stripCodeFences(raw), selection, sentence);
+        if (!validate.validateSelectionAnalysis(parsed)) throw lastErr || new Error('Phrase fallback failed');
+        return parsed;
+    } catch (_) {
+        if (lastErr) throw lastErr;
+        return normalizeSelectionResponse(null, '', selection, sentence);
+    }
 }
 
 // =================================
