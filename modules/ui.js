@@ -19,6 +19,7 @@ export function openModal() {
  */
 export function closeModal() {
     dom.appModal.classList.add('hidden');
+    try { dom.appModal.querySelector('.modal-content')?.classList.remove('modal-large'); } catch (_) {}
     dom.modalBody.innerHTML = ''; // 清理內容以防下次打開時殘留
 }
 

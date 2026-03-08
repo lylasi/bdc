@@ -131,6 +131,7 @@ export function initArticle() {
     dom.analyzeArticleBtn.addEventListener('click', analyzeArticle);
     dom.clearArticleBtn.addEventListener('click', clearArticleInput);
     dom.articleHistorySelect.addEventListener('change', loadSelectedArticle);
+    if (dom.manageHistoryBtn) dom.manageHistoryBtn.addEventListener('click', openArticleHistoryManager);
     dom.deleteHistoryBtn.addEventListener('click', deleteSelectedArticleHistory);
     dom.readArticleBtn.addEventListener('click', handleReadButtonClick);
     dom.stopReadArticleBtn.addEventListener('click', stopReadArticle);
@@ -1910,12 +1911,151 @@ function clearArticleInput() {
     if (dom.retryFailedParagraphsBtn) dom.retryFailedParagraphsBtn.style.display = 'none';
 }
 
+function buildArticleHistoryLabel(item) {
+    const meta = item && item.articleId ? storage.getArticleMetaById(item.articleId) : null;
+    const { title, paragraphs } = parseTitleAndParagraphs(item?.article || '');
+    const fallback = title || paragraphs.find(p => p && p.trim()) || (item?.article || '').trim() || '未命名文章';
+    return (meta?.title || fallback).trim().slice(0, 40);
+}
+
+function buildArticleHistorySummary(item) {
+    const { paragraphs } = parseTitleAndParagraphs(item?.article || '');
+    const summary = paragraphs.find(p => p && p.trim()) || (item?.article || '').trim() || '無內容';
+    return summary.replace(/\s+/g, ' ').slice(0, 120);
+}
+
+function buildArticleHistoryRecords() {
+    const list = Array.isArray(state.analyzedArticles) ? state.analyzedArticles : [];
+    return list.map((item, index) => {
+        const meta = item && item.articleId ? storage.getArticleMetaById(item.articleId) : null;
+        return {
+            index,
+            item,
+            meta,
+            label: buildArticleHistoryLabel(item),
+            summary: buildArticleHistorySummary(item)
+        };
+    });
+}
+
+function loadArticleHistoryRecord(index) {
+    const item = (state.analyzedArticles || [])[index];
+    if (!item) return false;
+    dom.articleHistorySelect.value = String(index);
+    dom.articleInput.value = item.article;
+    clearCurrentArticleSourceMeta();
+    const articleId = item.articleId || null;
+    if (articleId && typeof storage.getArticleMetaById === 'function') {
+        try {
+            const meta = storage.getArticleMetaById(articleId);
+            if (meta) {
+                setCurrentArticleSourceMeta({
+                    sourceType: meta.sourceType || 'paste',
+                    sourceUrl: meta.sourceUrl || '',
+                    title: meta.title || ''
+                });
+            } else {
+                setCurrentArticleSourceMeta({ sourceType: 'paste' });
+            }
+        } catch (_) {
+            setCurrentArticleSourceMeta({ sourceType: 'paste' });
+        }
+    } else {
+        setCurrentArticleSourceMeta({ sourceType: 'paste' });
+    }
+    displayArticleAnalysis(item.article, item.result);
+    try { notifyAssistantArticleChanged(); } catch(_) {}
+    return true;
+}
+
+function removeArticleHistoryRecord(index) {
+    const removed = storage.deleteAnalyzedArticleByIndex(index);
+    if (!removed) return false;
+    populateArticleHistorySelect();
+    clearArticleInput();
+    return true;
+}
+
+function openArticleHistoryManager() {
+    const records = buildArticleHistoryRecords();
+    const container = document.createElement('div');
+    container.className = 'article-history-manager';
+    if (!records.length) {
+        container.innerHTML = '<p>尚無閱讀記錄。</p>';
+    } else {
+        const items = records.map(({ index, item, meta, label, summary }) => {
+            const updatedAt = item?.result?.updatedAt || meta?.updatedAt || null;
+            const createdAt = meta?.createdAt || null;
+            const timeValue = updatedAt || createdAt;
+            const timeText = timeValue
+                ? (typeof timeValue === 'number' ? new Date(timeValue) : new Date(String(timeValue))).toLocaleString()
+                : '未記錄時間';
+            const sourceMap = {
+                url: '網頁 / 新聞',
+                file: '文章庫 / 檔案',
+                ocr: '圖片 OCR',
+                paste: '貼上文字'
+            };
+            const sourceType = meta?.sourceType || 'paste';
+            const sourceText = sourceMap[sourceType] || '貼上文字';
+            const hasResult = item?.result ? '已分析' : '未分析';
+            const safeLabel = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const safeSummary = summary.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `<div class="article-history-item" data-index="${index}">
+                <div class="article-history-main">
+                    <div class="article-history-title">${safeLabel}</div>
+                    <div class="article-history-meta">${sourceText} · ${timeText} · ${hasResult}</div>
+                    <div class="article-history-summary">${safeSummary}</div>
+                </div>
+                <div class="article-history-ops">
+                    <button type="button" class="btn-secondary" data-act="load">載入</button>
+                    <button type="button" class="btn-secondary" data-act="del">刪除</button>
+                </div>
+            </div>`;
+        }).join('');
+        container.innerHTML = `<div class="article-history-toolbar"><button type="button" id="article-history-clear" class="btn-secondary">清空全部</button></div><div class="article-history-list">${items}</div>`;
+    }
+    dom.modalTitle.textContent = '閱讀記錄管理';
+    dom.modalBody.innerHTML = '';
+    dom.modalBody.appendChild(container);
+    ui.openModal();
+    try { document.querySelector('#app-modal .modal-content')?.classList.add('modal-large'); } catch (_) {}
+    container.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        if (btn.id === 'article-history-clear') {
+            if (!records.length) return;
+            if (confirm('確定清空全部閱讀記錄？此操作不可撤回。')) {
+                storage.clearAnalyzedArticles();
+                populateArticleHistorySelect();
+                clearArticleInput();
+                ui.closeModal();
+            }
+            return;
+        }
+        const row = btn.closest('.article-history-item');
+        if (!row) return;
+        const index = Number.parseInt(row.getAttribute('data-index'), 10);
+        if (Number.isNaN(index)) return;
+        const action = btn.getAttribute('data-act');
+        if (action === 'load') {
+            loadArticleHistoryRecord(index);
+            ui.closeModal();
+        } else if (action === 'del') {
+            if (confirm('確定刪除此閱讀記錄？')) {
+                removeArticleHistoryRecord(index);
+                openArticleHistoryManager();
+            }
+        }
+    });
+}
+
 function populateArticleHistorySelect() {
     dom.articleHistorySelect.innerHTML = '<option value="">讀取歷史記錄</option>';
-    state.analyzedArticles.forEach((item, index) => {
+    buildArticleHistoryRecords().forEach(({ index, label }) => {
         const option = document.createElement('option');
         option.value = index;
-        option.textContent = item.article.substring(0, 20) + '...';
+        option.textContent = label;
         dom.articleHistorySelect.appendChild(option);
     });
 }
@@ -1926,34 +2066,7 @@ function loadSelectedArticle() {
         clearArticleInput();
         return;
     }
-    const item = state.analyzedArticles[selectedIndex];
-    if (item) {
-        dom.articleInput.value = item.article;
-        clearCurrentArticleSourceMeta();
-        // 若歷史記錄中帶有 articleId，嘗試從 ArticleMeta 還原來源資訊
-        const articleId = item.articleId || null;
-        if (articleId && typeof storage.getArticleMetaById === 'function') {
-            try {
-                const meta = storage.getArticleMetaById(articleId);
-                if (meta) {
-                    setCurrentArticleSourceMeta({
-                        sourceType: meta.sourceType || 'paste',
-                        sourceUrl: meta.sourceUrl || '',
-                        title: meta.title || ''
-                    });
-                } else {
-                    setCurrentArticleSourceMeta({ sourceType: 'paste' });
-                }
-            } catch (_) {
-                setCurrentArticleSourceMeta({ sourceType: 'paste' });
-            }
-        } else {
-            setCurrentArticleSourceMeta({ sourceType: 'paste' });
-        }
-        displayArticleAnalysis(item.article, item.result);
-        // 從歷史載入 → 通知助手切換上下文
-        try { notifyAssistantArticleChanged(); } catch(_) {}
-    }
+    loadArticleHistoryRecord(selectedIndex);
 }
 
 function deleteSelectedArticleHistory() {
@@ -1963,12 +2076,7 @@ function deleteSelectedArticleHistory() {
         return;
     }
     if (confirm('確定要刪除這條歷史記錄嗎？')) {
-        const articles = [...state.analyzedArticles];
-        articles.splice(selectedIndex, 1);
-        state.setAnalyzedArticles(articles);
-        storage.saveAnalyzedArticles();
-        populateArticleHistorySelect();
-        clearArticleInput();
+        removeArticleHistoryRecord(selectedIndex);
     }
 }
 

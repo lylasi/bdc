@@ -84,6 +84,7 @@ export const importArticleBtn = document.getElementById('import-article-btn');
 export const retryFailedParagraphsBtn = document.getElementById('retry-failed-paragraphs-btn');
 export const articleAnalysisContainer = document.getElementById('article-analysis-container');
 export const articleHistorySelect = document.getElementById('article-history-select');
+export const manageHistoryBtn = document.getElementById('manage-history-btn');
 export const deleteHistoryBtn = document.getElementById('delete-history-btn');
 export const clearArticleBtn = document.getElementById('clear-article-btn');
 // 中文翻譯遮罩開關（文章詳解頁，極簡設定）
