@@ -73,6 +73,15 @@ export function saveArticleMeta(articleMeta) {
     return normalized;
 }
 
+export function deleteArticleMetaById(articleId) {
+    if (!articleId) return false;
+    const map = readArticleMetasMap();
+    if (!Object.prototype.hasOwnProperty.call(map, articleId)) return false;
+    delete map[articleId];
+    writeArticleMetasMap(map);
+    return true;
+}
+
 /**
  * 依 URL 尋找文章 metadata（僅 sourceType = 'url'）。
  */
@@ -429,6 +438,31 @@ export function loadAnalyzedArticles() {
     const saved = localStorage.getItem('analyzedArticles');
     const articles = saved ? JSON.parse(saved) : [];
     state.setAnalyzedArticles(articles);
+}
+
+export function deleteAnalyzedArticleByIndex(index, options = {}) {
+    const normalizedIndex = Number.parseInt(index, 10);
+    if (Number.isNaN(normalizedIndex) || normalizedIndex < 0) return null;
+    const articles = Array.isArray(state.analyzedArticles) ? [...state.analyzedArticles] : [];
+    if (normalizedIndex >= articles.length) return null;
+    const removed = articles.splice(normalizedIndex, 1)[0] || null;
+    state.setAnalyzedArticles(articles);
+    saveAnalyzedArticles();
+    if (options.deleteMeta !== false && removed && removed.articleId) {
+        deleteArticleMetaById(removed.articleId);
+    }
+    return removed;
+}
+
+export function clearAnalyzedArticles(options = {}) {
+    const removed = Array.isArray(state.analyzedArticles) ? [...state.analyzedArticles] : [];
+    state.setAnalyzedArticles([]);
+    saveAnalyzedArticles();
+    if (options.deleteMeta !== false) {
+        const ids = Array.from(new Set(removed.map(item => item && item.articleId).filter(Boolean)));
+        ids.forEach(id => deleteArticleMetaById(id));
+    }
+    return removed;
 }
 
 // --- 默寫 AI 批改歷史（LocalStorage） ---

@@ -105,7 +105,7 @@ function hideAllModules() {
 
 // 根據視窗寬度切換主導航文案（移動端顯示短文案）
 function responsiveNavLabels() {
-    const isCompact = window.innerWidth <= 480;
+    const isCompact = window.innerWidth <= 767;
     const nav = document.querySelector('nav');
     if (nav) {
         nav.classList.toggle('nav-compact', isCompact);
