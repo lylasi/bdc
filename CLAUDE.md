@@ -191,3 +191,18 @@ node scripts/extract-5a-readings.js
 - 沒有 `package.json` / npm scripts 工作流；不要假設存在 `npm run build`、`npm test`、`npm run lint`。
 - 沒有自動化測試框架；不要虛構單測指令。
 - `ai-config.js` 屬本機私有設定，不應被當成可安全提交的專案檔案。
+
+## 文檔落盤規範（強製）
+1. 每次生成文檔、計劃、紀要、調研、報告、清單時，必須落盤到工作區 `docs` 目錄下。
+2. 必須按類型創建子目錄，至少包含：
+- `docs/plan`（計劃）
+- `docs/meeting`（會議材料與紀要）
+- `docs/research`（調研）
+- `docs/spec`（需求與規格拆解）
+- `docs/report`（週報/階段報告）
+- `docs/decision`（決策記錄）
+- `docs/release`（髮佈記錄）
+3. 文件名必須包含時間戳，格式固定：`yyyyMMddHHmmssfff`。
+4. 文件命名建議：`<時間戳>_<主題>.md`，示例：`20260224165501222_登錄改造實施計劃.md`。
+5. 若目錄不存在，先自動創建再冩入；冩入完成後在結果裡明確給出實際文件路徑。
+6. 除非我明確要求，不要隻在聊天中給文檔，必須同時生成對應落地文件。
