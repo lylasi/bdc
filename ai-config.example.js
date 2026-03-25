@@ -3,10 +3,10 @@ export const API_URL = 'https://YOUR-ENDPOINT/v1/chat/completions';
 // API 金鑰（請自行填入；此檔僅作為示例，不應提交真實金鑰）
 export const API_KEY = '';
 
-// 多端點 Profiles（新增）：根據供應商/環境切換 baseUrl 與 key
+// 多端點 Providers（示例）
 // - default 指向全域（維持相容）
-// - 你可以新增如 tbai/openrouter/local 等 profile
-export const AI_PROFILES = {
+// - 你可以新增如 tbai/openrouter/local 等 provider
+export const AI_PROVIDERS = {
   default: { apiUrl: API_URL, apiKey: API_KEY },
   // 範例：
   tbai: { apiUrl: 'https://tbai.xin/v1/chat/completions', apiKey: '' },
@@ -14,31 +14,48 @@ export const AI_PROFILES = {
   local: { apiUrl: 'http://localhost:11434/v1/chat/completions', apiKey: '' } // Ollama 之類的相容服務
 };
 
-// AI 模型清單（示例）
+// 相容舊名稱
+export const AI_PROFILES = AI_PROVIDERS;
+
+// AI 任務映射（示例）
 // 模型使用位置索引（示例）：
 // - exampleGeneration → modules/api.js: generateExamplesForWord()
 // - wordAnalysis      → modules/api.js: getWordAnalysis()；亦為 analyzeSelection() 後備
-// - articleWordTooltip→ modules/api.js: analyzeWordInSentence()（文章詳解區：點詞彈窗）
-// - articlePhraseAnalysis→ modules/api.js: analyzeSelection()（文章詳解區：片語解析）
 // - sentenceChecking  → modules/api.js: checkUserSentence()
+// - qaChecking        → features/qa/qa-checker.js
 // - articleAnalysis   → modules/api.js: analyzeParagraph() / analyzeSentence()
+// - articleCleanup    → modules/api.js: aiCleanArticleMarkdown() / aiExtractArticleFromHtml()
 // - imageOCR          → modules/api.js: ocrExtractTextFromImage() / aiGradeHandwriting()
-export const AI_MODELS = {
+// - assistant         → features/assistant/assistant.js
+export const AI_TASKS = {
   // 你可以使用以下三種寫法指定模型對應的端點：
   // 1) 純字串：'gpt-4.1-mini'（走全域 API_URL/API_KEY）
-  // 2) 前綴字串：'tbai:gpt-4.1-mini'（走 AI_PROFILES.tbai）
-  // 3) 物件：{ profile:'tbai', model:'gpt-4.1-mini' }（可加覆蓋 apiUrl/apiKey）
+  // 2) 前綴字串：'tbai:gpt-4.1-mini'（走 AI_PROVIDERS.tbai）
+  // 3) 物件：{ provider:'tbai', model:'gpt-4.1-mini' }（可加覆蓋 apiUrl/apiKey）
   exampleGeneration: 'tbai:gpt-4.1-nano',
-  wordAnalysis: { profile: 'tbai', model: 'gpt-4.1-mini' },
-  // 文章詳解：片語解析（句卡內「詳解」與工具提示內「片語解析」）
+  wordAnalysis: { provider: 'tbai', model: 'gpt-4.1-mini' },
+  sentenceChecking: 'gpt-4.1-mini',
+  qaChecking: 'gpt-4.1-mini',
+  articleAnalysis: 'gpt-4.1-mini',
+  articleCleanup: 'gpt-4.1-mini',
+  imageOCR: { provider: 'openrouter', model: 'gpt-4o-mini' },
+  assistant: 'gpt-4.1-mini',
+
+  // 相容既有細分任務
   articlePhraseAnalysis: 'gpt-4.1-mini',
-  // 文章詳解：點擊單詞彈出卡片專用（可與 wordAnalysis 不同）
   articleWordTooltip: 'gpt-4.1-mini',
-  sentenceChecking: 'gpt-4.1-mini', // 沒前綴 → 用全域
-  // 若需要，也可新增 articleAnalysis 指定段落/句子分析用模型
-  // articleAnalysis: 'gpt-4.1-mini',
-  imageOCR: { profile: 'openrouter', model: 'gpt-4o-mini' }
+  articleParagraphTranslation: 'gpt-4.1-mini',
+  articleParagraphTranslationFallback: { provider: 'openrouter', model: 'gpt-4o-mini' },
+  articleSentenceTranslation: 'gpt-4.1-mini',
+  articleSentenceTranslationFallback: { provider: 'openrouter', model: 'gpt-4o-mini' },
+  articleWordTranslation: 'gpt-4.1-mini',
+  articleWordTranslationFallback: { provider: 'openrouter', model: 'gpt-4o-mini' },
+  articlePhraseTranslation: 'gpt-4.1-mini',
+  articlePhraseTranslationFallback: { provider: 'openrouter', model: 'gpt-4o-mini' }
 };
+
+// 相容舊名稱
+export const AI_MODELS = AI_TASKS;
 
 // 集中管理的提示詞模板（示例）
 // - 使用 ${name} 作為變數佔位，程式端會帶入對應值
@@ -138,7 +155,7 @@ export const AI_PROMPTS = {
 };
 // 問答集校對模型別名（缺省時回退到 sentenceChecking）
 if (!AI_MODELS.answerChecking) {
-  AI_MODELS.answerChecking = AI_MODELS.sentenceChecking || 'gpt-4.1-mini';
+  AI_MODELS.answerChecking = AI_MODELS.qaChecking || AI_MODELS.sentenceChecking || 'gpt-4.1-mini';
 }
 
 // 文本轉語音（示例）
@@ -158,11 +175,12 @@ export const TTS_CONFIG = {
 // 若需與其他功能使用不同端點/金鑰/模型，可在此覆寫；
 // 留空（undefined）則沿用上方全域 API_URL/API_KEY 與 AI_MODELS.answerChecking。
 export const QA_CHECK = {
-  // 可用 PROFILE 指向 AI_PROFILES 中的某個端點；或直接填 API_URL/API_KEY 覆蓋。
+  // 可用 PROFILE 指向 AI_PROVIDERS 中的某個端點；或直接填 API_URL/API_KEY 覆蓋。
   PROFILE: undefined,
   API_URL: undefined,
   API_KEY: undefined,
-  MODEL: 'gpt-4.1-mini',
+  MODEL: AI_TASKS.qaChecking,
+  DEFAULT_MODEL: AI_TASKS.qaChecking,
   temperature: 0.2,
   maxTokens: 1500,
   timeoutMs: 30000,   // 單題逾時（毫秒）
@@ -179,11 +197,11 @@ export const OCR_CONFIG = {
   API_URL: undefined,
   API_KEY: undefined,
   // 你可以只指定 MODEL，或提供 MODELS 與 DEFAULT_MODEL 給 UI 供選
-  MODEL: undefined, // e.g. 'gpt-4o-mini' 或 'openrouter:gpt-4o-mini'
+  MODEL: AI_TASKS.imageOCR,
   MODELS: [
     // e.g. 'gemini-2.5-flash-nothinking', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'
   ],
-  DEFAULT_MODEL: undefined,
+  DEFAULT_MODEL: AI_TASKS.imageOCR,
   maxTokens: 1500,
   timeoutMs: 45000
 };
@@ -198,10 +216,10 @@ export const ARTICLE_IMPORT = {
   API_KEY: undefined,
   // 可選：你自己的 HTML 代理服務（例如 Cloudflare Worker），避免 CORS；格式例：'https://your-worker.example/fetch?url='
   PROXY_URL: undefined,
-  // 模型：可用 'profile:model'、物件或純字串（走全域）
-  MODEL: 'gpt-4.1-mini',
+  // 模型：可用 'provider:model'、物件或純字串（走全域）
+  MODEL: AI_TASKS.articleCleanup,
   MODELS: [ 'gpt-4.1-mini', 'gpt-4o-mini' ],
-  DEFAULT_MODEL: undefined,
+  DEFAULT_MODEL: AI_TASKS.articleCleanup,
   // 推論參數與預設清洗選項
   temperature: 0.1,
   maxTokens: 1400,
@@ -217,10 +235,20 @@ export const SUPABASE = {
   anonKey: ''
 };
 
+// AI 助手（聊天）模型清單（示例）
+// - 可用：純字串、'provider:model'、或 { provider, model }
+export const ASSISTANT = {
+  MODEL: AI_TASKS.assistant,
+  MODELS: [ 'gpt-4.1-mini', 'gpt-4.1-nano' ],
+  DEFAULT_MODEL: AI_TASKS.assistant
+};
+
 // 匯出預設設定，便於動態 import 使用 config.default 取得整體物件
 const __DEFAULT__ = {
   API_URL,
   API_KEY,
+  AI_PROVIDERS,
+  AI_TASKS,
   AI_PROFILES,
   AI_MODELS,
   AI_PROMPTS,
@@ -232,10 +260,3 @@ const __DEFAULT__ = {
   SUPABASE
 };
 export default __DEFAULT__;
-// AI 助手（聊天）模型清單（示例）
-// - 可用：純字串、'profile:model'、或 { profile, model }
-export const ASSISTANT = {
-  MODEL: 'gpt-4.1-mini',
-  MODELS: [ 'gpt-4.1-mini', 'gpt-4.1-nano' ],
-  DEFAULT_MODEL: undefined
-};

@@ -5,6 +5,19 @@ import * as dom from '../../modules/dom.js';
 import { buildLocalSnapshot, applyMergedSnapshot } from '../../modules/sync-core.js';
 import { syncNow, auth, subscribeSnapshotChanges, unsubscribeChannel } from '../../modules/sync-supabase.js';
 import * as ui from '../../modules/ui.js';
+import {
+  loadGlobalSettings,
+  loadGlobalSecrets,
+  saveGlobalSettings,
+  saveGlobalSecrets
+} from '../../modules/settings.js';
+import {
+  listAIProviders,
+  getTaskModelSelection,
+  discoverProviderModels,
+  deriveApiUrl,
+  deriveModelsUrl
+} from '../../modules/ai-models.js';
 import { openDictationGradingHistory } from '../dictation/dictation-grader.js';
 import * as backup from '../../modules/local-backup.js';
 import * as cache from '../../modules/cache.js';
@@ -329,19 +342,383 @@ function showGlobalSettingsModal() {
       .gs-hint{color:#64748b;font-size:12px;margin-left:auto}
     `; document.head.appendChild(st);
   })();
-  // read existing
-  let settings, secrets;
-  try { const mod = requireOrImportSettings(); settings = mod.settings; secrets = mod.secrets; } catch(_) { settings = {}; secrets = {}; }
+  const persistedSettings = loadGlobalSettings();
+  const persistedSecrets = loadGlobalSecrets();
+  const taskFields = getAiTaskFieldList();
+  const aiState = {
+    providers: listAIProviders({ settings: persistedSettings, secrets: persistedSecrets, includeDisabled: true }).map((provider) => ({
+      id: provider.id,
+      label: provider.label || provider.id,
+      enabled: provider.enabled !== false,
+      baseUrl: provider.baseUrl || '',
+      apiUrl: provider.apiUrl || '',
+      modelsUrl: provider.modelsUrl || '',
+      apiKey: provider.apiKey || '',
+      allowedModels: Array.isArray(provider.allowedModels) ? provider.allowedModels.slice() : [],
+      discoveredModels: Array.isArray(provider.discoveredModels) ? provider.discoveredModels.slice() : [],
+      lastDiscoveryAt: provider.lastDiscoveryAt || '',
+      discoveryStatus: provider.discoveryStatus || '',
+      discoveryError: provider.discoveryError || ''
+    })),
+    taskModels: {}
+  };
+  taskFields.forEach(({ key }) => {
+    const currentValue = (persistedSettings?.ai?.models && persistedSettings.ai.models[key])
+      || (persistedSettings?.ai?.tasks && persistedSettings.ai.tasks[key])
+      || '';
+    aiState.taskModels[key] = getTaskModelSelection(key, {
+      settings: persistedSettings,
+      secrets: persistedSecrets,
+      currentValue
+    }).value || '';
+  });
+  const settings = {
+    ttsUrlCustom: persistedSettings?.tts?.baseUrlCustom || '',
+    ttsUse: persistedSettings?.tts?.use || 'remote',
+    readEn: (persistedSettings?.reading && persistedSettings.reading.englishVariant) || 'en-GB',
+    readZh: (persistedSettings?.reading && persistedSettings.reading.chineseVariant) || 'zh-CN',
+    selectedVoices: (persistedSettings?.tts && persistedSettings.tts.selectedVoices) || {},
+    assistantEnabled: persistedSettings?.assistant?.enabled !== false,
+    assistantStream: persistedSettings?.assistant?.stream !== false
+  };
+  const secrets = {
+    ttsKey: persistedSecrets?.ttsApiKey || ''
+  };
+
+  const normalizeModelValue = (providerId, value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    return raw.includes(':') ? raw : `${providerId}:${raw}`;
+  };
+  const dedupeStrings = (values = []) => {
+    const out = [];
+    const seen = new Set();
+    values.forEach((value) => {
+      const raw = String(value || '').trim();
+      if (!raw || seen.has(raw)) return;
+      seen.add(raw);
+      out.push(raw);
+    });
+    return out;
+  };
+  const formatDiscoveryTime = (value) => {
+    if (!value) return '';
+    try {
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return '';
+      return d.toLocaleString('zh-TW', { hour12: false });
+    } catch (_) {
+      return '';
+    }
+  };
+  const describeDiscoveryState = (row) => {
+    if (row.discoveryStatus === 'success') return '已抓取';
+    if (row.discoveryStatus === 'loading') return '抓取中';
+    if (row.discoveryStatus === 'error') return '抓取失敗';
+    return '尚未抓取';
+  };
+  const buildDraftAiSettings = () => {
+    const providers = {};
+    aiState.providers.forEach((row) => {
+      const providerRecord = {
+        label: row.label || row.id,
+        enabled: row.enabled !== false,
+        baseUrl: String(row.baseUrl || '').trim(),
+        apiUrl: String(row.apiUrl || '').trim(),
+        modelsUrl: String(row.modelsUrl || '').trim(),
+        allowedModels: dedupeStrings(row.allowedModels || []),
+        discoveredModels: Array.isArray(row.discoveredModels) ? row.discoveredModels.slice() : [],
+        lastDiscoveryAt: row.lastDiscoveryAt || '',
+        discoveryStatus: row.discoveryStatus || '',
+        discoveryError: row.discoveryError || ''
+      };
+      if (!providerRecord.apiUrl) providerRecord.apiUrl = deriveApiUrl(providerRecord);
+      if (!providerRecord.modelsUrl) providerRecord.modelsUrl = deriveModelsUrl(providerRecord);
+      providers[row.id] = providerRecord;
+    });
+    const defaultProvider = providers.default || {};
+    const models = {};
+    taskFields.forEach(({ key }) => {
+      const value = String(aiState.taskModels[key] || '').trim();
+      if (!value) return;
+      models[key] = value;
+    });
+    return {
+      ai: {
+        apiUrl: defaultProvider.apiUrl || '',
+        models,
+        providers,
+        tasks: { ...models }
+      }
+    };
+  };
+  const buildDraftAiSecrets = () => {
+    const aiProviders = {};
+    aiState.providers.forEach((row) => {
+      const apiKey = String(row.apiKey || '').trim();
+      if (apiKey) aiProviders[row.id] = { apiKey };
+    });
+    return {
+      aiApiKey: aiProviders.default?.apiKey || '',
+      aiProviders
+    };
+  };
+  const renderAiSettingsSection = () => {
+    const host = dom.modalBody.querySelector('#gs-ai-settings');
+    if (!host) return;
+    const modelDetailsOpenState = new Map(
+      Array.from(host.querySelectorAll('[data-ai-provider-model-details]')).map((element) => [
+        element.getAttribute('data-ai-provider-model-details') || '',
+        element.open
+      ])
+    );
+    const draftSettings = buildDraftAiSettings();
+    const draftSecrets = buildDraftAiSecrets();
+    const providerCardsHtml = aiState.providers.map((row) => {
+      const discovered = Array.isArray(row.discoveredModels) ? row.discoveredModels : [];
+      const discoveredEntries = discovered.map((item) => ({
+        value: item?.value || normalizeModelValue(row.id, item?.id || item?.model || item?.label || ''),
+        label: item?.label || item?.id || item?.model || item?.value || '',
+        meta: '',
+        isManual: false
+      })).filter((item) => item.value);
+      const discoveredSet = new Set(discoveredEntries.map((item) => item.value));
+      const manualEntries = (row.allowedModels || [])
+        .filter((value) => value && !discoveredSet.has(value))
+        .map((value) => ({
+          value,
+          label: value,
+          meta: '手動新增',
+          isManual: true
+        }));
+      const combinedEntries = [...discoveredEntries, ...manualEntries];
+      const selectedCount = combinedEntries.filter((item) => (row.allowedModels || []).includes(item.value)).length;
+      const defaultModelListOpen = combinedEntries.length > 0 && combinedEntries.length <= 8;
+      const isModelListOpen = modelDetailsOpenState.has(row.id)
+        ? modelDetailsOpenState.get(row.id)
+        : defaultModelListOpen;
+      const statusText = describeDiscoveryState(row);
+      const statusClass = row.discoveryStatus === 'success'
+        ? 'success'
+        : (row.discoveryStatus === 'error' ? 'error' : 'muted');
+      const lastText = formatDiscoveryTime(row.lastDiscoveryAt);
+      return `
+        <div class="gs-ai-provider-card" data-ai-provider-card="${escapeHtml(row.id)}">
+          <div class="gs-ai-provider-header">
+            <div class="gs-ai-provider-header-main">
+              <div class="gs-ai-provider-title">${escapeHtml(row.label || row.id)}</div>
+              <div class="gs-ai-provider-id">ID: ${escapeHtml(row.id)}</div>
+              <label class="checkbox-inline"><input data-ai-provider-enabled="${escapeHtml(row.id)}" type="checkbox" ${row.enabled !== false ? 'checked' : ''}> <span>啟用</span></label>
+            </div>
+            <div class="gs-ai-provider-actions">
+              <span class="gs-ai-discovery-state ${statusClass}">${escapeHtml(statusText)}</span>
+              ${lastText ? `<span class="gs-ai-provider-time">${escapeHtml(lastText)}</span>` : ''}
+              <button type="button" class="btn-secondary" data-ai-provider-discover="${escapeHtml(row.id)}">抓取模型</button>
+              ${row.id !== 'default' ? `<button type="button" class="btn-secondary" data-ai-provider-remove="${escapeHtml(row.id)}">移除</button>` : ''}
+            </div>
+          </div>
+          <div class="gs-ai-provider-fields">
+            <label class="gs-ai-provider-field">
+              <span class="gs-ai-provider-field-label">名稱</span>
+              <input data-ai-provider-label="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.label || row.id)}" placeholder="顯示名稱">
+            </label>
+            <label class="gs-ai-provider-field">
+              <span class="gs-ai-provider-field-label">Base URL</span>
+              <input data-ai-provider-base="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.baseUrl || '')}" placeholder="https://api.example.com/v1">
+            </label>
+            <label class="gs-ai-provider-field">
+              <span class="gs-ai-provider-field-label">API URL（選填）</span>
+              <input data-ai-provider-api="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.apiUrl || '')}" placeholder="留空則由 Base URL 推導">
+            </label>
+            <label class="gs-ai-provider-field">
+              <span class="gs-ai-provider-field-label">Models URL（選填）</span>
+              <input data-ai-provider-models="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.modelsUrl || '')}" placeholder="留空則預設為 baseUrl + /v1/models">
+            </label>
+            <label class="gs-ai-provider-field">
+              <span class="gs-ai-provider-field-label">API Key（僅本機）</span>
+              <input data-ai-provider-key="${escapeHtml(row.id)}" type="password" value="${escapeHtml(row.apiKey || '')}" placeholder="sk-...">
+            </label>
+          </div>
+          <div class="gs-ai-provider-model-section">
+            ${combinedEntries.length ? `
+              <details class="gs-ai-model-details" data-ai-provider-model-details="${escapeHtml(row.id)}" ${isModelListOpen ? 'open' : ''}>
+                <summary>
+                  <span class="gs-ai-model-summary-main">
+                    <span class="gs-ai-model-summary-title">允許模型</span>
+                    <span class="gs-ai-model-summary-meta">已選 ${selectedCount} / 全部 ${combinedEntries.length}</span>
+                  </span>
+                </summary>
+                <div class="gs-ai-model-details-body">
+                  <div class="gs-ai-model-hint">勾選後會出現在各任務下拉</div>
+                  <div class="gs-ai-model-grid" data-ai-provider-model-list="${escapeHtml(row.id)}">
+                    ${combinedEntries.map((item) => `
+                      <label class="gs-ai-model-option" title="${escapeHtml(item.label || item.value)}">
+                        <input class="gs-ai-model-checkbox" data-ai-provider-allowed="${escapeHtml(row.id)}" type="checkbox" value="${escapeHtml(item.value)}" ${(row.allowedModels || []).includes(item.value) ? 'checked' : ''}>
+                        <span class="gs-ai-model-card">
+                          <span class="gs-ai-model-indicator" aria-hidden="true"></span>
+                          <span class="gs-ai-model-content">
+                            <span class="gs-ai-model-name">${escapeHtml(item.label || item.value)}</span>
+                            ${item.meta ? `<span class="gs-ai-model-meta">${escapeHtml(item.meta)}</span>` : ''}
+                          </span>
+                        </span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+              </details>
+            ` : `
+              <div class="gs-ai-model-empty" data-ai-provider-model-list="${escapeHtml(row.id)}">尚無模型，可先抓取或手動新增。</div>
+            `}
+            <div class="gs-ai-provider-manual-row">
+              <input data-ai-provider-manual-input="${escapeHtml(row.id)}" type="text" placeholder="手動新增模型，例如 gpt-4.1-mini 或 provider:model">
+              <button type="button" class="btn-secondary" data-ai-provider-manual-add="${escapeHtml(row.id)}">新增模型</button>
+            </div>
+            ${row.discoveryError ? `<div class="gs-ai-provider-error">${escapeHtml(row.discoveryError)}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+    const taskRowsHtml = taskFields.map(({ key, label }) => {
+      const selection = getTaskModelSelection(key, {
+        settings: draftSettings,
+        secrets: draftSecrets,
+        currentValue: aiState.taskModels[key] || ''
+      });
+      const value = String(selection.value || '');
+      if (!aiState.taskModels[key] && value) aiState.taskModels[key] = value;
+      return `
+        <div style="display:grid;grid-template-columns:minmax(120px,180px) 1fr;gap:8px;align-items:center;">
+          <div style="font-size:13px;color:#0f172a;">${escapeHtml(label)}</div>
+          <select data-ai-task-select="${escapeHtml(key)}" ${selection.disabled ? 'disabled' : ''} title="${selection.disabled ? '請先到全局設定配置 provider 與模型' : ''}">
+            ${selection.options.map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === value ? 'selected' : ''}>${escapeHtml(option.label || option.value)}</option>`).join('')}
+          </select>
+        </div>`;
+    }).join('');
+    host.innerHTML = `
+      <div class="auth-field">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap;">
+          <label style="margin:0">AI Provider 設定</label>
+          <button id="gs-ai-provider-add" type="button" class="btn-secondary">新增 provider</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px;">
+          ${providerCardsHtml}
+        </div>
+        <div class="gs-hint" style="margin-top:6px">可設定 baseUrl / key，抓取模型後勾選允許清單；default 仍作為全域回退。</div>
+      </div>
+      <div class="auth-field">
+        <label>AI Task → 模型映射</label>
+        <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+          ${taskRowsHtml}
+        </div>
+        <div class="gs-hint" style="margin-top:6px">各任務僅顯示允許模型；若目前值不在允許清單中，會暫時保留顯示。</div>
+      </div>`;
+
+    host.querySelector('#gs-ai-provider-add')?.addEventListener('click', () => {
+      const rawId = window.prompt('請輸入 provider ID（英文、數字、- 或 _）', 'custom');
+      const nextId = String(rawId || '').trim().replace(/[^a-zA-Z0-9_-]/g, '');
+      if (!nextId) return;
+      if (aiState.providers.some((row) => row.id === nextId)) {
+        window.alert('此 provider ID 已存在');
+        return;
+      }
+      aiState.providers.push({
+        id: nextId,
+        label: nextId,
+        enabled: true,
+        baseUrl: '',
+        apiUrl: '',
+        modelsUrl: '',
+        apiKey: '',
+        allowedModels: [],
+        discoveredModels: [],
+        lastDiscoveryAt: '',
+        discoveryStatus: '',
+        discoveryError: ''
+      });
+      renderAiSettingsSection();
+    });
+
+    aiState.providers.forEach((row) => {
+      const id = row.id;
+      host.querySelector(`[data-ai-provider-label="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
+        row.label = e.target.value || '';
+      });
+      host.querySelector(`[data-ai-provider-base="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
+        row.baseUrl = e.target.value || '';
+      });
+      host.querySelector(`[data-ai-provider-api="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
+        row.apiUrl = e.target.value || '';
+      });
+      host.querySelector(`[data-ai-provider-models="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
+        row.modelsUrl = e.target.value || '';
+      });
+      host.querySelector(`[data-ai-provider-key="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
+        row.apiKey = e.target.value || '';
+      });
+      host.querySelector(`[data-ai-provider-enabled="${CSS.escape(id)}"]`)?.addEventListener('change', (e) => {
+        row.enabled = !!e.target.checked;
+        renderAiSettingsSection();
+      });
+      host.querySelector(`[data-ai-provider-remove="${CSS.escape(id)}"]`)?.addEventListener('click', () => {
+        aiState.providers = aiState.providers.filter((item) => item.id !== id);
+        Object.keys(aiState.taskModels).forEach((taskKey) => {
+          if (String(aiState.taskModels[taskKey] || '').startsWith(`${id}:`)) aiState.taskModels[taskKey] = '';
+        });
+        renderAiSettingsSection();
+      });
+      host.querySelectorAll(`[data-ai-provider-allowed="${CSS.escape(id)}"]`).forEach((input) => {
+        input.addEventListener('change', () => {
+          const values = Array.from(host.querySelectorAll(`[data-ai-provider-allowed="${CSS.escape(id)}"]:checked`)).map((el) => el.value);
+          row.allowedModels = dedupeStrings(values);
+          renderAiSettingsSection();
+        });
+      });
+      host.querySelector(`[data-ai-provider-manual-add="${CSS.escape(id)}"]`)?.addEventListener('click', () => {
+        const input = host.querySelector(`[data-ai-provider-manual-input="${CSS.escape(id)}"]`);
+        const normalized = normalizeModelValue(id, input?.value || '');
+        if (!normalized) return;
+        row.allowedModels = dedupeStrings([...(row.allowedModels || []), normalized]);
+        if (input) input.value = '';
+        renderAiSettingsSection();
+      });
+      host.querySelector(`[data-ai-provider-manual-input="${CSS.escape(id)}"]`)?.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        host.querySelector(`[data-ai-provider-manual-add="${CSS.escape(id)}"]`)?.click();
+      });
+      host.querySelector(`[data-ai-provider-discover="${CSS.escape(id)}"]`)?.addEventListener('click', async () => {
+        row.discoveryStatus = 'loading';
+        row.discoveryError = '';
+        renderAiSettingsSection();
+        try {
+          const result = await discoverProviderModels(id, {
+            settings: buildDraftAiSettings(),
+            secrets: buildDraftAiSecrets(),
+            refresh: true
+          });
+          row.discoveredModels = Array.isArray(result.models) ? result.models.slice() : [];
+          row.lastDiscoveryAt = result.updatedAt ? new Date(result.updatedAt).toISOString() : '';
+          row.discoveryStatus = result.ok ? 'success' : 'error';
+          row.discoveryError = result.error || '';
+        } catch (error) {
+          row.discoveryStatus = 'error';
+          row.discoveryError = error?.message || '模型清單抓取失敗';
+        }
+        renderAiSettingsSection();
+      });
+    });
+
+    host.querySelectorAll('[data-ai-task-select]').forEach((select) => {
+      select.addEventListener('change', () => {
+        const key = select.getAttribute('data-ai-task-select') || '';
+        if (!key) return;
+        aiState.taskModels[key] = select.value || '';
+      });
+    });
+  };
+
   const html = `
     <div class="auth-modal" style="min-width:320px;">
-      <div class="auth-field">
-        <label>AI API URL</label>
-        <input id="gs-ai-url" type="text" placeholder="https://api.example.com/v1/chat/completions" value="${escapeHtml(settings.aiUrl||'')}">
-      </div>
-      <div class="auth-field">
-        <label>AI API Key（僅保存在本機）</label>
-        <input id="gs-ai-key" type="password" placeholder="sk-..." value="${escapeHtml(secrets.aiKey||'')}">
-      </div>
+      <div id="gs-ai-settings"></div>
       <div class="auth-field">
         <label>TTS 來源</label>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
@@ -427,17 +804,6 @@ function showGlobalSettingsModal() {
           <span class="gs-hint">右下角入口 · 串流更順暢</span>
         </div>
       </div>
-      <div class="auth-field">
-        <label>AI 模型覆蓋（留空則使用預設）</label>
-        <div style="display:grid;grid-template-columns:1fr;gap:8px;">
-          <input id="gs-model-word" type="text" placeholder="wordAnalysis，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.wordAnalysis)||'')}">
-          <input id="gs-model-sentence" type="text" placeholder="sentenceChecking，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.sentenceChecking)||'')}">
-          <input id="gs-model-qa" type="text" placeholder="qaChecking（問答校對），例如 tbai:gemini-2.5-flash-nothinking" value="${escapeHtml((settings.models&&(settings.models.qaChecking||settings.models.qaCheck))||'')}">
-          <input id="gs-model-article" type="text" placeholder="articleAnalysis，例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.articleAnalysis)||'')}">
-          <input id="gs-model-clean" type="text" placeholder="articleCleanup（AI 清洗），例如 gpt-4.1-mini" value="${escapeHtml((settings.models&&settings.models.articleCleanup)||'')}">
-          <input id="gs-model-example" type="text" placeholder="exampleGeneration，例如 gpt-4.1-nano" value="${escapeHtml((settings.models&&settings.models.exampleGeneration)||'')}">
-        </div>
-      </div>
       <div class="auth-actions">
         <button id="gs-cancel" class="btn-secondary">取消</button>
         <button id="gs-save" class="btn-primary">儲存</button>
@@ -445,13 +811,13 @@ function showGlobalSettingsModal() {
       <div class="auth-msg" id="gs-msg">設定僅保存在本機，不會同步到雲端。</div>
     </div>`;
   dom.modalBody.innerHTML = html;
+  renderAiSettingsSection();
   const $ = (id)=> dom.modalBody.querySelector(id);
   $('#gs-cancel').onclick = ()=> ui.closeModal();
   // 初始化預設單選狀態
   try {
-    const { settings } = requireOrImportSettings();
     const use = settings?.ttsUse || 'remote';
-    dom.modalBody.querySelector('#gs-tts-use-remote').checked = use !== 'local';
+    dom.modalBody.querySelector('#gs-tts-use-remote').checked = use !== 'local' && use !== 'custom';
     dom.modalBody.querySelector('#gs-tts-use-local').checked = use === 'local';
     dom.modalBody.querySelector('#gs-tts-use-custom').checked = use === 'custom';
     const en = settings?.readEn || 'en-GB';
@@ -482,26 +848,11 @@ function showGlobalSettingsModal() {
 
   $('#gs-save').onclick = async ()=>{
     try {
-      const { saveGlobalSettings, saveGlobalSecrets } = await import('../../modules/settings.js');
-      const aiUrl = $('#gs-ai-url').value.trim();
-      const aiKey = $('#gs-ai-key').value.trim();
       const ttsUse = dom.modalBody.querySelector('#gs-tts-use-custom')?.checked ? 'custom' : (dom.modalBody.querySelector('#gs-tts-use-local')?.checked ? 'local' : 'remote');
       const ttsUrlCustom = (dom.modalBody.querySelector('#gs-tts-url-custom')?.value || '').trim();
       const ttsKey = $('#gs-tts-key').value.trim();
-      // 模型覆蓋（空值表示清除）
-      const models = {
-        wordAnalysis: $('#gs-model-word').value.trim(),
-        sentenceChecking: $('#gs-model-sentence').value.trim(),
-        qaChecking: $('#gs-model-qa').value.trim(),
-        articleAnalysis: $('#gs-model-article').value.trim(),
-        articleCleanup: $('#gs-model-clean').value.trim(),
-        exampleGeneration: $('#gs-model-example').value.trim()
-      };
-      // 移除空鍵，避免污染設置
-      Object.keys(models).forEach(k => { if (!models[k]) delete models[k]; });
       const asstEnabled = dom.modalBody.querySelector('#gs-assistant-enabled')?.checked ? true : false;
       const asstStream = dom.modalBody.querySelector('#gs-assistant-stream')?.checked !== false;
-      // voice selections
       const sv = {
         'en-US': (dom.modalBody.querySelector('#gs-voice-en-us')?.value || '').trim(),
         'en-GB': (dom.modalBody.querySelector('#gs-voice-en-gb')?.value || '').trim(),
@@ -511,13 +862,18 @@ function showGlobalSettingsModal() {
       Object.keys(sv).forEach(k => { if (!sv[k]) delete sv[k]; });
       const readEn = dom.modalBody.querySelector('#gs-read-en-us')?.checked ? 'en-US' : 'en-GB';
       const readZh = dom.modalBody.querySelector('#gs-read-zh-hk')?.checked ? 'zh-HK' : 'zh-CN';
+      const aiSettings = buildDraftAiSettings();
+      const aiSecrets = buildDraftAiSecrets();
       saveGlobalSettings({
-        ai: { apiUrl: aiUrl, models },
+        ...aiSettings,
         tts: { use: ttsUse, baseUrlCustom: ttsUrlCustom, selectedVoices: sv },
         reading: { englishVariant: readEn, chineseVariant: readZh },
         assistant: { enabled: asstEnabled, stream: asstStream }
       });
-      saveGlobalSecrets({ aiApiKey: aiKey, ttsApiKey: ttsKey });
+      saveGlobalSecrets({
+        ...aiSecrets,
+        ttsApiKey: ttsKey
+      });
       $('#gs-msg').textContent = '已儲存（僅本機）';
       setTimeout(()=> ui.closeModal(), 500);
     } catch (e) {
@@ -823,29 +1179,17 @@ function escapeHtml(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function requireOrImportSettings() {
-  // Read current values synchronously from localStorage
-    let settings = {}, secrets = {};
-    try {
-      const raw = localStorage.getItem('pen_global_settings');
-      if (raw) {
-        const s = JSON.parse(raw);
-        settings.aiUrl = s?.ai?.apiUrl || '';
-        settings.ttsUrl = s?.tts?.baseUrl || '';
-      settings.ttsUrlRemote = s?.tts?.baseUrlRemote || '';
-      settings.ttsUrlLocal = s?.tts?.baseUrlLocal || '';
-      settings.ttsUrlCustom = s?.tts?.baseUrlCustom || '';
-      settings.ttsUse = s?.tts?.use || 'remote';
-        settings.readEn = (s?.reading && s.reading.englishVariant) || 'en-GB';
-        settings.readZh = (s?.reading && s.reading.chineseVariant) || 'zh-CN';
-        settings.selectedVoices = (s?.tts && s.tts.selectedVoices) || {};
-        settings.models = (s?.ai && s.ai.models) || {};
-        settings.assistantEnabled = (s?.assistant && s.assistant.enabled !== false);
-        settings.assistantStream = (s?.assistant && s.assistant.stream !== false);
-      }
-  } catch(_) {}
-  try { const raw = localStorage.getItem('pen_global_secrets'); if (raw) { const s = JSON.parse(raw); secrets.aiKey = s?.aiApiKey || ''; secrets.ttsKey = s?.ttsApiKey || ''; } } catch(_) {}
-  return { settings, secrets };
+function getAiTaskFieldList() {
+  return [
+    { key: 'wordAnalysis', label: '查詞 / 單詞分析' },
+    { key: 'sentenceChecking', label: '造句檢查' },
+    { key: 'qaChecking', label: '問答 AI 校對' },
+    { key: 'articleAnalysis', label: '文章詳解' },
+    { key: 'articleCleanup', label: '文章 AI 清洗' },
+    { key: 'exampleGeneration', label: '例句生成' },
+    { key: 'imageOCR', label: 'OCR / 視覺' },
+    { key: 'assistant', label: 'AI 助手' }
+  ];
 }
 
 // -----------------

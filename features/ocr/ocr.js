@@ -2,6 +2,10 @@ import * as dom from '../../modules/dom.js';
 import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import { markdownToHtml } from '../../modules/markdown.js';
+import {
+    getTaskModelSelection,
+    saveTaskModelSelection
+} from '../../modules/ai-models.js';
 import { OCR_CONFIG } from '../../ai-config.js';
 
 // =================================
@@ -603,24 +607,37 @@ async function handleClipboardPaste(event) {
 
 function initModelSelect() {
     if (!dom.ocrModelSelect) return;
-    const current = loadModelSelection();
-    const models = Array.isArray(OCR_CONFIG?.MODELS) && OCR_CONFIG.MODELS.length
-      ? OCR_CONFIG.MODELS
-      : [OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || 'gpt-4o-mini'];
+    const legacyValue = loadLegacyModelSelection();
+    const selection = getTaskModelSelection('imageOCR', {
+        currentValue: legacyValue,
+        preferredCandidates: [
+            OCR_CONFIG?.DEFAULT_MODEL,
+            OCR_CONFIG?.MODEL
+        ]
+    });
     dom.ocrModelSelect.innerHTML = '';
-    for (const m of models) {
+    for (const option of selection.options) {
         const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = m;
+        opt.value = option.value;
+        opt.textContent = option.label || option.value;
         dom.ocrModelSelect.appendChild(opt);
     }
-    const toSelect = current || OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || models[0];
-    dom.ocrModelSelect.value = toSelect;
+    if (selection.value) {
+        dom.ocrModelSelect.value = selection.value;
+    }
+    dom.ocrModelSelect.disabled = !!selection.disabled;
+    if (selection.disabled) {
+        dom.ocrModelSelect.title = '請先到全局設定配置 provider 與模型';
+    } else {
+        dom.ocrModelSelect.removeAttribute('title');
+    }
     dom.ocrModelSelect.addEventListener('change', () => {
-        try { localStorage.setItem('ocr.model', dom.ocrModelSelect.value); } catch (_) {}
+        const selected = dom.ocrModelSelect.value || '';
+        try { saveTaskModelSelection('imageOCR', selected); } catch (_) {}
+        try { localStorage.setItem('ocr.model', selected); } catch (_) {}
     });
 }
 
-function loadModelSelection() {
+function loadLegacyModelSelection() {
     try { return localStorage.getItem('ocr.model') || ''; } catch (_) { return ''; }
 }

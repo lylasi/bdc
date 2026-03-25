@@ -1,0 +1,86 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - heading "PEN子背單詞" [level=1] [ref=e4]
+      - navigation [ref=e5]:
+        - button "單詞本" [ref=e6] [cursor=pointer]:
+          - img [ref=e7]
+          - generic [ref=e11]: 單詞本
+        - button "默寫模式" [ref=e12] [cursor=pointer]:
+          - img [ref=e13]
+          - generic [ref=e17]: 默寫模式
+        - button "學習模式" [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+          - generic [ref=e21]: 學習模式
+        - button "問答訓練" [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+          - generic [ref=e26]: 問答訓練
+        - button "文章詳解" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e31]: 文章詳解
+        - button "圖片識別" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: 圖片識別
+        - button "隨堂測驗" [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e41]: 隨堂測驗
+      - button "設定" [ref=e42] [cursor=pointer]:
+        - img [ref=e43]
+    - main [ref=e46]:
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - generic [ref=e51]:
+            - heading "我的單詞本" [level=3] [ref=e52]
+            - button "新增單詞本" [ref=e53] [cursor=pointer]:
+              - img [ref=e54]
+            - button "導入單詞本" [ref=e57] [cursor=pointer]:
+              - img [ref=e58]
+          - list [ref=e61]:
+            - listitem [ref=e62]:
+              - text: 還沒有單詞本。
+              - link "點此導入" [ref=e63] [cursor=pointer]:
+                - /url: "#"
+              - text: ，或點擊上方「導入單詞本」。
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - heading "請選擇一個單詞本" [level=3] [ref=e66]
+            - generic [ref=e67]:
+              - button "補完缺失" [disabled] [ref=e68]:
+                - img [ref=e69]
+              - button "合併單詞本" [ref=e71] [cursor=pointer]:
+                - img [ref=e72]
+              - button "導出單詞本" [disabled] [ref=e74]:
+                - img [ref=e75]
+              - button "編輯單詞" [disabled] [ref=e78]:
+                - img [ref=e79]
+              - button "刪除單詞本" [disabled] [ref=e82]:
+                - img [ref=e83]
+          - paragraph
+          - list [ref=e87]:
+            - listitem [ref=e88]: 請從左側選擇或創建一個單詞本
+    - generic [ref=e90]:
+      - button "×" [ref=e91] [cursor=pointer]
+      - generic [ref=e92]:
+        - banner [ref=e93]:
+          - heading "全局設定" [level=3] [ref=e144]
+        - main [ref=e95]
+        - contentinfo [ref=e104]
+  - generic [ref=e106]:
+    - generic [ref=e107] [cursor=pointer]:
+      - img [ref=e109]
+      - generic [ref=e112]: 立即同步
+    - generic [ref=e113] [cursor=pointer]:
+      - img [ref=e115]
+      - generic [ref=e118]: 登入 / 註冊
+    - generic [ref=e120] [cursor=pointer]:
+      - img [ref=e122]
+      - generic [ref=e125]: 全局設定
+    - generic [ref=e126] [cursor=pointer]:
+      - img [ref=e128]
+      - generic [ref=e131]: 默寫批改歷史
+    - generic [ref=e132] [cursor=pointer]:
+      - img [ref=e134]
+      - generic [ref=e136]: AI 會話
+    - generic [ref=e137] [cursor=pointer]:
+      - img [ref=e139]
+      - generic [ref=e142]: 備份與還原

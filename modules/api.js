@@ -1,14 +1,36 @@
-import { API_URL, API_KEY, AI_MODELS, AI_LIMITS, OCR_CONFIG, ARTICLE_IMPORT, AI_PROFILES as __AI_PROFILES__, AI_PROMPTS } from '../ai-config.js';
+import { API_URL, API_KEY, AI_LIMITS, OCR_CONFIG, ARTICLE_IMPORT, AI_PROMPTS } from '../ai-config.js';
 import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
+import {
+    getAIProviderRegistry,
+    getProviderConnection,
+    getPreferredTaskSpec,
+    hasModelSpec,
+    normalizeModelSpec,
+    normalizeTaskName,
+    resolveAIRequestConfig,
+    resolveAITaskSpec,
+    firstNonEmptyString
+} from './ai-models.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
+
+export {
+    getAIProviderRegistry,
+    getPreferredTaskSpec,
+    hasModelSpec,
+    normalizeModelSpec,
+    normalizeTaskName,
+    resolveAIRequestConfig,
+    resolveAITaskSpec
+};
 
 // =================================
 // AI API 服務
 // =================================
 
-// Profiles: 若未定義，回退為僅 default → 指向全域
-const AI_PROFILES = __AI_PROFILES__ || { default: { apiUrl: API_URL, apiKey: API_KEY } };
+function isPlainObject(value) {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
+}
 
 // Simple template filler: replaces ${name} with provided vars
 function applyTemplate(tpl, vars = {}) {
@@ -51,21 +73,6 @@ async function fetchJsonWithTimeout(url, { timeoutMs = 20000, signal, headers } 
         throw err;
     }
     return resp.json();
-}
-
-function normalizeModelSpec(spec) {
-    if (spec && typeof spec === 'object') {
-        const model = String(spec.model || '');
-        const pid = spec.profile || null;
-        const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
-        return { model, apiUrl: spec.apiUrl || prof.apiUrl || null, apiKey: spec.apiKey || prof.apiKey || null, profile: pid || null };
-    }
-    const s = String(spec || '');
-    const hasPrefix = s.includes(':');
-    const pid = hasPrefix ? s.slice(0, s.indexOf(':')) : null;
-    const model = hasPrefix ? s.slice(s.indexOf(':') + 1) : s;
-    const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
-    return { model, apiUrl: prof.apiUrl || null, apiKey: prof.apiKey || null, profile: pid || null };
 }
 
 const __aiQueues = new Map();
@@ -141,13 +148,6 @@ function safeJsonParse(text = '') {
     }
 }
 
-function firstNonEmptyString(...vals) {
-    for (const val of vals) {
-        if (typeof val === 'string' && val.trim()) return val.trim();
-    }
-    return '';
-}
-
 function normalizeParagraphResponse(parsed, fallbackText = '') {
     if (parsed && typeof parsed === 'object') {
         return {
@@ -218,8 +218,38 @@ function buildModelCandidates(primary, fallback) {
     return out;
 }
 
+export function resolveConfigConnection(config = {}, { settings, secrets } = {}) {
+    const cfg = isPlainObject(config) ? config : {};
+    const explicitProvider = firstNonEmptyString(cfg.PROFILE, cfg.provider, cfg.profile);
+    const hasExplicitConnection = !!firstNonEmptyString(cfg.API_URL, cfg.API_KEY, explicitProvider);
+    if (!hasExplicitConnection) {
+        return {
+            apiUrl: undefined,
+            apiKey: undefined,
+            provider: undefined,
+            profile: undefined
+        };
+    }
+    const resolved = resolveAIRequestConfig({
+        task: 'default',
+        model: '',
+        apiUrl: cfg.API_URL,
+        apiKey: cfg.API_KEY,
+        provider: explicitProvider,
+        profile: explicitProvider,
+        settings,
+        secrets
+    });
+    return {
+        apiUrl: firstNonEmptyString(cfg.API_URL, resolved.apiUrl),
+        apiKey: firstNonEmptyString(cfg.API_KEY, resolved.apiKey),
+        provider: resolved.provider,
+        profile: resolved.profile
+    };
+}
+
 // Small, reusable AI request helper with timeout and retry.
-async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat, apiUrl, apiKey, taskType = 'default' }) {
+export async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat, apiUrl, apiKey, taskType = 'default', provider, profile }) {
     // AbortController per request; chain with external signal if provided
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
@@ -231,35 +261,37 @@ async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeou
         composed.signal.addEventListener('abort', () => ac.abort(composed.signal.reason), { once: true });
     }
 
-    // 解析模型與端點
-    const resolved = normalizeModelSpec(model);
-    const finalModel = resolved.model;
-
-    const body = {
-        model: finalModel,
-        messages,
-        temperature,
-    };
-    if (typeof maxTokens === 'number') body.max_tokens = maxTokens;
-    if (responseFormat) {
-        body.response_format = typeof responseFormat === 'string' ? { type: responseFormat } : responseFormat;
-    }
-
     const fetchOnce = async () => {
         const s = loadGlobalSettings();
         const sec = loadGlobalSecrets();
-        const endpoint = (apiUrl && String(apiUrl).trim()) || (resolved.apiUrl && String(resolved.apiUrl).trim())
-          || (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
-        const key = (apiKey && String(apiKey).trim()) || (resolved.apiKey && String(resolved.apiKey).trim())
-          || (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
-        const { maxConcurrency, minIntervalMs } = getLimitConfig(taskType);
-        const queueKey = queueKeyForRequest({ endpoint, profile: resolved.profile, model: finalModel, taskType });
+        const resolved = resolveAIRequestConfig({
+            task: taskType,
+            model,
+            apiUrl,
+            apiKey,
+            provider,
+            profile,
+            settings: s,
+            secrets: sec
+        });
+        const finalModel = resolved.model;
+        const body = {
+            model: finalModel,
+            messages,
+            temperature
+        };
+        if (typeof maxTokens === 'number') body.max_tokens = maxTokens;
+        if (responseFormat) {
+            body.response_format = typeof responseFormat === 'string' ? { type: responseFormat } : responseFormat;
+        }
+        const { maxConcurrency, minIntervalMs } = getLimitConfig(resolved.task);
+        const queueKey = queueKeyForRequest({ endpoint: resolved.apiUrl, profile: resolved.profile, model: finalModel, taskType: resolved.task });
         return await enqueueAIRequest(queueKey, async () => {
-            const resp = await fetch(endpoint, {
+            const resp = await fetch(resolved.apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${key}`
+                    'Authorization': `Bearer ${resolved.apiKey}`
                 },
                 body: JSON.stringify(body),
                 signal: ac.signal
@@ -315,7 +347,7 @@ async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeou
 /**
  * 通用的 AI API 請求函數；預期回傳 JSON 內容或可解析為 JSON 的字串。
  */
-async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTokens, timeoutMs = 30000, signal, responseFormat } = {}) {
+export async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTokens, timeoutMs = 30000, signal, responseFormat, taskType = 'default', apiUrl, apiKey, provider, profile } = {}) {
     const data = await requestAI({
         model,
         temperature,
@@ -323,7 +355,12 @@ async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTokens, ti
         messages: [{ role: 'user', content: prompt }],
         timeoutMs,
         signal,
-        responseFormat
+        responseFormat,
+        taskType,
+        apiUrl,
+        apiKey,
+        provider,
+        profile
     });
 
     let content = (data?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
@@ -345,9 +382,7 @@ export async function getWordAnalysis(word) {
         const prompt = (AI_PROMPTS && AI_PROMPTS.dictionary && AI_PROMPTS.dictionary.wordAnalysis && AI_PROMPTS.dictionary.wordAnalysis.template)
           ? applyTemplate(AI_PROMPTS.dictionary.wordAnalysis.template, { word })
           : `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Traditional Chinese (Hong Kong) meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}. Ensure the meaning is in Traditional Chinese (Hong Kong) vocabulary (e.g., 網上/上載/電郵/巴士/的士/單車/軟件/網絡/連結/相片).`;
-        const s = loadGlobalSettings();
-        const model = (s?.ai?.models && s.ai.models.wordAnalysis) || AI_MODELS.wordAnalysis;
-        return await fetchAIResponse(model, prompt, 0.2);
+        return await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis' });
     } catch (error) {
         console.error(`Error analyzing word "${word}":`, error);
         return { phonetic: 'error', pos: '', meaning: '分析失敗' };
@@ -364,9 +399,7 @@ export async function generateExamplesForWord(word, opts = {}) {
     const prompt = (AI_PROMPTS && AI_PROMPTS.learning && AI_PROMPTS.learning.exampleGeneration && AI_PROMPTS.learning.exampleGeneration.template)
       ? applyTemplate(AI_PROMPTS.learning.exampleGeneration.template, { word: w })
       : `請為單詞 "${w}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯（使用香港繁體中文用字），以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
-    const s = loadGlobalSettings();
-    const model = (s?.ai?.models && s.ai.models.exampleGeneration) || AI_MODELS.exampleGeneration;
-    return await fetchAIResponse(model, prompt, 0.7, { maxTokens: 600, timeoutMs: 20000, ...opts });
+    return await fetchAIResponse('', prompt, 0.7, { maxTokens: 600, timeoutMs: 20000, taskType: 'exampleGeneration', ...opts });
 }
 
 /**
@@ -379,9 +412,7 @@ export async function checkUserSentence(word, userSentence, opts = {}) {
     const prompt = (AI_PROMPTS && AI_PROMPTS.learning && AI_PROMPTS.learning.sentenceChecking && AI_PROMPTS.learning.sentenceChecking.template)
       ? applyTemplate(AI_PROMPTS.learning.sentenceChecking.template, { word, userSentence })
       : `請判斷以下這個使用單詞 "${word}" 的句子在語法和用法上是否正確: "${userSentence}"。如果正確，請只回答 "正確"。如果不正確，請詳細指出錯誤並提供一個修改建議，格式為 "不正確。建議：[你的建議]"。並總結錯誤的知識點。`;
-    const s = loadGlobalSettings();
-    const model = (s?.ai?.models && s.ai.models.sentenceChecking) || AI_MODELS.sentenceChecking;
-    return await fetchAIResponse(model, prompt, 0.5, { maxTokens: 400, timeoutMs: 15000, ...opts });
+    return await fetchAIResponse('', prompt, 0.5, { maxTokens: 400, timeoutMs: 15000, taskType: 'sentenceChecking', ...opts });
 }
 
 /**
@@ -392,10 +423,8 @@ export async function checkUserSentence(word, userSentence, opts = {}) {
 export async function analyzeParagraph(paragraph, opts = {}) {
     const { timeoutMs = 45000, signal, level: requestedLevel = 'standard', noCache = false } = opts;
     const s = loadGlobalSettings();
-    const primaryModel = (s?.ai?.models && (s.ai.models.articleParagraphTranslation || s.ai.models.articleAnalysis))
-      || AI_MODELS.articleParagraphTranslation || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
-    const fallbackModel = (s?.ai?.models && s.ai.models.articleParagraphTranslationFallback)
-      || AI_MODELS.articleParagraphTranslationFallback || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const primaryModel = getPreferredTaskSpec(['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis'], { settings: s });
+    const fallbackModel = getPreferredTaskSpec(['articleParagraphTranslationFallback', 'articleAnalysis', 'wordAnalysis'], { settings: s });
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
 
     if (!noCache) {
@@ -475,10 +504,8 @@ ${paragraph}`;
 export async function analyzeWordInSentence(word, sentence, opts = {}) {
     const { timeoutMs = 20000, signal } = opts;
     const s = loadGlobalSettings();
-    const primaryModel = (s?.ai?.models && (s.ai.models.articleWordTranslation || s.ai.models.articleWordTooltip || s.ai.models.wordAnalysis))
-      || AI_MODELS.articleWordTranslation || AI_MODELS.articleWordTooltip || AI_MODELS.wordAnalysis;
-    const fallbackModel = (s?.ai?.models && s.ai.models.articleWordTranslationFallback)
-      || AI_MODELS.articleWordTranslationFallback || AI_MODELS.wordAnalysis;
+    const primaryModel = getPreferredTaskSpec(['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'], { settings: s });
+    const fallbackModel = getPreferredTaskSpec(['articleWordTranslationFallback', 'wordAnalysis'], { settings: s });
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
     for (const modelSpec of candidates) {
         const resolved = normalizeModelSpec(modelSpec);
@@ -545,10 +572,8 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
 export async function analyzeSentence(sentence, context = '', opts = {}) {
     const { timeoutMs = 20000, signal, noCache = false, conciseKeypoints = true, includeStructure = true } = opts;
     const s = loadGlobalSettings();
-    const primaryModel = (s?.ai?.models && (s.ai.models.articleSentenceTranslation || s.ai.models.articleAnalysis))
-      || AI_MODELS.articleSentenceTranslation || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
-    const fallbackModel = (s?.ai?.models && s.ai.models.articleSentenceTranslationFallback)
-      || AI_MODELS.articleSentenceTranslationFallback || AI_MODELS.articleAnalysis || AI_MODELS.wordAnalysis;
+    const primaryModel = getPreferredTaskSpec(['articleSentenceTranslation', 'articleAnalysis', 'wordAnalysis'], { settings: s });
+    const fallbackModel = getPreferredTaskSpec(['articleSentenceTranslationFallback', 'articleAnalysis', 'wordAnalysis'], { settings: s });
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
@@ -636,10 +661,8 @@ ${sentence}`;
 export async function analyzeSelection(selection, sentence, context = '', opts = {}) {
     const { timeoutMs = 15000, signal, noCache = false } = opts;
     const s = loadGlobalSettings();
-    const primaryModel = (s?.ai?.models && (s.ai.models.articlePhraseTranslation || s.ai.models.articlePhraseAnalysis || s.ai.models.wordAnalysis))
-      || AI_MODELS.articlePhraseTranslation || AI_MODELS.articlePhraseAnalysis || AI_MODELS.wordAnalysis;
-    const fallbackModel = (s?.ai?.models && s.ai.models.articlePhraseTranslationFallback)
-      || AI_MODELS.articlePhraseTranslationFallback || AI_MODELS.wordAnalysis;
+    const primaryModel = getPreferredTaskSpec(['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis'], { settings: s });
+    const fallbackModel = getPreferredTaskSpec(['articlePhraseTranslationFallback', 'wordAnalysis'], { settings: s });
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
@@ -726,29 +749,28 @@ export async function ocrExtractTextFromImage(imageDataUrl, opts = {}) {
     } = opts;
 
     const s = loadGlobalSettings();
-    const model = modelOverride
-      || (s?.ai?.models && (s.ai.models.imageOCR || s.ai.models.ocr))
-      || (OCR_CONFIG && (OCR_CONFIG.DEFAULT_MODEL || OCR_CONFIG.MODEL))
-      || AI_MODELS.imageOCR || AI_MODELS.articleAnalysis;
-
-    // 端點：PROFILE > API_URL/API_KEY > 其餘回退由 requestAI 處理
-    let endpoint = (OCR_CONFIG && OCR_CONFIG.API_URL && String(OCR_CONFIG.API_URL).trim()) || undefined; // fallback to global in requestAI
-    let overrideKey = (OCR_CONFIG && OCR_CONFIG.API_KEY && String(OCR_CONFIG.API_KEY).trim()) || undefined;
-    if (!endpoint && OCR_CONFIG && OCR_CONFIG.PROFILE && AI_PROFILES[OCR_CONFIG.PROFILE]) {
-        endpoint = AI_PROFILES[OCR_CONFIG.PROFILE].apiUrl || endpoint;
-        overrideKey = AI_PROFILES[OCR_CONFIG.PROFILE].apiKey || overrideKey;
-    }
+    const sec = loadGlobalSecrets();
+    const model = hasModelSpec(modelOverride)
+      ? modelOverride
+      : getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], {
+            settings: s,
+            override: OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL
+        });
+    const connection = resolveConfigConnection(OCR_CONFIG, { settings: s, secrets: sec });
     const finalMaxTokens = typeof maxTokens === 'number' ? maxTokens : (OCR_CONFIG?.maxTokens || 1500);
     const finalTimeout = typeof timeoutMs === 'number' ? timeoutMs : (OCR_CONFIG?.timeoutMs || 45000);
 
     const data = await requestAI({
-        apiUrl: endpoint,
-        apiKey: overrideKey,
+        apiUrl: connection.apiUrl,
+        apiKey: connection.apiKey,
+        provider: connection.provider,
+        profile: connection.profile,
         model,
         temperature,
         maxTokens: finalMaxTokens,
         timeoutMs: finalTimeout,
         signal,
+        taskType: 'imageOCR',
         messages: [{
             role: 'user',
             content: [
@@ -790,17 +812,14 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
     } = opts;
 
     const s = loadGlobalSettings();
-    const model = modelOverride
-      || (s?.ai?.models && (s.ai.models.imageOCR || s.ai.models.ocr))
-      || (OCR_CONFIG && (OCR_CONFIG.DEFAULT_MODEL || OCR_CONFIG.MODEL))
-      || AI_MODELS.imageOCR || AI_MODELS.articleAnalysis;
-
-    let endpoint = (OCR_CONFIG && OCR_CONFIG.API_URL && String(OCR_CONFIG.API_URL).trim()) || undefined;
-    let overrideKey = (OCR_CONFIG && OCR_CONFIG.API_KEY && String(OCR_CONFIG.API_KEY).trim()) || undefined;
-    if (!endpoint && OCR_CONFIG && OCR_CONFIG.PROFILE && AI_PROFILES[OCR_CONFIG.PROFILE]) {
-        endpoint = AI_PROFILES[OCR_CONFIG.PROFILE].apiUrl || endpoint;
-        overrideKey = AI_PROFILES[OCR_CONFIG.PROFILE].apiKey || overrideKey;
-    }
+    const sec = loadGlobalSecrets();
+    const model = hasModelSpec(modelOverride)
+      ? modelOverride
+      : getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], {
+            settings: s,
+            override: OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL
+        });
+    const connection = resolveConfigConnection(OCR_CONFIG, { settings: s, secrets: sec });
     const finalTimeout = typeof timeoutMs === 'number' ? timeoutMs : (OCR_CONFIG?.timeoutMs || 60000);
 
     const defaultPrompt = (AI_PROMPTS && AI_PROMPTS.ocr && AI_PROMPTS.ocr.grading && AI_PROMPTS.ocr.grading.defaultPrompt)
@@ -837,12 +856,15 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
     }
 
     const req = {
-        apiUrl: endpoint,
-        apiKey: overrideKey,
+        apiUrl: connection.apiUrl,
+        apiKey: connection.apiKey,
+        provider: connection.provider,
+        profile: connection.profile,
         model,
         messages: [{ role: 'user', content }],
         temperature,
-        timeoutMs: finalTimeout
+        timeoutMs: finalTimeout,
+        taskType: 'imageOCR'
     };
     if (format === 'json') {
         req.responseFormat = { type: 'json_object' };
@@ -1185,18 +1207,15 @@ export async function fetchCuratedArticle(sourceId, articleUrl, opts = {}) {
  */
 export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
     const { timeoutMs: toMs, temperature: temp, signal, model: modelOverride, keepImages: keepImgs } = opts;
-    // 模型解析：優先 opts → ai-config（ARTICLE_IMPORT）→ 全域（AI_MODELS）
-    const model = modelOverride
-      || (ARTICLE_IMPORT && (ARTICLE_IMPORT.DEFAULT_MODEL || ARTICLE_IMPORT.MODEL))
-      || AI_MODELS.articleAnalysis;
-
-    // 端點解析：PROFILE > API_URL/API_KEY > 其餘回退由 requestAI 處理
-    let endpoint = (ARTICLE_IMPORT && ARTICLE_IMPORT.API_URL && String(ARTICLE_IMPORT.API_URL).trim()) || undefined;
-    let overrideKey = (ARTICLE_IMPORT && ARTICLE_IMPORT.API_KEY && String(ARTICLE_IMPORT.API_KEY).trim()) || undefined;
-    if (!endpoint && ARTICLE_IMPORT && ARTICLE_IMPORT.PROFILE && AI_PROFILES[ARTICLE_IMPORT.PROFILE]) {
-        endpoint = AI_PROFILES[ARTICLE_IMPORT.PROFILE].apiUrl || endpoint;
-        overrideKey = AI_PROFILES[ARTICLE_IMPORT.PROFILE].apiKey || overrideKey;
-    }
+    const s = loadGlobalSettings();
+    const sec = loadGlobalSecrets();
+    const model = hasModelSpec(modelOverride)
+      ? modelOverride
+      : getPreferredTaskSpec(['articleCleanup', 'articleAnalysis', 'wordAnalysis'], {
+            settings: s,
+            override: ARTICLE_IMPORT?.DEFAULT_MODEL || ARTICLE_IMPORT?.MODEL
+        });
+    const connection = resolveConfigConnection(ARTICLE_IMPORT, { settings: s, secrets: sec });
 
     const temperature = (typeof temp === 'number') ? temp : (ARTICLE_IMPORT?.temperature ?? 0.1);
     const maxTokens = ARTICLE_IMPORT?.maxTokens ?? 1400;
@@ -1214,8 +1233,10 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
 - 嚴禁輸出任何額外解釋或程式碼區塊圍欄（使用三個反引號的圍欄）；只輸出清洗後的 Markdown 純文字。`;
 
     const data = await requestAI({
-        apiUrl: endpoint,
-        apiKey: overrideKey,
+        apiUrl: connection.apiUrl,
+        apiKey: connection.apiKey,
+        provider: connection.provider,
+        profile: connection.profile,
         model,
         messages: [
             { role: 'system', content: 'You are a precise Markdown editor that preserves structure and removes noise without translating.' },
@@ -1224,7 +1245,8 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
         temperature,
         maxTokens,
         timeoutMs,
-        signal
+        signal,
+        taskType: 'articleCleanup'
     });
     let content = (data?.choices?.[0]?.message?.content || '').trim();
     // 去掉偶發的 ``` 標記
@@ -1241,17 +1263,15 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
 export async function aiExtractArticleFromHtml(html, opts = {}) {
     const { url = '', keepImages = true, timeoutMs: toMs, temperature: temp, signal, model: modelOverride } = opts;
 
-    // 模型與端點覆寫沿用 ARTICLE_IMPORT 設定
-    const model = modelOverride
-      || (ARTICLE_IMPORT && (ARTICLE_IMPORT.DEFAULT_MODEL || ARTICLE_IMPORT.MODEL))
-      || AI_MODELS.articleAnalysis;
-
-    let endpoint = (ARTICLE_IMPORT && ARTICLE_IMPORT.API_URL && String(ARTICLE_IMPORT.API_URL).trim()) || undefined;
-    let overrideKey = (ARTICLE_IMPORT && ARTICLE_IMPORT.API_KEY && String(ARTICLE_IMPORT.API_KEY).trim()) || undefined;
-    if (!endpoint && ARTICLE_IMPORT && ARTICLE_IMPORT.PROFILE && AI_PROFILES[ARTICLE_IMPORT.PROFILE]) {
-        endpoint = AI_PROFILES[ARTICLE_IMPORT.PROFILE].apiUrl || endpoint;
-        overrideKey = AI_PROFILES[ARTICLE_IMPORT.PROFILE].apiKey || overrideKey;
-    }
+    const s = loadGlobalSettings();
+    const sec = loadGlobalSecrets();
+    const model = hasModelSpec(modelOverride)
+      ? modelOverride
+      : getPreferredTaskSpec(['articleCleanup', 'articleAnalysis', 'wordAnalysis'], {
+            settings: s,
+            override: ARTICLE_IMPORT?.DEFAULT_MODEL || ARTICLE_IMPORT?.MODEL
+        });
+    const connection = resolveConfigConnection(ARTICLE_IMPORT, { settings: s, secrets: sec });
 
     const temperature = (typeof temp === 'number') ? temp : (ARTICLE_IMPORT?.temperature ?? 0.1);
     const maxTokens = ARTICLE_IMPORT?.maxTokens ?? 1800;
@@ -1286,14 +1306,17 @@ export async function aiExtractArticleFromHtml(html, opts = {}) {
     ];
 
     const data = await requestAI({
-        apiUrl: endpoint,
-        apiKey: overrideKey,
+        apiUrl: connection.apiUrl,
+        apiKey: connection.apiKey,
+        provider: connection.provider,
+        profile: connection.profile,
         model,
         messages: content,
         temperature,
         maxTokens,
         timeoutMs,
-        signal
+        signal,
+        taskType: 'articleCleanup'
     });
 
     let md = (data?.choices?.[0]?.message?.content || '').trim();
