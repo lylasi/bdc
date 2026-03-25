@@ -4,6 +4,10 @@ import * as storage from '../../modules/storage.js';
 import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
+import {
+    getTaskModelSelection,
+    saveTaskModelSelection
+} from '../../modules/ai-models.js';
 import { AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT } from '../../ai-config.js';
 import { getAllQASets, loadQASet } from '../qa/qa-storage.js';
 import * as cache from '../../modules/cache.js';
@@ -359,35 +363,30 @@ function openArticleImportModal() {
         newsSource: 'importArticle.news.source'
     };
 
-    // 準備模型清單（去重）
-    const modelSuggestions = (() => {
-        const arr = [];
-        const push = (v) => {
-            if (!v) return;
-            let sVal = '';
-            if (typeof v === 'object') {
-                const pid = (v.profile && String(v.profile).trim()) || '';
-                const m = String(v.model || '').trim();
-                sVal = pid ? `${pid}:${m}` : m;
-            } else {
-                sVal = String(v).trim();
-            }
-            if (sVal && !arr.includes(sVal)) arr.push(sVal);
-        };
-        if (Array.isArray(ARTICLE_IMPORT?.MODELS) && ARTICLE_IMPORT.MODELS.length) {
-            ARTICLE_IMPORT.MODELS.forEach(push);
-        } else {
-            push(ARTICLE_IMPORT?.DEFAULT_MODEL);
-            push(ARTICLE_IMPORT?.MODEL);
-        }
-        return arr;
-    })();
-    const defaultCleanModel = ARTICLE_IMPORT?.DEFAULT_MODEL || ARTICLE_IMPORT?.MODEL || modelSuggestions[0] || '';
+    const getArticleCleanupModelSelection = () => getTaskModelSelection('articleCleanup', {
+        currentValue: LS.get(LS_KEYS.cleanModel, ''),
+        preferredCandidates: [ARTICLE_IMPORT?.DEFAULT_MODEL, ARTICLE_IMPORT?.MODEL]
+    });
+    const getArticleOCRModelSelection = () => getTaskModelSelection('imageOCR', {
+        currentValue: LS.get(LS_KEYS.ocrModel, ''),
+        preferredCandidates: [OCR_CONFIG?.DEFAULT_MODEL, OCR_CONFIG?.MODEL]
+    });
+    const persistArticleCleanupModel = (value) => {
+        const normalized = String(value || '');
+        LS.set(LS_KEYS.cleanModel, normalized);
+        try { saveTaskModelSelection('articleCleanup', normalized); } catch (_) {}
+    };
+    const persistArticleOCRModel = (value) => {
+        const normalized = String(value || '');
+        LS.set(LS_KEYS.ocrModel, normalized);
+        try { saveTaskModelSelection('imageOCR', normalized); } catch (_) {}
+    };
 
     const renderUrl = () => {
         panel.innerHTML = '';
         const wrap = document.createElement('div');
 
+        const cleanSelection = getArticleCleanupModelSelection();
         wrap.innerHTML = `
             <div class="import-form">
                 <div class="form-row">
@@ -409,7 +408,7 @@ function openArticleImportModal() {
                         <label class="checkbox-inline"><input id="imp-auto-apply" type="checkbox"> <span>擷取後自動套用</span></label>
                         <label class="checkbox-inline" title="跳過 r.jina.ai 等第三方轉換；僅嘗試直接抓取頁面 HTML 再交給 AI 清洗（可能受 CORS 限制）"><input id="imp-direct-only" type="checkbox"> <span>跳過第三方轉換</span></label>
                         <span class="model-label">清洗模型</span>
-                        <select id="imp-ai-clean-model" class="import-input short">${modelSuggestions.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
+                        <select id="imp-ai-clean-model" class="import-input short" ${cleanSelection.disabled ? 'disabled' : ''} title="${cleanSelection.disabled ? '請先到全局設定配置 provider 與模型' : ''}">${cleanSelection.options.map(option => `<option value="${esc(option.value)}">${esc(option.label || option.value)}</option>`).join('')}</select>
                     </div>
                 </div>
                 <div class="dropzone" id="imp-url-dropzone" tabindex="0" aria-label="拖放 .md / .txt 檔，或直接貼上全文">拖放 .md / .txt 到此，或聚焦後按 Ctrl+V 貼上全文</div>
@@ -440,8 +439,7 @@ function openArticleImportModal() {
         const autoApplyChk = $('#imp-auto-apply');
         const directOnlyChk = $('#imp-direct-only');
         if (modelSelect) {
-            const savedModel = LS.get(LS_KEYS.cleanModel, defaultCleanModel);
-            modelSelect.value = String(savedModel || defaultCleanModel || '');
+            modelSelect.value = String(cleanSelection.value || '');
         }
         // restore toggles
         if (aiCleanChk) aiCleanChk.checked = !!LS.get(LS_KEYS.cleanEnabled, true);
@@ -452,7 +450,7 @@ function openArticleImportModal() {
         if (aiCleanChk) aiCleanChk.addEventListener('change', () => LS.set(LS_KEYS.cleanEnabled, !!aiCleanChk.checked));
         if (keepImagesChk) keepImagesChk.addEventListener('change', () => LS.set(LS_KEYS.cleanKeepImages, !!keepImagesChk.checked));
         if (autoApplyChk) autoApplyChk.addEventListener('change', () => LS.set(LS_KEYS.cleanAutoApply, !!autoApplyChk.checked));
-        if (modelSelect) modelSelect.addEventListener('change', () => LS.set(LS_KEYS.cleanModel, modelSelect.value));
+        if (modelSelect) modelSelect.addEventListener('change', () => persistArticleCleanupModel(modelSelect.value));
         if (directOnlyChk) directOnlyChk.addEventListener('change', () => LS.set(LS_KEYS.directOnly, !!directOnlyChk.checked));
         const previewBox = $('#imp-preview');
         const beforeEl = $('#imp-before');
@@ -667,6 +665,7 @@ function openArticleImportModal() {
     const renderNews = async () => {
         panel.innerHTML = '';
         const wrap = document.createElement('div');
+        const cleanSelection = getArticleCleanupModelSelection();
         wrap.innerHTML = `
             <div class="import-form">
                 <div class="form-row wrap">
@@ -680,7 +679,7 @@ function openArticleImportModal() {
                         <label class="checkbox-inline"><input id="news-keep-images" type="checkbox" checked> <span>保留圖片</span></label>
                         <label class="checkbox-inline"><input id="news-auto-apply" type="checkbox"> <span>導入後自動套用</span></label>
                         <span class="model-label">清洗模型</span>
-                        <select id="news-clean-model" class="import-input short">${modelSuggestions.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
+                        <select id="news-clean-model" class="import-input short" ${cleanSelection.disabled ? 'disabled' : ''} title="${cleanSelection.disabled ? '請先到全局設定配置 provider 與模型' : ''}">${cleanSelection.options.map(option => `<option value="${esc(option.value)}">${esc(option.label || option.value)}</option>`).join('')}</select>
                     </div>
                 </div>
                 <div id="news-feed" class="news-feed" aria-live="polite"></div>
@@ -705,7 +704,7 @@ function openArticleImportModal() {
         if (aiCleanChk) aiCleanChk.checked = !!LS.get(LS_KEYS.cleanEnabled, true);
         if (keepImagesChk) keepImagesChk.checked = LS.get(LS_KEYS.cleanKeepImages, true);
         if (autoApplyChk) autoApplyChk.checked = LS.get(LS_KEYS.cleanAutoApply, false);
-        if (modelSel) modelSel.value = LS.get(LS_KEYS.cleanModel, defaultCleanModel);
+        if (modelSel) modelSel.value = String(cleanSelection.value || '');
 
         // 來源列表：優先向 Worker 取得，若無則回退 ai-config.SOURCES
         let sources = [];
@@ -891,17 +890,13 @@ function openArticleImportModal() {
         if (aiCleanChk) aiCleanChk.addEventListener('change', () => LS.set(LS_KEYS.cleanEnabled, !!aiCleanChk.checked));
         if (keepImagesChk) keepImagesChk.addEventListener('change', () => LS.set(LS_KEYS.cleanKeepImages, !!keepImagesChk.checked));
         if (autoApplyChk) autoApplyChk.addEventListener('change', () => LS.set(LS_KEYS.cleanAutoApply, !!autoApplyChk.checked));
-        if (modelSel) modelSel.addEventListener('change', () => LS.set(LS_KEYS.cleanModel, modelSel.value));
+        if (modelSel) modelSel.addEventListener('change', () => persistArticleCleanupModel(modelSel.value));
     };
 
     const renderOcr = () => {
         panel.innerHTML = '';
         const wrap = document.createElement('div');
-        // OCR 模型清單
-        const ocrModels = Array.isArray(OCR_CONFIG?.MODELS) && OCR_CONFIG.MODELS.length
-          ? OCR_CONFIG.MODELS
-          : [OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || 'gpt-4o-mini'];
-        const defaultOcrModel = OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || ocrModels[0];
+        const ocrSelection = getArticleOCRModelSelection();
 
         wrap.innerHTML = `
             <div class="import-form">
@@ -917,7 +912,7 @@ function openArticleImportModal() {
                     </div>
                     <div class="controls right">
                         <span class="model-label">OCR 模型</span>
-                        <select id="imp-ocr-model" class="import-input short">${ocrModels.map(m => `<option value="${m}">${m}</option>`).join('')}</select>
+                        <select id="imp-ocr-model" class="import-input short" ${ocrSelection.disabled ? 'disabled' : ''} title="${ocrSelection.disabled ? '請先到全局設定配置 provider 與模型' : ''}">${ocrSelection.options.map(option => `<option value="${esc(option.value)}">${esc(option.label || option.value)}</option>`).join('')}</select>
                     </div>
                 </div>
                 <div class="dropzone" id="imp-dropzone" aria-label="拖放圖片到此或貼上截圖">拖放圖片到此，或在此視窗貼上截圖</div>
@@ -954,7 +949,7 @@ function openArticleImportModal() {
         const applyBtn = $('#imp-ocr-apply');
         const dropzone = $('#imp-dropzone');
         const thumbs = $('#imp-ocr-thumbs');
-        if (modelSel) modelSel.value = defaultOcrModel;
+        if (modelSel) modelSel.value = String(ocrSelection.value || '');
 
         // 內部檔案池（支援拖放/貼上）
         const selectedFiles = [];
@@ -1081,6 +1076,7 @@ function openArticleImportModal() {
                 document.body.appendChild(overlay);
             });
         }
+        if (modelSel) modelSel.addEventListener('change', () => persistArticleOCRModel(modelSel.value));
         runBtn.addEventListener('click', async () => {
             const files = selectedFiles.length ? selectedFiles.slice() : Array.from(fileInput.files || []);
             if (!files.length) { alert('請先選擇圖片'); return; }

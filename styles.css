@@ -3835,6 +3835,261 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.2);
 }
 /* =================================
+   全局設定 - AI Provider 緊湊模型列表
+   ================================= */
+.gs-ai-provider-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+  display: grid;
+  gap: 8px;
+}
+
+.gs-ai-provider-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gs-ai-provider-header-main,
+.gs-ai-provider-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gs-ai-provider-title {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.gs-ai-provider-id,
+.gs-ai-provider-time,
+.gs-ai-provider-field-label,
+.gs-ai-model-hint,
+.gs-ai-model-summary-meta,
+.gs-ai-model-empty,
+.gs-ai-model-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.gs-ai-discovery-state.success {
+  color: #166534;
+}
+
+.gs-ai-discovery-state.error {
+  color: #b91c1c;
+}
+
+.gs-ai-discovery-state.muted {
+  color: #64748b;
+}
+
+.gs-ai-provider-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.gs-ai-provider-field {
+  display: grid;
+  gap: 4px;
+}
+
+.gs-ai-provider-model-section {
+  display: grid;
+  gap: 6px;
+}
+
+.gs-ai-model-details {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.gs-ai-model-details summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.gs-ai-model-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.gs-ai-model-details summary::after {
+  content: '▾';
+  color: #64748b;
+  font-size: 12px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.gs-ai-model-details[open] summary {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.gs-ai-model-details[open] summary::after {
+  content: '▴';
+}
+
+.gs-ai-model-summary-main {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.gs-ai-model-summary-title {
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.gs-ai-model-summary-meta {
+  line-height: 1.35;
+}
+
+.gs-ai-model-details-body {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px 10px;
+}
+
+.gs-ai-model-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.gs-ai-model-option {
+  position: relative;
+  display: block;
+}
+
+.gs-ai-model-checkbox {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gs-ai-model-card {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 9px;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.gs-ai-model-indicator {
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gs-ai-model-content {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.gs-ai-model-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.gs-ai-model-meta {
+  line-height: 1.3;
+}
+
+.gs-ai-model-option:hover .gs-ai-model-card {
+  border-color: #b8c2cf;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(15, 23, 42, 0.05);
+}
+
+.gs-ai-model-checkbox:checked + .gs-ai-model-card {
+  background: #eff6ff;
+  border-color: #3a7bd5;
+  box-shadow: 0 1px 3px rgba(58, 123, 213, 0.14);
+}
+
+.gs-ai-model-checkbox:checked + .gs-ai-model-card .gs-ai-model-indicator {
+  border-color: #3a7bd5;
+  background: #3a7bd5;
+  box-shadow: inset 0 0 0 3px #eff6ff;
+}
+
+.gs-ai-model-checkbox:checked + .gs-ai-model-card .gs-ai-model-name,
+.gs-ai-model-checkbox:checked + .gs-ai-model-card .gs-ai-model-meta {
+  color: #1d4ed8;
+}
+
+.gs-ai-model-checkbox:focus-visible + .gs-ai-model-card {
+  outline: 2px solid rgba(58, 123, 213, 0.35);
+  outline-offset: 2px;
+}
+
+.gs-ai-provider-manual-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gs-ai-provider-manual-row input {
+  flex: 1;
+  min-width: 220px;
+}
+
+.gs-ai-provider-error {
+  font-size: 12px;
+  color: #b91c1c;
+}
+
+@media (max-width: 640px) {
+  .gs-ai-model-details summary {
+    align-items: flex-start;
+  }
+
+  .gs-ai-model-grid {
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  }
+
+  .gs-ai-provider-manual-row input {
+    min-width: 100%;
+  }
+}
+
+/* =================================
    Merge Modal Styles
    ================================= */
 

@@ -1,6 +1,8 @@
 // AI智能校對模組
 import { displayMessage } from '../../modules/ui.js';
 import { loadGlobalSettings, loadGlobalSecrets } from '../../modules/settings.js';
+import { getTaskModelSelection } from '../../modules/ai-models.js';
+import { requestAI, resolveAIRequestConfig, resolveConfigConnection } from '../../modules/api.js';
 
 // AI配置检查
 let aiConfig = null;
@@ -40,6 +42,38 @@ function dedupeArray(arr = []) {
   return out;
 }
 
+function getSelectedQaModel() {
+  try {
+    const settings = loadGlobalSettings();
+    const currentValue = (settings?.ai?.models && (settings.ai.models.qaChecking || settings.ai.models.qaCheck)) || '';
+    return getTaskModelSelection('qaChecking', { currentValue }).value || '';
+  } catch (_) {
+    return '';
+  }
+}
+
+function getQaRequestConfig(modelOverride) {
+  const settings = loadGlobalSettings();
+  const secrets = loadGlobalSecrets();
+  const configConnection = resolveConfigConnection(aiConfig?.QA_CHECK || {}, { settings, secrets });
+  const request = resolveAIRequestConfig({
+    task: 'qaChecking',
+    model: modelOverride,
+    apiUrl: configConnection.apiUrl,
+    apiKey: configConnection.apiKey,
+    provider: configConnection.provider,
+    profile: configConnection.profile,
+    settings,
+    secrets
+  });
+  return {
+    settings,
+    secrets,
+    qaCfg: aiConfig?.QA_CHECK || {},
+    ...request
+  };
+}
+
 // 校對結果快取（可關閉）
 const checkResultsCache = new Map();
 
@@ -56,7 +90,10 @@ export async function startAIChecking(trainingResult, options = {}) {
   // 延遲加載AI配置
   await loadAIConfig();
 
-  if (!aiConfig || !aiConfig.API_URL || !aiConfig.API_KEY) {
+  const selectedModel = getSelectedQaModel();
+  const availability = getQaRequestConfig(selectedModel);
+
+  if (!aiConfig || !availability.apiUrl || !availability.apiKey || !availability.model) {
     displayMessage('AI服務不可用，將使用基本校對模式', 'warning');
     return performBasicChecking(trainingResult);
   }
@@ -214,58 +251,10 @@ async function checkSingleAnswer(answer) {
 // AI語義分析
 async function performAIAnalysis(question, correctAnswer, userAnswer) {
   if (!aiConfig) { await loadAIConfig(); }
-  // 讀取 QA 專用組態
-  const qaCfg = aiConfig?.QA_CHECK || {};
-  // 端點：PROFILE > API_URL/API_KEY > 全域
-  let __apiUrl = qaCfg.API_URL || '';
-  let __apiKey = qaCfg.API_KEY || '';
-  if (!__apiUrl && qaCfg.PROFILE && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[qaCfg.PROFILE]) {
-    __apiUrl = aiConfig.AI_PROFILES[qaCfg.PROFILE].apiUrl || '';
-    __apiKey = aiConfig.AI_PROFILES[qaCfg.PROFILE].apiKey || __apiKey;
-  }
-  // 若仍未決定端點，嘗試使用全局設定覆蓋（localStorage）
-  try {
-    const s = loadGlobalSettings();
-    const sec = loadGlobalSecrets();
-    if (!__apiUrl && s?.ai?.apiUrl) __apiUrl = String(s.ai.apiUrl).trim();
-    if (!__apiKey && sec?.aiApiKey) __apiKey = String(sec.aiApiKey).trim();
-  } catch(_) {}
-  if (!__apiUrl) __apiUrl = aiConfig.API_URL;
-  if (!__apiKey) __apiKey = aiConfig.API_KEY;
-  // 模型：優先 UI 選擇與全局覆蓋；支援 'profile:model' 或 {profile, model}
-  let __model;
-  try {
-    const selA = document.getElementById('qa-model-select');
-    const selB = document.getElementById('qa-model-select-report');
-    const fromUi = (selA && selA.value) || (selB && selB.value) || '';
-    const s = loadGlobalSettings();
-    const fromSettings = (s?.ai?.models && (s.ai.models.qaChecking || s.ai.models.qaCheck)) || '';
-    __model = fromUi || fromSettings || qaCfg.DEFAULT_MODEL || qaCfg.MODEL || (aiConfig.AI_MODELS?.answerChecking || 'gpt-4.1-mini');
-  } catch(_) {
-    __model = qaCfg.DEFAULT_MODEL || qaCfg.MODEL || (aiConfig.AI_MODELS?.answerChecking || 'gpt-4.1-mini');
-  }
-  // 若模型帶有前綴或物件，解析出最終模型與可能的 profile 端點
-  try {
-    const hadExplicitQaUrl = !!(qaCfg && qaCfg.API_URL);
-    if (__model && typeof __model === 'object') {
-      const pid = __model.profile || '';
-      // 選了 profile 就應該切到該端點；除非明確在 QA_CHECK.API_URL 指定端點
-      if (pid && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[pid] && !hadExplicitQaUrl) {
-        __apiUrl = aiConfig.AI_PROFILES[pid].apiUrl || __apiUrl;
-        __apiKey = aiConfig.AI_PROFILES[pid].apiKey || __apiKey;
-      }
-      __model = String(__model.model || '');
-    } else if (typeof __model === 'string' && __model.includes(':')) {
-      const pid = __model.slice(0, __model.indexOf(':'));
-      const m = __model.slice(__model.indexOf(':') + 1);
-      // 選了 profile 就應該切到該端點；除非明確在 QA_CHECK.API_URL 指定端點
-      if (pid && aiConfig.AI_PROFILES && aiConfig.AI_PROFILES[pid] && !hadExplicitQaUrl) {
-        __apiUrl = aiConfig.AI_PROFILES[pid].apiUrl || __apiUrl;
-        __apiKey = aiConfig.AI_PROFILES[pid].apiKey || __apiKey;
-      }
-      __model = m;
-    }
-  } catch(_) {}
+  const selectedModel = getSelectedQaModel();
+  const requestConfig = getQaRequestConfig(selectedModel);
+  const qaCfg = requestConfig.qaCfg || {};
+  const __model = requestConfig.model;
   const __temperature = (qaCfg.temperature ?? 0.2);
   const __maxTokens = (qaCfg.maxTokens ?? 1500);
 
@@ -295,41 +284,43 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
 
   // 首選強制 JSON（大多數 OpenAI 兼容端點支援）；若 4xx 指出不支援，將回退一次
   async function callOnce(includeJsonFormat) {
-    const body = {
+    return await requestAI({
       model: __model,
       messages: [
         { role: 'system', content: sysMsg },
         { role: 'user', content: prompt }
       ],
       temperature: __temperature,
-      max_tokens: __maxTokens
-    };
-    if (includeJsonFormat) body.response_format = { type: 'json_object' };
-    const resp = await fetch(__apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${__apiKey}` },
-      body: JSON.stringify(body)
+      maxTokens: __maxTokens,
+      responseFormat: includeJsonFormat ? { type: 'json_object' } : undefined,
+      apiUrl: requestConfig.apiUrl,
+      apiKey: requestConfig.apiKey,
+      provider: requestConfig.provider,
+      profile: requestConfig.profile,
+      taskType: 'qaChecking'
     });
-    let payload = null;
-    try { payload = await resp.json(); } catch(_) {}
-    return { ok: resp.ok, status: resp.status, data: payload };
   }
 
-  let first = await callOnce(true);
-  if (!first.ok) {
-    const msg = JSON.stringify(first.data || {});
-    const mayNotSupport = /response_format|json_object|unsupported|unknown/i.test(msg) || (first.status === 400 || first.status === 422);
-    if (mayNotSupport) {
-      first = await callOnce(false);
+  let data;
+  try {
+    data = await callOnce(true);
+  } catch (error) {
+    const detail = JSON.stringify(error?.payload || {});
+    const mayNotSupport = /response_format|json_object|unsupported|unknown/i.test(detail) || error?.status === 400 || error?.status === 422;
+    if (!mayNotSupport) {
+      const code = error?.status || 0;
+      const message = error?.payload?.error?.message || error?.payload?.message || error?.message || '';
+      throw new Error(`AI API請求失敗: ${code}${message ? ' - ' + message : ''}`);
+    }
+    try {
+      data = await callOnce(false);
+    } catch (fallbackError) {
+      const code = fallbackError?.status || 0;
+      const message = fallbackError?.payload?.error?.message || fallbackError?.payload?.message || fallbackError?.message || '';
+      throw new Error(`AI API請求失敗: ${code}${message ? ' - ' + message : ''}`);
     }
   }
-  if (!first.ok) {
-    const code = first.status || 0;
-    const detail = (first.data && (first.data.error?.message || first.data.message)) || '';
-    throw new Error(`AI API請求失敗: ${code}${detail ? ' - ' + detail : ''}`);
-  }
 
-  const data = first.data || {};
   let content = data.choices?.[0]?.message?.content;
   // 一些模型（如 GLM/Qwen/Gemini）可能把主要輸出放在 reasoning_content 或其他欄位
   if (!content || (typeof content === 'string' && content.trim() === '')) {

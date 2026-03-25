@@ -1,0 +1,6 @@
+Total messages: 20 (Errors: 1, Warnings: 1)
+Returning 1 messages for level "error"
+
+ReferenceError: escapeHtml is not defined
+    at showGlobalSettingsModal (http://127.0.0.1:4173/features/sync/sync.js:359:13)
+    at HTMLDivElement.<anonymous> (http://127.0.0.1:4173/features/sync/sync.js:307:60)

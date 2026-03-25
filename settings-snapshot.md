@@ -1,0 +1,135 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - heading "PEN子背單詞" [level=1] [ref=e4]
+      - navigation [ref=e5]:
+        - button "單詞本" [ref=e6] [cursor=pointer]:
+          - img [ref=e7]
+          - generic [ref=e11]: 單詞本
+        - button "默寫模式" [ref=e12] [cursor=pointer]:
+          - img [ref=e13]
+          - generic [ref=e17]: 默寫模式
+        - button "學習模式" [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+          - generic [ref=e21]: 學習模式
+        - button "問答訓練" [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+          - generic [ref=e26]: 問答訓練
+        - button "文章詳解" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e31]: 文章詳解
+        - button "圖片識別" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: 圖片識別
+        - button "隨堂測驗" [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e41]: 隨堂測驗
+      - button "設定" [active] [ref=e42] [cursor=pointer]:
+        - img [ref=e43]
+    - main [ref=e46]:
+      - generic [ref=e106]:
+        - heading "文章詳解" [level=2] [ref=e107]
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - heading "輸入文章" [level=3] [ref=e110]
+            - generic [ref=e111]:
+              - combobox [ref=e112]:
+                - option "讀取歷史記錄" [selected]
+              - button "管理記錄" [ref=e113] [cursor=pointer]
+              - button "刪除記錄" [ref=e114] [cursor=pointer]
+            - textbox "在這裡輸入或粘貼您想分析的文章..." [ref=e115]
+            - generic [ref=e116]:
+              - button "分析文章" [ref=e117] [cursor=pointer]
+              - button "導入..." [ref=e118] [cursor=pointer]
+              - button "清除重寫" [ref=e119] [cursor=pointer]
+              - button "從文章庫選取" [ref=e120] [cursor=pointer]
+            - paragraph [ref=e121]: 目前文章詳解採用精簡模式：僅輸出中文翻譯。
+            - generic [ref=e122]:
+              - heading "朗讀控制" [level=4] [ref=e123]
+              - generic [ref=e124]:
+                - button "朗讀文章" [ref=e125] [cursor=pointer]:
+                  - img [ref=e126]
+                - button "停止朗讀" [disabled] [ref=e128]:
+                  - img [ref=e129]
+                - button "下載語音" [ref=e131] [cursor=pointer]:
+                  - img [ref=e132]
+              - generic [ref=e135]:
+                - generic [ref=e136]: "模式:"
+                - combobox "模式:" [ref=e137]:
+                  - option "全文" [selected]
+                  - option "段落"
+                  - option "句子"
+              - generic "調整非當前句子的淡化程度" [ref=e138]:
+                - generic [ref=e139]: "淡化強度:"
+                - slider "淡化強度:" [ref=e140]: "0.45"
+              - generic [ref=e141]:
+                - generic [ref=e142]: "語速:"
+                - group "語速:" [ref=e143]:
+                  - button "x0.5" [ref=e144] [cursor=pointer]
+                  - button "x0.75" [ref=e145] [cursor=pointer]
+                  - button "x1.0" [ref=e146] [cursor=pointer]
+                  - button "x1.25" [ref=e147] [cursor=pointer]
+                  - button "x1.5" [ref=e148] [cursor=pointer]
+          - generic [ref=e150]:
+            - generic [ref=e151]:
+              - heading "分析結果" [level=3] [ref=e152]
+              - generic "翻譯遮罩" [ref=e153]:
+                - generic [ref=e154]: 迷霧
+                - generic "翻譯遮罩：預設開啟；滑鼠移入/按住顯示" [ref=e155] [cursor=pointer]:
+                  - checkbox "翻譯遮罩" [checked]
+                  - generic [ref=e157]: 翻譯遮罩
+            - paragraph [ref=e159]: 請先輸入文章並點擊分析按鈕。
+    - generic [ref=e90]:
+      - button "×" [ref=e91] [cursor=pointer]
+      - generic [ref=e92]:
+        - banner [ref=e93]:
+          - heading "開始之前" [level=3] [ref=e94]
+        - main [ref=e95]:
+          - generic [ref=e96]:
+            - paragraph [ref=e97]: 目前還沒有任何單詞本。
+            - paragraph [ref=e98]: 建議先「導入單詞本」或「新建單詞本」，之後就可以在學習 / 默寫 / 測驗等功能中使用。
+            - paragraph [ref=e99]: 已經有雲端帳號？可直接登入並同步既有單詞本。
+          - generic [ref=e100]:
+            - button "稍後" [ref=e101] [cursor=pointer]
+            - button "登入" [ref=e102] [cursor=pointer]
+            - button "導入單詞本" [ref=e103] [cursor=pointer]
+        - contentinfo [ref=e104]
+  - button "AI 助手" [ref=e160] [cursor=pointer]:
+    - img [ref=e161]
+  - generic [ref=e163]:
+    - generic [ref=e164]:
+      - generic [ref=e166]: AI 助手 · 全局
+      - generic [ref=e167]:
+        - button "小視窗（右下角）" [ref=e168] [cursor=pointer]:
+          - img [ref=e169]
+        - button "靠右全高" [ref=e172] [cursor=pointer]:
+          - img [ref=e173]
+        - button "居中大視窗" [ref=e176] [cursor=pointer]:
+          - img [ref=e177]
+        - button "新建會話" [ref=e180] [cursor=pointer]:
+          - img [ref=e181]
+        - button "查看會話" [ref=e183] [cursor=pointer]:
+          - img [ref=e184]
+        - button "刷新上下文" [ref=e186] [cursor=pointer]:
+          - img [ref=e187]
+        - button "關閉" [ref=e190] [cursor=pointer]:
+          - img [ref=e191]
+    - generic [ref=e194]:
+      - generic [ref=e195]:
+        - textbox "輸入與本文相關的問題，Enter 送出" [ref=e196]
+        - button "發送" [ref=e197] [cursor=pointer]
+      - generic [ref=e198]:
+        - generic [ref=e199]:
+          - checkbox "串流回應" [checked] [ref=e200]
+          - text: 串流回應
+        - generic [ref=e201]:
+          - text: 模型：
+          - combobox "模型：" [ref=e202]:
+            - option "default:gpt-4.1-mini" [selected]
+            - option "articleMock:article-cleaner"
+            - option "qaMock:qa-model-x"
+            - option "qaMock:qa-model-y"
+        - generic [ref=e203]:
+          - text: 字級：
+          - button "小" [ref=e204] [cursor=pointer]
+          - button "大" [ref=e205] [cursor=pointer]

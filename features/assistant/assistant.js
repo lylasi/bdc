@@ -2,8 +2,13 @@
 // 注意：不修改全局樣式與 index.html；所有 UI 以動態插入，樣式侷限在 .assistant-* 作用域。
 
 import * as dom from '../../modules/dom.js';
-import { loadGlobalSettings, loadGlobalSecrets } from '../../modules/settings.js';
-import { API_URL, API_KEY, AI_MODELS, AI_PROFILES as __AI_PROFILES__, ASSISTANT as __ASSISTANT__ } from '../../ai-config.js';
+import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
+import {
+  getTaskModelSelection,
+  saveTaskModelSelection,
+  stringifyModelSpec
+} from '../../modules/ai-models.js';
+import { requestAI, resolveAIRequestConfig, resolveAITaskSpec } from '../../modules/api.js';
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 import * as cache from '../../modules/cache.js';
 import { markdownToHtml } from '../../modules/markdown.js';
@@ -12,51 +17,23 @@ const LS_KEY = 'assistantConversations'; // legacy（含所有訊息）
 const LS_UPDATED_AT = 'assistantUpdatedAt';
 const IDX_KEY = 'assistantConvIndex'; // 新索引：[{id, articleKey, title, updatedAt}]
 
-const ASSISTANT = __ASSISTANT__ || {};
-
-function getDefaultModel() {
+function getAssistantModelOverride() {
   const s = loadGlobalSettings();
-  const models = s?.ai?.models || {};
-  return models.assistant
-    || ASSISTANT?.DEFAULT_MODEL
-    || ASSISTANT?.MODEL
-    || models.articleAnalysis
-    || AI_MODELS?.articleAnalysis
-    || 'gpt-4.1-mini';
+  return s?.ai?.tasks?.assistant || s?.ai?.models?.assistant || '';
 }
 
-function getAssistantSuggestions() {
-  const seen = new Set();
-  const out = [];
-  const push = (v) => {
-    const s = (typeof v === 'object') ? (v.profile ? `${v.profile}:${v.model||''}` : (v.model||'')) : String(v||'');
-    if (!s) return; if (seen.has(s)) return; seen.add(s); out.push(s);
-  };
-  if (Array.isArray(ASSISTANT?.MODELS)) ASSISTANT.MODELS.forEach(push);
-  push(ASSISTANT?.DEFAULT_MODEL);
-  push(ASSISTANT?.MODEL);
-  push(AI_MODELS?.articleAnalysis);
-  push(loadGlobalSettings()?.ai?.models?.assistant);
-  return out;
+function getAssistantModelSelection(currentValue) {
+  return getTaskModelSelection('assistant', {
+    currentValue: currentValue ?? getAssistantModelOverride()
+  });
 }
 
-// Profiles：若未定義，回退為僅 default 指向全域
-const AI_PROFILES = __AI_PROFILES__ || { default: { apiUrl: API_URL, apiKey: API_KEY } };
+function getAssistantModelSpec(modelOverride) {
+  return getAssistantModelSelection(modelOverride).value || resolveAITaskSpec('assistant') || 'gpt-4.1-mini';
+}
 
-// 與 modules/api.js 對齊：解析模型規格（string / 'profile:model' / {profile, model, apiUrl?, apiKey?}）
-function normalizeModelSpec(spec) {
-  if (spec && typeof spec === 'object') {
-    const model = String(spec.model || '');
-    const pid = spec.profile || null;
-    const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
-    return { model, apiUrl: spec.apiUrl || prof.apiUrl || null, apiKey: spec.apiKey || prof.apiKey || null };
-  }
-  const s = String(spec || '');
-  const hasPrefix = s.includes(':');
-  const pid = hasPrefix ? s.slice(0, s.indexOf(':')) : null;
-  const model = hasPrefix ? s.slice(s.indexOf(':') + 1) : s;
-  const prof = (pid && AI_PROFILES[pid]) ? AI_PROFILES[pid] : {};
-  return { model, apiUrl: prof.apiUrl || null, apiKey: prof.apiKey || null };
+function getAssistantRequestConfig(modelOverride) {
+  return resolveAIRequestConfig({ task: 'assistant', model: getAssistantModelSpec(modelOverride) });
 }
 
 export function initAiAssistant() {
@@ -128,14 +105,12 @@ function setupVisibilityLogic() {
 }
 
 function renderPanelHtml() {
-  const modelSpec = getDefaultModel();
-  const toSelect = (typeof modelSpec === 'object')
-    ? (modelSpec.profile ? `${modelSpec.profile}:${modelSpec.model||''}` : (modelSpec.model||''))
-    : String(modelSpec||'');
-  const suggestions = getAssistantSuggestions();
+  const selection = getAssistantModelSelection();
+  const toSelect = stringifyModelSpec(selection.value);
+  const placeholder = selection.disabled ? '請先到全局設定配置 provider 與模型' : '';
   const selectHtml = `<label class="assistant-switch" style="gap:6px;">模型：
-    <select id=\"assistant-model-select\" style=\"border:1px solid #d1d5db;border-radius:8px;padding:4px 6px;background:#fff;color:#334155;\">
-      ${suggestions.map(m => `<option value=\"${escapeHtml(m)}\" ${m===toSelect? 'selected':''}>${escapeHtml(m)}</option>`).join('')}
+    <select id="assistant-model-select" ${selection.disabled ? 'disabled' : ''} title="${escapeHtml(selection.disabled ? placeholder : '')}" style="border:1px solid #d1d5db;border-radius:8px;padding:4px 6px;background:#fff;color:#334155;${selection.disabled ? 'opacity:.65;cursor:not-allowed;' : ''}">
+      ${selection.options.map(option => `<option value="${escapeHtml(option.value)}" ${option.value === toSelect ? 'selected' : ''}>${escapeHtml(option.label || option.value)}</option>`).join('')}
     </select>
   </label>`;
   const title = extractArticleTitle();
@@ -168,6 +143,7 @@ function renderPanelHtml() {
           <button class="assistant-font-btn" data-size="l" title="13px">大</button>
         </span>
       </div>
+      ${selection.disabled ? `<div class="assistant-model-hint">${escapeHtml(placeholder)}</div>` : ''}
   </div>`;
 }
 
@@ -194,14 +170,9 @@ function wirePanel(panel) {
   // 模型選擇（保存至本機設定）
   const modelSel = panel.querySelector('#assistant-model-select');
   if (modelSel) {
-    modelSel.addEventListener('change', async () => {
+    modelSel.addEventListener('change', () => {
       try {
-        const { saveGlobalSettings } = await import('../../modules/settings.js');
-        const selected = modelSel.value || '';
-        const s0 = loadGlobalSettings();
-        const nextModels = { ...(s0?.ai?.models || {}) };
-        if (selected) nextModels.assistant = selected; else delete nextModels.assistant;
-        saveGlobalSettings({ ai: { models: nextModels } });
+        saveTaskModelSelection('assistant', modelSel.value || '');
       } catch(_) {}
     });
   }
@@ -210,13 +181,8 @@ function wirePanel(panel) {
   $('#assistant-new').addEventListener('click', () => newConversation(panel));
   $('#assistant-history').addEventListener('click', () => toggleHistory(panel));
   $('#assistant-stream').addEventListener('change', (ev) => {
-    const st = loadGlobalSettings();
     try {
-      localStorage.setItem('pen_global_settings', JSON.stringify({
-        ...st,
-        assistant: { ...(st.assistant || {}), stream: ev.target.checked },
-        updatedAt: new Date().toISOString()
-      }));
+      saveGlobalSettings({ assistant: { stream: ev.target.checked } });
     } catch(_) {}
   });
   const input = $('#assistant-input');
@@ -491,34 +457,22 @@ function migrateLegacyStore() {
   } catch(_) {}
 }
 
-async function onceCompletions(messages, signal) {
-  const s = loadGlobalSettings();
-  const sec = loadGlobalSecrets();
-  const modelSpec = getDefaultModel();
-  const resolved = normalizeModelSpec(modelSpec);
-  const endpoint = (resolved.apiUrl && String(resolved.apiUrl).trim()) || (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
-  const key = (resolved.apiKey && String(resolved.apiKey).trim()) || (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
-  const model = resolved.model;
-  const resp = await fetch(endpoint, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-    body: JSON.stringify({ model, messages, temperature: 0.2 }), signal
+async function onceCompletions(messages, signal, modelOverride) {
+  const data = await requestAI({
+    model: getAssistantModelSpec(modelOverride),
+    messages,
+    temperature: 0.2,
+    signal,
+    taskType: 'assistant'
   });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  const data = await resp.json();
-  return (data?.choices?.[0]?.message?.content || '').trim();
+  return (data?.choices?.[0]?.message?.content || data?.output_text || '').trim();
 }
 
-async function streamCompletions(messages, signal, onDelta) {
-  const s = loadGlobalSettings();
-  const sec = loadGlobalSecrets();
-  const modelSpec = getDefaultModel();
-  const resolved = normalizeModelSpec(modelSpec);
-  const endpoint = (resolved.apiUrl && String(resolved.apiUrl).trim()) || (s?.ai?.apiUrl && String(s.ai.apiUrl).trim()) || API_URL;
-  const key = (resolved.apiKey && String(resolved.apiKey).trim()) || (sec?.aiApiKey && String(sec.aiApiKey).trim()) || API_KEY;
-  const model = resolved.model;
-  const resp = await fetch(endpoint, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-    body: JSON.stringify({ model, messages, temperature: 0.2, stream: true }), signal
+async function streamCompletions(messages, signal, onDelta, modelOverride) {
+  const resolved = getAssistantRequestConfig(modelOverride);
+  const resp = await fetch(resolved.apiUrl, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resolved.apiKey}` },
+    body: JSON.stringify({ model: resolved.model, messages, temperature: 0.2, stream: true }), signal
   });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const reader = resp.body.getReader();
@@ -587,6 +541,7 @@ function injectScopedStyles() {
   /* 底部第二行：改為 3 欄網格（串流、模型、字級）在桌面更整齊；行動裝置自動換行 */
   .assistant-sub{display:grid;grid-template-columns: auto minmax(140px,1fr) auto;align-items:center;gap:10px;color:#6b7280;font-size:12px}
   .assistant-switch{display:flex;align-items:center;gap:6px}
+  .assistant-model-hint{grid-column:1 / -1;font-size:12px;color:#b45309}
   .assistant-link{background:none;border:none;color:#2563eb;cursor:pointer}
   .assistant-stop{position:absolute;right:8px;bottom:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
   .assistant-retry{display:inline-block;margin-top:6px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
