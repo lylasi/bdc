@@ -270,16 +270,27 @@ export function clearDictationSession() {
  */
 import { touch as syncTouch } from './sync-signals.js';
 
-export function saveDictationSettings(preserveUpdatedAt = false) {
+export function saveDictationSettings(options = {}) {
+    const normalizedOptions = typeof options === 'boolean'
+        ? { preserveUpdatedAt: options }
+        : (options && typeof options === 'object' ? options : {});
     try {
-        // 設置分組級變更時間戳，便於雲端同步時做 LWW 合併
-        if (!preserveUpdatedAt) {
+        if (typeof normalizedOptions.updatedAtOverride === 'string' && normalizedOptions.updatedAtOverride) {
+            dictationSettings = { ...dictationSettings, updatedAt: normalizedOptions.updatedAtOverride };
+        } else if (normalizedOptions.preserveUpdatedAt !== true) {
             try {
                 dictationSettings = { ...dictationSettings, updatedAt: new Date().toISOString() };
             } catch (_) { /* 保守處理，避免因序列化錯誤中斷 */ }
         }
         localStorage.setItem(DICTATION_SETTINGS_KEY, JSON.stringify(dictationSettings));
-        try { syncTouch('dictation'); } catch (_) {}
+        try {
+            if (dictationSettings && dictationSettings.updatedAt) {
+                localStorage.setItem('dictationUpdatedAt', String(dictationSettings.updatedAt));
+            }
+        } catch (_) {}
+        if (normalizedOptions.suppressSyncTouch !== true) {
+            try { syncTouch('dictation'); } catch (_) {}
+        }
     } catch (error) {
         console.warn('Failed to save dictation settings:', error);
     }
