@@ -2,7 +2,7 @@
 // Provides: Login (Email OTP), Logout, and "Sync Now" button
 
 import * as dom from '../../modules/dom.js';
-import { buildLocalSnapshot, applyMergedSnapshot } from '../../modules/sync-core.js';
+import { buildLocalSnapshot, applyMergedSnapshot, restoreSnapshotLocally } from '../../modules/sync-core.js';
 import { syncNow, auth, subscribeSnapshotChanges, unsubscribeChannel } from '../../modules/sync-supabase.js';
 import * as ui from '../../modules/ui.js';
 import {
@@ -19,8 +19,14 @@ import {
   deriveModelsUrl
 } from '../../modules/ai-models.js';
 import { openDictationGradingHistory } from '../dictation/dictation-grader.js';
+import {
+  listAssistantConversationMetas,
+  getAssistantConversationMessages,
+  createAssistantConversation,
+  renameAssistantConversation,
+  deleteAssistantConversation
+} from '../assistant/assistant.js';
 import * as backup from '../../modules/local-backup.js';
-import * as cache from '../../modules/cache.js';
 import { markdownToHtml } from '../../modules/markdown.js';
 
 export function initSync() {
@@ -1235,8 +1241,7 @@ async function showAssistantSessions(){
   })();
 
   // 讀取索引
-  let index = [];
-  try { const raw = localStorage.getItem('assistantConvIndex'); index = raw ? JSON.parse(raw) : []; } catch(_) {}
+  let index = listAssistantConversationMetas();
   if (!Array.isArray(index)) index = [];
 
   const layout = document.createElement('div');
@@ -1278,8 +1283,7 @@ async function showAssistantSessions(){
     currentId = id; const meta = index.find(x=>x.id===id) || {}; currentArticleKey = meta.articleKey || 'global';
     rightBody.innerHTML = '<div style="padding:8px;color:#64748b;">載入中...</div>';
     try {
-      const rec = await cache.getItem('assistant:conv:'+id);
-      const msgs = (rec && rec.messages) ? rec.messages : [];
+      const msgs = await getAssistantConversationMessages(id);
       const html = msgs.map(m => {
         if (m.role === 'assistant') return `<div class=\"assistant-msg assistant-assistant\">${markdownToHtml(m.content||'')}</div>`;
         return `<div class=\"assistant-msg assistant-user\">${escapeHtml(m.content||'')}</div>`;
@@ -1320,11 +1324,10 @@ async function showAssistantSessions(){
     const ak = prompt('請輸入文章鍵（留空為全局）','') || '';
     const articleKey = ak.trim() ? ak.trim() : 'global';
     const title = prompt('會話名稱','新會話') || '新會話';
-    const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
     try {
-      const raw = localStorage.getItem('assistantConvIndex'); const arr = raw? JSON.parse(raw):[]; arr.unshift({ id, articleKey, title, updatedAt:new Date().toISOString() }); localStorage.setItem('assistantConvIndex', JSON.stringify(arr));
-      await cache.setItem('assistant:conv:'+id, { messages: [] });
-      index = arr; left.innerHTML += `<div class=\"as-item\" data-id=\"${id}\" style=\"padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;\"><div style=\"font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\">${escapeHtml((articleKey==='global'?'全局 · ':'')+title)}</div><div style=\"font-size:12px;color:#64748b;\">${new Date().toLocaleString()}</div></div>`;
+      const meta = await createAssistantConversation({ articleKey, title, messages: [] });
+      index = listAssistantConversationMetas();
+      left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;"><div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?'全局 · ':'')+meta.title)}</div><div style="font-size:12px;color:#64748b;">${new Date(meta.updatedAt || Date.now()).toLocaleString()}</div></div>`;
     } catch(_) {}
   });
   // 匯入
@@ -1334,9 +1337,9 @@ async function showAssistantSessions(){
     try {
       const text = await f.text(); const json = JSON.parse(text||'{}');
       const articleKey = json.articleKey || 'global'; const title = json.title || '匯入會話'; const messages = Array.isArray(json.messages)? json.messages: [];
-      const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-      const raw = localStorage.getItem('assistantConvIndex'); const arr = raw? JSON.parse(raw):[]; arr.unshift({ id, articleKey, title, updatedAt:new Date().toISOString() }); localStorage.setItem('assistantConvIndex', JSON.stringify(arr));
-      await cache.setItem('assistant:conv:'+id, { messages }); index = arr; left.innerHTML += `<div class=\"as-item\" data-id=\"${id}\" style=\"padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;\"><div style=\"font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\">${escapeHtml((articleKey==='global'?'全局 · ':'')+title)}</div><div style=\"font-size:12px;color:#64748b;\">${new Date().toLocaleString()}</div></div>`;
+      const meta = await createAssistantConversation({ articleKey, title, messages });
+      index = listAssistantConversationMetas();
+      left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;"><div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?'全局 · ':'')+meta.title)}</div><div style="font-size:12px;color:#64748b;">${new Date(meta.updatedAt || Date.now()).toLocaleString()}</div></div>`;
     } catch(e) { alert('匯入失敗：' + (e?.message||'')); }
   });
   // 重命名
@@ -1347,13 +1350,15 @@ async function showAssistantSessions(){
     const meta = index.find(x => x.id === id) || null; if (!meta) return;
     const newTitle = prompt('輸入新的會話名稱：', meta.title || '會話');
     if (!newTitle || !newTitle.trim()) return;
-    const title = newTitle.trim();
-    index = index.map(x => x.id === id ? { ...x, title, updatedAt: new Date().toISOString() } : x);
-    try { localStorage.setItem('assistantConvIndex', JSON.stringify(index)); } catch(_) {}
+    const updated = renameAssistantConversation(id, newTitle.trim());
+    if (!updated) return;
+    index = listAssistantConversationMetas();
     const item = left.querySelector(`.as-item[data-id="${id}"]`);
     if (item) {
       const titleDiv = item.querySelector('div');
-      if (titleDiv) titleDiv.textContent = (meta.articleKey==='global' ? '全局 · ' : '') + title;
+      if (titleDiv) titleDiv.textContent = (updated.articleKey==='global' ? '全局 · ' : '') + updated.title;
+      const timeDiv = item.querySelector('div:nth-child(2)');
+      if (timeDiv) timeDiv.textContent = new Date(updated.updatedAt || Date.now()).toLocaleString();
     }
   });
   // 刪除
@@ -1363,9 +1368,9 @@ async function showAssistantSessions(){
     if (!id) { alert('請先選擇一個會話'); return; }
     if (!confirm('確定刪除此會話？此操作無法復原。')) return;
     try {
-      index = index.filter(x => x.id !== id);
-      localStorage.setItem('assistantConvIndex', JSON.stringify(index));
-      try { await cache.setItem('assistant:conv:'+id, { messages: [] }); } catch(_) {}
+      const removed = await deleteAssistantConversation(id);
+      if (!removed) throw new Error('會話不存在');
+      index = listAssistantConversationMetas();
       const node = left.querySelector(`.as-item[data-id="${id}"]`);
       if (node) node.remove();
       if (!left.querySelector('.as-item')) left.innerHTML = '<div style="padding:12px;color:#64748b;">尚無會話</div>';
@@ -1376,7 +1381,15 @@ async function showAssistantSessions(){
   rightToolbar.querySelector('#as-export').addEventListener('click', async () => {
     if (!currentId) return;
     const meta = index.find(x=>x.id===currentId) || { articleKey:'global', title:'會話' };
-    try { const rec = await cache.getItem('assistant:conv:'+currentId); const messages = (rec&&rec.messages)||[]; const blob = new Blob([JSON.stringify({ articleKey: meta.articleKey, title: meta.title, messages }, null, 2)], { type:'application/json' }); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download = `assistant-conv-${currentId}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);} catch(_){}
+    try {
+      const messages = await getAssistantConversationMessages(currentId);
+      const blob = new Blob([JSON.stringify({ articleKey: meta.articleKey, title: meta.title, messages }, null, 2)], { type:'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `assistant-conv-${currentId}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch(_) {}
   });
   // 在助手中繼續 + 直接發送
   rightToolbar.querySelector('#as-open').addEventListener('click', () => { if (!currentId) return; const meta = index.find(x=>x.id===currentId)||{}; try { window.__assistant && window.__assistant.open('modal'); window.__assistant && window.__assistant.switch(meta.articleKey||'global', currentId); } catch(_){} });
@@ -1398,29 +1411,79 @@ async function showAssistantSessions(){
 // Auto sync & Realtime
 // -----------------
 let autoTimer = null;
+let autoDueAt = 0;
+let pendingAutoReason = '';
+let lastLocalChangeAt = 0;
 let lastSyncAt = 0;
 let syncInFlight = false;
+let queuedWhileInFlight = false;
 const DEBOUNCE_MS = 6000; // 6s after last change
 const MIN_INTERVAL_MS = 20000; // at least 20s between sync runs
 let rtChannel = null;
 let rtThrottled = 0;
 
+function clearAutoTimer() {
+  if (!autoTimer) return;
+  clearTimeout(autoTimer);
+  autoTimer = null;
+}
+
+function extractTouchedGroup(reason) {
+  if (typeof reason !== 'string') return '';
+  if (reason.startsWith('data:')) return reason.slice(5) || '';
+  return '';
+}
+
+function runAutoSyncTimer() {
+  autoTimer = null;
+  autoDueAt = 0;
+  const reason = pendingAutoReason || 'debounce';
+  pendingAutoReason = '';
+  doAutoSync(reason);
+}
+
 function scheduleAutoSync(reason) {
   const now = Date.now();
-  const delta = now - lastSyncAt;
-  if (delta < MIN_INTERVAL_MS && !autoTimer) {
-    const wait = MIN_INTERVAL_MS - delta + 200; // small buffer
-    autoTimer = setTimeout(() => { autoTimer = null; doAutoSync('min-interval'); }, wait);
+  const group = extractTouchedGroup(reason);
+  const isLocalDataChange = !!group;
+  if (isLocalDataChange) {
+    lastLocalChangeAt = now;
+  }
+
+  if (!pendingAutoReason || isLocalDataChange) {
+    pendingAutoReason = reason || 'debounce';
+  }
+
+  if (syncInFlight) {
+    if (isLocalDataChange) {
+      queuedWhileInFlight = true;
+    }
     return;
   }
-  if (autoTimer) clearTimeout(autoTimer);
-  autoTimer = setTimeout(() => { autoTimer = null; doAutoSync(reason || 'debounce'); }, DEBOUNCE_MS);
+
+  let nextDue = now;
+  if (isLocalDataChange) {
+    const debounceBase = lastLocalChangeAt || now;
+    const debounceDue = debounceBase + DEBOUNCE_MS;
+    const minDue = lastSyncAt > 0 ? lastSyncAt + MIN_INTERVAL_MS : now;
+    nextDue = Math.max(debounceDue, minDue);
+  }
+  const wait = Math.max(0, nextDue - now);
+
+  if (autoTimer && autoDueAt === nextDue) return;
+
+  clearAutoTimer();
+  autoDueAt = nextDue;
+  autoTimer = setTimeout(runAutoSyncTimer, wait);
 }
 
 async function doAutoSync(reason) {
   const { data } = await auth.getSession();
   if (!data?.session) return; // not logged in
-  if (syncInFlight) return; // avoid reentry
+  if (syncInFlight) {
+    queuedWhileInFlight = true;
+    return;
+  }
   try {
     syncInFlight = true;
     updateStatus('自動同步中...');
@@ -1443,6 +1506,10 @@ async function doAutoSync(reason) {
     updateStatus('自動同步失敗');
   } finally {
     syncInFlight = false;
+    if (queuedWhileInFlight) {
+      queuedWhileInFlight = false;
+      scheduleAutoSync('data:queued');
+    }
   }
 }
 
@@ -1551,7 +1618,7 @@ function showBackupRestoreModal() {
       try {
         const payload = backup.loadBackupPayload(id);
         if (!payload) { try { ui.displayMessage('備份不存在或已損壞', 'error'); } catch(_) {} return; }
-        await applyMergedSnapshot({ payload });
+        await restoreSnapshotLocally(payload);
         try { lastSyncAt = Date.now(); localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
         updateStatus('已從備份還原（僅本機）');
         try { ui.displayMessage('已從備份還原（僅本機）', 'success'); } catch(_) {}

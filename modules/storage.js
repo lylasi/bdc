@@ -7,6 +7,44 @@ import { touch as syncTouch } from './sync-signals.js';
 
 // 文章 metadata 存儲 key
 const ARTICLE_METAS_KEY = 'articleMetas';
+const DICTATION_UPDATED_AT_KEY = 'dictationUpdatedAt';
+
+function normalizePersistOptions(options = {}) {
+    if (typeof options === 'boolean') {
+        return { preserveUpdatedAt: options };
+    }
+    return options && typeof options === 'object' ? options : {};
+}
+
+function updateGroupPersistence(updatedAtKey, group, options = {}) {
+    const normalizedOptions = normalizePersistOptions(options);
+    let effectiveUpdatedAt = '';
+
+    try {
+        if (typeof normalizedOptions.updatedAtOverride === 'string' && normalizedOptions.updatedAtOverride) {
+            effectiveUpdatedAt = normalizedOptions.updatedAtOverride;
+            localStorage.setItem(updatedAtKey, effectiveUpdatedAt);
+        } else if (normalizedOptions.preserveUpdatedAt !== true) {
+            effectiveUpdatedAt = new Date().toISOString();
+            localStorage.setItem(updatedAtKey, effectiveUpdatedAt);
+        } else {
+            effectiveUpdatedAt = String(localStorage.getItem(updatedAtKey) || '');
+        }
+    } catch (_) {
+        effectiveUpdatedAt = typeof normalizedOptions.updatedAtOverride === 'string'
+            ? normalizedOptions.updatedAtOverride
+            : '';
+    }
+
+    if (normalizedOptions.suppressSyncTouch !== true) {
+        try { syncTouch(group); } catch (_) {}
+    }
+
+    return {
+        ...normalizedOptions,
+        effectiveUpdatedAt
+    };
+}
 
 // --- ArticleMeta helpers ---
 
@@ -26,10 +64,10 @@ function readArticleMetasMap() {
     }
 }
 
-function writeArticleMetasMap(map) {
+function writeArticleMetasMap(map, options = {}) {
     try {
         localStorage.setItem(ARTICLE_METAS_KEY, JSON.stringify(map));
-        try { syncTouch('articles'); } catch (_) {}
+        updateGroupPersistence('articlesUpdatedAt', 'articles', options);
     } catch (_) {
         // 保守處理，避免因 localStorage 錯誤導致應用崩潰
     }
@@ -56,7 +94,7 @@ export function getAllArticleMetas() {
 /**
  * 新增或更新文章 metadata。
  */
-export function saveArticleMeta(articleMeta) {
+export function saveArticleMeta(articleMeta, options = {}) {
     if (!articleMeta || !articleMeta.id) return null;
     const map = readArticleMetasMap();
     const normalized = {
@@ -69,17 +107,35 @@ export function saveArticleMeta(articleMeta) {
         normalized.shareId = generateArticleShareId();
     }
     map[normalized.id] = normalized;
-    writeArticleMetasMap(map);
+    writeArticleMetasMap(map, options);
     return normalized;
 }
 
-export function deleteArticleMetaById(articleId) {
+export function deleteArticleMetaById(articleId, options = {}) {
     if (!articleId) return false;
     const map = readArticleMetasMap();
     if (!Object.prototype.hasOwnProperty.call(map, articleId)) return false;
     delete map[articleId];
-    writeArticleMetasMap(map);
+    writeArticleMetasMap(map, options);
     return true;
+}
+
+export function replaceArticleMetas(articleMetas, options = {}) {
+    const list = Array.isArray(articleMetas) ? articleMetas : [];
+    const nextMap = {};
+    list.forEach(meta => {
+        if (!meta || !meta.id) return;
+        const normalized = {
+            ...meta,
+            createdAt: typeof meta.createdAt === 'number'
+                ? meta.createdAt
+                : Date.now(),
+            shareId: meta.shareId || generateArticleShareId()
+        };
+        nextMap[normalized.id] = normalized;
+    });
+    writeArticleMetasMap(nextMap, options);
+    return Object.values(nextMap);
 }
 
 /**
@@ -98,17 +154,9 @@ export function findArticleMetaByUrl(url) {
  * 將當前的單詞本數據保存到 localStorage。
  */
 export function saveVocabularyBooks(options = {}) {
-    // options: { preserveUpdatedAt?: boolean, updatedAtOverride?: string }
+    const normalizedOptions = normalizePersistOptions(options);
     localStorage.setItem('vocabularyBooks', JSON.stringify(state.vocabularyBooks));
-    try {
-        const key = 'vocabularyUpdatedAt';
-        if (options && typeof options.updatedAtOverride === 'string' && options.updatedAtOverride) {
-            localStorage.setItem(key, options.updatedAtOverride);
-        } else if (!options || options.preserveUpdatedAt !== true) {
-            localStorage.setItem(key, new Date().toISOString());
-        }
-    } catch (_) { /* ignore quota errors */ }
-    try { syncTouch('vocabulary'); } catch (_) {}
+    updateGroupPersistence('vocabularyUpdatedAt', 'vocabulary', normalizedOptions);
 }
 
 /**
@@ -385,17 +433,10 @@ export function getOrCreateArticleWordbook(articleMetaInput, options = {}) {
  * 保存當前激活的單詞本ID。
  */
 export function saveAppState(options = {}) {
+    const normalizedOptions = normalizePersistOptions(options);
     localStorage.setItem('activeBookId', state.activeBookId);
     // 變更當前書視為 vocabulary 分組的變更
-    try {
-        const key = 'vocabularyUpdatedAt';
-        if (options && typeof options.updatedAtOverride === 'string' && options.updatedAtOverride) {
-            localStorage.setItem(key, options.updatedAtOverride);
-        } else if (!options || options.preserveUpdatedAt !== true) {
-            localStorage.setItem(key, new Date().toISOString());
-        }
-    } catch (_) { /* ignore */ }
-    try { syncTouch('vocabulary'); } catch (_) {}
+    updateGroupPersistence('vocabularyUpdatedAt', 'vocabulary', normalizedOptions);
 }
 
 /**
@@ -419,16 +460,9 @@ export function loadAppState() {
  * 保存已分析的文章列表。
  */
 export function saveAnalyzedArticles(options = {}) {
+    const normalizedOptions = normalizePersistOptions(options);
     localStorage.setItem('analyzedArticles', JSON.stringify(state.analyzedArticles));
-    try {
-        const key = 'articlesUpdatedAt';
-        if (options && typeof options.updatedAtOverride === 'string' && options.updatedAtOverride) {
-            localStorage.setItem(key, options.updatedAtOverride);
-        } else if (!options || options.preserveUpdatedAt !== true) {
-            localStorage.setItem(key, new Date().toISOString());
-        }
-    } catch (_) { /* ignore */ }
-    try { syncTouch('articles'); } catch (_) {}
+    updateGroupPersistence('articlesUpdatedAt', 'articles', normalizedOptions);
 }
 
 /**
@@ -447,9 +481,13 @@ export function deleteAnalyzedArticleByIndex(index, options = {}) {
     if (normalizedIndex >= articles.length) return null;
     const removed = articles.splice(normalizedIndex, 1)[0] || null;
     state.setAnalyzedArticles(articles);
-    saveAnalyzedArticles();
+    saveAnalyzedArticles(options);
     if (options.deleteMeta !== false && removed && removed.articleId) {
-        deleteArticleMetaById(removed.articleId);
+        deleteArticleMetaById(removed.articleId, {
+            ...options,
+            preserveUpdatedAt: true,
+            suppressSyncTouch: true
+        });
     }
     return removed;
 }
@@ -457,16 +495,32 @@ export function deleteAnalyzedArticleByIndex(index, options = {}) {
 export function clearAnalyzedArticles(options = {}) {
     const removed = Array.isArray(state.analyzedArticles) ? [...state.analyzedArticles] : [];
     state.setAnalyzedArticles([]);
-    saveAnalyzedArticles();
+    saveAnalyzedArticles(options);
     if (options.deleteMeta !== false) {
         const ids = Array.from(new Set(removed.map(item => item && item.articleId).filter(Boolean)));
-        ids.forEach(id => deleteArticleMetaById(id));
+        ids.forEach(id => deleteArticleMetaById(id, {
+            ...options,
+            preserveUpdatedAt: true,
+            suppressSyncTouch: true
+        }));
     }
     return removed;
 }
 
 // --- 默寫 AI 批改歷史（LocalStorage） ---
 const GRADING_HISTORY_KEY = 'dictationGradingHistory';
+
+function saveGradingHistoryList(list, options = {}) {
+    const normalizedOptions = normalizePersistOptions(options);
+    try {
+        if (Array.isArray(list) && list.length > 0) {
+            localStorage.setItem(GRADING_HISTORY_KEY, JSON.stringify(list.slice(0, 200)));
+        } else {
+            localStorage.removeItem(GRADING_HISTORY_KEY);
+        }
+    } catch (_) {}
+    return updateGroupPersistence(DICTATION_UPDATED_AT_KEY, 'dictation', normalizedOptions);
+}
 
 export function getGradingHistory() {
     try {
@@ -475,28 +529,31 @@ export function getGradingHistory() {
     } catch (_) { return []; }
 }
 
-export function saveGradingRecord(record) {
+export function saveGradingRecord(record, options = {}) {
     const list = getGradingHistory();
     // ensure id
     const id = record && record.id ? record.id : `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const createdAt = record && record.createdAt ? record.createdAt : new Date().toISOString();
     const normalized = { id, createdAt, ...record };
     list.unshift(normalized);
-    try { localStorage.setItem(GRADING_HISTORY_KEY, JSON.stringify(list.slice(0, 200))); } catch (_) {}
-    try { syncTouch('dictation'); } catch (_) {}
+    saveGradingHistoryList(list, options);
     return normalized;
 }
 
-export function deleteGradingRecord(id) {
-    const list = getGradingHistory();
-    const next = list.filter(x => x.id !== id);
-    try { localStorage.setItem(GRADING_HISTORY_KEY, JSON.stringify(next)); } catch (_) {}
-    try { syncTouch('dictation'); } catch (_) {}
+export function saveGradingHistory(records, options = {}) {
+    const list = Array.isArray(records) ? records : [];
+    saveGradingHistoryList(list, options);
+    return list.slice(0, 200);
 }
 
-export function clearGradingHistory() {
-    try { localStorage.removeItem(GRADING_HISTORY_KEY); } catch (_) {}
-    try { syncTouch('dictation'); } catch (_) {}
+export function deleteGradingRecord(id, options = {}) {
+    const list = getGradingHistory();
+    const next = list.filter(x => x.id !== id);
+    saveGradingHistoryList(next, options);
+}
+
+export function clearGradingHistory(options = {}) {
+    saveGradingHistoryList([], options);
 }
 
 /**
@@ -529,5 +586,4 @@ export function saveAnalysisResult(article, result, extra = {}) {
     }
     state.setAnalyzedArticles(articles);
     saveAnalyzedArticles(); // 持久化到localStorage（會觸發 articlesUpdatedAt）
-    try { syncTouch('articles'); } catch (_) {}
 }

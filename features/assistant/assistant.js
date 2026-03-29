@@ -207,25 +207,102 @@ function updateHeaderTitle(){
 }
 
 // --------- 新：索引 + IndexedDB 儲存（cache.kv） ---------
+function generateConversationId() {
+  return `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+}
+
 function readIndex() {
-  try { const raw = localStorage.getItem(IDX_KEY); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr)? arr: []; } catch(_) { return []; }
+  try {
+    const raw = localStorage.getItem(IDX_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (_) {
+    return [];
+  }
 }
+
 function writeIndex(arr) {
-  try { localStorage.setItem(IDX_KEY, JSON.stringify(arr)); localStorage.setItem(LS_UPDATED_AT, new Date().toISOString()); syncTouch('assistant'); } catch(_) {}
+  try {
+    localStorage.setItem(IDX_KEY, JSON.stringify(arr));
+    localStorage.setItem(LS_UPDATED_AT, new Date().toISOString());
+    syncTouch('assistant');
+  } catch (_) {}
 }
+
 async function idbGetConv(convId) {
-  try { const rec = await cache.getItem('assistant:conv:'+convId); return rec && rec.messages ? rec.messages : []; } catch(_) { return []; }
+  try {
+    const rec = await cache.getItem('assistant:conv:' + convId);
+    return rec && rec.messages ? rec.messages : [];
+  } catch (_) {
+    return [];
+  }
 }
+
 async function idbSetConv(convId, messages) {
-  try { await cache.setItem('assistant:conv:'+convId, { messages }); return true; } catch(_) { return false; }
+  try {
+    await cache.setItem('assistant:conv:' + convId, { messages });
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
+
+export function listAssistantConversationMetas() {
+  return readIndex();
+}
+
+export async function getAssistantConversationMessages(convId) {
+  return await idbGetConv(convId);
+}
+
+export async function createAssistantConversation({ articleKey = 'global', title = '新會話', id, messages = [] } = {}) {
+  const convId = id || generateConversationId();
+  const meta = ensureMetaWithId(articleKey, title, convId);
+  await idbSetConv(convId, Array.isArray(messages) ? messages : []);
+  return meta;
+}
+
+export function renameAssistantConversation(convId, title) {
+  const nextTitle = String(title || '').trim();
+  if (!convId || !nextTitle) return null;
+  let updated = null;
+  const nextIdx = readIndex().map(item => {
+    if (item.id !== convId) return item;
+    updated = { ...item, title: nextTitle, updatedAt: new Date().toISOString() };
+    return updated;
+  });
+  if (!updated) return null;
+  writeIndex(nextIdx);
+  return updated;
+}
+
+export async function deleteAssistantConversation(convId) {
+  if (!convId) return false;
+  const currentIndex = readIndex();
+  const target = currentIndex.find(item => item.id === convId) || null;
+  if (!target) return false;
+  writeIndex(currentIndex.filter(item => item.id !== convId));
+  try {
+    const currentMap = getCurrentMap();
+    const nextMap = {};
+    Object.keys(currentMap).forEach(key => {
+      if (currentMap[key] !== convId) nextMap[key] = currentMap[key];
+    });
+    setCurrentMap(nextMap);
+  } catch (_) {}
+  try { await idbSetConv(convId, []); } catch (_) {}
+  updateSessionLabel();
+  return true;
+}
+
 function ensureMeta(articleKey, title) {
   const idx = readIndex();
   let m = idx.find(x => x.articleKey === articleKey);
   if (!m) {
     const defaultTitle = articleKey === 'global' ? '全局會話' : '文章';
-    m = { id: `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`, articleKey, title: title||defaultTitle, updatedAt: new Date().toISOString() };
-    idx.unshift(m); writeIndex(idx);
+    m = { id: generateConversationId(), articleKey, title: title || defaultTitle, updatedAt: new Date().toISOString() };
+    idx.unshift(m);
+    writeIndex(idx);
   }
   return m;
 }
@@ -702,9 +779,11 @@ function setCurrentConvId(articleKey,id){ const m=getCurrentMap(); m[articleKey]
 
 async function newConversation(panel){
   const ctx = await buildContext();
-  const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-  const meta = ensureMetaWithId(ctx.articleKey, extractArticleTitle(), id);
-  await idbSetConv(meta.id, []);
+  const meta = await createAssistantConversation({
+    articleKey: ctx.articleKey,
+    title: extractArticleTitle(),
+    messages: []
+  });
   setCurrentConvId(ctx.articleKey, meta.id);
   const box = panel.querySelector('#assistant-messages'); if (box) box.innerHTML='';
 }
@@ -764,18 +843,26 @@ async function toggleHistory(panel){
       const titleEl = item.querySelector('.ah-title');
       const newTitle = prompt('輸入新的會話名稱：', titleEl?.textContent || '');
       if (newTitle && newTitle.trim()) {
-        const list = readIndex().map(x => x.id===id? { ...x, title:newTitle.trim(), updatedAt:new Date().toISOString() }: x);
-        writeIndex(list); titleEl.textContent = newTitle.trim(); updateSessionLabel();
+        const updated = renameAssistantConversation(id, newTitle.trim());
+        if (updated) {
+          titleEl.textContent = updated.title;
+          updateSessionLabel();
+        }
       }
       return;
     }
     if (act === 'delete') {
       ev.stopPropagation();
       if (!confirm('確定刪除此會話？')) return;
-      const list = readIndex().filter(x => x.id!==id); writeIndex(list);
-      try { await cache.setItem('assistant:conv:'+id, { messages: [] }); } catch(_) {}
+      const deleted = await deleteAssistantConversation(id);
+      if (!deleted) return;
       item.remove();
-      if (getCurrentConvId(ctx.articleKey)===id){ setCurrentConvId(ctx.articleKey, ''); const box=panel.querySelector('#assistant-messages'); if (box) box.innerHTML=''; updateSessionLabel(); }
+      if (getCurrentConvId(ctx.articleKey) === id) {
+        setCurrentConvId(ctx.articleKey, '');
+        const box = panel.querySelector('#assistant-messages');
+        if (box) box.innerHTML = '';
+        updateSessionLabel();
+      }
       return;
     }
     // open 切換
@@ -844,11 +931,17 @@ function exposeGlobalAPI(){
         if (text && text.trim()) { await ask(panel, text.trim(), { articleKey, convId }); }
       },
       create: async (articleKey, title) => {
-        const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-        ensureMetaWithId(articleKey||'global', title||'新會話', id);
-        await idbSetConv(id, []);
-        return id;
-      }
+        const meta = await createAssistantConversation({
+          articleKey: articleKey || 'global',
+          title: title || '新會話',
+          messages: []
+        });
+        return meta.id;
+      },
+      list: () => listAssistantConversationMetas(),
+      getMessages: async (convId) => await getAssistantConversationMessages(convId),
+      rename: (convId, title) => renameAssistantConversation(convId, title),
+      remove: async (convId) => await deleteAssistantConversation(convId)
     };
     window.__assistant = api;
   } catch(_) {}

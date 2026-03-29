@@ -186,8 +186,6 @@ export function saveQASet(qaSet) {
 
     // 更新清單
     updateQASetsManifest(qaSet);
-    try { localStorage.setItem('qaUpdatedAt', new Date().toISOString()); } catch(_) {}
-    try { syncTouch('qa'); } catch(_) {}
 
     console.log(`問答集已儲存: ${qaSet.name}`);
     return true;
@@ -226,8 +224,6 @@ export async function deleteQASet(id) {
 
     // 從清單中移除
     removeFromQASetsManifest(id);
-    try { localStorage.setItem('qaUpdatedAt', new Date().toISOString()); } catch(_) {}
-    try { syncTouch('qa'); } catch(_) {}
 
     console.log(`問答集已刪除: ${id}`);
     return true;
