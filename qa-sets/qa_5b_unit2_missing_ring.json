@@ -1,0 +1,29 @@
+{
+  "id": "qa_5b_unit2_missing_ring",
+  "name": "5B Unit 2 - The Missing Ring",
+  "category": "五年級 Q & A",
+  "description": "關於 The Missing Ring 的閱讀理解問答",
+  "creator": "系統預置",
+  "questions": [
+    {
+      "qid": 1,
+      "question": "Where did Henry think he put the ring?",
+      "answer": "He thought he put it in his pocket."
+    },
+    {
+      "qid": 2,
+      "question": "What did Billy see?",
+      "answer": "He saw a woman with a diamond ring."
+    },
+    {
+      "qid": 3,
+      "question": "What happened after Eddy gave Henry the box with the ring?",
+      "answer": "Henry helped his mum put on her sweater."
+    },
+    {
+      "qid": 4,
+      "question": "Where did Henry leave the box?",
+      "answer": "He left the box on the chair."
+    }
+  ]
+}
