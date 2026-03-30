@@ -1,0 +1,29 @@
+{
+  "id": "qa_5b_unit1_chinese_new_year",
+  "name": "5B Unit 1 - It's Chinese New Year",
+  "category": "五年級 Q & A",
+  "description": "關於 Chinese New Year 的閱讀理解問答",
+  "creator": "系統預置",
+  "questions": [
+    {
+      "qid": 1,
+      "question": "Why didn't people sweep the floor on the first day of Chinese New Year in the past?",
+      "answer": "It was because people believed it would sweep away the good luck for the New Year."
+    },
+    {
+      "qid": 2,
+      "question": "What did Ben get from his relatives?",
+      "answer": "He got many red packets from them."
+    },
+    {
+      "qid": 3,
+      "question": "Why do people like buying mandarin trees at Chinese New Year?",
+      "answer": "It is because the Chinese words for mandarins and luck sound similar."
+    },
+    {
+      "qid": 4,
+      "question": "Did Max think he would get red packets too? Why or why not?",
+      "answer": "No, he didn't. It was because he thought he was not their family member."
+    }
+  ]
+}

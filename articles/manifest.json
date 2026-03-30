@@ -1,5 +1,53 @@
 [
   {
+    "id": "u1-my-first-chinese-new-year",
+    "title": "My first Chinese New Year",
+    "description": "Max writes about celebrating Chinese New Year in Hong Kong with Ben’s family and shares a festive poem.",
+    "difficulty": "小學5B",
+    "category": "ready reading",
+    "path": "articles/5b ready reading/u1-my-first-chinese-new-year.json"
+  },
+  {
+    "id": "u2-where-was-the-wedding-ring",
+    "title": "Where was the wedding ring?",
+    "description": "Betty and Billy help Uncle Eddy search for a missing wedding ring before the ceremony begins.",
+    "difficulty": "小學5B",
+    "category": "ready reading",
+    "path": "articles/5b ready reading/u2-where-was-the-wedding-ring.json"
+  },
+  {
+    "id": "u3-dream-city",
+    "title": "Dream City",
+    "description": "A theme-park leaflet introduces Dream City’s attractions and visitors’ experiences with different jobs.",
+    "difficulty": "小學5B",
+    "category": "ready reading",
+    "path": "articles/5b ready reading/u3-dream-city.json"
+  },
+  {
+    "id": "u4-people-we-admire",
+    "title": "People we admire",
+    "description": "Students write about Safina Lam and Fung Kam-hung, two role models with inspiring life stories.",
+    "difficulty": "小學5B",
+    "category": "ready reading",
+    "path": "articles/5b ready reading/u4-people-we-admire.json"
+  },
+  {
+    "id": "u5-i-will-never-forget",
+    "title": "I will never forget ...",
+    "description": "A children’s magazine collects four unforgettable experiences, from camping and birthdays to rainy holidays and school life.",
+    "difficulty": "小學5B",
+    "category": "ready reading",
+    "path": "articles/5b ready reading/u5-i-will-never-forget.json"
+  },
+  {
+    "id": "u6-mousemans-hole",
+    "title": "MouseMan's Hole",
+    "description": "MouseMan and other passengers share blog entries about considerate and inconsiderate behaviour on the MTR.",
+    "difficulty": "小學5B",
+    "category": "ready reading",
+    "path": "articles/5b ready reading/u6-mousemans-hole.json"
+  },
+  {
     "id": "u1-lost-in-the-city",
     "title": "Lost in the city",
     "description": "A City Race in Tsim Sha Tsui challenges Ben and friends as they navigate buses, crossings and street signs.",
