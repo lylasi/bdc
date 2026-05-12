@@ -1,0 +1,34 @@
+{
+  "id": "qa_5b_unit4_role_models",
+  "name": "5B Unit 4 - Role Models",
+  "category": "五年級 Q & A",
+  "description": "關於 Role Models 的閱讀理解問答",
+  "creator": "系統預置",
+  "questions": [
+    {
+      "qid": 1,
+      "question": "How long has Safina Lam been a voice actress?",
+      "answer": "She has been a voice actress since 2003."
+    },
+    {
+      "qid": 2,
+      "question": "What does Safina think of her father?",
+      "answer": "She thinks her father was cheerful and gentle."
+    },
+    {
+      "qid": 3,
+      "question": "Why does Ben want to be a voice actor?",
+      "answer": "It is because he loves watching cartoons."
+    },
+    {
+      "qid": 4,
+      "question": "What happened to Fung Kam-hung in 1991?",
+      "answer": "He lost his left leg in a traffic accident."
+    },
+    {
+      "qid": 5,
+      "question": "Who is your role model? What is he/she like?",
+      "answer": "My role model is my dad. He is caring and helpful."
+    }
+  ]
+}
