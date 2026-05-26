@@ -16,5 +16,11 @@
     "name": "5B Unit 4 - Role Models",
     "path": "qa-sets/qa_5b_unit4_role_models.json",
     "category": "五年級 Q & A"
+  },
+  {
+    "id": "qa_5b_unit5_past_experiences",
+    "name": "5B Unit 5 - Past Experiences",
+    "path": "qa-sets/qa_5b_unit5_past_experiences.json",
+    "category": "五年級 Q & A"
   }
 ]

@@ -1,0 +1,29 @@
+{
+  "id": "qa_5b_unit5_past_experiences",
+  "name": "5B Unit 5 - Past Experiences",
+  "category": "五年級 Q & A",
+  "description": "關於 Past Experiences 的閱讀理解問答",
+  "creator": "系統預置",
+  "questions": [
+    {
+      "qid": 1,
+      "question": "How did Carol feel about the camping trip?",
+      "answer": "She thought it was an exciting experience."
+    },
+    {
+      "qid": 2,
+      "question": "What presents did Pete get?",
+      "answer": "He got a bicycle and a video game."
+    },
+    {
+      "qid": 3,
+      "question": "Why did Megan's family have to stay indoors during their holiday last summer?",
+      "answer": "It was because it rained heavily every day."
+    },
+    {
+      "qid": 4,
+      "question": "Who did Kevin become good friends with later?",
+      "answer": "He became good friends with the monitor and other classmates."
+    }
+  ]
+}
