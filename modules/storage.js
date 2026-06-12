@@ -9,6 +9,28 @@ import { touch as syncTouch } from './sync-signals.js';
 const ARTICLE_METAS_KEY = 'articleMetas';
 const DICTATION_UPDATED_AT_KEY = 'dictationUpdatedAt';
 
+/**
+ * 安全讀取 localStorage 中的 JSON 陣列。
+ * 內容損壞（parse 失敗或非陣列）時不讓啟動流程崩潰：
+ * 先把原始內容備份到 `<key>.corrupt` 供救援，再回退為空陣列。
+ */
+function safeParseArray(key) {
+    let raw = null;
+    try {
+        raw = localStorage.getItem(key);
+    } catch (_) {
+        return [];
+    }
+    if (!raw) return [];
+    try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+    } catch (_) { /* fallthrough：視同損壞 */ }
+    try { localStorage.setItem(`${key}.corrupt`, raw); } catch (_) {}
+    console.warn(`[storage] localStorage 鍵 "${key}" 內容損壞，已備份至 "${key}.corrupt" 並回退為空陣列`);
+    return [];
+}
+
 function normalizePersistOptions(options = {}) {
     if (typeof options === 'boolean') {
         return { preserveUpdatedAt: options };
@@ -165,8 +187,7 @@ export function saveVocabularyBooks(options = {}) {
  * 同時包含一個數據遷移邏輯，用於清理舊數據格式。
  */
 export function loadVocabularyBooks() {
-    const saved = localStorage.getItem('vocabularyBooks');
-    let books = saved ? JSON.parse(saved) : [];
+    let books = safeParseArray('vocabularyBooks');
 
     if (books.length > 0) {
         // 資料遷移和清理：遍歷所有單詞並標準化音標格式，同時補齊生詞本 metadata
@@ -192,7 +213,7 @@ export function loadVocabularyBooks() {
                 }
             }
 
-            if (book.words && Array.isArray(book.words)) {
+            if (book && book.words && Array.isArray(book.words)) {
                 book.words.forEach(word => {
                     if (word.phonetic && typeof word.phonetic === 'string') {
                         const originalPhonetic = word.phonetic;
@@ -469,8 +490,7 @@ export function saveAnalyzedArticles(options = {}) {
  * 從 localStorage 加載已分析的文章列表。
  */
 export function loadAnalyzedArticles() {
-    const saved = localStorage.getItem('analyzedArticles');
-    const articles = saved ? JSON.parse(saved) : [];
+    const articles = safeParseArray('analyzedArticles');
     state.setAnalyzedArticles(articles);
 }
 

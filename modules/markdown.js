@@ -1,9 +1,22 @@
 // 簡易 Markdown 轉 HTML（支援：標題、粗體、斜體、行內程式碼、連結、表格）
 // 使用場景：OCR 結果預覽、簡單報表
-// 注意：為安全僅做最小語法替換，且對文中 <>& 做轉義；不支援 HTML 直入。
+// 注意：為安全僅做最小語法替換，對文中 <>&"' 做轉義，連結/圖片 URL 走 scheme 白名單；不支援 HTML 直入。
 
 export function markdownToHtml(md) {
-  const esc = (s) => String(s).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  const esc = (s) => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  // URL 白名單檢查：僅允許 http(s)/mailto/tel 與相對路徑，圖片可額外允許 data:image/
+  // 先移除控制字元與空白再判斷 scheme，避免 "java\tscript:" 之類繞過
+  const safeUrl = (url, { allowDataImage = false } = {}) => {
+    const raw = String(url || '').trim();
+    const probe = raw.replace(/[\u0000-\u0020]/g, '').toLowerCase();
+    if (/^(https?:|mailto:|tel:)/.test(probe)) return raw;
+    if (allowDataImage && /^data:image\//.test(probe)) return raw;
+    const colon = probe.indexOf(':');
+    if (colon === -1) return raw; // 無 scheme 的相對路徑
+    const delim = probe.search(/[/?#]/);
+    if (delim !== -1 && delim < colon) return raw; // ":" 出現在路徑/查詢中，非 scheme
+    return '';
+  };
   const L = String(md || '').replace(/\r\n/g,'\n').split('\n');
   const out = [];
   let i = 0;
@@ -11,7 +24,11 @@ export function markdownToHtml(md) {
     const line = L[i];
     // 圖片
     const img = line.match(/^!\[([^\]]*)\]\(([^\)]+)\)/);
-    if (img) { out.push(`<p><img src="${esc(img[2])}" alt="${esc(img[1])}"></p>`); i++; continue; }
+    if (img) {
+      const src = safeUrl(img[2], { allowDataImage: true });
+      out.push(src ? `<p><img src="${esc(src)}" alt="${esc(img[1])}"></p>` : `<p>${esc(line)}</p>`);
+      i++; continue;
+    }
     // 水平線
     if (/^\s*---+\s*$/.test(line)) { out.push('<hr>'); i++; continue; }
     // 程式碼區塊
@@ -64,7 +81,10 @@ export function markdownToHtml(md) {
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      .replace(/\[(.+?)\]\((.+?)\)/g, (m0, text, href) => {
+        const url = safeUrl(href);
+        return url ? `<a href="${url}" target="_blank" rel="noopener">${text}</a>` : text;
+      });
   }
   function tableMarkdownToHtml(t) {
     const rows = t.trim().split(/\r?\n/).filter(Boolean);
