@@ -1,5 +1,0 @@
-Total messages: 45 (Errors: 0, Warnings: 2)
-Returning 2 messages for level "warning"
-
-[WARNING] [sync] syncNowBtn not found @ http://127.0.0.1:4173/features/sync/sync.js:34
-[WARNING] [sync] syncNowBtn not found @ http://127.0.0.1:4173/features/sync/sync.js:34
