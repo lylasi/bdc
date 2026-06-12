@@ -1,8 +1,7 @@
 # AI配置文件（包含API密钥）
 ai-config.js
 
-# Claude Code生成的上下文文档
-CLAUDE.md
+# Claude Code生成的上下文文档（根目錄 CLAUDE.md 已入庫，不在此列）
 modules/CLAUDE.md
 features/*/CLAUDE.md
 .claude/
@@ -65,6 +64,18 @@ rooveterinaryinc.roo-cline/
 
 # Playwright reports
 playwright-report/
+
+# 開發除錯殘留（瀏覽器測試截圖、console 輸出、頁面快照）
+.playwright-mcp/
+console-*.txt
+playwright-*.txt
+playwright-*.md
+*-snapshot.md
+global-settings-*.png
+page-*.png
+
+# 無 npm 工作流，不追蹤 lockfile
+package-lock.json
 
 # BMAD core files
 .bmad-core/
