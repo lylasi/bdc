@@ -1233,6 +1233,7 @@ const paragraphElapsedMs = Object.create(null);
 // --- Sentence analysis in-flight de-duplication ---
 // 同一句子（在相同上下文）短時間內只發出一個請求，其餘共用同一 promise。
 const _inflightSentenceMap = new Map(); // key: `${sentence}||${context}` -> Promise
+const _analyzedSentenceKeys = new Set(); // 本次會話已完成分析的句子；hover 配對僅限此集合，避免 hover 觸發 AI 請求
 
 function _sentenceKey(sentence, context) {
     return `${sentence}||${context || ''}`;
@@ -1243,6 +1244,7 @@ function analyzeSentenceDedupe(sentence, context = '', opts = {}) {
     const existed = _inflightSentenceMap.get(key);
     if (existed) return existed;
     const p = api.analyzeSentence(sentence, context, opts)
+        .then((data) => { try { _analyzedSentenceKeys.add(key); } catch (_) {} return data; })
         .finally(() => { try { _inflightSentenceMap.delete(key); } catch (_) {} });
     _inflightSentenceMap.set(key, p);
     return p;
@@ -1250,6 +1252,18 @@ function analyzeSentenceDedupe(sentence, context = '', opts = {}) {
 
 // 以 Modal 呈現句子詳解（避免佔據版面與收合誤觸）
 const USE_SENTENCE_MODAL = true;
+
+// 句卡載入中：若中文側已有該句譯文（按句翻譯對齊產生），先顯示譯文再等 AI 詳解
+function sentenceCardLoadingHtml(paraIdx, sentIdx) {
+    let zh = '';
+    try {
+        const el = dom.articleAnalysisContainer.querySelector(`.interactive-sentence-zh[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
+        zh = el ? (el.textContent || '').trim() : '';
+    } catch (_) {}
+    return zh
+      ? `<div style="margin-bottom:4px">${escapeHtml(zh)}</div><div style="font-size:12px;opacity:.8">載入詳解中...</div>`
+      : '<div style="font-size:12px;opacity:.8">載入中...</div>';
+}
 
 // Merge helper: deduplicate detailed_analysis by key (word|sentence)
 function mergeDetailedAnalyses(existing, incoming) {
@@ -1671,7 +1685,15 @@ async function analyzeArticle() {
                     result = { chinese_translation: '', word_alignment: [], detailed_analysis: [] };
                 } else {
                     const textForAI = stripMarkdownImagesFromText(text);
-                    result = await api.analyzeParagraph(textForAI || text, { timeoutMs, signal: currentAnalysisAbort.signal, level: 'quick' });
+                    const baseText = textForAI || text;
+                    // 純文字段落改用按句翻譯：以渲染同款分句器預切，中英句對齊由構造保證
+                    const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
+                    result = await api.analyzeParagraph(baseText, {
+                        timeoutMs,
+                        signal: currentAnalysisAbort.signal,
+                        level: 'quick',
+                        sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
+                    });
                 }
                 if (!cached) paragraphCache.set(text, result);
                 paragraphAnalyses[idx] = result;
@@ -1684,7 +1706,9 @@ async function analyzeArticle() {
             } catch (error) {
                 if (currentAnalysisAbort.signal.aborted) throw error;
                 console.error(`分析第 ${idx + 1} 段時出錯:`, error);
-                paragraphAnalyses[idx] = { chinese_translation: `[第 ${idx + 1} 段分析失敗]`, word_alignment: [], detailed_analysis: [] };
+                // 失敗時不偽造譯文，避免「分析失敗」文案被存入歷史與同步快照；
+                // renderParagraph 對空譯文會顯示失敗狀態與「重試本段」
+                paragraphAnalyses[idx] = { chinese_translation: '', word_alignment: [], detailed_analysis: [], failed: true };
                 lastFailedIndices.push(idx);
                 try { renderParagraph(idx, text, paragraphAnalyses[idx]); } catch(_) {}
             } finally {
@@ -1787,32 +1811,7 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         const englishPara = englishParagraphs[i] || '';
         const chinesePara = stripSpanTags(chineseParagraphs[i] || '');
         
-        let processedEnglish = englishPara;
-        let processedChinese = chinesePara;
-        
-        const paragraphWords = (paragraph_analysis && paragraph_analysis[i]?.detailed_analysis) || [];
-        
-        const wordStartMap = new Map();
-        let cursor = 0;
-        paragraphWords.forEach(item => {
-            const wordRegex = new RegExp(`\\b${escapeRegex(item.word)}\\b`);
-            const match = englishPara.substring(cursor).match(wordRegex);
-            if (match) {
-                item.startIndex = cursor + match.index;
-                wordStartMap.set(item.startIndex, item);
-                cursor = item.startIndex + 1;
-            }
-        });
-        
-        const relevantAlignment = (word_alignment || []).filter(pair => englishPara.includes(pair.en) && chinesePara.includes(pair.zh));
-        const sortedAlignment = [...relevantAlignment].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
-        
-        sortedAlignment.forEach((pair, index) => {
-            if (!pair.en || !pair.zh) return;
-            const pairId = `para-${i}-pair-${index}`;
-            processedEnglish = processedEnglish.replace(new RegExp(`\b(${escapeRegex(pair.en)})\b`, 'g'), `<span class=\"interactive-word\" data-pair-id=\"${pairId}\" data-word=\"${escapeAttr(pair.en)}\">$1</span>`);
-            processedChinese = processedChinese.replace(new RegExp(`(${escapeRegex(pair.zh)})`, 'g'), `<span class=\"interactive-word\" data-pair-id=\"${pairId}\">$1</span>`);
-        });
+        const processedChinese = chinesePara;
 
         // 若是 Markdown 表格段落，直接以表格渲染
         if (isMarkdownTableStart(englishPara)) {
@@ -1851,13 +1850,13 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             const sSorted = [...sAlign].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
             sSorted.forEach((pair) => {
                 const pid = `para-${i}-pair-${sIdx}-${pair.en}-${pair.zh}`.replace(/[^a-zA-Z0-9_-]/g,'_');
-                sHtml = sHtml.replace(new RegExp(`\b(${escapeRegex(pair.en)})\b`, 'g'), `<span class=\"interactive-word\" data-pair-id=\"${pid}\" data-word=\"${escapeAttr(pair.en)}\">$1</span>`);
+                sHtml = sHtml.replace(new RegExp(`\\b(${escapeRegex(pair.en)})\\b`, 'g'), `<span class=\"interactive-word\" data-pair-id=\"${pid}\" data-word=\"${escapeAttr(pair.en)}\">$1</span>`);
             });
             const words = paraWords.filter(w => w.word && sText.includes(w.word)).map(w => w.word);
             Array.from(new Set(words)).forEach(w => {
                 const marker = `data-word=\"${escapeAttr(w)}\"`;
                 if (sHtml.includes(marker)) return;
-                const re = new RegExp(`\b(${escapeRegex(w)})\b`, 'g');
+                const re = new RegExp(`\\b(${escapeRegex(w)})\\b`, 'g');
                 sHtml = sHtml.replace(re, `<span class=\"interactive-word\" data-word=\"${escapeAttr(w)}\">$1</span>`);
             });
             return `<span class=\"sentence-wrap\">` +
@@ -1868,8 +1867,10 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         }).join(' ');
 
         // Chinese sentence wrapping + cleaning
+        // 優先用按句翻譯結果對齊（與英文 sent-index 一一對應）；否則回退中文標點分句
+        const zhAligned = alignedZhSentences(paragraph_analysis && paragraph_analysis[i], sentences);
         const cleanedZh = cleanChinese(stripSpanTags(processedChinese || ''));
-        const zhSentences = sentenceSplitZh(cleanedZh);
+        const zhSentences = zhAligned || sentenceSplitZh(cleanedZh);
         const zhHtml = zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\">${escapeAttr(z)}</span>`).join(' ');
 
         const isTitle = !!title && i === 0;
@@ -2848,10 +2849,20 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
 
 function showArticleWordAnalysis(clickedElement, analysisArray) {
     const wordText = clickedElement.dataset.word || clickedElement.textContent;
-    const wordIndex = parseInt(clickedElement.dataset.wordIndex, 10) || 0;
 
-    const matchingAnalyses = analysisArray.filter(item => item.word && item.word.toLowerCase() === (wordText || '').toLowerCase());
-    let wordAnalysisData = (wordIndex < matchingAnalyses.length) ? matchingAnalyses[wordIndex] : null;
+    // 句子直接取自包裹的 interactive-sentence（渲染時已寫入 data-sentence），
+    // 避免二次分句與子字串匹配造成句子錯配
+    const englishContainer = clickedElement.closest('.paragraph-english');
+    const pairContainer = clickedElement.closest('.paragraph-pair');
+    const paraEnglish = pairContainer ? (pairContainer.getAttribute('data-english') || englishContainer?.textContent || '') : (englishContainer?.textContent || '');
+    const sentenceEl = clickedElement.closest('.interactive-sentence');
+    const sentence = ((sentenceEl && (sentenceEl.getAttribute('data-sentence') || sentenceEl.textContent)) || paraEnglish).trim();
+
+    // 命中查找需同時比對單詞與句子，避免多義詞拿到其他句境的舊解釋
+    const normText = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const wordAnalysisData = analysisArray.find(item => item.word
+        && item.word.toLowerCase() === (wordText || '').toLowerCase()
+        && normText(item.sentence) === normText(sentence)) || null;
 
     const showTooltip = (data, sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText) => {
         const escAttr = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
@@ -2887,31 +2898,18 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
     };
 
     if (wordAnalysisData && wordAnalysisData.analysis) {
-        // build context for phrase button
-        const englishContainer = clickedElement.closest('.paragraph-english');
-        const pairContainer = clickedElement.closest('.paragraph-pair');
-        const paraEnglish = pairContainer ? pairContainer.getAttribute('data-english') || englishContainer?.textContent || '' : englishContainer?.textContent || '';
-        const sentences = (paraEnglish.match(/[^.!?]+[.!?]*/g) || [paraEnglish]);
-        const sentence = sentences.find(s => s.includes(wordText)) || paraEnglish;
         showTooltip(wordAnalysisData, sentence, paraEnglish, wordText);
         return;
     }
 
     // 懶載詳解：僅當點擊英文字時觸發
-    const englishContainer = clickedElement.closest('.paragraph-english');
     if (!englishContainer) {
         showTooltip(null);
         return;
     }
-    const pairContainer = clickedElement.closest('.paragraph-pair');
-    const paraEnglish = pairContainer ? pairContainer.getAttribute('data-english') || englishContainer.textContent : englishContainer.textContent;
-
-    // 找出包含該詞的句子
-    const sentences = paraEnglish.match(/[^.!?]+[.!?]*/g) || [paraEnglish];
-    const sentence = sentences.find(s => s.includes(wordText)) || paraEnglish;
 
     // 去重：避免重覆請求
-    const lazyKey = `${sentence}::${wordText}`;
+    const lazyKey = `${normText(sentence)}::${(wordText || '').toLowerCase()}`;
     if (!showArticleWordAnalysis._lazyCache) showArticleWordAnalysis._lazyCache = new Map();
     if (showArticleWordAnalysis._lazyCache.has(lazyKey)) {
         const data = showArticleWordAnalysis._lazyCache.get(lazyKey);
@@ -2960,7 +2958,15 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         showTooltip(normalized, sentence, paraEnglish, wordText);
     }).catch(err => {
         console.warn('懶載詳解失敗:', err);
-        showTooltip(null);
+        dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>解析失敗。</p></div>
+            <div class="tooltip-actions" style="margin-top:6px;"><button class="btn-ghost btn-mini btn-retry-word">重試</button></div>`;
+        const retryBtn = dom.analysisTooltip.querySelector('.btn-retry-word');
+        if (retryBtn) retryBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            showArticleWordAnalysis(clickedElement, analysisArray);
+        });
+        dom.analysisTooltip.style.display = 'block';
+        ui.repositionTooltip(clickedElement);
     });
 }
 
@@ -2978,6 +2984,9 @@ async function ensureWordPairMapping(wordEl) {
     const sentence = sentenceEl.getAttribute('data-sentence') || sentenceEl.textContent || '';
     const context = paraEl.getAttribute('data-english') || '';
     const sentIdx = parseInt(sentenceEl.getAttribute('data-sent-index'), 10) || 0;
+    // 僅當該句在本次會話已完成分析時才做配對（此時 analyzeSentenceDedupe 會命中快取）；
+    // 否則直接返回，避免 hover 觸發新的 AI 請求擠佔併發隊列
+    if (!_analyzedSentenceKeys.has(_sentenceKey(sentence, context))) return false;
     const key = `${sentence}::${rawWord}`;
     if (_pendingPairKeys.has(key)) return false;
     _pendingPairKeys.add(key);
@@ -3211,7 +3220,7 @@ function renderParagraph(index, englishPara, result) {
                 });
                 htmlParts.push(`<span class=\"sentence-wrap\">` +
                     `<span class=\"interactive-sentence\" data-para-index=\"${index}\" data-sent-index=\"${curIdx}\" data-sentence=\"${esc(s)}\">${sHtml}</span>` +
-                    `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${curIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
+                    `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${curIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
                     `<span class=\"sentence-hotzone\" data-para-index=\"${index}\" data-sent-index=\"${curIdx}\" title=\"展開/收合\"></span>` +
                     `</span>`);
             });
@@ -3296,14 +3305,16 @@ function renderParagraph(index, englishPara, result) {
         });
         htmlParts.push(`<span class=\"sentence-wrap\">` +
             `<span class=\"interactive-sentence\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" data-sentence=\"${esc(s)}\">${sHtml}</span>` +
-            `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
+            `<button class=\"sent-analyze-btn icon-only\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"解析\" aria-label=\"解析\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z\"/></svg></button>` +
             `<span class=\"sentence-hotzone\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\" title=\"展開/收合\"></span>` +
             `</span>`);
     });
 
     englishDiv.innerHTML = htmlParts.join(' ');
     wrapWordsInElementOnce(englishDiv);
-    const zhSentences = sentenceSplitZh(processedChinese || chinese || '');
+    // 優先用按句翻譯結果對齊（與英文 sent-index 一一對應）；否則回退中文標點分句
+    const zhAligned = alignedZhSentences(result, sentences);
+    const zhSentences = zhAligned || sentenceSplitZh(processedChinese || chinese || '');
     const zhHtml = zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\">${esc(z)}</span>`).join(' ');
     const failed = processedChinese ? false : true;
     chineseDiv.innerHTML = (processedChinese ? zhHtml : '<em>分析失敗</em>');
@@ -3369,7 +3380,14 @@ async function retryFailedParagraphs() {
         const idx = indices[pick];
         const text = all[idx];
         try {
-            const result = await api.analyzeParagraph(text, { timeoutMs, signal: currentAnalysisAbort.signal, level });
+            const baseText = stripMarkdownImagesFromText(text) || text;
+            const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
+            const result = await api.analyzeParagraph(baseText, {
+                timeoutMs,
+                signal: currentAnalysisAbort.signal,
+                level,
+                sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
+            });
             renderParagraph(idx, text, result);
             if (Array.isArray(result?.detailed_analysis)) {
                 aggregatedDetails = aggregatedDetails.concat(result.detailed_analysis);
@@ -3425,6 +3443,29 @@ function sentenceSplitZh(text) {
     const re = /[^。！？；;]+[。！？；;]?/g;
     const parts = text.match(re) || [text];
     return parts.map(s => s.trim()).filter(Boolean);
+}
+
+// 純文字段落（無表格/清單/標題/引用/圖片）才適用按句翻譯模式，避免破壞 Markdown 結構
+function isPlainProseParagraph(text) {
+    const t = String(text || '');
+    if (!t.trim()) return false;
+    if (isMarkdownTableStart(t)) return false;
+    const lines = t.split('\n').map(l => l.trim()).filter(Boolean);
+    return !lines.some(l => /^(#{1,6}\s|[-*+]\s|\d+[.)]\s|>\s|\||!\[)/.test(l));
+}
+
+// 若分析結果帶有按句翻譯（sentences: [{en, zh}]）且與本地分句逐句吻合，
+// 返回對齊的中文譯句陣列；否則返回 null（呼叫端回退 sentenceSplitZh）
+function alignedZhSentences(result, localSentences) {
+    const pairs = result && Array.isArray(result.sentences) ? result.sentences : null;
+    if (!pairs || !Array.isArray(localSentences) || pairs.length !== localSentences.length) return null;
+    const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    for (let i = 0; i < pairs.length; i++) {
+        const p = pairs[i];
+        if (!p || typeof p.zh !== 'string' || !p.zh.trim()) return null;
+        if (p.en != null && norm(p.en) !== norm(localSentences[i])) return null;
+    }
+    return pairs.map(p => cleanChinese(p.zh));
 }
 
 function cleanChinese(s) {
@@ -3541,7 +3582,7 @@ async function toggleSentenceCard(sentenceEl) {
         card.style.border = '1px solid #e5e7eb';
         card.style.borderRadius = '6px';
         card.style.background = '#fafafa';
-        card.innerHTML = '<div style="font-size:12px;opacity:.8">載入中...</div>';
+        card.innerHTML = sentenceCardLoadingHtml(paraIdx, sentIdx);
         dom.modalBody.appendChild(card);
 
         // 關閉時清理高亮
@@ -3583,7 +3624,7 @@ async function toggleSentenceCard(sentenceEl) {
     card.style.border = '1px solid #e5e7eb';
     card.style.borderRadius = '6px';
     card.style.background = '#fafafa';
-    card.innerHTML = '<div style="font-size:12px;opacity:.8">載入中...</div>';
+    card.innerHTML = sentenceCardLoadingHtml(paraIdx, sentIdx);
     sentenceEl.after(card);
 
     try {

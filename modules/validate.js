@@ -31,6 +31,13 @@ export function validateArticleAnalysis(obj, level = 'standard') {
   if (!isString(obj.chinese_translation)) return false;
   // word_alignment 可選；存在時需結構正確
   if (obj.word_alignment != null && !validateWordAlignment(obj.word_alignment)) return false;
+  // sentences（按句翻譯）可選；存在時需為 {en, zh} 陣列
+  if (obj.sentences != null) {
+    if (!isArray(obj.sentences)) return false;
+    for (const p of obj.sentences) {
+      if (!isObject(p) || !isString(p.en) || !isString(p.zh)) return false;
+    }
+  }
   // 自 2025-10 起：允許所有等級採用最小輸出（僅翻譯）。
   // 若提供 detailed_analysis，需通過結構校驗；未提供亦視為合法。
   if (obj.detailed_analysis != null) {

@@ -148,6 +148,36 @@ function safeJsonParse(text = '') {
     }
 }
 
+// 純文字後備路徑用：把回應當「純文字答案」，若內容其實是（截斷的）JSON 殘骸則視為無效返回 ''。
+function plainAnswerOrEmpty(raw) {
+    const t = stripCodeFences(raw).trim();
+    if (!t) return '';
+    // 後備請求預期得到純文字翻譯/釋義；若以 { 或 [ 開頭，多半是模型仍在輸出（被截斷的）JSON，不可當答案。
+    if (t.startsWith('{') || t.startsWith('[')) return '';
+    return t;
+}
+
+// 統一從回應抽取主要文字內容。
+// 某些模型（GLM/Qwen/DeepSeek 等）在 content 為空時會把答案放到 reasoning_content/output_text；
+// content 為陣列時（部分多模態端點）合併其文字片段。
+function pickMessageContent(data) {
+    const msg = data?.choices?.[0]?.message || {};
+    const toText = (c) => {
+        if (!c) return '';
+        if (typeof c === 'string') return c;
+        if (Array.isArray(c)) {
+            try { return c.map(x => (typeof x === 'string' ? x : (x?.text || ''))).join('\n'); } catch (_) { return ''; }
+        }
+        return '';
+    };
+    const primary = toText(msg.content).trim();
+    if (primary) return primary;
+    return toText(msg.reasoning_content).trim()
+        || toText(data?.choices?.[0]?.delta?.content).trim()
+        || toText(data?.output_text).trim()
+        || '';
+}
+
 function normalizeParagraphResponse(parsed, fallbackText = '') {
     if (parsed && typeof parsed === 'object') {
         return {
@@ -157,6 +187,23 @@ function normalizeParagraphResponse(parsed, fallbackText = '') {
         };
     }
     return { chinese_translation: firstNonEmptyString(fallbackText), word_alignment: [], detailed_analysis: [] };
+}
+
+// 按句翻譯模式：把模型回應規整為「與輸入句數等長的中文譯句陣列」；不符合則返回 null
+function normalizeSentenceTranslations(parsed, count) {
+    if (!parsed) return null;
+    let arr = null;
+    if (Array.isArray(parsed)) arr = parsed;
+    else if (Array.isArray(parsed.sentences)) arr = parsed.sentences;
+    else if (Array.isArray(parsed.translations)) arr = parsed.translations;
+    if (!arr) return null;
+    const zh = arr.map(item => {
+        if (typeof item === 'string') return item.trim();
+        if (item && typeof item === 'object') return firstNonEmptyString(item.zh, item.translation, item.chinese, typeof item.text === 'string' ? item.text : '').trim();
+        return '';
+    });
+    if (zh.length !== count || zh.some(s => !s)) return null;
+    return zh;
 }
 
 function normalizeSentenceResponse(parsed, fallbackText = '', sentence = '') {
@@ -261,6 +308,10 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
         composed.signal.addEventListener('abort', () => ac.abort(composed.signal.reason), { once: true });
     }
 
+    // reasoning 模型會把「思考」算進 completion 額度，導致 JSON 被砍斷（finish_reason==='length'）。
+    // 用可變的 effectiveMaxTokens，命中截斷時加倍重試一次。
+    let effectiveMaxTokens = (typeof maxTokens === 'number') ? maxTokens : undefined;
+
     const fetchOnce = async () => {
         const s = loadGlobalSettings();
         const sec = loadGlobalSecrets();
@@ -280,7 +331,7 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
             messages,
             temperature
         };
-        if (typeof maxTokens === 'number') body.max_tokens = maxTokens;
+        if (typeof effectiveMaxTokens === 'number') body.max_tokens = effectiveMaxTokens;
         if (responseFormat) {
             body.response_format = typeof responseFormat === 'string' ? { type: responseFormat } : responseFormat;
         }
@@ -315,9 +366,17 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
     const maxRetries = 2;
     let attempt = 0;
     let lastErr = null;
+    let truncationRetried = false;
     while (attempt <= maxRetries) {
         try {
             const json = await fetchOnce();
+            // 截斷偵測：若回應因 max_tokens 被砍斷，且還有額度可加，則加倍重試一次而不是把殘骸往下傳。
+            const finishReason = json?.choices?.[0]?.finish_reason;
+            if (finishReason === 'length' && typeof effectiveMaxTokens === 'number' && !truncationRetried) {
+                truncationRetried = true;
+                effectiveMaxTokens = Math.min(effectiveMaxTokens * 2, 4000);
+                continue; // 不佔用 429/5xx 的重試額度
+            }
             clearTimeout(timer);
             return json;
         } catch (err) {
@@ -363,7 +422,7 @@ export async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTok
         profile
     });
 
-    let content = (data?.choices?.[0]?.message?.content || '').replace(/^```json\n/, '').replace(/\n```$/, '').trim();
+    let content = pickMessageContent(data).replace(/^```json\n/, '').replace(/\n```$/, '').trim();
     try {
         return JSON.parse(content);
     } catch (error) {
@@ -399,7 +458,7 @@ export async function generateExamplesForWord(word, opts = {}) {
     const prompt = (AI_PROMPTS && AI_PROMPTS.learning && AI_PROMPTS.learning.exampleGeneration && AI_PROMPTS.learning.exampleGeneration.template)
       ? applyTemplate(AI_PROMPTS.learning.exampleGeneration.template, { word: w })
       : `請為單詞 "${w}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯（使用香港繁體中文用字），以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
-    return await fetchAIResponse('', prompt, 0.7, { maxTokens: 600, timeoutMs: 20000, taskType: 'exampleGeneration', ...opts });
+    return await fetchAIResponse('', prompt, 0.7, { maxTokens: 900, timeoutMs: 20000, taskType: 'exampleGeneration', ...opts });
 }
 
 /**
@@ -412,7 +471,7 @@ export async function checkUserSentence(word, userSentence, opts = {}) {
     const prompt = (AI_PROMPTS && AI_PROMPTS.learning && AI_PROMPTS.learning.sentenceChecking && AI_PROMPTS.learning.sentenceChecking.template)
       ? applyTemplate(AI_PROMPTS.learning.sentenceChecking.template, { word, userSentence })
       : `請判斷以下這個使用單詞 "${word}" 的句子在語法和用法上是否正確: "${userSentence}"。如果正確，請只回答 "正確"。如果不正確，請詳細指出錯誤並提供一個修改建議，格式為 "不正確。建議：[你的建議]"。並總結錯誤的知識點。`;
-    return await fetchAIResponse('', prompt, 0.5, { maxTokens: 400, timeoutMs: 15000, taskType: 'sentenceChecking', ...opts });
+    return await fetchAIResponse('', prompt, 0.5, { maxTokens: 600, timeoutMs: 15000, taskType: 'sentenceChecking', ...opts });
 }
 
 /**
@@ -422,6 +481,13 @@ export async function checkUserSentence(word, userSentence, opts = {}) {
  */
 export async function analyzeParagraph(paragraph, opts = {}) {
     const { timeoutMs = 45000, signal, level: requestedLevel = 'standard', noCache = false } = opts;
+    // 按句翻譯模式：呼叫端預先用與渲染一致的分句器切好句子傳入，
+    // 模型只需返回等長的中文譯句陣列，對齊由構造保證
+    const sentenceList = Array.isArray(opts.sentences)
+      ? opts.sentences.map(s => String(s || '').trim()).filter(Boolean)
+      : null;
+    const sentenceMode = !!(sentenceList && sentenceList.length);
+    const cacheLevel = sentenceMode ? `${requestedLevel}-sent` : requestedLevel;
     const s = loadGlobalSettings();
     const primaryModel = getPreferredTaskSpec(['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis'], { settings: s });
     const fallbackModel = getPreferredTaskSpec(['articleParagraphTranslationFallback', 'articleAnalysis', 'wordAnalysis'], { settings: s });
@@ -431,7 +497,7 @@ export async function analyzeParagraph(paragraph, opts = {}) {
         for (const modelSpec of candidates) {
             const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getParagraphAnalysisCached(paragraph, requestedLevel, resolved.model);
+                const cached = await cache.getParagraphAnalysisCached(paragraph, cacheLevel, resolved.model);
                 if (cached) return cached;
             } catch (_) {}
         }
@@ -439,15 +505,34 @@ export async function analyzeParagraph(paragraph, opts = {}) {
 
     const instructions = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.instructions)
       || '請將以下英文段落翻譯成香港繁體中文，只返回 JSON。';
-    const prompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.user)
-      ? applyTemplate(AI_PROMPTS.article.paragraph.user, { paragraph, instructions })
-      : `請將以下英文段落翻譯成香港繁體中文，並只返回 JSON 物件。
+    const prompt = sentenceMode
+      ? (() => {
+            const count = sentenceList.length;
+            const numbered = sentenceList.map((sent, i) => `${i + 1}. ${sent}`).join('\n');
+            return (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraphSentences && AI_PROMPTS.article.paragraphSentences.user)
+              ? applyTemplate(AI_PROMPTS.article.paragraphSentences.user, { numbered, count })
+              : `請將下列 ${count} 個已編號的英文句子逐句翻譯成繁體中文，只返回一個 JSON 物件：
+{"sentences":["第1句譯文","第2句譯文"]}
+要求：
+- "sentences" 必須是字串陣列，長度必須等於 ${count}，第 i 個元素是第 i 句的譯文；
+- 不要合併或拆分句子，不要輸出英文原句，不要加編號；
+- 翻譯使用繁體中文，符合香港中文用字（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片），不要廣東話；英文姓名不用翻譯；
+- 只輸出 JSON，不要 markdown code fence，不要任何解釋。
+句子：
+${numbered}`;
+        })()
+      : ((AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.user)
+          ? applyTemplate(AI_PROMPTS.article.paragraph.user, { paragraph, instructions })
+          : `請將以下英文段落翻譯成香港繁體中文，並只返回 JSON 物件。
 允許鍵名：chinese_translation 或 translation。
 不要使用 markdown code fence，不要加解釋。
 段落: """
 ${paragraph}
 """
-${instructions}`;
+${instructions}`);
+    const maxTokens = sentenceMode
+      ? Math.max(800, Math.min(2400, 300 + sentenceList.length * 180))
+      : (requestedLevel === 'quick' ? 800 : 1000);
 
     let lastErr = null;
     for (const modelSpec of candidates) {
@@ -457,16 +542,31 @@ ${instructions}`;
                 model: modelSpec,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.2,
-                maxTokens: requestedLevel === 'quick' ? 500 : 700,
+                maxTokens,
                 timeoutMs,
                 signal,
                 responseFormat: { type: 'json_object' },
                 taskType: 'articleParagraphTranslation'
             });
-            const content = data?.choices?.[0]?.message?.content || '';
-            const parsed = normalizeParagraphResponse(safeJsonParse(content), stripCodeFences(content));
+            const content = pickMessageContent(data);
+            const rawParsed = safeJsonParse(content);
+            // 解析失敗（多為截斷殘骸）直接換下一個模型，不可把原始文字當譯文塞進結果與快取
+            if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
+            let parsed;
+            if (sentenceMode) {
+                const zhArr = normalizeSentenceTranslations(rawParsed, sentenceList.length);
+                if (!zhArr) throw new Error('Sentence-mode schema validation failed');
+                parsed = {
+                    chinese_translation: zhArr.join(''),
+                    sentences: sentenceList.map((en, i) => ({ en, zh: zhArr[i] })),
+                    word_alignment: [],
+                    detailed_analysis: []
+                };
+            } else {
+                parsed = normalizeParagraphResponse(rawParsed, '');
+            }
             if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw new Error('Schema validation failed');
-            try { await cache.setParagraphAnalysisCached(paragraph, requestedLevel, resolved.model, parsed, 14 * 24 * 60 * 60 * 1000); } catch (_) {}
+            try { await cache.setParagraphAnalysisCached(paragraph, cacheLevel, resolved.model, parsed, 14 * 24 * 60 * 60 * 1000); } catch (_) {}
             return parsed;
         } catch (error) {
             lastErr = error;
@@ -483,13 +583,13 @@ ${paragraph}`;
             model: fallbackModelSpec,
             messages: [{ role: 'user', content: fbPrompt }],
             temperature: 0.2,
-            maxTokens: 450,
+            maxTokens: 700,
             timeoutMs,
             signal,
             taskType: 'articleParagraphTranslation'
         });
-        const raw = fb?.choices?.[0]?.message?.content || '';
-        const parsed = normalizeParagraphResponse(safeJsonParse(raw), stripCodeFences(raw));
+        const raw = pickMessageContent(fb);
+        const parsed = normalizeParagraphResponse(safeJsonParse(raw), plainAnswerOrEmpty(raw));
         if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw lastErr || new Error('Paragraph fallback failed');
         return parsed;
     } catch (_) {
@@ -529,14 +629,17 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
                 model: modelSpec,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.2,
-                maxTokens: 280,
+                maxTokens: 520,
                 timeoutMs,
                 signal,
                 responseFormat: { type: 'json_object' },
                 taskType: 'articleWordTranslation'
             });
-            const raw = data?.choices?.[0]?.message?.content || '';
-            const parsed = normalizeWordInSentenceResponse(safeJsonParse(raw), stripCodeFences(raw), word, sentence);
+            const raw = pickMessageContent(data);
+            const rawParsed = safeJsonParse(raw);
+            // 解析失敗（多為截斷殘骸）直接換下一個模型，避免把原始 JSON 字串塞進「意思」並寫入快取
+            if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
+            const parsed = normalizeWordInSentenceResponse(rawParsed, '', word, sentence);
             if (!validate.validateWordInSentence(parsed)) throw new Error('Schema validation failed');
             try { await cache.setWordAnalysisCached(word, sentence, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000); } catch (_) {}
             return parsed;
@@ -553,14 +656,14 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
 詞: ${word}
 句: ${sentence}` }],
             temperature: 0.2,
-            maxTokens: 120,
+            maxTokens: 200,
             timeoutMs,
             signal,
             taskType: 'articleWordTranslation'
         });
-        const raw = fb?.choices?.[0]?.message?.content || '';
-        const parsed = normalizeWordInSentenceResponse(null, stripCodeFences(raw), word, sentence);
-        if (!validate.validateWordInSentence(parsed)) throw lastErr || new Error('Word fallback failed');
+        const raw = pickMessageContent(fb);
+        const parsed = normalizeWordInSentenceResponse(null, plainAnswerOrEmpty(raw), word, sentence);
+        if (!validate.validateWordInSentence(parsed) || !parsed.analysis.meaning) throw lastErr || new Error('Word fallback failed');
         return parsed;
     } catch (_) {
         if (lastErr) throw lastErr;
@@ -616,15 +719,18 @@ ${keyPointRule}`);
                 model: modelSpec,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.2,
-                maxTokens: includeStructure ? 650 : 380,
+                maxTokens: includeStructure ? 1100 : 700,
                 timeoutMs,
                 signal,
                 responseFormat: { type: 'json_object' },
                 taskType: 'articleSentenceTranslation'
             });
-            const raw = data?.choices?.[0]?.message?.content || '';
-            const parsed = normalizeSentenceResponse(safeJsonParse(raw), stripCodeFences(raw), sentence);
-            if (!validate.validateSentenceAnalysis(parsed)) throw new Error('Schema validation failed');
+            const raw = pickMessageContent(data);
+            const rawParsed = safeJsonParse(raw);
+            // 解析失敗（多為截斷殘骸）直接換下一個模型，避免把原始 JSON 字串當成譯文顯示與快取
+            if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
+            const parsed = normalizeSentenceResponse(rawParsed, '', sentence);
+            if (!validate.validateSentenceAnalysis(parsed) || !parsed.translation) throw new Error('Schema validation failed');
             try { await cache.setSentenceAnalysisCached(sentence, contextHash, resolved.model, parsed, 21 * 24 * 60 * 60 * 1000); } catch (_) {}
             return parsed;
         } catch (error) {
@@ -642,14 +748,14 @@ ${sentence}`;
             model: fallbackModelSpec,
             messages: [{ role: 'user', content: fbPrompt }],
             temperature: 0.2,
-            maxTokens: 260,
+            maxTokens: 400,
             timeoutMs,
             signal,
             taskType: 'articleSentenceTranslation'
         });
-        const raw = fb?.choices?.[0]?.message?.content || '';
-        const parsed = normalizeSentenceResponse(safeJsonParse(raw), stripCodeFences(raw), sentence);
-        if (!validate.validateSentenceAnalysis(parsed)) throw lastErr || new Error('Sentence fallback failed');
+        const raw = pickMessageContent(fb);
+        const parsed = normalizeSentenceResponse(safeJsonParse(raw), plainAnswerOrEmpty(raw), sentence);
+        if (!validate.validateSentenceAnalysis(parsed) || !parsed.translation) throw lastErr || new Error('Sentence fallback failed');
         return parsed;
     } catch (_) {
         if (lastErr) throw lastErr;
@@ -691,14 +797,17 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
                 model: modelSpec,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.2,
-                maxTokens: 260,
+                maxTokens: 520,
                 timeoutMs,
                 signal,
                 responseFormat: { type: 'json_object' },
                 taskType: 'articlePhraseTranslation'
             });
-            const raw = data?.choices?.[0]?.message?.content || '';
-            const parsed = normalizeSelectionResponse(safeJsonParse(raw), stripCodeFences(raw), selection, sentence);
+            const raw = pickMessageContent(data);
+            const rawParsed = safeJsonParse(raw);
+            // 解析失敗（多為截斷殘骸）直接換下一個模型，避免把原始 JSON 字串當成釋義顯示與快取
+            if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
+            const parsed = normalizeSelectionResponse(rawParsed, '', selection, sentence);
             if (!validate.validateSelectionAnalysis(parsed)) throw new Error('Schema validation failed');
             try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000); } catch (_) {}
             return parsed;
@@ -715,14 +824,14 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
 片語: ${selection}
 句子: ${sentence}` }],
             temperature: 0.2,
-            maxTokens: 140,
+            maxTokens: 220,
             timeoutMs,
             signal,
             taskType: 'articlePhraseTranslation'
         });
-        const raw = fb?.choices?.[0]?.message?.content || '';
-        const parsed = normalizeSelectionResponse(null, stripCodeFences(raw), selection, sentence);
-        if (!validate.validateSelectionAnalysis(parsed)) throw lastErr || new Error('Phrase fallback failed');
+        const raw = pickMessageContent(fb);
+        const parsed = normalizeSelectionResponse(null, plainAnswerOrEmpty(raw), selection, sentence);
+        if (!validate.validateSelectionAnalysis(parsed) || !parsed.analysis.meaning) throw lastErr || new Error('Phrase fallback failed');
         return parsed;
     } catch (_) {
         if (lastErr) throw lastErr;

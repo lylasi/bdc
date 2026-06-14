@@ -113,6 +113,10 @@ export const AI_PROMPTS = {
       user: '請對以下英文段落進行分析並返回嚴格有效的 JSON（不允許代碼塊或額外解釋）：\n\n段落: """\n${paragraph}\n"""\n\n${instructions}',
       fallback: '只返回 JSON：{"chinese_translation":"..."}\n請使用繁體中文符合香港中文習慣，不要廣東話。\n段落:"""\n${paragraph}\n"""'
     },
+    // 按句翻譯（純文字段落優先使用）：前端預先分句並編號，模型返回等長的中文譯句陣列
+    paragraphSentences: {
+      user: '請將下列 ${count} 個已編號的英文句子逐句翻譯成繁體中文，只返回一個 JSON 物件：\n{"sentences":["第1句譯文","第2句譯文"]}\n要求：\n- "sentences" 必須是字串陣列，長度必須等於 ${count}，第 i 個元素是第 i 句的譯文；\n- 不要合併或拆分句子，不要輸出英文原句，不要加編號；\n- 翻譯使用繁體中文，符合香港中文用字（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片），不要廣東話；英文姓名不用翻譯；\n- 只輸出 JSON，不要 markdown code fence，不要任何解釋。\n句子：\n${numbered}'
+    },
     sentence: {
       withStructure: '對下列英文句子進行分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  "sentence":"...",\n  "translation":"...",\n  "phrase_alignment":[{"en":"...","zh":"..."}],\n  "chunks":[{"text":"...","role":"...","note":"..."}],\n  "key_points":["..."]\n}\n${keyPointRule}',
       concise: '僅對下列英文句子進行精簡分析，返回嚴格 JSON：\n${basePrompt}\n只返回：{\n  "sentence":"...",\n  "translation":"...",\n  "key_points":["..."]\n}\n${keyPointRule}',
