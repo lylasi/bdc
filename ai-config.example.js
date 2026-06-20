@@ -239,6 +239,14 @@ export const SUPABASE = {
   anonKey: ''
 };
 
+// 同步後端（Cloudflare D1 + Worker）設定（示例）
+// - endpoint：部署 cloudflare-worker/ 後得到的 Worker 網址，例如：
+//   'https://bdc-sync-api.YOUR-SUBDOMAIN.workers.dev'
+// - 通行碼不放這裡；由使用者登入時輸入，僅存於瀏覽器本機。
+export const SYNC = {
+  endpoint: ''
+};
+
 // AI 助手（聊天）模型清單（示例）
 // - 可用：純字串、'provider:model'、或 { provider, model }
 export const ASSISTANT = {
@@ -261,6 +269,7 @@ const __DEFAULT__ = {
   QA_CHECK,
   OCR_CONFIG,
   ARTICLE_IMPORT,
-  SUPABASE
+  SUPABASE,
+  SYNC
 };
 export default __DEFAULT__;
