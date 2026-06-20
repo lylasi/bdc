@@ -1,0 +1,15 @@
+name = "bdc-sync-api"
+main = "src/worker.js"
+compatibility_date = "2026-01-01"
+
+# CORS 允許的前端網域。先用 "*" 可跑；建議改成你的網站網域，例如：
+#   ALLOW_ORIGIN = "https://your-site.pages.dev"
+[vars]
+ALLOW_ORIGIN = "*"
+
+# 執行 `wrangler d1 create bdc-sync` 後，把回傳的 database_id 填到下方。
+# 注意：請複製本檔為 wrangler.toml 再填入，wrangler.toml 已被 .gitignore 忽略，不會上傳。
+[[d1_databases]]
+binding = "DB"
+database_name = "bdc-sync"
+database_id = "PUT-YOUR-D1-DATABASE-ID-HERE"

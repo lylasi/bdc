@@ -82,3 +82,7 @@ package-lock.json
 
 # Web bundles
 web-bundles/
+
+# Cloudflare Worker 本機設定與快取（含 database_id、帳號資訊，勿上傳；改用 wrangler.toml.example）
+cloudflare-worker/wrangler.toml
+cloudflare-worker/.wrangler/
