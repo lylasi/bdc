@@ -57,6 +57,33 @@ export const AI_TASKS = {
 // 相容舊名稱
 export const AI_MODELS = AI_TASKS;
 
+// AI 請求節流 / 併發控制（前端佇列）
+// 用途：modules/api.js 會依「任務類型」把請求分流到各自的佇列，避免短時間湧出大量
+//       請求而觸發服務商限流（HTTP 429）。每個任務一條獨立佇列（佇列鍵 = 端點 +
+//       provider + 模型 + 任務），彼此互不影響。
+// 欄位：
+//   - maxConcurrency：該佇列「同時在途」的最大請求數。調高 → 更快，但更易被限流。
+//   - minIntervalMs ：同佇列中相鄰兩次請求「啟動」的最小間隔（毫秒），等同每秒最多
+//                     發出 1000 / minIntervalMs 個請求。調大 → 更溫和、更不易 429。
+// 規則：
+//   - default 為總後備；任何未列在下方的任務都套用 default。
+//   - 個別任務可只覆寫其中一個欄位，未填者沿用 default。
+//   - 鍵名必須對應 AI_TASKS 的任務名稱（如 articleWordTranslation）才會生效。
+// 為何只有文章翻譯類另設：文章詳解會「逐段／逐句／逐詞／逐片語」拆成大量小請求，
+//   其中逐詞、逐片語數量最多，故併發壓到 1、間隔加大，最不易觸發限流。
+export const AI_LIMITS = {
+  // 全域後備：未單獨設定的任務都用這組（最多 2 併發、每次至少間隔 150ms）
+  default: { maxConcurrency: 2, minIntervalMs: 150 },
+  // 文章「逐段」翻譯：請求數中等，2 併發、間隔 500ms
+  articleParagraphTranslation: { maxConcurrency: 2, minIntervalMs: 500 },
+  // 文章「逐句」翻譯：請求較多，2 併發、間隔 250ms
+  articleSentenceTranslation: { maxConcurrency: 2, minIntervalMs: 250 },
+  // 文章「逐詞」翻譯：請求最多，限 1 併發、間隔 300ms
+  articleWordTranslation: { maxConcurrency: 1, minIntervalMs: 300 },
+  // 文章「逐片語」翻譯：同上，1 併發、間隔 350ms
+  articlePhraseTranslation: { maxConcurrency: 1, minIntervalMs: 350 }
+};
+
 // 集中管理的提示詞模板（示例）
 // - 使用 ${name} 作為變數佔位，程式端會帶入對應值
 export const AI_PROMPTS = {
@@ -162,9 +189,27 @@ if (!AI_MODELS.answerChecking) {
   AI_MODELS.answerChecking = AI_MODELS.qaChecking || AI_MODELS.sentenceChecking || 'gpt-4.1-mini';
 }
 
+// Email 發送配置（可選；目前為預留設定，尚未被任何模組讀取）
+// - mode: 'mailto'（預設，開啟本機郵件用戶端）、'webhook'（自建 API）、'emailjs'（需 EmailJS 公鑰）
+// - defaultTo：預設收件人
+export const EMAIL = {
+  mode: 'mailto',
+  defaultTo: '',
+  webhook: { url: '', method: 'POST', headers: {} },
+  emailjs: { publicKey: '', serviceId: '', templateId: '' }
+};
+
 // 文本轉語音（示例）
+// - 支援「遠端 / 本機」雙來源：use 決定預設使用哪一個，使用者也可在「全域設定」中切換。
+//   baseUrl 為舊欄位，僅在未提供 baseUrlRemote 時作為後備（向後相容）。
 export const TTS_CONFIG = {
   baseUrl: 'https://your-tts.example.com',
+  // 遠端 TTS 端點（對外網址）；未填則回退到 baseUrl
+  baseUrlRemote: 'https://your-tts.example.com',
+  // 本機 / 區網 TTS 端點（例如自架服務）；可留空
+  baseUrlLocal: 'http://localhost:8888',
+  // 預設使用哪個來源：'remote'（遠端）或 'local'（本機）
+  use: 'remote',
   // 可選：提供一個可查詢可用音色/模型清單的端點（例如 /voices）
   voicesUrl: 'https://your-tts.example.com/voices',
   apiKey: '',
@@ -184,12 +229,15 @@ export const QA_CHECK = {
   API_URL: undefined,
   API_KEY: undefined,
   MODEL: AI_TASKS.qaChecking,
+  // 可選模型清單（供 UI 下拉選擇使用）
+  MODELS: [ 'gpt-4.1-mini', 'gpt-4.1-nano' ],
   DEFAULT_MODEL: AI_TASKS.qaChecking,
   temperature: 0.2,
   maxTokens: 1500,
   timeoutMs: 30000,   // 單題逾時（毫秒）
   concurrent: true,   // 整批校對時是否並行
-  includeAnalysis: true // 是否回傳錯誤分類分析
+  includeAnalysis: true, // 是否回傳錯誤分類分析
+  cache: false        // 是否使用本地快取（預設關閉，避免取到舊結果）
 };
 
 // 影像識別（OCR）專用覆蓋（示例）
@@ -207,7 +255,9 @@ export const OCR_CONFIG = {
   ],
   DEFAULT_MODEL: AI_TASKS.imageOCR,
   maxTokens: 1500,
-  timeoutMs: 45000
+  timeoutMs: 45000,
+  // 批量 OCR 時一次最多同時處理幾張圖片；未設定時程式預設為 5
+  maxConcurrency: 3
 };
 
 // 文章導入與 AI 清洗（新增）
@@ -220,6 +270,15 @@ export const ARTICLE_IMPORT = {
   API_KEY: undefined,
   // 可選：你自己的 HTML 代理服務（例如 Cloudflare Worker），避免 CORS；格式例：'https://your-worker.example/fetch?url='
   PROXY_URL: undefined,
+  // 可選：Worker 的正文抽取端點（優先於 PROXY_URL 用於擷取正文）；格式例：'https://your-worker.example/extract?url='
+  EXTRACT_URL: undefined,
+  // 可選：Worker 的新聞 Feed 聚合端點；設定後「新聞」分頁才能拉取來源與文章列表
+  FEED_URL: undefined,
+  // 可選：新聞來源清單（當 FEED_URL 未回傳來源時的後備）；每項格式：{ id, label }
+  SOURCES: [
+    // { id: 'guardian', label: 'The Guardian US' },
+    // { id: 'techcrunch', label: 'TechCrunch' }
+  ],
   // 模型：可用 'provider:model'、物件或純字串（走全域）
   MODEL: AI_TASKS.articleCleanup,
   MODELS: [ 'gpt-4.1-mini', 'gpt-4o-mini' ],
@@ -263,6 +322,7 @@ const __DEFAULT__ = {
   AI_TASKS,
   AI_PROFILES,
   AI_MODELS,
+  AI_LIMITS,
   AI_PROMPTS,
   ASSISTANT,
   TTS_CONFIG,
