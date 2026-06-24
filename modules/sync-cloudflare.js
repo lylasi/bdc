@@ -10,7 +10,32 @@ import { lwwMerge } from './sync-core.js';
 const TOKEN_KEY = 'sync_token';
 const USER_ID_KEY = 'sync_user_id';
 const LABEL_KEY = 'sync_label';
-const POLL_MS = 45000; // 輪詢間隔（取代 realtime）
+
+// 向伺服器確認更新的預設參數（可由 ai-config.js 的 SYNC.poll 覆寫；各欄位用途見 ai-config.example.js）
+// baseMs：正常檢查間隔；maxMs：沒操作時自動拉長到的最慢間隔；
+// pauseWhenHidden：切到背景分頁就停止檢查；pollOnFocus：回到頁面立刻檢查一次
+const DEFAULT_POLL = { baseMs: 90000, maxMs: 300000, pauseWhenHidden: true, pollOnFocus: true };
+
+function toInt(v, dflt) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n > 0 ? n : dflt;
+}
+
+function getPollConfig() {
+  const p = (SYNC && SYNC.poll) || {};
+  const baseMs = Math.max(5000, toInt(p.baseMs, DEFAULT_POLL.baseMs));
+  const maxMs = Math.max(baseMs, toInt(p.maxMs, DEFAULT_POLL.maxMs));
+  return {
+    baseMs,
+    maxMs,
+    pauseWhenHidden: p.pauseWhenHidden !== false,
+    pollOnFocus: p.pollOnFocus !== false,
+  };
+}
+
+function isHidden() {
+  try { return typeof document !== 'undefined' && document.hidden === true; } catch (_) { return false; }
+}
 
 function getEndpoint() {
   const url = (SYNC && SYNC.endpoint) ? String(SYNC.endpoint) : '';
@@ -226,14 +251,40 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
   }
 }
 
-// --- 輪詢取代 realtime 訂閱 ---
+// --- 定時向伺服器確認其他裝置有沒有更新（取代 realtime 訂閱）---
 // 介面對齊 supabase 版：傳入 (userId, onChange)，回傳可被 unsubscribeChannel 停止的 handle
+// 行為：
+//   - 切到背景分頁（document.hidden）時停止確認；回到前景立刻確認一次。
+//   - 在前景但一直沒有操作時，間隔會從 baseMs 逐次加倍、最長到 maxMs，藉此少送請求。
+//   - 一旦發現遠端有更新、或本機剛改過資料，間隔就馬上恢復成最短的 baseMs。
 export function subscribeSnapshotChanges(userId, onChange) {
+  const cfg = getPollConfig();
   let stopped = false;
   let timer = null;
+  let inFlight = false;
+  let curInterval = cfg.baseMs;
 
-  const tick = async () => {
+  const clearTimer = () => { if (timer) { clearTimeout(timer); timer = null; } };
+
+  const schedule = (ms) => {
+    clearTimer();
     if (stopped) return;
+    if (cfg.pauseWhenHidden && isHidden()) return; // 切到背景就不再安排下一次檢查
+    timer = setTimeout(tick, Math.max(0, ms));
+  };
+
+  // 把間隔縮回最短的 baseMs；pollNow 為 true 時立刻檢查一次，否則等一個 baseMs 後再檢查
+  const resetToBase = (pollNow) => {
+    curInterval = cfg.baseMs;
+    schedule(pollNow ? 0 : curInterval);
+  };
+
+  async function tick() {
+    timer = null;
+    if (stopped || inFlight) return;
+    if (cfg.pauseWhenHidden && isHidden()) return; // 保險：背景不發請求
+    inFlight = true;
+    let changed = false;
     try {
       const res = await apiFetch('/version', { method: 'GET' });
       if (res.ok) {
@@ -241,20 +292,44 @@ export function subscribeSnapshotChanges(userId, onChange) {
         const remoteVer = data && typeof data.version === 'number' ? data.version : 0;
         const localVer = parseInt(localStorage.getItem('lastSnapshotVersion') || '0', 10) || 0;
         if (remoteVer > localVer) {
+          changed = true;
           try { onChange && onChange({ eventType: 'poll', version: remoteVer }); } catch (_) {}
         }
       }
     } catch (_) {
       // 網路抖動忽略，下一輪再試
+    } finally {
+      inFlight = false;
     }
-    if (!stopped) timer = setTimeout(tick, POLL_MS);
+    if (stopped) return;
+    // 有更新就把間隔縮回最短的 baseMs；沒更新就把間隔加倍（最長到 maxMs），藉此少送請求
+    curInterval = changed ? cfg.baseMs : Math.min(cfg.maxMs, curInterval * 2);
+    schedule(curInterval);
+  }
+
+  // 本機剛改過資料：代表使用者正在操作，把間隔縮回最短的 baseMs（不立刻送請求，上行交給既有 push 路徑）
+  const onLocalChange = () => { if (!stopped) resetToBase(false); };
+  // 切換分頁／視窗焦點：切到背景就停止，回到前景就立刻確認一次並把間隔縮回最短
+  const onVisible = () => {
+    if (stopped) return;
+    if (isHidden()) { clearTimer(); return; }
+    resetToBase(cfg.pollOnFocus);
   };
 
-  timer = setTimeout(tick, POLL_MS);
+  try { window.addEventListener('bdc:data-changed', onLocalChange); } catch (_) {}
+  try { document.addEventListener('visibilitychange', onVisible); } catch (_) {}
+  try { if (cfg.pollOnFocus) window.addEventListener('focus', onVisible); } catch (_) {}
+
+  // 起始：可見則照 base 排程，背景則等回前景再啟動
+  schedule(curInterval);
+
   return {
     stop() {
       stopped = true;
-      if (timer) { clearTimeout(timer); timer = null; }
+      clearTimer();
+      try { window.removeEventListener('bdc:data-changed', onLocalChange); } catch (_) {}
+      try { document.removeEventListener('visibilitychange', onVisible); } catch (_) {}
+      try { window.removeEventListener('focus', onVisible); } catch (_) {}
     }
   };
 }
