@@ -1485,6 +1485,8 @@ function showBackupRestoreModal() {
       <div class="auth-actions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <button id="bk-close" class="btn-secondary">關閉</button>
         <button id="bk-create" class="btn-primary">建立新備份</button>
+        <input id="bk-import" type="file" accept="application/json,.json" style="display:none">
+        <button id="bk-import-btn" class="btn-secondary">匯入備份檔</button>
         <button id="bk-clear-cache" class="btn-tertiary">清理本機快取</button>
       </div>
       <div id="bk-msg" class="auth-msg"></div>
@@ -1495,6 +1497,34 @@ function showBackupRestoreModal() {
   $('#bk-create').onclick = async () => {
     const msg = $('#bk-msg');
     try { await backup.createBackup('manual'); msg.textContent = '已建立備份'; setTimeout(()=> showBackupRestoreModal(), 300); } catch (e) { msg.textContent = '建立備份失敗：' + (e?.message||''); }
+  };
+  // 從檔案匯入備份：先存入本機備份列表（標記手動，不會被自動裁剪），再由使用者點「還原」套用
+  const bkImport = $('#bk-import');
+  $('#bk-import-btn').onclick = () => { try { if (bkImport) bkImport.value = ''; } catch(_) {} try { bkImport && bkImport.click(); } catch(_) {} };
+  if (bkImport) bkImport.onchange = () => {
+    const msg = $('#bk-msg');
+    const file = bkImport.files && bkImport.files[0];
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) { msg.textContent = '檔案過大（>25MB），請確認是否為備份檔'; return; }
+    const reader = new FileReader();
+    reader.onerror = () => { msg.textContent = '讀取檔案失敗'; };
+    reader.onload = () => {
+      let parsed;
+      try { parsed = JSON.parse(String(reader.result || '')); }
+      catch (_) { msg.textContent = '匯入失敗：檔案不是有效的 JSON'; return; }
+      // 相容三種格式：原始 payload / 完整快照 {payload} / 備份包 {ts,note,payload}
+      const payload = (parsed && typeof parsed === 'object' && parsed.payload && typeof parsed.payload === 'object')
+        ? parsed.payload : parsed;
+      const KNOWN = ['userSettings', 'dictation', 'vocabulary', 'articles', 'qa', 'assistant'];
+      const ok = payload && typeof payload === 'object'
+        && KNOWN.some(k => payload[k] && typeof payload[k] === 'object');
+      if (!ok) { msg.textContent = '檔案格式不符，找不到可還原的備份資料'; return; }
+      const res = backup.saveBackupPayload(payload, '手動·檔案匯入');
+      if (res && res.error) { msg.textContent = '匯入失敗：' + (res.error?.message || '無法寫入本機儲存'); return; }
+      try { ui.displayMessage('已匯入備份，請於列表點「還原」套用到本機', 'success'); } catch(_) {}
+      showBackupRestoreModal();
+    };
+    reader.readAsText(file);
   };
   $('#bk-clear-cache').onclick = async () => {
     const msg = $('#bk-msg');
