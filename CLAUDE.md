@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 語言與現況
 
-- 本專案文件與介面文案以繁體中文為主。
+- 本專案文件以繁體中文為主；介面支援大陸簡體中文（`zh-CN`，預設）與香港繁體中文（`zh-HK`）。
 - 這是一個純前端靜態 SPA，沒有 bundler，也沒有既定的 npm scripts 工作流。
 - `main.js` 已取代舊版 `app.js` 作為唯一初始化入口；`PLAN.md` 主要是歷史重構紀錄。
 
@@ -160,8 +160,21 @@ node scripts/extract-5a-readings.js
 - 先延用既有模組邊界；新增共享邏輯前先檢查 `modules/` 是否已有相近職責。
 - 新增 DOM 參照時，優先擴充 `modules/dom.js`。
 - 跨模組共享狀態優先放 `modules/state.js`，或透過既有同步 / 自訂事件機制傳遞。
-- 使用者可見文字預設採繁體中文。
+- 使用者可見文字必須同時支援大陸簡體中文與香港繁體中文，預設介面為 `zh-CN`。
 - `features/` 下的功能模組應維持 `init*` 入口模式，讓 `main.js` 能統一初始化。
+
+## UI 雙語開發規範（強制）
+
+- 新增功能或調整現有功能時，只要涉及 UI 層的使用者可見文字，就必須同時完成 `zh-CN` 與 `zh-HK` 文案。
+- 功能邏輯只維護一套，不得為簡體及繁體複製兩套功能程式碼。
+- 靜態 HTML 使用 `data-i18n`、`data-i18n-title`、`data-i18n-placeholder`、`data-i18n-aria-label` 等屬性。
+- JavaScript 動態產生的按鈕、彈窗、Tooltip、提示、載入狀態、完成狀態、錯誤訊息、空狀態及輔助功能文字必須使用 `t('...')`，禁止硬編碼簡體或繁體中文。
+- 每個新翻譯鍵必須同時加入 `locales/zh-CN.js` 及 `locales/zh-HK.js`，兩份字典的鍵集合及插值參數必須一致。
+- 香港繁體使用香港正式書面中文及香港常用詞，不使用台灣慣用詞，也不預設使用粵語口語。
+- 切換介面語言不得轉換詞書、教材、文章原文、OCR 原文、QA 內容、使用者輸入或歷史訊息。
+- AI 任務模板及 schema 只維護一套，透過 `modules/prompts/language-rules.js` 按目前 locale 注入輸出語言規則，不要複製兩套完整提示詞。
+- UI 修改完成後，必須分別以 `zh-CN` 及 `zh-HK` 驗證完整互動流程，尤其是非同步載入、成功、失敗、重試及動態 DOM 路徑。
+- 詳細規則及 Code Review 檢查清單見 `docs/spec/20260712202038506_UI雙語開發與維護規範.md`。
 
 ## 驗證重點
 
@@ -182,6 +195,7 @@ node scripts/extract-5a-readings.js
 - `README.md`：最新專案摘要與啟動方式
 - `AGENTS.md`：給所有 AI 代理的共用規則
 - `SNOW.md`：開發者導向的高階摘要
+- `docs/spec/20260712202038506_UI雙語開發與維護規範.md`：新增或修改 UI 時必須遵守的簡體／香港繁體開發規範
 - `docs/prd.md`：QA 模組產品需求
 - `@docs/storage-architecture.md`：本地資料鍵名、TTL、快取與資料生命週期
 - `@docs/sync-overview.md`、`@docs/sync-supabase-design.md`：同步設計脈絡

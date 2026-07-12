@@ -12,6 +12,8 @@ import { requestAI, resolveAIRequestConfig, resolveAITaskSpec } from '../../modu
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 import * as cache from '../../modules/cache.js';
 import { markdownToHtml } from '../../modules/markdown.js';
+import { getLocale, t } from '../../modules/i18n.js';
+import { buildPrompt } from '../../modules/prompts/index.js';
 
 const LS_KEY = 'assistantConversations'; // legacy（含所有訊息）
 const LS_UPDATED_AT = 'assistantUpdatedAt';
@@ -45,6 +47,13 @@ export function initAiAssistant() {
   mountUi();
   setupVisibilityLogic();
   exposeGlobalAPI();
+  document.addEventListener('bdc:locale-change', () => {
+    document.getElementById('assistant-history-panel')?.remove();
+    document.getElementById('assistant-panel')?.remove();
+    document.getElementById('assistant-fab')?.remove();
+    mountUi();
+    setupVisibilityLogic();
+  });
 }
 
 function mountUi() {
@@ -53,8 +62,8 @@ function mountUi() {
   fab.id = 'assistant-fab';
   fab.className = 'assistant-fab';
   fab.type = 'button';
-  fab.title = 'AI 助手';
-  fab.setAttribute('aria-label', 'AI 助手');
+  fab.title = t('assistant.title');
+  fab.setAttribute('aria-label', t('assistant.title'));
   fab.innerHTML = svgChat();
   document.body.appendChild(fab);
 
@@ -107,40 +116,40 @@ function setupVisibilityLogic() {
 function renderPanelHtml() {
   const selection = getAssistantModelSelection();
   const toSelect = stringifyModelSpec(selection.value);
-  const placeholder = selection.disabled ? '請先到全局設定配置 provider 與模型' : '';
-  const selectHtml = `<label class="assistant-switch" style="gap:6px;">模型：
+  const placeholder = selection.disabled ? t('assistant.configureModel') : '';
+  const selectHtml = `<label class="assistant-switch" style="gap:6px;">${t('assistant.model')}
     <select id="assistant-model-select" ${selection.disabled ? 'disabled' : ''} title="${escapeHtml(selection.disabled ? placeholder : '')}" style="border:1px solid #d1d5db;border-radius:8px;padding:4px 6px;background:#fff;color:#334155;${selection.disabled ? 'opacity:.65;cursor:not-allowed;' : ''}">
       ${selection.options.map(option => `<option value="${escapeHtml(option.value)}" ${option.value === toSelect ? 'selected' : ''}>${escapeHtml(option.label || option.value)}</option>`).join('')}
     </select>
   </label>`;
   const title = extractArticleTitle();
-  const headerTitle = isGlobalArticle() ? '全局' : (title || '文章');
+  const headerTitle = isGlobalArticle() ? t('assistant.global') : (title || t('assistant.article'));
   return `
     <div class="assistant-head">
-      <div class="assistant-title"><div class="assistant-article">AI 助手 · <span id="assistant-article-title">${escapeHtml(headerTitle)}</span></div><div id="assistant-session-label" class="assistant-session"></div></div>
+      <div class="assistant-title"><div class="assistant-article">${t('assistant.title')} · <span id="assistant-article-title">${escapeHtml(headerTitle)}</span></div><div id="assistant-session-label" class="assistant-session"></div></div>
       <div class="assistant-actions">
-        <button class="assistant-icon" id="assistant-small" title="小視窗（右下角）">${svgSmall()}</button>
-        <button class="assistant-icon" id="assistant-dock" title="靠右全高">${svgPin()}</button>
-        <button class="assistant-icon" id="assistant-modal" title="居中大視窗">${svgMax()}</button>
+        <button class="assistant-icon" id="assistant-small" title="${t('assistant.smallWindow')}">${svgSmall()}</button>
+        <button class="assistant-icon" id="assistant-dock" title="${t('assistant.dockRight')}">${svgPin()}</button>
+        <button class="assistant-icon" id="assistant-modal" title="${t('assistant.largeWindow')}">${svgMax()}</button>
         <span class="assistant-divider"></span>
-        <button class="assistant-icon" id="assistant-new" title="新建會話">${svgPlus()}</button>
-        <button class="assistant-icon" id="assistant-history" title="查看會話">${svgList()}</button>
-        <button class="assistant-icon" id="assistant-refresh" title="刷新上下文">${svgRefresh()}</button>
-        <button class="assistant-icon" id="assistant-close" title="關閉">${svgClose()}</button>
+        <button class="assistant-icon" id="assistant-new" title="${t('assistant.newSession')}">${svgPlus()}</button>
+        <button class="assistant-icon" id="assistant-history" title="${t('assistant.viewSessions')}">${svgList()}</button>
+        <button class="assistant-icon" id="assistant-refresh" title="${t('assistant.refreshContext')}">${svgRefresh()}</button>
+        <button class="assistant-icon" id="assistant-close" title="${t('assistant.close')}">${svgClose()}</button>
       </div>
     </div>
     <div id="assistant-messages" class="assistant-messages" aria-live="polite"></div>
     <div class="assistant-foot">
       <div class="assistant-row">
-        <input id="assistant-input" type="text" class="assistant-input" placeholder="輸入與本文相關的問題，Enter 送出">
-        <button id="assistant-send" class="assistant-send">發送</button>
+        <input id="assistant-input" type="text" class="assistant-input" placeholder="${t('assistant.inputPlaceholder')}">
+        <button id="assistant-send" class="assistant-send">${t('assistant.send')}</button>
       </div>
        <div class="assistant-sub">
-        <label class="assistant-switch"><input id="assistant-stream" type="checkbox" ${loadGlobalSettings()?.assistant?.stream === false ? '' : 'checked'}> 串流回應</label>
+        <label class="assistant-switch"><input id="assistant-stream" type="checkbox" ${loadGlobalSettings()?.assistant?.stream === false ? '' : 'checked'}> ${t('assistant.streaming')}</label>
         ${selectHtml}
-        <span class="assistant-font">字級：
-          <button class="assistant-font-btn" data-size="s" title="11px">小</button>
-          <button class="assistant-font-btn" data-size="l" title="13px">大</button>
+        <span class="assistant-font">${t('assistant.fontSize')}
+          <button class="assistant-font-btn" data-size="s" title="11px">${t('assistant.small')}</button>
+          <button class="assistant-font-btn" data-size="l" title="13px">${t('assistant.large')}</button>
         </span>
       </div>
       ${selection.disabled ? `<div class="assistant-model-hint">${escapeHtml(placeholder)}</div>` : ''}
@@ -151,7 +160,7 @@ function wirePanel(panel) {
   const $ = (sel) => panel.querySelector(sel);
   // 關閉按鈕：隱藏面板（移除重複的最小化按鈕，以免與關閉重覆）
   $('#assistant-close').addEventListener('click', () => panel.classList.add('assistant-hidden'));
-  $('#assistant-refresh').addEventListener('click', () => addHint(panel, '已刷新文章上下文，下次提問將以最新內容為準'));
+  $('#assistant-refresh').addEventListener('click', () => addHint(panel, t('assistant.contextRefreshed')));
   // 模式切換（精簡版）：小視窗/靠右全高/居中彈窗
   $('#assistant-small').addEventListener('click', () => setPanelMode(panel,'floating'));
   $('#assistant-dock').addEventListener('click', () => setPanelMode(panel,'dock'));
@@ -199,10 +208,10 @@ function wirePanel(panel) {
 
 function updateHeaderTitle(){
   try {
-    const t = extractArticleTitle();
+    const titleText = extractArticleTitle();
     const el = document.getElementById('assistant-article-title');
     if (!el) return;
-    el.textContent = isGlobalArticle() ? '全局' : (t || '文章');
+    el.textContent = isGlobalArticle() ? t('assistant.global') : (titleText || t('assistant.article'));
   } catch(_){}
 }
 
@@ -255,7 +264,7 @@ export async function getAssistantConversationMessages(convId) {
   return await idbGetConv(convId);
 }
 
-export async function createAssistantConversation({ articleKey = 'global', title = '新會話', id, messages = [] } = {}) {
+export async function createAssistantConversation({ articleKey = 'global', title = t('assistant.newSession'), id, messages = [] } = {}) {
   const convId = id || generateConversationId();
   const meta = ensureMetaWithId(articleKey, title, convId);
   await idbSetConv(convId, Array.isArray(messages) ? messages : []);
@@ -299,7 +308,7 @@ function ensureMeta(articleKey, title) {
   const idx = readIndex();
   let m = idx.find(x => x.articleKey === articleKey);
   if (!m) {
-    const defaultTitle = articleKey === 'global' ? '全局會話' : '文章';
+    const defaultTitle = articleKey === 'global' ? t('assistant.globalSession') : t('assistant.article');
     m = { id: generateConversationId(), articleKey, title: title || defaultTitle, updatedAt: new Date().toISOString() };
     idx.unshift(m);
     writeIndex(idx);
@@ -382,8 +391,11 @@ async function ask(panel, userText, opts = {}) {
   const articleText = ctx0.text;
 
   // messages：系統 + 上下文 + 近幾輪 + 本輪
-  const system = { role: 'system', content: SYSTEM_PROMPT };
-  const context = articleText && articleText.trim() ? { role: 'user', content: `以下是目前文章內容，僅作為上下文：\n\n"""\n${articleText}\n"""` } : null;
+  const system = {
+    role: 'system',
+    content: buildPrompt('assistant.articleTutor', {}, { locale: getLocale() })
+  };
+  const context = articleText && articleText.trim() ? { role: 'user', content: `${t('assistant.contextPrefix')}\n\n"""\n${articleText}\n"""` } : null;
   // 讀取最近 N 輪歷史：優先使用「當前選中會話」ID；否則回退同文章下的第一筆
   const idx = readIndex();
   const curId = opts.convId || getCurrentConvId(articleKey);
@@ -408,7 +420,7 @@ async function ask(panel, userText, opts = {}) {
   const ac = new AbortController();
   const stopBtn = document.createElement('button');
   stopBtn.className = 'assistant-stop';
-  stopBtn.textContent = '停止';
+  stopBtn.textContent = t('assistant.stop');
   stopBtn.addEventListener('click', () => ac.abort());
   placeholder.parentElement.appendChild(stopBtn);
 
@@ -432,7 +444,7 @@ async function ask(panel, userText, opts = {}) {
   } catch (e) {
     if (e?.name !== 'AbortError') {
       hadError = true;
-      placeholder.textContent = (buffer || '') + `\n[錯誤] ${e?.message || '請稍後再試'}`;
+      placeholder.textContent = (buffer || '') + `\n${t('assistant.error', { message: e?.message || t('assistant.tryLater') })}`;
     }
   } finally {
     stopBtn.remove();
@@ -449,7 +461,7 @@ async function ask(panel, userText, opts = {}) {
       try {
         const retry = document.createElement('button');
         retry.className = 'assistant-retry';
-        retry.textContent = '重試';
+        retry.textContent = t('assistant.retry');
         retry.addEventListener('click', async () => {
           retry.disabled = true;
           await ask(panel, userText, { ...opts, mode: 'retry', reuseEl: placeholder });
@@ -501,13 +513,13 @@ function enhanceMarkdown(root){
       const code = pre.querySelector('code');
       const btn = document.createElement('button');
       btn.className = 'assistant-copy';
-      btn.textContent = '複製';
+      btn.textContent = t('assistant.copy');
       btn.addEventListener('click', async () => {
         try {
           const txt = code ? code.innerText : pre.innerText;
           await navigator.clipboard.writeText(txt);
-          btn.textContent = '已複製';
-          setTimeout(()=> btn.textContent = '複製', 1200);
+          btn.textContent = t('assistant.copied');
+          setTimeout(()=> btn.textContent = t('assistant.copy'), 1200);
         } catch(_) {}
       });
       pre.appendChild(btn);
@@ -526,7 +538,7 @@ function migrateLegacyStore() {
     const exist = new Set(idx.map(x => x.id));
     for (const c of convs) {
       const id = c.id || `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-      if (!exist.has(id)) idx.unshift({ id, articleKey: c.articleKey, title: c.title || '文章', updatedAt: c.updatedAt || new Date().toISOString() });
+      if (!exist.has(id)) idx.unshift({ id, articleKey: c.articleKey, title: c.title || t('assistant.article'), updatedAt: c.updatedAt || new Date().toISOString() });
       try { if (Array.isArray(c.messages)) cache.setItem('assistant:conv:'+id, { messages: c.messages }); } catch(_) {}
     }
     writeIndex(idx);
@@ -792,7 +804,7 @@ function ensureMetaWithId(articleKey, title, id){
   const idx = readIndex();
   const exist = idx.find(x => x.id === id);
   if (exist) return exist;
-  const defaultTitle = articleKey === 'global' ? '全局會話' : '新會話';
+  const defaultTitle = articleKey === 'global' ? t('assistant.globalSession') : t('assistant.newSession');
   const m = { id, articleKey, title: title||defaultTitle, updatedAt: new Date().toISOString() };
   idx.unshift(m); writeIndex(idx); return m;
 }
@@ -806,15 +818,15 @@ async function toggleHistory(panel){
   pop.id='assistant-history-panel';
   // 帶標題與關閉鈕的頭部
   pop.style.cssText='position:absolute; right:12px; top:44px; z-index:2401; background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14); min-width:320px; max-height:60vh; overflow:auto;';
-  pop.innerHTML = `<div class=\"ah-head\"><div class=\"ah-titlebar\">歷史會話</div><button class=\"ah-close\" title=\"關閉\" aria-label=\"關閉\">×</button></div>` + (idx.length ? idx.map(m=>`<div class="ah-item" data-id="${m.id}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;">
+  pop.innerHTML = `<div class=\"ah-head\"><div class=\"ah-titlebar\">${t('assistant.history')}</div><button class=\"ah-close\" title=\"${t('assistant.close')}\" aria-label=\"${t('assistant.close')}\">×</button></div>` + (idx.length ? idx.map(m=>`<div class="ah-item" data-id="${m.id}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;">
     <div class="ah-meta" style="flex:1;min-width:0;">
-      <div class="ah-title" style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.title||'會話')}</div>
+      <div class="ah-title" style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.title || t('assistant.session'))}</div>
       <div class="ah-time" style="font-size:12px;color:#64748b;">${new Date(m.updatedAt||Date.now()).toLocaleString()}</div>
     </div>
-    <button class="assistant-icon" data-act="open" title="切換">${svgOpen()}</button>
-    <button class="assistant-icon" data-act="rename" title="重命名">${svgEdit()}</button>
-    <button class="assistant-icon" data-act="delete" title="刪除">${svgTrash()}</button>
-  </div>`).join('') : '<div style="padding:12px;color:#64748b;">尚無會話</div>');
+    <button class="assistant-icon" data-act="open" title="${t('assistant.switch')}">${svgOpen()}</button>
+    <button class="assistant-icon" data-act="rename" title="${t('assistant.rename')}">${svgEdit()}</button>
+    <button class="assistant-icon" data-act="delete" title="${t('assistant.delete')}">${svgTrash()}</button>
+  </div>`).join('') : `<div style="padding:12px;color:#64748b;">${t('assistant.noSessions')}</div>`);
   panel.appendChild(pop);
   // 外部點擊與 Esc 關閉（選項 1+3）
   const histBtn = panel.querySelector('#assistant-history');
@@ -841,7 +853,7 @@ async function toggleHistory(panel){
     if (act === 'rename') {
       ev.stopPropagation();
       const titleEl = item.querySelector('.ah-title');
-      const newTitle = prompt('輸入新的會話名稱：', titleEl?.textContent || '');
+      const newTitle = prompt(t('assistant.renamePrompt'), titleEl?.textContent || '');
       if (newTitle && newTitle.trim()) {
         const updated = renameAssistantConversation(id, newTitle.trim());
         if (updated) {
@@ -853,7 +865,7 @@ async function toggleHistory(panel){
     }
     if (act === 'delete') {
       ev.stopPropagation();
-      if (!confirm('確定刪除此會話？')) return;
+      if (!confirm(t('assistant.confirmDelete'))) return;
       const deleted = await deleteAssistantConversation(id);
       if (!deleted) return;
       item.remove();
@@ -933,7 +945,7 @@ function exposeGlobalAPI(){
       create: async (articleKey, title) => {
         const meta = await createAssistantConversation({
           articleKey: articleKey || 'global',
-          title: title || '新會話',
+          title: title || t('assistant.newSession'),
           messages: []
         });
         return meta.id;
@@ -967,24 +979,3 @@ function svgList(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill=
 function svgOpen(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4 4h6v1H5v6H4V4zm3 3h5v5H7V7z"/></svg>'}
 function svgEdit(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-9.5 9.5L4 14l.646-2.354 9.5-9.5z"/></svg>'}
 function svgTrash(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M6.5 1h3a.5.5 0 0 1 .5.5V3h3a.5.5 0 0 1 0 1H3a.5.5 0 0 1 0-1h3V1.5a.5.5 0 0 1 .5-.5z"/><path d="M5.5 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5z"/><path d="M4.118 4.5 4 14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l-.118-9.5H4.118z"/></svg>'}
-
-const SYSTEM_PROMPT = `你是「PEN子背單詞」前端網頁中的英語學習助教。請始終以繁體中文（香港用字）回答，用字例：網上、上載、電郵、的士、巴士、軟件、網絡、連結、相片。不要使用粵語口語。
-
-[任務範圍]
-- 專注協助使用者理解「目前文章」內容（前端已夾帶全文作為上下文），並支援互動問答。
-- 常見需求：翻譯句子/段落（保持 Markdown 結構）、抽取關鍵點、解釋詞彙與文法、提供例句、檢查句子是否自然/正確、產生練習題與摘要。
-- 禁止臆測未提供的外部內容；若資料不足，請說明需要哪部分文章或上下文。
-
-[輸出風格]
-- 優先給出可直接使用的答案；必要時附 2–5 條重點。
-- 若翻譯含 Markdown：必須保留原 Markdown 語法與行結構，只翻譯文字；圖片/連結語法原樣保留。
-
-[功能指南]
-- 詞彙：給 IPA（若可）、詞性、常見義項、例句（短、自然）。
-- 文法/句構：指出結構與功能角色，常見錯誤與記憶提示。
-- 例句：日常、簡潔、符合主題；1–3 句。
-- 檢查：結論 + 改寫建議 + 簡短理由。
-- 練習題：填空/判斷/改寫，附標準答案與提示。
-
-[錯誤處理]
-- 若文章不足或未提供，請提示使用者先在文章詳解頁輸入內容，或指定段落。`;

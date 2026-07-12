@@ -3,6 +3,7 @@ import * as dom from '../../modules/dom.js';
 import * as storage from '../../modules/storage.js';
 import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
+import { t } from '../../modules/i18n.js';
 import * as audio from '../../modules/audio.js';
 
 // =================================
@@ -28,6 +29,10 @@ export function initLearning() {
     dom.examplesContainer.addEventListener('mouseover', handleWordHighlight);
     dom.examplesContainer.addEventListener('mouseout', handleWordHighlight);
     dom.examplesContainer.addEventListener('click', handleWordAnalysisClick);
+    document.addEventListener('bdc:locale-change', () => {
+        populateWordSelect();
+        displayWordDetails();
+    });
 }
 
 /**
@@ -45,12 +50,12 @@ export function populateWordSelect() {
     dom.wordSelect.innerHTML = '';
 
     if (!words || words.length === 0) {
-        dom.wordSelect.innerHTML = '<option value="">當前單詞本為空</option>';
+        dom.wordSelect.innerHTML = `<option value="">${t('learning.currentBookEmpty')}</option>`;
         clearWordDetails();
         return;
     }
 
-    dom.wordSelect.innerHTML = '<option value="">請選擇單詞</option>';
+    dom.wordSelect.innerHTML = `<option value="">${t('learning.selectWordOption')}</option>`;
     words.forEach(word => {
         const option = document.createElement('option');
         option.value = word.id;
@@ -77,7 +82,7 @@ function displayWordDetails() {
     if (word) {
         dom.detailWord.textContent = word.word;
         dom.detailPhonetic.textContent = word.phonetic ? `/${word.phonetic}/` : '';
-        dom.detailMeaning.textContent = word.meaning || '(無中文意思)';
+        dom.detailMeaning.textContent = word.meaning || t('learning.noMeaning');
         displayExamples(word);
     } else {
         clearWordDetails();
@@ -94,7 +99,7 @@ function clearWordDetails() {
 function speakCurrentWord() {
     const selectedId = dom.wordSelect.value;
     if (!selectedId) {
-        alert('請先選擇一個單詞！');
+        alert(t('learning.selectWord'));
         return;
     }
     
@@ -108,7 +113,7 @@ function speakCurrentWord() {
 async function generateExamples() {
     const selectedId = dom.wordSelect.value;
     if (!selectedId) {
-        alert('請先選擇一個單詞！');
+        alert(t('learning.selectWord'));
         return;
     }
     
@@ -116,7 +121,7 @@ async function generateExamples() {
     const word = words.find(w => w.id === selectedId);
     if (word) {
         dom.generateExamplesBtn.disabled = true;
-        dom.generateExamplesBtn.textContent = '生成中...';
+        dom.generateExamplesBtn.textContent = t('learning.generating');
         
         try {
             const exampleSentences = await api.generateExamplesForWord(word);
@@ -125,10 +130,10 @@ async function generateExamples() {
             displayExamples(word);
         } catch (error) {
             console.error('生成例句時出錯:', error);
-            alert('生成例句失敗，請檢查API Key或網絡連接後再試。');
+            alert(t('learning.generateFailed'));
         } finally {
             dom.generateExamplesBtn.disabled = false;
-            dom.generateExamplesBtn.textContent = '生成AI例句';
+            dom.generateExamplesBtn.textContent = t('learning.generateExamples');
         }
     }
 }
@@ -137,7 +142,7 @@ function displayExamples(word) {
     dom.examplesContainer.innerHTML = '';
 
     if (!word.examples || word.examples.length === 0) {
-        dom.examplesContainer.innerHTML = '<p>還沒有例句，點擊「生成AI例句」按鈕生成例句。</p>';
+        dom.examplesContainer.innerHTML = `<p>${t('learning.noExamples')}</p>`;
         return;
     }
 
@@ -183,11 +188,11 @@ async function checkSentence() {
     const userSentence = dom.sentenceInput.value.trim();
     
     if (!selectedId) {
-        alert('請先選擇一個單詞！');
+        alert(t('learning.selectWord'));
         return;
     }
     if (!userSentence) {
-        alert('請輸入一個例句！');
+        alert(t('learning.enterSentence'));
         return;
     }
     
@@ -196,29 +201,29 @@ async function checkSentence() {
     if (word) {
         const wordRegex = new RegExp(`\\b${word.word}\\b`, 'i');
         if (!wordRegex.test(userSentence)) {
-            dom.sentenceFeedback.textContent = `您的例句必須包含單詞 "${word.word}"。`;
+            dom.sentenceFeedback.textContent = t('learning.mustContainWord', { word: word.word });
             dom.sentenceFeedback.className = 'feedback-incorrect';
             return;
         }
 
         dom.checkSentenceBtn.disabled = true;
-        dom.sentenceFeedback.textContent = '正在檢查...';
+        dom.sentenceFeedback.textContent = t('learning.checking');
         dom.sentenceFeedback.className = '';
         
         try {
             const feedback = await api.checkUserSentence(word.word, userSentence);
-            if (feedback.startsWith('正確')) {
-                dom.sentenceFeedback.textContent = '很好！您的例句正確。';
+            if (/^(正確|正确)/.test(feedback)) {
+                dom.sentenceFeedback.textContent = t('learning.sentenceCorrect');
                 dom.sentenceFeedback.className = 'feedback-correct';
             } else {
-                const suggestion = feedback.replace('不正確。建議：', '').trim();
-                dom.sentenceFeedback.innerHTML = `您的例句有一些問題。<div class="feedback-suggestion">建議：${suggestion}</div>`;
+                const suggestion = feedback.replace(/^(不正確。建議：|不正确。建议：)/, '').trim();
+                dom.sentenceFeedback.innerHTML = `${t('learning.sentenceHasIssues')}<div class="feedback-suggestion">${t('learning.suggestion')}${suggestion}</div>`;
                 dom.sentenceFeedback.className = 'feedback-incorrect';
             }
         } catch (error) {
             console.error('檢查例句時出錯:', error);
-            alert('檢查例句失敗，請檢查API Key或網絡連接後再試。');
-            dom.sentenceFeedback.textContent = '檢查失敗。';
+            alert(t('learning.requestFailed'));
+            dom.sentenceFeedback.textContent = t('learning.checkFailed');
             dom.sentenceFeedback.className = 'feedback-incorrect';
         } finally {
             dom.checkSentenceBtn.disabled = false;

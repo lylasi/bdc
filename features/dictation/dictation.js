@@ -4,6 +4,7 @@ import * as audio from '../../modules/audio.js';
 import * as ui from '../../modules/ui.js';
 import * as platform from '../../modules/platform.js';
 import { initDictationGrader } from './dictation-grader.js';
+import { t } from '../../modules/i18n.js';
 
 // =================================
 // Dictation Feature
@@ -20,6 +21,11 @@ export function initDictation() {
     dom.prevDictationBtn.addEventListener('click', gotoPrevDictationWord);
     dom.nextDictationBtn.addEventListener('click', gotoNextDictationWord);
     dom.checkDictationBtn.addEventListener('click', checkDictation);
+    document.addEventListener('bdc:locale-change', () => {
+        updatePauseButtonUI();
+        updateFloatingStatus();
+        updateFloatingWordList();
+    });
     dom.listenOnlyMode.addEventListener('change', () => {
         dom.dictationPractice.classList.toggle('hidden', dom.listenOnlyMode.checked);
     });
@@ -135,7 +141,11 @@ function checkAndRestoreDictationSession() {
  */
 function showSessionRestorePrompt(session) {
     const startTime = new Date(session.startTime).toLocaleString();
-    const message = `檢測到未完成的默寫會話：\n開始時間：${startTime}\n進度：${session.currentIndex + 1}/${session.words.length}\n\n是否繼續之前的會話？`;
+    const message = t('dictation.restoreSession', {
+        startTime,
+        current: session.currentIndex + 1,
+        total: session.words.length
+    });
     
     if (confirm(message)) {
         restoreDictationSession(session);
@@ -198,7 +208,7 @@ function startDictation() {
     let wordsForDictation = getSelectedDictationWords();
 
     if (!wordsForDictation || wordsForDictation.length === 0) {
-        alert('請先選擇一個包含單詞的單詞本！');
+        alert(t('dictation.selectBookAlert'));
         return;
     }
 
@@ -252,7 +262,7 @@ function stopDictation() {
     dom.dictationProgressContainer.classList.add('hidden');
     dom.dictationPractice.classList.toggle('hidden', dom.listenOnlyMode.checked);
     dom.replayDictationBtn.style.display = 'none';
-    dom.dictationWordDisplay.textContent = '已停止';
+    dom.dictationWordDisplay.textContent = t('dictation.stopped');
     
     state.setCurrentDictationIndex(-1);
     state.setIsDictationPaused(false);
@@ -299,7 +309,7 @@ export function togglePauseDictation() {
 }
 
 function updatePauseButtonUI() {
-    const text = state.isDictationPaused ? '繼續' : '暫停';
+    const text = state.isDictationPaused ? t('dictation.resume') : t('dictation.pause');
     const replayBtnDisplay = state.isDictationPaused ? 'inline-block' : 'none';
     // 導航按鈕在默寫開始後就顯示（不管是否暫停）
     const navBtnDisplay = (state.currentDictationIndex >= 0 && state.dictationWords.length > 0) ? 'inline-block' : 'none';
@@ -364,7 +374,7 @@ function createMainControls() {
     prevBtn.id = 'floating-prev-btn';
     prevBtn.className = 'control-btn prev-btn';
     prevBtn.innerHTML = '⬅';
-    prevBtn.title = '上一個單詞';
+    prevBtn.title = t('dictation.previousTitle');
     prevBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         gotoPrevDictationWord();
@@ -375,7 +385,7 @@ function createMainControls() {
     replayBtn.id = 'floating-replay-btn';
     replayBtn.className = 'control-btn replay-btn';
     replayBtn.innerHTML = '🔄';
-    replayBtn.title = '重播當前單詞';
+    replayBtn.title = t('dictation.replayTitle');
     replayBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         replayCurrentDictationWord();
@@ -394,7 +404,7 @@ function createMainControls() {
     const expandIcon = document.createElement('span');
     expandIcon.className = 'expand-icon';
     expandIcon.textContent = '▼';
-    expandIcon.setAttribute('aria-label', '展開單詞列表');
+    expandIcon.setAttribute('aria-label', t('dictation.expandWordList'));
     expandIcon.dataset.expanded = 'false';
 
     infoArea.appendChild(progressSpan);
@@ -404,7 +414,7 @@ function createMainControls() {
     const pauseBtn = document.createElement('button');
     pauseBtn.id = 'floating-pause-btn';
     pauseBtn.className = 'control-btn pause-btn';
-    pauseBtn.textContent = state.isDictationPaused ? '繼續' : '暫停';
+    pauseBtn.textContent = state.isDictationPaused ? t('dictation.resume') : t('dictation.pause');
     pauseBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         togglePauseDictation();
@@ -415,7 +425,7 @@ function createMainControls() {
     nextBtn.id = 'floating-next-btn';
     nextBtn.className = 'control-btn next-btn';
     nextBtn.innerHTML = '➡';
-    nextBtn.title = '下一個單詞';
+    nextBtn.title = t('dictation.nextTitle');
     nextBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         gotoNextDictationWord();
@@ -444,7 +454,7 @@ function createExpandPanel() {
     header.className = 'panel-header';
     
     const title = document.createElement('h3');
-    title.textContent = '單詞列表';
+    title.textContent = t('dictation.wordList');
     
     const closeBtn = document.createElement('button');
     closeBtn.className = 'close-btn';
@@ -463,7 +473,7 @@ function createExpandPanel() {
     showInfoCheckbox.id = 'show-word-info';
 
     const showInfoLabel = document.createElement('span');
-    showInfoLabel.textContent = '顯示單詞信息';
+    showInfoLabel.textContent = t('dictation.showWordInfo');
 
     showInfoToggle.appendChild(showInfoCheckbox);
     showInfoToggle.appendChild(showInfoLabel);
@@ -537,7 +547,7 @@ function updateExpandIcon(isExpanded) {
     const expandIcon = document.querySelector('.expand-icon');
     if (!expandIcon) return;
     expandIcon.textContent = isExpanded ? '▲' : '▼';
-    expandIcon.setAttribute('aria-label', isExpanded ? '收起單詞列表' : '展開單詞列表');
+    expandIcon.setAttribute('aria-label', isExpanded ? t('dictation.collapseWordList') : t('dictation.expandWordList'));
     expandIcon.dataset.expanded = String(isExpanded);
 }
 
@@ -588,7 +598,7 @@ function updateFloatingWordList() {
             if (hasPhonetic) {
                 phoneticEl.textContent = `/${cleanedPhonetic}/`;
             } else {
-                phoneticEl.textContent = '暫無音標';
+                phoneticEl.textContent = t('dictation.noPhonetic');
                 phoneticEl.classList.add('word-phonetic--missing');
             }
             wordHeader.appendChild(phoneticEl);
@@ -717,7 +727,7 @@ function updateFloatingStatus() {
     }
     
     if (pauseBtn) {
-        pauseBtn.textContent = state.isDictationPaused ? '繼續' : '暫停';
+        pauseBtn.textContent = state.isDictationPaused ? t('dictation.resume') : t('dictation.pause');
     }
     
     // 更新單詞列表（如果展開）
@@ -738,7 +748,7 @@ function playCurrentWord() {
             state.setCurrentDictationIndex(0);
         } else {
             stopDictation();
-            dom.dictationWordDisplay.textContent = '默寫完成';
+            dom.dictationWordDisplay.textContent = t('dictation.completed');
             return;
         }
     }
@@ -787,7 +797,7 @@ function playCurrentWord() {
 
 function checkDictation() {
     if (!state.dictationWords || state.currentDictationIndex < 0 || state.currentDictationIndex >= state.dictationWords.length) {
-        alert('請先開始默寫！');
+        alert(t('dictation.startFirst'));
         return;
     }
     
@@ -795,10 +805,10 @@ function checkDictation() {
     const userInput = dom.dictationInput.value.trim().toLowerCase();
     
     if (userInput === currentWord.word.toLowerCase()) {
-        dom.dictationResult.textContent = '正確！';
+        dom.dictationResult.textContent = t('dictation.correct');
         dom.dictationResult.className = 'correct';
     } else {
-        dom.dictationResult.textContent = `錯誤！正確答案是: ${currentWord.word}`;
+        dom.dictationResult.textContent = t('dictation.incorrect', { answer: currentWord.word });
         dom.dictationResult.className = 'incorrect';
     }
     dom.dictationWordDisplay.textContent = currentWord.word;

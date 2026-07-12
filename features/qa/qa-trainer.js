@@ -1,6 +1,7 @@
 // 問答訓練邏輯和會話管理
 import { loadQASet } from './qa-storage.js';
 import { displayMessage } from '../../modules/ui.js';
+import { t } from '../../modules/i18n.js';
 
 // 訓練狀態管理
 let currentSession = {
@@ -185,7 +186,7 @@ export function finishTraining() {
   const unansweredCount = currentSession.answers.filter(a => !(a.userAnswer && a.userAnswer.trim().length > 0)).length;
 
   if (unansweredCount > 0) {
-    const confirmed = confirm(`還有 ${unansweredCount} 題未回答，確定要完成訓練嗎？`);
+    const confirmed = confirm(t('qa.unansweredConfirm', { count: unansweredCount }));
     if (!confirmed) {
       return false;
     }
@@ -251,7 +252,7 @@ export function cancelTraining() {
     return true;
   }
 
-  const confirmed = confirm('確定要取消當前訓練嗎？所有進度將會遺失。');
+  const confirmed = confirm(t('qa.cancelTrainingConfirm'));
   if (confirmed) {
     resetSession();
     console.log('訓練已取消');

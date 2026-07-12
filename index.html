@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>背單詞應用</title>
+    <title data-i18n="app.documentTitle">背单词应用</title>
     <link rel="stylesheet" href="styles.css?v=20240618" />
   </head>
   <body>
     <div class="app-layout">
       <header>
-        <h1>PEN子背單詞</h1>
+        <h1 data-i18n="app.title">PEN子背单词</h1>
         <nav>
           <button id="vocabulary-btn" class="nav-btn active">
             <svg
@@ -30,8 +30,8 @@
                 d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"
               />
             </svg>
-            <span class="nav-text" data-full-text="單詞本" data-short-text="詞"
-              >單詞本</span
+            <span class="nav-text" data-i18n-full="nav.vocabulary.full" data-i18n-short="nav.vocabulary.short"
+              >单词本</span
             >
           </button>
           <button id="dictation-btn" class="nav-btn">
@@ -56,9 +56,9 @@
             </svg>
             <span
               class="nav-text"
-              data-full-text="默寫模式"
-              data-short-text="默"
-              >默寫模式</span
+              data-i18n-full="nav.dictation.full"
+              data-i18n-short="nav.dictation.short"
+              >听写模式</span
             >
           </button>
           <button id="learning-btn" class="nav-btn">
@@ -76,9 +76,9 @@
             </svg>
             <span
               class="nav-text"
-              data-full-text="學習模式"
-              data-short-text="學"
-              >學習模式</span
+              data-i18n-full="nav.learning.full"
+              data-i18n-short="nav.learning.short"
+              >学习模式</span
             >
           </button>
           <button id="qa-btn" class="nav-btn">
@@ -99,9 +99,9 @@
             </svg>
             <span
               class="nav-text"
-              data-full-text="問答訓練"
-              data-short-text="問"
-              >問答訓練</span
+              data-i18n-full="nav.qa.full"
+              data-i18n-short="nav.qa.short"
+              >问答训练</span
             >
           </button>
           <button id="article-btn" class="nav-btn">
@@ -122,9 +122,9 @@
             </svg>
             <span
               class="nav-text"
-              data-full-text="文章詳解"
-              data-short-text="文"
-              >文章詳解</span
+              data-i18n-full="nav.article.full"
+              data-i18n-short="nav.article.short"
+              >文章详解</span
             >
           </button>
           <button id="ocr-btn" class="nav-btn">
@@ -142,9 +142,9 @@
             </svg>
             <span
               class="nav-text"
-              data-full-text="圖片識別"
-              data-short-text="圖"
-              >圖片識別</span
+              data-i18n-full="nav.ocr.full"
+              data-i18n-short="nav.ocr.short"
+              >图片识别</span
             >
           </button>
           <button id="quiz-btn" class="nav-btn">
@@ -165,9 +165,9 @@
             </svg>
             <span
               class="nav-text"
-              data-full-text="隨堂測驗"
-              data-short-text="測"
-              >隨堂測驗</span
+              data-i18n-full="nav.quiz.full"
+              data-i18n-short="nav.quiz.short"
+              >随堂测验</span
             >
           </button>
         </nav>
@@ -179,8 +179,10 @@
         <button
           id="app-gear-btn"
           class="floating-gear-btn"
-          title="設定"
-          aria-label="設定"
+          title="设置"
+          aria-label="设置"
+          data-i18n-title="app.settings"
+          data-i18n-aria-label="app.settings"
         >
           <svg
             width="18"
@@ -210,11 +212,12 @@
             <!-- 左側: 單詞本列表 -->
             <div id="vocab-books-panel" class="vocab-books-panel">
               <div class="panel-header">
-                <h3>我的單詞本</h3>
+                <h3 data-i18n="vocabulary.myBooks">我的单词本</h3>
                 <button
                   id="add-vocab-book-btn"
                   class="icon-btn"
-                  title="新增單詞本"
+                  title="新增单词本"
+                  data-i18n-title="vocabulary.addBook"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -235,7 +238,8 @@
                 <button
                   id="import-vocab-book-btn"
                   class="icon-btn"
-                  title="導入單詞本"
+                  title="导入单词本"
+                  data-i18n-title="vocabulary.importBook"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -261,12 +265,13 @@
             <!-- 右側: 選定單詞本的內容 -->
             <div id="vocab-words-panel" class="vocab-words-panel">
               <div class="panel-header">
-                <h3 id="current-book-name">請選擇一個單詞本</h3>
+                <h3 id="current-book-name" data-i18n="vocabulary.selectBook">请选择一个单词本</h3>
                 <div class="word-panel-actions">
                   <button
                     id="complete-missing-btn"
                     class="icon-btn"
-                    title="補完缺失"
+                    title="补全缺失资料"
+                    data-i18n-title="vocabulary.completeMissing"
                     disabled
                   >
                     <svg
@@ -285,7 +290,8 @@
                   <button
                     id="merge-vocab-books-btn"
                     class="icon-btn"
-                    title="合併單詞本"
+                    title="合并单词本"
+                    data-i18n-title="vocabulary.mergeBooks"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -303,7 +309,8 @@
                   <button
                     id="export-vocab-book-btn"
                     class="icon-btn"
-                    title="導出單詞本"
+                    title="导出单词本"
+                    data-i18n-title="vocabulary.exportBook"
                     disabled
                   >
                     <svg
@@ -327,7 +334,8 @@
                   <button
                     id="edit-vocab-book-btn"
                     class="icon-btn"
-                    title="編輯單詞"
+                    title="编辑单词"
+                    data-i18n-title="vocabulary.editWords"
                     disabled
                   >
                     <svg
@@ -350,7 +358,8 @@
                   <button
                     id="delete-vocab-book-btn"
                     class="icon-btn"
-                    title="刪除單詞本"
+                    title="删除单词本"
+                    data-i18n-title="vocabulary.deleteBook"
                     disabled
                   >
                     <svg
@@ -379,8 +388,8 @@
               ></p>
               <div class="list-container">
                 <ul id="word-list">
-                  <li class="word-item-placeholder">
-                    請從左側選擇或創建一個單詞本
+                  <li class="word-item-placeholder" data-i18n="vocabulary.chooseOrCreate">
+                    请从左侧选择或创建一个单词本
                   </li>
                 </ul>
               </div>
@@ -390,7 +399,7 @@
 
         <!-- 默寫模式頁面 -->
         <section id="dictation-section" class="section">
-          <h2>默寫模式</h2>
+          <h2 data-i18n="dictation.title">听写模式</h2>
           <div class="dictation-container">
             <div
               id="dictation-progress-container"
@@ -401,17 +410,17 @@
             </div>
             <div class="dictation-main-content">
               <div class="dictation-settings">
-                <h3>設置</h3>
+                <h3 data-i18n="dictation.settings">设置</h3>
                 <div id="dictation-settings-container">
                   <div class="settings-grid">
                     <div class="form-group settings-group full-width">
-                      <label>選擇單詞本:</label>
+                      <label data-i18n="dictation.selectBook">选择单词本：</label>
                       <div id="dictation-book-selector" class="book-selector">
                         <!-- JS動態生成 -->
                       </div>
                     </div>
                     <div class="form-group settings-group">
-                      <label for="repeat-times">重複:</label>
+                      <label for="repeat-times" data-i18n="dictation.repeat">重复：</label>
                       <div class="number-stepper" data-slider-max="30">
                         <input
                           type="range"
@@ -420,7 +429,8 @@
                           max="30"
                           step="1"
                           value="2"
-                          aria-label="滑動設定重複次數"
+                          aria-label="滑动设置重复次数"
+                          data-i18n-aria-label="dictation.repeatSlider"
                         />
                         <div class="stepper-field">
                           <input
@@ -437,18 +447,20 @@
                               type="button"
                               class="stepper-arrow stepper-up"
                               aria-label="增加"
+                              data-i18n-aria-label="common.increase"
                             ></button>
                             <button
                               type="button"
                               class="stepper-arrow stepper-down"
-                              aria-label="減少"
+                              aria-label="减少"
+                              data-i18n-aria-label="common.decrease"
                             ></button>
                           </div>
                         </div>
                       </div>
                     </div>
                     <div class="form-group settings-group">
-                      <label for="word-interval">詞隔:</label>
+                      <label for="word-interval" data-i18n="dictation.interval">单词间隔：</label>
                       <div class="number-stepper" data-slider-max="30">
                         <input
                           type="range"
@@ -457,7 +469,8 @@
                           max="30"
                           step="1"
                           value="3"
-                          aria-label="滑動設定詞隔"
+                          aria-label="滑动设置单词间隔"
+                          data-i18n-aria-label="dictation.intervalSlider"
                         />
                         <div class="stepper-field">
                           <input
@@ -474,99 +487,102 @@
                               type="button"
                               class="stepper-arrow stepper-up"
                               aria-label="增加"
+                              data-i18n-aria-label="common.increase"
                             ></button>
                             <button
                               type="button"
                               class="stepper-arrow stepper-down"
-                              aria-label="減少"
+                              aria-label="减少"
+                              data-i18n-aria-label="common.decrease"
                             ></button>
                           </div>
                         </div>
                       </div>
                     </div>
                     <div class="form-group settings-group chinese-voice-group">
-                      <label>中文:</label>
+                      <label data-i18n="dictation.chinese">中文：</label>
                       <div class="chinese-voice-options">
                         <label class="voice-toggle">
                           <input type="checkbox" id="read-chinese-mandarin" />
-                          <span>普</span>
+                          <span data-i18n="dictation.mandarinShort">普</span>
                         </label>
                         <label class="voice-toggle">
                           <input type="checkbox" id="read-chinese-cantonese" />
-                          <span>粵</span>
+                          <span data-i18n="dictation.cantoneseShort">粤</span>
                         </label>
                       </div>
                     </div>
                     <div class="form-group settings-group">
-                      <label for="loop-mode">循環模式:</label>
+                      <label for="loop-mode" data-i18n="dictation.loop">循环模式：</label>
                       <input type="checkbox" id="loop-mode" />
                     </div>
                     <div class="form-group settings-group">
-                      <label for="shuffle-mode">亂序播放:</label>
+                      <label for="shuffle-mode" data-i18n="dictation.shuffle">随机播放：</label>
                       <input type="checkbox" id="shuffle-mode" />
                     </div>
                     <div class="form-group settings-group">
-                      <label for="listen-only-mode">只聽不練:</label>
+                      <label for="listen-only-mode" data-i18n="dictation.listenOnly">只听不练：</label>
                       <input type="checkbox" id="listen-only-mode" checked />
                     </div>
                   </div>
                   <div class="button-group">
                     <button id="start-dictation-btn" class="btn-primary">
-                      開始默寫
+                      <span data-i18n="dictation.start">开始听写</span>
                     </button>
                     <button
                       id="stop-dictation-btn"
                       class="btn-secondary"
                       disabled
                     >
-                      停止
+                      <span data-i18n="dictation.stop">停止</span>
                     </button>
                     <button
                       id="pause-dictation-btn"
                       class="btn-secondary"
                       disabled
                     >
-                      暫停
+                      <span data-i18n="dictation.pause">暂停</span>
                     </button>
                     <button
                       id="replay-dictation-btn"
                       class="btn-secondary"
                       style="display: none"
                     >
-                      重播
+                      <span data-i18n="dictation.replay">重播</span>
                     </button>
                     <button
                       id="prev-dictation-btn"
                       class="btn-secondary nav-large"
                       style="display: none"
                     >
-                      ⬅️ 上一個
+                      <span data-i18n="dictation.previous">⬅️ 上一个</span>
                     </button>
                     <button
                       id="next-dictation-btn"
                       class="btn-secondary nav-large"
                       style="display: none"
                     >
-                      下一個 ➡️
+                      <span data-i18n="dictation.next">下一个 ➡️</span>
                     </button>
                     <button id="dictation-ai-grade-btn" class="btn-secondary">
-                      AI 批改手寫
+                      <span data-i18n="dictation.aiGrade">AI 批改手写</span>
                     </button>
                   </div>
                 </div>
               </div>
               <div class="dictation-practice">
-                <h3>默寫練習</h3>
+                <h3 data-i18n="dictation.practice">听写练习</h3>
                 <div id="dictation-word-display" class="word-display-box"></div>
                 <div class="input-group">
                   <input
                     type="text"
                     id="dictation-input"
                     class="input-field"
-                    placeholder="請輸入聽到的單詞"
+                    placeholder="请输入听到的单词"
+                    data-i18n-placeholder="dictation.inputPlaceholder"
                   />
                   <button id="check-dictation-btn" class="btn-primary">
-                    檢查
+                    <span data-i18n="dictation.check">检查</span>
                   </button>
                 </div>
                 <div id="dictation-result" class="result-box"></div>
@@ -577,18 +593,18 @@
 
         <!-- 學習模式頁面 -->
         <section id="learning-section" class="section">
-          <h2>學習模式</h2>
+          <h2 data-i18n="learning.title">学习模式</h2>
           <div class="learning-container">
             <div class="settings-group">
-              <label>選擇單詞本:</label>
+              <label data-i18n="learning.selectBook">选择单词本：</label>
               <div id="learning-book-selector" class="book-selector">
                 <!-- JS動態生成 -->
               </div>
             </div>
             <div class="word-selection">
-              <h3>選擇單詞</h3>
+              <h3 data-i18n="learning.selectWordTitle">选择单词</h3>
               <select id="word-select">
-                <option value="">請先從上方選擇單詞本</option>
+                <option value="" data-i18n="learning.selectBookFirst">请先从上方选择单词本</option>
               </select>
             </div>
             <div class="word-details">
@@ -596,22 +612,23 @@
                 <h3 id="detail-word"></h3>
                 <p id="detail-phonetic"></p>
                 <p id="detail-meaning"></p>
-                <button id="speak-word-btn">朗讀單詞</button>
+                <button id="speak-word-btn" data-i18n="learning.speakWord">朗读单词</button>
               </div>
             </div>
             <div class="example-sentences">
-              <h3>例句</h3>
+              <h3 data-i18n="learning.examples">例句</h3>
               <div id="examples-container"></div>
-              <button id="generate-examples-btn">生成AI例句</button>
+              <button id="generate-examples-btn" data-i18n="learning.generateExamples">生成 AI 例句</button>
             </div>
             <div class="practice-sentences">
-              <h3>造句練習</h3>
+              <h3 data-i18n="learning.sentencePractice">造句练习</h3>
               <div class="input-group">
                 <textarea
                   id="sentence-input"
-                  placeholder="請使用此單詞造句"
+                  placeholder="请使用此单词造句"
+                  data-i18n-placeholder="learning.sentencePlaceholder"
                 ></textarea>
-                <button id="check-sentence-btn">檢查</button>
+                <button id="check-sentence-btn" data-i18n="learning.check">检查</button>
               </div>
               <div id="sentence-feedback"></div>
             </div>
@@ -620,12 +637,12 @@
 
         <!-- 圖片 OCR 頁面 -->
         <section id="ocr-section" class="section">
-          <h2>圖片文字識別（OCR）</h2>
+          <h2 data-i18n="ocr.title">图片文字识别（OCR）</h2>
           <div class="ocr-layout">
             <div class="ocr-left">
               <div class="ocr-form">
                 <div class="form-row">
-                  <label for="ocr-image-input">上傳圖片：</label>
+                  <label for="ocr-image-input" data-i18n="ocr.upload">上传图片：</label>
                   <div class="field-inline">
                     <input
                       id="ocr-image-input"
@@ -644,7 +661,7 @@
                     <button
                       id="ocr-prefer-toggle"
                       class="btn-secondary btn-icon"
-                      title="使用相機優先"
+                      title="优先使用相机" data-i18n-title="ocr.preferCamera"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -658,13 +675,13 @@
                           fill="currentColor"
                         />
                       </svg>
-                      <span class="sr-only">使用相機優先</span>
+                      <span class="sr-only" data-i18n="ocr.preferCamera">优先使用相机</span>
                     </button>
                     <!-- 操作按鈕改為同行，節省垂直空間 -->
                     <button
                       id="ocr-open-camera-btn"
                       class="btn-secondary btn-icon"
-                      title="開啟相機"
+                      title="打开相机" data-i18n-title="ocr.openCamera"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -678,19 +695,19 @@
                           fill="currentColor"
                         />
                       </svg>
-                      <span class="sr-only">開啟相機</span>
+                      <span class="sr-only" data-i18n="ocr.openCamera">打开相机</span>
                     </button>
                     <button
                       id="ocr-clear-btn"
                       class="btn-secondary"
-                      title="清除已加入的圖片與結果"
+                      title="清除已添加的图片和结果" data-i18n-title="ocr.clearTitle"
                     >
-                      清除
+                      <span data-i18n="ocr.clear">清除</span>
                     </button>
                     <button
                       id="ocr-stop-btn"
                       class="btn-secondary btn-icon hidden"
-                      title="停止"
+                      title="停止" data-i18n-title="ocr.stop"
                       disabled
                     >
                       <svg
@@ -710,10 +727,10 @@
                           fill="currentColor"
                         />
                       </svg>
-                      <span class="sr-only">停止</span>
+                      <span class="sr-only" data-i18n="ocr.stop">停止</span>
                     </button>
                     <button id="ocr-run-btn" class="btn-primary">
-                      識別文字
+                      <span data-i18n="ocr.run">识别文字</span>
                     </button>
                   </div>
                 </div>
@@ -728,70 +745,82 @@
                       <span id="ocr-progress-bar"></span>
                     </div>
                     <div class="ocr-progress-text" id="ocr-progress-text">
-                      尚未開始
+                      <span data-i18n="ocr.notStarted">尚未开始</span>
                     </div>
                   </div>
                 </div>
 
                 <details class="ocr-advanced">
-                  <summary>進階選項</summary>
+                  <summary data-i18n="ocr.advanced">高级选项</summary>
                   <div class="adv-grid">
                     <div class="form-row">
-                      <label for="ocr-hint">提示詞：</label>
+                      <label for="ocr-hint" data-i18n="ocr.prompt">补充要求：</label>
                       <textarea
                         id="ocr-hint"
                         rows="6"
-                        placeholder="例：只擷取右下角藍色對話框文字；或：只輸出圖片中的英文單字與數字，不要其它UI元素"
+                        placeholder="例如：只提取右下角蓝色对话框文字" data-i18n-placeholder="ocr.promptPlaceholder"
                       ></textarea>
                     </div>
                     <div class="form-row">
-                      <label for="ocr-hint-preset">常用模板：</label>
+                      <label for="ocr-hint-preset" data-i18n="ocr.presets">常用模板：</label>
                       <div class="field-inline">
                         <select id="ocr-hint-preset">
-                          <option value="">常用模板...</option>
+                          <option value="" data-i18n="ocr.presetDefault">常用模板...</option>
                           <option
                             value="只擷取圖片中右下角藍色對話框的所有文字，按原有換行輸出；忽略其它區域與UI元素。"
+                            data-i18n-value="ocr.presetBluePrompt"
+                            data-i18n="ocr.presetBlueLabel"
                           >
-                            只擷取：右下角藍色對話框
+                            只提取：右下角蓝色对话框
                           </option>
                           <option
                             value="僅輸出圖片中的英文與阿拉伯數字，保留原始換行；忽略圖示、按鈕、介面元素與背景雜訊。"
+                            data-i18n-value="ocr.presetEnglishPrompt"
+                            data-i18n="ocr.presetEnglishLabel"
                           >
-                            只擷取：英文與數字
+                            只提取：英文与数字
                           </option>
                           <option
                             value="請將正文完整轉寫為純文字，保留原始換行與標點；刪除頁碼、分隔線、圖示與介面文字。"
+                            data-i18n-value="ocr.presetBodyPrompt"
+                            data-i18n="ocr.presetBodyLabel"
                           >
-                            正文轉寫，移除UI/雜訊
+                            正文转写，移除 UI／噪声
                           </option>
                           <option
                             value="若是題目圖片，僅擷取題幹與選項文字，依序以 A)、B)、C)、D) 標示；不要輸出解析或多餘內容。"
+                            data-i18n-value="ocr.presetQuizPrompt"
+                            data-i18n="ocr.presetQuizLabel"
                           >
-                            試題模式：題幹+選項
+                            试题模式：题干＋选项
                           </option>
                           <option
                             value="輸出為 Markdown 清單：每個段落作為一個條目，若有小標題請使用二級標題。"
+                            data-i18n-value="ocr.presetMarkdownPrompt"
+                            data-i18n="ocr.presetMarkdownLabel"
                           >
-                            輸出格式：Markdown 清單
+                            输出格式：Markdown 列表
                           </option>
                           <option
                             value="這是一張默寫單詞的相片。請先逐行擷取學生書寫的英文單詞或短語，保留順序與原始大小寫。接著檢查每行拼寫是否正確，如果有中文意思，也要檢查中文是否書寫正確：若正確請在該行末標註 (正確)；若錯誤請在該行末標註 (錯→建議：correct)。只輸出純文字清單，如：1) word (正確)；2) wrd (錯→建議：word)。不要翻譯，不要加入多餘解釋或格式。"
+                            data-i18n-value="ocr.presetDictationPrompt"
+                            data-i18n="ocr.presetDictationLabel"
                           >
-                            小學生默寫單詞：檢查拼寫
+                            小学生听写单词：检查拼写
                           </option>
                         </select>
-                        <span class="hint">選擇模板會附加到提示詞</span>
+                        <span class="hint" data-i18n="ocr.presetHint">选择模板会附加到提示词</span>
                       </div>
                     </div>
                     <div class="form-row">
-                      <label for="ocr-model-select">OCR 模型：</label>
-                      <select id="ocr-model-select"></select>
+                      <label for="ocr-model-select" data-i18n="ocr.model">OCR 模型：</label>
+                      <select id="ocr-model-select" title="请先到全局设置配置 provider 与模型" data-i18n-title="ocr.configureModel"></select>
                     </div>
                     <div class="form-row">
                       <label>&nbsp;</label>
                       <label class="checkbox-inline"
                         ><input type="checkbox" id="ocr-merge-output" />
-                        合併輸出為一段（多張圖片時）</label
+                        <span data-i18n="ocr.merge">多张图片合并为一段输出</span></label
                       >
                     </div>
                   </div>
@@ -801,10 +830,10 @@
                   <video id="ocr-video" autoplay playsinline></video>
                   <div class="btn-row">
                     <button id="ocr-capture-btn" class="btn-primary">
-                      拍照
+                      <span data-i18n="ocr.capture">拍照</span>
                     </button>
                     <button id="ocr-close-camera-btn" class="btn-secondary">
-                      關閉相機
+                      <span data-i18n="ocr.closeCamera">关闭相机</span>
                     </button>
                   </div>
                   <canvas id="ocr-canvas" class="hidden"></canvas>
@@ -820,20 +849,19 @@
                   class="thumbs"
                   id="ocr-preview-list"
                   tabindex="0"
-                  aria-label="拖放或貼上圖片以加入 OCR"
+                  aria-label="拖放或粘贴图片以加入 OCR" data-i18n-aria-label="ocr.dropAria"
                 ></div>
                 <p class="ocr-clipboard-hint">
-                  提示：在此區域按 Ctrl+V 或 ⌘+V
-                  可以直接貼上截圖，也可拖放圖片。
+                  <span data-i18n="ocr.pasteHint">提示：在此区域按 Ctrl+V 或 ⌘+V 可以直接粘贴截图，也可以拖放图片。</span>
                 </p>
               </div>
               <div class="result-pane">
                 <div class="result-head">
-                  <label for="ocr-result">識別結果</label>
+                  <label for="ocr-result" data-i18n="ocr.result">识别结果</label>
                   <div class="result-mode">
-                    <select id="ocr-display-mode" aria-label="顯示模式">
-                      <option value="text">純文本</option>
-                      <option value="md">Markdown 預覽</option>
+                    <select id="ocr-display-mode" aria-label="显示模式" data-i18n-aria-label="ocr.displayMode">
+                      <option value="text" data-i18n="ocr.plainText">纯文本</option>
+                      <option value="md" data-i18n="ocr.markdownPreview">Markdown 预览</option>
                     </select>
                   </div>
                 </div>
@@ -841,7 +869,7 @@
                   id="ocr-result"
                   class="mono"
                   rows="16"
-                  placeholder="識別後的文字會顯示在此處"
+                  placeholder="识别后的文字将显示在此处" data-i18n-placeholder="ocr.resultPlaceholder"
                 ></textarea>
                 <div id="ocr-result-preview" class="ocr-md hidden"></div>
               </div>
@@ -851,19 +879,19 @@
 
         <!-- 隨堂測驗頁面 -->
         <section id="quiz-section" class="section">
-          <h2>隨堂測驗</h2>
+          <h2 data-i18n="quiz.title">随堂测验</h2>
           <div class="quiz-container">
             <div id="quiz-settings-container">
               <div class="quiz-settings">
-                <h3>測驗設置</h3>
+                <h3 data-i18n="quiz.settings">测验设置</h3>
                 <div class="settings-group">
-                  <label>選擇單詞本:</label>
+                  <label data-i18n="quiz.selectBook">选择单词本：</label>
                   <div id="quiz-book-selector" class="book-selector">
                     <!-- JS動態生成 -->
                   </div>
                 </div>
                 <div class="settings-group hidden">
-                  <label for="quiz-count">題目數量:</label>
+                  <label for="quiz-count" data-i18n="quiz.count">题目数量：</label>
                   <div class="number-stepper">
                     <input
                       type="range"
@@ -872,7 +900,8 @@
                       max="20"
                       step="1"
                       value="10"
-                      aria-label="滑動設定題目數量"
+                      aria-label="滑动设置题目数量"
+                      data-i18n-aria-label="quiz.countSlider"
                     />
                     <div class="stepper-field">
                       <input
@@ -890,49 +919,51 @@
                           type="button"
                           class="stepper-arrow stepper-up"
                           aria-label="增加"
+                          data-i18n-aria-label="common.increase"
                         ></button>
                         <button
                           type="button"
                           class="stepper-arrow stepper-down"
-                          aria-label="減少"
+                          aria-label="减少"
+                          data-i18n-aria-label="common.decrease"
                         ></button>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div class="settings-group">
-                  <label for="quiz-type">測驗類型:</label>
+                  <label for="quiz-type" data-i18n="quiz.type">测验类型：</label>
                   <select id="quiz-type">
-                    <option value="meaning">看英文選中文</option>
-                    <option value="word">看中文選英文</option>
-                    <option value="phonetic">看音標選單詞</option>
-                    <option value="mixed">混合模式</option>
+                    <option value="meaning" data-i18n="quiz.typeMeaning">看英文选中文</option>
+                    <option value="word" data-i18n="quiz.typeWord">看中文选英文</option>
+                    <option value="phonetic" data-i18n="quiz.typePhonetic">看音标选单词</option>
+                    <option value="mixed" data-i18n="quiz.typeMixed">混合模式</option>
                   </select>
                 </div>
                 <button id="start-quiz-btn" class="primary-btn">
-                  開始測驗
+                  <span data-i18n="quiz.start">开始测验</span>
                 </button>
               </div>
             </div>
             <div id="quiz-main-container" class="hidden">
               <div class="quiz-header">
                 <div id="quiz-info">
-                  <span id="quiz-progress">題目 0/0</span>
-                  <span id="quiz-score">得分: 0/0</span>
+                  <span id="quiz-progress">题目 0/0</span>
+                  <span id="quiz-score">得分：0/0</span>
                 </div>
-                <button id="stop-quiz-btn" disabled>結束測驗</button>
+                <button id="stop-quiz-btn" disabled data-i18n="quiz.stop">结束测验</button>
               </div>
               <div class="quiz-content">
                 <div id="quiz-question-container">
                   <h3 id="quiz-question"></h3>
                   <div id="quiz-options"></div>
-                  <button id="next-question-btn" disabled>下一題</button>
+                  <button id="next-question-btn" disabled data-i18n="quiz.next">下一题</button>
                 </div>
                 <div id="quiz-result" class="quiz-result hidden">
-                  <h3>測驗完成！</h3>
+                  <h3 data-i18n="quiz.completed">测验完成！</h3>
                   <div id="final-score"></div>
                   <div id="quiz-summary"></div>
-                  <button id="restart-quiz-btn">重新測驗</button>
+                  <button id="restart-quiz-btn" data-i18n="quiz.restart">重新测验</button>
                 </div>
               </div>
             </div>
@@ -941,51 +972,54 @@
 
         <!-- 文章詳解頁面 -->
         <section id="article-section" class="section">
-          <h2>文章詳解</h2>
+          <h2 data-i18n="article.title">文章详解</h2>
           <div class="analysis-container">
             <div class="analysis-input">
-              <h3>輸入文章</h3>
+              <h3 data-i18n="article.inputTitle">输入文章</h3>
               <div class="history-controls">
                 <select id="article-history-select">
-                  <option value="">讀取歷史記錄</option>
+                  <option value="" data-i18n="article.historyRead">读取历史记录</option>
                 </select>
-                <button id="manage-history-btn" class="secondary" title="管理閱讀記錄">
-                  管理記錄
+                <button id="manage-history-btn" class="secondary" title="管理阅读记录" data-i18n="article.historyManage" data-i18n-title="article.historyManageTitle">
+                  管理记录
                 </button>
-                <button id="delete-history-btn" title="刪除選中的歷史記錄">
-                  刪除記錄
+                <button id="delete-history-btn" title="删除选中的历史记录" data-i18n="article.historyDelete" data-i18n-title="article.historyDeleteTitle">
+                  删除记录
                 </button>
               </div>
               <textarea
                 id="article-input"
-                placeholder="在這裡輸入或粘貼您想分析的文章..."
+                placeholder="在这里输入或粘贴您想分析的文章..."
+                data-i18n-placeholder="article.inputPlaceholder"
               ></textarea>
               <div class="button-group">
-                <button id="analyze-article-btn">分析文章</button>
+                <button id="analyze-article-btn" data-i18n="article.analyze">分析文章</button>
                 <button
                   id="import-article-btn"
                   class="secondary"
-                  title="從網址或圖片導入文章"
+                  title="从网址或图片导入文章"
+                  data-i18n="article.import"
+                  data-i18n-title="article.importTitle"
                 >
-                  導入...
+                  导入...
                 </button>
                 <button
                   id="retry-failed-paragraphs-btn"
                   class="secondary"
                   style="display: none"
                 >
-                  重試失敗段
+                  <span data-i18n="article.retryFailed">重试失败段</span>
                 </button>
-                <button id="clear-article-btn">清除重寫</button>
-                <button id="show-article-library-btn">從文章庫選取</button>
+                <button id="clear-article-btn" data-i18n="article.clear">清除重写</button>
+                <button id="show-article-library-btn" data-i18n="article.library">从文章库选取</button>
               </div>
               <p class="form-hint" style="margin: 8px 0 0; opacity: 0.8">
-                目前文章詳解採用精簡模式：僅輸出中文翻譯。
+                <span data-i18n="article.compactHint">当前文章详解采用精简模式：仅输出中文翻译。</span>
               </p>
               <div class="audio-controls">
-                <h4>朗讀控制</h4>
+                <h4 data-i18n="article.readingControls">朗读控制</h4>
                 <div class="audio-main-buttons">
-                  <button id="read-article-btn" title="朗讀文章">
+                  <button id="read-article-btn" title="朗读文章" data-i18n-title="article.read">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
@@ -999,7 +1033,7 @@
                       />
                     </svg>
                   </button>
-                  <button id="stop-read-article-btn" title="停止朗讀" disabled>
+                  <button id="stop-read-article-btn" title="停止朗读" data-i18n-title="article.stopReading" disabled>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
@@ -1013,7 +1047,7 @@
                       />
                     </svg>
                   </button>
-                  <button id="download-audio-btn" title="下載語音">
+                  <button id="download-audio-btn" title="下载语音" data-i18n-title="article.downloadAudio">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
@@ -1032,15 +1066,15 @@
                   </button>
                 </div>
                 <div class="settings-group">
-                  <label for="reading-mode">模式:</label>
+                  <label for="reading-mode" data-i18n="article.mode">模式：</label>
                   <select id="reading-mode">
-                    <option value="full">全文</option>
-                    <option value="paragraph">段落</option>
-                    <option value="sentence">句子</option>
+                    <option value="full" data-i18n="article.full">全文</option>
+                    <option value="paragraph" data-i18n="article.paragraph">段落</option>
+                    <option value="sentence" data-i18n="article.sentence">句子</option>
                   </select>
                 </div>
-                <div class="settings-group" title="調整非當前句子的淡化程度">
-                  <label for="dimming-intensity">淡化強度:</label>
+                <div class="settings-group" title="调整非当前句子的淡化程度" data-i18n-title="article.dimmingTitle">
+                  <label for="dimming-intensity" data-i18n="article.dimming">淡化强度：</label>
                   <input
                     type="range"
                     id="dimming-intensity"
@@ -1051,10 +1085,11 @@
                   />
                 </div>
                 <div id="chunk-repeat-controls" class="settings-group hidden">
-                  <label for="chunk-repeat-times">重複:</label>
+                  <label for="chunk-repeat-times" data-i18n="article.repeat">重复：</label>
                   <div
                     class="number-stepper"
-                    title="設置段落/句子朗讀的重複次數"
+                    title="设置段落/句子朗读的重复次数"
+                    data-i18n-title="article.repeatTitle"
                   >
                     <input
                       type="range"
@@ -1063,7 +1098,8 @@
                       max="10"
                       step="1"
                       value="1"
-                      aria-label="滑動設定重複次數"
+                      aria-label="滑动设置重复次数"
+                      data-i18n-aria-label="article.repeatSlider"
                     />
                     <div class="stepper-field">
                       <input
@@ -1080,20 +1116,20 @@
                         <button
                           type="button"
                           class="stepper-arrow stepper-up"
-                          aria-label="增加"
+                          aria-label="增加" data-i18n-aria-label="common.increase"
                         ></button>
                         <button
                           type="button"
                           class="stepper-arrow stepper-down"
-                          aria-label="減少"
+                          aria-label="减少" data-i18n-aria-label="common.decrease"
                         ></button>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div class="settings-group">
-                  <span class="field-label" id="reading-speed-label"
-                    >語速:</span
+                  <span class="field-label" id="reading-speed-label" data-i18n="article.speed"
+                    >语速：</span
                   >
                   <div
                     id="speed-control-group"
@@ -1111,9 +1147,9 @@
                   </div>
                 </div>
                 <div id="chunk-nav-controls" class="settings-group hidden">
-                  <button id="prev-chunk-btn" disabled>上一句</button>
+                  <button id="prev-chunk-btn" disabled data-i18n="article.previousSentence">上一句</button>
                   <span id="chunk-progress">0 / 0</span>
-                  <button id="next-chunk-btn" disabled>下一句</button>
+                  <button id="next-chunk-btn" disabled data-i18n="article.nextSentence">下一句</button>
                 </div>
                 <div
                   id="current-sentence-display"
@@ -1123,16 +1159,17 @@
             </div>
             <div class="analysis-result">
               <div class="ar-head">
-                <h3>分析結果</h3>
-                <div class="cn-mask-group" aria-label="翻譯遮罩">
-                  <span class="cn-mask-label">迷霧</span>
+                <h3 data-i18n="article.result">分析结果</h3>
+                <div class="cn-mask-group" aria-label="翻译遮罩" data-i18n-aria-label="article.maskAria">
+                  <span class="cn-mask-label" data-i18n="article.maskLabel">迷雾</span>
                   <label
                     class="cn-mask-mini"
-                    title="翻譯遮罩：預設開啟；滑鼠移入/按住顯示"
+                    title="翻译遮罩：默认开启；鼠标移入/按住显示"
+                    data-i18n-title="article.maskTitle"
                   >
                     <input type="checkbox" id="toggle-cn-mask" checked />
                     <span class="slider" aria-hidden="true"></span>
-                    <span class="sr-only">翻譯遮罩</span>
+                    <span class="sr-only" data-i18n="article.maskAria">翻译遮罩</span>
                   </label>
                 </div>
                 <div
@@ -1140,19 +1177,19 @@
                   class="form-hint"
                   style="margin-left: auto; display: none; opacity: 0.85"
                 >
-                  <span id="article-source-label">來源：—</span>
+                  <span id="article-source-label" data-i18n="article.sourceEmpty">来源：—</span>
                   <a
                     id="article-source-link"
                     href="#"
                     target="_blank"
                     rel="noopener noreferrer"
                     style="margin-left: 8px; display: none"
-                    >開啟原文</a
+                    data-i18n="article.openSource">打开原文</a
                   >
                 </div>
               </div>
               <div id="article-analysis-container">
-                <p>請先輸入文章並點擊分析按鈕。</p>
+                <p data-i18n="article.initialHint">请先输入文章并点击分析按钮。</p>
               </div>
             </div>
           </div>
@@ -1160,17 +1197,17 @@
 
         <!-- 問答訓練模組 -->
 <section id="qa-module" class="section" style="display: none">
-          <h2>問答訓練</h2>
+          <h2 data-i18n="qa.title">问答训练</h2>
 
           <!-- 問答集管理區域 -->
           <div id="qa-management-area" class="qa-management">
-            <h3>我的問答集</h3>
+            <h3 data-i18n="qa.mySets">我的问答集</h3>
             <div class="qa-buttons">
-              <button id="create-qa-set-btn" class="btn primary">
-                創建問答集
+              <button id="create-qa-set-btn" class="btn primary" data-i18n="qa.createSet">
+                创建问答集
               </button>
-              <button id="import-qa-set-btn" class="btn secondary">
-                導入問答集
+              <button id="import-qa-set-btn" class="btn secondary" data-i18n="qa.importSet">
+                导入问答集
               </button>
             </div>
             <div id="qa-sets-list" class="qa-sets-list">
@@ -1180,59 +1217,59 @@
 
           <!-- 問答集創建區域 -->
           <div id="qa-creator-area" class="qa-creator" style="display: none">
-            <h3>創建問答集</h3>
+            <h3 data-i18n="qa.createSet">创建问答集</h3>
             <div class="qa-creator-form">
               <div class="qa-creator-card">
                 <div class="qa-creator-header">
                   <div class="qa-template-row">
                     <select id="qa-template-select">
-                      <option value="">選擇既有問答集</option>
+                      <option value="" data-i18n="qa.selectExisting">选择已有问答集</option>
                     </select>
                     <button
                       id="load-qa-template-btn"
                       class="btn small secondary"
                       disabled
                     >
-                      套用範本
+                      <span data-i18n="qa.applyTemplate">应用模板</span>
                     </button>
                   </div>
                   <p class="form-hint">
-                    選擇問答集作為起點，仍可微調後另存新集。
+                    <span data-i18n="qa.templateHint">选择问答集作为起点，仍可微调后另存新集。</span>
                   </p>
                 </div>
 
                 <div class="qa-creator-body">
                   <div class="qa-form-row">
-                    <label class="qa-input-label" for="qa-set-name">名稱</label>
+                    <label class="qa-input-label" for="qa-set-name" data-i18n="qa.name">名称</label>
                     <input
                       type="text"
                       id="qa-set-name"
-                      placeholder="輸入問答集名稱"
+                      placeholder="输入问答集名称" data-i18n-placeholder="qa.namePlaceholder"
                     />
                   </div>
                   <div class="qa-form-row">
                     <label class="qa-input-label" for="qa-set-description"
-                      >描述</label
+                      data-i18n="qa.description">描述</label
                     >
                     <input
                       type="text"
                       id="qa-set-description"
-                      placeholder="輸入問答集描述"
+                      placeholder="输入问答集描述" data-i18n-placeholder="qa.descriptionPlaceholder"
                     />
                   </div>
                   <div class="qa-form-row qa-pairs-row">
                     <label class="qa-input-label" for="qa-pairs-input"
-                      >問答對（每兩行一組：上一行問題、下一行答案）</label
+                      data-i18n="qa.pairsLabel">问答对（每两行一组：上一行问题、下一行答案）</label
                     >
                     <div class="qa-pairs-field">
                       <textarea
                         id="qa-pairs-input"
                         rows="10"
-                        placeholder="問題1？
+                        placeholder="问题1？
 答案1。
 
-問題2？
-答案2。"
+问题2？
+答案2。" data-i18n-placeholder="qa.pairsPlaceholder"
                       ></textarea>
                       <div class="qa-pairs-actions">
                         <button
@@ -1240,7 +1277,7 @@
                           type="button"
                           class="btn small secondary"
                         >
-                          載入示例
+                          <span data-i18n="qa.loadExample">加载示例</span>
                         </button>
                       </div>
                     </div>
@@ -1252,10 +1289,10 @@
 
                 <div class="qa-creator-actions">
                   <button id="save-qa-set-btn" class="btn primary">
-                    保存問答集
+                    <span data-i18n="qa.saveSet">保存问答集</span>
                   </button>
                   <button id="cancel-qa-creator-btn" class="btn secondary">
-                    取消
+                    <span data-i18n="qa.cancel">取消</span>
                   </button>
                 </div>
               </div>
@@ -1265,9 +1302,9 @@
           <!-- 問答訓練區域 -->
           <div id="qa-training-area" class="qa-training" style="display: none">
             <div class="qa-training-header">
-              <h3 id="qa-training-title">問答訓練</h3>
+              <h3 id="qa-training-title" data-i18n="qa.title">问答训练</h3>
               <div class="qa-progress">
-                <span id="qa-progress-text">第 1 題 / 共 10 題</span>
+                <span id="qa-progress-text">第 1 题 / 共 10 题</span>
                 <div class="progress-bar">
                   <div
                     id="qa-progress-bar"
@@ -1288,38 +1325,38 @@
                 gap: 8px;
               "
             >
-              <label for="qa-model-select">校對模型：</label>
+              <label for="qa-model-select" data-i18n="qa.checkerModel">校对模型：</label>
               <select id="qa-model-select"></select>
             </div>
 
             <div class="qa-question-area">
               <div class="question-card">
-                <h4>問題：</h4>
-                <p id="qa-current-question">這裡將顯示當前問題</p>
+                <h4 data-i18n="qa.question">问题：</h4>
+                <p id="qa-current-question" data-i18n="qa.questionPlaceholder">这里将显示当前问题</p>
               </div>
 
               <div class="answer-area">
-                <label for="qa-answer-input">您的答案：</label>
+                <label for="qa-answer-input" data-i18n="qa.yourAnswer">您的答案：</label>
                 <textarea
                   id="qa-answer-input"
                   rows="4"
-                  placeholder="請輸入您的答案"
+                  placeholder="请输入您的答案" data-i18n-placeholder="qa.answerPlaceholder"
                 ></textarea>
               </div>
 
               <div class="qa-training-controls">
-                <button id="prev-qa-btn" class="btn secondary">上一題</button>
+                <button id="prev-qa-btn" class="btn secondary" data-i18n="qa.previous">上一题</button>
                 <button id="submit-and-check-btn" class="btn primary">
-                  AI 校對本題
+                  <span data-i18n="qa.checkCurrent">AI 校对本题</span>
                 </button>
-                <button id="next-qa-btn" class="btn secondary">下一題</button>
+                <button id="next-qa-btn" class="btn secondary" data-i18n="qa.next">下一题</button>
               </div>
               <div
                 id="qa-instant-feedback"
                 class="qa-instant-feedback"
                 style="display: none"
               >
-                <h4>本題 AI 回饋</h4>
+                <h4 data-i18n="qa.instantFeedback">本题 AI 反馈</h4>
                 <div
                   id="qa-instant-feedback-content"
                   class="qa-instant-feedback-content"
@@ -1329,17 +1366,17 @@
 
             <div class="qa-training-actions">
               <button id="finish-training-btn" class="btn warning">
-                完成訓練
+                <span data-i18n="qa.finish">完成训练</span>
               </button>
               <button id="back-to-qa-list-btn" class="btn secondary">
-                返回問答集
+                <span data-i18n="qa.backSets">返回问答集</span>
               </button>
             </div>
           </div>
 
           <!-- 校對報告區域 -->
           <div id="qa-report-area" class="qa-report" style="display: none">
-            <h3>AI校對報告</h3>
+            <h3 data-i18n="qa.reportTitle">AI 校对报告</h3>
             <div class="report-summary" style="display: none"></div>
 
             <div id="qa-detailed-results" class="detailed-results">
@@ -1354,38 +1391,38 @@
             >
               <div class="progress-indicator">
                 <div class="spinner"></div>
-                <span id="checking-status">正在進行AI智能校對...</span>
+                <span id="checking-status" data-i18n="qa.checking">正在进行 AI 智能校对...</span>
               </div>
               <div id="checking-details" class="checking-details"></div>
             </div>
 
             <div class="report-actions">
               <label for="qa-model-select-report" style="margin-right: 6px"
-                >校對模型：</label
+                data-i18n="qa.checkerModel">校对模型：</label
               >
               <select
                 id="qa-model-select-report"
                 style="margin-right: 12px"
               ></select>
               <button id="ai-check-btn" class="btn primary">
-                AI 校對全部題目
+                <span data-i18n="qa.checkAll">AI 校对全部题目</span>
               </button>
-              <button id="export-pdf-btn" class="btn primary">導出PDF</button>
+              <button id="export-pdf-btn" class="btn primary" data-i18n="qa.exportPdf">导出 PDF</button>
               <button id="copy-report-btn" class="btn secondary">
-                複製錯誤報告
+                <span data-i18n="qa.copyReport">复制错误报告</span>
               </button>
               <button
                 id="toggle-all-details-btn"
                 class="btn secondary"
                 data-expanded="true"
               >
-                收合全部
+                <span data-i18n="qa.collapseAll">收起全部</span>
               </button>
               <button id="retry-training-btn" class="btn secondary">
-                重新訓練
+                <span data-i18n="qa.retryTraining">重新训练</span>
               </button>
               <button id="back-to-qa-menu-btn" class="btn secondary">
-                返回主選單
+                <span data-i18n="qa.backMenu">返回主菜单</span>
               </button>
             </div>
           </div>
@@ -1419,11 +1456,11 @@
       <div id="article-library-modal" class="modal-overlay hidden">
         <div class="modal-content">
           <button class="modal-close-btn">&times;</button>
-          <h3 id="modal-title">文章庫</h3>
+          <h3 id="modal-title" data-i18n="article.library">从文章库选取</h3>
           <div id="article-library-controls" class="article-library-controls">
-            <label for="article-category-filter" class="sr-only">分類</label>
+            <label for="article-category-filter" class="sr-only" data-i18n="article.allCategories">全部分类</label>
             <select id="article-category-filter">
-              <option value="">全部分類</option>
+              <option value="" data-i18n="article.allCategories">全部分类</option>
             </select>
             <span
               id="article-library-count"

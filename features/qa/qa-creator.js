@@ -1,6 +1,7 @@
 // 問答集創建和格式解析
 import { saveQASet } from './qa-storage.js';
 import { displayMessage } from '../../modules/ui.js';
+import { t } from '../../modules/i18n.js';
 
 // Q1:A1格式解析
 export function parseQAPairs(text) {
@@ -90,7 +91,7 @@ export function validateFormat(pairs) {
 // 生成預覽HTML
 export function generatePreviewHTML(pairs) {
   if (!pairs || pairs.length === 0) {
-    return '<p class="preview-empty">請輸入：每兩行為一組（第一行為問題，第二行為答案）</p>';
+    return `<p class="preview-empty">${t('qa.previewEmpty')}</p>`;
   }
 
   const validation = validateFormat(pairs);
@@ -99,7 +100,7 @@ export function generatePreviewHTML(pairs) {
   // 顯示驗證結果
   if (!validation.isValid) {
     html += '<div class="validation-errors">';
-    html += '<h5>格式錯誤：</h5>';
+    html += `<h5>${t('qa.formatErrors')}</h5>`;
     html += '<ul>';
     validation.errors.forEach(error => {
       html += `<li class="error">${error}</li>`;
@@ -108,7 +109,7 @@ export function generatePreviewHTML(pairs) {
     html += '</div>';
   } else {
     html += '<div class="validation-success">';
-    html += `<p class="success">✅ 成功解析 ${pairs.length} 個問答對</p>`;
+    html += `<p class="success">${t('qa.parsedPairs', { count: pairs.length })}</p>`;
     html += '</div>';
   }
 
@@ -125,10 +126,10 @@ export function generatePreviewHTML(pairs) {
             <span class="qa-drag-handle" draggable="true" title="拖拽排序" aria-label="拖拽排序">⠿</span>
           </div>
           <div class="qa-pair-toolbar">
-            <button type="button" class="qa-chip-btn qa-copy-pair" data-qid="${pair.qid}">複製</button>
-            <button type="button" class="qa-chip-btn qa-move-up" data-qid="${pair.qid}">上移</button>
-            <button type="button" class="qa-chip-btn qa-move-down" data-qid="${pair.qid}">下移</button>
-            <button type="button" class="qa-chip-btn danger qa-delete-pair" data-qid="${pair.qid}">刪除</button>
+            <button type="button" class="qa-chip-btn qa-copy-pair" data-qid="${pair.qid}">${t('qa.copy')}</button>
+            <button type="button" class="qa-chip-btn qa-move-up" data-qid="${pair.qid}">${t('qa.moveUp')}</button>
+            <button type="button" class="qa-chip-btn qa-move-down" data-qid="${pair.qid}">${t('qa.moveDown')}</button>
+            <button type="button" class="qa-chip-btn danger qa-delete-pair" data-qid="${pair.qid}">${t('qa.delete')}</button>
           </div>
         </div>
         <div class="qa-question">
@@ -143,7 +144,7 @@ export function generatePreviewHTML(pairs) {
     `;
   });
   html += '</div>';
-  html += '<button type="button" class="qa-add-pair-btn" id="qa-add-pair-btn" title="新增問答">+</button>';
+  html += `<button type="button" class="qa-add-pair-btn" id="qa-add-pair-btn" title="${t('qa.addPair')}">+</button>`;
 
   return html;
 }
@@ -188,7 +189,7 @@ export function saveNewSet(name, description, pairs, existingQASet = null) {
         id: existingQASet.id,
         name: name.trim(),
         description: description.trim() || '',
-        category: existingQASet.category || '自定義',
+        category: existingQASet.category || t('qa.customCategory'),
         difficulty: existingQASet.difficulty || 'unknown',
         creator: existingQASet.creator || '用戶創建',
         createdAt: existingQASet.createdAt || now,
@@ -207,7 +208,7 @@ export function saveNewSet(name, description, pairs, existingQASet = null) {
         id: id,
         name: name.trim(),
         description: description.trim() || '',
-        category: '自定義',
+        category: t('qa.customCategory'),
         difficulty: 'unknown',
         creator: '用戶創建',
         createdAt: now,
@@ -301,7 +302,7 @@ export function clearForm() {
   if (nameInput) nameInput.value = '';
   if (descInput) descInput.value = '';
   if (pairsInput) pairsInput.value = '';
-  if (preview) preview.innerHTML = '<p class="preview-empty">請輸入：每兩行一組（第一行為問題，第二行為答案）</p>';
+  if (preview) preview.innerHTML = `<p class="preview-empty">${t('qa.previewEmpty')}</p>`;
 }
 
 // 載入示例
@@ -391,23 +392,23 @@ function addExampleButton() {
     dynamicButton.id = 'load-example-btn';
     dynamicButton.type = 'button';
     dynamicButton.className = 'btn small secondary';
-    dynamicButton.textContent = '載入示例';
+    dynamicButton.textContent = t('qa.loadExample');
     dynamicButton.onclick = loadExample;
 
     const copyAllBtn = document.createElement('button');
     copyAllBtn.id = 'qa-copy-all-btn';
     copyAllBtn.type = 'button';
     copyAllBtn.className = 'btn small secondary';
-    copyAllBtn.textContent = '複製全部';
+    copyAllBtn.textContent = t('qa.copyAll');
     copyAllBtn.onclick = () => copyAllPairsToClipboard(pairsInput.value);
 
     const clearAllBtn = document.createElement('button');
     clearAllBtn.id = 'qa-clear-all-btn';
     clearAllBtn.type = 'button';
     clearAllBtn.className = 'btn small secondary';
-    clearAllBtn.textContent = '清空全部';
+    clearAllBtn.textContent = t('qa.clearAll');
     clearAllBtn.onclick = () => {
-      if (confirm('確定要清空所有問答對嗎？')) {
+      if (confirm(t('qa.confirmClearPairs'))) {
         pairsInput.value = '';
         handleTextInputChange(pairsInput, document.getElementById('qa-preview'));
       }
@@ -476,12 +477,12 @@ function ensurePreviewInteractions(textArea, previewContainer) {
     if (delBtn) {
       const qid = parseInt(delBtn.dataset.qid || delBtn.closest('.qa-pair-preview')?.dataset.qid, 10);
       if (!qid) return;
-      if (!confirm(`刪除第 ${qid} 題？`)) return;
+      if (!confirm(t('qa.confirmDeleteQuestion', { number: qid }))) return;
       const pairs = parseQAPairs(textArea.value);
       const filtered = normalizeQids(pairs.filter(p => p.qid !== qid));
       textArea.value = pairsToText(filtered);
       handleTextInputChange(textArea, previewContainer);
-      displayMessage('已刪除該問答對', 'success');
+      displayMessage(t('qa.pairDeleted'), 'success');
       return;
     }
 
@@ -492,7 +493,7 @@ function ensurePreviewInteractions(textArea, previewContainer) {
       if (p) {
         const text = `${p.question}\n${p.answer}`;
         await writeToClipboard(text);
-        displayMessage('已複製該題到剪貼簿', 'info');
+        displayMessage(t('qa.pairCopied'), 'info');
       }
       return;
     }
@@ -500,7 +501,7 @@ function ensurePreviewInteractions(textArea, previewContainer) {
     if (addBtn) {
       const pairs = parseQAPairs(textArea.value);
       const nextId = pairs.length + 1;
-      const appended = `${textArea.value.trim()}${textArea.value.trim() ? '\n\n' : ''}（請輸入問題）\n（請輸入答案）`;
+      const appended = `${textArea.value.trim()}${textArea.value.trim() ? '\n\n' : ''}${t('qa.newQuestion')}\n${t('qa.newAnswer')}`;
       textArea.value = appended;
       handleTextInputChange(textArea, previewContainer);
       // 聚焦到新題目
@@ -615,5 +616,5 @@ async function writeToClipboard(text) {
 function copyAllPairsToClipboard(text) {
   if (!text) return;
   writeToClipboard(text);
-  displayMessage('已複製全部問答對', 'info');
+  displayMessage(t('qa.allPairsCopied'), 'info');
 }

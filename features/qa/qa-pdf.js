@@ -1,6 +1,7 @@
 // PDF導出功能
 import { displayMessage } from '../../modules/ui.js';
 import { loadQASet } from './qa-storage.js';
+import { t } from '../../modules/i18n.js';
 
 console.log('qa-pdf.js 模組載入');
 
@@ -67,7 +68,7 @@ export async function exportQASetForHandwriting(qaSetId, options = {}) {
     // 載入問答集數據
     const qaSet = await loadQASet(qaSetId);
     if (!qaSet) {
-      throw new Error('問答集載入失敗');
+      throw new Error(t('qaPdf.loadSetFailed'));
     }
 
     // 檢查並載入jsPDF
@@ -107,7 +108,7 @@ export async function exportQASetForHandwriting(qaSetId, options = {}) {
         throw new Error('jsPDF構造函數調用失敗: ' + error.message);
       }
     } else {
-      throw new Error('jsPDF載入失敗，請檢查網路連接或嘗試刷新頁面');
+      throw new Error(t('qaPdf.loadLibraryFailed'));
     }
 
     // 註冊中文字型（若可用 Base64）— 會在提供 Base64 時自動生效
@@ -157,7 +158,7 @@ export async function exportQASetForHandwriting(qaSetId, options = {}) {
       const qHeight = qLines * getLineHeightMm(PDF_CONFIG.fontSize.normal);
       let blockHeight;
       if (includeAnswers) {
-        const answerLabel = `答案: ${question.answer}`;
+        const answerLabel = t('qaPdf.answer', { answer: question.answer });
         const aLines = doc.splitTextToSize(answerLabel, contentWidth).length;
         const aHeight = aLines * getLineHeightMm(PDF_CONFIG.fontSize.small);
         blockHeight = qHeight + PDF_CONFIG.spacing.answerTextTopGap + aHeight + PDF_CONFIG.spacing.answerTextBottomGap + PDF_CONFIG.spacing.answerSpacing;
@@ -183,21 +184,21 @@ export async function exportQASetForHandwriting(qaSetId, options = {}) {
 
     // 生成文件名
     const timestamp = new Date().toISOString().split('T')[0];
-    const shuffleText = shuffleQuestions ? '_亂序' : '_順序';
-    const answerText = includeAnswers ? '_含答案' : '_手寫版';
+    const shuffleText = shuffleQuestions ? t('qaPdf.shuffled') : t('qaPdf.ordered');
+    const answerText = includeAnswers ? t('qaPdf.withAnswers') : t('qaPdf.handwriting');
     const filename = `${qaSet.name}${shuffleText}${answerText}_${timestamp}.pdf`;
 
     // 保存PDF
     doc.save(filename);
 
-    displayMessage('手寫默寫PDF已成功導出！', 'success');
+    displayMessage(t('qaPdf.exportSuccess'), 'success');
     console.log(`手寫默寫PDF已保存: ${filename}`);
 
     return true;
 
   } catch (error) {
     console.error('手寫默寫PDF導出失敗:', error);
-    displayMessage('手寫默寫PDF導出失敗: ' + error.message, 'error');
+    displayMessage(t('qaPdf.exportFailed', { message: error.message }), 'error');
     return false;
   }
 }
@@ -208,7 +209,7 @@ function addHandwritingTitle(doc, qaSetName, yPosition) {
   doc.setTextColor(PDF_CONFIG.colors.primary);
 
   // 使用中文標題，並進行UTF-8編碼處理
-  const title = `${qaSetName} - 手寫默寫練習`;
+  const title = t('qaPdf.handwritingTitle', { name: qaSetName });
 
   // 方案B：將含中文的行以 Canvas 轉圖片嵌入，避免缺字
   addTextWithCJKImageFallback(doc, title, PDF_CONFIG.margin.left, yPosition, {
@@ -231,11 +232,11 @@ function addHandwritingInstructions(doc, yPosition, includeAnswers) {
   doc.setTextColor(PDF_CONFIG.colors.text);
 
   const instructions = [
-    `日期: _______________    姓名: _______________    成績: _______________`,
+    t('qaPdf.identity'),
     '',
     includeAnswers ?
-      '說明: 請根據問題寫出答案，答案已提供在題目下方供參考。' :
-      '說明: 請在下劃線上寫出完整的英文答案，注意大小寫和標點符號。'
+      t('qaPdf.instructionsWithAnswers') :
+      t('qaPdf.instructions')
   ];
 
   instructions.forEach((instruction, index) => {
@@ -267,7 +268,7 @@ function addHandwritingQuestion(doc, question, questionNumber, yPosition, conten
 
   if (includeAnswers) {
     // 顯示答案
-    const answerLabel = `答案: ${question.answer}`;
+    const answerLabel = t('qaPdf.answer', { answer: question.answer });
     const answerX = PDF_CONFIG.margin.left; // 與題目左對齊
     const fontSize = PDF_CONFIG.fontSize.small;
     const lhMm = getLineHeightMm(fontSize);
@@ -308,7 +309,7 @@ function addHandwritingFooter(doc) {
     doc.setFontSize(PDF_CONFIG.fontSize.small);
     doc.setTextColor(PDF_CONFIG.colors.text);
 
-    const footerText = `第 ${i} 頁，共 ${pageCount} 頁`;
+    const footerText = t('qaPdf.page', { current: i, total: pageCount });
     const footerX = doc.internal.pageSize.width / 2;
     const footerY = doc.internal.pageSize.height - 10;
     addTextWithCJKImageFallback(doc, footerText, footerX, footerY, {
@@ -371,7 +372,7 @@ export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult
         throw new Error('jsPDF構造函數調用失敗: ' + error.message);
       }
     } else {
-      throw new Error('jsPDF載入失敗，請檢查網路連接或嘗試刷新頁面');
+      throw new Error(t('qaPdf.loadLibraryFailed'));
     }
 
     // 註冊中文字型（若前端已提供 Base64）
@@ -382,7 +383,7 @@ export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult
     const contentWidth = doc.internal.pageSize.width - PDF_CONFIG.margin.left - PDF_CONFIG.margin.right;
 
     // 添加標題
-    yPosition = addTitle(doc, '問答訓練結果報告', yPosition);
+    yPosition = addTitle(doc, t('qaPdf.reportTitle'), yPosition);
     yPosition += 10;
 
     // 添加基本信息
@@ -397,7 +398,7 @@ export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult
     if (options && options.errorText) {
       doc.setFontSize(PDF_CONFIG.fontSize.subtitle);
       doc.setTextColor(PDF_CONFIG.colors.primary);
-      addTextWithCJKImageFallback(doc, '錯誤點彙總（精簡）', PDF_CONFIG.margin.left, yPosition, {
+      addTextWithCJKImageFallback(doc, t('qaPdf.errorSummary'), PDF_CONFIG.margin.left, yPosition, {
         fontSizePt: PDF_CONFIG.fontSize.subtitle,
         color: PDF_CONFIG.colors.primary,
         weight: '600'
@@ -418,19 +419,19 @@ export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult
 
     // 生成文件名
     const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `問答訓練報告_${trainingResult.qaSetName}_${timestamp}.pdf`;
+    const filename = t('qaPdf.reportFile', { name: trainingResult.qaSetName, date: timestamp });
 
     // 保存PDF
     doc.save(filename);
 
-    displayMessage('PDF報告已成功導出！', 'success');
+    displayMessage(t('qaPdf.reportSuccess'), 'success');
     console.log(`PDF已保存: ${filename}`);
 
     return true;
 
   } catch (error) {
     console.error('PDF導出失敗:', error);
-    displayMessage('PDF導出失敗: ' + error.message, 'error');
+    displayMessage(t('qaPdf.reportFailed', { message: error.message }), 'error');
     return false;
   }
 }
@@ -527,12 +528,12 @@ function addBasicInfo(doc, trainingResult, yPosition) {
   doc.setTextColor(PDF_CONFIG.colors.text);
 
   const basicInfo = [
-    `問答集名稱: ${trainingResult.qaSetName}`,
-    `訓練時間: ${formatDate(trainingResult.startTime)} - ${formatDate(trainingResult.endTime)}`,
-    `訓練時長: ${formatDuration(trainingResult.duration)}`,
-    `訓練模式: ${trainingResult.mode === 'random' ? '隨機模式' : '順序模式'}`,
-    `題目總數: ${trainingResult.totalQuestions}`,
-    `已回答: ${trainingResult.answeredQuestions}`
+    t('qaPdf.setName', { name: trainingResult.qaSetName }),
+    t('qaPdf.trainingTime', { start: formatDate(trainingResult.startTime), end: formatDate(trainingResult.endTime) }),
+    t('qaPdf.duration', { duration: formatDuration(trainingResult.duration) }),
+    t('qaPdf.mode', { mode: trainingResult.mode === 'random' ? t('qaPdf.random') : t('qaPdf.sequential') }),
+    t('qaPdf.total', { count: trainingResult.totalQuestions }),
+    t('qaPdf.answered', { count: trainingResult.answeredQuestions })
   ];
 
   basicInfo.forEach((info, index) => {
@@ -546,7 +547,7 @@ function addBasicInfo(doc, trainingResult, yPosition) {
 function addTrainingSummary(doc, trainingResult, aiCheckingResult, yPosition) {
   doc.setFontSize(PDF_CONFIG.fontSize.subtitle);
   doc.setTextColor(PDF_CONFIG.colors.primary);
-  doc.text('訓練總結', PDF_CONFIG.margin.left, yPosition);
+  doc.text(t('qaPdf.summary'), PDF_CONFIG.margin.left, yPosition);
   yPosition += 12;
 
   doc.setFontSize(PDF_CONFIG.fontSize.normal);
@@ -558,20 +559,20 @@ function addTrainingSummary(doc, trainingResult, aiCheckingResult, yPosition) {
     const unanswered = s.unanswered != null ? s.unanswered : Math.max(0, (s.totalQuestions || trainingResult.totalQuestions || 0) - (s.totalAnswers || trainingResult.answeredQuestions || 0));
     const total = s.totalQuestions || trainingResult.totalQuestions;
     const answered = total - unanswered;
-    doc.text(`題目總數: ${total}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
-    doc.text(`已作答: ${answered}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(t('qaPdf.total', { count: total }), PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(t('qaPdf.answered', { count: answered }), PDF_CONFIG.margin.left, yPosition); yPosition += 8;
     doc.setTextColor(incorrect > 0 ? PDF_CONFIG.colors.error : PDF_CONFIG.colors.success);
-    doc.text(`錯題數: ${incorrect}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(t('qaPdf.incorrect', { count: incorrect }), PDF_CONFIG.margin.left, yPosition); yPosition += 8;
     doc.setTextColor(unanswered > 0 ? PDF_CONFIG.colors.warning : PDF_CONFIG.colors.success);
-    doc.text(`未作答: ${unanswered}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(t('qaPdf.unanswered', { count: unanswered }), PDF_CONFIG.margin.left, yPosition); yPosition += 8;
     doc.setTextColor(PDF_CONFIG.colors.text);
   } else {
     const total = trainingResult.totalQuestions;
     const answered = trainingResult.answeredQuestions;
     const unanswered = Math.max(0, total - answered);
-    doc.text(`題目總數: ${total}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
-    doc.text(`已作答: ${answered}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
-    doc.text(`未作答: ${unanswered}`, PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(t('qaPdf.total', { count: total }), PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(t('qaPdf.answered', { count: answered }), PDF_CONFIG.margin.left, yPosition); yPosition += 8;
+    doc.text(t('qaPdf.unanswered', { count: unanswered }), PDF_CONFIG.margin.left, yPosition); yPosition += 8;
   }
 
   return yPosition;
@@ -581,7 +582,7 @@ function addTrainingSummary(doc, trainingResult, aiCheckingResult, yPosition) {
 async function addDetailedAnswers(doc, trainingResult, aiCheckingResult, yPosition, pageHeight, contentWidth) {
   doc.setFontSize(PDF_CONFIG.fontSize.subtitle);
   doc.setTextColor(PDF_CONFIG.colors.primary);
-  doc.text('詳細答案分析', PDF_CONFIG.margin.left, yPosition);
+  doc.text(t('qaPdf.details'), PDF_CONFIG.margin.left, yPosition);
   yPosition += 12;
 
   doc.setFontSize(PDF_CONFIG.fontSize.normal);
@@ -598,39 +599,39 @@ async function addDetailedAnswers(doc, trainingResult, aiCheckingResult, yPositi
 
     // 問題標題
     doc.setTextColor(PDF_CONFIG.colors.primary);
-    doc.text(`第 ${i + 1} 題`, PDF_CONFIG.margin.left, yPosition);
+    doc.text(t('qaPdf.questionNumber', { number: i + 1 }), PDF_CONFIG.margin.left, yPosition);
     yPosition += 10;
 
     // 問題內容
     doc.setTextColor(PDF_CONFIG.colors.text);
-    yPosition = addWrappedText(doc, `問題: ${answer.question}`, PDF_CONFIG.margin.left, yPosition, contentWidth);
+    yPosition = addWrappedText(doc, t('qaPdf.question', { text: answer.question }), PDF_CONFIG.margin.left, yPosition, contentWidth);
     yPosition += 5;
 
     // 標準答案
-    yPosition = addWrappedText(doc, `標準答案: ${answer.correctAnswer}`, PDF_CONFIG.margin.left, yPosition, contentWidth);
+    yPosition = addWrappedText(doc, t('qaPdf.standardAnswer', { text: answer.correctAnswer }), PDF_CONFIG.margin.left, yPosition, contentWidth);
     yPosition += 5;
 
     // 用戶答案
-    const userAnswerText = answer.userAnswer || '(未回答)';
-    yPosition = addWrappedText(doc, `您的答案: ${userAnswerText}`, PDF_CONFIG.margin.left, yPosition, contentWidth);
+    const userAnswerText = answer.userAnswer || t('qaPdf.noAnswer');
+    yPosition = addWrappedText(doc, t('qaPdf.userAnswer', { text: userAnswerText }), PDF_CONFIG.margin.left, yPosition, contentWidth);
     yPosition += 5;
 
     // AI 判定（如果有）
     if (aiResult) {
       const ok = aiResult.isCorrect === true;
       doc.setTextColor(ok ? PDF_CONFIG.colors.success : PDF_CONFIG.colors.error);
-      doc.text(`判定: ${ok ? '正確' : '錯誤'}`, PDF_CONFIG.margin.left, yPosition);
+      doc.text(t('qaPdf.verdict', { result: ok ? t('qaPdf.correct') : t('qaPdf.wrong') }), PDF_CONFIG.margin.left, yPosition);
       yPosition += 8;
       if (aiResult.teacherFeedback) {
         doc.setTextColor(PDF_CONFIG.colors.text);
-        yPosition = addWrappedText(doc, `回饋: ${aiResult.teacherFeedback}`, PDF_CONFIG.margin.left, yPosition, contentWidth);
+        yPosition = addWrappedText(doc, t('qaPdf.feedback', { text: aiResult.teacherFeedback }), PDF_CONFIG.margin.left, yPosition, contentWidth);
         yPosition += 4;
       }
       // 簡列差異或改進
       const suggestions = aiResult.improvementSuggestions || aiResult.aiSuggestions || [];
       if (suggestions.length) {
         doc.setTextColor(PDF_CONFIG.colors.text);
-        const line = `建議: ${suggestions.slice(0, 2).join('；')}`;
+        const line = t('qaPdf.suggestion', { text: suggestions.slice(0, 2).join('；') });
         yPosition = addWrappedText(doc, line, PDF_CONFIG.margin.left, yPosition, contentWidth);
         yPosition += 4;
       }
@@ -735,7 +736,7 @@ function addFooter(doc) {
     doc.setFontSize(PDF_CONFIG.fontSize.small);
     doc.setTextColor(PDF_CONFIG.colors.text);
 
-    const footerText = `第 ${i} 頁，共 ${pageCount} 頁`;
+    const footerText = t('qaPdf.page', { current: i, total: pageCount });
     const footerX = doc.internal.pageSize.width / 2;
     const footerY = doc.internal.pageSize.height - 10;
 
@@ -746,7 +747,7 @@ function addFooter(doc) {
     });
 
     // 添加生成時間
-    const generateTime = `生成時間: ${formatDate(new Date())}`;
+    const generateTime = t('qaPdf.generatedAt', { time: formatDate(new Date()) });
     addTextWithCJKImageFallback(doc, generateTime, PDF_CONFIG.margin.right, footerY, {
       fontSizePt: PDF_CONFIG.fontSize.small,
       color: PDF_CONFIG.colors.text,
@@ -770,7 +771,7 @@ function formatDate(date) {
 function formatDuration(duration) {
   const minutes = Math.floor(duration / 60000);
   const seconds = Math.floor((duration % 60000) / 1000);
-  return `${minutes}分${seconds}秒`;
+  return t('qaPdf.durationShort', { minutes, seconds });
 }
 
 // 嘗試從多種來源註冊中文字型（思源黑體等）

@@ -2,10 +2,20 @@ import * as state from './state.js';
 import * as storage from './storage.js';
 import * as ui from './ui.js';
 import * as api from './api.js';
+import { t } from './i18n.js';
 
 // Vocabulary helpers: default book, add/dedupe, and AI completion
 
-const DEFAULT_BOOK_NAME = '生詞本';
+const LEGACY_DEFAULT_BOOK_NAMES = ['生詞本', '单词本'];
+
+function getDefaultBookName() {
+    return t('vocabulary.defaultBookName');
+}
+
+function getDisplayBookName(book) {
+    const name = book?.name || getDefaultBookName();
+    return LEGACY_DEFAULT_BOOK_NAMES.includes(name) ? getDefaultBookName() : name;
+}
 
 // In-memory IPA cache to reduce重複查詢（瀏覽器刷新即清空）
 const _ipaCache = new Map(); // key: lowercase word, value: IPA string (no leading/trailing slashes)
@@ -48,10 +58,10 @@ function isPhrase(text) {
 
 export function ensureDefaultWordbook() {
     // find existing default book by name
-    let book = state.vocabularyBooks.find(b => b && b.name === DEFAULT_BOOK_NAME);
+    let book = state.vocabularyBooks.find(b => b && LEGACY_DEFAULT_BOOK_NAMES.includes(b.name));
     if (book) return book;
     // not found: create a new one; do not change activeBookId (avoid UI jump)
-    const newBook = { id: nowId(), name: DEFAULT_BOOK_NAME, words: [] };
+    const newBook = { id: nowId(), name: getDefaultBookName(), words: [] };
     state.vocabularyBooks.push(newBook);
     storage.saveVocabularyBooks();
     try { storage.saveAppState(); } catch (_) {}
@@ -59,7 +69,7 @@ export function ensureDefaultWordbook() {
 }
 
 export function getDefaultWordbook() {
-    return state.vocabularyBooks.find(b => b && b.name === DEFAULT_BOOK_NAME) || null;
+    return state.vocabularyBooks.find(b => b && LEGACY_DEFAULT_BOOK_NAMES.includes(b.name)) || null;
 }
 
 export async function ensureWordDetails(entry, opts = {}) {
@@ -169,14 +179,14 @@ export async function addWordToDefaultBook(text, options = {}) {
     const raw = (text || '').trim();
     const key = normalizeWordKey(raw);
     if (!key) {
-        ui.displayMessage('沒有可加入的文字。', 'warning');
+        ui.displayMessage(t('vocabulary.nothingToAdd'), 'warning');
         return { ok: false, reason: 'empty' };
     }
 
     const book = ensureDefaultWordbook();
     const dup = findInBookByWord(book, key);
     if (dup) {
-        ui.displayMessage(`「${cleanDisplayText(raw)}」已存在於《${DEFAULT_BOOK_NAME}》。`, 'info');
+        ui.displayMessage(t('vocabulary.existsInBook', { word: cleanDisplayText(raw), book: getDisplayBookName(book) }), 'info');
         return { ok: true, reason: 'duplicate', id: dup.id };
     }
 
@@ -204,7 +214,7 @@ export async function addWordToDefaultBook(text, options = {}) {
 
     book.words.push(entry);
     storage.saveVocabularyBooks();
-    ui.displayMessage(`已加入「${raw}」到《${DEFAULT_BOOK_NAME}》。`, 'success');
+    ui.displayMessage(t('vocabulary.addedToBook', { word: raw, book: getDisplayBookName(book) }), 'success');
     return { ok: true, id: entry.id };
 }
 
@@ -226,7 +236,7 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
     const raw = (text || '').trim();
     const key = normalizeWordKey(raw);
     if (!key) {
-        ui.displayMessage('沒有可加入的文字。', 'warning');
+        ui.displayMessage(t('vocabulary.nothingToAdd'), 'warning');
         return { ok: false, reason: 'empty' };
     }
 
@@ -258,8 +268,8 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
 
     const dup = findInBookByWord(book, key);
     if (dup) {
-        const name = book.name || DEFAULT_BOOK_NAME;
-        ui.displayMessage(`「${cleanDisplayText(raw)}」已存在於《${name}》。`, 'info');
+        const name = getDisplayBookName(book);
+        ui.displayMessage(t('vocabulary.existsInBook', { word: cleanDisplayText(raw), book: name }), 'info');
         return { ok: true, reason: 'duplicate', id: dup.id, bookId: book.id };
     }
 
@@ -291,8 +301,8 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
 
     const saved = storage.addWordToWordbook(book.id, entry);
     const latestBook = storage.getWordbookById(book.id) || book;
-    const bookName = latestBook.name || DEFAULT_BOOK_NAME;
+    const bookName = getDisplayBookName(latestBook);
 
-    ui.displayMessage(`已加入「${raw}」到《${bookName}》。`, 'success');
+    ui.displayMessage(t('vocabulary.addedToBook', { word: raw, book: bookName }), 'success');
     return { ok: true, id: saved.id, bookId: latestBook.id };
 }

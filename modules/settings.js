@@ -6,6 +6,9 @@ const SETTINGS_KEY = 'pen_global_settings';
 const SECRETS_KEY = 'pen_global_secrets';
 
 const defaults = {
+  language: {
+    interfaceLocale: 'zh-CN'
+  },
   ai: {
     apiUrl: '',
     models: {},
@@ -52,6 +55,7 @@ function mergeSettings(baseValue, overrideValue) {
   return {
     ...base,
     ...override,
+    language: mergeRecord(base.language, override.language),
     ai: {
       ...mergeRecord(base.ai, override.ai),
       models: aiOverride && Object.prototype.hasOwnProperty.call(aiOverride, 'models')

@@ -28,6 +28,8 @@ import {
 } from '../assistant/assistant.js';
 import * as backup from '../../modules/local-backup.js';
 import { markdownToHtml } from '../../modules/markdown.js';
+import { getLocale, setLocale, t } from '../../modules/i18n.js';
+import { SUPPORTED_LOCALES } from '../../modules/i18n-config.js';
 
 export function initSync() {
   try {
@@ -69,14 +71,14 @@ function wireAuthUI() {
   if (dom.logoutBtn) dom.logoutBtn.addEventListener('click', async () => {
     try { await auth.signOut(); } catch (_) {}
     updateAuthButtons(null);
-    updateStatus('已登出');
+    updateStatus(t('sync.loggedOut'));
   });
 
   auth.onAuthStateChange((event, session) => {
     const user = session?.user || null;
     try { window.__supabase_user = user || null; } catch(_) {}
     updateAuthButtons(user);
-    updateStatus(user ? (user.email || '已登入') : '未登入');
+    updateStatus(user ? (user.email || t('sync.loggedIn')) : t('sync.loggedOutState'));
     attachRealtime(user);
     setGearLoginState(!!user, user?.email || '');
     if (user) {
@@ -89,7 +91,7 @@ function wireAuthUI() {
     const user = data?.session?.user || null;
     try { window.__supabase_user = user || null; } catch(_) {}
     updateAuthButtons(user);
-    updateStatus(user ? (user.email || '已登入') : '未登入');
+    updateStatus(user ? (user.email || t('sync.loggedIn')) : t('sync.loggedOutState'));
     attachRealtime(user);
     setGearLoginState(!!user, user?.email || '');
     if (user) {
@@ -103,14 +105,14 @@ async function handleSync() {
   // 必須登入後才能同步
   const { data } = await auth.getSession();
   if (!data?.session) {
-    updateStatus('請先登入');
-    alert('請先登入');
+    updateStatus(t('sync.loginFirst'));
+    alert(t('sync.loginFirst'));
     return;
   }
 
   try {
     setBusy(true);
-    updateStatus('同步中...');
+    updateStatus(t('sync.syncing'));
     const info = await syncNow(buildLocalSnapshot, applyMergedSnapshot);
     lastSyncAt = Date.now();
     try { localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
@@ -118,17 +120,17 @@ async function handleSync() {
       try { localStorage.setItem('lastSnapshotVersion', String(info.version)); } catch(_) {}
     }
     if (info && info.restoredFromRemote) {
-      updateStatus('已從雲端恢復（偵測到本機為空）');
-      try { ui.displayMessage('偵測到本機為空，已自動從雲端恢復', 'warning', 5000); } catch(_) {}
+      updateStatus(t('sync.restoredEmpty'));
+      try { ui.displayMessage(t('sync.restoredEmptyMessage'), 'warning', 5000); } catch(_) {}
     } else {
-      updateStatus('已完成同步');
-      try { ui.displayMessage('同步完成', 'success', 2000); } catch(_) {}
+      updateStatus(t('sync.syncDone'));
+      try { ui.displayMessage(t('sync.syncDone'), 'success', 2000); } catch(_) {}
     }
     try { await backup.createBackup('手動同步後備份'); } catch(_) {}
   } catch (e) {
     console.warn(e);
-    updateStatus('同步失敗');
-    alert('同步失敗：' + (e?.message || '未知錯誤'));
+    updateStatus(t('sync.syncFailed'));
+    alert(`${t('sync.syncFailed')}：${e?.message || t('sync.unknownError')}`);
   } finally {
     setBusy(false);
   }
@@ -156,21 +158,21 @@ function updateAuthButtons(user) {
 
 function showLoginModal() {
   try { ui.openModal(); } catch(_) {}
-  try { dom.modalTitle.textContent = '登入'; } catch(_) {}
+  try { dom.modalTitle.textContent = t('sync.login'); } catch(_) {}
   const html = `
     <div class="auth-modal" style="min-width:300px;">
       <div class="auth-field">
-        <label for="auth-token">通行碼</label>
+        <label for="auth-token">${t('sync.passcode')}</label>
         <div class="auth-pass-row" style="display:flex;gap:8px;align-items:center;">
-          <input id="auth-token" type="password" placeholder="輸入你的通行碼" style="flex:1;" autocomplete="current-password">
-          <button id="auth-token-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">顯示</button>
+          <input id="auth-token" type="password" placeholder="${t('sync.passcodePlaceholder')}" style="flex:1;" autocomplete="current-password">
+          <button id="auth-token-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">${t('sync.show')}</button>
         </div>
       </div>
       <div class="auth-actions">
-        <button id="auth-forgot" class="btn-secondary" type="button">忘記通行碼</button>
-        <button id="auth-submit" class="btn-primary" type="button">登入</button>
+        <button id="auth-forgot" class="btn-secondary" type="button">${t('sync.forgot')}</button>
+        <button id="auth-submit" class="btn-primary" type="button">${t('sync.login')}</button>
       </div>
-      <div id="auth-msg" class="auth-msg">資料各自獨立，請使用分配給你的通行碼登入。</div>
+      <div id="auth-msg" class="auth-msg">${t('sync.loginHint')}</div>
     </div>`;
   dom.modalBody.innerHTML = html;
   const tokenEl = dom.modalBody.querySelector('#auth-token');
@@ -181,21 +183,21 @@ function showLoginModal() {
   if (toggle) toggle.onclick = () => {
     const toText = tokenEl.type === 'password';
     tokenEl.type = toText ? 'text' : 'password';
-    toggle.textContent = toText ? '隱藏' : '顯示';
+    toggle.textContent = toText ? t('sync.hide') : t('sync.show');
   };
 
   const doLogin = async () => {
     const code = (tokenEl.value || '').trim();
-    if (!code) { msg.textContent = '請輸入通行碼'; return; }
-    submitBtn.disabled = true; submitBtn.textContent = '登入中...';
+    if (!code) { msg.textContent = t('sync.enterPasscode'); return; }
+    submitBtn.disabled = true; submitBtn.textContent = t('sync.loggingIn');
     try {
       await auth.signInWithToken(code);
-      msg.textContent = '登入成功';
+      msg.textContent = t('sync.loginSuccess');
       try { ui.closeModal(); } catch(_) {}
     } catch (e) {
-      msg.textContent = '錯誤：' + (e?.message || '請稍後再試');
+      msg.textContent = t('sync.error', { message: e?.message || t('sync.tryLater') });
     } finally {
-      submitBtn.disabled = false; submitBtn.textContent = '登入';
+      submitBtn.disabled = false; submitBtn.textContent = t('sync.login');
     }
   };
 
@@ -209,30 +211,30 @@ function showLoginModal() {
 
 // 對外暴露：提供給其他功能模組開啟登入彈窗
 export function openLoginModal() {
-  try { showLoginModal(); } catch (_) { alert('登入模組暫時不可用'); }
+  try { showLoginModal(); } catch (_) { alert(t('sync.loginUnavailable')); }
 }
 
 // 已登入下，自助修改通行碼
 function showChangeTokenModal() {
   try { ui.openModal(); } catch(_) {}
-  try { dom.modalTitle.textContent = '變更通行碼'; } catch(_) {}
+  try { dom.modalTitle.textContent = t('sync.changePasscode'); } catch(_) {}
   const html = `
     <div class="auth-modal" style="min-width:300px;">
       <div class="auth-field">
-        <label for="ct-new">新通行碼</label>
+        <label for="ct-new">${t('sync.newPasscode')}</label>
         <div class="auth-pass-row" style="display:flex;gap:8px;align-items:center;">
-          <input id="ct-new" type="password" placeholder="至少 6 位" style="flex:1;">
-          <button id="ct-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">顯示</button>
+          <input id="ct-new" type="password" placeholder="${t('sync.minSix')}" style="flex:1;">
+          <button id="ct-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">${t('sync.show')}</button>
         </div>
       </div>
       <div class="auth-field">
-        <label for="ct-new2">確認新通行碼</label>
-        <input id="ct-new2" type="password" placeholder="再輸入一次">
+        <label for="ct-new2">${t('sync.confirmPasscode')}</label>
+        <input id="ct-new2" type="password" placeholder="${t('sync.enterAgain')}">
       </div>
       <div class="auth-actions">
-        <button id="ct-submit" class="btn-primary" type="button">更新通行碼</button>
+        <button id="ct-submit" class="btn-primary" type="button">${t('sync.updatePasscode')}</button>
       </div>
-      <div id="ct-msg" class="auth-msg">修改後本機會自動更新；其他裝置需用新通行碼重新登入。</div>
+      <div id="ct-msg" class="auth-msg">${t('sync.changeHint')}</div>
     </div>`;
   dom.modalBody.innerHTML = html;
   const n1 = dom.modalBody.querySelector('#ct-new');
@@ -240,21 +242,21 @@ function showChangeTokenModal() {
   const btn = dom.modalBody.querySelector('#ct-submit');
   const msg = dom.modalBody.querySelector('#ct-msg');
   const toggle = dom.modalBody.querySelector('#ct-toggle');
-  if (toggle) toggle.onclick = () => { const t = n1.type === 'password'; n1.type = t ? 'text' : 'password'; toggle.textContent = t ? '隱藏' : '顯示'; };
+  if (toggle) toggle.onclick = () => { const showText = n1.type === 'password'; n1.type = showText ? 'text' : 'password'; toggle.textContent = showText ? t('sync.hide') : t('sync.show'); };
   btn.onclick = async () => {
     const a = (n1.value || '').trim();
     const b = (n2.value || '').trim();
-    if (a.length < 6) { msg.textContent = '新通行碼至少 6 位'; return; }
-    if (a !== b) { msg.textContent = '兩次輸入不一致'; return; }
-    btn.disabled = true; btn.textContent = '更新中...';
+    if (a.length < 6) { msg.textContent = t('sync.passcodeTooShort'); return; }
+    if (a !== b) { msg.textContent = t('sync.mismatch'); return; }
+    btn.disabled = true; btn.textContent = t('sync.updating');
     try {
       await auth.changeToken(a);
-      msg.textContent = '已更新通行碼';
+      msg.textContent = t('sync.updatedPasscode');
       setTimeout(() => { try { ui.closeModal(); } catch(_) {} }, 600);
     } catch (e) {
-      msg.textContent = '錯誤：' + (e?.message || '請稍後再試');
+      msg.textContent = t('sync.error', { message: e?.message || t('sync.tryLater') });
     } finally {
-      btn.disabled = false; btn.textContent = '更新通行碼';
+      btn.disabled = false; btn.textContent = t('sync.updatePasscode');
     }
   };
 }
@@ -262,29 +264,29 @@ function showChangeTokenModal() {
 // 忘記通行碼：用「使用者代號 + 恢復碼」重置
 function showResetTokenModal() {
   try { ui.openModal(); } catch(_) {}
-  try { dom.modalTitle.textContent = '用恢復碼重置通行碼'; } catch(_) {}
+  try { dom.modalTitle.textContent = t('sync.resetPasscode'); } catch(_) {}
   const html = `
     <div class="auth-modal" style="min-width:300px;">
       <div class="auth-field">
-        <label for="rt-uid">使用者代號</label>
-        <input id="rt-uid" type="text" placeholder="例如 alice" autocomplete="username">
+        <label for="rt-uid">${t('sync.userId')}</label>
+        <input id="rt-uid" type="text" placeholder="${t('sync.userIdPlaceholder')}" autocomplete="username">
       </div>
       <div class="auth-field">
-        <label for="rt-recovery">恢復碼</label>
-        <input id="rt-recovery" type="text" placeholder="建立帳號時取得的恢復碼">
+        <label for="rt-recovery">${t('sync.recoveryCode')}</label>
+        <input id="rt-recovery" type="text" placeholder="${t('sync.recoveryPlaceholder')}">
       </div>
       <div class="auth-field">
-        <label for="rt-new">新通行碼</label>
+        <label for="rt-new">${t('sync.newPasscode')}</label>
         <div class="auth-pass-row" style="display:flex;gap:8px;align-items:center;">
-          <input id="rt-new" type="password" placeholder="至少 6 位" style="flex:1;">
-          <button id="rt-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">顯示</button>
+          <input id="rt-new" type="password" placeholder="${t('sync.minSix')}" style="flex:1;">
+          <button id="rt-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">${t('sync.show')}</button>
         </div>
       </div>
       <div class="auth-actions">
-        <button id="rt-back" class="btn-secondary" type="button">返回登入</button>
-        <button id="rt-submit" class="btn-primary" type="button">重置並登入</button>
+        <button id="rt-back" class="btn-secondary" type="button">${t('sync.backLogin')}</button>
+        <button id="rt-submit" class="btn-primary" type="button">${t('sync.resetAndLogin')}</button>
       </div>
-      <div id="rt-msg" class="auth-msg">忘記通行碼時，用「使用者代號 + 恢復碼」設定新通行碼。</div>
+      <div id="rt-msg" class="auth-msg">${t('sync.resetHint')}</div>
     </div>`;
   dom.modalBody.innerHTML = html;
   const uid = dom.modalBody.querySelector('#rt-uid');
@@ -294,23 +296,23 @@ function showResetTokenModal() {
   const back = dom.modalBody.querySelector('#rt-back');
   const msg = dom.modalBody.querySelector('#rt-msg');
   const toggle = dom.modalBody.querySelector('#rt-toggle');
-  if (toggle) toggle.onclick = () => { const t = nw.type === 'password'; nw.type = t ? 'text' : 'password'; toggle.textContent = t ? '隱藏' : '顯示'; };
+  if (toggle) toggle.onclick = () => { const showText = nw.type === 'password'; nw.type = showText ? 'text' : 'password'; toggle.textContent = showText ? t('sync.hide') : t('sync.show'); };
   if (back) back.onclick = () => showLoginModal();
   btn.onclick = async () => {
     const u = (uid.value || '').trim();
     const r = (rec.value || '').trim();
     const a = (nw.value || '').trim();
-    if (!u || !r) { msg.textContent = '請填寫使用者代號與恢復碼'; return; }
-    if (a.length < 6) { msg.textContent = '新通行碼至少 6 位'; return; }
-    btn.disabled = true; btn.textContent = '處理中...';
+    if (!u || !r) { msg.textContent = t('sync.fillRecovery'); return; }
+    if (a.length < 6) { msg.textContent = t('sync.passcodeTooShort'); return; }
+    btn.disabled = true; btn.textContent = t('sync.processing');
     try {
       await auth.resetToken(u, r, a);
-      msg.textContent = '重置成功，已登入';
+      msg.textContent = t('sync.resetSuccess');
       try { ui.closeModal(); } catch(_) {}
     } catch (e) {
-      msg.textContent = '錯誤：' + (e?.message || '請稍後再試');
+      msg.textContent = t('sync.error', { message: e?.message || t('sync.tryLater') });
     } finally {
-      btn.disabled = false; btn.textContent = '重置並登入';
+      btn.disabled = false; btn.textContent = t('sync.resetAndLogin');
     }
   };
 }
@@ -324,7 +326,7 @@ function toggleGearMenu() {
   const email = (window.__supabase_user && window.__supabase_user.email) || '';
   let ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
   const atMs = parseInt(localStorage.getItem('lastSnapshotAt')||'0',10) || 0;
-  const t = atMs ? new Date(atMs).toLocaleTimeString() : '';
+  const timeText = atMs ? new Date(atMs).toLocaleTimeString() : '';
   const status = dom.syncStatus?.textContent || '';
   if (!ver && status) {
     const mVer = status.match(/v(\d+)/i);
@@ -334,17 +336,17 @@ function toggleGearMenu() {
   m.innerHTML = `
     <div class="menu-item" id="gm-sync">
       <span class="mi-icon" aria-hidden="true">${svgSync()}</span>
-      <span class="mi-text">立即同步</span>
-      <span class="meta">${ver ? 'v'+ver : ''}${t ? ' · ' + t.replace(/:\\d{2}$/, '') : ''}</span>
+      <span class="mi-text">${t('menu.syncNow')}</span>
+      <span class="meta">${ver ? 'v'+ver : ''}${timeText ? ' · ' + timeText.replace(/:\\d{2}$/, '') : ''}</span>
     </div>
-    ${loggedIn ? '' : `<div class="menu-item" id="gm-login"><span class="mi-icon">${svgLogin()}</span><span class="mi-text">登入</span></div>`}
-    ${loggedIn ? `<div class="menu-item" id="gm-change-token"><span class="mi-icon">${svgKey()}</span><span class="mi-text">變更通行碼</span></div>` : ''}
-    ${loggedIn ? `<div class="menu-item" id="gm-logout"><span class="mi-icon">${svgLogout()}</span><span class="mi-text">登出</span><span class="meta">${escapeHtml(email)}</span></div>` : ''}
+    ${loggedIn ? '' : `<div class="menu-item" id="gm-login"><span class="mi-icon">${svgLogin()}</span><span class="mi-text">${t('menu.login')}</span></div>`}
+    ${loggedIn ? `<div class="menu-item" id="gm-change-token"><span class="mi-icon">${svgKey()}</span><span class="mi-text">${t('menu.changePasscode')}</span></div>` : ''}
+    ${loggedIn ? `<div class="menu-item" id="gm-logout"><span class="mi-icon">${svgLogout()}</span><span class="mi-text">${t('menu.logout')}</span><span class="meta">${escapeHtml(email)}</span></div>` : ''}
     <div class="menu-divider"></div>
-    <div class="menu-item" id="gm-settings"><span class="mi-icon">${svgGear()}</span><span class="mi-text">全局設定</span></div>
-    <div class="menu-item" id="gm-grading-history"><span class="mi-icon">${svgHistory()}</span><span class="mi-text">默寫批改歷史</span></div>
-    <div class="menu-item" id="gm-assistant"><span class="mi-icon">${svgChat()}</span><span class="mi-text">AI 會話</span></div>
-    <div class="menu-item" id="gm-backup-panel"><span class="mi-icon">${svgRestore()}</span><span class="mi-text">備份與還原</span></div>
+    <div class="menu-item" id="gm-settings"><span class="mi-icon">${svgGear()}</span><span class="mi-text">${t('menu.globalSettings')}</span></div>
+    <div class="menu-item" id="gm-grading-history"><span class="mi-icon">${svgHistory()}</span><span class="mi-text">${t('menu.gradingHistory')}</span></div>
+    <div class="menu-item" id="gm-assistant"><span class="mi-icon">${svgChat()}</span><span class="mi-text">${t('menu.assistantSessions')}</span></div>
+    <div class="menu-item" id="gm-backup-panel"><span class="mi-icon">${svgRestore()}</span><span class="mi-text">${t('menu.backupRestore')}</span></div>
     <div class="menu-status">${status}</div>`;
   document.body.appendChild(m);
   const sync = m.querySelector('#gm-sync');
@@ -358,7 +360,7 @@ function toggleGearMenu() {
   if (sync) sync.addEventListener('click', () => { handleSync(); m.remove(); });
   if (login) login.addEventListener('click', () => { showLoginModal(); m.remove(); });
   if (changeToken) changeToken.addEventListener('click', () => { showChangeTokenModal(); m.remove(); });
-  if (logout) logout.addEventListener('click', async () => { try { await auth.signOut(); } catch(_){} updateAuthButtons(null); updateStatus('已登出'); m.remove(); });
+  if (logout) logout.addEventListener('click', async () => { try { await auth.signOut(); } catch(_){} updateAuthButtons(null); updateStatus(t('sync.loggedOut')); m.remove(); });
   if (settings) settings.addEventListener('click', () => { showGlobalSettingsModal(); m.remove(); });
   if (gradingHistory) gradingHistory.addEventListener('click', () => { try { openDictationGradingHistory(); } catch(_) {} m.remove(); });
   if (assistantSessions) assistantSessions.addEventListener('click', () => { showAssistantSessions(); m.remove(); });
@@ -367,7 +369,7 @@ function toggleGearMenu() {
 
 function showGlobalSettingsModal() {
   try { ui.openModal(); } catch(_) {}
-  try { dom.modalTitle.textContent = '全局設定'; } catch(_) {}
+  try { dom.modalTitle.textContent = t('settings.globalTitle'); } catch(_) {}
   try { const mc = dom.appModal.querySelector('.modal-content'); if (mc) mc.classList.add('modal-large'); } catch(_) {}
   // 注入本面板私有樣式（避免全局污染）
   (function injectGsStyle(){
@@ -416,6 +418,7 @@ function showGlobalSettingsModal() {
     }).value || '';
   });
   const settings = {
+    interfaceLocale: persistedSettings?.language?.interfaceLocale || getLocale(),
     ttsUrlCustom: persistedSettings?.tts?.baseUrlCustom || '',
     ttsUse: persistedSettings?.tts?.use || 'remote',
     readEn: (persistedSettings?.reading && persistedSettings.reading.englishVariant) || 'en-GB',
@@ -449,16 +452,16 @@ function showGlobalSettingsModal() {
     try {
       const d = new Date(value);
       if (Number.isNaN(d.getTime())) return '';
-      return d.toLocaleString('zh-TW', { hour12: false });
+      return d.toLocaleString(getLocale(), { hour12: false });
     } catch (_) {
       return '';
     }
   };
   const describeDiscoveryState = (row) => {
-    if (row.discoveryStatus === 'success') return '已抓取';
-    if (row.discoveryStatus === 'loading') return '抓取中';
-    if (row.discoveryStatus === 'error') return '抓取失敗';
-    return '尚未抓取';
+    if (row.discoveryStatus === 'success') return t('settings.fetched');
+    if (row.discoveryStatus === 'loading') return t('settings.fetching');
+    if (row.discoveryStatus === 'error') return t('settings.fetchFailed');
+    return t('settings.notFetched');
   };
   const buildDraftAiSettings = () => {
     const providers = {};
@@ -531,7 +534,7 @@ function showGlobalSettingsModal() {
         .map((value) => ({
           value,
           label: value,
-          meta: '手動新增',
+          meta: t('settings.manualAdded'),
           isManual: true
         }));
       const combinedEntries = [...discoveredEntries, ...manualEntries];
@@ -551,34 +554,34 @@ function showGlobalSettingsModal() {
             <div class="gs-ai-provider-header-main">
               <div class="gs-ai-provider-title">${escapeHtml(row.label || row.id)}</div>
               <div class="gs-ai-provider-id">ID: ${escapeHtml(row.id)}</div>
-              <label class="checkbox-inline"><input data-ai-provider-enabled="${escapeHtml(row.id)}" type="checkbox" ${row.enabled !== false ? 'checked' : ''}> <span>啟用</span></label>
+              <label class="checkbox-inline"><input data-ai-provider-enabled="${escapeHtml(row.id)}" type="checkbox" ${row.enabled !== false ? 'checked' : ''}> <span>${t('settings.enabled')}</span></label>
             </div>
             <div class="gs-ai-provider-actions">
               <span class="gs-ai-discovery-state ${statusClass}">${escapeHtml(statusText)}</span>
               ${lastText ? `<span class="gs-ai-provider-time">${escapeHtml(lastText)}</span>` : ''}
-              <button type="button" class="btn-secondary" data-ai-provider-discover="${escapeHtml(row.id)}">抓取模型</button>
-              ${row.id !== 'default' ? `<button type="button" class="btn-secondary" data-ai-provider-remove="${escapeHtml(row.id)}">移除</button>` : ''}
+              <button type="button" class="btn-secondary" data-ai-provider-discover="${escapeHtml(row.id)}">${t('settings.fetchModels')}</button>
+              ${row.id !== 'default' ? `<button type="button" class="btn-secondary" data-ai-provider-remove="${escapeHtml(row.id)}">${t('settings.remove')}</button>` : ''}
             </div>
           </div>
           <div class="gs-ai-provider-fields">
             <label class="gs-ai-provider-field">
-              <span class="gs-ai-provider-field-label">名稱</span>
-              <input data-ai-provider-label="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.label || row.id)}" placeholder="顯示名稱">
+              <span class="gs-ai-provider-field-label">${t('settings.name')}</span>
+              <input data-ai-provider-label="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.label || row.id)}" placeholder="${t('settings.displayName')}">
             </label>
             <label class="gs-ai-provider-field">
               <span class="gs-ai-provider-field-label">Base URL</span>
               <input data-ai-provider-base="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.baseUrl || '')}" placeholder="https://api.example.com/v1">
             </label>
             <label class="gs-ai-provider-field">
-              <span class="gs-ai-provider-field-label">API URL（選填）</span>
-              <input data-ai-provider-api="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.apiUrl || '')}" placeholder="留空則由 Base URL 推導">
+              <span class="gs-ai-provider-field-label">${t('settings.apiUrlOptional')}</span>
+              <input data-ai-provider-api="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.apiUrl || '')}" placeholder="${t('settings.deriveApiUrl')}">
             </label>
             <label class="gs-ai-provider-field">
-              <span class="gs-ai-provider-field-label">Models URL（選填）</span>
-              <input data-ai-provider-models="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.modelsUrl || '')}" placeholder="留空則預設為 baseUrl + /v1/models">
+              <span class="gs-ai-provider-field-label">${t('settings.modelsUrlOptional')}</span>
+              <input data-ai-provider-models="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.modelsUrl || '')}" placeholder="${t('settings.deriveModelsUrl')}">
             </label>
             <label class="gs-ai-provider-field">
-              <span class="gs-ai-provider-field-label">API Key（僅本機）</span>
+              <span class="gs-ai-provider-field-label">${t('settings.apiKeyLocal')}</span>
               <input data-ai-provider-key="${escapeHtml(row.id)}" type="password" value="${escapeHtml(row.apiKey || '')}" placeholder="sk-...">
             </label>
           </div>
@@ -587,12 +590,12 @@ function showGlobalSettingsModal() {
               <details class="gs-ai-model-details" data-ai-provider-model-details="${escapeHtml(row.id)}" ${isModelListOpen ? 'open' : ''}>
                 <summary>
                   <span class="gs-ai-model-summary-main">
-                    <span class="gs-ai-model-summary-title">允許模型</span>
-                    <span class="gs-ai-model-summary-meta">已選 ${selectedCount} / 全部 ${combinedEntries.length}</span>
+                    <span class="gs-ai-model-summary-title">${t('settings.allowedModels')}</span>
+                    <span class="gs-ai-model-summary-meta">${t('settings.selectedModels', { selected: selectedCount, total: combinedEntries.length })}</span>
                   </span>
                 </summary>
                 <div class="gs-ai-model-details-body">
-                  <div class="gs-ai-model-hint">勾選後會出現在各任務下拉</div>
+                  <div class="gs-ai-model-hint">${t('settings.modelHint')}</div>
                   <div class="gs-ai-model-grid" data-ai-provider-model-list="${escapeHtml(row.id)}">
                     ${combinedEntries.map((item) => `
                       <label class="gs-ai-model-option" title="${escapeHtml(item.label || item.value)}">
@@ -610,11 +613,11 @@ function showGlobalSettingsModal() {
                 </div>
               </details>
             ` : `
-              <div class="gs-ai-model-empty" data-ai-provider-model-list="${escapeHtml(row.id)}">尚無模型，可先抓取或手動新增。</div>
+              <div class="gs-ai-model-empty" data-ai-provider-model-list="${escapeHtml(row.id)}">${t('settings.noModels')}</div>
             `}
             <div class="gs-ai-provider-manual-row">
-              <input data-ai-provider-manual-input="${escapeHtml(row.id)}" type="text" placeholder="手動新增模型，例如 gpt-4.1-mini 或 provider:model">
-              <button type="button" class="btn-secondary" data-ai-provider-manual-add="${escapeHtml(row.id)}">新增模型</button>
+              <input data-ai-provider-manual-input="${escapeHtml(row.id)}" type="text" placeholder="${t('settings.manualModel')}">
+              <button type="button" class="btn-secondary" data-ai-provider-manual-add="${escapeHtml(row.id)}">${t('settings.addModel')}</button>
             </div>
             ${row.discoveryError ? `<div class="gs-ai-provider-error">${escapeHtml(row.discoveryError)}</div>` : ''}
           </div>
@@ -631,7 +634,7 @@ function showGlobalSettingsModal() {
       return `
         <div style="display:grid;grid-template-columns:minmax(120px,180px) 1fr;gap:8px;align-items:center;">
           <div style="font-size:13px;color:#0f172a;">${escapeHtml(label)}</div>
-          <select data-ai-task-select="${escapeHtml(key)}" ${selection.disabled ? 'disabled' : ''} title="${selection.disabled ? '請先到全局設定配置 provider 與模型' : ''}">
+          <select data-ai-task-select="${escapeHtml(key)}" ${selection.disabled ? 'disabled' : ''} title="${selection.disabled ? t('qa.configureModel') : ''}">
             ${selection.options.map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === value ? 'selected' : ''}>${escapeHtml(option.label || option.value)}</option>`).join('')}
           </select>
         </div>`;
@@ -639,28 +642,28 @@ function showGlobalSettingsModal() {
     host.innerHTML = `
       <div class="auth-field">
         <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap;">
-          <label style="margin:0">AI Provider 設定</label>
-          <button id="gs-ai-provider-add" type="button" class="btn-secondary">新增 provider</button>
+          <label style="margin:0">${t('settings.providerSettings')}</label>
+          <button id="gs-ai-provider-add" type="button" class="btn-secondary">${t('settings.addProvider')}</button>
         </div>
         <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px;">
           ${providerCardsHtml}
         </div>
-        <div class="gs-hint" style="margin-top:6px">可設定 baseUrl / key，抓取模型後勾選允許清單；default 仍作為全域回退。</div>
+        <div class="gs-hint" style="margin-top:6px">${t('settings.providerHint')}</div>
       </div>
       <div class="auth-field">
-        <label>AI Task → 模型映射</label>
+        <label>${t('settings.taskMapping')}</label>
         <div style="display:grid;grid-template-columns:1fr;gap:8px;">
           ${taskRowsHtml}
         </div>
-        <div class="gs-hint" style="margin-top:6px">各任務僅顯示允許模型；若目前值不在允許清單中，會暫時保留顯示。</div>
+        <div class="gs-hint" style="margin-top:6px">${t('settings.taskHint')}</div>
       </div>`;
 
     host.querySelector('#gs-ai-provider-add')?.addEventListener('click', () => {
-      const rawId = window.prompt('請輸入 provider ID（英文、數字、- 或 _）', 'custom');
+      const rawId = window.prompt(t('settings.providerIdPrompt'), 'custom');
       const nextId = String(rawId || '').trim().replace(/[^a-zA-Z0-9_-]/g, '');
       if (!nextId) return;
       if (aiState.providers.some((row) => row.id === nextId)) {
-        window.alert('此 provider ID 已存在');
+        window.alert(t('settings.providerExists'));
         return;
       }
       aiState.providers.push({
@@ -744,7 +747,7 @@ function showGlobalSettingsModal() {
           row.discoveryError = result.error || '';
         } catch (error) {
           row.discoveryStatus = 'error';
-          row.discoveryError = error?.message || '模型清單抓取失敗';
+          row.discoveryError = error?.message || t('settings.fetchFailed');
         }
         renderAiSettingsSection();
       });
@@ -761,97 +764,104 @@ function showGlobalSettingsModal() {
 
   const html = `
     <div class="auth-modal" style="min-width:320px;">
+      <div class="auth-field">
+        <label for="gs-interface-locale">${escapeHtml(t('settings.languageLabel'))}</label>
+        <select id="gs-interface-locale">
+          ${Object.keys(SUPPORTED_LOCALES).map((value) => `<option value="${escapeHtml(value)}" ${settings.interfaceLocale === value ? 'selected' : ''}>${escapeHtml(t(value === 'zh-HK' ? 'settings.localeHk' : 'settings.localeCn'))}</option>`).join('')}
+        </select>
+        <div class="gs-hint" style="margin-top:6px">${escapeHtml(t('settings.languageHint'))}</div>
+      </div>
       <div id="gs-ai-settings"></div>
       <div class="auth-field">
-        <label>TTS 來源</label>
+        <label>${t('settings.ttsSource')}</label>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <label class="gs-toggle"><input id="gs-tts-use-remote" class="gs-visually-hidden" type="radio" name="gs-tts-use" checked><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">遠程</span></label>
-          <label class="gs-toggle"><input id="gs-tts-use-local" class="gs-visually-hidden" type="radio" name="gs-tts-use"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">本地</span></label>
-          <label class="gs-toggle"><input id="gs-tts-use-custom" class="gs-visually-hidden" type="radio" name="gs-tts-use"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">自定義</span></label>
-          <span class="gs-hint">一般用戶只需選擇來源；需要自定義再輸入 URL</span>
+          <label class="gs-toggle"><input id="gs-tts-use-remote" class="gs-visually-hidden" type="radio" name="gs-tts-use" checked><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.remote')}</span></label>
+          <label class="gs-toggle"><input id="gs-tts-use-local" class="gs-visually-hidden" type="radio" name="gs-tts-use"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.local')}</span></label>
+          <label class="gs-toggle"><input id="gs-tts-use-custom" class="gs-visually-hidden" type="radio" name="gs-tts-use"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.custom')}</span></label>
+          <span class="gs-hint">${t('settings.ttsSourceHint')}</span>
         </div>
       </div>
       <div class="auth-field" id="gs-tts-custom-wrap" style="display:none">
-        <label>自定義 TTS 基礎 URL</label>
+        <label>${t('settings.customTtsUrl')}</label>
         <input id="gs-tts-url-custom" type="text" placeholder="https://your-tts.example.com" value="${escapeHtml(settings.ttsUrlCustom||'')}">
       </div>
       <div class="auth-field">
-        <label>TTS API Key（僅保存在本機）</label>
+        <label>${t('settings.ttsKey')}</label>
         <input id="gs-tts-key" type="password" placeholder="..." value="${escapeHtml(secrets.ttsKey||'')}">
       </div>
       <div class="auth-field">
-        <label>英語朗讀首選</label>
+        <label>${t('settings.englishVoicePreference')}</label>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <label class="gs-toggle"><input id="gs-read-en-gb" class="gs-visually-hidden" name="gs-read-en" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">英音 en‑GB</span></label>
-          <label class="gs-toggle"><input id="gs-read-en-us" class="gs-visually-hidden" name="gs-read-en" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">美音 en‑US</span></label>
-          <span class="gs-hint">未指定時預設英音</span>
+          <label class="gs-toggle"><input id="gs-read-en-gb" class="gs-visually-hidden" name="gs-read-en" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.britishEnglish')}</span></label>
+          <label class="gs-toggle"><input id="gs-read-en-us" class="gs-visually-hidden" name="gs-read-en" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.americanEnglish')}</span></label>
+          <span class="gs-hint">${t('settings.defaultBritish')}</span>
         </div>
       </div>
       <div class="auth-field">
-        <label>中文朗讀首選</label>
+        <label>${t('settings.chineseVoicePreference')}</label>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <label class="gs-toggle"><input id="gs-read-zh-cn" class="gs-visually-hidden" name="gs-read-zh" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">普通話 zh‑CN</span></label>
-          <label class="gs-toggle"><input id="gs-read-zh-hk" class="gs-visually-hidden" name="gs-read-zh" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">粵語 zh‑HK</span></label>
+          <label class="gs-toggle"><input id="gs-read-zh-cn" class="gs-visually-hidden" name="gs-read-zh" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.mandarin')}</span></label>
+          <label class="gs-toggle"><input id="gs-read-zh-hk" class="gs-visually-hidden" name="gs-read-zh" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.cantonese')}</span></label>
         </div>
       </div>
       <div class="auth-field">
         <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap">
-          <label style="margin:0">TTS 聲音（僅顯示：美音、英音、廣東話、普通話）</label>
-          <button id="gs-tts-reload" type="button" class="btn" style="margin-left:auto">重新載入清單</button>
+          <label style="margin:0">${t('settings.ttsVoices')}</label>
+          <button id="gs-tts-reload" type="button" class="btn" style="margin-left:auto">${t('settings.reloadList')}</button>
         </div>
         <div id="gs-voice-box" style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px">
           <div>
             <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:#64748b">英語（美音 en-US）</div>
-              <button id="gs-test-en-us" type="button" class="btn-secondary" style="padding:4px 8px">試聽</button>
+              <div style="font-size:12px;color:#64748b">${t('settings.englishAmerican')}</div>
+              <button id="gs-test-en-us" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
             </div>
-            <select id="gs-voice-en-us" style="width:100%"><option value="">正在載入...</option></select>
+            <select id="gs-voice-en-us" style="width:100%"><option value="">${t('settings.loading')}</option></select>
           </div>
           <div>
             <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:#64748b">英語（英音 en-GB）</div>
-              <button id="gs-test-en-gb" type="button" class="btn-secondary" style="padding:4px 8px">試聽</button>
+              <div style="font-size:12px;color:#64748b">${t('settings.englishBritish')}</div>
+              <button id="gs-test-en-gb" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
             </div>
-            <select id="gs-voice-en-gb" style="width:100%"><option value="">正在載入...</option></select>
+            <select id="gs-voice-en-gb" style="width:100%"><option value="">${t('settings.loading')}</option></select>
           </div>
           <div>
             <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:#64748b">粵語（廣東話 zh-HK）</div>
-              <button id="gs-test-zh-hk" type="button" class="btn-secondary" style="padding:4px 8px">試聽</button>
+              <div style="font-size:12px;color:#64748b">${t('settings.cantoneseVoice')}</div>
+              <button id="gs-test-zh-hk" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
             </div>
-            <select id="gs-voice-zh-hk" style="width:100%"><option value="">正在載入...</option></select>
+            <select id="gs-voice-zh-hk" style="width:100%"><option value="">${t('settings.loading')}</option></select>
           </div>
           <div>
             <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:#64748b">中文（普通話 zh-CN）</div>
-              <button id="gs-test-zh-cn" type="button" class="btn-secondary" style="padding:4px 8px">試聽</button>
+              <div style="font-size:12px;color:#64748b">${t('settings.mandarinVoice')}</div>
+              <button id="gs-test-zh-cn" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
             </div>
-            <select id="gs-voice-zh-cn" style="width:100%"><option value="">正在載入...</option></select>
+            <select id="gs-voice-zh-cn" style="width:100%"><option value="">${t('settings.loading')}</option></select>
           </div>
         </div>
-        <div id="gs-voice-hint" class="gs-hint">若載入失敗，請確認 TTS 基礎 URL 或 ai-config.js 的 voicesUrl 可存取。</div>
+        <div id="gs-voice-hint" class="gs-hint">${t('settings.voiceLoadHint')}</div>
       </div>
       <div class="auth-field">
-        <label>AI 助手</label>
+        <label>${t('settings.assistant')}</label>
         <div class="gs-asst-row">
-          <label class="gs-toggle" title="右下角浮窗入口">
+          <label class="gs-toggle" title="${t('settings.assistantEntryTitle')}">
             <input id="gs-assistant-enabled" class="gs-visually-hidden" type="checkbox" ${settings.assistantEnabled ? 'checked' : ''}>
             <span class="gs-switch" aria-hidden="true"></span>
-            <span class="gs-label">啟用助手</span>
+            <span class="gs-label">${t('settings.enableAssistant')}</span>
           </label>
-          <label class="gs-toggle" title="串流回應可減少等待">
+          <label class="gs-toggle" title="${t('settings.streamTitle')}">
             <input id="gs-assistant-stream" class="gs-visually-hidden" type="checkbox" ${settings.assistantStream === false ? '' : 'checked'}>
             <span class="gs-switch" aria-hidden="true"></span>
-            <span class="gs-label">串流回應</span>
+            <span class="gs-label">${t('settings.streaming')}</span>
           </label>
-          <span class="gs-hint">右下角入口 · 串流更順暢</span>
+          <span class="gs-hint">${t('settings.assistantHint')}</span>
         </div>
       </div>
       <div class="auth-actions">
-        <button id="gs-cancel" class="btn-secondary">取消</button>
-        <button id="gs-save" class="btn-primary">儲存</button>
+        <button id="gs-cancel" class="btn-secondary">${t('settings.cancel')}</button>
+        <button id="gs-save" class="btn-primary">${t('settings.save')}</button>
       </div>
-      <div class="auth-msg" id="gs-msg">設定僅保存在本機，不會同步到雲端。</div>
+      <div class="auth-msg" id="gs-msg">${t('settings.localOnlyHint')}</div>
     </div>`;
   dom.modalBody.innerHTML = html;
   renderAiSettingsSection();
@@ -894,6 +904,7 @@ function showGlobalSettingsModal() {
       const ttsUse = dom.modalBody.querySelector('#gs-tts-use-custom')?.checked ? 'custom' : (dom.modalBody.querySelector('#gs-tts-use-local')?.checked ? 'local' : 'remote');
       const ttsUrlCustom = (dom.modalBody.querySelector('#gs-tts-url-custom')?.value || '').trim();
       const ttsKey = $('#gs-tts-key').value.trim();
+      const interfaceLocale = dom.modalBody.querySelector('#gs-interface-locale')?.value || 'zh-CN';
       const asstEnabled = dom.modalBody.querySelector('#gs-assistant-enabled')?.checked ? true : false;
       const asstStream = dom.modalBody.querySelector('#gs-assistant-stream')?.checked !== false;
       const sv = {
@@ -909,6 +920,7 @@ function showGlobalSettingsModal() {
       const aiSecrets = buildDraftAiSecrets();
       saveGlobalSettings({
         ...aiSettings,
+        language: { interfaceLocale },
         tts: { use: ttsUse, baseUrlCustom: ttsUrlCustom, selectedVoices: sv },
         reading: { englishVariant: readEn, chineseVariant: readZh },
         assistant: { enabled: asstEnabled, stream: asstStream }
@@ -917,10 +929,11 @@ function showGlobalSettingsModal() {
         ...aiSecrets,
         ttsApiKey: ttsKey
       });
-      $('#gs-msg').textContent = '已儲存（僅本機）';
+      setLocale(interfaceLocale, { persist: false });
+      $('#gs-msg').textContent = t('settings.savedLocal');
       setTimeout(()=> ui.closeModal(), 500);
     } catch (e) {
-      $('#gs-msg').textContent = '儲存失敗：' + (e?.message || '');
+      $('#gs-msg').textContent = t('settings.saveFailed') + (e?.message || '');
     }
   };
 
@@ -935,11 +948,11 @@ function showGlobalSettingsModal() {
       'zh-HK': $('#gs-test-zh-hk'),
       'zh-CN': $('#gs-test-zh-cn')
     };
-    const setLoading = (on) => { selects.forEach(sel => { if (!sel) return; sel.innerHTML = `<option value="">${on?'正在載入...':'無可用選項'}</option>`; sel.disabled = on; }); };
+    const setLoading = (on) => { selects.forEach(sel => { if (!sel) return; sel.innerHTML = `<option value="">${on ? t('settings.loading') : t('settings.noAvailable')}</option>`; sel.disabled = on; }); };
     const ensureOptions = (sel, arr, savedVal) => {
         if (!sel) return;
         sel.innerHTML = '';
-        if (!arr || !arr.length) { sel.innerHTML = '<option value="">無可用選項</option>'; sel.disabled = false; return; }
+        if (!arr || !arr.length) { sel.innerHTML = `<option value="">${t('settings.noAvailable')}</option>`; sel.disabled = false; return; }
         arr.forEach(v => { const o=document.createElement('option'); o.value=v.id; o.textContent=v.__label||v.id; sel.appendChild(o); });
         // 若有保存值且存在於清單，選中；否則預設第一項
         if (savedVal && Array.from(sel.options).some(o => o.value === savedVal)) sel.value = savedVal;
@@ -970,10 +983,10 @@ function showGlobalSettingsModal() {
         fillAll(groups, saved);
         // 啟用試聽按鈕
         Object.keys(testBtns).forEach(k => { if (testBtns[k]) testBtns[k].disabled = false; });
-        const hint = $('#gs-voice-hint'); if (hint) hint.textContent = '已載入，共 ' + list.length + ' 個聲音';
+        const hint = $('#gs-voice-hint'); if (hint) hint.textContent = t('settings.voicesLoaded', { count: list.length });
       } catch (e) {
-        selects.forEach(sel => { if (!sel) return; sel.innerHTML = '<option value="">載入失敗</option>'; sel.disabled = false; });
-        const hint = $('#gs-voice-hint'); if (hint) hint.textContent = '載入失敗：' + (e?.message || '');
+        selects.forEach(sel => { if (!sel) return; sel.innerHTML = `<option value="">${t('settings.loadFailed')}</option>`; sel.disabled = false; });
+        const hint = $('#gs-voice-hint'); if (hint) hint.textContent = t('settings.loadFailedMessage', { message: e?.message || '' });
       } finally {
         selects.forEach(sel => { if (!sel) return; sel.disabled = false; });
       }
@@ -1005,7 +1018,7 @@ function showGlobalSettingsModal() {
             else id = cfg?.TTS_CONFIG?.voices?.english || '';
           } catch(_) {}
         }
-        if (!id) { if (hint) hint.textContent = '沒有可用的聲音可試聽'; return; }
+        if (!id) { if (hint) hint.textContent = t('settings.noVoice'); return; }
         let text;
         if (group === 'en-US') text = 'This is a test voice.';
         else if (group === 'en-GB') text = 'This is a British English test voice.';
@@ -1015,7 +1028,7 @@ function showGlobalSettingsModal() {
         if (!ok) {
           const url = buildTTSUrl(text, id, 0);
           try { console.debug('[TTS test]', group, id, url.replace(/(api_key=)[^&]+/, '$1***')); } catch(_) {}
-          if (hint) hint.textContent = '播放失敗，已輸出測試 URL 於 Console，請檢查回應格式與 voice 代碼。';
+          if (hint) hint.textContent = t('settings.playbackFailed');
         }
       } catch(e) {
         console.error('試聽失敗', e);
@@ -1034,7 +1047,7 @@ function showGlobalSettingsModal() {
           if (fb) {
             let text = (group === 'zh-HK') ? '呢個係測試語音。' : (group === 'zh-CN' ? '這是一段測試語音。' : 'This is a test voice.');
             await speakText(text, fb, 0);
-            if (hint) hint.textContent = '提示：該聲音可能不被後端支援，已用預設後備語音試聽。';
+            if (hint) hint.textContent = t('settings.fallbackVoice');
           }
         } catch(_) {}
       }
@@ -1049,7 +1062,7 @@ function showGlobalSettingsModal() {
 function setGearLoginState(isLoggedIn, email) {
   if (!dom.appGearBtn) return;
   dom.appGearBtn.classList.toggle('is-logged-in', !!isLoggedIn);
-  if (email) dom.appGearBtn.title = `設定（${email}）`; else dom.appGearBtn.title = '設定';
+  if (email) dom.appGearBtn.title = `${t('sync.settings')}（${email}）`; else dom.appGearBtn.title = t('sync.settings');
 }
 
 // 通行碼登入模式：不再需要郵件回跳處理與密碼重設 / 變更流程（已移除）
@@ -1076,14 +1089,14 @@ function escapeHtml(s){
 
 function getAiTaskFieldList() {
   return [
-    { key: 'wordAnalysis', label: '查詞 / 單詞分析' },
-    { key: 'sentenceChecking', label: '造句檢查' },
-    { key: 'qaChecking', label: '問答 AI 校對' },
-    { key: 'articleAnalysis', label: '文章詳解' },
-    { key: 'articleCleanup', label: '文章 AI 清洗' },
-    { key: 'exampleGeneration', label: '例句生成' },
-    { key: 'imageOCR', label: 'OCR / 視覺' },
-    { key: 'assistant', label: 'AI 助手' }
+    { key: 'wordAnalysis', label: t('settings.taskWord') },
+    { key: 'sentenceChecking', label: t('settings.taskSentence') },
+    { key: 'qaChecking', label: t('settings.taskQa') },
+    { key: 'articleAnalysis', label: t('settings.taskArticle') },
+    { key: 'articleCleanup', label: t('settings.taskCleanup') },
+    { key: 'exampleGeneration', label: t('settings.taskExamples') },
+    { key: 'imageOCR', label: t('settings.taskOcr') },
+    { key: 'assistant', label: t('settings.taskAssistant') }
   ];
 }
 
@@ -1092,7 +1105,7 @@ function getAiTaskFieldList() {
 // -----------------
 async function showAssistantSessions(){
   try { ui.openModal(); } catch(_) {}
-  try { dom.modalTitle.textContent = 'AI 會話'; } catch(_) {}
+  try { dom.modalTitle.textContent = t('menu.assistantSessions'); } catch(_) {}
   try { const mc = dom.appModal.querySelector('.modal-content'); if (mc) mc.classList.add('modal-large'); } catch(_) {}
 
   // 單次注入樣式（避免全局污染）
@@ -1137,23 +1150,23 @@ async function showAssistantSessions(){
   layout.id = 'as-layout';
   const leftWrap = document.createElement('div'); leftWrap.id = 'as-left-wrap';
   const leftToolbar = document.createElement('div'); leftToolbar.id = 'as-left-toolbar'; leftToolbar.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
-  leftToolbar.innerHTML = `<button id="as-new" class="btn primary" style="padding:6px 8px;font-size:12px;">新建</button>
-  <input id="as-import" type="file" accept="application/json" style="display:none"><button id="as-import-btn" class="btn secondary" style="padding:6px 8px;font-size:12px;">匯入</button>
+  leftToolbar.innerHTML = `<button id="as-new" class="btn primary" style="padding:6px 8px;font-size:12px;">${t('assistant.new')}</button>
+  <input id="as-import" type="file" accept="application/json" style="display:none"><button id="as-import-btn" class="btn secondary" style="padding:6px 8px;font-size:12px;">${t('assistant.import')}</button>
   <span style="flex:1"></span>
-  <button id="as-rename" class="btn tertiary" title="修改標題" style="padding:6px 8px;font-size:12px;">重命名</button>
-  <button id="as-delete" class="btn danger" title="刪除目前會話" style="padding:6px 8px;font-size:12px;">刪除</button>`;
+  <button id="as-rename" class="btn tertiary" title="${t('assistant.modifyTitle')}" style="padding:6px 8px;font-size:12px;">${t('assistant.rename')}</button>
+  <button id="as-delete" class="btn danger" title="${t('assistant.delete')}" style="padding:6px 8px;font-size:12px;">${t('assistant.delete')}</button>`;
   const left = document.createElement('div'); left.id = 'as-left';
   leftWrap.appendChild(leftToolbar); leftWrap.appendChild(left);
   const right = document.createElement('div'); right.id = 'as-right';
 
   left.innerHTML = index.length ? index.map(m => {
-    const title = (m.articleKey==='global' ? '全局 · ' : '') + (m.title || '會話');
+    const title = (m.articleKey==='global' ? `${t('assistant.global')} · ` : '') + (m.title || t('assistant.session'));
     const time = new Date(m.updatedAt || Date.now()).toLocaleString();
     return `<div class="as-item" data-id="${m.id}" title="點擊預覽，雙擊直接在助手中開啟">
       <div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(title)}</div>
       <div style="font-size:12px;color:#64748b;">${time}</div>
     </div>`;
-  }).join('') : '<div style="padding:12px;color:#64748b;">尚無會話</div>';
+  }).join('') : `<div style="padding:12px;color:#64748b;">${t('assistant.noSessions')}</div>`;
 
   layout.appendChild(leftWrap); layout.appendChild(right);
   dom.modalBody.innerHTML=''; dom.modalBody.appendChild(layout);
@@ -1162,34 +1175,34 @@ async function showAssistantSessions(){
   let currentArticleKey = '';
   const rightBody = document.createElement('div'); rightBody.id = 'as-right-body';
   const rightToolbar = document.createElement('div'); rightToolbar.id = 'as-right-toolbar';
-  rightToolbar.innerHTML = `<button id="as-open" class="btn primary" style="padding:6px 10px;font-size:12px;">在助手中繼續</button>
-  <button id="as-export" class="btn secondary" style="padding:6px 10px;font-size:12px;">匯出</button>
-  <input id="as-question" type="text" placeholder="輸入問題…" style="flex:1;border:1px solid #d1d5db;border-radius:8px;padding:6px 8px;">
-  <button id="as-send" class="btn primary" style="padding:6px 10px;font-size:12px;">發送</button>`;
+  rightToolbar.innerHTML = `<button id="as-open" class="btn primary" style="padding:6px 10px;font-size:12px;">${t('assistant.continueInAssistant')}</button>
+  <button id="as-export" class="btn secondary" style="padding:6px 10px;font-size:12px;">${t('assistant.export')}</button>
+  <input id="as-question" type="text" placeholder="${t('assistant.questionPlaceholder')}" style="flex:1;border:1px solid #d1d5db;border-radius:8px;padding:6px 8px;">
+  <button id="as-send" class="btn primary" style="padding:6px 10px;font-size:12px;">${t('assistant.send')}</button>`;
   right.appendChild(rightBody); right.appendChild(rightToolbar);
 
   async function renderConversation(id){
     currentId = id; const meta = index.find(x=>x.id===id) || {}; currentArticleKey = meta.articleKey || 'global';
-    rightBody.innerHTML = '<div style="padding:8px;color:#64748b;">載入中...</div>';
+    rightBody.innerHTML = `<div style="padding:8px;color:#64748b;">${t('assistant.loading')}</div>`;
     try {
       const msgs = await getAssistantConversationMessages(id);
       const html = msgs.map(m => {
         if (m.role === 'assistant') return `<div class=\"assistant-msg assistant-assistant\">${markdownToHtml(m.content||'')}</div>`;
         return `<div class=\"assistant-msg assistant-user\">${escapeHtml(m.content||'')}</div>`;
       }).join('');
-      rightBody.innerHTML = html || '<div style="padding:8px;color:#64748b;">此會話暫無訊息</div>';
+      rightBody.innerHTML = html || `<div style="padding:8px;color:#64748b;">${t('assistant.emptySession')}</div>`;
       // 為預覽面板中的程式碼塊補上複製按鈕
       try { rightBody.querySelectorAll('pre').forEach(pre => {
         if (pre.querySelector('.assistant-copy')) return;
         const code = pre.querySelector('code');
         const btn = document.createElement('button');
-        btn.className = 'assistant-copy'; btn.textContent = '複製';
+        btn.className = 'assistant-copy'; btn.textContent = t('assistant.copy');
         btn.addEventListener('click', async () => {
-          try { const txt = code ? code.innerText : pre.innerText; await navigator.clipboard.writeText(txt); btn.textContent='已複製'; setTimeout(()=> btn.textContent='複製', 1200); } catch(_) {}
+          try { const txt = code ? code.innerText : pre.innerText; await navigator.clipboard.writeText(txt); btn.textContent=t('assistant.copied'); setTimeout(()=> btn.textContent=t('assistant.copy'), 1200); } catch(_) {}
         });
         pre.appendChild(btn);
       }); } catch(_) {}
-    } catch(e) { rightBody.innerHTML = '<div style="padding:8px;color:#ef4444;">載入失敗</div>'; }
+    } catch(e) { rightBody.innerHTML = `<div style="padding:8px;color:#ef4444;">${t('assistant.loadFailed')}</div>`; }
   }
 
   left.addEventListener('click', (ev) => {
@@ -1210,9 +1223,9 @@ async function showAssistantSessions(){
 
   // 新建
   leftToolbar.querySelector('#as-new').addEventListener('click', async () => {
-    const ak = prompt('請輸入文章鍵（留空為全局）','') || '';
+    const ak = prompt(t('assistant.articleKeyPrompt'),'') || '';
     const articleKey = ak.trim() ? ak.trim() : 'global';
-    const title = prompt('會話名稱','新會話') || '新會話';
+    const title = prompt(t('assistant.sessionName'), t('assistant.newSession')) || t('assistant.newSession');
     try {
       const meta = await createAssistantConversation({ articleKey, title, messages: [] });
       index = listAssistantConversationMetas();
@@ -1225,19 +1238,19 @@ async function showAssistantSessions(){
     const f = ev.target.files && ev.target.files[0]; if (!f) return;
     try {
       const text = await f.text(); const json = JSON.parse(text||'{}');
-      const articleKey = json.articleKey || 'global'; const title = json.title || '匯入會話'; const messages = Array.isArray(json.messages)? json.messages: [];
+      const articleKey = json.articleKey || 'global'; const title = json.title || t('assistant.importedSession'); const messages = Array.isArray(json.messages)? json.messages: [];
       const meta = await createAssistantConversation({ articleKey, title, messages });
       index = listAssistantConversationMetas();
       left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;"><div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?'全局 · ':'')+meta.title)}</div><div style="font-size:12px;color:#64748b;">${new Date(meta.updatedAt || Date.now()).toLocaleString()}</div></div>`;
-    } catch(e) { alert('匯入失敗：' + (e?.message||'')); }
+    } catch(e) { alert(t('assistant.importFailed', { message: e?.message || '' })); }
   });
   // 重命名
   leftToolbar.querySelector('#as-rename').addEventListener('click', () => {
     const active = left.querySelector('.as-item.active');
     const id = active ? active.getAttribute('data-id') : (currentId || '');
-    if (!id) { alert('請先選擇一個會話'); return; }
+    if (!id) { alert(t('assistant.selectSession')); return; }
     const meta = index.find(x => x.id === id) || null; if (!meta) return;
-    const newTitle = prompt('輸入新的會話名稱：', meta.title || '會話');
+    const newTitle = prompt(t('assistant.renamePrompt'), meta.title || t('assistant.session'));
     if (!newTitle || !newTitle.trim()) return;
     const updated = renameAssistantConversation(id, newTitle.trim());
     if (!updated) return;
@@ -1254,22 +1267,22 @@ async function showAssistantSessions(){
   leftToolbar.querySelector('#as-delete').addEventListener('click', async () => {
     const active = left.querySelector('.as-item.active');
     const id = active ? active.getAttribute('data-id') : (currentId || '');
-    if (!id) { alert('請先選擇一個會話'); return; }
-    if (!confirm('確定刪除此會話？此操作無法復原。')) return;
+    if (!id) { alert(t('assistant.selectSession')); return; }
+    if (!confirm(t('assistant.confirmDelete'))) return;
     try {
       const removed = await deleteAssistantConversation(id);
-      if (!removed) throw new Error('會話不存在');
+      if (!removed) throw new Error(t('assistant.sessionMissing'));
       index = listAssistantConversationMetas();
       const node = left.querySelector(`.as-item[data-id="${id}"]`);
       if (node) node.remove();
-      if (!left.querySelector('.as-item')) left.innerHTML = '<div style="padding:12px;color:#64748b;">尚無會話</div>';
-      if (currentId === id) { currentId = ''; rightBody.innerHTML = '<div style="padding:8px;color:#64748b;">未選擇會話</div>'; }
-    } catch (e) { alert('刪除失敗：' + (e?.message || '')); }
+      if (!left.querySelector('.as-item')) left.innerHTML = `<div style="padding:12px;color:#64748b;">${t('assistant.noSessions')}</div>`;
+      if (currentId === id) { currentId = ''; rightBody.innerHTML = `<div style="padding:8px;color:#64748b;">${t('assistant.noSelection')}</div>`; }
+    } catch (e) { alert(t('assistant.deleteFailed', { message: e?.message || '' })); }
   });
   // 匯出
   rightToolbar.querySelector('#as-export').addEventListener('click', async () => {
     if (!currentId) return;
-    const meta = index.find(x=>x.id===currentId) || { articleKey:'global', title:'會話' };
+    const meta = index.find(x=>x.id===currentId) || { articleKey:'global', title:t('assistant.session') };
     try {
       const messages = await getAssistantConversationMessages(currentId);
       const blob = new Blob([JSON.stringify({ articleKey: meta.articleKey, title: meta.title, messages }, null, 2)], { type:'application/json' });
@@ -1375,7 +1388,7 @@ async function doAutoSync(reason) {
   }
   try {
     syncInFlight = true;
-    updateStatus('自動同步中...');
+    updateStatus(t('sync.autoSyncing'));
     const info = await syncNow(buildLocalSnapshot, applyMergedSnapshot);
     lastSyncAt = Date.now();
     try { localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
@@ -1383,16 +1396,16 @@ async function doAutoSync(reason) {
       try { localStorage.setItem('lastSnapshotVersion', String(info.version)); } catch(_) {}
     }
     if (info && info.restoredFromRemote) {
-      updateStatus('已從雲端恢復（自動偵測）');
-      try { ui.displayMessage('已從雲端恢復（自動偵測）', 'warning', 5000); } catch(_) {}
+      updateStatus(t('sync.restoredAutomatic'));
+      try { ui.displayMessage(t('sync.restoredAutomatic'), 'warning', 5000); } catch(_) {}
     } else {
-      updateStatus('已完成同步');
+      updateStatus(t('sync.syncDone'));
       // 自動同步成功不再彈出提示，避免干擾
     }
     try { await backup.createBackup('自動同步後備份'); } catch(_) {}
   } catch (e) {
     console.warn('[sync] auto sync failed:', e);
-    updateStatus('自動同步失敗');
+    updateStatus(t('sync.autoSyncFailed'));
   } finally {
     syncInFlight = false;
     if (queuedWhileInFlight) {
@@ -1454,7 +1467,7 @@ function attachRealtime(user) {
 // -----------------
 function showBackupRestoreModal() {
   try { ui.openModal(); } catch(_) {}
-  try { dom.modalTitle.textContent = '本機備份與還原'; } catch(_) {}
+  try { dom.modalTitle.textContent = t('sync.backupTitle'); } catch(_) {}
   const items = (function(){ try { return backup.listBackups(); } catch(_) { return []; } })();
   const listHtml = items.length ? items.map(it => {
     const timeStr = new Date(parseInt(it.ts,10)||Date.now()).toLocaleString();
@@ -1469,25 +1482,25 @@ function showBackupRestoreModal() {
     return `<div class="backup-item" data-id="${it.id}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #eee;">
       <div class="bi-meta">
         <div class="bi-title">${timeStr}${noteHtml}</div>
-        <div class="bi-sub" style="color:#64748b;font-size:12px;">ID: ${it.id} · 約 ${sizeKB} KB</div>
+        <div class="bi-sub" style="color:#64748b;font-size:12px;">ID: ${it.id} · ${t('sync.approximately', { size: sizeKB })}</div>
       </div>
       <div class="bi-actions" style="display:flex;gap:6px;">
-        <button class="btn-secondary bi-restore" data-id="${it.id}">還原</button>
-        <button class="btn-tertiary bi-export" data-id="${it.id}">匯出</button>
-        <button class="btn-danger bi-delete" data-id="${it.id}">刪除</button>
+        <button class="btn-secondary bi-restore" data-id="${it.id}">${t('sync.restore')}</button>
+        <button class="btn-tertiary bi-export" data-id="${it.id}">${t('sync.export')}</button>
+        <button class="btn-danger bi-delete" data-id="${it.id}">${t('sync.delete')}</button>
       </div>
     </div>`;
-  }).join('') : '<div style="color:#64748b;padding:8px 0;">尚無備份</div>';
+  }).join('') : `<div style="color:#64748b;padding:8px 0;">${t('sync.noBackups')}</div>`;
 
   const html = `
     <div class="backup-modal" style="min-width:340px;">
       <div class="backup-list">${listHtml}</div>
       <div class="auth-actions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <button id="bk-close" class="btn-secondary">關閉</button>
-        <button id="bk-create" class="btn-primary">建立新備份</button>
+        <button id="bk-close" class="btn-secondary">${t('sync.close')}</button>
+        <button id="bk-create" class="btn-primary">${t('sync.createBackup')}</button>
         <input id="bk-import" type="file" accept="application/json,.json" style="display:none">
-        <button id="bk-import-btn" class="btn-secondary">匯入備份檔</button>
-        <button id="bk-clear-cache" class="btn-tertiary">清理本機快取</button>
+        <button id="bk-import-btn" class="btn-secondary">${t('sync.importBackup')}</button>
+        <button id="bk-clear-cache" class="btn-tertiary">${t('sync.clearCache')}</button>
       </div>
       <div id="bk-msg" class="auth-msg"></div>
     </div>`;
@@ -1496,7 +1509,7 @@ function showBackupRestoreModal() {
   $('#bk-close').onclick = () => ui.closeModal();
   $('#bk-create').onclick = async () => {
     const msg = $('#bk-msg');
-    try { await backup.createBackup('manual'); msg.textContent = '已建立備份'; setTimeout(()=> showBackupRestoreModal(), 300); } catch (e) { msg.textContent = '建立備份失敗：' + (e?.message||''); }
+    try { await backup.createBackup('manual'); msg.textContent = t('sync.backupCreated'); setTimeout(()=> showBackupRestoreModal(), 300); } catch (e) { msg.textContent = t('sync.backupCreateFailed', { message: e?.message || '' }); }
   };
   // 從檔案匯入備份：先存入本機備份列表（標記手動，不會被自動裁剪），再由使用者點「還原」套用
   const bkImport = $('#bk-import');
@@ -1505,30 +1518,30 @@ function showBackupRestoreModal() {
     const msg = $('#bk-msg');
     const file = bkImport.files && bkImport.files[0];
     if (!file) return;
-    if (file.size > 25 * 1024 * 1024) { msg.textContent = '檔案過大（>25MB），請確認是否為備份檔'; return; }
+    if (file.size > 25 * 1024 * 1024) { msg.textContent = t('sync.fileTooLarge'); return; }
     const reader = new FileReader();
-    reader.onerror = () => { msg.textContent = '讀取檔案失敗'; };
+    reader.onerror = () => { msg.textContent = t('sync.readFileFailed'); };
     reader.onload = () => {
       let parsed;
       try { parsed = JSON.parse(String(reader.result || '')); }
-      catch (_) { msg.textContent = '匯入失敗：檔案不是有效的 JSON'; return; }
+      catch (_) { msg.textContent = t('sync.invalidJson'); return; }
       // 相容三種格式：原始 payload / 完整快照 {payload} / 備份包 {ts,note,payload}
       const payload = (parsed && typeof parsed === 'object' && parsed.payload && typeof parsed.payload === 'object')
         ? parsed.payload : parsed;
       const KNOWN = ['userSettings', 'dictation', 'vocabulary', 'articles', 'qa', 'assistant'];
       const ok = payload && typeof payload === 'object'
         && KNOWN.some(k => payload[k] && typeof payload[k] === 'object');
-      if (!ok) { msg.textContent = '檔案格式不符，找不到可還原的備份資料'; return; }
+      if (!ok) { msg.textContent = t('sync.invalidBackup'); return; }
       const res = backup.saveBackupPayload(payload, '手動·檔案匯入');
-      if (res && res.error) { msg.textContent = '匯入失敗：' + (res.error?.message || '無法寫入本機儲存'); return; }
-      try { ui.displayMessage('已匯入備份，請於列表點「還原」套用到本機', 'success'); } catch(_) {}
+      if (res && res.error) { msg.textContent = t('sync.importWriteFailed', { message: res.error?.message || t('sync.unknownError') }); return; }
+      try { ui.displayMessage(t('sync.backupImported'), 'success'); } catch(_) {}
       showBackupRestoreModal();
     };
     reader.readAsText(file);
   };
   $('#bk-clear-cache').onclick = async () => {
     const msg = $('#bk-msg');
-    try { await clearLocalCaches(); msg.textContent = '已清理本機快取'; } catch (e) { msg.textContent = '清理失敗：' + (e?.message||''); }
+    try { await clearLocalCaches(); msg.textContent = t('sync.cacheCleared'); } catch (e) { msg.textContent = t('sync.clearFailed', { message: e?.message || '' }); }
   };
   // actions
   dom.modalBody.querySelectorAll('.bi-restore').forEach(btn => {
@@ -1536,14 +1549,14 @@ function showBackupRestoreModal() {
       const id = btn.getAttribute('data-id');
       try {
         const payload = backup.loadBackupPayload(id);
-        if (!payload) { try { ui.displayMessage('備份不存在或已損壞', 'error'); } catch(_) {} return; }
+        if (!payload) { try { ui.displayMessage(t('sync.backupMissing'), 'error'); } catch(_) {} return; }
         await restoreSnapshotLocally(payload);
         try { lastSyncAt = Date.now(); localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
-        updateStatus('已從備份還原（僅本機）');
-        try { ui.displayMessage('已從備份還原（僅本機）', 'success'); } catch(_) {}
+        updateStatus(t('sync.restoredLocal'));
+        try { ui.displayMessage(t('sync.restoredLocal'), 'success'); } catch(_) {}
         ui.closeModal();
       } catch (e) {
-        try { ui.displayMessage('還原失敗：' + (e?.message||''), 'error'); } catch(_) {}
+        try { ui.displayMessage(t('sync.restoreFailed', { message: e?.message || '' }), 'error'); } catch(_) {}
       }
     });
   });
@@ -1551,7 +1564,7 @@ function showBackupRestoreModal() {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       const payload = backup.loadBackupPayload(id);
-      if (!payload) { try { ui.displayMessage('備份不存在或已損壞', 'error'); } catch(_) {} return; }
+      if (!payload) { try { ui.displayMessage(t('sync.backupMissing'), 'error'); } catch(_) {} return; }
       try {
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
@@ -1559,14 +1572,14 @@ function showBackupRestoreModal() {
         a.download = `bdc-backup-${id}.json`;
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        try { ui.displayMessage('已匯出備份', 'success'); } catch(_) {}
-      } catch (_) { try { ui.displayMessage('匯出失敗', 'error'); } catch(_) {} }
+        try { ui.displayMessage(t('sync.backupExported'), 'success'); } catch(_) {}
+      } catch (_) { try { ui.displayMessage(t('sync.exportFailed'), 'error'); } catch(_) {} }
     });
   });
   dom.modalBody.querySelectorAll('.bi-delete').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
-      try { backup.deleteBackup(id); showBackupRestoreModal(); try { ui.displayMessage('已刪除備份', 'success'); } catch(_) {} } catch (_) { try { ui.displayMessage('刪除失敗', 'error'); } catch(_) {} }
+      try { backup.deleteBackup(id); showBackupRestoreModal(); try { ui.displayMessage(t('sync.backupDeleted'), 'success'); } catch(_) {} } catch (_) { try { ui.displayMessage(t('sync.deleteFailed'), 'error'); } catch(_) {} }
     });
   });
 }

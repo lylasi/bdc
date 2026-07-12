@@ -4,6 +4,8 @@ import * as state from '../../modules/state.js';
 import * as api from '../../modules/api.js';
 import * as storage from '../../modules/storage.js';
 import { OCR_CONFIG } from '../../ai-config.js';
+import { getLocale, t } from '../../modules/i18n.js';
+import { buildPrompt } from '../../modules/prompts/index.js';
 
 // 簡易 AI 批改（OCR→比對）
 export function initDictationGrader() {
@@ -17,22 +19,22 @@ export function openDictationGradingHistory() {
   const list = storage.getGradingHistory();
   const box = document.createElement('div');
   box.className = 'dg-history';
-  if (!list.length) { box.innerHTML = '<p>尚無歷史記錄。</p>'; show(box); return; }
+  if (!list.length) { box.innerHTML = `<p>${t('dictationGrader.emptyHistory')}</p>`; show(box); return; }
   const items = list.map(it => {
-    const t = new Date(it.createdAt).toLocaleString();
+    const timeText = new Date(it.createdAt).toLocaleString();
     return `<div class="dg-h-item" data-id="${it.id}">
       <img src="${it.thumbnail || ''}" alt="thumb">
       <div class="meta">
-        <div class="time">${t}</div>
-        <div class="sub">模型：${it.model || '-'} · 圖片：${it.imagesCount || 0} · 詞表：${it.wordsCount || 0}</div>
+        <div class="time">${timeText}</div>
+        <div class="sub">${t('dictationGrader.meta', { model: it.model || '-', images: it.imagesCount || 0, words: it.wordsCount || 0 })}</div>
       </div>
       <div class="ops">
-        <button data-act="view">查看</button>
-        <button data-act="del">刪除</button>
+        <button data-act="view">${t('dictationGrader.view')}</button>
+        <button data-act="del">${t('dictationGrader.delete')}</button>
       </div>
     </div>`;
   }).join('');
-  box.innerHTML = `<div class="dg-h-toolbar"><button id="dg-h-clear" class="btn-secondary">清空全部</button></div><div class="dg-h-list">${items}</div>`;
+  box.innerHTML = `<div class="dg-h-toolbar"><button id="dg-h-clear" class="btn-secondary">${t('dictationGrader.clearAll')}</button></div><div class="dg-h-list">${items}</div>`;
   box.addEventListener('click', (e) => {
     const btn = e.target.closest('button'); if (!btn) return;
     const item = e.target.closest('.dg-h-item'); if (!item) return;
@@ -42,18 +44,18 @@ export function openDictationGradingHistory() {
     if (!rec) return;
     const act = btn.getAttribute('data-act');
     if (btn.id === 'dg-h-clear') {
-      if (confirm('確定清空全部歷史？此操作不可撤回')) { storage.clearGradingHistory(); openDictationGradingHistory(); }
+      if (confirm(t('dictationGrader.confirmClear'))) { storage.clearGradingHistory(); openDictationGradingHistory(); }
     } else if (act === 'view') {
       const container = document.createElement('div');
       container.className = 'dictation-grader-wrap';
       const tools = document.createElement('div');
       tools.className = 'dg-tools';
-      tools.innerHTML = '<button id="dg-view-copy" class="btn-secondary">複製 Markdown</button> <button id="dg-view-export" class="btn-secondary">下載 CSV</button>';
+      tools.innerHTML = `<button id="dg-view-copy" class="btn-secondary">${t('dictationGrader.copy')}</button> <button id="dg-view-export" class="btn-secondary">${t('dictationGrader.downloadCsv')}</button>`;
       const report = document.createElement('div');
       renderMarkdownReport(report, rec.markdown || '');
       container.appendChild(tools);
       container.appendChild(report);
-      dom.modalTitle.textContent = '批改結果';
+      dom.modalTitle.textContent = t('dictationGrader.resultTitle');
       dom.modalBody.innerHTML = '';
       dom.modalBody.appendChild(container);
       ui.openModal();
@@ -73,13 +75,13 @@ export function openDictationGradingHistory() {
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
       });
     } else if (act === 'del') {
-      if (confirm('確定刪除此記錄？')) { storage.deleteGradingRecord(id); openDictationGradingHistory(); }
+      if (confirm(t('dictationGrader.confirmDelete'))) { storage.deleteGradingRecord(id); openDictationGradingHistory(); }
     }
   });
   show(box);
 
   function show(content) {
-    dom.modalTitle.textContent = '批改歷史';
+    dom.modalTitle.textContent = t('dictationGrader.historyTitle');
     dom.modalBody.innerHTML = '';
     dom.modalBody.appendChild(content);
     ui.openModal();
@@ -90,7 +92,7 @@ export function openDictationGradingHistory() {
 function openGraderModal() {
   const expected = getExpectedWords();
   const body = buildModalContent(expected);
-  dom.modalTitle.textContent = 'AI 批改手寫（OCR）';
+  dom.modalTitle.textContent = t('dictationGrader.title');
   dom.modalBody.innerHTML = '';
   dom.modalBody.appendChild(body);
   ui.openModal();
@@ -121,20 +123,20 @@ function buildModalContent(expected) {
         <label>上傳相片：</label>
         <input id="dg-file" type="file" accept="image/*" multiple>
         <div class="dg-inline" style="gap:6px;">
-          <button id="dg-take-photo" class="btn-secondary">拍照</button>
-          <button id="dg-choose-gallery" class="btn-secondary">從相簿選擇</button>
+          <button id="dg-take-photo" class="btn-secondary">${t('dictationGrader.takePhoto')}</button>
+          <button id="dg-choose-gallery" class="btn-secondary">${t('dictationGrader.gallery')}</button>
         </div>
       </div>
       <div class="dg-row">
         <label>選項：</label>
-        <label class="dg-inline"><input type="checkbox" id="dg-include-meaning" checked> 對照中文意思（若有）</label>
-        <label class="dg-inline"><input type="checkbox" id="dg-strict" > 嚴格大小寫</label>
+        <label class="dg-inline"><input type="checkbox" id="dg-include-meaning" checked> ${t('dictationGrader.includeMeaning')}</label>
+        <label class="dg-inline"><input type="checkbox" id="dg-strict" > ${t('dictationGrader.strictCase')}</label>
       </div>
       <!-- 批改方式（已固定使用 AI，保留結構方便日後需要時再開） -->
       <div class="dg-row" style="display:none;">
         <label>批改方式：</label>
-        <label class="dg-inline"><input type="radio" name="dg-mode" id="dg-mode-local"> OCR + 本地比對</label>
-        <label class="dg-inline"><input type="radio" name="dg-mode" id="dg-mode-ai" checked> 直接交給 AI 批改</label>
+        <label class="dg-inline"><input type="radio" name="dg-mode" id="dg-mode-local"> ${t('dictationGrader.localMode')}</label>
+        <label class="dg-inline"><input type="radio" name="dg-mode" id="dg-mode-ai" checked> ${t('dictationGrader.aiMode')}</label>
       </div>
       <div class="dg-row">
         <label>OCR 模型：</label>
@@ -142,19 +144,19 @@ function buildModalContent(expected) {
       </div>
       <div class="dg-row dg-ai-prompt" style="display:none; align-items:flex-start;">
         <label>AI 提示詞：</label>
-        <textarea id="dg-ai-prompt" rows="6" style="flex:1; width:100%;" placeholder="自訂 AI 批改提示詞"></textarea>
+        <textarea id="dg-ai-prompt" rows="6" style="flex:1; width:100%;" placeholder="${t('dictationGrader.promptPlaceholder')}"></textarea>
       </div>
       <div class="dg-actions">
-        <button id="dg-run" class="btn-primary">識別並批改</button>
-        <button id="dg-save" class="btn-secondary" disabled>保存結果</button>
-        <button id="dg-history" class="btn-secondary">查看歷史</button>
+        <button id="dg-run" class="btn-primary">${t('dictationGrader.run')}</button>
+        <button id="dg-save" class="btn-secondary" disabled>${t('dictationGrader.save')}</button>
+        <button id="dg-history" class="btn-secondary">${t('dictationGrader.history')}</button>
         <div class="spacer"></div>
-        <button id="dg-copy" class="btn-secondary" disabled>複製 Markdown</button>
-        <button id="dg-export-csv" class="btn-secondary" disabled>下載 CSV</button>
+        <button id="dg-copy" class="btn-secondary" disabled>${t('dictationGrader.copy')}</button>
+        <button id="dg-export-csv" class="btn-secondary" disabled>${t('dictationGrader.downloadCsv')}</button>
       </div>
       <div class="dg-previews" id="dg-previews"></div>
       <div class="dg-result">
-        <div id="dg-status" class="dg-status">請上傳或拍照後點擊「識別並批改」</div>
+        <div id="dg-status" class="dg-status">${t('dictationGrader.initialStatus')}</div>
         <div id="dg-report" class="dg-report"></div>
       </div>
     </div>
@@ -209,7 +211,7 @@ function buildModalContent(expected) {
       img.src = url; img.alt = f.name; img.style.maxWidth = '100%'; img.style.maxHeight = '120px'; img.style.objectFit = 'contain';
       const cell = document.createElement('div'); cell.appendChild(img); previews.appendChild(cell);
     }
-    status.textContent = images.length ? `已選擇 ${images.length} 張圖片` : '尚未選擇圖片';
+    status.textContent = images.length ? t('dictationGrader.selectedImages', { count: images.length }) : t('dictationGrader.noImages');
   });
 
   // 點擊縮圖查看大圖（簡易 lightbox）
@@ -224,25 +226,25 @@ function buildModalContent(expected) {
   });
 
   run.addEventListener('click', async () => {
-    if (!images.length) { status.textContent = '請先上傳或拍照'; return; }
-    status.textContent = '正在識別與批改...'; report.innerHTML = '';
+    if (!images.length) { status.textContent = t('dictationGrader.uploadFirst'); return; }
+    status.textContent = t('dictationGrader.processing'); report.innerHTML = '';
     try {
       const model = modelSelect && modelSelect.value ? modelSelect.value : undefined;
       const prompt = (aiPromptEl.value || defaultAIMarkdownPrompt());
       const md = await api.aiGradeHandwriting(images, expected, { model, prompt, format: 'markdown' });
       lastMarkdown = md || '';
       renderMarkdownReport(report, lastMarkdown);
-      status.textContent = '批改完成（AI）';
+      status.textContent = t('dictationGrader.completed');
       saveBtn.disabled = !lastMarkdown;
       copyBtn.disabled = !lastMarkdown;
       exportBtn.disabled = !lastMarkdown;
     } catch (e) {
-      status.textContent = '處理失敗：' + (e?.message || e);
+      status.textContent = t('dictationGrader.failed', { message: e?.message || e });
     }
   });
 
   saveBtn.addEventListener('click', () => {
-    if (!lastMarkdown) { alert('沒有可保存的結果'); return; }
+    if (!lastMarkdown) { alert(t('dictationGrader.noResult')); return; }
     const thumb = previews.querySelector('img')?.src || '';
     const rec = storage.saveGradingRecord({
       type: 'dictation-ai-grading',
@@ -252,7 +254,7 @@ function buildModalContent(expected) {
       imagesCount: images.length,
       wordsCount: expected.length
     });
-    status.textContent = `已保存：${new Date(rec.createdAt).toLocaleString()}`;
+    status.textContent = t('dictationGrader.saved', { time: new Date(rec.createdAt).toLocaleString(getLocale()) });
   });
 
   historyBtn.addEventListener('click', openHistory);
@@ -260,7 +262,7 @@ function buildModalContent(expected) {
   copyBtn.addEventListener('click', async () => {
     if (!lastMarkdown) return;
     const ok = await copyToClipboard(lastMarkdown);
-    status.textContent = ok ? '已複製 Markdown 到剪貼簿' : '複製失敗，請手動選取';
+    status.textContent = ok ? t('dictationGrader.copied') : t('dictationGrader.copyFailed');
   });
 
   exportBtn.addEventListener('click', () => {
@@ -279,22 +281,22 @@ function buildModalContent(expected) {
     const list = storage.getGradingHistory();
     const box = document.createElement('div');
     box.className = 'dg-history';
-    if (!list.length) { box.innerHTML = '<p>尚無歷史記錄。</p>'; show(box); return; }
+    if (!list.length) { box.innerHTML = `<p>${t('dictationGrader.emptyHistory')}</p>`; show(box); return; }
     const items = list.map(it => {
-      const t = new Date(it.createdAt).toLocaleString();
+      const timeText = new Date(it.createdAt).toLocaleString();
       return `<div class="dg-h-item" data-id="${it.id}">
         <img src="${it.thumbnail || ''}" alt="thumb">
         <div class="meta">
-          <div class="time">${t}</div>
-          <div class="sub">模型：${it.model || '-'} · 圖片：${it.imagesCount || 0} · 詞表：${it.wordsCount || 0}</div>
+          <div class="time">${timeText}</div>
+          <div class="sub">${t('dictationGrader.meta', { model: it.model || '-', images: it.imagesCount || 0, words: it.wordsCount || 0 })}</div>
         </div>
         <div class="ops">
-          <button data-act="view">查看</button>
-          <button data-act="del">刪除</button>
+          <button data-act="view">${t('dictationGrader.view')}</button>
+          <button data-act="del">${t('dictationGrader.delete')}</button>
         </div>
       </div>`;
     }).join('');
-    box.innerHTML = `<div class="dg-h-toolbar"><button id="dg-h-clear" class="btn-secondary">清空全部</button></div><div class="dg-h-list">${items}</div>`;
+    box.innerHTML = `<div class="dg-h-toolbar"><button id="dg-h-clear" class="btn-secondary">${t('dictationGrader.clearAll')}</button></div><div class="dg-h-list">${items}</div>`;
     box.addEventListener('click', (e) => {
       const btn = e.target.closest('button'); if (!btn) return;
       const item = e.target.closest('.dg-h-item'); if (!item) return;
@@ -303,20 +305,20 @@ function buildModalContent(expected) {
       if (!rec) return;
       const act = btn.getAttribute('data-act');
       if (btn.id === 'dg-h-clear') {
-        if (confirm('確定清空全部歷史？此操作不可撤回')) { storage.clearGradingHistory(); openHistory(); }
+        if (confirm(t('dictationGrader.confirmClear'))) { storage.clearGradingHistory(); openHistory(); }
       } else if (act === 'view') {
         report.innerHTML = '';
         renderMarkdownReport(report, rec.markdown || '');
-        status.textContent = `查看記錄：${new Date(rec.createdAt).toLocaleString()}`;
+        status.textContent = t('dictationGrader.viewRecord', { time: new Date(rec.createdAt).toLocaleString() });
         ui.openModal(); // 確保可見
       } else if (act === 'del') {
-        if (confirm('確定刪除此記錄？')) { storage.deleteGradingRecord(id); openHistory(); }
+        if (confirm(t('dictationGrader.confirmDelete'))) { storage.deleteGradingRecord(id); openHistory(); }
       }
     });
     show(box);
 
     function show(content) {
-      dom.modalTitle.textContent = '批改歷史';
+      dom.modalTitle.textContent = t('dictationGrader.historyTitle');
       dom.modalBody.innerHTML = '';
       dom.modalBody.appendChild(content);
       ui.openModal();
@@ -327,7 +329,7 @@ function buildModalContent(expected) {
   // 預先載入預期清單摘要
   const expectedList = document.createElement('div');
   expectedList.className = 'dg-expected';
-  expectedList.textContent = `當前對照單詞 ${expected.length} 個`;
+  expectedList.textContent = t('dictationGrader.currentWords', { count: expected.length });
   wrap.prepend(expectedList);
 
   return wrap;
@@ -338,11 +340,11 @@ function renderReport(container, data) {
   const pad = (s) => (s == null ? '' : String(s));
   const esc = (s) => pad(s);
   for (const r of data.rows) {
-    rows.push(`<tr class="${r.ok ? 'ok' : 'err'}"><td>${esc(r.expected)}</td><td>${esc(r.recognized)}</td><td>${esc(r.meaning || '')}</td><td>${r.ok ? '正確' : '錯誤 → 建議：' + esc(r.suggest)}</td></tr>`);
+    rows.push(`<tr class="${r.ok ? 'ok' : 'err'}"><td>${esc(r.expected)}</td><td>${esc(r.recognized)}</td><td>${esc(r.meaning || '')}</td><td>${r.ok ? t('dictationGrader.correct') : t('dictationGrader.wrongSuggestion', { suggestion: esc(r.suggest) })}</td></tr>`);
   }
   container.innerHTML = `
     <table class="dg-table">
-      <thead><tr><th>標準答案</th><th>書寫內容</th><th>中文（參考）</th><th>結果</th></tr></thead>
+      <thead><tr><th>${t('dictationGrader.standardAnswer')}</th><th>${t('dictationGrader.writing')}</th><th>${t('dictationGrader.chineseReference')}</th><th>${t('dictationGrader.result')}</th></tr></thead>
       <tbody>${rows.join('')}</tbody>
     </table>
   `;
@@ -370,16 +372,7 @@ function normalizeAIGrading(result) {
 }
 
 function defaultAIMarkdownPrompt() {
-  return [
-    '這是一張（或多張）學生默寫單詞的相片，和正確答案。識別時請忽略手寫劃掉的詞字。要檢查英文和中文是否有寫錯',
-    '請逐行擷取學生書寫的英文單詞或短語（保留順序與原始大小寫），若同一行寫了中文意思也一併擷取。',
-    '默寫順序可能是亂序；請無視順序，將每一行與提供的「標準詞表」比對：英文拼寫是否正確；若有書寫中文， 檢查中文是否書寫正確，包括錯別字提醒。',
-    '請以 Markdown 回覆：',
-    '1) 文首一行輸出：`批改完成（AI）：正確 X/Y（錯誤 Z）`；',
-    '2) 其後用 Markdown 表格輸出詳情，表頭為：`書寫內容 | 結果`；',
-    '   - 結果欄：若正確，請寫「正確」（可加粗）；若錯誤，請以「**錯誤** → 英文...中文...」醒目標註，指出英文或中文錯因與修正。',
-    '3) 不要輸出多餘說明或程式碼框。'
-  ].join('\n');
+  return buildPrompt('dictation.handwritingGradingMarkdown', {}, { locale: getLocale() });
 }
 
 function renderMarkdownReport(container, markdown) {
@@ -392,12 +385,12 @@ function renderMarkdownReport(container, markdown) {
         const last = tr.querySelector('td:last-child');
         if (!last) return;
         const txt = last.textContent || '';
-        if (/錯誤/.test(txt)) {
+        if (/錯誤|错误/.test(txt)) {
           tr.classList.add('err');
-          last.innerHTML = last.innerHTML.replace(/錯誤/g, '<strong class="dg-bad">錯誤</strong>');
-        } else if (/正確/.test(txt)) {
+          last.innerHTML = last.innerHTML.replace(/錯誤|错误/g, '<strong class="dg-bad">$&</strong>');
+        } else if (/正確|正确/.test(txt)) {
           tr.classList.add('ok');
-          last.innerHTML = last.innerHTML.replace(/正確/g, '<strong class="dg-good">正確</strong>');
+          last.innerHTML = last.innerHTML.replace(/正確|正确/g, '<strong class="dg-good">$&</strong>');
         }
       });
     });
