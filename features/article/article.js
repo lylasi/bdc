@@ -12,6 +12,7 @@ import { AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT } from '../../ai-config.js';
 import { getAllQASets, loadQASet } from '../qa/qa-storage.js';
 import * as cache from '../../modules/cache.js';
 import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
+import { t } from '../../modules/i18n.js';
 
 // =================================
 // Article Analysis Feature
@@ -47,20 +48,20 @@ function updateArticleSourceBarFromDataset() {
         return;
     }
 
-    let text = '來源：';
+    let text = t('article.sourcePrefix');
     switch (sourceType) {
         case 'url':
-            text += '網頁 / 新聞';
+            text += t('article.sourceUrl');
             break;
         case 'file':
-            text += '文章庫 / 檔案';
+            text += t('article.sourceFile');
             break;
         case 'ocr':
-            text += '圖片 OCR';
+            text += t('article.sourceOcr');
             break;
         case 'paste':
         default:
-            text += '貼上文字';
+            text += t('article.sourcePaste');
             break;
     }
     label.textContent = text;
@@ -68,7 +69,7 @@ function updateArticleSourceBarFromDataset() {
     if (link) {
         if (sourceType === 'url' && rawUrl) {
             link.href = rawUrl;
-            link.textContent = '開啟原文';
+            link.textContent = t('article.openSource');
             link.style.display = 'inline';
         } else {
             link.removeAttribute('href');
@@ -120,7 +121,7 @@ function buildArticleMetaInput(articleText, parsedTitle) {
     const title = (parsedTitle && parsedTitle.trim())
         || (ds.sourceTitle && ds.sourceTitle.trim())
         || (articleText || '').split('\n').find(line => line.trim())?.trim()
-        || '未命名文章';
+        || t('article.untitled');
     const meta = {
         title,
         sourceType
@@ -132,6 +133,15 @@ function buildArticleMetaInput(articleText, parsedTitle) {
 }
 
 export function initArticle() {
+    document.addEventListener('bdc:locale-change', () => {
+        updateArticleSourceBarFromDataset();
+        populateArticleHistorySelect();
+        const mode = dom.readingModeSelect?.value;
+        if (dom.prevChunkBtn && dom.nextChunkBtn) {
+            dom.prevChunkBtn.textContent = t(mode === 'paragraph' ? 'article.previousParagraph' : 'article.previousSentence');
+            dom.nextChunkBtn.textContent = t(mode === 'paragraph' ? 'article.nextParagraph' : 'article.nextSentence');
+        }
+    });
     dom.analyzeArticleBtn.addEventListener('click', analyzeArticle);
     dom.clearArticleBtn.addEventListener('click', clearArticleInput);
     dom.articleHistorySelect.addEventListener('change', loadSelectedArticle);
@@ -155,10 +165,8 @@ export function initArticle() {
         const isChunkMode = mode === 'sentence' || mode === 'paragraph';
         dom.chunkRepeatControls.classList.toggle('hidden', !isChunkMode);
         
-        let navText = '句';
-        if (mode === 'paragraph') navText = '段';
-        dom.prevChunkBtn.textContent = `上一${navText}`;
-        dom.nextChunkBtn.textContent = `下一${navText}`;
+        dom.prevChunkBtn.textContent = t(mode === 'paragraph' ? 'article.previousParagraph' : 'article.previousSentence');
+        dom.nextChunkBtn.textContent = t(mode === 'paragraph' ? 'article.nextParagraph' : 'article.nextSentence');
     });
 
     // 重新设计导航控制 - 分别防抖每个按钮
@@ -325,19 +333,19 @@ function openArticleImportModal() {
     tabs.className = 'import-tabbar';
     const btnUrl = document.createElement('button');
     btnUrl.className = 'tab-btn';
-    btnUrl.textContent = '網址導入';
+    btnUrl.textContent = t('article.importUrl');
     btnUrl.dataset.tab = 'url';
     const btnNews = document.createElement('button');
     btnNews.className = 'tab-btn';
-    btnNews.textContent = '新聞來源';
+    btnNews.textContent = t('article.importNews');
     btnNews.dataset.tab = 'news';
     const btnOcr = document.createElement('button');
     btnOcr.className = 'tab-btn';
-    btnOcr.textContent = '圖片 OCR';
+    btnOcr.textContent = t('article.importOcr');
     btnOcr.dataset.tab = 'ocr';
     const btnQa = document.createElement('button');
     btnQa.className = 'tab-btn';
-    btnQa.textContent = '問答集';
+    btnQa.textContent = t('article.importQa');
     btnQa.dataset.tab = 'qa';
     tabs.appendChild(btnUrl); tabs.appendChild(btnNews); tabs.appendChild(btnOcr); tabs.appendChild(btnQa);
     const panel = document.createElement('div');
@@ -390,42 +398,42 @@ function openArticleImportModal() {
         wrap.innerHTML = `
             <div class="import-form">
                 <div class="form-row">
-                    <label class="label" for="imp-url">貼上網址</label>
+                    <label class="label" for="imp-url">${t('article.pasteUrl')}</label>
                     <div class="controls">
                         <input id="imp-url" class="import-input" type="url" placeholder="https://example.com/article">
                     </div>
                     <div class="form-actions">
-                        <button id="imp-fetch" class="btn-primary">擷取</button>
+                        <button id="imp-fetch" class="btn-primary">${t('article.fetch')}</button>
                         <input id="imp-url-file" type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" multiple style="display:none">
-                        <button id="imp-url-pick" class="btn-secondary" type="button" title="從本機檔案導入 .md/.txt">選擇檔案</button>
+                        <button id="imp-url-pick" class="btn-secondary" type="button" title="${t('article.chooseFileTitle')}">${t('article.chooseFile')}</button>
                     </div>
                 </div>
                 <div class="form-row wrap">
-                    <span class="label">清洗選項</span>
+                    <span class="label">${t('article.cleanupOptions')}</span>
                     <div class="controls">
-                        <label class="checkbox-inline"><input id="imp-ai-clean" type="checkbox"> <span>AI 清洗內容（更適合閱讀）</span></label>
-                        <label class="checkbox-inline"><input id="imp-ai-keep-images" type="checkbox" checked> <span>保留圖片</span></label>
-                        <label class="checkbox-inline"><input id="imp-auto-apply" type="checkbox"> <span>擷取後自動套用</span></label>
-                        <label class="checkbox-inline" title="跳過 r.jina.ai 等第三方轉換；僅嘗試直接抓取頁面 HTML 再交給 AI 清洗（可能受 CORS 限制）"><input id="imp-direct-only" type="checkbox"> <span>跳過第三方轉換</span></label>
-                        <span class="model-label">清洗模型</span>
-                        <select id="imp-ai-clean-model" class="import-input short" ${cleanSelection.disabled ? 'disabled' : ''} title="${cleanSelection.disabled ? '請先到全局設定配置 provider 與模型' : ''}">${cleanSelection.options.map(option => `<option value="${esc(option.value)}">${esc(option.label || option.value)}</option>`).join('')}</select>
+                        <label class="checkbox-inline"><input id="imp-ai-clean" type="checkbox"> <span>${t('article.aiCleanup')}</span></label>
+                        <label class="checkbox-inline"><input id="imp-ai-keep-images" type="checkbox" checked> <span>${t('article.keepImages')}</span></label>
+                        <label class="checkbox-inline"><input id="imp-auto-apply" type="checkbox"> <span>${t('article.autoApply')}</span></label>
+                        <label class="checkbox-inline"><input id="imp-direct-only" type="checkbox"> <span>${t('article.skipThirdParty')}</span></label>
+                        <span class="model-label">${t('article.cleanupModel')}</span>
+                        <select id="imp-ai-clean-model" class="import-input short" ${cleanSelection.disabled ? 'disabled' : ''} title="${cleanSelection.disabled ? t('article.configureModel') : ''}">${cleanSelection.options.map(option => `<option value="${esc(option.value)}">${esc(option.label || option.value)}</option>`).join('')}</select>
                     </div>
                 </div>
-                <div class="dropzone" id="imp-url-dropzone" tabindex="0" aria-label="拖放 .md / .txt 檔，或直接貼上全文">拖放 .md / .txt 到此，或聚焦後按 Ctrl+V 貼上全文</div>
+                <div class="dropzone" id="imp-url-dropzone" tabindex="0" aria-label="${t('article.dropTextFile')}">${t('article.dropTextFile')}</div>
                 <div id="imp-preview" class="import-preview" style="display:none;">
                     <div class="split">
                         <div class="pane">
-                            <div class="import-preview-head">清洗前</div>
+                            <div class="import-preview-head">${t('article.beforeCleanup')}</div>
                             <pre id="imp-before" class="import-preview-body"></pre>
                         </div>
                         <div class="pane">
-                            <div class="import-preview-head">清洗後</div>
+                            <div class="import-preview-head">${t('article.afterCleanup')}</div>
                             <pre id="imp-after" class="import-preview-body"></pre>
                         </div>
                     </div>
-                    <div class="import-preview-actions"><button id="imp-apply" class="btn-primary">套用到輸入框</button></div>
+                    <div class="import-preview-actions"><button id="imp-apply" class="btn-primary">${t('article.applyInput')}</button></div>
                 </div>
-                <p class="import-hint">將透過 r.jina.ai 嘗試擷取閱讀版內容；若失敗則改為簡易抽取。</p>
+                <p class="import-hint">${t('article.importHint')}</p>
             </div>`;
         panel.appendChild(wrap);
         const $ = (sel) => wrap.querySelector(sel);
@@ -785,7 +793,7 @@ function openArticleImportModal() {
 
         const loadFeed = async (sourceId) => {
             if (!feedBox) return;
-            feedBox.innerHTML = '<div class="news-empty">載入中…</div>';
+            feedBox.innerHTML = `<div class="news-empty">${t('article.loading')}</div>`;
             try {
                 if (cacheFeeds.has(sourceId)) {
                     renderFeed(cacheFeeds.get(sourceId), sourceId);
@@ -901,38 +909,38 @@ function openArticleImportModal() {
         wrap.innerHTML = `
             <div class="import-form">
                 <div class="form-row wrap">
-                    <label for="imp-img" class="label">選擇圖片</label>
+                    <label for="imp-img" class="label">${t('article.chooseImages')}</label>
                     <div class="controls">
                         <input id="imp-img" type="file" accept="image/*" multiple class="import-input">
                         <div class="import-actions">
-                            <label class="checkbox-inline"><input id="imp-prefer-camera" type="checkbox"> <span>使用相機優先</span></label>
-                            <button id="imp-add-files" class="btn-secondary" type="button">新增圖片</button>
-                            <button id="imp-clear-files" class="btn-secondary" type="button">清空</button>
+                            <label class="checkbox-inline"><input id="imp-prefer-camera" type="checkbox"> <span>${t('article.preferCamera')}</span></label>
+                            <button id="imp-add-files" class="btn-secondary" type="button">${t('article.addImages')}</button>
+                            <button id="imp-clear-files" class="btn-secondary" type="button">${t('article.clearImages')}</button>
                         </div>
                     </div>
                     <div class="controls right">
-                        <span class="model-label">OCR 模型</span>
-                        <select id="imp-ocr-model" class="import-input short" ${ocrSelection.disabled ? 'disabled' : ''} title="${ocrSelection.disabled ? '請先到全局設定配置 provider 與模型' : ''}">${ocrSelection.options.map(option => `<option value="${esc(option.value)}">${esc(option.label || option.value)}</option>`).join('')}</select>
+                        <span class="model-label">${t('article.ocrModel')}</span>
+                        <select id="imp-ocr-model" class="import-input short" ${ocrSelection.disabled ? 'disabled' : ''} title="${ocrSelection.disabled ? t('article.configureModel') : ''}">${ocrSelection.options.map(option => `<option value="${esc(option.value)}">${esc(option.label || option.value)}</option>`).join('')}</select>
                     </div>
                 </div>
-                <div class="dropzone" id="imp-dropzone" aria-label="拖放圖片到此或貼上截圖">拖放圖片到此，或在此視窗貼上截圖</div>
+                <div class="dropzone" id="imp-dropzone" aria-label="${t('article.dropImages')}">${t('article.dropImages')}</div>
                 <div id="imp-ocr-thumbs" class="thumbs-grid" aria-live="polite"></div>
                 <div class="form-row wrap">
-                    <label for="imp-ocr-hint" class="label">提示詞</label>
+                    <label for="imp-ocr-hint" class="label">${t('article.prompt')}</label>
                     <div class="controls">
-                        <textarea id="imp-ocr-hint" rows="3" class="import-input" placeholder="例：僅輸出圖片中文章正文，保留原始換行；忽略UI元素與雜訊"></textarea>
+                        <textarea id="imp-ocr-hint" rows="3" class="import-input" placeholder="${t('article.promptPlaceholder')}"></textarea>
                     </div>
                     <div class="controls right">
-                        <button id="imp-ocr" class="btn-primary">擷取圖片文字</button>
-                        <label class="checkbox-inline"><input id="imp-merge" type="checkbox" checked> <span>合併輸出</span></label>
+                        <button id="imp-ocr" class="btn-primary">${t('article.extractImageText')}</button>
+                        <label class="checkbox-inline"><input id="imp-merge" type="checkbox" checked> <span>${t('article.mergeOutput')}</span></label>
                     </div>
                 </div>
                 <div id="imp-ocr-preview" class="import-preview" style="display:none;">
-                    <div class="import-preview-head">OCR 結果預覽</div>
+                    <div class="import-preview-head">${t('article.ocrPreview')}</div>
                     <pre id="imp-ocr-result" class="import-preview-body"></pre>
-                    <div class="import-preview-actions"><button id="imp-ocr-apply" class="btn-primary">套用到輸入框</button></div>
+                    <div class="import-preview-actions"><button id="imp-ocr-apply" class="btn-primary">${t('article.applyInput')}</button></div>
                 </div>
-                <p class="import-hint">使用 AI 視覺模型擷取圖片中文本，保留原始換行與標點。</p>
+                <p class="import-hint">${t('article.ocrHint')}</p>
             </div>`;
         panel.appendChild(wrap);
         const $ = (sel) => wrap.querySelector(sel);
@@ -962,7 +970,7 @@ function openArticleImportModal() {
                 cell.className = 'thumb-cell';
                 cell.setAttribute('draggable', 'true');
                 cell.dataset.index = String(i);
-                cell.innerHTML = `<img src="${url}" alt="image ${i+1}"><button type="button" class="thumb-remove" data-i="${i}" aria-label="移除">×</button>`;
+                cell.innerHTML = `<img src="${url}" alt="image ${i+1}"><button type="button" class="thumb-remove" data-i="${i}" aria-label="${t('article.remove')}">×</button>`;
                 thumbs.appendChild(cell);
                 cell.querySelector('.thumb-remove').addEventListener('click', () => {
                     selectedFiles.splice(i, 1);
@@ -1079,8 +1087,8 @@ function openArticleImportModal() {
         if (modelSel) modelSel.addEventListener('change', () => persistArticleOCRModel(modelSel.value));
         runBtn.addEventListener('click', async () => {
             const files = selectedFiles.length ? selectedFiles.slice() : Array.from(fileInput.files || []);
-            if (!files.length) { alert('請先選擇圖片'); return; }
-            runBtn.disabled = true; runBtn.textContent = '擷取中...';
+            if (!files.length) { alert(t('article.selectImagesFirst')); return; }
+            runBtn.disabled = true; runBtn.textContent = t('article.extracting');
             try {
                 const texts = [];
                 for (const f of files) {
@@ -1090,13 +1098,13 @@ function openArticleImportModal() {
                     const text = await api.ocrExtractTextFromImage(resized || dataUrl, { temperature: 0.0, promptHint: (hintInput && hintInput.value) || undefined, model: modelSel && modelSel.value });
                     texts.push(text || '');
                 }
-                const finalText = mergeChk.checked ? texts.join('\n\n') : texts.map((t, i) => `--- 圖片 ${i+1} ---\n${t}`).join('\n\n');
+                const finalText = mergeChk.checked ? texts.join('\n\n') : texts.map((text, i) => `--- ${t('article.imageNumber', { number: i + 1 })} ---\n${text}`).join('\n\n');
                 if (resultPre) resultPre.textContent = finalText.trim();
                 if (previewBox) previewBox.style.display = 'block';
             } catch (e) {
-                alert('OCR 失敗：' + (e?.message || e));
+                alert(t('article.ocrFailed', { message: e?.message || e }));
             } finally {
-                runBtn.disabled = false; runBtn.textContent = '擷取圖片文字';
+                runBtn.disabled = false; runBtn.textContent = t('article.extractImageText');
             }
         });
     };
@@ -1123,7 +1131,7 @@ function openArticleImportModal() {
         (list || []).forEach(item => {
             const opt = document.createElement('option');
             opt.value = item.id;
-            opt.textContent = `${item.name}${item.isPreset ? '（預置）' : ''}`;
+            opt.textContent = `${item.name}${item.isPreset ? t('article.preset') : ''}`;
             select.appendChild(opt);
         });
 
@@ -1142,9 +1150,9 @@ function openArticleImportModal() {
 
         applyBtn.addEventListener('click', async () => {
             const id = select.value;
-            if (!id) { alert('請先選擇問答集'); return; }
+            if (!id) { alert(t('article.selectQaFirst')); return; }
             const qaSet = await loadQASet(id);
-            if (!qaSet) { alert('載入問答集失敗'); return; }
+            if (!qaSet) { alert(t('article.loadQaFailed')); return; }
             const md = qaSetToMarkdownForArticle(qaSet);
             if (dom.articleInput) dom.articleInput.value = md;
             try { ui.closeModal(); } catch(_) {}
@@ -1176,14 +1184,14 @@ function openArticleImportModal() {
         else activate('url');
     } catch(_) { activate('url'); }
 
-    try { dom.modalTitle.textContent = '導入文章'; } catch (_) {}
+    try { dom.modalTitle.textContent = t('article.importModal'); } catch (_) {}
         ui.openModal();
 }
 
 // 將問答集轉為適合文章詳解的 Markdown
 function qaSetToMarkdownForArticle(qaSet) {
     if (!qaSet || !Array.isArray(qaSet.questions)) return '';
-    const header = `# ${qaSet.name || '問答集'}\n\n` + (qaSet.description ? `${qaSet.description}\n\n` : '');
+    const header = `# ${qaSet.name || t('article.qaDefault')}\n\n` + (qaSet.description ? `${qaSet.description}\n\n` : '');
     const body = qaSet.questions.map((q, i) => {
         const num = i + 1;
         const qq = (q?.question || '').trim();
@@ -1261,8 +1269,8 @@ function sentenceCardLoadingHtml(paraIdx, sentIdx) {
         zh = el ? (el.textContent || '').trim() : '';
     } catch (_) {}
     return zh
-      ? `<div style="margin-bottom:4px">${escapeHtml(zh)}</div><div style="font-size:12px;opacity:.8">載入詳解中...</div>`
-      : '<div style="font-size:12px;opacity:.8">載入中...</div>';
+      ? `<div style="margin-bottom:4px">${escapeHtml(zh)}</div><div style="font-size:12px;opacity:.8">${t('article.loadingDetails')}</div>`
+      : `<div style="font-size:12px;opacity:.8">${t('article.loading')}</div>`;
 }
 
 // Merge helper: deduplicate detailed_analysis by key (word|sentence)
@@ -1605,7 +1613,7 @@ function renderMarkdownImagesPairHTML(engText, zhText) {
 async function analyzeArticle() {
     const articleText = dom.articleInput.value.trim();
     if (!articleText) {
-        alert('請輸入要分析的文章！');
+        alert(t('article.enterArticle'));
         return;
     }
 
@@ -1616,7 +1624,7 @@ async function analyzeArticle() {
     currentAnalysisAbort = new AbortController();
 
     dom.analyzeArticleBtn.disabled = true;
-    dom.analyzeArticleBtn.textContent = '分析中...';
+    dom.analyzeArticleBtn.textContent = t('article.analyzing');
     
     const { title, paragraphs } = parseTitleAndParagraphs(articleText);
 
@@ -1631,13 +1639,13 @@ async function analyzeArticle() {
     }
     const items = title ? [title, ...paragraphs] : paragraphs; // 將標題也納入分析列表
     if (items.length === 0) {
-        alert('請輸入有效的文章內容！');
+        alert(t('article.invalidArticle'));
         dom.analyzeArticleBtn.disabled = false;
-        dom.analyzeArticleBtn.textContent = '分析文章';
+        dom.analyzeArticleBtn.textContent = t('article.analyze');
         return;
     }
 
-    updateAnalysisProgress(0, items.length, '準備中...');
+    updateAnalysisProgress(0, items.length, t('article.preparing'));
 
     // Pre-render placeholders for incremental rendering
     const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
@@ -1645,12 +1653,12 @@ async function analyzeArticle() {
         <div class="paragraph-pair${title && i === 0 ? ' is-title' : ''}" data-paragraph-index="${i}" data-english="${esc(p)}">
             <div class="para-status" data-status="pending" style="font-size:12px;opacity:.8;margin:4px 0;display:flex;gap:8px;align-items:center;">
                 <span class="status-icon">⏳</span>
-                <span class="status-text">分析中...</span>
-                <span class="elapsed" title="耗時"></span>
-                <button class="retry-paragraph-btn" data-index="${i}" style="display:none;">重試本段</button>
+                <span class="status-text">${t('article.analyzing')}</span>
+                <span class="elapsed" title="${t('article.elapsed')}"></span>
+                <button class="retry-paragraph-btn" data-index="${i}" style="display:none;">${t('article.retryParagraph')}</button>
             </div>
             <div class="paragraph-english">${esc(p)}</div>
-            <div class="paragraph-chinese"><em>分析中...</em></div>
+            <div class="paragraph-chinese"><em>${t('article.analyzing')}</em></div>
         </div>`).join('');
 
     try {
@@ -1672,7 +1680,7 @@ async function analyzeArticle() {
             // 啟動前延遲，平滑請求節奏
             await new Promise(r => setTimeout(r, SPACING_MS));
             const text = items[idx];
-            updateAnalysisProgress(completed, total, `正在分析第 ${idx + 1} 段...`);
+            updateAnalysisProgress(completed, total, t('article.analyzingParagraph', { number: idx + 1 }));
             try {
                 // start timing for this paragraph
                 paragraphStartTime[idx] = Date.now();
@@ -1715,7 +1723,7 @@ async function analyzeArticle() {
                 // finalize elapsed time
                 if (paragraphStartTime[idx]) paragraphElapsedMs[idx] = Math.max(0, Date.now() - paragraphStartTime[idx]);
                 completed += 1;
-                updateAnalysisProgress(completed, total, `已完成 ${completed} 段分析`);
+                updateAnalysisProgress(completed, total, t('article.completedParagraphs', { count: completed }));
                 await runNext();
             }
         };
@@ -1744,14 +1752,14 @@ async function analyzeArticle() {
 
     } catch (error) {
         if (currentAnalysisAbort?.signal?.aborted) {
-            dom.articleAnalysisContainer.innerHTML = '<p>已取消此次分析。</p>';
+            dom.articleAnalysisContainer.innerHTML = `<p>${t('article.cancelled')}</p>`;
         } else {
             console.error('分析文章時出錯:', error);
-            dom.articleAnalysisContainer.innerHTML = `<p style="color: red;">分析失敗！請檢查API Key或網絡連接後再試。</p>`;
+            dom.articleAnalysisContainer.innerHTML = `<p style="color: red;">${t('article.analysisFailed')}</p>`;
         }
     } finally {
         dom.analyzeArticleBtn.disabled = false;
-        dom.analyzeArticleBtn.textContent = '分析文章';
+        dom.analyzeArticleBtn.textContent = t('article.analyze');
         const inline = dom.articleAnalysisContainer.querySelector('.inline-progress');
         if (inline) inline.remove();
     }
@@ -1794,7 +1802,7 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
     const { chinese_translation, word_alignment, detailed_analysis, paragraph_analysis } = analysisResult;
 
     if (!chinese_translation && (!paragraph_analysis || paragraph_analysis.length === 0)) {
-        dom.articleAnalysisContainer.innerHTML = `<p style="color: red;">API返回的數據格式不完整。</p>`;
+        dom.articleAnalysisContainer.innerHTML = `<p style="color: red;">${t('article.invalidResponse')}</p>`;
         return;
     }
 
@@ -1893,7 +1901,7 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
 
 function clearArticleInput() {
     dom.articleInput.value = '';
-    dom.articleAnalysisContainer.innerHTML = '<p>請先輸入文章並點擊分析按鈕。</p>';
+    dom.articleAnalysisContainer.innerHTML = `<p>${t('article.initialHint')}</p>`;
     dom.articleHistorySelect.value = '';
     clearCurrentArticleSourceMeta();
     try {
@@ -1911,13 +1919,13 @@ function clearArticleInput() {
 function buildArticleHistoryLabel(item) {
     const meta = item && item.articleId ? storage.getArticleMetaById(item.articleId) : null;
     const { title, paragraphs } = parseTitleAndParagraphs(item?.article || '');
-    const fallback = title || paragraphs.find(p => p && p.trim()) || (item?.article || '').trim() || '未命名文章';
+    const fallback = title || paragraphs.find(p => p && p.trim()) || (item?.article || '').trim() || t('article.untitled');
     return (meta?.title || fallback).trim().slice(0, 40);
 }
 
 function buildArticleHistorySummary(item) {
     const { paragraphs } = parseTitleAndParagraphs(item?.article || '');
-    const summary = paragraphs.find(p => p && p.trim()) || (item?.article || '').trim() || '無內容';
+    const summary = paragraphs.find(p => p && p.trim()) || (item?.article || '').trim() || t('article.noContent');
     return summary.replace(/\s+/g, ' ').slice(0, 120);
 }
 
@@ -1978,7 +1986,7 @@ function openArticleHistoryManager() {
     const container = document.createElement('div');
     container.className = 'article-history-manager';
     if (!records.length) {
-        container.innerHTML = '<p>尚無閱讀記錄。</p>';
+        container.innerHTML = `<p>${t('article.noHistory')}</p>`;
     } else {
         const items = records.map(({ index, item, meta, label, summary }) => {
             const updatedAt = item?.result?.updatedAt || meta?.updatedAt || null;
@@ -1986,16 +1994,16 @@ function openArticleHistoryManager() {
             const timeValue = updatedAt || createdAt;
             const timeText = timeValue
                 ? (typeof timeValue === 'number' ? new Date(timeValue) : new Date(String(timeValue))).toLocaleString()
-                : '未記錄時間';
+                : t('article.unknownTime');
             const sourceMap = {
-                url: '網頁 / 新聞',
-                file: '文章庫 / 檔案',
-                ocr: '圖片 OCR',
-                paste: '貼上文字'
+                url: t('article.sourceUrl'),
+                file: t('article.sourceFile'),
+                ocr: t('article.sourceOcr'),
+                paste: t('article.sourcePaste')
             };
             const sourceType = meta?.sourceType || 'paste';
-            const sourceText = sourceMap[sourceType] || '貼上文字';
-            const hasResult = item?.result ? '已分析' : '未分析';
+            const sourceText = sourceMap[sourceType] || t('article.sourcePaste');
+            const hasResult = item?.result ? t('article.analyzed') : t('article.notAnalyzed');
             const safeLabel = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const safeSummary = summary.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             return `<div class="article-history-item" data-index="${index}">
@@ -2005,14 +2013,14 @@ function openArticleHistoryManager() {
                     <div class="article-history-summary">${safeSummary}</div>
                 </div>
                 <div class="article-history-ops">
-                    <button type="button" class="btn-secondary" data-act="load">載入</button>
-                    <button type="button" class="btn-secondary" data-act="del">刪除</button>
+                    <button type="button" class="btn-secondary" data-act="load">${t('article.load')}</button>
+                    <button type="button" class="btn-secondary" data-act="del">${t('article.delete')}</button>
                 </div>
             </div>`;
         }).join('');
-        container.innerHTML = `<div class="article-history-toolbar"><button type="button" id="article-history-clear" class="btn-secondary">清空全部</button></div><div class="article-history-list">${items}</div>`;
+        container.innerHTML = `<div class="article-history-toolbar"><button type="button" id="article-history-clear" class="btn-secondary">${t('article.clearAll')}</button></div><div class="article-history-list">${items}</div>`;
     }
-    dom.modalTitle.textContent = '閱讀記錄管理';
+    dom.modalTitle.textContent = t('article.historyManager');
     dom.modalBody.innerHTML = '';
     dom.modalBody.appendChild(container);
     ui.openModal();
@@ -2022,7 +2030,7 @@ function openArticleHistoryManager() {
         if (!btn) return;
         if (btn.id === 'article-history-clear') {
             if (!records.length) return;
-            if (confirm('確定清空全部閱讀記錄？此操作不可撤回。')) {
+            if (confirm(t('article.confirmClearHistory'))) {
                 storage.clearAnalyzedArticles();
                 populateArticleHistorySelect();
                 clearArticleInput();
@@ -2039,7 +2047,7 @@ function openArticleHistoryManager() {
             loadArticleHistoryRecord(index);
             ui.closeModal();
         } else if (action === 'del') {
-            if (confirm('確定刪除此閱讀記錄？')) {
+            if (confirm(t('article.confirmDeleteHistory'))) {
                 removeArticleHistoryRecord(index);
                 openArticleHistoryManager();
             }
@@ -2048,7 +2056,7 @@ function openArticleHistoryManager() {
 }
 
 function populateArticleHistorySelect() {
-    dom.articleHistorySelect.innerHTML = '<option value="">讀取歷史記錄</option>';
+    dom.articleHistorySelect.innerHTML = `<option value="">${t('article.historyRead')}</option>`;
     buildArticleHistoryRecords().forEach(({ index, label }) => {
         const option = document.createElement('option');
         option.value = index;
@@ -2069,10 +2077,10 @@ function loadSelectedArticle() {
 function deleteSelectedArticleHistory() {
     const selectedIndex = dom.articleHistorySelect.value;
     if (selectedIndex === '') {
-        alert('請先選擇一個歷史記錄！');
+        alert(t('article.selectHistory'));
         return;
     }
-    if (confirm('確定要刪除這條歷史記錄嗎？')) {
+    if (confirm(t('article.confirmDeleteHistory'))) {
         removeArticleHistoryRecord(selectedIndex);
     }
 }
@@ -2472,7 +2480,7 @@ function highlightCurrentChunk(chunk) {
 
 async function downloadAudio() {
     const raw = dom.articleInput.value.trim();
-    if (!raw) { alert('請先輸入要下載的文章！'); return; }
+    if (!raw) { alert(t('article.enterArticle')); return; }
     // 構造下載文本：
     const mode = dom.readingModeSelect.value;
     const chunks = (function() {
@@ -2512,9 +2520,9 @@ let _articleLibraryData = [];
 function renderArticleLibraryList(filter = {}) {
     const cat = (filter.category || '').trim();
     const items = _articleLibraryData.filter(a => !cat || (a.category || '') === cat);
-    if (dom.articleLibraryCount) dom.articleLibraryCount.textContent = `${items.length} 篇`;
+    if (dom.articleLibraryCount) dom.articleLibraryCount.textContent = t('article.articleCount', { count: items.length });
     if (items.length === 0) {
-        dom.articleLibraryList.innerHTML = '<p>沒有符合條件的文章。</p>';
+        dom.articleLibraryList.innerHTML = `<p>${t('article.noLibraryMatch')}</p>`;
         return;
     }
     dom.articleLibraryList.innerHTML = items.map(article => `
@@ -2523,7 +2531,7 @@ function renderArticleLibraryList(filter = {}) {
             <p class="description">${article.description}</p>
             <div class="meta">
                 <span class="difficulty">${article.difficulty}</span>
-                <span class="category">${article.category || '未分類'}</span>
+                <span class="category">${article.category || t('article.uncategorized')}</span>
             </div>
         </div>`).join('');
     dom.articleLibraryList.querySelectorAll('.article-library-item').forEach(item => {
@@ -2532,7 +2540,7 @@ function renderArticleLibraryList(filter = {}) {
 }
 
 async function openArticleLibrary() {
-    dom.articleLibraryList.innerHTML = '<p>正在加載文章列表...</p>';
+    dom.articleLibraryList.innerHTML = `<p>${t('article.loadingLibrary')}</p>`;
     dom.articleLibraryModal.classList.remove('hidden');
     try {
         if (!_articleLibraryData || _articleLibraryData.length === 0) {
@@ -2542,15 +2550,15 @@ async function openArticleLibrary() {
         }
 
         if (!_articleLibraryData || _articleLibraryData.length === 0) {
-            dom.articleLibraryList.innerHTML = '<p>文章庫是空的。</p>';
+            dom.articleLibraryList.innerHTML = `<p>${t('article.emptyLibrary')}</p>`;
             return;
         }
 
         // 構建分類下拉
         if (dom.articleCategoryFilter) {
-            const cats = Array.from(new Set(_articleLibraryData.map(a => a.category || '未分類')));
+            const cats = Array.from(new Set(_articleLibraryData.map(a => a.category || t('article.uncategorized'))));
             const prev = dom.articleCategoryFilter.value || '';
-            dom.articleCategoryFilter.innerHTML = ['<option value="">全部分類</option>']
+            dom.articleCategoryFilter.innerHTML = [`<option value="">${t('article.allCategories')}</option>`]
                 .concat(cats.map(c => `<option value="${String(c).replace(/\"/g,'&quot;')}">${c}</option>`))
                 .join('');
             dom.articleCategoryFilter.value = prev;
@@ -2562,7 +2570,7 @@ async function openArticleLibrary() {
         renderArticleLibraryList({ category: dom.articleCategoryFilter ? dom.articleCategoryFilter.value : '' });
     } catch (error) {
         console.error('無法加載文章庫:', error);
-        dom.articleLibraryList.innerHTML = '<p style="color: red;">加載文章列表失敗。</p>';
+        dom.articleLibraryList.innerHTML = `<p style="color: red;">${t('article.loadLibraryFailed')}</p>`;
     }
 }
 async function loadArticleFromLibrary(path) {
@@ -2586,7 +2594,7 @@ async function loadArticleFromLibrary(path) {
         closeArticleLibrary();
     } catch (error) {
         console.error(`無法從 ${path} 加載文章:`, error);
-        alert('加載文章失敗！');
+        alert(t('article.loadArticleFailed'));
     }
 }
 
@@ -2680,7 +2688,7 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
         const context = card.dataset.context || '';
         const paraIdx = parseInt(card.dataset.paraIdx, 10) || 0;
         const sentIdx = parseInt(card.dataset.sentIdx, 10) || 0;
-        chunkBtn.disabled = true; chunkBtn.textContent = '詳解中...';
+        chunkBtn.disabled = true; chunkBtn.textContent = t('article.detailsLoading');
         try {
             const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
             const box = document.createElement('div');
@@ -2691,10 +2699,10 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
             const ex = Array.isArray(res.analysis?.examples) ? res.analysis.examples.slice(0,2) : [];
             box.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
                                <div><strong>${esc(res.selection || phrase)}</strong>：${esc(res.analysis?.meaning || '')}
-                                   ${res.analysis?.usage ? `<div>用法：${esc(res.analysis.usage)}</div>`:''}
+                                   ${res.analysis?.usage ? `<div>${t('article.usageLabel')}${esc(res.analysis.usage)}</div>`:''}
                                    ${ex.length? '<div>' + ex.map(x=>`<div>• ${esc(x.en)} — ${esc(x.zh)}</div>`).join('') + '</div>' : ''}
                                </div>
-                               <button class="phrase-close" style="font-size:12px;">關閉</button>
+                               <button class="phrase-close" style="font-size:12px;">${t('article.close')}</button>
                              </div>`;
             const chunkItem = chunkBtn.closest('.chunk-item');
             if (chunkItem) chunkItem.after(box);
@@ -2711,9 +2719,9 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
             });
         } catch (err) {
             console.warn('片語詳解請求失敗:', err);
-            alert('解析失敗，稍後再試');
+            alert(t('article.analysisRetry'));
         } finally {
-            chunkBtn.disabled = false; chunkBtn.textContent = '詳解';
+            chunkBtn.disabled = false; chunkBtn.textContent = t('article.details');
         }
         return;
     }
@@ -2742,7 +2750,7 @@ try {
         const context = card.dataset.context || '';
         const paraIdx = parseInt(card.dataset.paraIdx, 10) || 0;
         const sentIdx = parseInt(card.dataset.sentIdx, 10) || 0;
-        chunkBtn.disabled = true; chunkBtn.textContent = '詳解中...';
+        chunkBtn.disabled = true; chunkBtn.textContent = t('article.detailsLoading');
         try {
             const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
             const box = document.createElement('div');
@@ -2754,10 +2762,10 @@ try {
             try { const arr = res?.analysis?.examples; if (Array.isArray(arr)) arr.slice(0,2).forEach(x => ex.push(x)); } catch (_) {}
             box.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
                                <div><strong>${esc(res.selection || phrase)}</strong>：${esc(res.analysis?.meaning || '')}
-                                   ${res.analysis?.usage ? `<div>用法：${esc(res.analysis.usage)}</div>`:''}
+                                   ${res.analysis?.usage ? `<div>${t('article.usageLabel')}${esc(res.analysis.usage)}</div>`:''}
                                    ${ex.length? '<div>' + ex.map(x=>`<div>• ${esc(x.en)} — ${esc(x.zh)}</div>`).join('') + '</div>' : ''}
                                </div>
-                               <button class="phrase-close" style="font-size:12px;">關閉</button>
+                               <button class="phrase-close" style="font-size:12px;">${t('article.close')}</button>
                              </div>`;
             const chunkItem = chunkBtn.closest('.chunk-item');
             if (chunkItem) chunkItem.after(box); else card.appendChild(box);
@@ -2770,9 +2778,9 @@ try {
             });
         } catch (err) {
             console.warn('片語詳解請求失敗(Modal):', err);
-            alert('解析失敗，稍後再試');
+            alert(t('article.analysisRetry'));
         } finally {
-            chunkBtn.disabled = false; chunkBtn.textContent = '詳解';
+            chunkBtn.disabled = false; chunkBtn.textContent = t('article.details');
         }
     });
 } catch (_) {}
@@ -2798,7 +2806,7 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
         const context = btnAdd.getAttribute('data-context') || '';
         const prev = btnAdd.textContent;
         btnAdd.disabled = true;
-        btnAdd.textContent = '加入中...';
+        btnAdd.textContent = t('qa.adding');
         btnAdd.setAttribute('aria-busy', 'true');
         try {
             const mod = await import('../../modules/vocab.js');
@@ -2806,15 +2814,15 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
             const phonetic = btnAdd.getAttribute('data-phonetic') || '';
             const pos = btnAdd.getAttribute('data-pos') || '';
             const res = await mod.addWordToCurrentArticleBook(w, { source: 'article', sentence, context, meaning, phonetic, pos });
-            btnAdd.textContent = res && res.reason === 'duplicate' ? '已存在' : '已加入';
+            btnAdd.textContent = res && res.reason === 'duplicate' ? t('qa.exists') : t('qa.added');
         } catch (err) {
             console.warn('加入生詞本失敗:', err);
-            btnAdd.textContent = '失敗';
+            btnAdd.textContent = t('qa.failed');
         } finally {
             setTimeout(() => {
                 btnAdd.removeAttribute('aria-busy');
                 btnAdd.disabled = false;
-                btnAdd.textContent = prev || '加入生詞本';
+                btnAdd.textContent = prev || t('article.addToWordbook');
             }, 1000);
         }
         return;
@@ -2825,25 +2833,25 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
     const context = (btnPhrase || btnCustom).getAttribute('data-context') || '';
     let selection = (btnPhrase || btnCustom).getAttribute('data-default') || '';
     if (btnCustom) {
-        const input = prompt('輸入要解析的片語', selection);
+        const input = prompt(t('article.phrasePrompt'), selection);
         if (!input) return;
         selection = input.trim();
     }
     const resultBox = dom.analysisTooltip.querySelector('.tooltip-phrase-result');
-    if (resultBox) resultBox.textContent = '解析中...';
+    if (resultBox) resultBox.textContent = t('article.analyzingSelection');
     try {
         const res = await api.analyzeSelection(selection, sentence, context, { timeoutMs: 15000 });
         if (resultBox) {
             const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
             const ex = Array.isArray(res.analysis?.examples) ? res.analysis.examples.slice(0,2) : [];
             const phon = (res.analysis?.phonetic || '').replace(/^\/|\/$/g, '');
-            resultBox.innerHTML = `<div><strong>片語:</strong> ${esc(res.selection || selection)}${phon ? ` <span class=\"tooltip-phonetic\">/${esc(phon)}/</span>` : ''}</div>
-                                   <div><strong>釋義:</strong> ${esc(res.analysis?.meaning || '')}</div>
-                                   ${res.analysis?.usage ? `<div><strong>用法:</strong> ${esc(res.analysis.usage)}</div>`:''}
+            resultBox.innerHTML = `<div><strong>${t('article.phraseLabel')}</strong> ${esc(res.selection || selection)}${phon ? ` <span class=\"tooltip-phonetic\">/${esc(phon)}/</span>` : ''}</div>
+                                   <div><strong>${t('article.meaningLabel')}</strong> ${esc(res.analysis?.meaning || '')}</div>
+                                   ${res.analysis?.usage ? `<div><strong>${t('article.usageLabel')}</strong> ${esc(res.analysis.usage)}</div>`:''}
                                    ${ex.length? '<div style="margin-top:4px">' + ex.map(x=>`<div>• ${esc(x.en)} — ${esc(x.zh)}</div>`).join('') + '</div>' : ''}`;
         }
     } catch (err) {
-        if (resultBox) resultBox.innerHTML = '<span style="color:#b91c1c">解析失敗，稍後重試</span>';
+        if (resultBox) resultBox.innerHTML = `<span style="color:#b91c1c">${t('article.analysisRetryShort')}</span>`;
     }
 });
 
@@ -2873,11 +2881,11 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
             dom.analysisTooltip.innerHTML = `
                 <div class="tooltip-title">${data.word}<span class="tooltip-phonetic">${phonetic}</span> (${analysis.pos})</div>
                 <div class="tooltip-content">
-                    <p><strong>作用:</strong> ${analysis.role}</p>
-                    <p><strong>意思:</strong> ${analysis.meaning}</p>
+                    <p><strong>${t('article.roleLabel')}</strong> ${analysis.role}</p>
+                    <p><strong>${t('article.meaningLabel')}</strong> ${analysis.meaning}</p>
                 </div>
                 <div class="tooltip-actions" style="margin-top:6px;display:flex;gap:6px;align-items:center;">
-                    <button class="btn-ghost btn-mini btn-play-word" data-word="${escAttr(data.word || defaultPhrase)}">發音</button>
+                    <button class="btn-ghost btn-mini btn-play-word" data-word="${escAttr(data.word || defaultPhrase)}">${t('article.pronunciation')}</button>
                     <button class="btn-ghost btn-mini btn-add-to-book"
                         data-word="${escAttr(defaultPhrase||data.word||'')}"
                         data-sentence="${escAttr(sentenceForBtn||'')}"
@@ -2885,13 +2893,13 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
                         data-meaning="${escAttr(analysis.meaning || '')}"
                         data-phonetic="${escAttr(analysis.phonetic || '')}"
                         data-pos="${escAttr(analysis.pos || '')}"
-                    >加入生詞本</button>
-                    <button class="btn-ghost btn-mini btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">片語解析</button>
-                    <button class="btn-ghost btn-mini btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">自訂片語...</button>
+                    >${t('article.addToWordbook')}</button>
+                    <button class="btn-ghost btn-mini btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzePhrase')}</button>
+                    <button class="btn-ghost btn-mini btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzeOtherPhrase')}</button>
                 </div>
                 <div class="tooltip-phrase-result" style="margin-top:6px;font-size:12px;"></div>`;
         } else {
-            dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>分析數據未找到。</p></div>`;
+            dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.noAnalysisData')}</p></div>`;
         }
         dom.analysisTooltip.style.display = 'block';
         ui.repositionTooltip(clickedElement);
@@ -2920,7 +2928,7 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         return;
     }
 
-    dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>載入中...</p></div>`;
+    dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.loading')}</p></div>`;
     dom.analysisTooltip.style.display = 'block';
     ui.repositionTooltip(clickedElement);
 
@@ -2958,8 +2966,8 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         showTooltip(normalized, sentence, paraEnglish, wordText);
     }).catch(err => {
         console.warn('懶載詳解失敗:', err);
-        dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>解析失敗。</p></div>
-            <div class="tooltip-actions" style="margin-top:6px;"><button class="btn-ghost btn-mini btn-retry-word">重試</button></div>`;
+        dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.wordAnalysisFailed')}</p></div>
+            <div class="tooltip-actions" style="margin-top:6px;"><button class="btn-ghost btn-mini btn-retry-word">${t('article.retry')}</button></div>`;
         const retryBtn = dom.analysisTooltip.querySelector('.btn-retry-word');
         if (retryBtn) retryBtn.addEventListener('click', (ev) => {
             ev.stopPropagation();
@@ -3144,9 +3152,9 @@ function renderParagraph(index, englishPara, result) {
                 elapsedSpan.textContent = `(${secs}s)`;
             }
             statusDiv.dataset.status = 'done';
-            if (textSpan) textSpan.textContent = '完成 ✓';
+            if (textSpan) textSpan.textContent = t('article.doneStatus');
             if (iconSpan) iconSpan.textContent = '✅';
-            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = '重新獲取'; }
+            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = t('article.refresh'); }
         }
         return;
     }
@@ -3177,9 +3185,9 @@ function renderParagraph(index, englishPara, result) {
                     elapsedSpan.textContent = `(${secs}s)`;
                 }
                 statusDiv.dataset.status = 'done';
-                if (textSpan) textSpan.textContent = '完成 ✓';
+                if (textSpan) textSpan.textContent = t('article.doneStatus');
                 if (iconSpan) iconSpan.textContent = '✅';
-                if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = '重新獲取'; }
+                if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = t('article.refresh'); }
             }
             return;
         }
@@ -3275,9 +3283,9 @@ function renderParagraph(index, englishPara, result) {
                 elapsedSpan.textContent = `(${secs}s)`;
             }
             statusDiv.dataset.status = 'done';
-            if (textSpan) textSpan.textContent = '完成 ✓';
+            if (textSpan) textSpan.textContent = t('article.doneStatus');
             if (iconSpan) iconSpan.textContent = '✅';
-            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = '重新獲取'; }
+            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = t('article.refresh'); }
         }
         return;
     }
@@ -3332,9 +3340,9 @@ function renderParagraph(index, englishPara, result) {
         }
         if (!failed) {
             statusDiv.dataset.status = 'done';
-            if (textSpan) textSpan.textContent = '完成 ✓';
+            if (textSpan) textSpan.textContent = t('article.doneStatus');
             if (iconSpan) iconSpan.textContent = '✅';
-            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = '重新獲取'; }
+            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = t('article.refresh'); }
         } else {
             statusDiv.dataset.status = 'failed';
             if (textSpan) textSpan.textContent = '失敗 ⚠️';
@@ -3487,7 +3495,7 @@ function initArticleSelectionToWordbook() {
         if (btn) return btn;
         btn = document.createElement('button');
         btn.className = 'btn-ghost btn-mini';
-        btn.textContent = '加入生詞本';
+        btn.textContent = t('article.addToWordbook');
         btn.style.cssText = [
             'position:absolute',
             'z-index:9999',
@@ -3513,13 +3521,13 @@ function initArticleSelectionToWordbook() {
             } catch (_) {}
 
             const prev = btn.textContent;
-            btn.disabled = true; btn.textContent = '加入中...'; btn.setAttribute('aria-busy','true');
+            btn.disabled = true; btn.textContent = t('qa.adding'); btn.setAttribute('aria-busy','true');
             try {
                 const mod = await import('../../modules/vocab.js');
                 await mod.addWordToCurrentArticleBook(text, { source: 'article', sentence, context });
             } catch (_) {}
             hideBtn();
-            btn.removeAttribute('aria-busy'); btn.disabled = false; btn.textContent = prev || '加入生詞本';
+            btn.removeAttribute('aria-busy'); btn.disabled = false; btn.textContent = prev || t('article.addToWordbook');
             try { sel && sel.removeAllRanges && sel.removeAllRanges(); } catch (_) {}
         });
         return btn;
@@ -3567,7 +3575,7 @@ async function toggleSentenceCard(sentenceEl) {
         // 高亮當前句（未播放時不淡化，其邏輯在 applySentenceHighlight 內）
         applySentenceHighlight(paraIdx, sentIdx, true);
         try { ui.openModal(); } catch (_) {}
-        try { dom.modalTitle.textContent = '句子解析'; } catch (_) {}
+        try { dom.modalTitle.textContent = t('article.sentenceAnalysis'); } catch (_) {}
         // 建立容器並標記為 modal 環境
         dom.modalBody.innerHTML = '';
         try {
@@ -3599,7 +3607,7 @@ async function toggleSentenceCard(sentenceEl) {
             // 持久化句子解析
             persistSentenceAnalysis(sentence, context, data);
         } catch (e) {
-            card.innerHTML = `<div style=\"color:#b91c1c\">解析失敗，稍後再試</div>`;
+            card.innerHTML = `<div style=\"color:#b91c1c\">${t('article.analysisRetry')}</div>`;
         }
         return;
     }
@@ -3644,12 +3652,12 @@ async function toggleSentenceCard(sentenceEl) {
             }
         }, 300);
     } catch (e) {
-        card.innerHTML = `<div style="color:#b91c1c">解析失敗。<button class="retry-sentence-btn">重試</button></div>`;
+        card.innerHTML = `<div style="color:#b91c1c">${t('article.wordAnalysisFailed')}<button class="retry-sentence-btn">${t('article.retry')}</button></div>`;
         const btn = card.querySelector('.retry-sentence-btn');
         if (btn) btn.addEventListener('click', async () => {
-            btn.disabled = true; btn.textContent = '重試中...';
+            btn.disabled = true; btn.textContent = t('article.retrying');
             try { const data = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true, includeStructure: true }); renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx); applySentenceHighlight(paraIdx, sentIdx, true); }
-            catch { btn.disabled = false; btn.textContent = '重試'; }
+            catch { btn.disabled = false; btn.textContent = t('article.retry'); }
         });
     }
 }
@@ -3678,10 +3686,10 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
 
     card.innerHTML = `
         <div class="sentence-card-head" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-            <div style="font-weight:600">句子解析</div>
+            <div style="font-weight:600">${t('article.sentenceAnalysis')}</div>
             <div class="actions" style="display:flex;gap:6px;">
-                <button class="btn-ghost btn-mini sent-refresh">重新獲取</button>
-                <button class="btn-ghost btn-mini sent-collapse" title="收合 (點擊標題列或右側也可收合)">收合</button>
+                <button class="btn-ghost btn-mini sent-refresh">${t('article.refresh')}</button>
+                <button class="btn-ghost btn-mini sent-collapse">${t('article.collapse')}</button>
             </div>
         </div>
         <div class="sentence-translation" style="margin:6px 0 8px 0;">${translation}</div>
@@ -3690,23 +3698,23 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
             + `</div>` : ''}
         ${chunks.length? `<div class="sentence-chunks">`
             + chunks.slice(0,8).map((c,idx)=>`<div class="chunk-item" data-chunk-id="sent-${paraIdx}-${sentIdx}-${idx}" style="margin:4px 0;display:flex;gap:6px;align-items:center;">
-                    <button class="btn-ghost btn-mini chunk-explain" data-chunk-id="sent-${paraIdx}-${sentIdx}-${idx}" data-phrase="${esc(c.text)}">詳解</button>
+                    <button class="btn-ghost btn-mini chunk-explain" data-chunk-id="sent-${paraIdx}-${sentIdx}-${idx}" data-phrase="${esc(c.text)}">${t('article.details')}</button>
                     <div class="chunk-line"><span class="chunk-text" style="color:#22c55e">${esc(c.text)}</span> — <em>${esc(c.role)}</em>${c.note? `：${esc(c.note)}`:''}</div>
                 </div>`).join('')
             + `</div>` : ''}
         ${filteredPoints.length? `<ul class="sentence-points" style="margin:6px 0 0 18px;">`
             + filteredPoints.slice(0,6).map(p=>`<li>${esc(p)}</li>`).join('') + `</ul>` : ''}
         <div class="sent-footer" style="margin-top:8px;display:flex;gap:6px;align-items:center;">
-            <button class="btn-ghost btn-mini analyze-selection">解析選中</button>
-            <small style="opacity:.8">選取句中片語後點擊</small>
+            <button class="btn-ghost btn-mini analyze-selection">${t('article.analyzeSelection')}</button>
+            <small style="opacity:.8">${t('article.selectPhraseHint')}</small>
         </div>
     `;
     const refresh = card.querySelector('.sent-refresh');
     const collapse = card.querySelector('.sent-collapse');
     // Modal 環境下，將收合按鈕文案替換為「關閉」
     if (collapse && card.dataset.modal === '1') {
-        collapse.textContent = '關閉';
-        collapse.title = '關閉視窗';
+        collapse.textContent = t('article.close');
+        collapse.title = t('article.closeWindow');
     }
     const head = card.querySelector('.sentence-card-head');
     const selBtn = card.querySelector('.analyze-selection');
@@ -3741,10 +3749,10 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
             card.style.position = 'relative';
             const overlay = document.createElement('div');
             overlay.className = 'card-collapse-overlay';
-            overlay.title = '點擊此區收合';
+            overlay.title = t('article.collapseArea');
             // 降低層級，讓標題列與其上的按鈕可點擊在上層
             overlay.style.zIndex = '1';
-            overlay.setAttribute('aria-label', '點擊右側空白區可收合');
+            overlay.setAttribute('aria-label', t('article.collapseAreaAria'));
             // 顯示更明顯的收合圖示與分塊感
             const handle = document.createElement('div');
             handle.className = 'collapse-handle';
@@ -3764,57 +3772,57 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         }
     } catch (_) {}
     if (refresh) refresh.addEventListener('click', async ()=>{
-        refresh.disabled = true; refresh.textContent = '重新獲取中...';
+        refresh.disabled = true; refresh.textContent = t('article.refreshing');
         try { const fresh = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true }); renderSentenceCard(card, fresh, sentence, context, paraIdx, sentIdx); persistSentenceAnalysis(sentence, context, fresh); }
-        finally { refresh.disabled = false; refresh.textContent = '重新獲取'; }
+        finally { refresh.disabled = false; refresh.textContent = t('article.refresh'); }
     });
     if (selBtn) selBtn.addEventListener('click', async ()=>{
         const sentenceEl = card.previousElementSibling;
         const selection = window.getSelection();
         const text = (selection && selection.toString && selection.toString().trim()) || '';
-        if (!text) { alert('請先在該句中選取片語'); return; }
-        selBtn.disabled = true; selBtn.textContent = '解析中...';
+        if (!text) { alert(t('article.selectPhraseFirst')); return; }
+        selBtn.disabled = true; selBtn.textContent = t('article.analyzingSelection');
         try {
             const res = await api.analyzeSelection(text, sentence, context, { timeoutMs: 15000 });
             const box = document.createElement('div');
             box.style.marginTop = '6px'; box.style.padding='6px 8px'; box.style.border='1px dashed #ddd'; box.style.borderRadius='6px';
-            box.innerHTML = `<div style="font-weight:600;">片語：${esc(res.selection||text)}</div>
+            box.innerHTML = `<div style="font-weight:600;">${t('article.phraseLabel')}${esc(res.selection||text)}</div>
                              <div>${esc(res.analysis?.meaning || '')}</div>
-                             ${res.analysis?.usage? `<div style=\"opacity:.9\">用法：${esc(res.analysis.usage)}</div>`:''}
+                             ${res.analysis?.usage? `<div style=\"opacity:.9\">${t('article.usageLabel')}${esc(res.analysis.usage)}</div>`:''}
                              ${Array.isArray(res.analysis?.examples) && res.analysis.examples.length? '<div style=\"margin-top:4px\">' + res.analysis.examples.slice(0,2).map(ex=>`<div>• ${esc(ex.en)} — ${esc(ex.zh)}</div>`).join('') + '</div>' : ''}`;
             card.appendChild(box);
             // 持久化片語解析
             try { persistPhraseAnalysis(text, sentence, context, res); } catch (_) {}
         } catch (e) {
-            alert('解析失敗，稍後再試');
+            alert(t('article.analysisRetry'));
         } finally {
-            selBtn.disabled = false; selBtn.textContent = '解析選中';
+            selBtn.disabled = false; selBtn.textContent = t('article.analyzeSelection');
         }
     });
     // Add to wordbook from current selection (sentence card)
     const addBtn = document.createElement('button');
     addBtn.className = 'btn-ghost btn-mini sent-add-to-book';
-    addBtn.textContent = '加入生詞本（選中）';
+    addBtn.textContent = t('article.addSelectedToWordbook');
     addBtn.style.marginLeft = '6px';
     const footer = card.querySelector('.sent-footer');
     if (footer) footer.insertBefore(addBtn, footer.lastElementChild);
     addBtn.addEventListener('click', async () => {
         const selection = window.getSelection();
         const text = (selection && selection.toString && selection.toString().trim()) || '';
-        if (!text) { alert('請先在該句中選取詞/片語'); return; }
+        if (!text) { alert(t('article.selectWordOrPhrase')); return; }
         const prev = addBtn.textContent;
-        addBtn.disabled = true; addBtn.textContent = '加入中...'; addBtn.setAttribute('aria-busy','true');
+        addBtn.disabled = true; addBtn.textContent = t('qa.adding'); addBtn.setAttribute('aria-busy','true');
         try {
             const mod = await import('../../modules/vocab.js');
             const res = await mod.addWordToCurrentArticleBook(text, { source: 'article', sentence, context });
-            addBtn.textContent = (res && res.reason === 'duplicate') ? '已存在' : '已加入';
+            addBtn.textContent = (res && res.reason === 'duplicate') ? t('qa.exists') : t('qa.added');
         } catch (err) {
             console.warn('加入生詞本失敗:', err);
-            addBtn.textContent = '失敗';
+            addBtn.textContent = t('qa.failed');
         } finally {
             setTimeout(()=>{
                 addBtn.removeAttribute('aria-busy');
-                addBtn.disabled = false; addBtn.textContent = prev || '加入生詞本（選中）';
+                addBtn.disabled = false; addBtn.textContent = prev || t('article.addSelectedToWordbook');
             }, 1000);
         }
     });

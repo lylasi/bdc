@@ -8,6 +8,7 @@ import { startAIChecking, clearCheckingCache, getCheckingCacheStats, recheckAnsw
 import { exportTrainingResultToPDF, exportQASetForHandwriting } from './qa-pdf.js';
 import { displayMessage, showOptionsModal, openModal, closeModal } from '../../modules/ui.js';
 import { loadGlobalSettings } from '../../modules/settings.js';
+import { t } from '../../modules/i18n.js';
 import {
   getTaskModelSelection,
   saveTaskModelSelection
@@ -42,6 +43,14 @@ export async function init() {
 
   // 初始化事件監聽器
   initEventListeners();
+  document.addEventListener('bdc:locale-change', () => {
+    updateQASetsDisplay();
+    refreshCreatorTemplateSelector();
+    const pairsInput = dom.qaModule?.querySelector('#qa-pairs-input');
+    const preview = dom.qaModule?.querySelector('#qa-preview');
+    if (pairsInput && preview) handleTextInputChange(pairsInput, preview);
+    if (qaModuleState.currentView === 'training') updateTrainingInterface();
+  });
 
   // 問答區選字：顯示「加入生詞本」懸浮按鈕（簡化版）
   try { initQASelectionToWordbook(); } catch (_) {}
@@ -88,7 +97,7 @@ function initQASelectionToWordbook() {
   function ensureBtn() {
     if (btn) return btn;
     btn = document.createElement('button');
-    btn.textContent = '加入生詞本';
+    btn.textContent = t('qa.addWord');
     btn.style.cssText = [
       'position:absolute',
       'z-index:9999',
@@ -106,19 +115,19 @@ function initQASelectionToWordbook() {
     btn.addEventListener('click', async () => {
       const sel = window.getSelection();
       const text = (sel && sel.toString && sel.toString().trim()) || '';
-      if (!text) { displayMessage('請先選取要加入的詞/片語', 'warning'); return; }
+      if (!text) { displayMessage(t('qa.selectWord'), 'warning'); return; }
       const q = dom.qaModule?.querySelector('#qa-current-question')?.textContent || '';
       const prev = btn.textContent;
-      btn.disabled = true; btn.textContent = '加入中...'; btn.setAttribute('aria-busy','true');
+      btn.disabled = true; btn.textContent = t('qa.adding'); btn.setAttribute('aria-busy','true');
       try {
         const mod = await import('../../modules/vocab.js');
         const res = await mod.addWordToDefaultBook(text, { source: 'qa', sentence: q, context: q });
-        btn.textContent = (res && res.reason === 'duplicate') ? '已存在' : '已加入';
+        btn.textContent = (res && res.reason === 'duplicate') ? t('qa.exists') : t('qa.added');
       } catch (err) {
         console.warn('加入生詞本失敗:', err);
-        btn.textContent = '失敗';
+        btn.textContent = t('qa.failed');
       } finally {
-        setTimeout(()=>{ btn.removeAttribute('aria-busy'); btn.disabled = false; btn.textContent = prev || '加入生詞本'; }, 1000);
+        setTimeout(()=>{ btn.removeAttribute('aria-busy'); btn.disabled = false; btn.textContent = prev || t('qa.addWord'); }, 1000);
         hideBtn();
         try { sel && sel.removeAllRanges && sel.removeAllRanges(); } catch (_) {}
       }
@@ -277,7 +286,7 @@ function initEventListeners() {
         const expanded = toggleAllBtn.dataset.expanded === 'true';
         setAllAIDetailsExpanded(!expanded);
         toggleAllBtn.dataset.expanded = (!expanded).toString();
-        toggleAllBtn.textContent = (!expanded) ? '收合全部' : '展開全部';
+        toggleAllBtn.textContent = (!expanded) ? t('qa.collapseAll') : t('qa.expandAll');
       });
     }
 
@@ -306,11 +315,11 @@ function initEventListeners() {
       const expanded = details.style.display !== 'none';
       if (expanded) {
         details.style.display = 'none';
-        btn.textContent = '顯示詳解';
+        btn.textContent = t('qa.showDetails');
         btn.setAttribute('aria-expanded', 'false');
       } else {
         details.style.display = '';
-        btn.textContent = '收合詳解';
+        btn.textContent = t('qa.hideDetails');
         btn.setAttribute('aria-expanded', 'true');
       }
     });
@@ -328,7 +337,7 @@ function setAllAIDetailsExpanded(expand) {
   });
   const btns = container.querySelectorAll('.ai-toggle-details');
   btns.forEach(btn => {
-    btn.textContent = expand ? '收合詳解' : '顯示詳解';
+    btn.textContent = expand ? t('qa.hideDetails') : t('qa.showDetails');
     btn.setAttribute('aria-expanded', expand ? 'true' : 'false');
   });
 }
@@ -352,7 +361,7 @@ async function loadQASets() {
 
   } catch (error) {
     console.error('載入問答集時出錯:', error);
-    displayMessage('載入問答集失敗', 'error');
+    displayMessage(t('qa.loadSetsFailed'), 'error');
 
     // 降級到只顯示用戶創建的問答集
     qaModuleState.qaSets = getStoredQASets().map(set => ({
@@ -372,7 +381,7 @@ function updateQASetsDisplay() {
   listContainer.innerHTML = '';
 
   if (qaModuleState.qaSets.length === 0) {
-    listContainer.innerHTML = '<p class="no-qa-sets">尚無問答集，點擊"創建問答集"開始創建。</p>';
+    listContainer.innerHTML = `<p class="no-qa-sets">${t('qa.noSets')}</p>`;
     return;
   }
 
@@ -407,15 +416,15 @@ function createQASetCard(qaSet) {
     <div class="qa-set-card" data-qa-id="${qaSet.id}">
       <div class="qa-set-header">
         <h5 class="qa-set-name">${qaSet.name}</h5>
-        <span class="qa-set-count">${qaSet.questionCount} 題</span>
+        <span class="qa-set-count">${t('qa.questionsCount', { count: qaSet.questionCount })}</span>
       </div>
       <div class="qa-set-description">${qaSet.description}</div>
       <div class="qa-set-actions">
-        <button class="btn small secondary view-btn">查看題目</button>
-        <button class="btn small primary start-training-btn">開始訓練</button>
-        ${!qaSet.isPreset ? '<button class="btn small secondary edit-btn">編輯</button>' : ''}
-        <button class="btn small secondary export-btn">導出手默</button>
-        ${!qaSet.isPreset ? '<button class="btn small danger delete-btn">刪除</button>' : ''}
+        <button class="btn small secondary view-btn">${t('qa.view')}</button>
+        <button class="btn small primary start-training-btn">${t('qa.startTraining')}</button>
+        ${!qaSet.isPreset ? `<button class="btn small secondary edit-btn">${t('qa.edit')}</button>` : ''}
+        <button class="btn small secondary export-btn">${t('qa.exportHandwriting')}</button>
+        ${!qaSet.isPreset ? `<button class="btn small danger delete-btn">${t('qa.delete')}</button>` : ''}
       </div>
     </div>
   `;
@@ -447,13 +456,13 @@ async function handlePreviewQASet(qaId) {
   try {
     const qaSet = await loadQASet(qaId);
     if (!qaSet) {
-      displayMessage('載入問答集失敗。', 'error');
+      displayMessage(t('qa.loadSetsFailed'), 'error');
       return;
     }
     openQASetPreviewModal(qaSet);
   } catch (error) {
     console.error('預覽問答集時出錯:', error);
-    displayMessage('無法預覽問答集，請稍後再試。', 'error');
+    displayMessage(t('qa.previewFailed'), 'error');
   }
 }
 
@@ -461,7 +470,7 @@ function openQASetPreviewModal(qaSet) {
   openModal();
 
   if (dom.modalTitle) {
-    dom.modalTitle.textContent = `查看問答集：${qaSet.name || ''}`;
+    dom.modalTitle.textContent = t('qa.previewTitle', { name: qaSet.name || '' });
   }
 
   if (!dom.modalBody) return;
@@ -506,25 +515,25 @@ function openQASetPreviewModal(qaSet) {
     <div class="qa-view-modal">
       <div class="qa-view-meta" style="margin-bottom:12px; color:#4b5563; font-size:13px;">
         ${metaDesc ? `<div style="margin-bottom:4px;">${metaDesc}</div>` : ''}
-        <div>題目數量：${total}</div>
+        <div>${t('qa.questionTotal', { count: total })}</div>
       </div>
       <div class="qa-view-toolbar" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
-        <button type="button" class="qa-chip-btn" id="qa-view-shuffle">隨機順序</button>
-        <button type="button" class="qa-chip-btn" id="qa-view-reset">重置</button>
-        <button type="button" class="qa-chip-btn" id="qa-view-copy-questions">複製內容</button>
-        <span style="margin-left:6px; color:#6b7280; font-size:12px;">每頁</span>
+        <button type="button" class="qa-chip-btn" id="qa-view-shuffle">${t('qa.shuffleOrder')}</button>
+        <button type="button" class="qa-chip-btn" id="qa-view-reset">${t('qa.resetOrder')}</button>
+        <button type="button" class="qa-chip-btn" id="qa-view-copy-questions">${t('qa.copyContent')}</button>
+        <span style="margin-left:6px; color:#6b7280; font-size:12px;">${t('qa.perPage')}</span>
         <input id="qa-view-qpp" type="number" min="4" max="12" value="8" style="width:54px; padding:4px 6px; border:1px solid #d1d5db; border-radius:6px; font-size:12px;" />
-        <span style="color:#6b7280; font-size:12px;">行數</span>
+        <span style="color:#6b7280; font-size:12px;">${t('qa.lineCount')}</span>
         <input id="qa-view-lines" type="number" min="1" max="3" value="1" style="width:46px; padding:4px 6px; border:1px solid #d1d5db; border-radius:6px; font-size:12px;" />
-        <button type="button" class="qa-chip-btn" id="qa-view-export-questions">導出手默</button>
-        <button type="button" class="qa-chip-btn" id="qa-view-export-with-answers">導出答案</button>
+        <button type="button" class="qa-chip-btn" id="qa-view-export-questions">${t('qa.exportQuestions')}</button>
+        <button type="button" class="qa-chip-btn" id="qa-view-export-with-answers">${t('qa.exportAnswers')}</button>
       </div>
       <div class="qa-preview">
         <div id="qa-view-list" class="qa-pairs-preview"></div>
       </div>
       <div class="qa-editor-actions" style="margin-top:12px;">
-        <button type="button" class="btn primary" id="qa-preview-start-training">開始訓練此問答集</button>
-        <button type="button" class="btn secondary" id="qa-preview-close">關閉</button>
+        <button type="button" class="btn primary" id="qa-preview-start-training">${t('qa.startPreviewTraining')}</button>
+        <button type="button" class="btn secondary" id="qa-preview-close">${t('qa.close')}</button>
       </div>
     </div>
   `;
@@ -538,7 +547,7 @@ function openQASetPreviewModal(qaSet) {
     shuffleBtn.addEventListener('click', () => {
       shuffleInPlace(current);
       renderPairs();
-      displayMessage('已隨機打亂題目順序', 'info');
+      displayMessage(t('qa.shuffledNotice'), 'info');
     });
   }
 
@@ -548,7 +557,7 @@ function openQASetPreviewModal(qaSet) {
     resetBtn.addEventListener('click', () => {
       current = [...original];
       renderPairs();
-      displayMessage('已重置為原順序', 'info');
+      displayMessage(t('qa.resetNotice'), 'info');
     });
   }
 
@@ -564,7 +573,7 @@ function openQASetPreviewModal(qaSet) {
             return `${qLine}\n${aLine}`;
           })
           .join('\n\n');
-        if (!text.trim()) { displayMessage('無可複製的內容', 'warning'); return; }
+        if (!text.trim()) { displayMessage(t('qa.nothingToCopy'), 'warning'); return; }
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(text);
         } else {
@@ -572,10 +581,10 @@ function openQASetPreviewModal(qaSet) {
           ta.value = text; document.body.appendChild(ta); ta.select();
           document.execCommand('copy'); document.body.removeChild(ta);
         }
-        displayMessage('內容已複製（含序號、Q/A）', 'success');
+        displayMessage(t('qa.contentCopied'), 'success');
       } catch (err) {
         console.error('複製失敗:', err);
-        displayMessage('複製內容失敗', 'error');
+        displayMessage(t('qa.copyContentFailed'), 'error');
       }
     });
   }
@@ -596,7 +605,7 @@ function openQASetPreviewModal(qaSet) {
         });
       } catch (err) {
         console.error('導出手默PDF失敗:', err);
-        displayMessage('導出手默PDF失敗', 'error');
+        displayMessage(t('qa.exportQuestionsFailed'), 'error');
       }
     });
   }
@@ -617,7 +626,7 @@ function openQASetPreviewModal(qaSet) {
         });
       } catch (err) {
         console.error('導出含答案PDF失敗:', err);
-        displayMessage('導出PDF失敗', 'error');
+        displayMessage(t('qa.exportAnswersFailed'), 'error');
       }
     });
   }
@@ -696,7 +705,7 @@ function refreshCreatorTemplateSelector(selectedId = '') {
 
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = '選擇既有問答集';
+  placeholder.textContent = t('qa.selectExisting');
   select.appendChild(placeholder);
 
   const collator = new Intl.Collator('zh-Hant', { sensitivity: 'base' });
@@ -705,7 +714,7 @@ function refreshCreatorTemplateSelector(selectedId = '') {
   sortedSets.forEach(set => {
     const option = document.createElement('option');
     option.value = set.id;
-    option.textContent = `${set.name}${set.isPreset ? '（預置）' : ''}`;
+    option.textContent = `${set.name}${set.isPreset ? t('qa.preset') : ''}`;
     select.appendChild(option);
   });
 
@@ -739,7 +748,7 @@ function setupQAModelSelectors() {
     selEl.value = (current && selection.options.some(option => option.value === current)) ? current : selection.value;
     selEl.disabled = !!selection.disabled;
     if (selection.disabled) {
-      selEl.title = '請先到全局設定配置 provider 與模型';
+      selEl.title = t('qa.configureModel');
     } else {
       selEl.removeAttribute('title');
     }
@@ -757,7 +766,7 @@ function openQASetEditorModal(qaSet) {
   openModal();
 
   if (dom.modalTitle) {
-    dom.modalTitle.textContent = `編輯問答集`;
+    dom.modalTitle.textContent = t('qa.editSet');
   }
 
   if (!dom.modalBody) return;
@@ -839,7 +848,7 @@ function openQASetEditorModal(qaSet) {
         const summary = {
           id: savedQASet.id,
           name: savedQASet.name,
-          category: savedQASet.category || '自定義',
+          category: savedQASet.category || t('qa.customCategory'),
           questionCount: savedQASet.questions.length,
           difficulty: savedQASet.difficulty || 'unknown',
           description: savedQASet.description || '',
@@ -859,7 +868,7 @@ function openQASetEditorModal(qaSet) {
         updateQASetsDisplay();
         refreshCreatorTemplateSelector(savedQASet.id);
 
-        displayMessage(`問答集 "${savedQASet.name}" 已更新！`, 'success');
+        displayMessage(t('qa.setUpdated', { name: savedQASet.name }), 'success');
         closeModal();
       }
     } catch (error) {
@@ -881,14 +890,14 @@ async function startQATraining(qaId) {
       if (!sessionState.qaSetId || sessionState.qaSetId === qaId) {
         showTrainingView();
         updateTrainingInterface();
-        displayMessage('已為你繼續上一個訓練。', 'info');
+        displayMessage(t('qa.continueTraining'), 'info');
         return;
       } else {
-        const confirmed = confirm('已有進行中的訓練。確定要開始新的訓練嗎？選「取消」將繼續先前訓練。');
+        const confirmed = confirm(t('qa.confirmNewTraining'));
         if (!confirmed) {
           showTrainingView();
           updateTrainingInterface();
-          displayMessage('已為你繼續上一個訓練。', 'info');
+          displayMessage(t('qa.continueTraining'), 'info');
           return;
         }
       }
@@ -912,7 +921,7 @@ async function startQATraining(qaId) {
       // 載入第一題
       updateTrainingInterface();
 
-      displayMessage('訓練開始！', 'success');
+      displayMessage(t('qa.trainingStarted'), 'success');
     }
 
   } catch (error) {
@@ -925,38 +934,38 @@ async function startQATraining(qaId) {
 function showTrainingOptions() {
   return new Promise((resolve) => {
     showOptionsModal({
-      title: '🎯 問答訓練設定',
-      description: '請選擇您的訓練偏好，這些設定將影響您的學習體驗',
+      title: t('qa.trainingOptionsTitle'),
+      description: t('qa.trainingOptionsDescription'),
       options: [
         {
           key: 'mode',
           type: 'radio',
-          label: '訓練模式',
-          description: '選擇問題的出現順序',
+          label: t('qa.trainingMode'),
+          description: t('qa.trainingModeDescription'),
           default: 'sequential',
           choices: [
             {
               value: 'sequential',
-              label: '順序模式',
-              description: '按照原始順序練習'
+              label: t('qa.sequentialMode'),
+              description: t('qa.sequentialDescription')
             },
             {
               value: 'random',
-              label: '隨機模式',
-              description: '隨機打亂問題順序'
+              label: t('qa.randomMode'),
+              description: t('qa.randomDescription')
             }
           ]
         },
         {
           key: 'layout',
           type: 'radio',
-          label: '練習呈現',
-          description: '是否分題練習',
+          label: t('qa.layout'),
+          description: t('qa.layoutDescription'),
           // 預設：不分題（一次列出全部）
           default: 'list',
           choices: [
-            { value: 'list', label: '列表模式（默認）', description: '一次列出全部題目，逐題輸入；每題可單獨 AI 校驗' },
-            { value: 'single', label: '分題模式', description: '一題一題作答，逐題切換' }
+            { value: 'list', label: t('qa.listMode'), description: t('qa.listDescription') },
+            { value: 'single', label: t('qa.singleMode'), description: t('qa.singleDescription') }
           ]
         }
       ],
@@ -1100,7 +1109,7 @@ function updateTrainingInterface() {
   // 更新進度顯示
   const progressText = dom.qaModule?.querySelector('#qa-progress-text');
   if (progressText) {
-    progressText.textContent = `第 ${progress.currentNumber} 題 / 共 ${progress.totalQuestions} 題`;
+    progressText.textContent = t('qa.trainingProgress', { current: progress.currentNumber, total: progress.totalQuestions });
   }
 
   const progressBar = dom.qaModule?.querySelector('#qa-progress-bar');
@@ -1306,7 +1315,7 @@ function handleSubmitAnswer() {
 
     const answer = answerInput.value.trim();
     if (!answer) {
-      displayMessage('請輸入答案', 'warning');
+      displayMessage(t('qa.answerRequired'), 'warning');
       return;
     }
 
@@ -1316,7 +1325,7 @@ function handleSubmitAnswer() {
     // 保存進度
     saveTrainingProgress();
 
-    displayMessage('答案已保存', 'success');
+    displayMessage(t('qa.answerSaved'), 'success');
 
     // 自動進入下一題（可選）
     setTimeout(() => {
@@ -1324,7 +1333,7 @@ function handleSubmitAnswer() {
         updateTrainingInterface();
       } else {
         // 已是最後一題，提示完成訓練
-        displayMessage('已完成所有題目，可以結束訓練了', 'info');
+        displayMessage(t('qa.allCompleted'), 'info');
       }
     }, 500);
 
@@ -1348,7 +1357,7 @@ async function handleSubmitAndCheckCurrent(event) {
 
     const answer = answerInput.value.trim();
     if (!answer) {
-      displayMessage('請先輸入答案', 'warning');
+      displayMessage(t('qa.answerRequired'), 'warning');
       return;
     }
 
@@ -1368,7 +1377,7 @@ async function handleSubmitAndCheckCurrent(event) {
     if (button) {
       button.dataset.originalLabel = button.textContent;
       button.disabled = true;
-      button.textContent = 'AI 校對中...';
+      button.textContent = t('qa.aiChecking');
     }
 
     showInstantFeedbackLoading('AI 正在校對本題...');
@@ -1387,7 +1396,7 @@ async function handleSubmitAndCheckCurrent(event) {
     instantAICheckResults.set(question.qid, checkResult);
     renderInstantFeedbackResult(checkResult);
 
-    displayMessage(`AI 已校對第 ${progress.currentNumber} 題`, 'success');
+    displayMessage(t('qa.aiCheckedQuestion', { number: progress.currentNumber }), 'success');
   } catch (error) {
     console.error('AI 校對失敗:', error);
     displayMessage('AI 校對失敗：' + (error.message || '請稍後再試'), 'error');
@@ -1395,7 +1404,7 @@ async function handleSubmitAndCheckCurrent(event) {
   } finally {
     const button = dom.qaModule?.querySelector('#submit-and-check-btn');
     if (button) {
-      const label = button.dataset.originalLabel || 'AI 校對本題';
+      const label = button.dataset.originalLabel || t('qa.checkCurrent');
       button.textContent = label;
       button.disabled = false;
     }
@@ -1610,7 +1619,7 @@ function updateReportInterface(trainingResult) {
   const detailedResults = dom.qaModule?.querySelector('#qa-detailed-results');
   if (detailedResults) {
     const html = generateResultsHTML(trainingResult);
-    detailedResults.innerHTML = html && html.trim() ? html : '<div class="empty-hint">尚未有作答內容。請返回填寫答案或在列表模式下輸入後再完成訓練。</div>';
+    detailedResults.innerHTML = html && html.trim() ? html : `<div class="empty-hint">${t('qa.noResults')}</div>`;
   }
 }
 
@@ -1633,7 +1642,7 @@ async function handleDeleteQASet(qaId) {
       qaModuleState.qaSets = qaModuleState.qaSets.filter(qa => qa.id !== qaId);
       updateQASetsDisplay();
       refreshCreatorTemplateSelector();
-      displayMessage('問答集已刪除', 'success');
+      displayMessage(t('qa.setDeleted'), 'success');
     }
   }
 }
@@ -1650,7 +1659,7 @@ function handleImportQASet() {
       if (success) {
         // 重新載入問答集
         await loadQASets();
-        displayMessage('問答集導入成功', 'success');
+        displayMessage(t('qa.importSuccess'), 'success');
       }
     }
   };
@@ -1681,7 +1690,7 @@ function handleSaveQASet() {
       const summary = {
         id: savedQASet.id,
         name: savedQASet.name,
-        category: savedQASet.category || '自定義',
+        category: savedQASet.category || t('qa.customCategory'),
         questionCount: savedQASet.questions.length,
         difficulty: savedQASet.difficulty || 'unknown',
         description: savedQASet.description || '',
@@ -1696,7 +1705,7 @@ function handleSaveQASet() {
       updateQASetsDisplay();
       refreshCreatorTemplateSelector(savedQASet.id);
 
-      displayMessage(`問答集 "${savedQASet.name}" 保存成功！`, 'success');
+      displayMessage(t('qa.setSaved', { name: savedQASet.name }), 'success');
 
       setTimeout(() => {
         showManagementView();
@@ -1789,11 +1798,11 @@ function collectIssueList(errorAnalysis) {
       arr.forEach(m => items.push(`【${label}】` + m));
     }
   };
-  push(errorAnalysis.punctuation, '標點/格式');
-  push(errorAnalysis.grammar, '文法');
-  push(errorAnalysis.spelling, '拼寫');
-  push(errorAnalysis.vocabulary, '用字');
-  push(errorAnalysis.structure, '句構');
+  push(errorAnalysis.punctuation, t('qa.issuePunctuation'));
+  push(errorAnalysis.grammar, t('qa.issueGrammar'));
+  push(errorAnalysis.spelling, t('qa.issueSpelling'));
+  push(errorAnalysis.vocabulary, t('qa.issueVocabulary'));
+  push(errorAnalysis.structure, t('qa.issueStructure'));
   // 去重（忽略大小寫）
   const seen = new Set();
   const unique = [];
@@ -2129,7 +2138,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
 
         ${summary.recommendedActions && summary.recommendedActions.length > 0 ? `
           <div class="recommendations">
-            <h5>📝 學習建議</h5>
+            <h5>${t('qa.learningAdvice')}</h5>
             <ul>
               ${summary.recommendedActions.map(action => `<li>${action}</li>`).join('')}
             </ul>
@@ -2151,12 +2160,12 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
 
     let userAnswerContent = answer.userAnswer
       ? (difference ? difference.userHighlighted : escapeHtml(answer.userAnswer))
-      : '<span class="no-answer">未作答</span>';
+      : `<span class="no-answer">${t('qa.unanswered')}</span>`;
     // 在使用者答案內標示標點/格式問題位置
     userAnswerContent = highlightPunctuationInUserAnswer(userAnswerContent, answer.userAnswer || '', answer.correctAnswer || '');
     const correctAnswerContent = answer.correctAnswer
       ? (difference ? difference.correctHighlighted : escapeHtml(answer.correctAnswer))
-      : '<span class="no-answer">尚無標準答案</span>';
+      : `<span class="no-answer">${t('qa.noStandardAnswer')}</span>`;
 
     // 決定卡片顏色：完全正確(綠) / 語義正確但有瑕疵(黃) / 錯誤(紅)
     let issues = collectIssueList(answer.errorAnalysis);
@@ -2171,21 +2180,21 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
 
     const differenceSection = difference ? `
           <div class="difference-analysis">
-            <h5>差異提示</h5>
+            <h5>${t('qa.differenceHint')}</h5>
             <div class="difference-highlight">
               <div>
-                <strong>您的答案：</strong>
+                <strong>${t('qa.yourAnswer')}</strong>
                 <p class="difference-text">${userAnswerContent}</p>
               </div>
               <div>
-                <strong>標準答案：</strong>
+                <strong>${t('qa.referenceAnswer')}：</strong>
                 <p class="difference-text">${correctAnswerContent}</p>
               </div>
             </div>
             ${(difference.missingTokens.length || difference.extraTokens.length) ? `
               <div class="difference-tags">
-                ${difference.missingTokens.length ? `<span class="difference-tag missing">缺少：${difference.missingTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}
-                ${difference.extraTokens.length ? `<span class="difference-tag extra">多出：${difference.extraTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}
+                ${difference.missingTokens.length ? `<span class="difference-tag missing">${t('qa.missing')}${difference.missingTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}
+                ${difference.extraTokens.length ? `<span class="difference-tag extra">${t('qa.extra')}${difference.extraTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}
               </div>
             ` : ''}
           </div>
@@ -2195,32 +2204,32 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
       <div class="result-item ${resultClass}">
         <div class="result-header">
           <span class="question-number">Q${questionNumber}</span>
-          <span class="result-status">${answer.isCorrect === true ? (hasIssues ? '部分正確' : '正確') : '需改進'}</span>
+          <span class="result-status">${answer.isCorrect === true ? (hasIssues ? t('qa.partialCorrect') : t('qa.correct')) : t('qa.needsImprovement')}</span>
           ${collapsible ? `<button type=\"button\" class=\"ai-toggle-details btn small secondary\" aria-expanded=\"${!collapsedByDefault}\">${collapsedByDefault ? '顯示詳解' : '收合詳解'}</button>` : ''}
         </div>
 
         <div class="ai-details" style="${collapsible && collapsedByDefault ? 'display:none;' : ''}">
           <div class="result-question">
-            <strong>題目:</strong> ${escapeHtml(answer.question)}
+            <strong>${t('qa.question')}</strong> ${escapeHtml(answer.question)}
           </div>
 
           <div class="result-answers">
             <div class="user-answer">
-              <strong>您的答案:</strong> ${userAnswerContent}
+              <strong>${t('qa.yourAnswer')}</strong> ${userAnswerContent}
             </div>
             <div class="correct-answer">
-              <strong>標準答案:</strong> ${correctAnswerContent}
+              <strong>${t('qa.referenceAnswer')}：</strong> ${correctAnswerContent}
             </div>
           </div>
 
           ${answer.teacherFeedback ? `
             <div class="teacher-feedback">
-              <h5>教師回饋</h5>
+              <h5>${t('qa.teacherFeedback')}</h5>
               <p class="feedback-content">${escapeHtml(answer.teacherFeedback)}</p>
             </div>
           ` : answer.feedback ? `
             <div class="ai-feedback">
-              <strong>AI 回饋:</strong> ${escapeHtml(answer.feedback)}
+              <strong>${t('qa.aiFeedback')}</strong> ${escapeHtml(answer.feedback)}
             </div>
           ` : ''}
 
@@ -2228,7 +2237,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
 
           ${answer.strengths && answer.strengths.length > 0 ? `
             <div class="student-strengths">
-              <h5>亮點表現</h5>
+              <h5>${t('qa.strengths')}</h5>
               <ul class="strengths-list">
                 ${answer.strengths.map(strength => `<li class="strength-item">${escapeHtml(strength)}</li>`).join('')}
               </ul>
@@ -2237,25 +2246,25 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
 
           ${Array.isArray(answer.aiFeedbackIssues) && answer.aiFeedbackIssues.length > 0 ? `
             <div class="ai-feedback-review">
-              <h5>AI 評語自檢</h5>
+              <h5>${t('qa.aiReview')}</h5>
               <ul class="issues-list">
                 ${answer.aiFeedbackIssues.map(issue => `<li class="issue-item">${escapeHtml(issue)}</li>`).join('')}
               </ul>
             </div>
           ` : (answer.aiFeedbackOk === true ? `
-            <div class="ai-feedback-review ok">AI 評語檢查：無明顯問題</div>
+            <div class="ai-feedback-review ok">${t('qa.aiReviewOk')}</div>
           ` : '')}
 
           ${answer.improvementSuggestions && answer.improvementSuggestions.length > 0 ? `
             <div class="improvement-suggestions">
-              <h5>改進建議</h5>
+              <h5>${t('qa.improvementAdvice')}</h5>
               <ul class="suggestions-list">
                 ${answer.improvementSuggestions.map(suggestion => `<li class="suggestion-item">${escapeHtml(suggestion)}</li>`).join('')}
               </ul>
             </div>
           ` : answer.aiSuggestions && answer.aiSuggestions.length > 0 ? `
             <div class="ai-suggestions">
-              <h5>改進建議</h5>
+              <h5>${t('qa.improvementAdvice')}</h5>
               <ul>
                 ${answer.aiSuggestions.map(suggestion => `<li>${escapeHtml(suggestion)}</li>`).join('')}
               </ul>
@@ -2264,7 +2273,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
 
           ${answer.studyFocus && answer.studyFocus.length > 0 ? `
             <div class="study-focus">
-              <h5>學習重點</h5>
+              <h5>${t('qa.studyFocusLabel')}</h5>
               <ul class="focus-list">
                 ${answer.studyFocus.map(focus => `<li class="focus-item">${escapeHtml(focus)}</li>`).join('')}
               </ul>
@@ -2273,17 +2282,17 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
 
           ${answer.improvedExamples && answer.improvedExamples.length > 0 ? `
             <div class="improved-examples">
-              <h5>優化範例</h5>
+              <h5>${t('qa.improvedExamples')}</h5>
               <div class="examples-container">
                 ${answer.improvedExamples.map((example, itemIndex) => `
                   <div class=\"example-item\">
-                    <strong>範例 ${itemIndex + 1}:</strong> ${escapeHtml(example)}
+                    <strong>${t('qa.example', { number: itemIndex + 1 })}</strong> ${escapeHtml(example)}
                   </div>
                 `).join('')}
               </div>
               ${answer.explanation ? `
                 <div class="example-explanation">
-                  <strong>解析:</strong> ${escapeHtml(answer.explanation)}
+                  <strong>${t('qa.explanationLabel')}</strong> ${escapeHtml(answer.explanation)}
                 </div>
               ` : ''}
             </div>
@@ -2291,7 +2300,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
 
           ${issues.length ? `
             <div class="issue-list">
-              <h5>需要修正</h5>
+              <h5>${t('qa.needsCorrection')}</h5>
               <ul class="issues">
                 ${issues.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
               </ul>

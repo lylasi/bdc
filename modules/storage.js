@@ -214,7 +214,15 @@ export function loadVocabularyBooks() {
             }
 
             if (book && book.words && Array.isArray(book.words)) {
-                book.words.forEach(word => {
+                book.words.forEach((word, index) => {
+                    if (!word.id) {
+                        word.id = `${book.id || 'book'}-word-${index + 1}`;
+                        dataWasModified = true;
+                    }
+                    if (!word.meaning && typeof word.definition === 'string' && word.definition.trim()) {
+                        word.meaning = word.definition.trim();
+                        dataWasModified = true;
+                    }
                     if (word.phonetic && typeof word.phonetic === 'string') {
                         const originalPhonetic = word.phonetic;
                         const cleanedPhonetic = originalPhonetic.replace(/^\/+|\/+$/g, '');

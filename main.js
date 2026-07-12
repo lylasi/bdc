@@ -12,6 +12,7 @@ import { initOCR } from './features/ocr/ocr.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
 import { initSync } from './features/sync/sync.js';
 import { initAiAssistant } from './features/assistant/assistant.js';
+import { initI18n, t } from './modules/i18n.js';
 
 const MODULE_ALIAS_TO_BUTTON_ID = {
     v: 'vocabulary-btn',
@@ -47,7 +48,7 @@ function setupNavigation() {
     dom.navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             if (state.quizInProgress && btn.id !== 'quiz-btn') {
-                if (!confirm('測驗正在進行中，確定要離開嗎？')) { return; }
+                if (!confirm(t('quiz.leaveConfirmation'))) { return; }
                 // 需要一个 stopQuiz 的引用，暂时从 quiz 模块导出
                 // import { stopQuiz } from './features/quiz/quiz.js';
                 // stopQuiz();
@@ -111,13 +112,17 @@ function responsiveNavLabels() {
         nav.classList.toggle('nav-compact', isCompact);
     }
     document.querySelectorAll('.nav-btn .nav-text').forEach(el => {
-        const full = el.getAttribute('data-full-text') || el.textContent;
-        const short = el.getAttribute('data-short-text') || full;
+        const fullKey = el.getAttribute('data-i18n-full');
+        const shortKey = el.getAttribute('data-i18n-short');
+        const full = fullKey ? t(fullKey) : el.textContent;
+        const short = shortKey ? t(shortKey) : full;
         el.textContent = isCompact ? short : full;
     });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    initI18n();
+
     // 1. 加载核心数据
     loadVocabularyBooks();
     loadAnalyzedArticles();
@@ -153,6 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 6.1 移動端壓縮文案（並監聽視窗縮放）
     responsiveNavLabels();
     window.addEventListener('resize', responsiveNavLabels);
+    document.addEventListener('bdc:locale-change', responsiveNavLabels);
 
     // 7. 手動觸發一次change事件來更新初始狀態
     if(dom.listenOnlyMode) {

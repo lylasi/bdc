@@ -1,5 +1,7 @@
-import { API_URL, API_KEY, AI_LIMITS, OCR_CONFIG, ARTICLE_IMPORT, AI_PROMPTS } from '../ai-config.js';
+import { API_URL, API_KEY, AI_LIMITS, OCR_CONFIG, ARTICLE_IMPORT } from '../ai-config.js';
 import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
+import { getLocale, t } from './i18n.js';
+import { buildMessages, buildPrompt, getPromptVersion } from './prompts/index.js';
 import {
     getAIProviderRegistry,
     getProviderConnection,
@@ -30,16 +32,6 @@ export {
 
 function isPlainObject(value) {
     return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-// Simple template filler: replaces ${name} with provided vars
-function applyTemplate(tpl, vars = {}) {
-  if (!tpl) return '';
-  let s = String(tpl);
-  for (const k of Object.keys(vars)) {
-    try { s = s.split('${' + k + '}').join(String(vars[k])); } catch (_) {}
-  }
-  return s;
 }
 
 function buildArticleImportUrl(base, targetUrl) {
@@ -438,13 +430,31 @@ export async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTok
  */
 export async function getWordAnalysis(word) {
     try {
-        const prompt = (AI_PROMPTS && AI_PROMPTS.dictionary && AI_PROMPTS.dictionary.wordAnalysis && AI_PROMPTS.dictionary.wordAnalysis.template)
-          ? applyTemplate(AI_PROMPTS.dictionary.wordAnalysis.template, { word })
-          : `Please provide a detailed analysis for the word "${word}". Return the result in a strict JSON format with the following keys: "phonetic" (IPA), "pos" (part of speech), and "meaning" (the most common Traditional Chinese (Hong Kong) meaning). For example: {"phonetic": "ɪɡˈzæmpəl", "pos": "noun", "meaning": "例子"}. Ensure the meaning is in Traditional Chinese (Hong Kong) vocabulary (e.g., 網上/上載/電郵/巴士/的士/單車/軟件/網絡/連結/相片).`;
-        return await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis' });
+        const locale = getLocale();
+        const promptVersion = getPromptVersion('dictionary.wordAnalysis');
+        const settings = loadGlobalSettings();
+        const modelSpec = getPreferredTaskSpec(['wordAnalysis'], { settings });
+        const cached = await cache.getCached('dictionaryWordAnalysis', {
+            word,
+            locale,
+            promptVersion,
+            modelSpec,
+            schema: 'v1'
+        });
+        if (cached) return cached;
+        const prompt = buildPrompt('dictionary.wordAnalysis', { word }, { locale });
+        const result = await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis' });
+        await cache.setCached('dictionaryWordAnalysis', {
+            word,
+            locale,
+            promptVersion,
+            modelSpec,
+            schema: 'v1'
+        }, result, 30 * 24 * 60 * 60 * 1000);
+        return result;
     } catch (error) {
         console.error(`Error analyzing word "${word}":`, error);
-        return { phonetic: 'error', pos: '', meaning: '分析失敗' };
+        return { phonetic: 'error', pos: '', meaning: t('ai.analysisFailed') };
     }
 }
 
@@ -455,9 +465,7 @@ export async function getWordAnalysis(word) {
  */
 export async function generateExamplesForWord(word, opts = {}) {
     const w = (word && typeof word === 'object') ? (word.word || '') : String(word || '');
-    const prompt = (AI_PROMPTS && AI_PROMPTS.learning && AI_PROMPTS.learning.exampleGeneration && AI_PROMPTS.learning.exampleGeneration.template)
-      ? applyTemplate(AI_PROMPTS.learning.exampleGeneration.template, { word: w })
-      : `請為單詞 "${w}" 生成3個英文例句。對於每個例句，請提供英文、中文翻譯（使用香港繁體中文用字），以及一個英文單詞到中文詞語的對齊映射數組。請確保對齊盡可能精確。請只返回JSON格式的數組，不要有其他任何文字。格式為: [{"english": "...", "chinese": "...", "alignment": [{"en": "word", "zh": "詞語"}, ...]}, ...]`;
+    const prompt = buildPrompt('learning.exampleGeneration', { word: w }, { locale: getLocale() });
     return await fetchAIResponse('', prompt, 0.7, { maxTokens: 900, timeoutMs: 20000, taskType: 'exampleGeneration', ...opts });
 }
 
@@ -468,9 +476,15 @@ export async function generateExamplesForWord(word, opts = {}) {
  * @returns {Promise<string>} - AI 的反饋文本。
  */
 export async function checkUserSentence(word, userSentence, opts = {}) {
-    const prompt = (AI_PROMPTS && AI_PROMPTS.learning && AI_PROMPTS.learning.sentenceChecking && AI_PROMPTS.learning.sentenceChecking.template)
-      ? applyTemplate(AI_PROMPTS.learning.sentenceChecking.template, { word, userSentence })
-      : `請判斷以下這個使用單詞 "${word}" 的句子在語法和用法上是否正確: "${userSentence}"。如果正確，請只回答 "正確"。如果不正確，請詳細指出錯誤並提供一個修改建議，格式為 "不正確。建議：[你的建議]"。並總結錯誤的知識點。`;
+    const locale = getLocale();
+    const correctToken = locale === 'zh-HK' ? '正確' : '正确';
+    const incorrectPrefix = locale === 'zh-HK' ? '不正確。建議：' : '不正确。建议：';
+    const prompt = buildPrompt('learning.sentenceChecking', {
+        word,
+        userSentence,
+        correctToken,
+        incorrectPrefix
+    }, { locale });
     return await fetchAIResponse('', prompt, 0.5, { maxTokens: 600, timeoutMs: 15000, taskType: 'sentenceChecking', ...opts });
 }
 
@@ -488,6 +502,9 @@ export async function analyzeParagraph(paragraph, opts = {}) {
       : null;
     const sentenceMode = !!(sentenceList && sentenceList.length);
     const cacheLevel = sentenceMode ? `${requestedLevel}-sent` : requestedLevel;
+    const locale = getLocale();
+    const promptVersion = getPromptVersion('article.paragraphTranslation');
+    const cacheOptions = { locale, promptVersion };
     const s = loadGlobalSettings();
     const primaryModel = getPreferredTaskSpec(['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis'], { settings: s });
     const fallbackModel = getPreferredTaskSpec(['articleParagraphTranslationFallback', 'articleAnalysis', 'wordAnalysis'], { settings: s });
@@ -497,39 +514,19 @@ export async function analyzeParagraph(paragraph, opts = {}) {
         for (const modelSpec of candidates) {
             const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getParagraphAnalysisCached(paragraph, cacheLevel, resolved.model);
+                const cached = await cache.getParagraphAnalysisCached(paragraph, cacheLevel, resolved.model, cacheOptions);
                 if (cached) return cached;
             } catch (_) {}
         }
     }
 
-    const instructions = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.instructions)
-      || '請將以下英文段落翻譯成香港繁體中文，只返回 JSON。';
     const prompt = sentenceMode
       ? (() => {
             const count = sentenceList.length;
             const numbered = sentenceList.map((sent, i) => `${i + 1}. ${sent}`).join('\n');
-            return (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraphSentences && AI_PROMPTS.article.paragraphSentences.user)
-              ? applyTemplate(AI_PROMPTS.article.paragraphSentences.user, { numbered, count })
-              : `請將下列 ${count} 個已編號的英文句子逐句翻譯成繁體中文，只返回一個 JSON 物件：
-{"sentences":["第1句譯文","第2句譯文"]}
-要求：
-- "sentences" 必須是字串陣列，長度必須等於 ${count}，第 i 個元素是第 i 句的譯文；
-- 不要合併或拆分句子，不要輸出英文原句，不要加編號；
-- 翻譯使用繁體中文，符合香港中文用字（例如：網上、上載、電郵、巴士、的士、單車、軟件、網絡、連結、相片），不要廣東話；英文姓名不用翻譯；
-- 只輸出 JSON，不要 markdown code fence，不要任何解釋。
-句子：
-${numbered}`;
+            return buildPrompt('article.paragraphTranslation', { numbered, count }, { locale, variant: 'sentences' });
         })()
-      : ((AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.user)
-          ? applyTemplate(AI_PROMPTS.article.paragraph.user, { paragraph, instructions })
-          : `請將以下英文段落翻譯成香港繁體中文，並只返回 JSON 物件。
-允許鍵名：chinese_translation 或 translation。
-不要使用 markdown code fence，不要加解釋。
-段落: """
-${paragraph}
-"""
-${instructions}`);
+      : buildPrompt('article.paragraphTranslation', { paragraph }, { locale, variant: 'standard' });
     const maxTokens = sentenceMode
       ? Math.max(800, Math.min(2400, 300 + sentenceList.length * 180))
       : (requestedLevel === 'quick' ? 800 : 1000);
@@ -566,7 +563,7 @@ ${instructions}`);
                 parsed = normalizeParagraphResponse(rawParsed, '');
             }
             if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw new Error('Schema validation failed');
-            try { await cache.setParagraphAnalysisCached(paragraph, cacheLevel, resolved.model, parsed, 14 * 24 * 60 * 60 * 1000); } catch (_) {}
+            try { await cache.setParagraphAnalysisCached(paragraph, cacheLevel, resolved.model, parsed, 14 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
             lastErr = error;
@@ -575,10 +572,7 @@ ${instructions}`);
 
     try {
         const fallbackModelSpec = candidates[0] || primaryModel;
-        const fbPrompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.paragraph && AI_PROMPTS.article.paragraph.fallback)
-          ? applyTemplate(AI_PROMPTS.article.paragraph.fallback, { paragraph })
-          : `請把這段英文翻譯成香港繁體中文，只輸出翻譯內容，不要其他文字：
-${paragraph}`;
+        const fbPrompt = buildPrompt('article.paragraphTranslation', { paragraph }, { locale, variant: 'fallback' });
         const fb = await requestAI({
             model: fallbackModelSpec,
             messages: [{ role: 'user', content: fbPrompt }],
@@ -607,19 +601,17 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
     const primaryModel = getPreferredTaskSpec(['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'], { settings: s });
     const fallbackModel = getPreferredTaskSpec(['articleWordTranslationFallback', 'wordAnalysis'], { settings: s });
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
+    const locale = getLocale();
+    const promptVersion = getPromptVersion('article.wordTooltip');
+    const cacheOptions = { locale, promptVersion };
     for (const modelSpec of candidates) {
         const resolved = normalizeModelSpec(modelSpec);
         try {
-            const cached = await cache.getWordAnalysisCached(word, sentence, resolved.model);
+            const cached = await cache.getWordAnalysisCached(word, sentence, resolved.model, cacheOptions);
             if (cached) return cached;
         } catch (_) {}
     }
-    const prompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.wordTooltip && AI_PROMPTS.article.wordTooltip.template)
-      ? applyTemplate(AI_PROMPTS.article.wordTooltip.template, { word, sentence })
-      : `請解釋英文單詞在句中的意思，只返回 JSON。
-允許最少字段：{"word":"${word}","meaning":"..."}
-詞: "${word}"
-句: "${sentence}"`;
+    const prompt = buildPrompt('article.wordTooltip', { word, sentence }, { locale, variant: 'standard' });
 
     let lastErr = null;
     for (const modelSpec of candidates) {
@@ -641,7 +633,7 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
             if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
             const parsed = normalizeWordInSentenceResponse(rawParsed, '', word, sentence);
             if (!validate.validateWordInSentence(parsed)) throw new Error('Schema validation failed');
-            try { await cache.setWordAnalysisCached(word, sentence, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000); } catch (_) {}
+            try { await cache.setWordAnalysisCached(word, sentence, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
             lastErr = error;
@@ -652,9 +644,7 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
         const fallbackModelSpec = candidates[0] || primaryModel;
         const fb = await requestAI({
             model: fallbackModelSpec,
-            messages: [{ role: 'user', content: `請只回答這個詞在句中的中文意思，不要解釋。
-詞: ${word}
-句: ${sentence}` }],
+            messages: [{ role: 'user', content: buildPrompt('article.wordTooltip', { word, sentence }, { locale, variant: 'fallback' }) }],
             temperature: 0.2,
             maxTokens: 200,
             timeoutMs,
@@ -678,38 +668,26 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
     const primaryModel = getPreferredTaskSpec(['articleSentenceTranslation', 'articleAnalysis', 'wordAnalysis'], { settings: s });
     const fallbackModel = getPreferredTaskSpec(['articleSentenceTranslationFallback', 'articleAnalysis', 'wordAnalysis'], { settings: s });
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
+    const locale = getLocale();
+    const promptVersion = getPromptVersion('article.sentenceAnalysis');
+    const cacheOptions = { locale, promptVersion };
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {
         for (const modelSpec of candidates) {
             const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getSentenceAnalysisCached(sentence, contextHash, resolved.model);
+                const cached = await cache.getSentenceAnalysisCached(sentence, contextHash, resolved.model, cacheOptions);
                 if (cached) return cached;
             } catch (_) {}
         }
     }
-    const keyPointRule = conciseKeypoints ? '請輸出 1-3 條簡短關鍵點；若模型不擅長結構化分析，可返回空陣列。' : '請輸出 2-4 條最重要的關鍵點。';
-    const basePrompt = `上下文（僅供理解）: """
-${context}
-"""
-目標句: """
-${sentence}
-"""`;
+    const keyPointRule = conciseKeypoints
+      ? 'Return 1-3 brief key points. If structured analysis is unreliable, return an empty array.'
+      : 'Return 2-4 of the most important key points.';
     const prompt = includeStructure
-      ? ((AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.sentence && AI_PROMPTS.article.sentence.withStructure)
-          ? applyTemplate(AI_PROMPTS.article.sentence.withStructure, { basePrompt, keyPointRule })
-          : `請把下列英文句子翻譯成香港繁體中文，並盡量返回 JSON。
-允許最少字段：{"translation":"..."}
-若能穩定輸出，再補 key_points / phrase_alignment / chunks。
-${basePrompt}
-${keyPointRule}`)
-      : ((AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.sentence && AI_PROMPTS.article.sentence.concise)
-          ? applyTemplate(AI_PROMPTS.article.sentence.concise, { basePrompt, keyPointRule })
-          : `請把下列英文句子翻譯成香港繁體中文，只返回 JSON。
-允許字段：translation, key_points
-${basePrompt}
-${keyPointRule}`);
+      ? buildPrompt('article.sentenceAnalysis', { sentence, context, keyPointRule }, { locale, variant: 'structured' })
+      : buildPrompt('article.sentenceAnalysis', { sentence, context, keyPointRule }, { locale, variant: 'concise' });
 
     let lastErr = null;
     for (const modelSpec of candidates) {
@@ -731,7 +709,7 @@ ${keyPointRule}`);
             if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
             const parsed = normalizeSentenceResponse(rawParsed, '', sentence);
             if (!validate.validateSentenceAnalysis(parsed) || !parsed.translation) throw new Error('Schema validation failed');
-            try { await cache.setSentenceAnalysisCached(sentence, contextHash, resolved.model, parsed, 21 * 24 * 60 * 60 * 1000); } catch (_) {}
+            try { await cache.setSentenceAnalysisCached(sentence, contextHash, resolved.model, parsed, 21 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
             lastErr = error;
@@ -740,10 +718,7 @@ ${keyPointRule}`);
 
     try {
         const fallbackModelSpec = candidates[0] || primaryModel;
-        const fbPrompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.sentence && AI_PROMPTS.article.sentence.fallback)
-          ? applyTemplate(AI_PROMPTS.article.sentence.fallback, { sentence })
-          : `請把這句英文翻譯成香港繁體中文；若可以，再附 1-2 條關鍵點。只返回 JSON 或純翻譯內容。
-${sentence}`;
+        const fbPrompt = buildPrompt('article.sentenceAnalysis', { sentence }, { locale, variant: 'fallback' });
         const fb = await requestAI({
             model: fallbackModelSpec,
             messages: [{ role: 'user', content: fbPrompt }],
@@ -770,24 +745,21 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
     const primaryModel = getPreferredTaskSpec(['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis'], { settings: s });
     const fallbackModel = getPreferredTaskSpec(['articlePhraseTranslationFallback', 'wordAnalysis'], { settings: s });
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
+    const locale = getLocale();
+    const promptVersion = getPromptVersion('article.phraseAnalysis');
+    const cacheOptions = { locale, promptVersion };
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {
         for (const modelSpec of candidates) {
             const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, resolved.model);
+                const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, resolved.model, cacheOptions);
                 if (cached) return cached;
             } catch (_) {}
         }
     }
-    const prompt = (AI_PROMPTS && AI_PROMPTS.article && AI_PROMPTS.article.phraseAnalysis && AI_PROMPTS.article.phraseAnalysis.template)
-      ? applyTemplate(AI_PROMPTS.article.phraseAnalysis.template, { selection, sentence, context })
-      : `請解釋下列片語在句中的意思，只返回 JSON。
-允許最少字段：{"selection":"${selection}","meaning":"..."}
-選中: "${selection}"
-句子: "${sentence}"
-上下文: "${context}"`;
+    const prompt = buildPrompt('article.phraseAnalysis', { selection, sentence, context }, { locale, variant: 'standard' });
 
     let lastErr = null;
     for (const modelSpec of candidates) {
@@ -809,7 +781,7 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
             if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
             const parsed = normalizeSelectionResponse(rawParsed, '', selection, sentence);
             if (!validate.validateSelectionAnalysis(parsed)) throw new Error('Schema validation failed');
-            try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000); } catch (_) {}
+            try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
             lastErr = error;
@@ -820,9 +792,7 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
         const fallbackModelSpec = candidates[0] || primaryModel;
         const fb = await requestAI({
             model: fallbackModelSpec,
-            messages: [{ role: 'user', content: `請只回答這個片語在句中的中文意思，不要解釋。
-片語: ${selection}
-句子: ${sentence}` }],
+            messages: [{ role: 'user', content: buildPrompt('article.phraseAnalysis', { selection, sentence }, { locale, variant: 'fallback' }) }],
             temperature: 0.2,
             maxTokens: 220,
             timeoutMs,
@@ -861,11 +831,16 @@ export async function ocrExtractTextFromImage(imageDataUrl, opts = {}) {
     const sec = loadGlobalSecrets();
     const model = hasModelSpec(modelOverride)
       ? modelOverride
-      : getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], {
-            settings: s,
-            override: OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL
-        });
-    const connection = resolveConfigConnection(OCR_CONFIG, { settings: s, secrets: sec });
+      : firstNonEmptyString(
+            getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], { settings: s }),
+            OCR_CONFIG?.DEFAULT_MODEL,
+            OCR_CONFIG?.MODEL
+        );
+    const modelHasProvider = (typeof model === 'string' && model.includes(':'))
+        || (isPlainObject(model) && !!firstNonEmptyString(model.provider, model.profile));
+    const connection = modelHasProvider
+        ? {}
+        : resolveConfigConnection(OCR_CONFIG, { settings: s, secrets: sec });
     const finalMaxTokens = typeof maxTokens === 'number' ? maxTokens : (OCR_CONFIG?.maxTokens || 1500);
     const finalTimeout = typeof timeoutMs === 'number' ? timeoutMs : (OCR_CONFIG?.timeoutMs || 45000);
 
@@ -884,9 +859,9 @@ export async function ocrExtractTextFromImage(imageDataUrl, opts = {}) {
             role: 'user',
             content: [
                 (function(){
-                    const defaultHint = (AI_PROMPTS && AI_PROMPTS.ocr && AI_PROMPTS.ocr.extract && AI_PROMPTS.ocr.extract.promptHint)
-                      || '請將圖片中的文字內容完整擷取為純文字，保留原始換行與標點；不要翻譯或改寫。若為截圖，請忽略 UI 按鈕與雜訊，只輸出正文。';
-                    const txt = (promptHint ?? defaultHint);
+                    const txt = buildPrompt('ocr.extractText', {
+                        userInstructions: promptHint || '(none)'
+                    }, { locale: getLocale() });
                     return { type: 'text', text: txt };
                 })(),
                 { type: 'image_url', image_url: { url: imageDataUrl, detail: 'high' } }
@@ -924,27 +899,22 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
     const sec = loadGlobalSecrets();
     const model = hasModelSpec(modelOverride)
       ? modelOverride
-      : getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], {
-            settings: s,
-            override: OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL
-        });
-    const connection = resolveConfigConnection(OCR_CONFIG, { settings: s, secrets: sec });
+      : firstNonEmptyString(
+            getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], { settings: s }),
+            OCR_CONFIG?.DEFAULT_MODEL,
+            OCR_CONFIG?.MODEL
+        );
+    const modelHasProvider = (typeof model === 'string' && model.includes(':'))
+        || (isPlainObject(model) && !!firstNonEmptyString(model.provider, model.profile));
+    const connection = modelHasProvider
+        ? {}
+        : resolveConfigConnection(OCR_CONFIG, { settings: s, secrets: sec });
     const finalTimeout = typeof timeoutMs === 'number' ? timeoutMs : (OCR_CONFIG?.timeoutMs || 60000);
 
-    const defaultPrompt = (AI_PROMPTS && AI_PROMPTS.ocr && AI_PROMPTS.ocr.grading && AI_PROMPTS.ocr.grading.defaultPrompt)
-      || `這是一張默寫單詞的相片。請直接在圖片中擷取學生書寫內容並進行批改：
-- 請忽略被手寫劃掉（刪去線）的詞字；
-- 逐行擷取學生書寫的英文單詞或短語，保留順序與原始大小寫；若某行同時有中文，請一併擷取；
-- 以提供的「標準詞表」作為唯一正確答案來源，逐行判斷英文拼寫是否正確；若該行含中文，檢查中文是否書寫正確；
-- 僅對錯誤的部分逐點指出（英/中），並給出建議修正；
-- 請返回嚴格 JSON 格式，不要任何多餘說明或程式碼框。JSON 需為：
-{
-  "items": [
-    {"line": "原始行文字", "english": "擷取到的英文", "chinese": "擷取到的中文(可空)", "correct": true|false,
-     "errors": [ {"type": "english|chinese", "expected": "標準答案或正確語義", "got": "書寫內容", "suggestion": "修正建議"} ]}
-  ],
-  "summary": {"total": 總行數, "correct": 正確行數, "wrong": 錯誤行數}
-}`;
+    const promptId = format === 'markdown'
+      ? 'dictation.handwritingGradingMarkdown'
+      : 'ocr.handwritingGradingJson';
+    const defaultPrompt = buildPrompt(promptId, { userInstructions: '(none)' }, { locale: getLocale() });
 
     const content = [];
     content.push({ type: 'text', text: String(userPrompt || defaultPrompt) });
@@ -1320,26 +1290,29 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
     const sec = loadGlobalSecrets();
     const model = hasModelSpec(modelOverride)
       ? modelOverride
-      : getPreferredTaskSpec(['articleCleanup', 'articleAnalysis', 'wordAnalysis'], {
-            settings: s,
-            override: ARTICLE_IMPORT?.DEFAULT_MODEL || ARTICLE_IMPORT?.MODEL
-        });
-    const connection = resolveConfigConnection(ARTICLE_IMPORT, { settings: s, secrets: sec });
+      : firstNonEmptyString(
+            getPreferredTaskSpec(['articleCleanup', 'articleAnalysis', 'wordAnalysis'], { settings: s }),
+            ARTICLE_IMPORT?.DEFAULT_MODEL,
+            ARTICLE_IMPORT?.MODEL
+        );
+    const modelHasProvider = (typeof model === 'string' && model.includes(':'))
+        || (isPlainObject(model) && !!firstNonEmptyString(model.provider, model.profile));
+    const connection = modelHasProvider
+        ? {}
+        : resolveConfigConnection(ARTICLE_IMPORT, { settings: s, secrets: sec });
 
     const temperature = (typeof temp === 'number') ? temp : (ARTICLE_IMPORT?.temperature ?? 0.1);
     const maxTokens = ARTICLE_IMPORT?.maxTokens ?? 1400;
     const timeoutMs = (typeof toMs === 'number') ? toMs : (ARTICLE_IMPORT?.timeoutMs ?? 25000);
     const keepImages = (typeof keepImgs === 'boolean') ? keepImgs : (ARTICLE_IMPORT?.keepImagesDefault ?? true);
 
-    const prompt = `你會收到一篇以 Markdown 表示的英文文章（可能含標題、清單、表格、圖片）。請清洗並輸出更適合閱讀的 Markdown：
-- 僅保留正文與必要的標題/段落/清單/表格/引用/程式碼（僅當確為程式碼）；移除網站導航、語言切換、社交按鈕、推薦卡片、廣告、版權宣告、留言模組、追蹤用圖片或計數器。
-- ${keepImages ? '保留正文相關的圖片為 Markdown 圖片行（例如：![alt](URL)）。不要翻譯或改寫 alt；若 alt 缺失可留空或取鄰近 caption。移除社交/追蹤/橫幅等非內容圖片。' : '移除所有 Markdown 圖片行（例如：![alt](URL)），不要以連結或描述替代圖片。'}
-- 不要新增任何強調或裝飾標記：嚴禁輸出由 * 或 _ 形成的粗斜體；除非原文已是 Markdown 且必須保留，否則不要加上 * 或 _。
-- 移除純裝飾符號與分隔線（如 -----、_______、****、====、••• 等）以及無意義圖示（▶︎◆•·►等）；清理標題或段落前後多餘符號。
-- 連結保留可讀文字與連結，並移除追蹤參數（如 utm_*、fbclid、ref 等）；相對連結不在此流程修正。
-- 保持原文語言與內容，不要翻譯、不新增解說；僅做結構整理、去噪聲、合併多餘空行，統一為合理段落。
-- 若沒有明確主標題而開頭存在明顯標題，轉為一行 ATX 標題（# Title）。
-- 嚴禁輸出任何額外解釋或程式碼區塊圍欄（使用三個反引號的圍欄）；只輸出清洗後的 Markdown 純文字。`;
+    const imageRule = keepImages
+      ? 'Keep content-related images as Markdown image lines. Preserve their syntax and alt text; remove social, tracking and banner images.'
+      : 'Remove all Markdown image lines without replacing them with links or descriptions.';
+    const messages = buildMessages('import.markdownCleanup', {
+        imageRule,
+        markdownText
+    });
 
     const data = await requestAI({
         apiUrl: connection.apiUrl,
@@ -1347,10 +1320,7 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
         provider: connection.provider,
         profile: connection.profile,
         model,
-        messages: [
-            { role: 'system', content: 'You are a precise Markdown editor that preserves structure and removes noise without translating.' },
-            { role: 'user', content: `${prompt}\n\n=== 原文開始 ===\n${markdownText}\n=== 原文結束 ===` }
-        ],
+        messages,
         temperature,
         maxTokens,
         timeoutMs,
@@ -1386,33 +1356,14 @@ export async function aiExtractArticleFromHtml(html, opts = {}) {
     const maxTokens = ARTICLE_IMPORT?.maxTokens ?? 1800;
     const timeoutMs = (typeof toMs === 'number') ? toMs : (ARTICLE_IMPORT?.timeoutMs ?? 30000);
 
-    // 指令：從 HTML 擷取正文並輸出 Markdown 純文字
-    const sys = (AI_PROMPTS && AI_PROMPTS.import && AI_PROMPTS.import.extractor && AI_PROMPTS.import.extractor.system)
-      || 'You are a precise content extractor that outputs clean Markdown. Do not translate or add commentary.';
-    const rulesArr = (() => {
-        const p = AI_PROMPTS && AI_PROMPTS.import && AI_PROMPTS.import.extractor;
-        if (p) {
-            if (keepImages && Array.isArray(p.rulesKeepImages)) return p.rulesKeepImages;
-            if (!keepImages && Array.isArray(p.rulesNoImages)) return p.rulesNoImages;
-        }
-        return [
-            '- 保留正文的結構：# 標題、段落、清單、表格、區塊引用、程式碼區塊（僅當確為程式碼）。',
-            keepImages
-                ? '- 將與正文相關的圖片保留為 Markdown 圖片行（![]()）。避免社交/廣告/追蹤用圖；為保留的圖片填入 alt（沿用原 alt 或鄰近 caption；不要改寫），URL 轉為絕對路徑。'
-                : '- 移除所有圖片，不要以文字替代。',
-            '- 徹底移除網站導航、側欄、頁尾、Cookie 提示、語言切換、社交分享、推薦卡、廣告、留言模組、版權宣告。',
-            '- 不要新增任何強調或裝飾標記：嚴禁使用 * 或 _ 產生粗斜體；不要輸出純裝飾分隔線（-----、_______、****、====、••• 等）或無意義圖示（▶︎◆•·►等）。',
-            '- 僅輸出 Markdown 純文字，不要使用 ``` 程式碼圍欄，也不要額外解釋。',
-            '- 解析相對 URL（連結與圖片）為絕對 URL，基於提供的 Base URL。',
-            '- 對連結移除追蹤參數（utm_*、fbclid、ref 等），清理多餘空白，但不要改動正文語句與標點。'
-        ];
-    })();
-    const rules = rulesArr.join('\n');
-
-    const content = [
-        { role: 'system', content: sys },
-        { role: 'user', content: `Base URL: ${url || '(unknown)'}\n規則：\n${rules}\n\n=== HTML 開始 ===\n${String(html || '')}\n=== HTML 結束 ===` }
-    ];
+    const imageRule = keepImages
+      ? 'Keep content-related images as Markdown image lines, preserve or infer useful alt text, and convert their URLs to absolute URLs.'
+      : 'Remove all images without replacing them with text.';
+    const content = buildMessages('import.htmlExtraction', {
+        url: url || '(unknown)',
+        imageRule,
+        html: String(html || '')
+    });
 
     const data = await requestAI({
         apiUrl: connection.apiUrl,

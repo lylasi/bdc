@@ -4,6 +4,7 @@ import * as storage from '../../modules/storage.js';
 import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
+import { t } from '../../modules/i18n.js';
 // 提供登入入口（已登入的使用者可直接同步雲端單詞本）
 import { openLoginModal as openSyncLoginModal } from '../sync/sync.js';
 
@@ -44,6 +45,7 @@ export function initVocabulary() {
     // 初次加載時渲染視圖
     renderVocabBookList();
     updateActiveBookView();
+    document.addEventListener('bdc:locale-change', refreshVocabularyView);
 
     // 首次啟動且沒有任何單詞本時，提醒用戶導入
     try {
@@ -120,9 +122,10 @@ function renderVocabBookList() {
     dom.vocabBookList.innerHTML = '';
     if (state.vocabularyBooks.length === 0) {
         // 空狀態：不要默認創建單詞本，改為顯示導入提示
-        dom.vocabBookList.innerHTML = '<li class="word-item-placeholder">還沒有單詞本。<a id="import-hint-link" href="#">點此導入</a>，或點擊上方「導入單詞本」。</li>';
-        const link = document.getElementById('import-hint-link');
-        if (link) link.addEventListener('click', (e) => { e.preventDefault(); openModalForImportBook(); });
+        const link = `<a id="import-hint-link" href="#">${t('vocabulary.importHere')}</a>`;
+        dom.vocabBookList.innerHTML = `<li class="word-item-placeholder">${t('vocabulary.noBooksImport', { link })}</li>`;
+        const importLink = document.getElementById('import-hint-link');
+        if (importLink) importLink.addEventListener('click', (e) => { e.preventDefault(); openModalForImportBook(); });
         return;
     }
     state.vocabularyBooks.forEach(book => {
@@ -150,17 +153,17 @@ function renderVocabBookList() {
 
 // 首次無單詞本的引導彈窗
 function showNoBookOnboarding() {
-    dom.modalTitle.textContent = '開始之前';
+    dom.modalTitle.textContent = t('vocabulary.beforeStart');
     dom.modalBody.innerHTML = `
         <div class="input-group" style="display:block;">
             <p>目前還沒有任何單詞本。</p>
             <p>建議先「導入單詞本」或「新建單詞本」，之後就可以在學習 / 默寫 / 測驗等功能中使用。</p>
-            <p style="margin-top:8px;color:#64748b;">已經有雲端帳號？可直接登入並同步既有單詞本。</p>
+            <p style="margin-top:8px;color:#64748b;">${t('vocabulary.cloudAccountHint')}</p>
         </div>
         <div class="modal-actions">
-            <button class="cancel-btn">稍後</button>
-            <button id="login-btn" class="btn-ghost">登入</button>
-            <button class="save-btn">導入單詞本</button>
+            <button class="cancel-btn">${t('vocabulary.later')}</button>
+            <button id="login-btn" class="btn-ghost">${t('vocabulary.login')}</button>
+            <button class="save-btn">${t('vocabulary.importTitle')}</button>
         </div>
     `;
     const cancel = dom.appModal.querySelector('.cancel-btn');
@@ -250,12 +253,12 @@ function updateActiveBookView() {
         }
         renderWordList();
     } else {
-        dom.currentBookName.textContent = '請選擇一個單詞本';
+        dom.currentBookName.textContent = t('vocabulary.selectBook');
         dom.editVocabBookBtn.disabled = true;
         dom.deleteVocabBookBtn.disabled = true;
         dom.exportVocabBookBtn.disabled = true;
         if (dom.completeMissingBtn) dom.completeMissingBtn.disabled = true;
-        dom.wordList.innerHTML = '<li class="word-item-placeholder">請從左側選擇或創建一個單詞本</li>';
+        dom.wordList.innerHTML = `<li class="word-item-placeholder">${t('vocabulary.chooseOrCreate')}</li>`;
         if (dom.currentBookMeta) dom.currentBookMeta.textContent = '';
     }
 }
@@ -265,18 +268,18 @@ async function openModalForCompleteMissing() {
     if (!book) return;
 
     const missing = findMissingEntries(book.words);
-    dom.modalTitle.textContent = '補完缺失';
+    dom.modalTitle.textContent = t('vocabulary.completeMissingTitle');
     dom.modalBody.innerHTML = `
         <div class="input-group" style="display:block;">
-            <p>當前單詞本：<strong>${book.name}</strong></p>
-            <p>共 <strong>${book.words.length}</strong> 條，其中缺失資料（音標為 n/a 或空白、或中文釋義缺失）的有 <strong>${missing.length}</strong> 條。</p>
-            <small class="form-hint">片語將優先嘗試以存檔的上下文補齊中文釋義，並補上音標（可用整體讀音或逐詞 IPA 串接）。</small>
+            <p>${t('vocabulary.currentBookLabel')}<strong>${book.name}</strong></p>
+            <p>${t('vocabulary.missingSummary', { total: book.words.length, missing: missing.length })}</p>
+            <small class="form-hint">${t('vocabulary.completeMissingHint')}</small>
         </div>
         <div id="complete-missing-progress" class="import-progress"></div>
         <div class="modal-actions">
-            <button id="dedupe-words-btn" class="btn-ghost">合併去重</button>
-            <button class="cancel-btn">取消</button>
-            <button class="save-btn" ${missing.length===0?'disabled':''}>開始</button>
+            <button id="dedupe-words-btn" class="btn-ghost">${t('vocabulary.dedupe')}</button>
+            <button class="cancel-btn">${t('common.cancel')}</button>
+            <button class="save-btn" ${missing.length===0?'disabled':''}>${t('vocabulary.startAction')}</button>
         </div>
     `;
     const cancel = dom.appModal.querySelector('.cancel-btn');
@@ -306,7 +309,7 @@ async function runCompleteMissing(book, missingList) {
     const saveBtn = dom.appModal.querySelector('.save-btn');
     const cancelBtn = dom.appModal.querySelector('.cancel-btn');
     if (saveBtn) saveBtn.disabled = true;
-    if (cancelBtn) cancelBtn.textContent = '停止';
+    if (cancelBtn) cancelBtn.textContent = t('vocabulary.stopAction');
     cancelBtn.onclick = () => { cancelled = true; cancelBtn.disabled = true; };
 
     const { addWordToDefaultBook, ensureWordDetails } = await import('../../modules/vocab.js');
@@ -323,7 +326,7 @@ async function runCompleteMissing(book, missingList) {
         const after = { phon: entry.phonetic, meaning: entry.meaning };
         if ((after.phon && after.phon !== 'n/a' && !before.phon) || (after.meaning && !before.meaning)) updated += 1; else skipped += 1;
         done += 1;
-        if (progress) progress.innerHTML = `<p>正在補完：${entry.word}（${done}/${total}）</p>`;
+        if (progress) progress.innerHTML = `<p>${t('vocabulary.completing', { word: entry.word, done, total })}</p>`;
     };
 
     // limit concurrency
@@ -338,7 +341,7 @@ async function runCompleteMissing(book, missingList) {
     await Promise.all(workers);
 
     try { storage.saveVocabularyBooks(); } catch(_) {}
-    if (progress) progress.innerHTML = `<p style="color:green;">完成：更新 ${updated} 條，略過 ${skipped} 條。</p>`;
+    if (progress) progress.innerHTML = `<p style="color:green;">${t('vocabulary.completeResult', { updated, skipped })}</p>`;
     setTimeout(() => { ui.closeModal(); renderWordList(); }, 600);
 }
 
@@ -386,30 +389,30 @@ async function mergeDedupeActiveBook(book) {
                 if (startBtn) startBtn.disabled = missing.length === 0;
             }
         }
-        if (progress) progress.innerHTML = `<p style="color:green;">去重完成：移除 ${removed} 條重複。</p>`;
+        if (progress) progress.innerHTML = `<p style="color:green;">${t('vocabulary.dedupeResult', { removed })}</p>`;
         // 同步列表
         renderWordList();
     } catch (e) {
         console.warn('合併去重失敗:', e);
-        if (progress) progress.innerHTML = `<p style="color:#b91c1c;">去重失敗，請稍後再試。</p>`;
+        if (progress) progress.innerHTML = `<p style="color:#b91c1c;">${t('vocabulary.dedupeFailed')}</p>`;
     }
 }
 
 function openModalForNewBook() {
-    dom.modalTitle.textContent = '新增單詞本';
+    dom.modalTitle.textContent = t('vocabulary.newBookTitle');
     dom.modalBody.innerHTML = `
         <div class="input-group">
-            <label for="modal-book-name">單詞本名稱</label>
-            <input type="text" id="modal-book-name" placeholder="例如：雅思核心詞彙">
+            <label for="modal-book-name">${t('vocabulary.bookName')}</label>
+            <input type="text" id="modal-book-name" placeholder="${t('vocabulary.bookNamePlaceholder')}">
         </div>
         <div class="input-group">
-            <label for="modal-vocab-content">批量新增單詞 (每行一個)</label>
-            <textarea id="modal-vocab-content" placeholder="可只輸入英文單詞，如:\napple\nbanana\ncherry\n系統將自動補全音標和釋義。"></textarea>
+            <label for="modal-vocab-content">${t('vocabulary.bulkWords')}</label>
+            <textarea id="modal-vocab-content" placeholder="${t('vocabulary.bulkWordsPlaceholder')}"></textarea>
             <div id="modal-ai-progress" class="import-progress"></div>
         </div>
         <div class="modal-actions">
-            <button class="cancel-btn">取消</button>
-            <button class="save-btn">創建</button>
+            <button class="cancel-btn">${t('common.cancel')}</button>
+            <button class="save-btn">${t('vocabulary.create')}</button>
         </div>
     `;
     dom.appModal.querySelector('.save-btn').onclick = () => saveBookWithAICompletion();
@@ -421,7 +424,7 @@ function openModalForEditBook() {
     const book = state.vocabularyBooks.find(b => b.id === state.activeBookId);
     if (!book) return;
 
-    dom.modalTitle.textContent = '編輯單詞本 - ' + book.name;
+    dom.modalTitle.textContent = t('vocabulary.editBookTitle', { name: book.name });
     const isArticleBook = book.sourceType === 'article' && book.articleId;
     let sourceUrl = '';
     if (isArticleBook && typeof storage.getArticleMetaById === 'function') {
@@ -437,24 +440,24 @@ function openModalForEditBook() {
     }).join('\n');
     dom.modalBody.innerHTML = `
         <div class="input-group">
-            <label for="modal-book-name">單詞本名稱</label>
+            <label for="modal-book-name">${t('vocabulary.bookName')}</label>
             <input type="text" id="modal-book-name" value="${book.name}">
         </div>
         ${isArticleBook ? `
         <div class="input-group">
-            <label for="modal-book-source-url">來源網址（可選）</label>
+            <label for="modal-book-source-url">${t('vocabulary.sourceUrl')}</label>
             <input type="url" id="modal-book-source-url" value="${safeSourceUrl}" placeholder="https://example.com/article">
-            <small class="form-hint">若填寫網址，文章詳解與單詞本中的「開啟原文」會使用此連結；留空則不顯示原文連結。</small>
+            <small class="form-hint">${t('vocabulary.sourceUrlHint')}</small>
         </div>` : ''}
         <div class="input-group">
-            <label for="modal-vocab-content">單詞內容 (格式: 單詞#中文@音標)</label>
+            <label for="modal-vocab-content">${t('vocabulary.wordFormat')}</label>
             <textarea id="modal-vocab-content">${wordsText}</textarea>
-            <small class="form-hint">對於只有單詞的行，系統將嘗試自動補全音標和釋義。</small>
+            <small class="form-hint">${t('vocabulary.wordFormatHint')}</small>
             <div id="modal-ai-progress" class="import-progress"></div>
         </div>
         <div class="modal-actions">
-            <button class="cancel-btn">取消</button>
-            <button class="save-btn">保存更改</button>
+            <button class="cancel-btn">${t('common.cancel')}</button>
+            <button class="save-btn">${t('vocabulary.saveChanges')}</button>
         </div>
     `;
     dom.appModal.querySelector('.save-btn').onclick = () => saveBookWithAICompletion(book.id);
@@ -463,14 +466,14 @@ function openModalForEditBook() {
 }
 
 async function openModalForImportBook() {
-    dom.modalTitle.textContent = '導入單詞本';
-    dom.modalBody.innerHTML = `<p>正在加載預設單詞本...</p>`;
+    dom.modalTitle.textContent = t('vocabulary.importTitle');
+    dom.modalBody.innerHTML = `<p>${t('vocabulary.loadingPresets')}</p>`;
     ui.openModal();
 
     try {
         const defaultBooks = await fetchDefaultWordlists();
         if (defaultBooks.length === 0) {
-            dom.modalBody.innerHTML = `<p>沒有找到可用的預設單詞本。</p>`;
+            dom.modalBody.innerHTML = `<p>${t('vocabulary.noPresets')}</p>`;
             return;
         }
 
@@ -489,34 +492,34 @@ async function openModalForImportBook() {
     dom.modalBody.innerHTML = `
             <div class="import-container">
                 <div class="import-section">
-                    <h4 class="import-section-title">從預設列表選擇</h4>
+                    <h4 class="import-section-title">${t('vocabulary.presetSection')}</h4>
                     <div id="modal-import-list">
                         ${presetItemsHtml}
                     </div>
                 </div>
                 <div class="import-section">
-                    <h4 class="import-section-title">從URL導入</h4>
+                    <h4 class="import-section-title">${t('vocabulary.urlSection')}</h4>
                     <div class="input-group">
-                         <label for="modal-import-url">單詞本URL</label>
+                         <label for="modal-import-url">${t('vocabulary.urlLabel')}</label>
                          <input type="url" id="modal-import-url" placeholder="https://example.com/words.json">
                     </div>
                 </div>
                 <div class="import-section">
-                    <h4 class="import-section-title">從文件導入</h4>
+                    <h4 class="import-section-title">${t('vocabulary.fileSection')}</h4>
                     <div class="input-group">
-                        <label for="modal-import-file">選擇JSON文件</label>
+                        <label for="modal-import-file">${t('vocabulary.fileLabel')}</label>
                         <input type="file" id="modal-import-file" accept=".json">
                     </div>
                 </div>
                 <div class="import-section" style="border-top:1px dashed #e5e7eb;margin-top:8px;padding-top:8px;">
-                    <small class="form-hint">已有帳號？登入即可同步雲端單詞本，無須再次導入。</small>
+                    <small class="form-hint">${t('vocabulary.loginSyncHint')}</small>
                 </div>
             </div>
             <div id="modal-import-progress" class="import-progress"></div>
             <div class="modal-actions">
-                <button class="cancel-btn">取消</button>
-                <button id="login-to-sync-btn" class="btn-ghost">登入</button>
-                <button class="save-btn">導入選中</button>
+                <button class="cancel-btn">${t('common.cancel')}</button>
+                <button id="login-to-sync-btn" class="btn-ghost">${t('vocabulary.login')}</button>
+                <button class="save-btn">${t('vocabulary.importSelected')}</button>
             </div>
         `;
         dom.appModal.querySelector('.save-btn').onclick = () => importSharedVocabBooks();
@@ -526,7 +529,7 @@ async function openModalForImportBook() {
 
     } catch (error) {
         console.error('加載預設單詞本失敗:', error);
-        dom.modalBody.innerHTML = `<p style="color: red;">加載失敗，請稍後再試。</p>`;
+        dom.modalBody.innerHTML = `<p style="color: red;">${t('vocabulary.loadFailed')}</p>`;
     }
 }
 
@@ -554,13 +557,13 @@ async function importVocabularySources(sources, options = {}) {
 
     for (const source of sources) {
         try {
-            onStatus(`正在處理: ${source.name}...`, { type: 'info' });
+            onStatus(t('vocabulary.processingSource', { name: source.name }), { type: 'info' });
 
             let bookData;
             if (source.type === 'preset' || source.type === 'url') {
                 const response = await fetch(source.value);
                 if (!response.ok) {
-                    throw new Error(`無法加載: ${source.name}`);
+                    throw new Error(t('vocabulary.loadingSourceFailed', { name: source.name }));
                 }
                 bookData = await response.json();
             } else if (source.type === 'file') {
@@ -570,26 +573,26 @@ async function importVocabularySources(sources, options = {}) {
                         try {
                             resolve(JSON.parse(reader.result));
                         } catch (err) {
-                            reject(new Error('文件格式無效'));
+                            reject(new Error(t('vocabulary.invalidFile')));
                         }
                     };
-                    reader.onerror = () => reject(new Error('讀取文件失敗'));
+                    reader.onerror = () => reject(new Error(t('vocabulary.readFileFailed')));
                     reader.readAsText(source.value);
                 });
             } else {
-                throw new Error('未知的來源類型');
+                throw new Error(t('vocabulary.unknownSource'));
             }
 
             if (!bookData.name || !Array.isArray(bookData.words)) {
-                throw new Error(`數據源 ${source.name} 格式不正確。`);
+                throw new Error(t('vocabulary.invalidSourceData', { name: source.name }));
             }
 
             const existingBookIndex = state.vocabularyBooks.findIndex(b => b.name === bookData.name);
             if (existingBookIndex > -1) {
                 const shouldOverwrite = await Promise.resolve(confirmOverwrite(bookData.name, source));
                 if (!shouldOverwrite) {
-                    summary.push(`已跳過: ${bookData.name}`);
-                    onStatus(`已跳過: ${bookData.name}`, { type: 'info' });
+                    summary.push(t('vocabulary.skipped', { name: bookData.name }));
+                    onStatus(t('vocabulary.skipped', { name: bookData.name }), { type: 'info' });
                     continue;
                 }
             }
@@ -597,7 +600,7 @@ async function importVocabularySources(sources, options = {}) {
             const wordsWithDetails = [];
             for (let i = 0; i < bookData.words.length; i++) {
                 const line = bookData.words[i];
-                onStatus(`正在解析: ${line} (${i + 1}/${bookData.words.length})`, { type: 'info' });
+                onStatus(t('vocabulary.parsing', { line, current: i + 1, total: bookData.words.length }), { type: 'info' });
 
                 const parsedWord = parseWordsFromText(line)[0];
                 if (!parsedWord) continue;
@@ -625,20 +628,20 @@ async function importVocabularySources(sources, options = {}) {
 
             if (existingBookIndex > -1) {
                 state.vocabularyBooks[existingBookIndex] = { ...state.vocabularyBooks[existingBookIndex], ...newBook };
-                summary.push(`已覆蓋: ${bookData.name}`);
-                onStatus(`已覆蓋: ${bookData.name}`, { type: 'success' });
+                summary.push(t('vocabulary.overwritten', { name: bookData.name }));
+                onStatus(t('vocabulary.overwritten', { name: bookData.name }), { type: 'success' });
             } else {
                 state.vocabularyBooks.push(newBook);
-                summary.push(`已導入: ${bookData.name}`);
-                onStatus(`已導入: ${bookData.name}`, { type: 'success' });
+                summary.push(t('vocabulary.imported', { name: bookData.name }));
+                onStatus(t('vocabulary.imported', { name: bookData.name }), { type: 'success' });
             }
 
             state.setActiveBookId(newBook.id);
             successCount++;
         } catch (error) {
             console.error(`導入 ${source.name} 失敗:`, error);
-            summary.push(`導入失敗: ${source.name} (${error.message})`);
-            onStatus(`導入失敗: ${source.name}`, { type: 'error' });
+            summary.push(`${t('vocabulary.importFailed', { name: source.name })} (${error.message})`);
+            onStatus(t('vocabulary.importFailed', { name: source.name }), { type: 'error' });
         }
     }
 
@@ -652,7 +655,7 @@ async function importVocabularySources(sources, options = {}) {
 }
 
 function defaultConfirmOverwrite(bookName) {
-    return confirm(`單詞本 "${bookName}" 已存在。要覆蓋它嗎？`);
+    return confirm(t('vocabulary.overwriteConfirm', { name: bookName }));
 }
 
 async function importSharedVocabBooks() {
@@ -671,7 +674,7 @@ async function importSharedVocabBooks() {
             const url = new URL(urlPath, window.location.href);
             sources.push({ type: 'url', value: url.toString(), name: url.pathname.split('/').pop() || 'URL單詞本' });
         } catch (_) {
-            alert(`"${urlPath}" 不是一個有效的URL。`);
+            alert(t('vocabulary.invalidUrl', { url: urlPath }));
             return;
         }
     }
@@ -681,7 +684,7 @@ async function importSharedVocabBooks() {
     }
 
     if (sources.length === 0) {
-        alert('請至少選擇一個預設單詞本、提供一個URL或選擇一個文件。');
+        alert(t('vocabulary.selectSource'));
         return;
     }
 
@@ -695,7 +698,7 @@ async function importSharedVocabBooks() {
 
     try {
         saveBtn.disabled = true;
-        saveBtn.textContent = '正在導入...';
+        saveBtn.textContent = t('vocabulary.importing');
         if (progressContainer) {
             progressContainer.innerHTML = '';
         }
@@ -705,17 +708,17 @@ async function importSharedVocabBooks() {
         });
 
         const finalMessage = summary.length > 0
-            ? `導入完成！\n\n${summary.join('\n')}`
-            : '導入完成，但沒有任何變更。';
+            ? t('vocabulary.importComplete', { summary: summary.join('\n') })
+            : t('vocabulary.importNoChanges');
 
         alert(finalMessage);
         ui.closeModal();
     } catch (error) {
         console.error('批量導入單詞本失敗:', error);
-        alert('導入過程發生錯誤，請查看控制台日誌。');
+        alert(t('vocabulary.importProcessFailed'));
     } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = '導入選中';
+        saveBtn.textContent = t('vocabulary.importSelected');
     }
 }
 
@@ -723,13 +726,13 @@ async function saveBookWithAICompletion(bookId = null) {
     const bookNameInput = document.getElementById('modal-book-name');
     const name = bookNameInput.value.trim();
     if (!name) {
-        alert('單詞本名稱不能為空！');
+        alert(t('vocabulary.nameRequired'));
         return;
     }
 
     const saveBtn = dom.appModal.querySelector('.save-btn');
     saveBtn.disabled = true;
-    saveBtn.textContent = '處理中...';
+    saveBtn.textContent = t('vocabulary.processing');
 
     let book;
     const isEditing = !!bookId;
@@ -821,7 +824,7 @@ async function processWordsWithAI(book, wordsText) {
 
 function deleteActiveVocabBook() {
     const book = state.vocabularyBooks.find(b => b.id === state.activeBookId);
-    if (book && confirm(`確定要永久刪除單詞本 "${book.name}" 嗎？此操作無法撤銷。`)) {
+    if (book && confirm(t('vocabulary.deleteConfirm', { name: book.name }))) {
         const removedId = state.activeBookId;
         const nextBooks = state.vocabularyBooks.filter(b => b.id !== removedId);
         state.setVocabularyBooks(nextBooks);
@@ -879,7 +882,7 @@ function parseWordsFromText(text) {
 function exportActiveVocabBook() {
     const activeBook = state.vocabularyBooks.find(b => b.id === state.activeBookId);
     if (!activeBook) {
-        alert('沒有激活的單詞本可以導出。');
+        alert(t('vocabulary.exportNoActive'));
         return;
     }
 
@@ -910,16 +913,16 @@ function exportActiveVocabBook() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    alert(`單詞本 "${activeBook.name}" 已導出。`);
+    alert(t('vocabulary.exported', { name: activeBook.name }));
 }
 
 function openModalForMergeBooks() {
     if (state.vocabularyBooks.length < 2) {
-        alert('至少需要兩個單詞本才能進行合併。');
+        alert(t('vocabulary.mergeNeedTwo'));
         return;
     }
 
-    dom.modalTitle.textContent = '合併單詞本';
+    dom.modalTitle.textContent = t('vocabulary.mergeTitle');
     dom.modalBody.innerHTML = `
         <div class="merge-layout">
             <div class="merge-selection-panel">
@@ -935,27 +938,27 @@ function openModalForMergeBooks() {
             <div class="merge-preview-panel">
                 <h4>合併預覽</h4>
                 <div class="input-group">
-                    <label for="modal-merge-book-name">新單詞本名稱</label>
-                    <input type="text" id="modal-merge-book-name" placeholder="例如：我的合輯">
+                    <label for="modal-merge-book-name">${t('vocabulary.newMergedName')}</label>
+                    <input type="text" id="modal-merge-book-name" placeholder="${t('vocabulary.mergedNamePlaceholder')}">
                 </div>
                 <div id="merge-preview-details">
                     <p><strong>已選單詞本:</strong> <span id="merge-selected-count">0</span></p>
                     <ul id="merge-selected-list"></ul>
                     <p><strong>去重後總詞數:</strong> <span id="merge-total-words">0</span></p>
                 </div>
-                <small class="form-hint">重複的單詞將會被自動去除。</small>
+                <small class="form-hint">${t('vocabulary.dedupeHint')}</small>
                 <div class="input-group" style="margin-top:10px;">
                     <label class="checkbox-inline">
                         <input type="checkbox" id="merge-remove-sources">
                         <span>合併後刪除已選單詞本</span>
                     </label>
-                    <small class="form-hint">不勾選則保留原單詞本。</small>
+                    <small class="form-hint">${t('vocabulary.keepSourcesHint')}</small>
                 </div>
             </div>
         </div>
         <div class="modal-actions">
-            <button class="cancel-btn">取消</button>
-            <button id="confirm-merge-btn" class="save-btn" disabled>合併</button>
+            <button class="cancel-btn">${t('common.cancel')}</button>
+            <button id="confirm-merge-btn" class="save-btn" disabled>${t('vocabulary.merge')}</button>
         </div>
     `;
 
@@ -1016,7 +1019,7 @@ function mergeSelectedBooks() {
         return;
     }
     if (state.vocabularyBooks.some(b => b.name === newBookName)) {
-        alert(`已存在名為 "${newBookName}" 的單詞本，請使用其他名稱。`);
+        alert(t('vocabulary.duplicateName', { name: newBookName }));
         return;
     }
 
@@ -1059,8 +1062,8 @@ function mergeSelectedBooks() {
     renderVocabBookList();
     updateActiveBookView();
     ui.closeModal();
-    const suffix = removeSources ? '（已刪除來源單詞本）' : '';
-    alert(`成功合併 ${selectedItems.length} 個單詞本為 "${newBookName}"${suffix}！`);
+    const suffix = removeSources ? t('vocabulary.sourcesDeleted') : '';
+    alert(t('vocabulary.mergeSuccess', { count: selectedItems.length, name: newBookName, suffix }));
 }
 
 function renderWordList() {
@@ -1068,7 +1071,7 @@ function renderWordList() {
     const activeBook = state.vocabularyBooks.find(b => b.id === state.activeBookId);
 
     if (!activeBook || activeBook.words.length === 0) {
-        dom.wordList.innerHTML = '<li class="word-item-placeholder">這個單詞本是空的，點擊右上角鉛筆按鈕添加單詞。</li>';
+        dom.wordList.innerHTML = `<li class="word-item-placeholder">${t('vocabulary.emptyBook')}</li>`;
         return;
     }
 
@@ -1078,7 +1081,7 @@ function renderWordList() {
         li.innerHTML = `
             <div class="word-text">
                 <strong data-word-id="${word.id}">${word.word}</strong>
-                <span class="phonetic">/${word.phonetic}/</span>
+                ${word.phonetic ? `<span class="phonetic">/${word.phonetic}/</span>` : ''}
                 ${word.meaning ? `<span class="meaning" data-word-id="${word.id}">${word.meaning}</span>` : ''}
             </div>
             <div class="word-actions">

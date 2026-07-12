@@ -1,4 +1,5 @@
 import * as dom from './dom.js';
+import { t } from './i18n.js';
 import * as state from './state.js';
 
 // =================================
@@ -200,7 +201,7 @@ export function createBookSelector(container, defaultBookId) {
     const bookCount = state.vocabularyBooks.length;
 
     if (bookCount === 0) {
-        container.innerHTML = '<p>沒有可用的單詞本。</p>';
+        container.innerHTML = `<p data-i18n="common.noBooks">${t('common.noBooks')}</p>`;
         return;
     }
 
@@ -369,7 +370,7 @@ function getMessageBorderColor(type) {
  */
 export function showOptionsModal(config) {
   const {
-    title = '選項設定',
+    title = '',
     description = '',
     options = [],
     onConfirm = () => {},
@@ -402,7 +403,7 @@ export function showOptionsModal(config) {
     <div class="modal-header" style="padding: 18px 20px 12px 20px; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; background: #fff; z-index: 1;">
       <h3 style="
         margin: 0; font-size: 18px; font-weight: 700; color: #111827; line-height: 1.4;
-      ">${title}</h3>
+      ">${title || t('common.optionsTitle')}</h3>
       ${description ? `
         <p style="margin: 6px 0 0 0; font-size: 13px; color: #6b7280; line-height: 1.5;">${description}</p>
       ` : ''}
@@ -413,8 +414,8 @@ export function showOptionsModal(config) {
     </div>
 
     <div class="modal-footer" style="padding: 12px 20px 16px 20px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid #e5e7eb; position: sticky; bottom: 0; background: #fff;">
-      <button id="cancel-btn" class="om-btn om-btn-ghost">取消</button>
-      <button id="confirm-btn" class="om-btn om-btn-primary">確定</button>
+      <button id="cancel-btn" class="om-btn om-btn-ghost">${t('common.cancel')}</button>
+      <button id="confirm-btn" class="om-btn om-btn-primary">${t('common.confirm')}</button>
     </div>
   `;
 

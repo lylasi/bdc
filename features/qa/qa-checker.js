@@ -3,6 +3,8 @@ import { displayMessage } from '../../modules/ui.js';
 import { loadGlobalSettings, loadGlobalSecrets } from '../../modules/settings.js';
 import { getTaskModelSelection } from '../../modules/ai-models.js';
 import { requestAI, resolveAIRequestConfig, resolveConfigConnection } from '../../modules/api.js';
+import { getLocale, t } from '../../modules/i18n.js';
+import { buildMessages } from '../../modules/prompts/index.js';
 
 // AI配置检查
 let aiConfig = null;
@@ -19,16 +21,6 @@ async function loadAIConfig() {
     }
   }
   return aiConfig;
-}
-
-// 小工具：簡易模板替換 ${name}
-function applyTemplate(tpl, vars = {}) {
-  if (!tpl) return '';
-  let s = String(tpl);
-  for (const k of Object.keys(vars)) {
-    try { s = s.split('${' + k + '}').join(String(vars[k])); } catch (_) {}
-  }
-  return s;
 }
 
 // 陣列去重（按字面大小寫比較）
@@ -94,7 +86,7 @@ export async function startAIChecking(trainingResult, options = {}) {
   const availability = getQaRequestConfig(selectedModel);
 
   if (!aiConfig || !availability.apiUrl || !availability.apiKey || !availability.model) {
-    displayMessage('AI服務不可用，將使用基本校對模式', 'warning');
+    displayMessage(t('qa.aiUnavailable'), 'warning');
     return performBasicChecking(trainingResult);
   }
 
@@ -108,7 +100,7 @@ export async function startAIChecking(trainingResult, options = {}) {
   const unansweredCount = Math.max(0, totalQuestions - answers.length);
 
   if (answers.length === 0) {
-    displayMessage('沒有可校對的答案（尚未輸入內容）', 'info');
+    displayMessage(t('qa.noCheckableAnswers'), 'info');
     return { checkedAnswers: [], summary: null };
   }
 
@@ -141,7 +133,7 @@ export async function startAIChecking(trainingResult, options = {}) {
 
   } catch (error) {
     console.error('AI校對過程中出錯:', error);
-    displayMessage('AI校對失敗，改用基本校對模式', 'error');
+    displayMessage(t('qa.aiFallback'), 'error');
     return performBasicChecking(trainingResult);
   }
 }
@@ -192,7 +184,7 @@ async function checkSingleAnswer(answer) {
   const { qid, question, correctAnswer, userAnswer } = answer;
 
   // 依設定決定是否使用快取（默認關閉）
-  const cacheKey = `${qid}_${userAnswer}`;
+  const cacheKey = `${getLocale()}_${qid}_${userAnswer}`;
   if (useCacheEnabled() && checkResultsCache.has(cacheKey)) {
     console.log(`使用快取結果: Q${qid}`);
     return checkResultsCache.get(cacheKey);
@@ -258,38 +250,17 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
   const __temperature = (qaCfg.temperature ?? 0.2);
   const __maxTokens = (qaCfg.maxTokens ?? 1500);
 
-  // 詳盡提示（本地後備）：要求回傳錯誤點、改進與學習重點
-  const qaPrompts = aiConfig?.AI_PROMPTS?.qa?.checker || {};
-  const sysMsg = qaPrompts.system || '你是英文問答的判題器，完全符合才算正確。務必使用繁體中文回覆，且只輸出嚴格 JSON。';
-  const prompt = qaPrompts.template
-    ? applyTemplate(qaPrompts.template, { question, correctAnswer, userAnswer })
-    : `題目: ${question}
-參考答案: ${correctAnswer}
-學生答案: ${userAnswer}
-
-請只輸出嚴格 JSON：
-{
-  "isCorrect": true/false,
-  "teacherFeedback": "精確給出所有錯誤的地方，包括所有出現的錯誤。如果回答在英文中是正確，也要對比上下文指出不同的地方。",
-  "improvementSuggestions": ["參考上下文，給出改進建議。"],
-  "studyFocus": ["結合錯誤，給學生提出需要加強的知識點（例：時態、主謂一致、代詞指代）"],
-  "errors": {
-    "grammar": ["文法錯誤（若無可留空）"],
-    "spelling": ["拼寫錯誤（若無可留空）"],
-    "vocabulary": ["用字/搭配不當（若無可留空）"],
-    "structure": ["語序/句構問題（若無可留空）"],
-    "punctuation": ["大小寫/標點問題（若無可留空）"]
-  }
-}`;
+  const messages = buildMessages('qa.answerChecking', {
+    question,
+    correctAnswer,
+    userAnswer
+  }, { locale: getLocale() });
 
   // 首選強制 JSON（大多數 OpenAI 兼容端點支援）；若 4xx 指出不支援，將回退一次
   async function callOnce(includeJsonFormat) {
     return await requestAI({
       model: __model,
-      messages: [
-        { role: 'system', content: sysMsg },
-        { role: 'user', content: prompt }
-      ],
+      messages,
       temperature: __temperature,
       maxTokens: __maxTokens,
       responseFormat: includeJsonFormat ? { type: 'json_object' } : undefined,
@@ -568,7 +539,7 @@ function generateRecommendations(checkedAnswers) {
   const incorrectAnswers = checkedAnswers.filter(a => !a.isCorrect);
 
   if (incorrectAnswers.length === 0) {
-    recommendations.push('太棒了！所有答案都正確，繼續保持！');
+    recommendations.push(t('qa.allCorrectRecommendation'));
     return recommendations;
   }
 
@@ -582,15 +553,15 @@ function generateRecommendations(checkedAnswers) {
   ).length;
 
   if (spellingErrors > incorrectAnswers.length * 0.5) {
-    recommendations.push('建議多練習單詞拼寫，可以使用拼寫檢查工具');
+    recommendations.push(t('qa.spellingRecommendation'));
   }
 
   if (grammarErrors > incorrectAnswers.length * 0.5) {
-    recommendations.push('建議複習相關語法規則，多做語法練習');
+    recommendations.push(t('qa.grammarRecommendation'));
   }
 
   if (checkedAnswers.filter(a => a.score < 50).length > 0) {
-    recommendations.push('有些答案需要重點關注，建議重新學習相關內容');
+    recommendations.push(t('qa.reviewRecommendation'));
   }
 
   return recommendations;
@@ -624,7 +595,7 @@ export async function batchCheckAnswers(answers, options = {}) {
 // 重新校對特定答案
 export async function recheckAnswer(answer, forceAI = false) {
   await loadAIConfig();
-  const cacheKey = `${answer.qid}_${answer.userAnswer}`;
+  const cacheKey = `${getLocale()}_${answer.qid}_${answer.userAnswer}`;
 
   if (forceAI || !useCacheEnabled()) {
     checkResultsCache.delete(cacheKey);

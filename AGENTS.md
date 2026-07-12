@@ -1,68 +1,16 @@
-# 儲存庫指引（AGENTS.md）
+# CLAUDE.md
 
-本文件提供給所有 AI 代理與自動化程式，協助快速掌握 `bdc` 專案的最新程式結構、開發規範與安全守則。所有敘述請使用繁體中文。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
----
+## 語言與現況
 
-## 專案結構與模組劃分
+- 本專案文件以繁體中文為主；介面支援大陸簡體中文（`zh-CN`，預設）與香港繁體中文（`zh-HK`）。
+- 這是一個純前端靜態 SPA，沒有 bundler，也沒有既定的 npm scripts 工作流。
+- `main.js` 已取代舊版 `app.js` 作為唯一初始化入口；`PLAN.md` 主要是歷史重構紀錄。
 
-整個應用是純靜態網站，以 `index.html`、`styles.css` 與 `main.js` 為骨幹：
+## 常用命令
 
-| 範疇 | 路徑 | 說明 |
-| --- | --- | --- |
-| 入口 | `index.html` | SPA 主畫面，預先擺放九個功能區塊的 DOM。 |
-|  | `styles.css` | 全域樣式、各模組子樣式、響應式設定。 |
-|  | `main.js` | 入口腳本，載入資料、初始化所有功能模組、控制導航與 hash routing。 |
-| 通用 UI | `test-floating-statusbar.html` | 手動測試平台偵測與浮動控制。 |
-
-### 共享模組（`modules/`）
-
-| 檔案 | 職責摘要 |
-| --- | --- |
-| `state.js` | 全域狀態、旗標與 helper getter。 |
-| `dom.js` | 集中管理所有 DOM 選擇器，嚴禁在功能模組內直接 `document.querySelector`。 |
-| `storage.js` | localStorage 初始化、詞書/文章/設定的持久化。 |
-| `api.js` | AI 請求封裝（單字解析、句子/段落分析、QA 校對、OCR 後處理等）。 |
-| `audio.js` | Web Audio / SpeechSynthesis 控制與解鎖。 |
-| `ui.js` | 模態框、數字步進器、訊息條、提示框。 |
-| `platform.js` | 平台偵測、視窗高度、安全區、可見性 API。 |
-| `settings.js` | 全域設定與秘密資料（AI 模型、TTS、閱讀偏好、助手開關）。 |
-| `cache.js` | IndexedDB + localStorage 雙層快取與 TTL 管理。 |
-| `local-backup.js` | 內建快照備份與回復。 |
-| `markdown.js` | 輕量 Markdown→HTML（OCR/報表共用）。 |
-| `sync-core.js` / `sync-signals.js` / `sync-supabase.js` | 雲端同步序列化、資料變更事件與 Supabase 介面。 |
-| `validate.js` | 表單與輸入驗證 helpers。 |
-| `vocab.js` | 跨模組的詞彙增刪與預設詞書維護。 |
-| `voices.js` | 聲音清單載入與快取（搭配 `voices*.json`）。 |
-| `fonts/` | 字型子集與載入器。 |
-
-> **規則**：新增共享邏輯前，必須先檢查是否能復用既有模組；若需擴充 `dom.js` 或 `state.js`，同步更新相關文件。
-
-### 功能模組（`features/<name>/`）
-
-| 模組 | 入口函式 | 功能摘要 |
-| --- | --- | --- |
-| `vocabulary/` | `initVocabulary()` | 詞書 CRUD、匯入匯出、URL 導入。 |
-| `learning/` | `initLearning()` | AI 單字詳解、例句產生、語音播放。 |
-| `dictation/` | `initDictation()` | 聽寫題組、計時、暫停/恢復、評分與歷史。 |
-| `quiz/` | `initQuiz()` | 測驗題庫、倒數與計分；跨模組旗標 `state.quizInProgress`。 |
-| `article/` | `initArticle()` | 文章載入、難度分析、朗讀控制。 |
-| `ocr/` | `initOCR()` | 圖片/相機 OCR、拖放、Markdown 預覽與模板提示。 |
-| `qa/` | `init()` | 問答集管理、訓練流程、AI 校對、PDF 匯出。 |
-| `sync/` | `initSync()` | Supabase 登入/登出、OTP、即時同步、懸浮齒輪設定。 |
-| `assistant/` | `initAiAssistant()` | 文章頁專用 AI 助手 FAB + 面板、對話儲存、Markdown 回覆。 |
-
-每個模組都要輸出 `init*` 函式，並由 `main.js` 在 `DOMContentLoaded` 後呼叫。禁止在未初始化前操作 DOM。
-
-### 資料與內容
-
-- `wordlists/`: 各冊/各單位詞書 JSON 與 `manifest.json`。
-- `articles/`: 文章內容 JSON，搭配生成腳本。
-- `qa-sets/`: 問答模板與訓練資料。
-- `voices.json` / `voices.min.json`: TTS 聲音清單（使用 `scripts/update-voices.sh` 更新）。
-- `ai-config.example.js`: 範例設定；複製成 `ai-config.js` 並填入真正 API key、模型、TTS/OCR/QA/Assistant 設定。
-
-## 建置與開發命令
+### 啟動本地開發伺服器
 
 在專案根目錄執行：
 
@@ -72,38 +20,202 @@ npx serve .
 npx http-server -c-1 .
 ```
 
-> 這兩個指令可提供 ES Module 需要的 HTTP 服務；第二個停用快取，方便除錯 storage 相關功能。
+- `http-server -c-1` 會停用快取，較適合除錯靜態資源、storage 與 manifest 變更。
+- 專案依賴瀏覽器以 HTTP 載入 ES Modules，不要直接用 `file://` 開啟。
 
-## 程式風格與命名
+### AI / 雲端設定
 
-- 目標語法：ES2022，縮排 4 spaces，字串使用單引號。
-- 優先使用 `const`/`let`，函式與變數採 `camelCase`，類別/命名空間採 `PascalCase`。
-- DOM 操作一律透過 `modules/dom.js`；若需新增節點存取器，請集中更新該檔並保持命名一致。
-- 大型檔案接近 300 行就拆分至同層 helper（例如 `features/qa/qa-creator.js`）。
-- 行內註解僅針對複雜邏輯或 TODO，必要時標註負責人縮寫。
+```bash
+cp ai-config.example.js ai-config.js
+```
 
-## 測試與驗證
+- `ai-config.js` 用於本機 API / TTS / OCR / Supabase 設定。
+- 若未設定，應用仍可使用大部分離線功能，但 AI、TTS、OCR、同步會降級或不可用。
 
-- 自動化測試尚未建立；重大改動需手動巡檢九大模組。
-- `test-floating-statusbar.html`：每次處理平台偵測、浮動控制或持久化相關改動後必須開啟檢查。
-- QA 功能改動時，同步更新 `qa-sets/*.json` 並在 PR 描述中標註使用的測試資料集。
-- AI / Supabase 整合需以真實 API key 測試；若無法執行，請撰寫清楚的驗證步驟供 reviewer 跟進。
+### 手動驗證
 
-## Commit 與 PR 規則
+本專案目前**沒有**既定的 build、lint、typecheck 或自動化測試命令；驗證方式以瀏覽器手動巡檢為主。
 
-- 指令前綴遵循 Conventional Commit（`feat:`, `fix:`, `chore:` 等），摘要可使用中文或英文。
-- 單一分支僅處理一個主題；PR 需連結需求文件或追蹤單。
-- PR 描述需紀錄手動驗證步驟、設定變更、資料遷移、以及（若有）影像前後對照。
+```bash
+# 啟動伺服器後，在瀏覽器開啟
+/test-floating-statusbar.html
+```
 
-## 安全與配置
+- `test-floating-statusbar.html` 是目前唯一明確存在的獨立測試頁，專門驗證平台偵測、浮動控制與持久化行為。
+- 若使用者要求「跑單一測試」，目前沒有測試 runner；可用的最接近做法是啟動本機伺服器後只驗證此頁，或只巡檢受影響模組。
 
-- 部署前請將 `ai-config.example.js` 複製為私有的 `ai-config.js`，並確保該檔未被提交。
-- 新增外部 API 時，必須在 `modules/api.js` 撰寫速率限制、錯誤回退與 UI Thread 保護說明。
-- 釋出前檢查 `wordlists/`、`articles/`、`qa-sets/` 等內容，確保不含敏感資訊。
-- 雲端同步採 Supabase，相關金鑰只可透過 `ai-config.js` 或瀏覽器本地儲存注入，不得硬編碼。
+### 常用維護腳本
 
----
+```bash
+bash scripts/update-voices.sh
+node scripts/compact-voices.mjs voices.json voices.min.json
+bash scripts/build-font-subset.sh
+node scripts/gen-subset-chars.js
+node scripts/generate-from-5a-jumpstart.js
+node scripts/generate-from-5a-texts.js
+node scripts/extract-5a-readings.js
+```
 
-如需擴充開發指引，請更新此檔並同步通知專案維運者。
+- `scripts/update-voices.sh`：更新 `voices.json`，並在可用時產生 `voices.min.json`。
+- `scripts/compact-voices.mjs`：將完整 voices 清單壓成前端優先讀取的精簡版。
+- 其餘腳本主要用於字型子集與教材資料生成。
 
-#使用繁體中文
+## 高階架構
+
+### 1. 應用骨架
+
+- `index.html`：SPA 的靜態骨架，預先放好各功能模組需要的主要 DOM 區塊。
+- `styles.css`：全域樣式與各模組樣式。
+- `main.js`：唯一啟動入口，負責：
+  1. 載入本地資料（詞書、已分析文章）
+  2. 初始化共用 UI
+  3. 初始化九個功能模組
+  4. 綁定主導覽與 hash / query routing
+  5. 處理音訊解鎖、可見性切換與 URL 導入
+
+### 2. 分層結構
+
+專案可以視為三層：
+
+1. **表示層**：`index.html` + `styles.css`
+2. **功能層**：`features/<module>/`，每個模組提供 `init*` 入口，由 `main.js` 呼叫
+3. **共享服務層**：`modules/`，封裝跨模組狀態、DOM、儲存、AI、音訊、同步與設定
+
+### 3. 功能模組分工
+
+`features/` 目前包含九個主要模組：
+
+- `vocabulary/`：詞書 CRUD、匯入匯出、URL 導入
+- `learning/`：單字詳解、例句、朗讀
+- `dictation/`：聽寫流程、暫停/恢復、評分
+- `quiz/`：題庫生成、倒數、計分、離開保護
+- `article/`：文章載入、分析、朗讀
+- `ocr/`：圖片 / 相機 OCR、Markdown 預覽
+- `qa/`：問答集管理、訓練、AI 校對、PDF 匯出
+- `sync/`：Supabase 登入與同步控制
+- `assistant/`：文章閱讀場景的 AI 助手面板
+
+關鍵模式：**每個功能模組自己處理事件與 UI，但初始化都從 `main.js` 集中觸發。**
+
+### 4. 共享服務分工
+
+最重要的共享模組：
+
+- `modules/dom.js`：集中 DOM 參照；不要在功能模組中散落新的 `querySelector` 慣用法
+- `modules/state.js`：全域旗標與共享狀態，例如測驗中、默寫狀態
+- `modules/storage.js`：localStorage 讀寫與初始資料載入
+- `modules/cache.js`：IndexedDB 優先、localStorage 後備的 AI 快取
+- `modules/api.js`：所有 AI 請求的統一入口
+- `modules/settings.js`：全域設定與 secrets 載入
+- `modules/audio.js`：Web Audio / SpeechSynthesis 控制與解鎖
+- `modules/sync-core.js` / `modules/sync-signals.js` / `modules/sync-supabase.js`：同步序列化、資料變更事件與 Supabase 介面
+- `modules/vocab.js` / `modules/voices.js` / `modules/markdown.js` / `modules/local-backup.js`：跨模組的詞彙、語音、Markdown 與備份能力
+
+## 關鍵資料流與持久化
+
+### 本地資料模型
+
+專案是 **local-first**：
+
+- 核心資料主要放在 `localStorage`
+  - `vocabularyBooks`, `activeBookId`
+  - `analyzedArticles`
+  - `qa-sets`, `qa-set-<id>`
+- 短期會話 / 偏好也在 `localStorage`
+  - `pen_dictation_session`
+  - `pen_dictation_settings`
+  - `qa-training-progress`
+- AI 派生結果快取優先使用 IndexedDB（`bdc-cache`），失敗時回退 localStorage
+
+### 靜態內容來源
+
+- `wordlists/manifest.json`：詞書索引
+- `articles/manifest.json`：文章索引
+- `qa-sets/manifest.json`：問答集索引
+- `voices.min.json` / `voices.json`：TTS 聲音清單
+
+變更這些資料集時，通常要同時更新對應 manifest 或相關載入流程。
+
+### 同步模型
+
+同步相關程式採 **snapshot / local-first** 思路：
+
+- 本地資料仍是主要來源
+- 同步模組負責建構與套用快照
+- 若你新增持久化欄位，通常需要同步檢查：
+  - `modules/storage.js`
+  - `modules/sync-core.js`
+  - `modules/sync-supabase.js`
+  - 以及任何使用該資料的 feature module
+
+## AI 與外部服務邊界
+
+- 所有 AI 相關能力都應優先經過 `modules/api.js`，不要在功能模組內直接散寫 fetch 邏輯。
+- 模型、端點、TTS、OCR、QA 校對與助手設定集中在 `ai-config.js` / `ai-config.example.js` 的結構中。
+- `assistant/`、`ocr/`、`qa/`、`article/` 都會依賴這層 API / 設定抽象。
+
+## 修改時應遵守的結構慣例
+
+- 使用 ES2022、4 空白縮排、單引號。
+- 先延用既有模組邊界；新增共享邏輯前先檢查 `modules/` 是否已有相近職責。
+- 新增 DOM 參照時，優先擴充 `modules/dom.js`。
+- 跨模組共享狀態優先放 `modules/state.js`，或透過既有同步 / 自訂事件機制傳遞。
+- 使用者可見文字必須同時支援大陸簡體中文與香港繁體中文，預設介面為 `zh-CN`。
+- `features/` 下的功能模組應維持 `init*` 入口模式，讓 `main.js` 能統一初始化。
+
+## UI 雙語開發規範（強制）
+
+- 新增功能或調整既有功能時，只要涉及 UI 層的使用者可見文字，就必須同時完成 `zh-CN` 與 `zh-HK` 兩份文案。
+- 功能邏輯只維護一套；不得為簡體與繁體複製兩套功能程式碼。
+- 靜態 HTML 文案使用 `data-i18n`、`data-i18n-title`、`data-i18n-placeholder`、`data-i18n-aria-label` 等屬性。
+- JavaScript 動態產生的按鈕、彈窗、提示、載入狀態、錯誤訊息、空狀態及 `aria-label` 必須使用 `t('...')`，禁止直接硬編碼簡體或繁體中文。
+- 每個新翻譯鍵必須同時加入 `locales/zh-CN.js` 與 `locales/zh-HK.js`，兩份字典的鍵集合必須保持一致。
+- 香港繁體文案使用香港正式書面中文及香港常用詞，不使用台灣慣用詞，也不預設使用粵語口語。
+- 介面語言只控制 UI 與後續 AI 回覆；不得轉換教材、文章原文、OCR 原文、QA 內容、詞書內容、使用者輸入或歷史訊息。
+- AI 任務邏輯與輸出 schema 維護一套，透過 `modules/prompts/language-rules.js` 按目前 locale 注入語言規則；不要複製兩套完整提示詞。
+- 修改 UI 後至少驗證一次 `zh-CN` 和 `zh-HK`，尤其檢查動態建立的 DOM、非同步載入文字、操作完成狀態與錯誤路徑。
+- 詳細實作與驗收清單見 `docs/spec/20260712202038506_UI雙語開發與維護規範.md`。
+
+## 驗證重點
+
+因為沒有自動化測試，修改後至少手動驗證受影響功能；常見回歸區域：
+
+1. 詞書 CRUD / 匯入匯出
+2. 聽寫流程與暫停恢復
+3. 測驗計分與離開保護（`state.quizInProgress`）
+4. 文章分析與 AI 助手顯示條件
+5. OCR 拖放、模型切換、Markdown 預覽
+6. QA 訓練進度恢復、AI 校對、PDF 匯出
+7. Supabase 登入 / 同步與本地備援
+
+若變更牽涉平台偵測、浮動狀態列或持久化 UI，務必額外打開 `test-floating-statusbar.html` 驗證。
+
+## 重要參考文件
+
+- `README.md`：最新專案摘要與啟動方式
+- `AGENTS.md`：給所有 AI 代理的共用規則
+- `SNOW.md`：開發者導向的高階摘要
+- `docs/prd.md`：QA 模組產品需求
+- `@docs/storage-architecture.md`：本地資料鍵名、TTL、快取與資料生命週期
+- `@docs/sync-overview.md`、`@docs/sync-supabase-design.md`：同步設計脈絡
+
+## 目前已知限制
+
+- 沒有 `package.json` / npm scripts 工作流；不要假設存在 `npm run build`、`npm test`、`npm run lint`。
+- 沒有自動化測試框架；不要虛構單測指令。
+- `ai-config.js` 屬本機私有設定，不應被當成可安全提交的專案檔案。
+
+## 文檔落盤規範（強製）
+1. 每次生成文檔、計劃、紀要、調研、報告、清單時，必須落盤到工作區 `docs` 目錄下。
+2. 必須按類型創建子目錄，至少包含：
+- `docs/plan`（計劃）
+- `docs/meeting`（會議材料與紀要）
+- `docs/research`（調研）
+- `docs/spec`（需求與規格拆解）
+- `docs/report`（週報/階段報告）
+- `docs/decision`（決策記錄）
+- `docs/release`（髮佈記錄）
+3. 文件名必須包含時間戳，格式固定：`yyyyMMddHHmmssfff`。
+4. 文件命名建議：`<時間戳>_<主題>.md`，示例：`20260224165501222_登錄改造實施計劃.md`。
+5. 若目錄不存在，先自動創建再冩入；冩入完成後在結果裡明確給出實際文件路徑。
+6. 除非我明確要求，不要隻在聊天中給文檔，必須同時生成對應落地文件。

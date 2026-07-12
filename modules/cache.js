@@ -129,36 +129,36 @@ export async function setCached(namespace, payload, value, ttlMs) {
 }
 
 // Convenience helpers for this app
-export async function getParagraphAnalysisCached(paragraph, level, model) {
-  return getCached('paragraphAnalysis', { paragraph, level, model, schema: 'v1' });
+export async function getParagraphAnalysisCached(paragraph, level, model, options = {}) {
+  return getCached('paragraphAnalysis', { paragraph, level, model, ...options, schema: 'v2' });
 }
 
-export async function setParagraphAnalysisCached(paragraph, level, model, value, ttlMs) {
-  return setCached('paragraphAnalysis', { paragraph, level, model, schema: 'v1' }, value, ttlMs);
+export async function setParagraphAnalysisCached(paragraph, level, model, value, ttlMs, options = {}) {
+  return setCached('paragraphAnalysis', { paragraph, level, model, ...options, schema: 'v2' }, value, ttlMs);
 }
 
-export async function getWordAnalysisCached(word, sentence, model) {
-  return getCached('wordAnalysis', { word, sentence, model, schema: 'v1' });
+export async function getWordAnalysisCached(word, sentence, model, options = {}) {
+  return getCached('wordAnalysis', { word, sentence, model, ...options, schema: 'v2' });
 }
 
-export async function setWordAnalysisCached(word, sentence, model, value, ttlMs) {
-  return setCached('wordAnalysis', { word, sentence, model, schema: 'v1' }, value, ttlMs);
+export async function setWordAnalysisCached(word, sentence, model, value, ttlMs, options = {}) {
+  return setCached('wordAnalysis', { word, sentence, model, ...options, schema: 'v2' }, value, ttlMs);
 }
 
 // Sentence-level analysis
-export async function getSentenceAnalysisCached(sentence, contextHash, model) {
-  return getCached('sentenceAnalysis', { sentence, contextHash, model, schema: 'v1' });
+export async function getSentenceAnalysisCached(sentence, contextHash, model, options = {}) {
+  return getCached('sentenceAnalysis', { sentence, contextHash, model, ...options, schema: 'v2' });
 }
 
-export async function setSentenceAnalysisCached(sentence, contextHash, model, value, ttlMs) {
-  return setCached('sentenceAnalysis', { sentence, contextHash, model, schema: 'v1' }, value, ttlMs);
+export async function setSentenceAnalysisCached(sentence, contextHash, model, value, ttlMs, options = {}) {
+  return setCached('sentenceAnalysis', { sentence, contextHash, model, ...options, schema: 'v2' }, value, ttlMs);
 }
 
 // Selection/phrase analysis within a sentence
-export async function getSelectionAnalysisCached(selection, sentence, contextHash, model) {
-  return getCached('selectionAnalysis', { selection, sentence, contextHash, model, schema: 'v1' });
+export async function getSelectionAnalysisCached(selection, sentence, contextHash, model, options = {}) {
+  return getCached('selectionAnalysis', { selection, sentence, contextHash, model, ...options, schema: 'v2' });
 }
 
-export async function setSelectionAnalysisCached(selection, sentence, contextHash, model, value, ttlMs) {
-  return setCached('selectionAnalysis', { selection, sentence, contextHash, model, schema: 'v1' }, value, ttlMs);
+export async function setSelectionAnalysisCached(selection, sentence, contextHash, model, value, ttlMs, options = {}) {
+  return setCached('selectionAnalysis', { selection, sentence, contextHash, model, ...options, schema: 'v2' }, value, ttlMs);
 }

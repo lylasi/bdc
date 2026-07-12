@@ -1,6 +1,7 @@
 import * as state from '../../modules/state.js';
 import * as dom from '../../modules/dom.js';
 import * as ui from '../../modules/ui.js';
+import { t } from '../../modules/i18n.js';
 
 // =================================
 // Quiz Feature
@@ -14,6 +15,7 @@ export function initQuiz() {
     dom.stopQuizBtn.addEventListener('click', stopQuiz);
     dom.nextQuestionBtn.addEventListener('click', nextQuestion);
     dom.restartQuizBtn.addEventListener('click', restartQuiz);
+    document.addEventListener('bdc:locale-change', refreshQuizLocale);
 }
 
 function getSelectedQuizWords() {
@@ -28,7 +30,7 @@ function getSelectedQuizWords() {
 function startQuiz() {
     const wordsForQuiz = getSelectedQuizWords();
     if (!wordsForQuiz || wordsForQuiz.length < 4) {
-        alert('請先選擇一個至少包含4個單詞的單詞本開始測驗！');
+        alert(t('quiz.needFourWords'));
         return;
     }
     
@@ -65,7 +67,7 @@ function stopQuiz() {
     dom.quizOptions.innerHTML = '';
     updateQuizProgress();
 
-    alert('測驗已停止！');
+    alert(t('quiz.stopped'));
 }
 
 function generateQuizQuestions() {
@@ -103,18 +105,15 @@ function generateQuestionByType(targetWord, type, allWords) {
     
     switch (type) {
         case 'meaning':
-            question.question = `"${targetWord.word}" 的中文意思是？`;
-            question.correctAnswer = targetWord.meaning || '(無中文意思)';
-            question.options = [question.correctAnswer, ...wrongOptions.map(w => w.meaning || '(無中文意思)')];
+            question.correctAnswer = targetWord.meaning || t('quiz.noMeaning');
+            question.options = [question.correctAnswer, ...wrongOptions.map(w => w.meaning || t('quiz.noMeaning'))];
             break;
         case 'word':
-            question.question = `"${targetWord.meaning || '(無中文意思)'}" 對應的英文單詞是？`;
             question.correctAnswer = targetWord.word;
             question.options = [question.correctAnswer, ...wrongOptions.map(w => w.word)];
             break;
         case 'phonetic':
             if (!targetWord.phonetic) return null; // Skip if no phonetic
-            question.question = `音標 "${targetWord.phonetic}" 對應的單詞是？`;
             question.correctAnswer = targetWord.word;
             question.options = [question.correctAnswer, ...wrongOptions.map(w => w.word)];
             break;
@@ -122,8 +121,16 @@ function generateQuestionByType(targetWord, type, allWords) {
             return null;
     }
     
+    question.question = getLocalizedQuestion(question);
     question.options = question.options.sort(() => 0.5 - Math.random());
     return question;
+}
+
+function getLocalizedQuestion(question) {
+    if (question.type === 'meaning') return t('quiz.askMeaning', { word: question.target.word });
+    if (question.type === 'word') return t('quiz.askWord', { meaning: question.target.meaning || t('quiz.noMeaning') });
+    if (question.type === 'phonetic') return t('quiz.askPhonetic', { phonetic: question.target.phonetic });
+    return question.question || '';
 }
 
 function showCurrentQuestion() {
@@ -182,8 +189,14 @@ function nextQuestion() {
 }
 
 function updateQuizProgress() {
-    dom.quizProgress.textContent = `題目 ${state.currentQuestionIndex + 1}/${state.quizQuestions.length}`;
-    dom.quizScoreDisplay.textContent = `得分: ${state.quizScore}/${Math.min(state.currentQuestionIndex + 1, state.quizQuestions.length)}`;
+    dom.quizProgress.textContent = t('quiz.progress', {
+        current: state.currentQuestionIndex + 1,
+        total: state.quizQuestions.length
+    });
+    dom.quizScoreDisplay.textContent = t('quiz.score', {
+        score: state.quizScore,
+        total: Math.min(state.currentQuestionIndex + 1, state.quizQuestions.length)
+    });
 }
 
 function endQuiz() {
@@ -200,15 +213,29 @@ function endQuiz() {
     else if (percentage >= 60) dom.finalScore.className = 'score-good';
     else dom.finalScore.className = 'score-poor';
     
-    let summary = '';
-    if (percentage >= 90) summary = '優秀！您對這些單詞掌握得很好！';
-    else if (percentage >= 80) summary = '良好！繼續保持，再接再勵！';
-    else if (percentage >= 60) summary = '及格！建議多複習這些單詞。';
-    else summary = '需要加強！請多花時間學習這些單詞。';
-    
-    dom.quizSummary.textContent = summary;
+    dom.quizSummary.textContent = getQuizSummary(percentage);
     dom.stopQuizBtn.disabled = true;
     dom.nextQuestionBtn.disabled = true;
+}
+
+function getQuizSummary(percentage) {
+    if (percentage >= 90) return t('quiz.excellent');
+    if (percentage >= 80) return t('quiz.good');
+    if (percentage >= 60) return t('quiz.pass');
+    return t('quiz.improve');
+}
+
+function refreshQuizLocale() {
+    updateQuizProgress();
+    const question = state.quizQuestions[state.currentQuestionIndex];
+    if (question && !dom.quizMainContainer.classList.contains('hidden')) {
+        question.question = getLocalizedQuestion(question);
+        dom.quizQuestion.textContent = question.question;
+    }
+    if (!dom.quizResult.classList.contains('hidden') && state.quizQuestions.length) {
+        const percentage = Math.round((state.quizScore / state.quizQuestions.length) * 100);
+        dom.quizSummary.textContent = getQuizSummary(percentage);
+    }
 }
 
 function restartQuiz() {
