@@ -1,6 +1,8 @@
 import { TTS_CONFIG } from '../ai-config.js';
+import { touch as syncTouch } from './sync-signals.js';
 
-// Local-only global settings & secrets (never synced)
+// Global settings are stored locally; selected non-sensitive AI fields may be synced.
+// Secrets always remain local-only and are never included in snapshots.
 // Keys
 const SETTINGS_KEY = 'pen_global_settings';
 const SECRETS_KEY = 'pen_global_secrets';
@@ -102,14 +104,29 @@ export function loadGlobalSettings() {
   }
 }
 
-export function saveGlobalSettings(partial) {
+export function saveGlobalSettings(partial, options = {}) {
   const current = loadGlobalSettings();
+  const normalizedOptions = options && typeof options === 'object' ? options : {};
+  const hasAiUpdate = isPlainObject(partial?.ai);
+  const now = new Date().toISOString();
+  const updatedAt = normalizedOptions.preserveUpdatedAt
+    ? (current.updatedAt || normalizedOptions.updatedAtOverride || now)
+    : now;
   const next = {
     ...mergeSettings(current, partial),
-    updatedAt: new Date().toISOString()
+    updatedAt
   };
+  if (hasAiUpdate) {
+    next.ai = {
+      ...next.ai,
+      updatedAt: normalizedOptions.preserveUpdatedAt
+        ? (normalizedOptions.updatedAtOverride || current.ai?.updatedAt || updatedAt)
+        : now
+    };
+  }
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+    if (hasAiUpdate && normalizedOptions.suppressSyncTouch !== true) syncTouch('aiSettings');
     return next;
   } catch (_) {
     return current;

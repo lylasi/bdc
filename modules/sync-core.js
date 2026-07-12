@@ -12,6 +12,7 @@ import {
   getGradingHistory,
   saveGradingHistory
 } from './storage.js';
+import { loadGlobalSettings, saveGlobalSettings } from './settings.js';
 
 const ASSISTANT_LEGACY_KEY = 'assistantConversations';
 const ASSISTANT_INDEX_KEY = 'assistantConvIndex';
@@ -41,6 +42,87 @@ function shouldApplyGroup(remoteUpdatedAt, localUpdatedAt, force = false) {
   const lts = String(localUpdatedAt || '');
   if (!rts) return false;
   return !lts || rts > lts;
+}
+
+function isPlainObject(value) {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function sanitizeStringArray(values) {
+  if (!Array.isArray(values)) return [];
+  return Array.from(new Set(values.map(value => String(value || '').trim()).filter(Boolean)));
+}
+
+function sanitizeDiscoveredModels(values) {
+  if (!Array.isArray(values)) return [];
+  return values.map((item) => {
+    if (typeof item === 'string') return item.trim();
+    if (!isPlainObject(item)) return null;
+    const sanitized = {};
+    for (const key of ['id', 'providerId', 'value', 'label', 'ownedBy', 'created', 'contextWindow']) {
+      const value = item[key];
+      if (value !== undefined && value !== null) sanitized[key] = value;
+    }
+    return sanitized;
+  }).filter(item => typeof item === 'string' ? !!item : !!item && Object.keys(item).length > 0);
+}
+
+function sanitizeTaskMappings(record) {
+  if (!isPlainObject(record)) return {};
+  const out = {};
+  for (const [key, value] of Object.entries(record)) {
+    if (typeof value === 'string') {
+      const normalized = value.trim();
+      if (normalized) out[key] = normalized;
+      continue;
+    }
+    if (!isPlainObject(value)) continue;
+    const sanitized = {};
+    for (const field of ['provider', 'profile', 'model', 'apiUrl']) {
+      const fieldValue = value[field];
+      if (typeof fieldValue === 'string' && fieldValue.trim()) sanitized[field] = fieldValue.trim();
+    }
+    if (sanitized.model) out[key] = sanitized;
+  }
+  return out;
+}
+
+function sanitizeAISettings(ai) {
+  const source = isPlainObject(ai) ? ai : {};
+  const providers = {};
+  if (isPlainObject(source.providers)) {
+    for (const [id, provider] of Object.entries(source.providers)) {
+      if (!id || id === '__proto__' || id === 'prototype' || id === 'constructor' || !isPlainObject(provider)) continue;
+      providers[id] = {
+        label: typeof provider.label === 'string' ? provider.label : id,
+        enabled: provider.enabled !== false,
+        baseUrl: typeof provider.baseUrl === 'string' ? provider.baseUrl : '',
+        apiUrl: typeof provider.apiUrl === 'string' ? provider.apiUrl : '',
+        modelsUrl: typeof provider.modelsUrl === 'string' ? provider.modelsUrl : '',
+        allowedModels: sanitizeStringArray(provider.allowedModels),
+        discoveredModels: sanitizeDiscoveredModels(provider.discoveredModels),
+        lastDiscoveryAt: typeof provider.lastDiscoveryAt === 'string' ? provider.lastDiscoveryAt : '',
+        discoveryStatus: typeof provider.discoveryStatus === 'string' ? provider.discoveryStatus : '',
+        discoveryError: typeof provider.discoveryError === 'string' ? provider.discoveryError : ''
+      };
+    }
+  }
+  return {
+    apiUrl: typeof source.apiUrl === 'string' ? source.apiUrl : '',
+    providers,
+    models: sanitizeTaskMappings(source.models),
+    tasks: sanitizeTaskMappings(source.tasks)
+  };
+}
+
+function hasSyncableAISettings(ai) {
+  if (!isPlainObject(ai)) return false;
+  return !!(
+    (typeof ai.apiUrl === 'string' && ai.apiUrl.trim())
+    || (isPlainObject(ai.providers) && Object.keys(ai.providers).length)
+    || (isPlainObject(ai.models) && Object.keys(ai.models).length)
+    || (isPlainObject(ai.tasks) && Object.keys(ai.tasks).length)
+  );
 }
 
 function readAssistantIndex() {
@@ -319,12 +401,30 @@ async function applyAssistantPayload(remote, force = false) {
   });
 }
 
+function applyAISettingsPayload(remote, force = false) {
+  const remoteGroup = remote?.aiSettings;
+  if (!remoteGroup || typeof remoteGroup !== 'object') return;
+  const remoteUpdatedAt = normalizeUpdatedAt(remoteGroup.updatedAt);
+  const localSettings = loadGlobalSettings();
+  const legacyLocalUpdatedAt = hasSyncableAISettings(localSettings?.ai) ? (localSettings?.updatedAt || '') : '';
+  const localUpdatedAt = normalizeUpdatedAt(localSettings?.ai?.updatedAt, legacyLocalUpdatedAt);
+  if (!shouldApplyGroup(remoteUpdatedAt, localUpdatedAt, force)) return;
+  saveGlobalSettings({
+    ai: sanitizeAISettings(remoteGroup.settings)
+  }, {
+    preserveUpdatedAt: true,
+    updatedAtOverride: remoteUpdatedAt,
+    suppressSyncTouch: true
+  });
+}
+
 async function applySnapshotPayload(payload, force = false) {
   const remote = payload || {};
   await applyDictationPayload(remote, force);
   applyVocabularyPayload(remote, force);
   applyArticlesPayload(remote, force);
   applyQAPayload(remote, force);
+  applyAISettingsPayload(remote, force);
   await applyAssistantPayload(remote, force);
 }
 
@@ -366,6 +466,9 @@ export async function buildLocalSnapshot() {
   // Assistant（對話）
   const assistantPayload = await buildAssistantSnapshotPayload();
   const assistantUpdatedAt = getLocalUpdatedAt(ASSISTANT_UPDATED_AT_KEY, false);
+  const globalSettings = loadGlobalSettings();
+  const legacyAiSettingsUpdatedAt = hasSyncableAISettings(globalSettings?.ai) ? (globalSettings?.updatedAt || '') : '';
+  const aiSettingsUpdatedAt = normalizeUpdatedAt(globalSettings?.ai?.updatedAt, legacyAiSettingsUpdatedAt);
 
   // Compact articles before push to reduce payload
   const compactArticles = compactAnalyzedArticles(state.analyzedArticles);
@@ -398,6 +501,10 @@ export async function buildLocalSnapshot() {
         updatedAt: qaUpdatedAt,
         manifest: qaManifest,
         sets: qaSets
+      },
+      aiSettings: {
+        updatedAt: aiSettingsUpdatedAt,
+        settings: sanitizeAISettings(globalSettings?.ai)
       },
       assistant: {
         updatedAt: assistantUpdatedAt,
@@ -465,6 +572,15 @@ export function lwwMerge(localPayload, remotePayload) {
   const rqts = String(rq?.updatedAt || '');
   if (lq && (!rq || lqts > rqts)) {
     out.qa = lq;
+  }
+
+  // non-sensitive AI provider/model settings group-level LWW
+  const lai = localPayload?.aiSettings;
+  const rai = remotePayload?.aiSettings;
+  const laits = String(lai?.updatedAt || '');
+  const raits = String(rai?.updatedAt || '');
+  if (lai && (!rai || laits > raits)) {
+    out.aiSettings = lai;
   }
 
   // assistant group-level LWW
