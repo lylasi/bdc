@@ -1,4 +1,68 @@
 [
+    {
+    "id": "6a-u1-lets-give-a-hand",
+    "title": "Unit 1: Let's give a hand",
+    "description": "Ready (Second Edition) 6A — Unit 1: Let's give a hand.",
+    "difficulty": "小學6A",
+    "category": "ready reading",
+    "path": "articles/6a ready reading/u1-lets-give-a-hand.json"
+  },
+  {
+    "id": "6a-u2-terrible-disasters",
+    "title": "Unit 2: Terrible disasters",
+    "description": "Ready (Second Edition) 6A — Unit 2: Terrible disasters.",
+    "difficulty": "小學6A",
+    "category": "ready reading",
+    "path": "articles/6a ready reading/u2-terrible-disasters.json"
+  },
+  {
+    "id": "6a-u3-cooking-is-fun",
+    "title": "Unit 3: Cooking is fun",
+    "description": "Ready (Second Edition) 6A — Unit 3: Cooking is fun.",
+    "difficulty": "小學6A",
+    "category": "ready reading",
+    "path": "articles/6a ready reading/u3-cooking-is-fun.json"
+  },
+  {
+    "id": "6a-u4-we-like-stories",
+    "title": "Unit 4: We like stories",
+    "description": "Ready (Second Edition) 6A — Unit 4: We like stories.",
+    "difficulty": "小學6A",
+    "category": "ready reading",
+    "path": "articles/6a ready reading/u4-we-like-stories.json"
+  },
+  {
+    "id": "6a-u5-things-went-wrong",
+    "title": "Unit 5: Things went wrong",
+    "description": "Ready (Second Edition) 6A — Unit 5: Things went wrong.",
+    "difficulty": "小學6A",
+    "category": "ready reading",
+    "path": "articles/6a ready reading/u5-things-went-wrong.json"
+  },
+  {
+    "id": "6a-u6-discover-our-country-discover-our-world",
+    "title": "Unit 6: Discover our country, discover our world",
+    "description": "Ready (Second Edition) 6A — Unit 6: Discover our country, discover our world.",
+    "difficulty": "小學6A",
+    "category": "ready reading",
+    "path": "articles/6a ready reading/u6-discover-our-country-discover-our-world.json"
+  },
+  {
+    "id": "6a-extension-1-farm-visits-for-unit-3",
+    "title": "Extension 1: Farm Visits (For Unit 3)",
+    "description": "Ready (Second Edition) 6A — Extension 1: Farm Visits (For Unit 3).",
+    "difficulty": "小學6A",
+    "category": "ready reading",
+    "path": "articles/6a ready reading/extension-1-farm-visits-for-unit-3.json"
+  },
+  {
+    "id": "6a-extension-2-balloons-rocket-for-unit-6",
+    "title": "Extension 2: Balloons & Rocket (For Unit 6)",
+    "description": "Ready (Second Edition) 6A — Extension 2: Balloons & Rocket (For Unit 6).",
+    "difficulty": "小學6A",
+    "category": "ready reading",
+    "path": "articles/6a ready reading/extension-2-balloons-rocket-for-unit-6.json"
+  },
   {
     "id": "u1-my-first-chinese-new-year",
     "title": "My first Chinese New Year",
