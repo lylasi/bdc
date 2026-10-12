@@ -613,6 +613,7 @@
                 <p id="detail-phonetic"></p>
                 <p id="detail-meaning"></p>
                 <button id="speak-word-btn" data-i18n="learning.speakWord">朗读单词</button>
+                <button id="phonetics-open" type="button" data-i18n="phonetics.practice" hidden>拆音练习</button>
               </div>
             </div>
             <div class="example-sentences">
@@ -1480,5 +1481,12 @@
       <script src="modules/fonts/SourceHanSansSC-Normal-Min-normal.js"></script>
       <script type="module" src="main.js"></script>
     </div>
+  <dialog id="phonetics-dialog" class="phonetics-dialog" aria-labelledby="phonetics-dialog-title">
+      <header><h2 id="phonetics-dialog-title" data-i18n="phonetics.practice">拆音练习</h2>
+        <a id="phonetics-independent" target="_blank" rel="noopener" data-i18n="phonetics.independent">独立打开</a>
+        <button id="phonetics-close" type="button" data-i18n="phonetics.close">关闭</button>
+      </header>
+      <iframe id="phonetics-frame" data-i18n-title="phonetics.practice" title="拆音练习"></iframe>
+    </dialog>
   </body>
 </html>

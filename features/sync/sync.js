@@ -842,6 +842,14 @@ function showGlobalSettingsModal() {
         <div id="gs-voice-hint" class="gs-hint">${t('settings.voiceLoadHint')}</div>
       </div>
       <div class="auth-field">
+        <label class="gs-toggle">
+          <input id="gs-phonetics-enabled" type="checkbox" ${persistedSettings.phonetics?.enabled === true ? 'checked' : ''}>
+          <span>${t('phonetics.enable')}</span>
+        </label>
+        <p class="gs-hint">${t('phonetics.settingHint')}</p>
+        <a href="phonetics.html" target="_blank" rel="noopener">${t('phonetics.independent')}</a>
+      </div>
+      <div class="auth-field">
         <label>${t('settings.assistant')}</label>
         <div class="gs-asst-row">
           <label class="gs-toggle" title="${t('settings.assistantEntryTitle')}">
@@ -921,6 +929,7 @@ function showGlobalSettingsModal() {
       saveGlobalSettings({
         ...aiSettings,
         language: { interfaceLocale },
+        phonetics: { enabled: dom.modalBody.querySelector('#gs-phonetics-enabled')?.checked === true },
         tts: { use: ttsUse, baseUrlCustom: ttsUrlCustom, selectedVoices: sv },
         reading: { englishVariant: readEn, chineseVariant: readZh },
         assistant: { enabled: asstEnabled, stream: asstStream }
@@ -930,6 +939,7 @@ function showGlobalSettingsModal() {
         ttsApiKey: ttsKey
       });
       setLocale(interfaceLocale, { persist: false });
+      document.dispatchEvent(new CustomEvent('bdc:settings-change'));
       $('#gs-msg').textContent = t('settings.savedLocal');
       setTimeout(()=> ui.closeModal(), 500);
     } catch (e) {

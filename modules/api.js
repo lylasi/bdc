@@ -1468,3 +1468,31 @@ function extractReadableFallback(html) {
         return (html || '').replace(/<[^>]+>/g, '\n');
     }
 }
+
+/** Accent-specific AI reference readings, using the existing wordAnalysis task/provider. */
+export async function getWordPronunciations(word, accent, { signal, refresh = false } = {}) {
+    const { validWord, validatePronunciations, normalizePronunciationText } = await import('./phonetics-data.js');
+    word = normalizePronunciationText(word);
+    if (!validWord(word) || !['uk', 'us'].includes(accent)) throw new Error(t('phonetics.invalid'));
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    const locale = getLocale();
+    const promptVersion = getPromptVersion('dictionary.pronunciation');
+    const modelSpec = getPreferredTaskSpec(['wordAnalysis'], { settings: loadGlobalSettings() });
+    const key = { word, accent, locale, promptVersion, modelSpec };
+    if (!refresh) {
+        const hit = await cache.getCached('dictionaryPronunciation', key);
+        const readings = validatePronunciations(hit, word, accent);
+        if (readings.length) return readings;
+    }
+    const prompt = buildPrompt('dictionary.pronunciation', { wordJSON: JSON.stringify(word), accent }, { locale });
+    const data = await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis', signal, timeoutMs: 20000 });
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    const readings = validatePronunciations(data, word, accent);
+    if (!readings.length) {
+        const error = new Error(t('phonetics.lookupUnavailable'));
+        error.code = 'pronunciation_invalid_response';
+        throw error;
+    }
+    await cache.setCached('dictionaryPronunciation', key, data, 24 * 60 * 60 * 1000);
+    return readings;
+}

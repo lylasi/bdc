@@ -5,6 +5,7 @@ import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import { t } from '../../modules/i18n.js';
 import * as audio from '../../modules/audio.js';
+import { setPhoneticsWord } from '../phonetics/phonetics.js';
 
 // =================================
 // Learning Feature
@@ -76,10 +77,11 @@ function displayWordDetails() {
         clearWordDetails();
         return;
     }
-    
+
     const words = getActiveWords();
     const word = words.find(w => w.id === selectedId);
     if (word) {
+        setPhoneticsWord(word);
         dom.detailWord.textContent = word.word;
         dom.detailPhonetic.textContent = word.phonetic ? `/${word.phonetic}/` : '';
         dom.detailMeaning.textContent = word.meaning || t('learning.noMeaning');
@@ -90,6 +92,7 @@ function displayWordDetails() {
 }
 
 function clearWordDetails() {
+    setPhoneticsWord(null);
     dom.detailWord.textContent = '';
     dom.detailPhonetic.textContent = '';
     dom.detailMeaning.textContent = '';
@@ -102,7 +105,7 @@ function speakCurrentWord() {
         alert(t('learning.selectWord'));
         return;
     }
-    
+
     const words = getActiveWords();
     const word = words.find(w => w.id === selectedId);
     if (word) {
@@ -116,13 +119,13 @@ async function generateExamples() {
         alert(t('learning.selectWord'));
         return;
     }
-    
+
     const words = getActiveWords();
     const word = words.find(w => w.id === selectedId);
     if (word) {
         dom.generateExamplesBtn.disabled = true;
         dom.generateExamplesBtn.textContent = t('learning.generating');
-        
+
         try {
             const exampleSentences = await api.generateExamplesForWord(word);
             word.examples = exampleSentences;
@@ -162,11 +165,11 @@ function displayExamples(word) {
         let processedChinese = example.chinese;
 
         const sortedAlignment = [...example.alignment].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
-        
+
         sortedAlignment.forEach((pair) => {
             if (pair.en && pair.zh) {
                 const pairId = `${word.id}-${index}-${pair.en.replace(/[^a-zA-Z0-9]/g, '')}`;
-                
+
                 const enRegex = new RegExp(`(?<!<span[^>]*>)\\b(${escapeRegex(pair.en)})\\b(?!<\\/span>)`, 'gi');
                 processedEnglish = processedEnglish.replace(enRegex, `<span class="interactive-word" data-pair-id="${pairId}">${pair.en}</span>`);
 
@@ -186,7 +189,7 @@ function displayExamples(word) {
 async function checkSentence() {
     const selectedId = dom.wordSelect.value;
     const userSentence = dom.sentenceInput.value.trim();
-    
+
     if (!selectedId) {
         alert(t('learning.selectWord'));
         return;
@@ -195,7 +198,7 @@ async function checkSentence() {
         alert(t('learning.enterSentence'));
         return;
     }
-    
+
     const words = getActiveWords();
     const word = words.find(w => w.id === selectedId);
     if (word) {
@@ -209,7 +212,7 @@ async function checkSentence() {
         dom.checkSentenceBtn.disabled = true;
         dom.sentenceFeedback.textContent = t('learning.checking');
         dom.sentenceFeedback.className = '';
-        
+
         try {
             const feedback = await api.checkUserSentence(word.word, userSentence);
             if (/^(正確|正确)/.test(feedback)) {
@@ -234,8 +237,7 @@ async function checkSentence() {
 // --- Helper Functions ---
 
 function getActiveWords() {
-    const activeBook = state.vocabularyBooks.find(b => b.id === state.activeBookId);
-    return activeBook ? activeBook.words : [];
+    return getSelectedWords(dom.learningBookSelector) || [];
 }
 
 function getSelectedWords(container) {
