@@ -12,6 +12,7 @@ import { initOCR } from './features/ocr/ocr.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
 import { initSync } from './features/sync/sync.js';
 import { initAiAssistant } from './features/assistant/assistant.js';
+import { initPhonetics } from './features/phonetics/phonetics.js';
 import { initI18n, t } from './modules/i18n.js';
 
 const MODULE_ALIAS_TO_BUTTON_ID = {
@@ -139,6 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 4. 初始化所有功能模块
     initVocabulary();
     initLearning();
+    initPhonetics();
     initDictation();
     initQuiz();
     initArticle();
@@ -147,7 +149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initSync();
     // 僅注入 UI，不修改全局 DOM/CSS
     try { initAiAssistant(); } catch (_) {}
-    
+
     // 5. 填充初始视图
     // 确保在导航设置前，为默认显示的模块（如此处为学习模块）填充内容
     populateLearningBookSelector();

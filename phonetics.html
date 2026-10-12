@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>单词拆音</title><link rel="stylesheet" href="features/phonetics/phonetics.css"><link rel="icon" href="data:,">
+</head>
+<body>
+  <main class="phonetics-shell">
+    <nav><a href="index.html" data-i18n="phonetics.back">返回背单词</a><a href="phonetic-chart/index.html" data-i18n="phonetics.chart">完整音标表</a></nav>
+    <h1 data-i18n="phonetics.title">单词拆音</h1>
+    <form id="phonetic-form">
+      <label for="phonetic-word" data-i18n="phonetics.word">英文单词或短语</label>
+      <div class="input-row"><input id="phonetic-word" required maxlength="80" autocomplete="off" autocapitalize="none" spellcheck="false"><button data-i18n="phonetics.search">查询与拆音</button></div>
+      <div class="accent-row"><label><input type="radio" name="accent" value="uk" checked><span data-i18n="phonetics.uk">英音</span></label><label><input type="radio" name="accent" value="us"><span data-i18n="phonetics.us">美音</span></label></div>
+    </form>
+    <p id="phonetic-status" role="status" aria-live="polite"></p>
+    <p id="phonetic-reference" class="muted" hidden></p>
+    <div id="phonetic-options" class="options"></div>
+    <section id="phonetic-result" hidden>
+      <h2 id="phonetic-title"></h2>
+      <div class="actions"><button id="phonetic-play" type="button" data-i18n="phonetics.play">听单词发音</button><button id="phonetic-stop" type="button" data-i18n="phonetics.stop">停止播放</button></div>
+      <p class="muted" data-i18n="phonetics.note">单词发音使用设置中选择的渠道和音源；多读音词的朗读可能与所选音标不同。独立音示范不等同于自然连读。</p>
+      <p id="phonetic-ipa" class="ipa"></p><p id="phonetic-source" class="muted"></p>
+      <p id="phonetic-sound-label" data-i18n="phonetics.sounds" hidden>点一个音，听示范</p>
+      <div id="phonetic-sounds" class="sounds"></div>
+      <button id="phonetic-sequence" type="button" data-i18n="phonetics.sequence" hidden>逐音跟读</button>
+      <div id="phonetic-art" class="art-frames"></div>
+      <p id="phonetic-audio-status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+  <dialog id="art-viewer" aria-labelledby="art-viewer-title">
+    <header class="viewer-bar"><strong id="art-viewer-title" data-i18n="phonetics.artTitle"></strong><button id="art-close" type="button" data-i18n="phonetics.close"></button></header>
+    <div id="art-stage"><img id="art-image" draggable="false" alt=""></div>
+    <p id="art-caption" aria-live="polite"></p>
+    <div class="viewer-controls"><button id="art-prev" type="button" data-i18n="phonetics.previous"></button><span id="art-count" aria-live="polite"></span><button id="art-next" type="button" data-i18n="phonetics.next"></button></div>
+    <div class="viewer-controls"><button id="art-out" type="button" data-i18n-aria-label="phonetics.zoomOut">−</button><button id="art-reset" type="button">100%</button><button id="art-in" type="button" data-i18n-aria-label="phonetics.zoomIn">＋</button></div>
+    <p class="muted viewer-hint" data-i18n="phonetics.artHint"></p>
+  </dialog>
+  <script src="phonetic-chart/data.js"></script><script src="phonetic-chart/word-audio.js"></script><script src="phonetic-chart/word-split.js"></script>
+  <script src="phonetic-chart/articulation.js"></script>
+  <script type="module" src="features/phonetics/page.js"></script>
+</body>
+</html>

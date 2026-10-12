@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%" role="img" aria-labelledby="l-top-title l-top-desc">
+  <title id="l-top-title">齿龈边近音 /l/ (俯视气流视角) 卡通示意</title>
+  <desc id="l-top-desc">口腔俯视示意图：上方为嘴前（牙齿与齿龈），下方为嘴后（咽喉）；粉色为舌头；舌尖在正前方中央与齿龈轻轻贴合（中央接触闭锁区）；蓝色虚线箭头展示气流从舌头两侧绕行逸出并向前流出（示例画两侧通道，实际可为一侧或两侧），绝不指向鼻腔。</desc>
+  <defs>
+    <marker id="arrow-l-top" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#2563EB" />
+    </marker>
+    <linearGradient id="tongueGrad-ltop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFA4B6" />
+      <stop offset="100%" stop-color="#FF6B8B" />
+    </linearGradient>
+  </defs>
+
+  <!-- 背景底卡 -->
+  <rect width="400" height="300" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5" />
+
+  <!-- 顶部特性标签 -->
+  <rect x="130" y="12" width="190" height="22" rx="11" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1" />
+  <text x="225" y="23" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="#3730A3">l · 齿龈边音气流俯视示意 (Top View)</text>
+
+  <!-- 朝向指示标签 (嘴前 / 嘴后) -->
+  <g class="orientation-indicators">
+    <!-- 上方：嘴前 -->
+    <rect x="14" y="44" width="104" height="20" rx="10" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1" />
+    <text x="66" y="57.5" text-anchor="middle" dominant-baseline="central" font-size="8.5" font-weight="700" fill="#334155">↑ 嘴前 (牙齿·齿龈)</text>
+
+    <!-- 下方：嘴后 -->
+    <rect x="14" y="218" width="104" height="20" rx="10" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1" />
+    <text x="66" y="231.5" text-anchor="middle" dominant-baseline="central" font-size="8.5" font-weight="700" fill="#334155">↓ 嘴后 (靠近咽部)</text>
+  </g>
+
+  <!-- 主解剖结构示意 (中央俯视) -->
+  <g class="top-view-figure" transform="translate(20, 0)">
+
+    <!-- 上牙弓与齿龈轮廓线 (马蹄形弓，位于前方顶部) -->
+    <path d="M 85 175 Q 85 68 205 68 Q 325 68 325 175" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" />
+
+    <!-- 示意牙齿 (白色小方块排列在牙弓外沿) -->
+    <rect x="195" y="60" width="10" height="7" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="207" y="61" width="10" height="7" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="183" y="61" width="10" height="7" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="169" y="65" width="10" height="7" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="221" y="65" width="10" height="7" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="153" y="73" width="9" height="8" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="238" y="73" width="9" height="8" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="135" y="86" width="9" height="9" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="256" y="86" width="9" height="9" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="118" y="106" width="10" height="10" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="272" y="106" width="10" height="10" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="102" y="132" width="10" height="11" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+    <rect x="288" y="132" width="10" height="11" rx="1" fill="#FFFFFF" stroke="#64748B" stroke-width="0.8" />
+
+    <!-- 舌体 (俯视粉色舌肌：舌根在下方 y=225，舌尖向前延伸紧贴齿龈中央 y=76) -->
+    <path d="M 148 226 Q 130 162 138 122 Q 155 77 205 77 Q 255 77 272 122 Q 280 162 262 226 Z" fill="url(#tongueGrad-ltop)" stroke="#E11D48" stroke-width="2" stroke-linejoin="round" />
+
+    <!-- 舌正中沟高光轮廓线 -->
+    <path d="M 205 100 L 205 195" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.75" />
+
+    <!-- 中央接触闭锁区 (红色标记：舌尖轻贴齿龈，正中阻断) -->
+    <path d="M 186 76 Q 205 74 224 76 L 222 84 Q 205 82 188 84 Z" fill="#EF4444" stroke="#B91C1C" stroke-width="1.6" />
+    <line x1="205" y1="70" x2="205" y2="76" stroke="#B91C1C" stroke-width="1.8" stroke-dasharray="2 1" />
+
+    <!-- 侧面开放通气道底色浅蓝示意带 (左侧与右侧) -->
+    <path d="M 122 228 Q 112 195 120 150 Q 128 120 144 102 Q 154 93 164 88" fill="none" stroke="#DBEAFE" stroke-width="12" stroke-linecap="round" opacity="0.6" />
+    <path d="M 288 228 Q 298 195 290 150 Q 282 120 266 102 Q 256 93 246 88" fill="none" stroke="#DBEAFE" stroke-width="12" stroke-linecap="round" opacity="0.6" />
+
+    <!-- 左侧气流流动箭头 (从喉部来，绕过左侧舌缘向前喷出) -->
+    <path d="M 122 228 Q 112 195 120 150 Q 128 120 144 102 Q 154 93 164 88" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 3" marker-end="url(#arrow-l-top)" />
+
+    <!-- 右侧气流流动箭头 (从喉部来，绕过右侧舌缘向前喷出) -->
+    <path d="M 288 228 Q 298 195 290 150 Q 282 120 266 102 Q 256 93 246 88" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 3" marker-end="url(#arrow-l-top)" />
+
+    <!-- 喉部来气入口提示 (底部截断) -->
+    <line x1="168" y1="236" x2="242" y2="236" stroke="#3B82F6" stroke-width="1.5" stroke-dasharray="3 3" />
+    <text x="205" y="246" font-size="8" fill="#64748B" text-anchor="middle">来气从两侧向前通过</text>
+
+  </g>
+
+  <!-- 说明标注组 -->
+  <g class="organ-labels" font-family="system-ui, -apple-system, sans-serif">
+    <!-- 中央接触闭锁区引线与标签 -->
+    <path d="M 225 44 L 225 60 L 225 72" fill="none" stroke="#B91C1C" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="225" cy="74" r="2.2" fill="#B91C1C" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="238" y="38" width="106" height="18" rx="4" fill="#FEF2F2" stroke="#FCA5A5" stroke-width="0.8" />
+    <text x="291" y="47" text-anchor="middle" dominant-baseline="central" font-size="8.5" font-weight="700" fill="#B91C1C">中央接触区 (舌尖贴齿龈)</text>
+
+    <!-- 舌头标签 (指向舌体中央) -->
+    <path d="M 24 130 L 150 130 L 195 145" fill="none" stroke="#64748B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="197" cy="146" r="2.2" fill="#475569" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="24" y="121" width="36" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8" />
+    <text x="42" y="130" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="600" fill="#334155">舌头</text>
+
+    <!-- 左侧通气道说明 -->
+    <path d="M 24 165 L 110 165 L 140 150" fill="none" stroke="#2563EB" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="140" cy="150" r="2.2" fill="#2563EB" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="24" y="156" width="68" height="18" rx="4" fill="#EFF6FF" stroke="#93C5FD" stroke-width="0.8" />
+    <text x="58" y="165" text-anchor="middle" dominant-baseline="central" font-size="8.5" font-weight="700" fill="#1D4ED8">左侧通气道</text>
+
+    <!-- 右侧通气道说明 -->
+    <path d="M 330 165 L 316 165 L 310 150" fill="none" stroke="#2563EB" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="310" cy="150" r="2.2" fill="#2563EB" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="330" y="156" width="56" height="18" rx="4" fill="#EFF6FF" stroke="#93C5FD" stroke-width="0.8" />
+    <text x="358" y="165" text-anchor="middle" dominant-baseline="central" font-size="8.5" font-weight="700" fill="#1D4ED8">右侧通气道</text>
+
+    <!-- 呼气方向 -->
+    <rect x="330" y="80" width="56" height="18" rx="4" fill="#EFF6FF" stroke="#93C5FD" stroke-width="0.8" />
+    <text x="358" y="89" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="700" fill="#1D4ED8">侧向气流</text>
+    <path d="M 330 89 L 306 89 L 272 90" fill="none" stroke="#2563EB" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 2" />
+
+  </g>
+
+  <!-- 发音口诀 -->
+  <text x="200" y="266" text-anchor="middle" font-size="9" font-weight="600" fill="#475569">舌尖轻贴齿龈中央 · 气流从舌头两侧绕过向前流出 · 示例为双侧流出</text>
+
+  <!-- 底部说明 -->
+  <text x="200" y="284" text-anchor="middle" font-size="8.5" fill="#94A3B8">动作草图 · 俯视视角：同一发音的双视角互补，非先后动作 · 待专业审核</text>
+</svg>

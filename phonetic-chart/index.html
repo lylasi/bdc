@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英语国际音标乐园 - Phonetic Chart</title>
+  <meta name="description" content="基于牛津学习词典习惯的互动英语音标学习表，45组音标卡片支持英美独立试听与真实差异对照。">
+  <link rel="stylesheet" href="styles.css?v=ui-review-2">
+  <link rel="stylesheet" href="words.css?v=ui-review-2">
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- 顶部应用栏 -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">英语国际音标乐园</h1>
+          <p class="brand-subtitle">英美独立试听 · 45组音标卡片</p>
+        </div>
+      </div>
+
+      <nav class="page-nav" aria-label="学习版面"><a href="index.html" aria-current="page">音标表</a><a href="../phonetics.html">单词拆音</a></nav>
+
+      <!-- 顶栏：默认试听口音控制器 -->
+      <div class="header-controls">
+        <div class="accent-switch-wrapper" role="group" aria-label="默认试听口音选择">
+          <span class="control-label" id="accent-label">默认试听口音：</span>
+          <div class="segmented-control" role="radiogroup" aria-labelledby="accent-label">
+            <button
+              type="button"
+              id="accent-btn-uk"
+              class="segment-btn active"
+              role="radio"
+              aria-checked="true"
+              data-accent="uk"
+              title="设置默认试听口音为英音 (快捷键 1)"
+            >
+              <span class="flag-badge" aria-hidden="true">🇬🇧</span>
+              <span class="btn-text">英音 (UK)</span>
+            </button>
+            <button
+              type="button"
+              id="accent-btn-us"
+              class="segment-btn"
+              role="radio"
+              aria-checked="false"
+              data-accent="us"
+              title="设置默认试听口音为美音 (快捷键 2)"
+            >
+              <span class="flag-badge" aria-hidden="true">🇺🇸</span>
+              <span class="btn-text">美音 (US)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="system-banner" aria-label="使用提示">
+      <div class="compact-notation">
+        <span>点音标试听 · 英美音可切换</span>
+        <button type="button" class="info-trigger" data-help="notation" aria-haspopup="dialog">牛津记音 <span class="info-mark" aria-hidden="true">i</span></button>
+      </div>
+      <button type="button" class="info-trigger shortcuts-item" data-help="keyboard" aria-haspopup="dialog">快捷键 <span class="info-mark" aria-hidden="true">i</span></button>
+    </section>
+
+    <nav class="mobile-category-nav" aria-label="快速跳转音标分类">
+      <a href="#block-short">基础元音</a><a href="#block-long">补充元音</a>
+      <a href="#block-diphthong">双元音</a><a href="#block-rhotic">带 r 元音</a><a href="#group-consonants">辅音</a>
+    </nav>
+    <p class="mobile-instruction"><span>点音标查看详情 · 点小喇叭听例词</span><button type="button" class="info-trigger" data-help="notation" aria-haspopup="dialog">牛津记音</button></p>
+    <!-- 主展示区：音标表格与详情侧栏 -->
+    <div class="main-container">
+      <main class="chart-viewport" id="chart-viewport" tabindex="-1">
+        <!-- 元音与对应大组 -->
+        <section class="category-group vowels-group" id="group-vowels" aria-labelledby="heading-vowels">
+          <div class="group-header vowel-theme">
+            <div class="group-title-wrap">
+              <span class="group-badge">Vowels</span>
+              <h2 id="heading-vowels" class="group-title">元音与对应组 (气流通畅，声带振动)</h2>
+            </div>
+            <span class="group-count" id="vowels-count">共 0 张卡</span>
+          </div>
+
+          <!-- 单元音(基础组) -->
+          <div class="subcategory-block" id="block-short">
+            <h3 class="subcategory-title">
+              <span class="sub-dot short-dot"></span>
+              单元音(基础组) <span class="sub-en">Basic Monophthongs</span>
+            </h3>
+            <div class="phoneme-grid" id="grid-short" role="region" aria-label="单元音(基础组)列表"></div>
+          </div>
+
+          <!-- 单元音(补充组) -->
+          <div class="subcategory-block" id="block-long">
+            <h3 class="subcategory-title">
+              <span class="sub-dot long-dot"></span>
+              单元音(补充组) <span class="sub-en">Supplementary Monophthongs</span>
+            </h3>
+            <div class="phoneme-grid" id="grid-long" role="region" aria-label="单元音(补充组)列表"></div>
+          </div>
+
+          <!-- 双元音与英美对应 -->
+          <div class="subcategory-block" id="block-diphthong">
+            <h3 class="subcategory-title">
+              <span class="sub-dot diphthong-dot"></span>
+              双元音与英美对应 <span class="sub-en">Diphthongs &amp; Glides</span>
+            </h3>
+            <div class="phoneme-grid" id="grid-diphthong" role="region" aria-label="双元音与英美对应列表"></div>
+          </div>
+
+          <!-- 带r音色的元音 -->
+          <div class="subcategory-block" id="block-rhotic">
+            <h3 class="subcategory-title">
+              <span class="sub-dot rhotic-dot"></span>
+              带r音色的元音 <span class="sub-en">R-colored Vowels</span>
+            </h3>
+            <div class="phoneme-grid" id="grid-rhotic" role="region" aria-label="带r音色的元音列表"></div>
+          </div>
+        </section>
+
+        <!-- 辅音大组 -->
+        <section class="category-group consonants-group" id="group-consonants" aria-labelledby="heading-consonants">
+          <div class="group-header consonant-theme">
+            <div class="group-title-wrap">
+              <span class="group-badge">Consonants</span>
+              <h2 id="heading-consonants" class="group-title">辅音组 (成对清浊对比与气流阻碍)</h2>
+            </div>
+            <span class="group-count" id="consonants-count">共 0 张卡</span>
+          </div>
+
+          <div class="subcategory-block" id="block-consonant">
+            <div class="phoneme-grid" id="grid-consonant" role="region" aria-label="辅音列表"></div>
+          </div>
+        </section>
+
+        <!-- 数据加载异常或空状态保底提示 -->
+        <div class="empty-state-card" id="empty-state" hidden>
+          <div class="empty-icon" aria-hidden="true">⚠️</div>
+          <h3 class="empty-title">音标数据加载中或缺失</h3>
+          <p class="empty-desc">正在等待本地音标数据就绪，若长时间未显示，请检查 data.js 资源是否正常引入。</p>
+        </div>
+      </main>
+
+      <!-- 详情检查器 (侧边栏 / 窄屏时置顶) -->
+      <aside class="inspector-panel" id="inspector-panel" aria-label="当前音标详情与真人例词检查器">
+        <div class="inspector-card">
+          <!-- 检查器头部元信息 -->
+          <div class="inspector-header">
+            <span class="inspector-tag" id="inspector-accent-badge">🇬🇧 英音 (UK)</span>
+            <span class="inspector-category-badge" id="inspector-category-badge">音标详情</span>
+          </div>
+
+          <!-- 未选中卡片时的引导占位 -->
+          <div class="inspector-idle" id="inspector-idle">
+            <div class="idle-illustration" aria-hidden="true">👆</div>
+            <h3 class="idle-title">轻点音标卡片开启学习</h3>
+            <p class="idle-tip">点击卡片主区域或 🇬🇧/🇺🇸 按钮，收听示范音频，查看例词真人发音、发音解剖示意与英美记音对照。</p>
+          </div>
+
+          <!-- 选中时的详情内容 -->
+          <div class="inspector-active" id="inspector-active" hidden>
+            <!-- 大符号展示区 -->
+            <div class="inspector-symbol-container">
+              <span class="inspector-symbol ipa-font" id="inspector-symbol">/iː/</span>
+              <div class="playing-pulse-ring" id="inspector-pulse" aria-hidden="true"></div>
+            </div>
+
+            <!-- 符号对照说明条 (当英美记音不同或有对应关系时) -->
+            <div class="inspector-symbol-contrast" id="inspector-symbol-contrast" hidden></div>
+
+            <!-- 双音试听与重播控制栏 -->
+            <div class="inspector-action-row">
+              <div class="inspector-dual-audition">
+                <button
+                  type="button"
+                  class="inspector-audition-btn btn-uk"
+                  id="inspector-play-uk"
+                  aria-label="试听英音示范"
+                  title="试听英音示范"
+                >
+                  <span class="btn-flag" aria-hidden="true">🇬🇧</span>
+                  <span class="btn-text" id="inspector-play-uk-label">试听英音</span>
+                </button>
+                <button
+                  type="button"
+                  class="inspector-audition-btn btn-us"
+                  id="inspector-play-us"
+                  aria-label="试听美音示范"
+                  title="试听美音示范"
+                >
+                  <span class="btn-flag" aria-hidden="true">🇺🇸</span>
+                  <span class="btn-text" id="inspector-play-us-label">试听美音</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="replay-button"
+                id="replay-btn"
+                aria-label="重播当前发音 (快捷键 R)"
+                title="重播当前发音 (快捷键 R)"
+              >
+                <span class="replay-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </span>
+                <span class="replay-label" id="replay-btn-label">重播发音</span>
+                <span class="key-shortcut" aria-hidden="true">R</span>
+              </button>
+            </div>
+
+            <!-- 播放状态信息条 -->
+            <div class="playback-status-bar" id="playback-status-bar" role="status" aria-live="polite">
+              <span class="status-indicator-dot" id="status-dot"></span>
+              <span class="status-text" id="status-text">就绪</span>
+            </div>
+
+            <!-- 音频缺失或变体特别说明提示条 -->
+            <div class="inspector-notice-box" id="inspector-notice" hidden>
+              <span class="notice-icon" aria-hidden="true">ℹ️</span>
+              <span class="notice-text" id="inspector-notice-text"></span>
+            </div>
+
+            <!-- 经典例词与真人整词发音对照 -->
+            <div class="inspector-section example-section">
+              <div class="section-label">🎯 经典例词 · 真人发音对照</div>
+              <div class="example-box">
+                <div class="example-header">
+                  <span class="example-word" id="inspector-example">—</span>
+                  <span class="example-hint-tag">英美真人原声</span>
+                </div>
+                <div class="example-compare-grid">
+                  <!-- UK 行 -->
+                  <div class="example-accent-row" id="inspector-word-row-uk">
+                    <div class="accent-meta">
+                      <span class="accent-flag" aria-hidden="true">🇬🇧</span>
+                      <span class="accent-name">英音</span>
+                      <span class="inspector-word-ipa ipa-font" id="inspector-word-ipa-uk">—</span>
+                    </div>
+                    <button type="button" class="word-play-btn inspector-word-btn" id="inspector-word-btn" data-accent="uk" hidden>
+                      <span class="word-speaker-icon" aria-hidden="true">🔊</span>
+                      <span class="word-accent-tag" id="inspector-word-accent">UK</span>
+                      <span class="word-kind-tag" id="inspector-word-kind">真人</span>
+                    </button>
+                  </div>
+                  <!-- US 行 -->
+                  <div class="example-accent-row" id="inspector-word-row-us">
+                    <div class="accent-meta">
+                      <span class="accent-flag" aria-hidden="true">🇺🇸</span>
+                      <span class="accent-name">美音</span>
+                      <span class="inspector-word-ipa ipa-font" id="inspector-word-ipa-us">—</span>
+                    </div>
+                    <button type="button" class="word-play-btn inspector-word-btn btn-us-word" id="inspector-word-btn-us" data-accent="us" hidden>
+                      <span class="word-speaker-icon" aria-hidden="true">🔊</span>
+                      <span class="word-accent-tag" id="inspector-word-accent-us">US</span>
+                      <span class="word-kind-tag" id="inspector-word-kind-us">真人</span>
+                    </button>
+                  </div>
+                </div>
+                <!-- 词典来源参考折叠 -->
+                <details class="example-dict-details" id="inspector-example-dict-details" hidden>
+                  <summary class="example-dict-summary">词典真人例词参考</summary>
+                  <div class="example-dict-body" id="inspector-example-dict-body"></div>
+                </details>
+              </div>
+            </div>
+
+            <button type="button" id="paired-sound-btn" class="paired-sound-btn" hidden></button>
+
+            <!-- 发音示意区 (在详情 hint 前增加发音示意区，当前card+accent变化同步刷新) -->
+            <div class="inspector-section articulation-section" id="inspector-articulation-section" hidden>
+              <div class="section-label">👅 发音示意预览</div>
+              <div class="articulation-card" id="articulation-card">
+                <!-- 示意区头部：标题与声带振动标签 -->
+                <div class="art-header">
+                  <div class="art-title-wrap">
+                    <h4 class="art-title" id="art-title">—</h4>
+                    <span class="art-voicing-badge" id="art-voicing-badge">声带振动</span>
+                  </div>
+                  <span class="art-mode-tag" id="art-mode-tag" hidden></span>
+                </div>
+
+                <!-- 简短动作概述 -->
+                <p class="art-summary" id="art-summary">—</p>
+
+                <div class="art-guide-entry"><button type="button" class="info-trigger" data-help="art" aria-haspopup="dialog">动作草图 <span class="info-mark" aria-hidden="true">i</span></button><span>点图放大</span></div>
+
+                <div id="art-step-controls" class="art-step-controls" role="group" aria-label="选择动作阶段" hidden></div>
+                <!-- 多帧/单帧示意图容器 -->
+                <div class="art-frames-container" id="art-frames-container" role="region" aria-label="发音示意图集"></div>
+
+                <!-- 气流走向提示 -->
+                <div class="art-hint-box art-airflow-box" id="art-airflow-box" hidden>
+                  <span class="art-hint-icon" aria-hidden="true">💨</span>
+                  <div class="art-hint-content">
+                    <span class="art-hint-label">气流怎么走：</span>
+                    <span class="art-hint-text" id="art-airflow-text"></span>
+                  </div>
+                </div>
+
+                <!-- 对比练习提示 -->
+                <div class="art-hint-box art-contrast-box" id="art-contrast-box" hidden>
+                  <span class="art-hint-icon" aria-hidden="true">🎯</span>
+                  <div class="art-hint-content">
+                    <span class="art-hint-label">对比着练：</span>
+                    <span class="art-hint-text" id="art-contrast-text"></span>
+                    <div class="art-contrast-words" id="art-contrast-words" hidden></div>
+                  </div>
+                </div>
+
+                <!-- 唇形辅助提示 -->
+                <div class="art-hint-box" id="art-lip-box">
+                  <span class="art-hint-icon" aria-hidden="true">👄</span>
+                  <div class="art-hint-content">
+                    <span class="art-hint-label">唇形提示：</span>
+                    <span class="art-hint-text" id="art-lip-hint">—</span>
+                  </div>
+                </div>
+
+                <!-- 教学体系说明 -->
+                <div class="art-note-box" id="art-note-box">
+                  <span class="art-note-icon" aria-hidden="true">💡</span>
+                  <p class="art-note-text" id="art-note">—</p>
+                </div>
+
+                <!-- 折叠来源参考链接 -->
+                <details class="art-sources-details" id="art-sources-details">
+                  <summary class="art-sources-summary">发音示意参考来源</summary>
+                  <ul class="art-sources-list" id="art-sources-list"></ul>
+                </details>
+              </div>
+            </div>
+
+            <!-- 发音技巧提示 -->
+            <div class="inspector-section hint-section">
+              <div class="section-label">👄 发音小窍门</div>
+              <div class="hint-box">
+                <p class="hint-text" id="inspector-hint">—</p>
+              </div>
+            </div>
+
+            <!-- 卡片体系说明 (card.note) -->
+            <div class="inspector-section note-section" id="inspector-note-section" hidden>
+              <div class="section-label">📝 体系说明</div>
+              <div class="note-box">
+                <p class="note-text" id="inspector-note">—</p>
+              </div>
+            </div>
+
+            <!-- 其他常见写法 (details折叠收纳) -->
+            <div class="inspector-section aliases-section">
+              <details class="aliases-details" id="inspector-aliases-details">
+                <summary class="aliases-summary">其他常见写法</summary>
+                <div class="aliases-body" id="inspector-aliases-body">
+                  <p class="aliases-empty">暂无其他写法</p>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 底部简要版权与说明 -->
+    <footer class="app-footer">
+      <p>本地试听版 · 统一遵循牛津学习词典音标习惯 · 45组音标卡片（英音 44 条录音，美音 44 条录音）</p>
+      <p>录音来源：<a href="https://github.com/xiaozhah/phoneme_audio" target="_blank" rel="noopener">英音示范（项目标注来源为 Oxford）</a> · <a href="https://soundsamerican.net/" target="_blank" rel="noopener">美音示范 Sounds American</a> · <a href="SOURCES.md">来源与使用说明</a></p>
+      <p>💡 建议每天大声朗读 5 分钟，体会舌位与唇形变化 · 专为小学英语语音启蒙设计</p>
+    </footer>
+  </div>
+
+  <dialog id="mobile-detail-dialog" class="mobile-detail-dialog" aria-labelledby="mobile-detail-title">
+    <div class="mobile-detail-shell">
+      <header class="mobile-detail-header">
+        <h2 id="mobile-detail-title">音标详情</h2>
+        <button type="button" id="mobile-detail-close" aria-label="关闭详情，返回音标表" autofocus>关闭 ✕</button>
+      </header>
+      <div class="mobile-detail-modes" role="group" aria-label="详情内容">
+        <button type="button" id="mobile-mode-listen" aria-pressed="true">试听与例词</button>
+        <button type="button" id="mobile-mode-art" aria-pressed="false">发音图</button>
+      </div>
+      <div id="mobile-detail-body" class="mobile-detail-body"></div>
+      <footer class="mobile-detail-nav">
+        <button type="button" id="mobile-detail-prev">← 上一个</button>
+        <span id="mobile-detail-position" aria-live="polite"></span>
+        <button type="button" id="mobile-detail-next">下一个 →</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- 原生 dialog 大图预览弹窗 (含关闭按钮、无障碍支持、Escape处理、焦点返回) -->
+  <dialog id="articulation-dialog" class="articulation-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <div class="dialog-title-wrap">
+          <h3 id="dialog-title" class="dialog-title">发音示意放大预览</h3>
+          <span id="dialog-badge" class="dialog-badge"></span>
+        </div>
+        <button type="button" id="dialog-close-btn" class="dialog-close-btn" aria-label="关闭预览弹窗">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div id="dialog-frame-controls" class="art-step-controls dialog-frame-controls" role="group" aria-label="切换或播放示意图" hidden></div>
+      <div class="dialog-body">
+        <div class="dialog-image-box">
+          <img id="dialog-image" alt="" class="dialog-image" />
+          <div id="dialog-fallback" class="dialog-fallback" hidden>
+            <span class="fallback-icon" aria-hidden="true">⚠️</span>
+            <span class="fallback-text">示意图无法加载，请检查文件是否存在</span>
+          </div>
+        </div>
+        <div class="dialog-info">
+          <div class="art-guide-entry"><button type="button" class="info-trigger" data-help="art" aria-haspopup="dialog">动作草图 <span class="info-mark" aria-hidden="true">i</span></button></div>
+          <p class="dialog-frame-label" id="dialog-frame-label"></p>
+          <p class="dialog-frame-desc" id="dialog-frame-desc"></p>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
+    <header class="help-header"><h3 id="help-title"></h3><button type="button" id="help-close" class="info-trigger" aria-label="关闭说明">关闭 ✕</button></header>
+    <div id="help-body" class="help-body"></div>
+  </dialog>
+  <script src="help.js?v=compact-1" defer></script>
+
+  <!-- 全局轻提示 Toast 容器 -->
+  <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- 脚本加载顺序：主代理负责 data.js、word-audio.js 与 audio.js，word-audio.js 在 audio.js 前加载 -->
+  <script src="data.js?v=ur-1"></script>
+  <script src="word-audio.js?v=ur-1"></script>
+  <script src="audio.js?v=ur-1"></script>
+  <script src="articulation.js?v=ur-1"></script>
+  <script src="mobile-details.js?v=ur-1"></script>
+  <script src="ui.js?v=compact-1" defer></script>
+</body>
+</html>

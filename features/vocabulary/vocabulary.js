@@ -5,6 +5,8 @@ import * as ui from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
 import { t } from '../../modules/i18n.js';
+import { loadGlobalSettings } from '../../modules/settings.js';
+import { openPhonetics } from '../phonetics/phonetics.js';
 // 提供登入入口（已登入的使用者可直接同步雲端單詞本）
 import { openLoginModal as openSyncLoginModal } from '../sync/sync.js';
 
@@ -46,6 +48,10 @@ export function initVocabulary() {
     renderVocabBookList();
     updateActiveBookView();
     document.addEventListener('bdc:locale-change', refreshVocabularyView);
+    document.addEventListener('bdc:settings-change', renderWordList);
+    window.addEventListener('storage', event => {
+        if (event.key === 'pen_global_settings') renderWordList();
+    });
 
     // 首次啟動且沒有任何單詞本時，提醒用戶導入
     try {
@@ -778,7 +784,7 @@ async function saveBookWithAICompletion(bookId = null) {
             storage.saveArticleMeta(meta);
         } catch (_) { /* ignore meta update error */ }
     }
-    
+
     if (!bookId) {
         state.vocabularyBooks.push(book);
         state.setActiveBookId(book.id);
@@ -797,7 +803,7 @@ async function processWordsWithAI(book, wordsText) {
 
     for (let i = 0; i < preliminaryWords.length; i++) {
         let wordObject = preliminaryWords[i];
-        
+
         if (!wordObject.meaning.trim() || !wordObject.phonetic.trim()) {
             if(progressContainer) progressContainer.innerHTML = `<p>正在分析: ${wordObject.word} (${i + 1}/${preliminaryWords.length})</p>`;
             try {
@@ -817,7 +823,7 @@ async function processWordsWithAI(book, wordsText) {
         }
         finalWords.push(wordObject);
     }
-    
+
     book.words = finalWords;
     if(progressContainer) progressContainer.innerHTML = `<p style="color: green;">處理完成！</p>`;
 }
@@ -903,16 +909,16 @@ function exportActiveVocabBook() {
     const content = JSON.stringify(bookData, null, 2);
     const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = `${activeBook.name.replace(/[\\/:\*\?"<>\|]/g, '_')}.json`;
     document.body.appendChild(a);
     a.click();
-    
+
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     alert(t('vocabulary.exported', { name: activeBook.name }));
 }
 
@@ -964,7 +970,7 @@ function openModalForMergeBooks() {
 
     const mergeBookList = dom.modalBody.querySelector('#merge-book-list');
     const newBookNameInput = dom.modalBody.querySelector('#modal-merge-book-name');
-    
+
     mergeBookList.addEventListener('click', (e) => {
         const item = e.target.closest('.import-preset-item-wrapper');
         if (item) {
@@ -977,7 +983,7 @@ function openModalForMergeBooks() {
 
     dom.modalBody.querySelector('#confirm-merge-btn').onclick = () => mergeSelectedBooks();
     dom.modalBody.querySelector('.cancel-btn').onclick = ui.closeModal;
-    
+
     ui.openModal();
     updateMergePreview();
 }
@@ -1025,7 +1031,7 @@ function mergeSelectedBooks() {
 
     const mergedWords = [];
     const seenWords = new Set();
-    
+
     selectedItems.forEach(item => {
         const bookId = item.dataset.bookId;
         const book = state.vocabularyBooks.find(b => b.id === bookId);
@@ -1075,6 +1081,7 @@ function renderWordList() {
         return;
     }
 
+    const phoneticsEnabled = loadGlobalSettings().phonetics?.enabled === true;
     activeBook.words.forEach(word => {
         const li = document.createElement('li');
         li.className = 'word-item';
@@ -1089,12 +1096,26 @@ function renderWordList() {
             </div>
         `;
 
+        if (phoneticsEnabled) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'word-phonetics-btn';
+            button.title = t('phonetics.practice');
+            button.setAttribute('aria-label', `${t('phonetics.practice')}: ${word.word}`);
+            button.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 10v4M8 6v12M12 3v18M16 6v12M20 10v4"/></svg>';
+            button.addEventListener('click', event => {
+                event.stopPropagation();
+                openPhonetics(word);
+            });
+            li.querySelector('.word-actions').appendChild(button);
+        }
+
         const playBtn = li.querySelector('.play-btn');
         playBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             playWordAndMeaning(word);
         });
-        
+
         dom.wordList.appendChild(li);
     });
 }
@@ -1114,7 +1135,7 @@ function playWordAndMeaning(word) {
         },
         () => {
             if (wordElement) wordElement.classList.remove('highlight');
-            
+
             if (word.meaning) {
                 setTimeout(() => {
                     // 使用全局中文朗讀首選（'chinese' 會由 audio 模組決定 zh-CN/zh-HK）

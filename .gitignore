@@ -86,3 +86,6 @@ web-bundles/
 # Cloudflare Worker 本機設定與快取（含 database_id、帳號資訊，勿上傳；改用 wrangler.toml.example）
 cloudflare-worker/wrangler.toml
 cloudflare-worker/.wrangler/
+
+# 拆音工具內置示範音訊（非快取）
+!phonetic-chart/audio/**/*.mp3

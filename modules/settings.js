@@ -29,6 +29,7 @@ const defaults = {
   // global reading preferences
   // translationMask: 是否對「文章詳解」中的中文翻譯加上模糊遮罩（滑鼠移入/按住顯示）
   reading: { englishVariant: 'en-GB', chineseVariant: 'zh-CN', translationMask: true },
+  phonetics: { enabled: false },
   assistant: { enabled: true, stream: true },
   updatedAt: null
 };
@@ -76,6 +77,7 @@ function mergeSettings(baseValue, overrideValue) {
         ? mergeRecord({}, ttsOverride.selectedVoices)
         : mergeRecord(base.tts?.selectedVoices, undefined)
     },
+    phonetics: mergeRecord(base.phonetics, override.phonetics),
     reading: mergeRecord(base.reading, override.reading),
     assistant: mergeRecord(base.assistant, override.assistant)
   };

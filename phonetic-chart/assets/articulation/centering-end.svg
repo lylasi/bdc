@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%" role="img" aria-labelledby="e-title e-desc">
+  <title id="e-title">英音 · 滑向中央参考</title>
+  <desc id="e-desc">舌位向中央附近过渡，双唇放松。与起点连续发声，不表示必须达到固定的独立 ə 终点。</desc>
+  <defs>
+    <marker id="arrow-e" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#2563EB" />
+    </marker>
+    <linearGradient id="palateGrad-e" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFDF9" />
+      <stop offset="100%" stop-color="#F7EEE1" />
+    </linearGradient>
+    <linearGradient id="tongueGrad-e" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFA4B6" />
+      <stop offset="100%" stop-color="#FF6B8B" />
+    </linearGradient>
+  </defs>
+
+  <!-- 背景底卡 -->
+  <rect width="400" height="300" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5" />
+
+  <!-- 主发音示意结构 (局部矢状面，脸朝右) -->
+  <g class="diagram-figure" transform="translate(28, 18)">
+    <!-- 后脑与面部外轮廓 -->
+    <path d="M 78 215 L 75 160 Q 75 105 115 48 Q 175 28 228 38 Q 252 58 260 74 Q 274 88 262 98 Q 260 106 268 114 Q 256 122 240 122" fill="none" stroke="#CBD5E1" stroke-width="1.6" stroke-linecap="round" />
+    <path d="M 240 134 Q 256 140 252 146 Q 242 154 248 174 Q 234 195 226 215" fill="none" stroke="#CBD5E1" stroke-width="1.6" stroke-linecap="round" />
+
+    <!-- 咽后壁解剖组织带 -->
+    <path d="M 78 215 L 78 84 L 90 84 L 90 215 Z" fill="#F8F1E7" stroke="#E2D1BE" stroke-width="1.2" />
+
+    <!-- 软腭与硬腭组织体 (浅米色解剖基底，软腭抬起闭合鼻腔) -->
+    <path d="M 90 84 Q 92 86 102 85 Q 120 82 142 80 Q 175 74 214 96 L 222 102 L 226 95 Q 180 66 142 70 Q 110 73 90 75 Z" fill="url(#palateGrad-e)" stroke="#D4BFA4" stroke-width="1.4" stroke-linejoin="round" />
+
+    <!-- 硬腭表面轮廓线 -->
+    <path d="M 142 80 Q 175 74 214 96" fill="none" stroke="#B89F82" stroke-width="1.8" stroke-linecap="round" />
+    <!-- 软腭肌肉轮廓线 (抬起闭合) -->
+    <path d="M 90 84 Q 92 86 102 85 Q 120 82 142 80" fill="none" stroke="#C27D88" stroke-width="1.8" stroke-linecap="round" />
+    <line x1="142" y1="70" x2="142" y2="80" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2 2" />
+
+    <!-- 鼻咽截断提示线 -->
+    <path d="M 90 75 L 142 70 L 226 95" fill="none" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="3 3" />
+    <text x="133" y="63" font-size="7" fill="#94A3B8" text-anchor="middle">鼻咽闭合 · 示意截断</text>
+
+    <!-- 喉咽/气管入口底端截断 -->
+    <line x1="90" y1="215" x2="118" y2="215" stroke="#3B82F6" stroke-width="1.5" stroke-dasharray="2 2" />
+    <text x="104" y="223" font-size="7" fill="#64748B" text-anchor="middle">来自气管</text>
+
+    <!-- 上门牙 -->
+    <rect x="220" y="100" width="7.5" height="16" rx="1.5" fill="#FFFFFF" stroke="#64748B" stroke-width="1.3" />
+    <!-- 下门牙 (中等开口度，开度介于 fleece 与 ae 之间) -->
+    <rect x="219" y="140" width="7.5" height="15" rx="1.5" fill="#FFFFFF" stroke="#64748B" stroke-width="1.3" />
+
+    <!-- 舌体 (粉色肌肉实体，舌前部隆起至中高位置，通气顺畅无自交) -->
+    <path d="M 120 215 Q 122 164 132 139 Q 144 112 162 112 Q 183 112 200 123 L 216 138 Q 202 152 182 168 Q 162 184 154 215 Z" fill="url(#tongueGrad-e)" stroke="#E11D48" stroke-width="1.8" stroke-linejoin="round" />
+    <!-- 舌面高光弧线 -->
+    <path d="M 145 119 Q 164 112 187 120" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.8" />
+
+    <!-- 呼气方向箭头 (口外指示呼气出口方向，解剖合理，不穿牙穿腭) -->
+    <path d="M 272 134 L 296 134" fill="none" stroke="#2563EB" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="5 3" marker-end="url(#arrow-e)" />
+  </g>
+
+  <!-- 左上角：正面唇形小图标 -->
+  <g class="lip-inset" transform="translate(14, 14)">
+    <rect width="84" height="60" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2" />
+    <text x="42" y="15" text-anchor="middle" font-size="9" font-weight="700" fill="#475569">正面唇形</text>
+    <ellipse cx="42" cy="34" rx="22" ry="8" fill="#FF8A9E" stroke="#E11D48" stroke-width="1.2" />
+    <ellipse cx="42" cy="34" rx="16" ry="4" fill="#FFFFFF" stroke="#BE6476" stroke-width="0.8" />
+    <text x="42" y="52" text-anchor="middle" font-size="8" fill="#64748B">适度微展 · 中等开口</text>
+  </g>
+
+  <!-- 朝向提示 -->
+  <g class="orientation-badge">
+    <rect x="14" y="80" width="102" height="20" rx="10" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1" />
+    <text x="65" y="93.5" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="600" fill="#475569">嘴巴侧面 · 脸朝右</text>
+  </g>
+
+  <!-- 顶部特性标签 -->
+  <rect x="146" y="14" width="154" height="22" rx="11" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1" />
+  <text x="223" y="25" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="#3730A3">英音 · 滑向中央参考</text>
+
+  <!-- 器官与气流标注 -->
+  <g class="organ-labels" font-family="system-ui, -apple-system, sans-serif">
+    <!-- 软腭 (指向闭合软腭：x=142, y=98) -->
+    <path d="M 134 66 L 134 78 L 142 98" fill="none" stroke="#64748B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="142" cy="100" r="2.2" fill="#475569" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="116" y="48" width="36" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8" />
+    <text x="134" y="57" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="600" fill="#334155">软腭</text>
+
+    <!-- 硬腭 (指向硬腭隆起：x=203, y=92) -->
+    <path d="M 188 66 L 188 78 L 203 90" fill="none" stroke="#64748B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="203" cy="92" r="2.2" fill="#475569" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="170" y="48" width="36" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8" />
+    <text x="188" y="57" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="600" fill="#334155">硬腭</text>
+
+    <!-- 咽部气道 (指向咽部空隙中央：x=125, y=168) -->
+    <path d="M 60 168 L 123 168" fill="none" stroke="#64748B" stroke-width="1.2" stroke-linecap="round" />
+    <circle cx="125" cy="168" r="2.2" fill="#475569" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="24" y="159" width="36" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8" />
+    <text x="42" y="168" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="600" fill="#334155">咽部</text>
+
+    <!-- 舌头 (指向舌体中心：x=193, y=163) -->
+    <path d="M 60 216 L 124 216 L 191 165" fill="none" stroke="#64748B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="193" cy="163" r="2.2" fill="#475569" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="24" y="207" width="36" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8" />
+    <text x="42" y="216" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="600" fill="#334155">舌头</text>
+
+    <!-- 上门牙 (x=252, y=126) -->
+    <path d="M 334 109 L 295 109 L 254 125" fill="none" stroke="#64748B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="252" cy="126" r="2.2" fill="#475569" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="334" y="100" width="46" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8" />
+    <text x="357" y="109" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="600" fill="#334155">上门牙</text>
+
+    <!-- 嘴唇 (x=296, y=132) -->
+    <path d="M 334 131 L 308 131 L 296 132" fill="none" stroke="#64748B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="296" cy="132" r="2.2" fill="#475569" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="334" y="122" width="36" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8" />
+    <text x="352" y="131" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="600" fill="#334155">嘴唇</text>
+
+    <!-- 呼气方向 -->
+    <path d="M 322 150 L 330 150" fill="none" stroke="#2563EB" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 2" />
+    <rect x="330" y="141" width="56" height="18" rx="4" fill="#EFF6FF" stroke="#93C5FD" stroke-width="0.8" />
+    <text x="358" y="150" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="700" fill="#1D4ED8">呼气方向</text>
+
+    <!-- 下门牙 (x=250, y=166) -->
+    <path d="M 334 171 L 295 171 L 252 166" fill="none" stroke="#64748B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="250" cy="166" r="2.2" fill="#475569" stroke="#FFFFFF" stroke-width="0.8" />
+    <rect x="334" y="162" width="46" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="0.8" />
+    <text x="357" y="171" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="600" fill="#334155">下门牙</text>
+  </g>
+
+  <!-- 发音口诀 -->
+  <text x="200" y="260" text-anchor="middle" font-size="9" font-weight="600" fill="#475569">② 滑向中央 · 与起点连贯发声</text>
+
+  <!-- 底部说明 -->
+  <text x="200" y="284" text-anchor="middle" font-size="8.5" fill="#94A3B8">方向参考 · 非固定终点 · 动作草图，待专业审核</text>
+</svg>
