@@ -73,31 +73,14 @@ export async function exportQASetForHandwriting(qaSetId, options = {}) {
 
     // 檢查並載入jsPDF
     console.log('檢查jsPDF狀態:', typeof window.jsPDF);
-    if (typeof window.jsPDF === 'undefined') {
+    if (!resolveJsPDFConstructor()) {
+      displayMessage(t('qaPdf.preparingEngine'), 'info');
       console.log('正在載入jsPDF...');
       await loadjsPDF();
     }
 
-    // 檢查jsPDF是否正確載入
-    console.log('載入後jsPDF狀態:', window.jsPDF);
-
     let doc;
-    let jsPDFConstructor = null;
-
-    // 檢查多種可能的構造函數
-    if (window.jsPDF && window.jsPDF.jsPDF) {
-      jsPDFConstructor = window.jsPDF.jsPDF;
-      console.log('使用 window.jsPDF.jsPDF 構造函數');
-    } else if (window.jsPDF && typeof window.jsPDF === 'function') {
-      jsPDFConstructor = window.jsPDF;
-      console.log('使用 window.jsPDF 作為構造函數');
-    } else if (typeof window.jspdf !== 'undefined') {
-      jsPDFConstructor = window.jspdf;
-      console.log('使用 window.jspdf 構造函數');
-    } else if (typeof jsPDF !== 'undefined') {
-      jsPDFConstructor = jsPDF;
-      console.log('使用全域 jsPDF 構造函數');
-    }
+    const jsPDFConstructor = resolveJsPDFConstructor();
 
     if (jsPDFConstructor) {
       try {
@@ -337,31 +320,14 @@ export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult
 
     // 檢查並載入jsPDF
     console.log('檢查jsPDF狀態:', typeof window.jsPDF);
-    if (typeof window.jsPDF === 'undefined') {
+    if (!resolveJsPDFConstructor()) {
+      displayMessage(t('qaPdf.preparingEngine'), 'info');
       console.log('正在載入jsPDF...');
       await loadjsPDF();
     }
 
-    // 檢查jsPDF是否正確載入
-    console.log('載入後jsPDF狀態:', window.jsPDF);
-
     let doc;
-    let jsPDFConstructor = null;
-
-    // 檢查多種可能的構造函數
-    if (window.jsPDF && window.jsPDF.jsPDF) {
-      jsPDFConstructor = window.jsPDF.jsPDF;
-      console.log('使用 window.jsPDF.jsPDF 構造函數');
-    } else if (window.jsPDF && typeof window.jsPDF === 'function') {
-      jsPDFConstructor = window.jsPDF;
-      console.log('使用 window.jsPDF 作為構造函數');
-    } else if (typeof window.jspdf !== 'undefined') {
-      jsPDFConstructor = window.jspdf;
-      console.log('使用 window.jspdf 構造函數');
-    } else if (typeof jsPDF !== 'undefined') {
-      jsPDFConstructor = jsPDF;
-      console.log('使用全域 jsPDF 構造函數');
-    }
+    const jsPDFConstructor = resolveJsPDFConstructor();
 
     if (jsPDFConstructor) {
       try {
@@ -437,75 +403,143 @@ export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult
 }
 
 // 動態載入jsPDF庫
+// 來源依序嘗試：本地內嵌（離線可用、版本鎖定）→ 公開 CDN 備援
+// 注意：整條 PDF 工具鏈（jsPDF + 中文字型）都只在需要導出時才抓，
+//       首頁不載入，避免拖慢瀏覽體驗。
+const JSPDF_SOURCES = [
+  'modules/vendor/jspdf.umd.min.js',
+  'https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js',
+  'https://registry.npmmirror.com/jspdf/4.2.1/files/dist/jspdf.umd.min.js'
+];
+
+// 已載入／載入中的來源，避免重複插入 <script>
+const scriptPromises = new Map();
+
+// 從各種可能的全域變數取出 jsPDF 建構函數（UMD 會掛在 window.jspdf.jsPDF）
+function resolveJsPDFConstructor() {
+  if (window.jsPDF && typeof window.jsPDF.jsPDF === 'function') return window.jsPDF.jsPDF;
+  if (typeof window.jsPDF === 'function') return window.jsPDF;
+  if (window.jspdf && typeof window.jspdf.jsPDF === 'function') return window.jspdf.jsPDF;
+  if (typeof window.jspdf === 'function') return window.jspdf;
+  if (typeof jsPDF !== 'undefined') return jsPDF;
+  return null;
+}
+
+// 插入單一 <script> 並等待載入結果（同一來源只載入一次）
+function loadScriptOnce(src) {
+  if (!scriptPromises.has(src)) {
+    scriptPromises.set(src, new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.onload = () => {
+        console.log('腳本載入完成:', src);
+        resolve();
+      };
+      script.onerror = () => {
+        scriptPromises.delete(src); // 允許之後重試同一來源（例如暫時離線）
+        reject(new Error(`無法載入 ${src}`));
+      };
+      document.head.appendChild(script);
+    }));
+  }
+  return scriptPromises.get(src);
+}
+
 async function loadjsPDF() {
-  return new Promise((resolve, reject) => {
-    if (typeof window.jsPDF !== 'undefined') {
-      console.log('jsPDF已存在:', window.jsPDF);
-      resolve();
+  if (resolveJsPDFConstructor()) {
+    console.log('jsPDF 已存在，略過載入');
+    return;
+  }
+
+  const failures = [];
+  for (const src of JSPDF_SOURCES) {
+    try {
+      await loadScriptOnce(src);
+      const jsPDFConstructor = resolveJsPDFConstructor();
+      if (!jsPDFConstructor) {
+        throw new Error('腳本已載入但找不到 jsPDF 建構函數');
+      }
+      // 統一掛回 window.jsPDF，供其他模組沿用
+      window.jsPDF = jsPDFConstructor;
+      console.log('jsPDF 就緒，來源:', src);
       return;
+    } catch (error) {
+      failures.push(`${src} → ${error.message}`);
+      console.warn('jsPDF 來源不可用，嘗試下一個:', src, error);
+    }
+  }
+
+  console.error('jsPDF 所有來源皆載入失敗:', failures.join(' | '));
+  throw new Error(t('qa.pdfLibLoadFailed'));
+}
+
+// ===== 中文字型按需載入 =====
+// 字型資料（子集 0.3MB／完整 9MB／思源 mini 2.5MB）過去寫在 index.html，
+// 每次開頁都要下載 12MB；現在只有真的要導出 PDF 時才抓，優先序如下：
+//   1) Noto Sans TC 子集（最省，涵蓋常用字）
+//   2) Noto Sans TC 完整版（子集缺字時）
+//   3) 思源黑體 SC mini（保底，簡體最小集）
+const CJK_FONT_SOURCES = [
+  { kind: 'base64', path: 'modules/fonts/NotoSansTC-Subset.base64.txt', family: 'NotoSansTC-Subset', fileName: 'NotoSansTC-Subset.ttf' },
+  { kind: 'base64', path: 'modules/fonts/NotoSansTC-Regular.base64.txt', family: 'NotoSansTC-Regular', fileName: 'NotoSansTC-Regular.ttf' },
+  { kind: 'script', path: 'modules/fonts/SourceHanSansSC-Normal-Min-normal.js' }
+];
+
+let cjkFontPromise = null;
+
+// 取得目前已載入的字型 Base64（若外部已自行引入 loader，這裡會直接沿用）
+function currentFontBase64() {
+  return window.SourceHanSansTC?.base64 || window.fontBase64 || '';
+}
+
+async function ensureChineseFontData() {
+  if (cjkFontPromise) return cjkFontPromise;
+
+  cjkFontPromise = (async () => {
+    if (currentFontBase64()) return currentFontBase64();
+
+    for (const source of CJK_FONT_SOURCES) {
+      try {
+        if (source.kind === 'script') {
+          await loadScriptOnce(source.path);
+        } else {
+          const resp = await fetch(source.path);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const text = await resp.text();
+          if (!text || text.length < 1024) throw new Error('字型資料為空');
+          window.SourceHanSansTC = window.SourceHanSansTC || {};
+          window.SourceHanSansTC.base64 = text;
+          window.SourceHanSansTC.name = source.family;
+          window.SourceHanSansTC.fileName = source.fileName;
+          window.fontBase64 = text;
+          window.fontFamilyName = source.family;
+          window.fontFileName = source.fileName;
+        }
+
+        const base64 = currentFontBase64();
+        if (base64) {
+          console.log('中文字型就緒，來源:', source.path);
+          return base64;
+        }
+        throw new Error('載入後仍無字型資料');
+      } catch (error) {
+        console.warn('中文字型來源不可用，嘗試下一個:', source.path, error);
+      }
     }
 
-    console.log('開始載入jsPDF庫...');
-    const script = document.createElement('script');
+    console.warn('所有中文字型來源皆不可用，將以 Canvas 圖像方式輸出中文');
+    return '';
+  })();
 
-    // 使用支持中文的jsPDF版本
-    script.src = 'https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js';
+  return cjkFontPromise;
+}
 
-    script.onload = () => {
-      console.log('jsPDF載入完成');
-      console.log('window對象檢查:', Object.keys(window).filter(key => key.toLowerCase().includes('jspdf')));
-      console.log('window.jsPDF:', window.jsPDF);
-      console.log('window.jspdf:', window.jspdf);
-      console.log('jsPDF類型:', typeof window.jsPDF);
-
-      // 檢查多種可能的全局變量名稱
-      let jsPDFConstructor = null;
-      if (window.jsPDF) {
-        jsPDFConstructor = window.jsPDF;
-        console.log('使用window.jsPDF');
-      } else if (window.jspdf) {
-        jsPDFConstructor = window.jspdf;
-        console.log('使用window.jspdf');
-      } else if (typeof jsPDF !== 'undefined') {
-        jsPDFConstructor = jsPDF;
-        console.log('使用全域jsPDF');
-      }
-
-      if (jsPDFConstructor) {
-        // 確保全局變量設置正確
-        window.jsPDF = jsPDFConstructor;
-        console.log('jsPDF對象存在');
-        console.log('jsPDF屬性:', Object.keys(jsPDFConstructor));
-
-        if (jsPDFConstructor.jsPDF) {
-          console.log('發現構造函數:', jsPDFConstructor.jsPDF);
-        } else if (typeof jsPDFConstructor === 'function') {
-          console.log('jsPDF本身就是構造函數');
-        }
-
-        // 嘗試設置中文支持
-        try {
-          // 檢查是否有中文字體支持插件
-          console.log('檢查中文字體支持...');
-        } catch (error) {
-          console.warn('中文字體支持檢查失敗，將使用回退方案');
-        }
-      } else {
-        console.error('未找到jsPDF構造函數');
-        reject(new Error(t('qa.pdfCtorMissing')));
-        return;
-      }
-
-      resolve();
-    };
-
-    script.onerror = (error) => {
-      console.error('jsPDF載入失敗:', error);
-      reject(new Error(t('qa.pdfLibLoadFailed')));
-    };
-
-    document.head.appendChild(script);
-  });
+// 提前暖機：使用者把游標移到導出按鈕上時就先抓好 jsPDF 與字型，
+// 讓第一次導出不必等（仍然不會在開頁時下載任何 PDF 相關資源）。
+export function prefetchPdfEngine() {
+  loadjsPDF().catch(() => {});
+  ensureChineseFontData().catch(() => {});
 }
 
 // 添加標題
@@ -786,34 +820,22 @@ async function registerChineseFont(doc, opts = {}) {
   const options = opts || {};
   const fromWindow = typeof window !== 'undefined' ? window : {};
 
+  // 顯式傳入的優先；否則按需抓取預設字型（子集 → 完整 → 思源 mini）
+  const explicitBase64 = options.base64 || options.fontBase64;
+  if (!explicitBase64) {
+    await ensureChineseFontData();
+  }
+
   // 來源優先序：顯式傳入 > Noto TC > 思源 TC > 思源 SC > 其他全域
-  let fontBase64 = options.base64 || options.fontBase64 || fromWindow.SourceHanSansTC?.base64 || fromWindow.SourceHanSans?.base64;
+  let fontBase64 = explicitBase64 || fromWindow.SourceHanSansTC?.base64 || fromWindow.SourceHanSans?.base64;
   let fontFamily = options.fontFamily || fromWindow.SourceHanSansTC?.name || fromWindow.SourceHanSans?.name || fromWindow.fontFamilyName;
   let fileName = options.fileName || fromWindow.SourceHanSansTC?.fileName || fromWindow.SourceHanSans?.fileName || fromWindow.fontFileName;
   // 若仍無，才回退到通用 window.fontBase64；但若其為 SC mini，改嘗試抓 Noto 再回退
   const isSCMini = (fromWindow.fontFamilyName || '').toLowerCase().includes('sourcehansanssc') || (fromWindow.fontFileName || '').toLowerCase().includes('sc-') || (fromWindow.fontFamilyName || '').toLowerCase().includes('min');
-  if (!fontBase64) {
-    if (!isSCMini && fromWindow.fontBase64) {
-      fontBase64 = fromWindow.fontBase64;
-      fontFamily = fontFamily || fromWindow.fontFamilyName || 'CJK-Fallback';
-      fileName = fileName || fromWindow.fontFileName || `${fontFamily}.ttf`;
-    }
-  }
-
-  // 若尚未提供 Base64，嘗試從預設路徑動態抓取（開發伺服器情境）
-  if ((!fontBase64 || isSCMini) && typeof fetch === 'function') {
-    try {
-      const resp = await fetch('modules/fonts/NotoSansTC-Regular.base64.txt');
-      if (resp.ok) {
-        const text = await resp.text();
-        if (text && text.length > 1024) {
-          fromWindow.fontBase64 = text; // 緩存於全域，供後續使用
-          fontBase64 = text;
-          fontFamily = 'NotoSansTC-Regular';
-          fileName = 'NotoSansTC-Regular.ttf';
-        }
-      }
-    } catch (_) { /* ignore */ }
+  if (!fontBase64 && !isSCMini && fromWindow.fontBase64) {
+    fontBase64 = fromWindow.fontBase64;
+    fontFamily = fontFamily || fromWindow.fontFamilyName || 'CJK-Fallback';
+    fileName = fileName || fromWindow.fontFileName || `${fontFamily}.ttf`;
   }
 
   const finalBase64 = fontBase64 || fromWindow.fontBase64;

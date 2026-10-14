@@ -5,7 +5,7 @@ import { getStoredQASets, getAllQASets, loadQASet, saveQASet, deleteQASet, impor
 import { initCreator, parseQAPairs, saveNewSet, clearForm, handleTextInputChange, fillFormWithQASet, qaSetToText } from './qa-creator.js';
 import { startTraining, getCurrentQuestion, getCurrentAnswer, getTrainingProgress, getSessionState, submitAnswer, nextQuestion, previousQuestion, finishTraining, pauseTraining, resumeTraining, cancelTraining, restoreTrainingProgress, saveTrainingProgress, saveAnswerDraft } from './qa-trainer.js';
 import { startAIChecking, clearCheckingCache, getCheckingCacheStats, recheckAnswer } from './qa-checker.js';
-import { exportTrainingResultToPDF, exportQASetForHandwriting } from './qa-pdf.js';
+import { exportTrainingResultToPDF, exportQASetForHandwriting, prefetchPdfEngine } from './qa-pdf.js';
 import { displayMessage, showOptionsModal, openModal, closeModal } from '../../modules/ui.js';
 import { loadGlobalSettings } from '../../modules/settings.js';
 import { t, formatDateTime, createCollator } from '../../modules/i18n.js';
@@ -271,6 +271,8 @@ function initEventListeners() {
     const exportPdfBtn = dom.qaModule.querySelector('#export-pdf-btn');
     if (exportPdfBtn) {
       exportPdfBtn.addEventListener('click', handleExportPDF);
+      exportPdfBtn.addEventListener('pointerenter', prefetchPdfEngine, { once: true });
+      exportPdfBtn.addEventListener('focus', prefetchPdfEngine, { once: true });
     }
 
     // 複製錯誤報告（純文字）
@@ -406,6 +408,13 @@ function updateQASetsDisplay() {
   // 添加卡片點擊事件
   if (!listContainer.dataset.listenerAttached) {
     listContainer.addEventListener('click', handleQASetCardClick);
+    // 游標移到「導出手寫練習」時先暖機 PDF 引擎（不影響開頁速度）
+    listContainer.addEventListener('pointerover', (event) => {
+      if (event.target.closest('.export-btn')) prefetchPdfEngine();
+    });
+    listContainer.addEventListener('focusin', (event) => {
+      if (event.target.closest('.export-btn')) prefetchPdfEngine();
+    });
     listContainer.dataset.listenerAttached = 'true';
   }
 }
@@ -469,6 +478,11 @@ async function handlePreviewQASet(qaId) {
 function openQASetPreviewModal(qaSet) {
   openModal();
 
+  // 題目較長，使用大型彈窗以減少換行
+  try {
+    dom.appModal?.querySelector('.modal-content')?.classList.add('modal-large');
+  } catch (_) {}
+
   if (dom.modalTitle) {
     dom.modalTitle.textContent = t('qa.previewTitle', { name: qaSet.name || '' });
   }
@@ -489,11 +503,11 @@ function openQASetPreviewModal(qaSet) {
           <div class="qa-view-number"><span class="qa-qid-badge">${idx + 1}</span></div>
           <div class="qa-view-content">
             <div class="qa-question">
-              <span class="qa-label">Q:</span>
+              <span class="qa-label">Q</span>
               <div class="qa-question-text">${escapeHtml(q.question || '')}</div>
             </div>
             <div class="qa-answer">
-              <span class="qa-label">A:</span>
+              <span class="qa-label">A</span>
               <div class="qa-editable" tabindex="-1">${escapeHtml(q.answer || '')}</div>
             </div>
           </div>
@@ -513,25 +527,33 @@ function openQASetPreviewModal(qaSet) {
 
   dom.modalBody.innerHTML = `
     <div class="qa-view-modal">
-      <div class="qa-view-meta" style="margin-bottom:12px; color:var(--ink-600); font-size:var(--fs-sm);">
-        ${metaDesc ? `<div style="margin-bottom:4px;">${metaDesc}</div>` : ''}
-        <div>${t('qa.questionTotal', { count: total })}</div>
+      <div class="qa-view-meta">
+        ${metaDesc ? `<p class="qa-view-desc">${metaDesc}</p>` : ''}
+        <span class="qa-view-count">${t('qa.questionTotal', { count: total })}</span>
       </div>
-      <div class="qa-view-toolbar" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
-        <button type="button" class="qa-chip-btn" id="qa-view-shuffle">${t('qa.shuffleOrder')}</button>
-        <button type="button" class="qa-chip-btn" id="qa-view-reset">${t('qa.resetOrder')}</button>
-        <button type="button" class="qa-chip-btn" id="qa-view-copy-questions">${t('qa.copyContent')}</button>
-        <span style="margin-left:6px; color:var(--ink-500); font-size:var(--fs-xs);">${t('qa.perPage')}</span>
-        <input id="qa-view-qpp" type="number" min="4" max="12" value="8" style="width:54px; padding:4px 6px; border:1px solid var(--line-strong); border-radius:var(--r-xs); font-size:var(--fs-xs);" />
-        <span style="color:var(--ink-500); font-size:var(--fs-xs);">${t('qa.lineCount')}</span>
-        <input id="qa-view-lines" type="number" min="1" max="3" value="1" style="width:46px; padding:4px 6px; border:1px solid var(--line-strong); border-radius:var(--r-xs); font-size:var(--fs-xs);" />
-        <button type="button" class="qa-chip-btn" id="qa-view-export-questions">${t('qa.exportQuestions')}</button>
-        <button type="button" class="qa-chip-btn" id="qa-view-export-with-answers">${t('qa.exportAnswers')}</button>
+      <div class="qa-view-toolbar">
+        <div class="qa-view-tools">
+          <button type="button" class="qa-chip-btn" id="qa-view-shuffle">${t('qa.shuffleOrder')}</button>
+          <button type="button" class="qa-chip-btn" id="qa-view-reset">${t('qa.resetOrder')}</button>
+          <button type="button" class="qa-chip-btn" id="qa-view-copy-questions">${t('qa.copyContent')}</button>
+        </div>
+        <div class="qa-view-export">
+          <label class="qa-view-field" for="qa-view-qpp">
+            <span>${t('qa.perPage')}</span>
+            <input id="qa-view-qpp" type="number" min="4" max="12" value="8" inputmode="numeric" />
+          </label>
+          <label class="qa-view-field" for="qa-view-lines">
+            <span>${t('qa.lineCount')}</span>
+            <input id="qa-view-lines" type="number" min="1" max="3" value="1" inputmode="numeric" />
+          </label>
+          <button type="button" class="qa-chip-btn" id="qa-view-export-questions">${t('qa.exportQuestions')}</button>
+          <button type="button" class="qa-chip-btn" id="qa-view-export-with-answers">${t('qa.exportAnswers')}</button>
+        </div>
       </div>
       <div class="qa-preview">
-        <div id="qa-view-list" class="qa-pairs-preview"></div>
+        <div id="qa-view-list" class="qa-pairs-preview qa-view-list"></div>
       </div>
-      <div class="qa-editor-actions" style="margin-top:12px;">
+      <div class="qa-editor-actions">
         <button type="button" class="btn primary" id="qa-preview-start-training">${t('qa.startPreviewTraining')}</button>
         <button type="button" class="btn secondary" id="qa-preview-close">${t('qa.close')}</button>
       </div>
@@ -630,6 +652,13 @@ function openQASetPreviewModal(qaSet) {
       }
     });
   }
+
+  // 游標移到導出按鈕時先暖機 PDF 引擎
+  [exportQBtn, exportABtn].forEach((btn) => {
+    if (!btn) return;
+    btn.addEventListener('pointerenter', prefetchPdfEngine, { once: true });
+    btn.addEventListener('focus', prefetchPdfEngine, { once: true });
+  });
 
   const startBtn = dom.modalBody.querySelector('#qa-preview-start-training');
   const closeBtn = dom.modalBody.querySelector('#qa-preview-close');

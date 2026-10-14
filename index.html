@@ -17,7 +17,7 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230f766e'/%3E%3Cpath d='M7 6.5h6.5L17 10v7.5H7z' fill='none' stroke='white' stroke-width='1.7' stroke-linejoin='round'/%3E%3Cpath d='M13 6.5V10h3.8' fill='none' stroke='white' stroke-width='1.7'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="styles.css?v=20261014c" />
+    <link rel="stylesheet" href="styles.css?v=20261014g" />
   </head>
   <body>
     <div class="app-layout">
@@ -235,6 +235,20 @@
                     <span data-i18n="vocabulary.deleteShort">删除</span>
                   </button>
                 </div>
+                <!-- 手機：操作收進「更多」選單，避免佔用上下空間 -->
+                <button
+                  id="word-panel-more-btn"
+                  class="action-chip word-panel-more-btn"
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  title="更多操作"
+                  data-i18n-title="vocabulary.moreActions"
+                  aria-label="更多操作"
+                  data-i18n-aria-label="vocabulary.moreActions"
+                >
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-more"/></svg>
+                </button>
               </div>
               <p id="current-book-meta" class="form-hint"></p>
               <div class="word-toolbar">
@@ -1384,19 +1398,9 @@
         </div>
       </div>
 
-      <!-- 注入思源黑體與 Noto Sans TC（繁/簡/英文皆可顯示）。若偵測到 Noto 則優先使用 Noto。 -->
-      <!-- 優先載入 Noto Sans TC 子集，若不存在再載入完整 Noto 與 SC mini 作為保底 -->
-      <script src="modules/fonts/NotoSansTC-Subset.loader.js"></script>
-      <script src="modules/fonts/NotoSansTC-Regular.loader.js"></script>
-      <script src="modules/fonts/SourceHanSansSC-Normal-Min-normal.js"></script>
+      <!-- 中文字型（Noto Sans TC 子集／完整版、思源黑體 mini）不在首頁載入：
+           佔 12MB 以上，僅 PDF 導出需要，改由 features/qa/qa-pdf.js 在導出時按需抓取。 -->
       <script type="module" src="main.js"></script>
     </div>
-  <dialog id="phonetics-dialog" class="phonetics-dialog" aria-labelledby="phonetics-dialog-title">
-      <header><h2 id="phonetics-dialog-title" data-i18n="phonetics.practice">拆音练习</h2>
-        <a id="phonetics-independent" target="_blank" rel="noopener" data-i18n="phonetics.independent">独立打开</a>
-        <button id="phonetics-close" type="button" data-i18n="phonetics.close">关闭</button>
-      </header>
-      <iframe id="phonetics-frame" data-i18n-title="phonetics.practice" title="拆音练习"></iframe>
-    </dialog>
   </body>
 </html>

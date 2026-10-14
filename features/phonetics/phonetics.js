@@ -1,43 +1,36 @@
+// 拆音入口：單詞本與學習模式的按鈕都打開同一個彈窗（內容見 word-sheet.js）。
+// 舊版以 <dialog> + iframe 內嵌 phonetics.html，已由彈窗取代；
+// phonetics.html 仍可作為獨立工具直接開啟（彈窗內提供連結）。
 import * as dom from '../../modules/dom.js';
 import { loadGlobalSettings } from '../../modules/settings.js';
 import { stopCurrentAudio } from '../../modules/audio.js';
-import { entryQuery } from '../../modules/phonetics-data.js';
+import { openPhoneticsSheet } from './word-sheet.js';
 
 let selectedWord = null;
+
 function refresh() {
-    if (dom.phoneticsOpen) dom.phoneticsOpen.hidden = loadGlobalSettings().phonetics?.enabled !== true || !selectedWord;
+    if (dom.phoneticsOpen) {
+        dom.phoneticsOpen.hidden = loadGlobalSettings().phonetics?.enabled !== true || !selectedWord;
+    }
 }
-function close() {
-    if (dom.phoneticsDialog?.open) dom.phoneticsDialog.close();
-    if (dom.phoneticsFrame) dom.phoneticsFrame.src = 'about:blank';
-}
+
 export function setPhoneticsWord(word) {
-    selectedWord = word;
-    close();
+    selectedWord = word || null;
     refresh();
 }
-export function openPhonetics(word) {
-    if (!word || loadGlobalSettings().phonetics?.enabled !== true) return;
+
+/** 以指定單詞（字串或詞條物件）打開拆音彈窗 */
+export function openPhonetics(entry) {
+    if (!entry || loadGlobalSettings().phonetics?.enabled !== true) return;
     stopCurrentAudio();
-    const accent = loadGlobalSettings().reading?.englishVariant === 'en-US' ? 'us' : 'uk';
-    const url = new URL('../../phonetics.html', import.meta.url);
-    url.search = entryQuery(word, accent).toString();
-    dom.phoneticsIndependent.href = url.href;
-    dom.phoneticsFrame.src = url.href;
-    dom.phoneticsDialog.showModal();
+    return openPhoneticsSheet(entry);
 }
+
 export function initPhonetics() {
     refresh();
-    dom.phoneticsOpen.addEventListener('click', () => openPhonetics(selectedWord));
-    dom.phoneticsIndependent.addEventListener('click', () => {
-        const current = dom.phoneticsFrame.contentWindow?.location;
-        if (current?.origin === location.origin && current.pathname.endsWith('/phonetics.html')) {
-            dom.phoneticsIndependent.href = current.href;
-        }
+    dom.phoneticsOpen?.addEventListener('click', () => openPhonetics(selectedWord));
+    document.addEventListener('bdc:settings-change', refresh);
+    window.addEventListener('storage', event => {
+        if (event.key === 'pen_global_settings') refresh();
     });
-    dom.phoneticsClose.addEventListener('click', close);
-    dom.phoneticsDialog.addEventListener('close', () => { dom.phoneticsFrame.src = 'about:blank'; });
-    document.addEventListener('bdc:settings-change', () => { close(); refresh(); });
-    window.addEventListener('storage', event => { if (event.key === 'pen_global_settings' || event.key === 'pen_global_secrets') { close(); refresh(); } });
-    window.addEventListener('pagehide', close);
 }

@@ -1265,6 +1265,7 @@ details > *:not(summary) { padding: var(--sp-4); }
     box-shadow: var(--sh-3);
     font-size: var(--fs-md);
     line-height: 1.5;
+    white-space: pre-line; /* 匯入摘要等多行訊息 */
     word-break: break-word;
     cursor: pointer;
     pointer-events: auto;
@@ -1472,11 +1473,80 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     box-shadow: var(--sh-1);
     padding: var(--sp-4);
     min-width: 0;
+    position: relative; /* 「更多操作」選單的定位基準 */
 }
 .vocab-words-panel .panel-header { align-items: flex-start; }
 #current-book-name { font-size: var(--fs-lg); flex: 1 1 160px; min-width: 0; }
 .word-panel-actions { gap: 6px; }
 .word-panel-actions .icon-btn { width: 40px; min-width: 40px; min-height: 40px; }
+
+/* 「更多操作」：桌面隱藏，手機才出現 */
+.word-panel-more-btn { display: none; width: 40px; min-width: 40px; padding: 0; justify-content: center; }
+.word-panel-more-btn[aria-expanded="true"] {
+    border-color: var(--primary-100);
+    background: var(--primary-050);
+    color: var(--primary-700);
+}
+
+/* 手機操作選單（內容由 vocabulary.js 依實際按鈕生成） */
+.word-panel-menu {
+    position: absolute;
+    top: calc(var(--sp-3) + 46px);
+    right: var(--sp-3);
+    z-index: 40;
+    min-width: 188px;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-3);
+    animation: sheet-up 0.16s ease;
+}
+.word-panel-menu[hidden] { display: none; }
+.word-panel-menu .menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--ink-700);
+    font-size: var(--fs-md);
+    font-weight: 600;
+    text-align: left;
+}
+.word-panel-menu .menu-item:hover { background: var(--surface-3); }
+.word-panel-menu .menu-item .icon { width: var(--icon-md); height: var(--icon-md); color: var(--ink-500); }
+.word-panel-menu .menu-item:disabled { opacity: 0.45; }
+.word-panel-menu .menu-item:disabled:hover { background: transparent; }
+.word-panel-menu .menu-item.danger { color: var(--danger-600); }
+.word-panel-menu .menu-item.danger .icon { color: var(--danger-600); }
+.word-panel-menu .menu-item.danger:hover { background: var(--danger-050); }
+.word-panel-menu .menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
+
+/* 窄螢幕（單欄）：標題列壓成一行，操作收進「更多」選單，把空間還給單詞列表。
+   五個 chip 需要約 432px，加上標題後面板要 ~680px 才排得下，故斷點取 719px。 */
+@media (max-width: 719px) {
+    .vocab-words-panel .panel-header {
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: var(--sp-2);
+        margin-bottom: var(--sp-2);
+    }
+    .vocab-words-panel .panel-header h3 {
+        font-size: var(--fs-base);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .word-panel-actions { display: none; }
+    .word-panel-more-btn { display: inline-flex; }
+    .vocab-words-panel .word-toolbar { margin: var(--sp-2) 0 0; }
+    .word-panel-menu { top: calc(var(--sp-3) + 44px); right: var(--sp-3); }
+}
 .list-container {
     max-height: min(62vh, 620px);
     overflow-y: auto;
@@ -2321,38 +2391,96 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
 .dg-report td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; }
 .dg-history { display: flex; flex-direction: column; gap: var(--sp-2); }
 
-/* 拆音對話框 */
-.phonetics-dialog {
-    width: min(920px, 94vw);
-    height: min(86vh, 780px);
-    padding: 0;
+/* 單詞拆音彈窗（單詞本／學習模式入口；獨立頁 phonetics.html 仍保留） */
+.phonetics-sheet { display: flex; flex-direction: column; gap: var(--sp-3); }
+.ps-head { display: flex; align-items: flex-start; gap: var(--sp-3); flex-wrap: wrap; }
+.ps-title { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ps-word { font-size: var(--fs-xl); font-weight: 700; color: var(--ink-900); overflow-wrap: anywhere; }
+.ps-ipa { font-size: var(--fs-lg); font-weight: 600; color: var(--primary-700); }
+.ps-accents {
+    display: inline-flex;
+    flex: 0 0 auto;
+    padding: 3px;
     border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    box-shadow: var(--sh-4);
-    background: var(--surface);
-    overflow: hidden;
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
 }
-.phonetics-dialog::backdrop { background: rgba(20, 22, 26, 0.42); backdrop-filter: blur(2px); }
-.phonetics-dialog > header {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-    padding: var(--sp-3) var(--sp-4);
-    border-bottom: 1px solid var(--line);
-    background: var(--surface);
-}
-.phonetics-dialog > header h2 { font-size: var(--fs-lg); margin: 0; }
-.phonetics-dialog > header a { margin-left: auto; font-size: var(--fs-md); font-weight: 600; }
-.phonetics-dialog > header button {
-    min-height: 38px;
+.ps-accent {
+    min-height: 32px;
     padding: 0 var(--sp-3);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-sm);
-    background: var(--surface);
+    border: 0;
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--ink-500);
+    font-size: var(--fs-sm);
+    font-weight: 650;
+}
+.ps-accent.is-active { background: var(--surface); color: var(--primary-700); box-shadow: var(--sh-1); }
+.ps-source { margin: 0; font-size: var(--fs-sm); color: var(--ink-500); }
+.ps-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.ps-status { margin: 0; min-height: 18px; font-size: var(--fs-sm); color: var(--ink-500); }
+.ps-status[data-error="true"] { color: var(--danger-600); }
+.ps-choices { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.ps-choice {
+    min-height: 36px;
+    padding: 0 var(--sp-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    color: var(--ink-700);
     font-size: var(--fs-md);
     font-weight: 600;
 }
-#phonetics-frame { width: 100%; height: calc(100% - 60px); border: 0; display: block; }
+.ps-choice:hover { border-color: var(--primary-100); background: var(--primary-050); color: var(--primary-700); }
+.ps-sounds {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 64px;
+    padding: var(--sp-3);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+}
+.ps-sound {
+    min-width: 46px;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--ink-900);
+    font-size: var(--fs-lg);
+    font-weight: 650;
+}
+.ps-sound:hover { border-color: var(--primary-100); color: var(--primary-700); }
+.ps-sound.is-playing { background: var(--primary-050); border-color: var(--primary); color: var(--primary-700); }
+.ps-mark { color: var(--ink-400); font-size: var(--fs-lg); }
+.ps-mark.is-gap { width: 10px; }
+.ps-optional { margin: 0; font-size: var(--fs-xs); color: var(--ink-400); }
+.ps-art {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    padding: var(--sp-3);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+}
+.ps-art-title { margin: 0; font-size: var(--fs-sm); font-weight: 650; color: var(--ink-700); }
+.ps-art-strip { display: flex; gap: var(--sp-3); overflow-x: auto; }
+.ps-art-strip figure { flex: 0 0 auto; width: min(240px, 58vw); margin: 0; }
+.ps-art-strip img {
+    width: 100%;
+    height: auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+}
+.ps-art-strip figcaption { margin-top: 4px; font-size: var(--fs-xs); color: var(--ink-500); }
+.ps-standalone { align-self: flex-start; font-size: var(--fs-sm); font-weight: 600; color: var(--primary-700); text-decoration: none; }
+.ps-standalone:hover { text-decoration: underline; }
 .phonetics-shell { padding: var(--sp-4); }
 
 /* 圖片燈箱 */
@@ -3252,6 +3380,56 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     padding: var(--sp-3);
     font-size: var(--fs-md);
 }
+
+/* 問答集編輯預覽（創建／編輯彈窗）：卡片化，與「查看問答集」維持同一套視覺 */
+#qa-preview,
+#qa-edit-preview {
+    max-height: min(52vh, 460px);
+    padding: var(--sp-3);
+    background: var(--paper);
+    border-radius: var(--r-sm);
+    overscroll-behavior: contain;
+}
+#qa-edit-preview { border: 1px solid var(--line); border-radius: var(--r-md); }
+#qa-preview .qa-pairs-preview,
+#qa-edit-preview .qa-pairs-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    padding: 0;
+}
+#qa-preview .qa-pair-preview,
+#qa-edit-preview .qa-pair-preview {
+    padding: var(--sp-3);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--primary-100);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-1);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+#qa-preview .qa-pair-preview:hover,
+#qa-edit-preview .qa-pair-preview:hover { border-color: var(--primary-100); box-shadow: var(--sh-2); }
+#qa-preview .qa-pair-preview.invalid,
+#qa-edit-preview .qa-pair-preview.invalid { border-left-color: var(--danger); }
+#qa-preview .qa-pair-header,
+#qa-edit-preview .qa-pair-header {
+    justify-content: space-between;
+    padding: 0 0 var(--sp-2);
+    margin-bottom: var(--sp-2);
+    border-bottom: 1px dashed var(--line);
+    font-size: var(--fs-xs);
+}
+#qa-preview .qa-pair-header .qa-qid-badge,
+#qa-edit-preview .qa-pair-header .qa-qid-badge { background: var(--primary); color: #fff; }
+#qa-preview .qa-editable[contenteditable="true"]:focus,
+#qa-edit-preview .qa-editable[contenteditable="true"]:focus {
+    outline: none;
+    border-radius: var(--r-xs);
+    box-shadow: var(--ring);
+}
+#qa-preview .preview-empty,
+#qa-edit-preview .preview-empty { color: var(--ink-500); }
 .qa-pair-header,
 .qa-pair-toolbar,
 .qa-pair-toolbar { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
@@ -3439,14 +3617,127 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
 .checking-details { font-size: var(--fs-sm); color: var(--ink-500); max-height: 180px; overflow-y: auto; }
 .qa-view-modal,
 .qa-editor-modal { display: flex; flex-direction: column; gap: var(--sp-3); }
-.qa-view-toolbar { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
-.qa-view-meta { font-size: var(--fs-sm); color: var(--ink-500); }
-.qa-view-content { display: flex; flex-direction: column; gap: var(--sp-2); max-height: 56vh; overflow-y: auto; }
-.qa-view-number { font-size: var(--fs-xs); font-weight: 700; color: var(--primary-600); }
+.qa-view-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); }
+
+/* 查看問答集：資訊摘要 */
+.qa-view-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-3);
+    font-size: var(--fs-sm);
+    color: var(--ink-500);
+}
+.qa-view-desc {
+    flex: 1 1 240px;
+    min-width: 0;
+    margin: 0;
+    color: var(--ink-600);
+    line-height: 1.55;
+}
+.qa-view-count {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 3px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    color: var(--ink-600);
+    font-size: var(--fs-xs);
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+/* 查看問答集：工具列（左：順序與複製／右：匯出設定與匯出） */
+.qa-view-tools,
+.qa-view-export { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.qa-view-export { margin-left: auto; padding-left: var(--sp-3); border-left: 1px solid var(--line); }
+.qa-view-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-500);
+    font-size: var(--fs-xs);
+    white-space: nowrap;
+}
+.qa-view-field input {
+    width: 56px;
+    min-height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-xs);
+    background: var(--surface);
+    color: var(--ink-800);
+    font-size: var(--fs-sm);
+    text-align: center;
+}
+.qa-view-field input:focus-visible { outline: none; border-color: var(--primary); box-shadow: var(--ring); }
+@media (max-width: 767px) {
+    .qa-view-export { margin-left: 0; padding-left: 0; border-left: 0; }
+}
+
+/* 查看問答集：清單容器（可捲動，卡片化） */
+.qa-view-modal .qa-preview {
+    max-height: min(56vh, 560px);
+    padding: var(--sp-3);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overscroll-behavior: contain;
+}
+.qa-view-list { display: flex; flex-direction: column; gap: var(--sp-3); padding: 0; }
+.qa-view-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-1);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.qa-view-item:hover { border-color: var(--primary-100); box-shadow: var(--sh-2); }
+.qa-view-number { flex: 0 0 auto; padding-top: 1px; }
+.qa-view-number .qa-qid-badge {
+    min-width: 26px;
+    height: 26px;
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(15, 118, 110, 0.25);
+}
+.qa-view-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+.qa-question,
+.qa-answer { display: flex; align-items: flex-start; gap: var(--sp-2); }
+.qa-question-text,
+.qa-answer .qa-editable { flex: 1 1 auto; min-width: 0; }
+.qa-question-text { line-height: 1.55; }
+.qa-answer .qa-editable { background: transparent; line-height: 1.55; }
 .qa-editor-form,
 .qa-editor-grid { display: grid; gap: var(--sp-3); }
 .qa-editor-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.qa-label { font-size: var(--fs-sm); color: var(--ink-500); font-weight: 600; }
+.qa-label {
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
+    border-radius: 7px;
+    background: var(--surface-3);
+    color: var(--ink-500);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    line-height: 1;
+}
+.qa-question .qa-label { background: var(--primary-050); color: var(--primary-700); }
 .preview-empty { padding: var(--sp-4); color: var(--ink-500); text-align: center; font-size: var(--fs-md); }
 .qa-header-left .qa-title { font-size: var(--fs-lg); }
 
