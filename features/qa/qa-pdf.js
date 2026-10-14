@@ -1,7 +1,7 @@
 // PDF導出功能
 import { displayMessage } from '../../modules/ui.js';
 import { loadQASet } from './qa-storage.js';
-import { t } from '../../modules/i18n.js';
+import { t, formatDateTime } from '../../modules/i18n.js';
 
 console.log('qa-pdf.js 模組載入');
 
@@ -50,12 +50,12 @@ const PDF_CONFIG = {
     answerSpacing: 2
   },
   colors: {
-    primary: '#2563eb',
-    success: '#16a34a',
-    warning: '#d97706',
-    error: '#dc2626',
-    text: '#374151',
-    lightGray: '#f3f4f6'
+    primary: '#0f766e',
+    success: '#0f9e6b',
+    warning: '#b96b00',
+    error: '#d92d20',
+    text: '#333941',
+    lightGray: '#f3f2ee'
   }
 };
 // ======================= 可調整區（PDF 版面配置）結束 =======================
@@ -105,7 +105,7 @@ export async function exportQASetForHandwriting(qaSetId, options = {}) {
         console.log('PDF文檔創建成功');
       } catch (error) {
         console.error('PDF文檔創建失敗:', error);
-        throw new Error('jsPDF構造函數調用失敗: ' + error.message);
+        throw new Error(t('qa.pdfCtorFailed', { message: error.message }));
       }
     } else {
       throw new Error(t('qaPdf.loadLibraryFailed'));
@@ -369,7 +369,7 @@ export async function exportTrainingResultToPDF(trainingResult, aiCheckingResult
         console.log('PDF文檔創建成功');
       } catch (error) {
         console.error('PDF文檔創建失敗:', error);
-        throw new Error('jsPDF構造函數調用失敗: ' + error.message);
+        throw new Error(t('qa.pdfCtorFailed', { message: error.message }));
       }
     } else {
       throw new Error(t('qaPdf.loadLibraryFailed'));
@@ -492,7 +492,7 @@ async function loadjsPDF() {
         }
       } else {
         console.error('未找到jsPDF構造函數');
-        reject(new Error('jsPDF載入失敗：未找到構造函數'));
+        reject(new Error(t('qa.pdfCtorMissing')));
         return;
       }
 
@@ -501,7 +501,7 @@ async function loadjsPDF() {
 
     script.onerror = (error) => {
       console.error('jsPDF載入失敗:', error);
-      reject(new Error('無法載入jsPDF庫'));
+      reject(new Error(t('qa.pdfLibLoadFailed')));
     };
 
     document.head.appendChild(script);
@@ -758,7 +758,7 @@ function addFooter(doc) {
 
 // 格式化日期
 function formatDate(date) {
-  return new Date(date).toLocaleString('zh-TW', {
+  return formatDateTime(date, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

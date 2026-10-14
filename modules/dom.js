@@ -5,6 +5,11 @@
 // --- 导航与主要布局 ---
 export const navBtns = document.querySelectorAll('.nav-btn');
 export const sections = document.querySelectorAll('.section');
+// 手機底部導覽的「更多」抽屜
+export const navMoreBtn = document.getElementById('nav-more-btn');
+export const navMoreList = document.getElementById('nav-more-list');
+export const navBackdrop = document.getElementById('nav-backdrop');
+export const appNav = document.querySelector('.app-nav');
 
 // --- 单词本页面 ---
 export const vocabBookList = document.getElementById('vocab-book-list');
@@ -18,10 +23,16 @@ export const exportVocabBookBtn = document.getElementById('export-vocab-book-btn
 export const mergeVocabBooksBtn = document.getElementById('merge-vocab-books-btn');
 export const completeMissingBtn = document.getElementById('complete-missing-btn');
 export const wordList = document.getElementById('word-list');
+export const wordFilter = document.getElementById('word-filter');
+export const wordFilterCount = document.getElementById('word-filter-count');
+export const vocabBookCount = document.getElementById('vocab-book-count');
 
 // --- 学习模式页面 ---
 export const learningBookSelector = document.getElementById('learning-book-selector');
 export const wordSelect = document.getElementById('word-select');
+export const wordPrevBtn = document.getElementById('word-prev-btn');
+export const wordNextBtn = document.getElementById('word-next-btn');
+export const wordPosition = document.getElementById('word-position');
 export const detailWord = document.getElementById('detail-word');
 export const detailPhonetic = document.getElementById('detail-phonetic');
 export const detailMeaning = document.getElementById('detail-meaning');
@@ -52,11 +63,32 @@ export const checkDictationBtn = document.getElementById('check-dictation-btn');
 export const dictationResult = document.getElementById('dictation-result');
 export const dictationBookSelector = document.getElementById('dictation-book-selector');
 export const listenOnlyMode = document.getElementById('listen-only-mode');
+export const dictationTypedMode = document.getElementById('dictation-typed-mode');
+export const dictationModeRow = document.getElementById('dictation-mode-row');
 export const dictationPractice = document.querySelector('.dictation-practice');
 export const dictationAIGradeBtn = document.getElementById('dictation-ai-grade-btn');
 export const dictationProgressContainer = document.getElementById('dictation-progress-container');
 export const dictationProgressBar = document.getElementById('dictation-progress-bar');
 export const dictationProgressText = document.getElementById('dictation-progress-text');
+// 聽寫播放器與完成卡片（紙上聽寫的主要狀態區）
+export const dictationSettingsCard = document.getElementById('dictation-settings-card');
+export const dictationPlayer = document.getElementById('dictation-player');
+export const dictationStateBadge = document.getElementById('dictation-state-badge');
+export const dictationBookChip = document.getElementById('dictation-book-chip');
+export const dictationCounterCurrent = document.getElementById('dictation-counter-current');
+export const dictationCounterTotal = document.getElementById('dictation-counter-total');
+export const dictationStageTitle = document.getElementById('dictation-stage-title');
+export const dictationStageHint = document.getElementById('dictation-stage-hint');
+export const dictationSummary = document.getElementById('dictation-summary');
+export const dictationBookHint = document.getElementById('dictation-book-hint');
+export const pauseDictationLabel = document.getElementById('pause-dictation-label');
+export const dictationComplete = document.getElementById('dictation-complete');
+export const dictationCompleteDesc = document.getElementById('dictation-complete-desc');
+export const completeWords = document.getElementById('complete-words');
+export const completeRepeat = document.getElementById('complete-repeat');
+export const completeTime = document.getElementById('complete-time');
+export const dictationAgainBtn = document.getElementById('dictation-again-btn');
+export const dictationBackSettingsBtn = document.getElementById('dictation-back-settings-btn');
 
 // --- 测验模式页面 ---
 export const quizBookSelector = document.getElementById('quiz-book-selector');

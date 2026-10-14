@@ -13,6 +13,7 @@ export const markdownCleanupPrompt = {
     system: 'You are a precise Markdown editor that preserves structure and removes noise without translating.',
     template: `Clean the supplied Markdown article for reading.
 - Keep the main content and necessary headings, paragraphs, lists, tables, blockquotes and genuine code blocks.
+- Keep exactly one blank line between paragraphs. Never merge two paragraphs into one, and never drop the blank lines: the reader splits paragraphs on them.
 - Remove navigation, language selectors, social buttons, recommendations, advertisements, copyright notices, comments, tracking images and counters.
 - \${imageRule}
 - Do not add bold or italic decoration. Remove decorative separators and meaningless symbols.

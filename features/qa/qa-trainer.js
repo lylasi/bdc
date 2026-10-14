@@ -25,7 +25,7 @@ export async function startTraining(qaSetId, options = {}) {
     // 載入問答集
     const qaSet = await loadQASet(qaSetId);
     if (!qaSet) {
-      throw new Error('找不到指定的問答集');
+      throw new Error(t('qa.trainerSetMissing'));
     }
 
     // 初始化訓練會話
@@ -59,7 +59,7 @@ export async function startTraining(qaSetId, options = {}) {
 
   } catch (error) {
     console.error('開始訓練時出錯:', error);
-    displayMessage('訓練啟動失敗: ' + error.message, 'error');
+    displayMessage(t('qa.trainingStartFailed', { message: error.message }), 'error');
     return false;
   }
 }
@@ -82,13 +82,13 @@ export function shuffleQuestions() {
 // 若內容非空，將 isSubmitted 派生為 true；否則為 false。
 export function submitAnswer(answer, questionIndex = null) {
   if (!currentSession.isActive) {
-    throw new Error('沒有活動的訓練會話');
+    throw new Error(t('qa.noActiveSession'));
   }
 
   const index = questionIndex !== null ? questionIndex : currentSession.currentIndex;
 
   if (index < 0 || index >= currentSession.questions.length) {
-    throw new Error('無效的問題索引');
+    throw new Error(t('qa.invalidQuestionIndex'));
   }
 
   const text = String(answer ?? '').trim();
@@ -107,13 +107,13 @@ export function submitAnswer(answer, questionIndex = null) {
 // 用途：在使用者切換上一題/下一題或其它操作時，保留輸入框內容，避免返回後遺失。
 export function saveAnswerDraft(answer, questionIndex = null) {
   if (!currentSession.isActive) {
-    throw new Error('沒有活動的訓練會話');
+    throw new Error(t('qa.noActiveSession'));
   }
 
   const index = questionIndex !== null ? questionIndex : currentSession.currentIndex;
 
   if (index < 0 || index >= currentSession.questions.length) {
-    throw new Error('無效的問題索引');
+    throw new Error(t('qa.invalidQuestionIndex'));
   }
 
   const prev = currentSession.answers[index] || { userAnswer: '', isSubmitted: false, timestamp: null };
@@ -132,7 +132,7 @@ export function saveAnswerDraft(answer, questionIndex = null) {
 // 下一題
 export function nextQuestion() {
   if (!currentSession.isActive) {
-    throw new Error('沒有活動的訓練會話');
+    throw new Error(t('qa.noActiveSession'));
   }
 
   if (currentSession.currentIndex < currentSession.questions.length - 1) {
@@ -148,7 +148,7 @@ export function nextQuestion() {
 // 上一題
 export function previousQuestion() {
   if (!currentSession.isActive) {
-    throw new Error('沒有活動的訓練會話');
+    throw new Error(t('qa.noActiveSession'));
   }
 
   if (currentSession.currentIndex > 0) {
@@ -164,11 +164,11 @@ export function previousQuestion() {
 // 跳到指定題目
 export function goToQuestion(index) {
   if (!currentSession.isActive) {
-    throw new Error('沒有活動的訓練會話');
+    throw new Error(t('qa.noActiveSession'));
   }
 
   if (index < 0 || index >= currentSession.questions.length) {
-    throw new Error('無效的問題索引');
+    throw new Error(t('qa.invalidQuestionIndex'));
   }
 
   currentSession.currentIndex = index;
@@ -179,7 +179,7 @@ export function goToQuestion(index) {
 // 完成訓練
 export function finishTraining() {
   if (!currentSession.isActive) {
-    throw new Error('沒有活動的訓練會話');
+    throw new Error(t('qa.noActiveSession'));
   }
 
   // 檢查是否所有問題都已回答（以是否有內容判斷）
@@ -227,7 +227,7 @@ export function finishTraining() {
 // 暫停訓練
 export function pauseTraining() {
   if (!currentSession.isActive) {
-    throw new Error('沒有活動的訓練會話');
+    throw new Error(t('qa.noActiveSession'));
   }
 
   currentSession.isPaused = true;
@@ -238,7 +238,7 @@ export function pauseTraining() {
 // 恢復訓練
 export function resumeTraining() {
   if (!currentSession.isActive) {
-    throw new Error('沒有活動的訓練會話');
+    throw new Error(t('qa.noActiveSession'));
   }
 
   currentSession.isPaused = false;
@@ -341,11 +341,11 @@ export function validateTrainingOptions(options) {
   const errors = [];
 
   if (options.mode && !['sequential', 'random'].includes(options.mode)) {
-    errors.push('無效的訓練模式');
+    errors.push(t('qa.invalidTrainingMode'));
   }
 
   if (options.submitMode && !['single', 'batch'].includes(options.submitMode)) {
-    errors.push('無效的提交模式');
+    errors.push(t('qa.invalidSubmitMode'));
   }
 
   return {

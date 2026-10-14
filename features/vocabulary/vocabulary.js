@@ -26,6 +26,9 @@ export function initVocabulary() {
     dom.exportVocabBookBtn.addEventListener('click', exportActiveVocabBook);
     dom.mergeVocabBooksBtn.addEventListener('click', openModalForMergeBooks);
     if (dom.completeMissingBtn) dom.completeMissingBtn.addEventListener('click', openModalForCompleteMissing);
+    if (dom.wordFilter) {
+        dom.wordFilter.addEventListener('input', renderWordList);
+    }
 
     // 單詞列表高亮
     dom.wordList.addEventListener('mouseover', (e) => {
@@ -86,26 +89,26 @@ export async function handleVocabularyQueryParams() {
             const matchedBook = defaultBooks.find(book => book.id === manifestId);
 
             if (!matchedBook) {
-                alert(`未找到ID為 "${manifestId}" 的預設單詞本。`);
-            } else if (confirm(`偵測到參數請求導入預設單詞本「${matchedBook.name}」。是否現在導入？`)) {
+                alert(t('vocabulary.presetNotFound', { id: manifestId }));
+            } else if (confirm(t('vocabulary.importDetectedParam', { name: matchedBook.name }))) {
                 sources.push({ type: 'preset', value: matchedBook.path, name: matchedBook.name });
             }
         } catch (error) {
             console.error('加載預設單詞本清單失敗:', error);
-            alert('無法讀取預設單詞本清單，請稍後再試。');
+            alert(t('vocabulary.loadPresetListFailed'));
         }
     }
 
     if (urlParam) {
         try {
             const resolvedUrl = new URL(urlParam, window.location.href).toString();
-            const urlDisplayName = new URL(resolvedUrl).pathname.split('/').pop() || 'URL單詞本';
-            if (confirm(`偵測到外部單詞本 URL:\n${resolvedUrl}\n是否導入？`)) {
+            const urlDisplayName = new URL(resolvedUrl).pathname.split('/').pop() || t('vocabulary.urlBook');
+            if (confirm(t('vocabulary.importDetectedUrl', { url: resolvedUrl }))) {
                 sources.push({ type: 'url', value: resolvedUrl, name: urlDisplayName });
             }
         } catch (error) {
             console.error('wordlistUrl 參數無效:', error);
-            alert(`URL 參數無效，無法導入: ${urlParam}`);
+            alert(t('vocabulary.invalidUrlParam', { url: urlParam }));
         }
     }
 
@@ -118,14 +121,17 @@ export async function handleVocabularyQueryParams() {
     });
 
     if (summary.length > 0) {
-        alert(`導入完成！\n\n${summary.join('\n')}`);
+        alert(t('vocabulary.importDone', { summary: summary.join('\n') }));
     } else {
-        alert('沒有導入任何單詞本。');
+        alert(t('vocabulary.noBooksImported'));
     }
 }
 
 function renderVocabBookList() {
     dom.vocabBookList.innerHTML = '';
+    if (dom.vocabBookCount) {
+        dom.vocabBookCount.textContent = String(state.vocabularyBooks.length);
+    }
     if (state.vocabularyBooks.length === 0) {
         // 空狀態：不要默認創建單詞本，改為顯示導入提示
         const link = `<a id="import-hint-link" href="#">${t('vocabulary.importHere')}</a>`;
@@ -149,7 +155,7 @@ function renderVocabBookList() {
 
         const countSpan = document.createElement('span');
         countSpan.className = 'word-count';
-        countSpan.textContent = count;
+        countSpan.textContent = t('vocabulary.wordCount', { count });
 
         li.appendChild(nameSpan);
         li.appendChild(countSpan);
@@ -164,7 +170,7 @@ function showNoBookOnboarding() {
         <div class="input-group" style="display:block;">
             <p>目前還沒有任何單詞本。</p>
             <p>建議先「導入單詞本」或「新建單詞本」，之後就可以在學習 / 默寫 / 測驗等功能中使用。</p>
-            <p style="margin-top:8px;color:#64748b;">${t('vocabulary.cloudAccountHint')}</p>
+            <p style="margin-top:8px;color:var(--ink-500);">${t('vocabulary.cloudAccountHint')}</p>
         </div>
         <div class="modal-actions">
             <button class="cancel-btn">${t('vocabulary.later')}</button>
@@ -212,13 +218,13 @@ function updateActiveBookView() {
                 const srcType = meta && meta.sourceType ? meta.sourceType : (activeBook.articleId ? 'url' : 'paste');
                 const rawUrl = meta && meta.sourceUrl ? String(meta.sourceUrl) : '';
 
-                let sourceText = '來源：文章詳解';
+                let sourceText = t('vocabulary.sourceArticle');
                 if (srcType === 'url') {
-                    sourceText = '來源：文章詳解（網頁 / 新聞）';
+                    sourceText = t('vocabulary.sourceArticleUrl');
                 } else if (srcType === 'file') {
-                    sourceText = '來源：文章詳解（文章庫 / 檔案）';
+                    sourceText = t('vocabulary.sourceArticleFile');
                 } else if (srcType === 'ocr') {
-                    sourceText = '來源：文章詳解（圖片 OCR）';
+                    sourceText = t('vocabulary.sourceArticleOcr');
                 }
 
                 const hasUrl = srcType === 'url' && rawUrl;
@@ -227,12 +233,12 @@ function updateActiveBookView() {
                 dom.currentBookMeta.innerHTML = `
                     <div class="book-meta-banner">
                         <div class="book-meta-info">
-                            <span class="book-meta-label">文章來源</span>
+                            <span class="book-meta-label">${t('vocabulary.articleSourceLabel')}</span>
                             <span class="book-meta-text">${sourceText}</span>
                         </div>
                         <div class="book-meta-actions">
-                            ${hasUrl ? `<a href="${escUrl}" target="_blank" rel="noopener noreferrer" class="book-origin-link">開啟原文</a>` : ''}
-                            <button type="button" class="book-open-article-btn">回文章</button>
+                            ${hasUrl ? `<a href="${escUrl}" target="_blank" rel="noopener noreferrer" class="book-origin-link">${t('vocabulary.openOrigin')}</a>` : ''}
+                            <button type="button" class="book-open-article-btn">${t('vocabulary.backToArticle')}</button>
                         </div>
                     </div>
                 `;
@@ -265,6 +271,7 @@ function updateActiveBookView() {
         dom.exportVocabBookBtn.disabled = true;
         if (dom.completeMissingBtn) dom.completeMissingBtn.disabled = true;
         dom.wordList.innerHTML = `<li class="word-item-placeholder">${t('vocabulary.chooseOrCreate')}</li>`;
+        updateWordFilterCount(0, 0);
         if (dom.currentBookMeta) dom.currentBookMeta.textContent = '';
     }
 }
@@ -390,7 +397,7 @@ async function mergeDedupeActiveBook(book) {
             const ps = info.querySelectorAll('p');
             if (ps[1]) {
                 const missing = findMissingEntries(book.words);
-                ps[1].innerHTML = `共 <strong>${book.words.length}</strong> 條，其中缺失資料（音標為 n/a 或空白、或中文釋義缺失）的有 <strong>${missing.length}</strong> 條。`;
+                ps[1].innerHTML = t('vocabulary.missingDataSummary', { total: book.words.length, missing: missing.length });
                 const startBtn = dom.appModal.querySelector('.save-btn');
                 if (startBtn) startBtn.disabled = missing.length === 0;
             }
@@ -400,7 +407,7 @@ async function mergeDedupeActiveBook(book) {
         renderWordList();
     } catch (e) {
         console.warn('合併去重失敗:', e);
-        if (progress) progress.innerHTML = `<p style="color:#b91c1c;">${t('vocabulary.dedupeFailed')}</p>`;
+        if (progress) progress.innerHTML = `<p style="color:var(--danger-600);">${t('vocabulary.dedupeFailed')}</p>`;
     }
 }
 
@@ -488,8 +495,10 @@ async function openModalForImportBook() {
              const safeId = `import-checkbox-${safeIdBase || Math.random().toString(36).slice(2)}`;
              return `
                 <div class="import-preset-item-wrapper">
-                    <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" data-id="${book.id || ''}" class="import-checkbox">
-                    <label for="${safeId}" class="import-preset-item">${book.name}</label>
+                    <label for="${safeId}" class="import-preset-item">
+                        <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" data-id="${book.id || ''}" class="import-checkbox">
+                        <span class="import-preset-name">${book.name}</span>
+                    </label>
                 </div>
             `;
         }).join('');
@@ -517,7 +526,7 @@ async function openModalForImportBook() {
                         <input type="file" id="modal-import-file" accept=".json">
                     </div>
                 </div>
-                <div class="import-section" style="border-top:1px dashed #e5e7eb;margin-top:8px;padding-top:8px;">
+                <div class="import-section" style="border-top:1px dashed var(--line);margin-top:8px;padding-top:8px;">
                     <small class="form-hint">${t('vocabulary.loginSyncHint')}</small>
                 </div>
             </div>
@@ -678,7 +687,7 @@ async function importSharedVocabBooks() {
     if (urlPath) {
         try {
             const url = new URL(urlPath, window.location.href);
-            sources.push({ type: 'url', value: url.toString(), name: url.pathname.split('/').pop() || 'URL單詞本' });
+            sources.push({ type: 'url', value: url.toString(), name: url.pathname.split('/').pop() || t('vocabulary.urlBook') });
         } catch (_) {
             alert(t('vocabulary.invalidUrl', { url: urlPath }));
             return;
@@ -805,7 +814,7 @@ async function processWordsWithAI(book, wordsText) {
         let wordObject = preliminaryWords[i];
 
         if (!wordObject.meaning.trim() || !wordObject.phonetic.trim()) {
-            if(progressContainer) progressContainer.innerHTML = `<p>正在分析: ${wordObject.word} (${i + 1}/${preliminaryWords.length})</p>`;
+            if(progressContainer) progressContainer.innerHTML = `<p>${t('vocabulary.analyzingProgress', { word: wordObject.word, done: i + 1, total: preliminaryWords.length })}</p>`;
             try {
                 const mod = await import('../../modules/vocab.js');
                 await mod.ensureWordDetails(wordObject, { allowDeferForPhrase: false });
@@ -814,9 +823,9 @@ async function processWordsWithAI(book, wordsText) {
                 try {
                     const analysis = await api.getWordAnalysis(wordObject.word);
                     wordObject.phonetic = wordObject.phonetic || (analysis.phonetic || 'n/a').replace(/^\/|\/$/g, '');
-                    wordObject.meaning = wordObject.meaning || analysis.meaning || '分析失敗';
+                    wordObject.meaning = wordObject.meaning || analysis.meaning || t('vocabulary.analysisFailedShort');
                 } catch (_) {
-                    wordObject.meaning = wordObject.meaning || '分析失敗';
+                    wordObject.meaning = wordObject.meaning || t('vocabulary.analysisFailedShort');
                     wordObject.phonetic = wordObject.phonetic || 'n/a';
                 }
             }
@@ -825,7 +834,7 @@ async function processWordsWithAI(book, wordsText) {
     }
 
     book.words = finalWords;
-    if(progressContainer) progressContainer.innerHTML = `<p style="color: green;">處理完成！</p>`;
+    if(progressContainer) progressContainer.innerHTML = `<p style="color: green;">${t('vocabulary.processDone')}</p>`;
 }
 
 function deleteActiveVocabBook() {
@@ -936,7 +945,7 @@ function openModalForMergeBooks() {
                 <div id="merge-book-list" class="import-preset-list">
                     ${state.vocabularyBooks.map(book => `
                         <div class="import-preset-item-wrapper" data-book-id="${book.id}">
-                            <div class="import-preset-item">${book.name} (${book.words.length}個單詞)</div>
+                            <div class="import-preset-item">${book.name} ${t('vocabulary.wordCountSuffix', { count: book.words.length })}</div>
                         </div>
                     `).join('')}
                 </div>
@@ -1078,11 +1087,27 @@ function renderWordList() {
 
     if (!activeBook || activeBook.words.length === 0) {
         dom.wordList.innerHTML = `<li class="word-item-placeholder">${t('vocabulary.emptyBook')}</li>`;
+        updateWordFilterCount(0, 0);
+        return;
+    }
+
+    const keyword = (dom.wordFilter?.value || '').trim().toLowerCase();
+    const wordsToRender = keyword
+        ? activeBook.words.filter(word => {
+            const haystack = `${word.word || ''} ${word.meaning || ''} ${word.phonetic || ''}`.toLowerCase();
+            return haystack.includes(keyword);
+        })
+        : activeBook.words;
+
+    updateWordFilterCount(wordsToRender.length, activeBook.words.length);
+
+    if (wordsToRender.length === 0) {
+        dom.wordList.innerHTML = `<li class="word-item-placeholder">${t('vocabulary.filterEmpty', { keyword: dom.wordFilter?.value || '' })}</li>`;
         return;
     }
 
     const phoneticsEnabled = loadGlobalSettings().phonetics?.enabled === true;
-    activeBook.words.forEach(word => {
+    wordsToRender.forEach(word => {
         const li = document.createElement('li');
         li.className = 'word-item';
         li.innerHTML = `
@@ -1092,7 +1117,7 @@ function renderWordList() {
                 ${word.meaning ? `<span class="meaning" data-word-id="${word.id}">${word.meaning}</span>` : ''}
             </div>
             <div class="word-actions">
-                <button class="play-btn" title="播放"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play-circle" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg></button>
+                <button class="play-btn" title="${t('vocabulary.playWord')}" aria-label="${t('vocabulary.playWord')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-speaker"/></svg></button>
             </div>
         `;
 
@@ -1118,6 +1143,17 @@ function renderWordList() {
 
         dom.wordList.appendChild(li);
     });
+}
+
+/** 更新篩選結果提示 */
+function updateWordFilterCount(shown, total) {
+    if (!dom.wordFilterCount) return;
+    const keyword = (dom.wordFilter?.value || '').trim();
+    if (!keyword) {
+        dom.wordFilterCount.textContent = total ? t('vocabulary.totalCount', { count: total }) : '';
+        return;
+    }
+    dom.wordFilterCount.textContent = t('vocabulary.filterCount', { shown, total });
 }
 
 function playWordAndMeaning(word) {

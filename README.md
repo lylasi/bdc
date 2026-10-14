@@ -66,11 +66,28 @@
    ```
 3. **啟動本地伺服器**：
    ```bash
+   # 推薦：自帶 AI 同源代理與文章抓取，且停用快取（不需要 npm）
+   python3 scripts/serve.py                      # http://127.0.0.1:8313/
+   python3 scripts/serve.py --lan                # 綁 0.0.0.0，手機／平板也能開
+   python3 scripts/serve.py --ai-proxy http://127.0.0.1:3425
+
+   # 或單純靜態服務（此時沒有 /v1 代理、沒有 /fetch 與 /extract）
    npx serve .
-   # 或
    npx http-server -c-1 .
    ```
-4. 瀏覽器開啟輸出網址（預設 `http://localhost:3000`），即可開始使用。
+4. 瀏覽器開啟輸出網址即可開始使用（`scripts/serve.py` 預設 `http://127.0.0.1:8313/`）。
+
+### 為什麼建議用 `scripts/serve.py`
+
+| 路由 | 用途 |
+| --- | --- |
+| `/v1/*` | 把 AI 請求轉給 `--ai-proxy` 指定的網關。瀏覽器只跟自己來源打交道，因此不會被網關的 CORS／來源白名單擋住；`ai-config.js` 的 provider 寫成相對路徑 `/v1/chat/completions` 時，桌機與區域網裝置可以共用同一份設定。 |
+| `/fetch?url=` | 伺服器端代抓目標網頁原始 HTML（瀏覽器直抓會被 CORS 擋）。 |
+| `/extract?url=` | 伺服器端代抓並直接轉成 `{title, markdown}`；文章「新聞來源／網址導入」優先走這條，不必再把整份 HTML 丟給模型。 |
+
+- 兩條抓取路由都有 SSRF 防護：只允許 http/https、拒絕私網／loopback／link-local／保留位址、逐次轉址重新檢查、限制大小與逾時。
+- 不需要文章抓取時用 `--no-article-fetch` 關閉。
+- 反過來說：用 `npx serve .` 也能跑，但 AI 與文章導入會退回直接連線或第三方服務（可能被 CORS／白名單擋掉）。
 
 ## AI / 雲端設定重點
 - `ai-config.js` **不得**提交版本控制，內含：

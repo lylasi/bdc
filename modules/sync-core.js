@@ -13,6 +13,7 @@ import {
   saveGradingHistory
 } from './storage.js';
 import { loadGlobalSettings, saveGlobalSettings } from './settings.js';
+import { t } from './i18n.js';
 
 const ASSISTANT_LEGACY_KEY = 'assistantConversations';
 const ASSISTANT_INDEX_KEY = 'assistantConvIndex';
@@ -140,7 +141,7 @@ function normalizeAssistantMeta(meta, fallbackUpdatedAt = '') {
   return {
     id: meta.id,
     articleKey: meta.articleKey || 'global',
-    title: meta.title || (meta.articleKey === 'global' ? '全局會話' : '文章'),
+    title: meta.title || (meta.articleKey === 'global' ? t('assistant.globalSession') : t('assistant.article')),
     updatedAt: normalizeUpdatedAt(meta.updatedAt, fallbackUpdatedAt)
   };
 }

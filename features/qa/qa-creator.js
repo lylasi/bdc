@@ -53,7 +53,7 @@ export function validateFormat(pairs) {
   const errors = [];
 
   if (!Array.isArray(pairs) || pairs.length === 0) {
-    errors.push('沒有找到有效的問答對');
+    errors.push(t('qa.noValidPairs'));
     return { isValid: false, errors };
   }
 
@@ -62,22 +62,22 @@ export function validateFormat(pairs) {
   const expectedQids = Array.from({ length: qids.length }, (_, i) => i + 1);
 
   if (!qids.every((qid, index) => qid === expectedQids[index])) {
-    errors.push('問題編號應該從1開始連續編號');
+    errors.push(t('qa.qidShouldStartAtOne'));
   }
 
   // 檢查重複的qid
   const uniqueQids = new Set(qids);
   if (uniqueQids.size !== qids.length) {
-    errors.push('發現重複的問題編號');
+    errors.push(t('qa.duplicateQid'));
   }
 
   // 檢查空內容
   pairs.forEach(pair => {
     if (!pair.question || pair.question.trim() === '') {
-      errors.push(`Q${pair.qid} 的問題內容不能為空`);
+      errors.push(t('qa.qidQuestionEmpty', { qid: pair.qid }));
     }
     if (!pair.answer || pair.answer.trim() === '') {
-      errors.push(`A${pair.qid} 的答案內容不能為空`);
+      errors.push(t('qa.qidAnswerEmpty', { qid: pair.qid }));
     }
   });
 
@@ -123,7 +123,7 @@ export function generatePreviewHTML(pairs) {
         <div class="qa-pair-header">
           <div class="qa-header-left">
             <span class="qa-qid-badge">${pair.qid}</span>
-            <span class="qa-drag-handle" draggable="true" title="拖拽排序" aria-label="拖拽排序">⠿</span>
+            <span class="qa-drag-handle" draggable="true" title="${t('qa.dragToSort')}" aria-label="${t('qa.dragToSort')}">⠿</span>
           </div>
           <div class="qa-pair-toolbar">
             <button type="button" class="qa-chip-btn qa-copy-pair" data-qid="${pair.qid}">${t('qa.copy')}</button>
@@ -134,11 +134,11 @@ export function generatePreviewHTML(pairs) {
         </div>
         <div class="qa-question">
           <span class="qa-label">Q:</span>
-          <div class="qa-editable" contenteditable="true" tabindex="0" data-role="question" aria-label="編輯問題 Q${pair.qid}">${escapeHtml(pair.question)}</div>
+          <div class="qa-editable" contenteditable="true" tabindex="0" data-role="question" aria-label="${t('qa.editQuestionAria', { qid: pair.qid })}">${escapeHtml(pair.question)}</div>
         </div>
         <div class="qa-answer">
           <span class="qa-label">A:</span>
-          <div class="qa-editable" contenteditable="true" tabindex="0" data-role="answer" aria-label="編輯答案 A${pair.qid}">${escapeHtml(pair.answer)}</div>
+          <div class="qa-editable" contenteditable="true" tabindex="0" data-role="answer" aria-label="${t('qa.editAnswerAria', { qid: pair.qid })}">${escapeHtml(pair.answer)}</div>
         </div>
       </div>
     `;
@@ -168,16 +168,16 @@ export function saveNewSet(name, description, pairs, existingQASet = null) {
   try {
     // 驗證輸入
     if (!name || name.trim() === '') {
-      throw new Error('問答集名稱不能為空');
+      throw new Error(t('qa.setNameRequired'));
     }
 
     if (!pairs || pairs.length === 0) {
-      throw new Error('至少需要一個問答對');
+      throw new Error(t('qa.needAtLeastOnePair'));
     }
 
     const validation = validateFormat(pairs);
     if (!validation.isValid) {
-      throw new Error('問答對格式錯誤：' + validation.errors.join(', '));
+      throw new Error(t('qa.pairFormatError', { errors: validation.errors.join(', ') }));
     }
 
     const now = new Date().toISOString();
@@ -191,7 +191,7 @@ export function saveNewSet(name, description, pairs, existingQASet = null) {
         description: description.trim() || '',
         category: existingQASet.category || t('qa.customCategory'),
         difficulty: existingQASet.difficulty || 'unknown',
-        creator: existingQASet.creator || '用戶創建',
+        creator: existingQASet.creator || t('qa.createdByUser'),
         createdAt: existingQASet.createdAt || now,
         updatedAt: now,
         questions: pairs.map(pair => ({
@@ -210,7 +210,7 @@ export function saveNewSet(name, description, pairs, existingQASet = null) {
         description: description.trim() || '',
         category: t('qa.customCategory'),
         difficulty: 'unknown',
-        creator: '用戶創建',
+        creator: t('qa.createdByUser'),
         createdAt: now,
         updatedAt: now,
         questions: pairs.map(pair => ({
@@ -226,12 +226,12 @@ export function saveNewSet(name, description, pairs, existingQASet = null) {
       console.log('問答集保存成功:', qaSet.name);
       return qaSet;
     } else {
-      throw new Error('保存問答集失敗');
+      throw new Error(t('qa.createSetFailed'));
     }
 
   } catch (error) {
     console.error('保存問答集時出錯:', error);
-    displayMessage('保存失敗: ' + error.message, 'error');
+    displayMessage(t('qa.saveFailed', { message: error.message }), 'error');
     return null;
   }
 }
@@ -260,7 +260,7 @@ function escapeHtml(text) {
 function generateTemplateName(baseName = '') {
   if (!baseName) return '';
 
-  const suffix = ' (複本)';
+  const suffix = ` ${t('qa.copySuffix')}`;
   return baseName.endsWith(suffix) ? baseName : `${baseName}${suffix}`;
 }
 

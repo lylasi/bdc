@@ -50,21 +50,46 @@ function buildArticleImportUrl(base, targetUrl) {
 
 async function fetchJsonWithTimeout(url, { timeoutMs = 20000, signal, headers } = {}) {
     const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
-    const resp = await fetch(url, {
-        signal: signal || ac.signal,
-        headers: { 'Accept': 'application/json', ...(headers || {}) }
-    });
-    clearTimeout(timer);
+    const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'TimeoutError')), timeoutMs);
+    let resp;
+    try {
+        resp = await fetch(url, {
+            signal: signal || ac.signal,
+            headers: { 'Accept': 'application/json', ...(headers || {}) }
+        });
+    } catch (e) {
+        // 逾時原本只會丟出 AbortError，訊息是 "Timeout" 或完全空白，使用者看不出發生什麼事
+        if (e && (e.name === 'AbortError' || e.name === 'TimeoutError')) {
+            const err = new Error(`Timeout（${Math.round(timeoutMs / 1000)}s）`);
+            err.code = 'timeout';
+            throw err;
+        }
+        throw e;
+    } finally {
+        clearTimeout(timer);
+    }
     if (!resp.ok) {
         let payload = null;
         try { payload = await resp.json(); } catch (_) {}
-        const err = new Error(`HTTP ${resp.status}`);
+        // 服務端通常會在 error/message/details 說明原因（例如「Host x is not allowed」）；
+        // 只顯示 HTTP 403 會讓使用者完全查不出問題出在哪裡
+        const detail = payload && (payload.error || payload.message || payload.detail || payload.details);
+        const err = new Error(typeof detail === 'string' && detail.trim() ? `HTTP ${resp.status}：${detail.trim()}` : `HTTP ${resp.status}`);
         err.status = resp.status;
         err.payload = payload;
         throw err;
     }
     return resp.json();
+}
+
+/**
+ * 回報非致命問題（例如模型輸出被截斷）。
+ * 只傳機器可讀的代碼，實際文案由呼叫端用 t() 決定，避免在這裡硬編中文。
+ */
+function notifyNotice(opts, code) {
+    if (!code) return;
+    try { console.warn('[article-import]', code); } catch (_) {}
+    try { if (typeof opts?.onNotice === 'function') opts.onNotice(code); } catch (_) {}
 }
 
 const __aiQueues = new Map();
@@ -477,7 +502,7 @@ export async function generateExamplesForWord(word, opts = {}) {
  */
 export async function checkUserSentence(word, userSentence, opts = {}) {
     const locale = getLocale();
-    const correctToken = locale === 'zh-HK' ? '正確' : '正确';
+    const correctToken = locale === 'zh-HK' ? '正確' : '正确'; // i18n-allow: 依介面語言給模型的指示詞
     const incorrectPrefix = locale === 'zh-HK' ? '不正確。建議：' : '不正确。建议：';
     const prompt = buildPrompt('learning.sentenceChecking', {
         word,
@@ -922,10 +947,11 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
     try {
         const compact = expectedList.map(x => ({ word: String(x.word||''), meaning: String(x.meaning||'') }));
         if (format === 'markdown') {
-            const md = ['標準詞表（僅供比對，請不要逐行列出於表格中）：'];
+            const md = ['標準詞表（僅供比對，請不要逐行列出於表格中）：']; // i18n-allow: 送給模型的提示詞，非介面文案
             for (const it of compact) md.push(`- ${it.word}${it.meaning ? ' — ' + it.meaning : ''}`);
             content.push({ type: 'text', text: md.join('\n') });
         } else {
+            // i18n-allow: 送給模型的提示詞，非介面文案
             content.push({ type: 'text', text: `標準詞表（JSON）:\n${JSON.stringify(compact)}` });
         }
     } catch (_) { /* ignore */ }
@@ -975,8 +1001,8 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
 export async function fetchArticleFromUrl(url, opts = {}) {
     const { timeoutMs = 20000, signal } = opts;
     let u;
-    try { u = new URL(url, window.location.href); } catch (_) { throw new Error('URL 無效'); }
-    if (!/^https?:$/i.test(u.protocol)) throw new Error('僅支援 http/https');
+    try { u = new URL(url, window.location.href); } catch (_) { throw new Error(t('errors.urlInvalid')); }
+    if (!/^https?:$/i.test(u.protocol)) throw new Error(t('errors.urlSchemeOnly'));
 
     // 1) r.jina.ai 轉換（常見站點可直接得到「純文字」正文）
     const jina = `https://r.jina.ai/${u.protocol}//${u.host}${u.pathname}${u.search}`;
@@ -1006,7 +1032,7 @@ export async function fetchArticleFromUrl(url, opts = {}) {
         }
     } catch (_) { /* ignore */ }
 
-    throw new Error('無法擷取此網址內容（可能被目標站點或網路限制）');
+    throw new Error(t('errors.urlFetchFailed'));
 }
 
 /**
@@ -1164,6 +1190,21 @@ export function extractArticleTitleAndBody(rawText, url = '') {
  * 直接獲取「標題+正文」結構；若抽取失敗，回傳以原文為正文。
  */
 export async function fetchArticleFromUrlStructured(url, opts = {}) {
+    // 有設定抽取端點就先走它：同源 /extract 直接回乾淨 Markdown，
+    // 不會受目標站 CORS 或 r.jina.ai 可用性影響
+    if (ARTICLE_IMPORT?.EXTRACT_URL) {
+        try {
+            const viaExtract = await fetchArticleViaWorker(url, { ...opts });
+            if (viaExtract?.markdown) {
+                return {
+                    title: viaExtract.title || '',
+                    content: viaExtract.markdown,
+                    publishedAt: viaExtract.publishedAt || '',
+                    url
+                };
+            }
+        } catch (_) { /* 落回原本的 r.jina.ai／直抓流程 */ }
+    }
     const raw = await fetchArticleFromUrl(url, opts);
     try {
         const parsed = extractArticleTitleAndBody(raw, url);
@@ -1177,10 +1218,11 @@ export async function fetchArticleFromUrlStructured(url, opts = {}) {
 export async function fetchArticleViaWorker(url, opts = {}) {
     const { timeoutMs = 20000, signal, keepImages = true, model, preferMarkdown = true } = opts;
     const endpoint = ARTICLE_IMPORT?.EXTRACT_URL || ARTICLE_IMPORT?.PROXY_URL;
-    if (!endpoint) throw new Error('尚未設定文章擷取服務端點');
+    if (!endpoint) throw new Error(t('errors.extractEndpointMissing'));
     const base = buildArticleImportUrl(endpoint, url);
-    if (!base) throw new Error('無法建立文章擷取網址');
-    const u = new URL(base);
+    if (!base) throw new Error(t('errors.extractUrlFailed'));
+    // 端點可以是相對路徑（例如預覽伺服器的同源 /extract?url=），用目前頁面當基底解析
+    const u = new URL(base, window.location.href);
     // 若 Worker 支援 format/includeMarkdown，優先要求 markdown
     if (preferMarkdown) {
         if (!u.searchParams.has('format')) u.searchParams.set('format', 'json');
@@ -1199,9 +1241,9 @@ export async function fetchArticleViaWorker(url, opts = {}) {
         const text = data?.contentText || '';
         if (html || text) {
             const htmlInput = html || `<article>${text}</article>`;
-            markdown = await aiExtractArticleFromHtml(htmlInput, { url: sourceUrl, keepImages, timeoutMs, signal, model });
+            markdown = await aiExtractArticleFromHtml(htmlInput, { url: sourceUrl, keepImages, timeoutMs, signal, model, onNotice: opts.onNotice });
         } else {
-            throw new Error('擷取結果缺少正文內容');
+            throw new Error(t('errors.extractNoContent'));
         }
     }
     return { title, byline, publishedAt, markdown, raw: data, sourceUrl };
@@ -1209,8 +1251,8 @@ export async function fetchArticleViaWorker(url, opts = {}) {
 
 export async function listCuratedArticles(sourceId, opts = {}) {
     const { timeoutMs = 15000, signal } = opts;
-    if (!sourceId) throw new Error('缺少來源代碼');
-    if (!ARTICLE_IMPORT?.FEED_URL) throw new Error('未設定新聞來源端點');
+    if (!sourceId) throw new Error(t('errors.missingSourceId'));
+    if (!ARTICLE_IMPORT?.FEED_URL) throw new Error(t('errors.feedEndpointMissing'));
     const base = ARTICLE_IMPORT.FEED_URL.replace(/\/$/, '');
     const u = new URL(`${base}/${encodeURIComponent(sourceId)}`);
     // 若 Worker 需要明確格式，指定 json
@@ -1238,7 +1280,7 @@ export async function listArticleSources(opts = {}) {
 
 export async function fetchCuratedArticle(sourceId, articleUrl, opts = {}) {
     const { timeoutMs = 22000, signal, keepImages = true, model } = opts;
-    if (!articleUrl) throw new Error('缺少文章網址');
+    if (!articleUrl) throw new Error(t('errors.missingArticleUrl'));
     let lastErr = null;
     if (ARTICLE_IMPORT?.FEED_URL && sourceId) {
         try {
@@ -1256,9 +1298,9 @@ export async function fetchCuratedArticle(sourceId, articleUrl, opts = {}) {
             if (!markdown) {
                 const html = data?.contentHtml || data?.rawHtml || '';
                 if (html) {
-                    markdown = await aiExtractArticleFromHtml(html, { url: articleUrl, keepImages, timeoutMs, signal, model });
+                    markdown = await aiExtractArticleFromHtml(html, { url: articleUrl, keepImages, timeoutMs, signal, model, onNotice: opts.onNotice });
                 } else if (data?.contentText) {
-                    markdown = await aiCleanArticleMarkdown(String(data.contentText), { keepImages, timeoutMs, signal, model });
+                    markdown = await aiCleanArticleMarkdown(String(data.contentText), { keepImages, timeoutMs, signal, model, onNotice: opts.onNotice });
                 }
             }
             if (markdown) return { title, byline, publishedAt, markdown, raw: data, sourceId };
@@ -1271,7 +1313,13 @@ export async function fetchCuratedArticle(sourceId, articleUrl, opts = {}) {
         res.sourceId = sourceId;
         return res;
     } catch (err) {
-        if (lastErr) throw lastErr;
+        // 兩個端點都失敗時要把兩個原因都講出來；只丟第一個（第三方來源的 403）
+        // 會讓使用者以為問題出在那邊，看不到自訂抽取端點真正的失敗原因
+        if (lastErr) {
+            const combined = new Error(t('errors.extractFallbackFailed', { first: lastErr.message, second: err?.message || err }));
+            combined.status = err?.status || lastErr.status;
+            throw combined;
+        }
         throw err;
     }
 }
@@ -1284,6 +1332,60 @@ export async function fetchCuratedArticle(sourceId, articleUrl, opts = {}) {
  * 讓 AI 清洗已抽取的 Markdown 文章，保留結構與圖片；移除站點噪音；不翻譯內容。
  * 返回乾淨的 Markdown 純文字。
  */
+/**
+ * 把長 Markdown 依空行切成數塊，供分段清洗使用。
+ * 不會切在程式碼區塊中間（用 ``` 的奇偶數判斷）。
+ */
+export function splitMarkdownForCleanup(markdown, limit = 3500) {
+    const blocks = String(markdown || '').split(/\n{2,}/);
+    const chunks = [];
+    let buf = [];
+    let len = 0;
+    let inFence = false;
+    const flush = () => {
+        if (!buf.length) return;
+        chunks.push(buf.join('\n\n'));
+        buf = [];
+        len = 0;
+    };
+    for (const block of blocks) {
+        if (len && !inFence && len + block.length + 2 > limit) flush();
+        buf.push(block);
+        len += block.length + 2;
+        const fences = (block.match(/^\s*```/gm) || []).length;
+        if (fences % 2 === 1) inFence = !inFence;
+    }
+    flush();
+    return chunks.length ? chunks : [String(markdown || '')];
+}
+
+/** 清洗單一塊；回傳 { content, truncated } */
+async function cleanMarkdownChunk(chunk, ctx) {
+    const messages = buildMessages('import.markdownCleanup', {
+        imageRule: ctx.imageRule,
+        markdownText: chunk
+    });
+    // 推理模型的思考 token 和正文共用同一個上限，所以額度要按輸入長度給足
+    const maxTokens = Math.min(8000, Math.max(ctx.baseMaxTokens, chunk.length + 800));
+    const data = await requestAI({
+        apiUrl: ctx.connection.apiUrl,
+        apiKey: ctx.connection.apiKey,
+        provider: ctx.connection.provider,
+        profile: ctx.connection.profile,
+        model: ctx.model,
+        messages,
+        temperature: ctx.temperature,
+        maxTokens,
+        timeoutMs: ctx.timeoutMs,
+        signal: ctx.signal,
+        taskType: 'articleCleanup'
+    });
+    let content = (data?.choices?.[0]?.message?.content || '').trim();
+    // 去掉偶發的 ``` 標記
+    content = content.replace(/^```(?:markdown)?\n/, '').replace(/\n```\s*$/, '').trim();
+    return { content, truncated: data?.choices?.[0]?.finish_reason === 'length' };
+}
+
 export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
     const { timeoutMs: toMs, temperature: temp, signal, model: modelOverride, keepImages: keepImgs } = opts;
     const s = loadGlobalSettings();
@@ -1302,35 +1404,41 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
         : resolveConfigConnection(ARTICLE_IMPORT, { settings: s, secrets: sec });
 
     const temperature = (typeof temp === 'number') ? temp : (ARTICLE_IMPORT?.temperature ?? 0.1);
-    const maxTokens = ARTICLE_IMPORT?.maxTokens ?? 1400;
+    const baseMaxTokens = ARTICLE_IMPORT?.maxTokens ?? 1400;
     const timeoutMs = (typeof toMs === 'number') ? toMs : (ARTICLE_IMPORT?.timeoutMs ?? 25000);
     const keepImages = (typeof keepImgs === 'boolean') ? keepImgs : (ARTICLE_IMPORT?.keepImagesDefault ?? true);
 
     const imageRule = keepImages
       ? 'Keep content-related images as Markdown image lines. Preserve their syntax and alt text; remove social, tracking and banner images.'
       : 'Remove all Markdown image lines without replacing them with links or descriptions.';
-    const messages = buildMessages('import.markdownCleanup', {
-        imageRule,
-        markdownText
-    });
 
-    const data = await requestAI({
-        apiUrl: connection.apiUrl,
-        apiKey: connection.apiKey,
-        provider: connection.provider,
-        profile: connection.profile,
-        model,
-        messages,
-        temperature,
-        maxTokens,
-        timeoutMs,
-        signal,
-        taskType: 'articleCleanup'
-    });
-    let content = (data?.choices?.[0]?.message?.content || '').trim();
-    // 去掉偶發的 ``` 標記
-    content = content.replace(/^```(?:markdown)?\n/, '').replace(/\n```\s*$/, '').trim();
-    return content;
+    const ctx = { connection, model, temperature, baseMaxTokens, timeoutMs, signal, imageRule };
+    const source = String(markdownText || '');
+    const chunks = splitMarkdownForCleanup(source);
+
+    // 短文章：維持單次呼叫
+    if (chunks.length <= 1) {
+        const { content, truncated } = await cleanMarkdownChunk(source, ctx);
+        if (truncated) notifyNotice(opts, 'cleanup-truncated');
+        return content;
+    }
+
+    // 長文章：逐塊清洗再拼回。先前是一次性送出，撞到輸出上限就會安靜地砍掉尾段。
+    const cleaned = [];
+    let truncatedAny = false;
+    for (let i = 0; i < chunks.length; i += 1) {
+        try { if (typeof opts.onProgress === 'function') opts.onProgress(i + 1, chunks.length); } catch (_) {}
+        try {
+            const { content, truncated } = await cleanMarkdownChunk(chunks[i], ctx);
+            if (truncated) truncatedAny = true;
+            cleaned.push(content || chunks[i]);
+        } catch (err) {
+            if (i === 0) throw err;          // 第一塊就失敗：讓呼叫端決定怎麼提示
+            cleaned.push(chunks[i]);         // 後續失敗：保留原文，至少不丢內容
+        }
+    }
+    if (truncatedAny) notifyNotice(opts, 'cleanup-truncated');
+    return cleaned.join('\n\n');
 }
 
 /**
@@ -1382,6 +1490,8 @@ export async function aiExtractArticleFromHtml(html, opts = {}) {
     let md = (data?.choices?.[0]?.message?.content || '').trim();
     // 去掉偶發的 ``` 標記
     md = md.replace(/^```(?:markdown)?\n/, '').replace(/\n```\s*$/, '').trim();
+    // 長文的 HTML 抽取同樣是一槍到底，撞到上限就會少掉尾段
+    if (data?.choices?.[0]?.finish_reason === 'length') notifyNotice(opts, 'extract-truncated');
     return md;
 }
 
@@ -1393,8 +1503,8 @@ export async function aiExtractArticleFromHtml(html, opts = {}) {
 export async function fetchArticleCleanMarkdown(url, opts = {}) {
     const { keepImages = true, noThirdPartyGateway = false, timeoutMs = 30000, signal, model } = opts;
     let u;
-    try { u = new URL(url, window.location.href); } catch (_) { throw new Error('URL 無效'); }
-    if (!/^https?:$/i.test(u.protocol)) throw new Error('僅支援 http/https');
+    try { u = new URL(url, window.location.href); } catch (_) { throw new Error(t('errors.urlInvalid')); }
+    if (!/^https?:$/i.test(u.protocol)) throw new Error(t('errors.urlSchemeOnly'));
 
     // 先嘗試直接抓取 HTML（受制於對方 CORS）
     try {
@@ -1404,16 +1514,26 @@ export async function fetchArticleCleanMarkdown(url, opts = {}) {
         clearTimeout(timer);
         if (resp.ok) {
             const html = await resp.text();
-            const md = await aiExtractArticleFromHtml(html, { url: u.toString(), keepImages, timeoutMs, signal, model });
+            const md = await aiExtractArticleFromHtml(html, { url: u.toString(), keepImages, timeoutMs, signal, model, onNotice: opts.onNotice });
             return md;
         }
     } catch (_) { /* fallthrough */ }
+
+    // 先試自有的抽取端點（例如預覽伺服器的同源 /extract）：它直接回乾淨 Markdown，
+    // 不必再把整份 HTML 丟給模型重寫一次（那條路既慢又容易撞到輸出上限）
+    if (ARTICLE_IMPORT?.EXTRACT_URL) {
+        try {
+            const viaExtract = await fetchArticleViaWorker(u.toString(), { timeoutMs, signal, keepImages, model });
+            if (viaExtract?.markdown) return viaExtract.markdown;
+        } catch (_) { /* 繼續嘗試其他路線 */ }
+    }
 
     // 嘗試使用自有代理（若已配置）
     try {
         const proxy = ARTICLE_IMPORT && ARTICLE_IMPORT.PROXY_URL && String(ARTICLE_IMPORT.PROXY_URL).trim();
         if (proxy) {
-            const pu = new URL(proxy);
+            // 允許相對路徑（例如預覽伺服器的同源 /fetch?url=）
+            const pu = new URL(proxy, window.location.href);
             // 允許 ?url= 形式；若使用路徑佔位，則直接拼接
             if (!pu.searchParams.get('url')) pu.searchParams.set('url', u.toString());
             const ac = new AbortController();
@@ -1422,19 +1542,19 @@ export async function fetchArticleCleanMarkdown(url, opts = {}) {
             clearTimeout(timer);
             if (resp.ok) {
                 const html = await resp.text();
-                const md = await aiExtractArticleFromHtml(html, { url: u.toString(), keepImages, timeoutMs, signal, model });
+                const md = await aiExtractArticleFromHtml(html, { url: u.toString(), keepImages, timeoutMs, signal, model, onNotice: opts.onNotice });
                 return md;
             }
         }
     } catch (_) { /* ignore */ }
 
     if (noThirdPartyGateway) {
-        throw new Error('目標站點禁止直抓或網路受限。請允許第三方轉換，或貼上全文/HTML。');
+        throw new Error(t('errors.directFetchBlocked'));
     }
 
     // 回退：使用 r.jina.ai 取得可讀文本 → 再清洗
     const raw = await fetchArticleFromUrl(u.toString(), { timeoutMs, signal });
-    const md = await aiCleanArticleMarkdown(raw, { timeoutMs, signal, keepImages, model });
+    const md = await aiCleanArticleMarkdown(raw, { timeoutMs, signal, keepImages, model, onNotice: opts.onNotice });
     return md;
 }
 

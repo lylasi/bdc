@@ -74,7 +74,7 @@ export function saveBackupPayload(payload, note = '') {
         const obj = JSON.parse(rawB);
         const ts = obj?.ts || bid;
         const n = String(obj?.note || '');
-        const isManual = /手動|manual/i.test(n);
+        const isManual = /(手動|手动|manual)/i.test(n);
         entries.push({ id: bid, ts, isManual });
       } catch (_) {}
     }

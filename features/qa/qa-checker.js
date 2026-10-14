@@ -216,14 +216,14 @@ async function checkSingleAnswer(answer) {
     try {
       const puncIssues = analyzePunctuationDifferences(userAnswer || '', correctAnswer || '');
       if (/[.!?]$/.test(correctAnswer || '') && !/[.!?]$/.test((userAnswer || '').trim())) {
-        puncIssues.push('句末缺少終止符');
+        puncIssues.push(t('qa.puncNoTerminator'));
       }
       if (puncIssues.length > 0) {
         result.errorAnalysis = result.errorAnalysis || {};
         const merged = Array.isArray(result.errorAnalysis.punctuation) ? result.errorAnalysis.punctuation.slice() : [];
         result.errorAnalysis.punctuation = dedupeArray(merged.concat(puncIssues));
         if (!result.teacherFeedback) {
-          result.teacherFeedback = '標點/格式需要修正';
+          result.teacherFeedback = t('qa.puncNeedsFix');
         }
         const sug = Array.isArray(result.improvementSuggestions) ? result.improvementSuggestions.slice() : [];
         if (puncIssues[0]) sug.unshift(puncIssues[0]);
@@ -281,14 +281,14 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
     if (!mayNotSupport) {
       const code = error?.status || 0;
       const message = error?.payload?.error?.message || error?.payload?.message || error?.message || '';
-      throw new Error(`AI API請求失敗: ${code}${message ? ' - ' + message : ''}`);
+      throw new Error(t('qa.apiRequestFailed', { code, message: message ? ` - ${message}` : '' }));
     }
     try {
       data = await callOnce(false);
     } catch (fallbackError) {
       const code = fallbackError?.status || 0;
       const message = fallbackError?.payload?.error?.message || fallbackError?.payload?.message || fallbackError?.message || '';
-      throw new Error(`AI API請求失敗: ${code}${message ? ' - ' + message : ''}`);
+      throw new Error(t('qa.apiRequestFailed', { code, message: message ? ` - ${message}` : '' }));
     }
   }
 
@@ -302,7 +302,7 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
   }
 
   if (!content) {
-    throw new Error('AI回應格式錯誤');
+    throw new Error(t('qa.aiBadFormat'));
   }
 
   // 有些模型會回傳 ```json\n...\n``` 或混入前後說明文字；這裡做健壯處理
@@ -330,7 +330,7 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
   };
 
   let text = extractJsonText(content);
-  if (!text) throw new Error('AI回應為空');
+  if (!text) throw new Error(t('qa.aiEmptyResponse'));
 
   // 解析JSON回應（帶自動修復尾逗號/多餘逗號）
   let aiResult;
@@ -384,7 +384,7 @@ async function performAIAnalysis(question, correctAnswer, userAnswer) {
 function createTimeoutPromise(__timeout, answer) {
   return new Promise((_, reject) => {
     setTimeout(() => {
-      reject(new Error(`校對超時: Q${answer.qid}`));
+      reject(new Error(t('qa.checkTimeout', { qid: answer.qid })));
     }, __timeout);
   });
 }
@@ -397,7 +397,7 @@ function createFailbackResult(answer) {
     ...answer,
     isCorrect: false,
     score: 0,
-    feedback: 'AI 校對暫不可用，請稍後再試',
+    feedback: t('qa.aiUnavailableShort'),
     aiSuggestions: [],
     errorAnalysis: {},
     checkMethod: 'basic_check'
@@ -416,7 +416,7 @@ function performBasicChecking(trainingResult) {
       ...answer,
       isCorrect: isExactMatch,
       score: isExactMatch ? 100 : calculateBasicScore(userAnswer, correctAnswer),
-      feedback: isExactMatch ? '答案正確' : '請檢查答案的準確性',
+      feedback: isExactMatch ? t('qa.answerCorrect') : t('qa.checkAccuracy'),
       aiSuggestions: [],
       errorAnalysis: {},
       checkMethod: 'basic_only'
@@ -524,7 +524,7 @@ function generateCheckingSummary(checkedAnswers) {
         isCorrect: !!a.isCorrect,
         displayIndex: typeof a.displayIndex === 'number' ? a.displayIndex : idx,
         qid: a.qid,
-        reason: a.teacherFeedback || a.feedback || '與參考答案不一致',
+        reason: a.teacherFeedback || a.feedback || t('qa.inconsistentWithReference'),
         userAnswer: a.userAnswer || '',
         correctAnswer: a.correctAnswer || ''
       }))
@@ -623,8 +623,8 @@ function analyzePunctuationDifferences(userAnswer = '', correctAnswer = '') {
   for (const ch of PUNC) {
     const du = u.get(ch) || 0;
     const dc = c.get(ch) || 0;
-    if (du < dc) msgs.push("缺少標點 '" + ch + "'");
-    if (du > dc) msgs.push("多餘標點 '" + ch + "'");
+    if (du < dc) msgs.push(t('qa.missingPunctuation', { char: ch }));
+    if (du > dc) msgs.push(t('qa.extraPunctuation', { char: ch }));
   }
   return msgs;
 }
@@ -663,27 +663,27 @@ function analyzeFormatIssues(userAnswer = '') {
   // 句首大寫
   const firstAlpha = s.match(/[A-Za-z]/);
   if (firstAlpha && firstAlpha[0] === firstAlpha[0].toLowerCase()) {
-    msgs.push('句首應使用大寫字母');
+    msgs.push(t('qa.shouldCapitalizeStart'));
   }
   // 句末標點
   if (!/[.!?]$/.test(s)) {
-    msgs.push('句末缺少標點');
+    msgs.push(t('qa.punctuationEndMissing'));
   }
   // Yes/No 之後的逗號
   if (/^(yes|no)\s+[a-z]/i.test(s) && !/^(yes|no),\s/i.test(s)) {
-    msgs.push('"Yes/No" 後建議加逗號');
+    msgs.push(t('qa.commaAfterYesNoShort'));
   }
   // I 應大寫
   if (/\bi\b/.test(s)) {
-    msgs.push('代詞 I 應大寫');
+    msgs.push(t('qa.pronounIShouldCapitalize'));
   }
   // 多餘空格
   if (/\s{2,}/.test(s)) {
-    msgs.push('請避免連續空格');
+    msgs.push(t('qa.avoidDoubleSpace'));
   }
   // 標點前空格
   if (/\s[,:;!?\.]/.test(s)) {
-    msgs.push('標點前不應有空格');
+    msgs.push(t('qa.noLeadingSpaceBeforePunct'));
   }
   return msgs;
 }
@@ -706,14 +706,15 @@ function ruleBasedPrecheck(question = '', correctAnswer = '', userAnswer = '') {
       payload: {
         isCorrect: false,
         score: 0,
-        teacherFeedback: '未作答或內容無效（需英文作答）',
-        improvementSuggestions: ['請用英文直接回答問題', '參考參考答案的要點作答'],
-        errorAnalysis: { punctuation: [], grammar: [], vocabulary: [], structure: ['未直接回應題目'] }
+        teacherFeedback: t('qa.emptyOrInvalidAnswer'),
+        improvementSuggestions: [t('qa.answerInEnglish'), t('qa.answerKeyPoints')],
+        errorAnalysis: { punctuation: [], grammar: [], vocabulary: [], structure: [t('qa.notAnsweringQuestion')] }
       }
     };
   }
 
   // 攔截明顯的元回覆/敷衍回覆
+  // i18n-allow: 這是比對 AI 回覆內容用的樣式，不是介面文案
   const metaPattern = /^(yes|no|yeah|yep|ok|okay|agree|i think|maybe|you are right|that'?s right|correct|right\.?|sure|fine|i don't know|idk|no idea|不知道)\b/i;
   const onlyAcknowledgement = metaPattern.test(ua);
 
@@ -726,8 +727,8 @@ function ruleBasedPrecheck(question = '', correctAnswer = '', userAnswer = '') {
   // 3) 關鍵詞覆蓋率過低 → 視為未回應題意
   if (onlyAcknowledgement || recall < 0.3) {
     const suggestions = [];
-    if (missing.length) suggestions.push('補充關鍵資訊：' + missing.join(', '));
-    suggestions.push('請直接回答題目重點');
+    if (missing.length) suggestions.push(t('qa.addKeyInfo', { items: missing.join(', ') }));
+    suggestions.push(t('qa.answerMainPoint'));
     if (fmt.length) suggestions.push(...fmt);
     if (punc.length) suggestions.push(...punc);
 
@@ -736,13 +737,13 @@ function ruleBasedPrecheck(question = '', correctAnswer = '', userAnswer = '') {
       payload: {
         isCorrect: false,
         score: Math.round(recall * 40),
-        teacherFeedback: onlyAcknowledgement ? '答案偏向附和/評述，未回應題目要點' : '未覆蓋標準答案的關鍵資訊',
+        teacherFeedback: onlyAcknowledgement ? t('qa.answerEchoesOnly') : t('qa.notCoveringKeyInfo'),
         improvementSuggestions: suggestions.slice(0, 5),
         errorAnalysis: {
           punctuation: [].concat(fmt, punc),
           grammar: [],
           vocabulary: [],
-          structure: ['未直接回應題目或關鍵資訊不足']
+          structure: [t('qa.insufficientKeyInfo')]
         }
       }
     };

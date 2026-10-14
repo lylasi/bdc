@@ -6,6 +6,7 @@
 
 import { SYNC } from '../ai-config.js';
 import { lwwMerge } from './sync-core.js';
+import { t } from './i18n.js';
 
 const TOKEN_KEY = 'sync_token';
 const USER_ID_KEY = 'sync_user_id';
@@ -48,7 +49,7 @@ function getToken() {
 
 async function apiFetch(path, options = {}, tokenOverride) {
   const endpoint = getEndpoint();
-  if (!endpoint) throw new Error('尚未設定同步端點（ai-config.js 的 SYNC.endpoint）');
+  if (!endpoint) throw new Error(t('errors.syncEndpointMissing'));
   const token = tokenOverride || getToken();
   const headers = { ...(options.headers || {}) };
   if (token) headers['Authorization'] = 'Bearer ' + token;
@@ -106,18 +107,18 @@ export const auth = {
   // 通行碼登入：驗證後存 token + user_id，並廣播 SIGNED_IN
   async signInWithToken(token) {
     const code = String(token || '').trim();
-    if (!code) throw new Error('請輸入通行碼');
+    if (!code) throw new Error(t('errors.passcodeRequired'));
     let res;
     try {
       res = await apiFetch('/me', { method: 'GET' }, code);
     } catch (e) {
-      throw new Error(e?.message || '無法連線到同步服務');
+      throw new Error(e?.message || t('errors.cannotReachSync'));
     }
-    if (res.status === 401) throw new Error('通行碼錯誤');
-    if (!res.ok) throw new Error('登入失敗（' + res.status + '）');
+    if (res.status === 401) throw new Error(t('errors.passcodeWrong'));
+    if (!res.ok) throw new Error(t('errors.loginFailed', { status: res.status }));
     const data = await res.json().catch(() => ({}));
     const userId = data && data.user_id ? String(data.user_id) : '';
-    if (!userId) throw new Error('伺服器未返回使用者');
+    if (!userId) throw new Error(t('errors.serverNoUser'));
     try {
       localStorage.setItem(TOKEN_KEY, code);
       localStorage.setItem(USER_ID_KEY, userId);
@@ -131,13 +132,13 @@ export const auth = {
   // 已登入下修改自己的通行碼；成功後更新本機存的 token
   async changeToken(newToken) {
     const next = String(newToken || '').trim();
-    if (next.length < 6) throw new Error('新通行碼至少 6 位');
+    if (next.length < 6) throw new Error(t('errors.newPasscodeTooShort'));
     const res = await apiFetch('/change-token', {
       method: 'POST',
       body: JSON.stringify({ new_token: next })
     });
-    if (res.status === 401) throw new Error('登入已失效，請重新登入');
-    if (!res.ok) throw new Error('修改失敗（' + res.status + '）');
+    if (res.status === 401) throw new Error(t('errors.loginExpired'));
+    if (!res.ok) throw new Error(t('errors.changeFailed', { status: res.status }));
     try { localStorage.setItem(TOKEN_KEY, next); } catch (_) {}
     return true;
   },
@@ -147,8 +148,8 @@ export const auth = {
     const uid = String(userId || '').trim();
     const recovery = String(recoveryCode || '').trim();
     const next = String(newToken || '').trim();
-    if (!uid || !recovery) throw new Error('請填寫使用者代號與恢復碼');
-    if (next.length < 6) throw new Error('新通行碼至少 6 位');
+    if (!uid || !recovery) throw new Error(t('errors.recoveryRequired'));
+    if (next.length < 6) throw new Error(t('errors.newPasscodeTooShort'));
     let res;
     try {
       res = await apiFetch('/reset-token', {
@@ -156,10 +157,10 @@ export const auth = {
         body: JSON.stringify({ user_id: uid, recovery_code: recovery, new_token: next })
       });
     } catch (e) {
-      throw new Error(e?.message || '無法連線到同步服務');
+      throw new Error(e?.message || t('errors.cannotReachSync'));
     }
-    if (res.status === 403) throw new Error('使用者代號或恢復碼錯誤');
-    if (!res.ok) throw new Error('重置失敗（' + res.status + '）');
+    if (res.status === 403) throw new Error(t('errors.recoveryWrong'));
+    if (!res.ok) throw new Error(t('errors.resetFailed', { status: res.status }));
     // 重置成功後直接用新通行碼登入
     return this.signInWithToken(next);
   }
@@ -168,8 +169,8 @@ export const auth = {
 // --- snapshot pull / push ---
 export async function pullSnapshot() {
   const res = await apiFetch('/snapshot', { method: 'GET' });
-  if (res.status === 401) throw new Error('未授權，請重新登入');
-  if (!res.ok) throw new Error('讀取雲端失敗（' + res.status + '）');
+  if (res.status === 401) throw new Error(t('errors.unauthorized'));
+  if (!res.ok) throw new Error(t('errors.cloudReadFailed', { status: res.status }));
   const data = await res.json().catch(() => null);
   if (!data || data.version === undefined || data.version === null) return null;
   let payload = data.payload;
@@ -185,8 +186,8 @@ export async function pushSnapshot(expectedVersion, payload) {
     body: JSON.stringify({ expected_version: expectedVersion ?? 0, payload })
   });
   if (res.status === 409) return { conflict: true };
-  if (res.status === 401) throw new Error('未授權，請重新登入');
-  if (!res.ok) throw new Error('寫入雲端失敗（' + res.status + '）');
+  if (res.status === 401) throw new Error(t('errors.unauthorized'));
+  if (!res.ok) throw new Error(t('errors.cloudWriteFailed', { status: res.status }));
   const data = await res.json().catch(() => ({}));
   return { conflict: false, version: data.version, updatedAt: data.updated_at };
 }
@@ -237,7 +238,7 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
       const latest = await pullSnapshot();
       const merged2 = lwwMerge(local.payload, latest?.payload || {});
       const res2 = await pushSnapshot(latest?.version ?? 0, merged2);
-      if (res2.conflict) throw new Error('同步衝突重試仍失敗');
+      if (res2.conflict) throw new Error(t('errors.syncConflict'));
       await applyMergedSnapshot({ payload: merged2 });
       return { version: res2.version ?? latest?.version ?? 0, updatedAt: res2.updatedAt ?? latest?.updated_at ?? null };
     }
