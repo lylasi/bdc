@@ -335,7 +335,7 @@ async function runOCR() {
                 if (r.ok) {
                     pieces.push(`${header}\n${r.text || ''}`);
                 } else {
-                    pieces.push(`${header}\n[識別失敗] ${r.error?.message || r.error || ''}`);
+                    pieces.push(`${header}\n${t('ocr.recognizeFailedTag', { message: r.error?.message || r.error || '' })}`);
                 }
             }
         }
@@ -474,7 +474,9 @@ function renderResultPreview() {
 function updatePreferToggleUI() {
     try {
         if (!dom.ocrPreferToggle) return;
-        dom.ocrPreferToggle.classList.toggle('active', !!(dom.ocrPreferCamera && dom.ocrPreferCamera.checked));
+        const on = !!(dom.ocrPreferCamera && dom.ocrPreferCamera.checked);
+        dom.ocrPreferToggle.classList.toggle('active', on);
+        dom.ocrPreferToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
     } catch(_) {}
 }
 
@@ -502,7 +504,7 @@ function updateProgressUI(finalize = false) {
         if (dom.ocrProgressBar) dom.ocrProgressBar.style.width = (total>0 ? Math.round(done/total*100) : 0) + '%';
         if (dom.ocrProgressText) {
             if (!total) dom.ocrProgressText.textContent = finalize ? t('ocr.done') : t('ocr.notStarted');
-            else dom.ocrProgressText.textContent = `${done}/${total} 完成（成功 ${c?.success||0}，失敗 ${c?.failed||0}，取消 ${c?.cancelled||0}）`;
+            else dom.ocrProgressText.textContent = t('ocr.progressSummary', { done, total, success: c?.success || 0, failed: c?.failed || 0, cancelled: c?.cancelled || 0 });
         }
     } catch (_) {}
 }
@@ -565,7 +567,7 @@ async function retrySingleImage(id) {
     try {
         const text = await api.ocrExtractTextFromImage(it.dataUrl, { temperature:0.0, promptHint: hint, model });
         setThumbStatus(id, t('ocr.done'));
-        const header = `--- 單張重試：${it.name} ---`;
+        const header = t('ocr.singleRetryHeader', { name: it.name });
         if (dom.ocrResult) { const prev = dom.ocrResult.value || ''; const add = `${header}\n${text || ''}`; dom.ocrResult.value = prev ? (prev+'\n\n'+add) : add; if (dom.ocrDisplayMode && dom.ocrDisplayMode.value === 'md') renderResultPreview(); }
         ui.displayMessage(t('ocr.retryDone'),'success',1500);
     } catch (e) { setThumbStatus(id,t('ocr.failed')); ui.displayMessage(t('ocr.retryFailed', { message: e?.message || e }),'error'); }

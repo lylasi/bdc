@@ -16,12 +16,14 @@ import { setPhoneticsWord } from '../phonetics/phonetics.js';
  */
 export function initLearning() {
     dom.learningBookSelector.addEventListener('change', (e) => {
-        // 監聽表單的 change 事件，適用於單選按鈕組
-        if (e.target.closest('.book-selector-form')) {
+        // 監聽單選按鈕組的 change 事件（事件會冒泡到容器）
+        if (e.target.matches('input[type="radio"]')) {
             populateWordSelect();
         }
     });
     dom.wordSelect.addEventListener('change', displayWordDetails);
+    dom.wordPrevBtn?.addEventListener('click', () => stepWord(-1));
+    dom.wordNextBtn?.addEventListener('click', () => stepWord(1));
     dom.speakWordBtn.addEventListener('click', speakCurrentWord);
     dom.generateExamplesBtn.addEventListener('click', generateExamples);
     dom.checkSentenceBtn.addEventListener('click', checkSentence);
@@ -34,6 +36,30 @@ export function initLearning() {
         populateWordSelect();
         displayWordDetails();
     });
+}
+
+/** 上一個 / 下一個單詞 */
+function stepWord(delta) {
+    const options = Array.from(dom.wordSelect.options).filter(opt => opt.value);
+    if (!options.length) return;
+    const currentIndex = options.findIndex(opt => opt.value === dom.wordSelect.value);
+    const baseIndex = currentIndex === -1 ? (delta > 0 ? -1 : options.length) : currentIndex;
+    const nextIndex = (baseIndex + delta + options.length) % options.length;
+    dom.wordSelect.value = options[nextIndex].value;
+    displayWordDetails();
+    dom.wordSelect.scrollIntoView?.({ block: 'nearest' });
+}
+
+/** 更新「第 n / 共 m 個」提示 */
+function updateWordPosition() {
+    if (!dom.wordPosition) return;
+    const options = Array.from(dom.wordSelect.options).filter(opt => opt.value);
+    const index = options.findIndex(opt => opt.value === dom.wordSelect.value);
+    if (index === -1) {
+        dom.wordPosition.textContent = '';
+        return;
+    }
+    dom.wordPosition.textContent = t('learning.wordPosition', { current: index + 1, total: options.length });
 }
 
 /**
@@ -53,6 +79,7 @@ export function populateWordSelect() {
     if (!words || words.length === 0) {
         dom.wordSelect.innerHTML = `<option value="">${t('learning.currentBookEmpty')}</option>`;
         clearWordDetails();
+        updateWordPosition();
         return;
     }
 
@@ -64,11 +91,13 @@ export function populateWordSelect() {
         dom.wordSelect.appendChild(option);
     });
 
-    if (Array.from(dom.wordSelect.options).some(opt => opt.value === currentSelectedValue)) {
+    if (currentSelectedValue && Array.from(dom.wordSelect.options).some(opt => opt.value === currentSelectedValue)) {
         dom.wordSelect.value = currentSelectedValue;
     } else {
+        dom.wordSelect.value = '';
         clearWordDetails();
     }
+    updateWordPosition();
 }
 
 function displayWordDetails() {
@@ -82,6 +111,7 @@ function displayWordDetails() {
     const word = words.find(w => w.id === selectedId);
     if (word) {
         setPhoneticsWord(word);
+        document.getElementById('word-detail-container')?.classList.remove('is-empty');
         dom.detailWord.textContent = word.word;
         dom.detailPhonetic.textContent = word.phonetic ? `/${word.phonetic}/` : '';
         dom.detailMeaning.textContent = word.meaning || t('learning.noMeaning');
@@ -89,14 +119,17 @@ function displayWordDetails() {
     } else {
         clearWordDetails();
     }
+    updateWordPosition();
 }
 
 function clearWordDetails() {
     setPhoneticsWord(null);
-    dom.detailWord.textContent = '';
+    dom.detailWord.textContent = t('learning.selectWordTitle');
     dom.detailPhonetic.textContent = '';
     dom.detailMeaning.textContent = '';
+    document.getElementById('word-detail-container')?.classList.add('is-empty');
     dom.examplesContainer.innerHTML = '';
+    updateWordPosition();
 }
 
 function speakCurrentWord() {

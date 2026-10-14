@@ -4,6 +4,7 @@
 import { SUPABASE } from '../ai-config.js';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { lwwMerge } from './sync-core.js';
+import { t } from './i18n.js';
 
 export const supabase = createClient(SUPABASE.url, SUPABASE.anonKey, {
   auth: { persistSession: true, autoRefreshToken: true }
@@ -89,7 +90,7 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
       const latest = await pullSnapshot();
       const merged2 = lwwMerge(local.payload, latest?.payload || {});
       const res2 = await pushSnapshot(latest?.version ?? 0, merged2);
-      if (res2.conflict) throw new Error('同步衝突重試仍失敗');
+      if (res2.conflict) throw new Error(t('errors.syncConflict'));
       await applyMergedSnapshot({ payload: merged2 });
       return { version: res2.version ?? latest?.version ?? 0, updatedAt: res2.updatedAt ?? latest?.updated_at ?? null };
     }

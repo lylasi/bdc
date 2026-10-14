@@ -12,7 +12,7 @@ import { requestAI, resolveAIRequestConfig, resolveAITaskSpec } from '../../modu
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 import * as cache from '../../modules/cache.js';
 import { markdownToHtml } from '../../modules/markdown.js';
-import { getLocale, t } from '../../modules/i18n.js';
+import { getLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { buildPrompt } from '../../modules/prompts/index.js';
 
 const LS_KEY = 'assistantConversations'; // legacy（含所有訊息）
@@ -43,7 +43,6 @@ export function initAiAssistant() {
   const s = loadGlobalSettings();
   if (s?.assistant && s.assistant.enabled === false) return;
   try { migrateLegacyStore(); } catch(_) {}
-  injectScopedStyles();
   mountUi();
   setupVisibilityLogic();
   exposeGlobalAPI();
@@ -64,7 +63,7 @@ function mountUi() {
   fab.type = 'button';
   fab.title = t('assistant.title');
   fab.setAttribute('aria-label', t('assistant.title'));
-  fab.innerHTML = svgChat();
+  fab.innerHTML = '<span class="assistant-fab-text" aria-hidden="true">AI</span>';
   document.body.appendChild(fab);
 
   const panel = document.createElement('div');
@@ -78,6 +77,7 @@ function mountUi() {
     const s = loadGlobalSettings();
     if (s?.assistant && s.assistant.enabled === false) return;
     panel.classList.toggle('assistant-hidden');
+    updateBackdrop();
     if (!panel.classList.contains('assistant-hidden')) {
       // 重新套用當前文章的顯示模式，避免初始化時以舊文章鍵讀到 dock 寬度殘留
       const mode = getSavedPanelMode();
@@ -101,7 +101,7 @@ function setupVisibilityLogic() {
     const enabled = (loadGlobalSettings()?.assistant?.enabled !== false);
     const onArticle = !!(dom.articleSection && dom.articleSection.classList.contains('active'));
     fab.style.display = enabled && onArticle ? 'inline-flex' : 'none';
-    if (!onArticle) panel.classList.add('assistant-hidden');
+    if (!onArticle) { panel.classList.add('assistant-hidden'); updateBackdrop(); }
   };
   update();
   setTimeout(update, 300);
@@ -117,8 +117,10 @@ function renderPanelHtml() {
   const selection = getAssistantModelSelection();
   const toSelect = stringifyModelSpec(selection.value);
   const placeholder = selection.disabled ? t('assistant.configureModel') : '';
-  const selectHtml = `<label class="assistant-switch" style="gap:6px;">${t('assistant.model')}
-    <select id="assistant-model-select" ${selection.disabled ? 'disabled' : ''} title="${escapeHtml(selection.disabled ? placeholder : '')}" style="border:1px solid #d1d5db;border-radius:8px;padding:4px 6px;background:#fff;color:#334155;${selection.disabled ? 'opacity:.65;cursor:not-allowed;' : ''}">
+  const selectHtml = selection.disabled
+    ? ''
+    : `<label class="assistant-switch">${t('assistant.model')}
+    <select id="assistant-model-select" class="assistant-model-select" title="">
       ${selection.options.map(option => `<option value="${escapeHtml(option.value)}" ${option.value === toSelect ? 'selected' : ''}>${escapeHtml(option.label || option.value)}</option>`).join('')}
     </select>
   </label>`;
@@ -159,7 +161,7 @@ function renderPanelHtml() {
 function wirePanel(panel) {
   const $ = (sel) => panel.querySelector(sel);
   // 關閉按鈕：隱藏面板（移除重複的最小化按鈕，以免與關閉重覆）
-  $('#assistant-close').addEventListener('click', () => panel.classList.add('assistant-hidden'));
+  $('#assistant-close').addEventListener('click', () => { panel.classList.add('assistant-hidden'); updateBackdrop(); });
   $('#assistant-refresh').addEventListener('click', () => addHint(panel, t('assistant.contextRefreshed')));
   // 模式切換（精簡版）：小視窗/靠右全高/居中彈窗
   $('#assistant-small').addEventListener('click', () => setPanelMode(panel,'floating'));
@@ -592,107 +594,6 @@ async function streamCompletions(messages, signal, onDelta, modelOverride) {
   }
 }
 
-function injectScopedStyles() {
-  const exist = document.getElementById('assistant-style');
-  const style = exist || document.createElement('style');
-  style.id = 'assistant-style';
-  style.textContent = `
-  .assistant-fab{position:fixed;right:16px;bottom:16px;width:48px;height:48px;border-radius:50%;background:#3b82f6;color:#fff;border:none;box-shadow:0 8px 24px rgba(59,130,246,.35);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:2400}
-  .assistant-fab:hover{transform:translateY(-1px)}
-  .assistant-panel{position:fixed;right:16px;bottom:76px;width:min(420px,92vw);max-height:min(75vh,640px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 14px 38px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;z-index:4000;pointer-events:auto}
-  .assistant-hidden{display:none}
-  .assistant-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eef2f7;background:#f8fafc}
-  .assistant-title{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
-  .assistant-article{font-weight:700;color:#111827;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .assistant-actions{display:flex;gap:6px;align-items:center;margin-left:8px}
-  .assistant-divider{width:1px;height:18px;background:#e5e7eb;margin:0 4px}
-  .assistant-session{font-size:12px;color:#64748b;margin-left:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .assistant-icon{width:28px;height:28px;border:1px solid #d1d5db;border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
-  .assistant-icon:hover{border-color:#93c5fd;color:#1d4ed8;background:#f8fbff}
-  .assistant-icon svg{width:16px;height:16px;display:block;fill:currentColor}
-  .assistant-messages{padding:12px 16px;overflow:auto;flex:1;background:#fff;display:flex;flex-direction:column;gap:2px}
-  .assistant-msg{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:10px 14px;border-radius:12px;margin:4px 0;box-sizing:border-box;max-width:86%}
-  .assistant-msg p{margin:3px 0}
-  .assistant-msg ol,.assistant-msg ul{margin:4px 0 8px 0;padding-left:1.25em}
-  .assistant-msg li{margin:2px 0}
-  .assistant-msg img{max-width:100%;height:auto;display:block;border-radius:6px}
-  .assistant-msg table{width:100%;border-collapse:collapse;table-layout:auto;margin:6px 0}
-  .assistant-msg th,.assistant-msg td{border:1px solid #e5e7eb;padding:6px 8px;vertical-align:top}
-  .assistant-msg code{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:0 3px;font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
-  .assistant-msg pre{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px;overflow:auto}
-  .assistant-user{background:#e6f0ff;color:#0f172a;align-self:flex-end;border:1px solid #cfe0ff;box-shadow:inset -3px 0 0 #60a5fa}
-  .assistant-assistant{background:#f6f8fb;color:#0f172a;align-self:flex-start;position:relative;border:1px solid #e5e7eb;box-shadow:inset 3px 0 0 #cbd5e1}
-  .assistant-hint{background:#fef3c7;color:#78350f}
-  .assistant-foot{border-top:1px solid #eef2f7;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:#fff}
-  .assistant-row{display:flex;gap:8px}
-  .assistant-input{flex:1;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px}
-  .assistant-send{padding:10px 14px;background:#3b82f6;color:#fff;border:none;border-radius:10px;cursor:pointer}
-  /* 底部第二行：改為 3 欄網格（串流、模型、字級）在桌面更整齊；行動裝置自動換行 */
-  .assistant-sub{display:grid;grid-template-columns: auto minmax(140px,1fr) auto;align-items:center;gap:10px;color:#6b7280;font-size:12px}
-  .assistant-switch{display:flex;align-items:center;gap:6px}
-  .assistant-model-hint{grid-column:1 / -1;font-size:12px;color:#b45309}
-  .assistant-link{background:none;border:none;color:#2563eb;cursor:pointer}
-  .assistant-stop{position:absolute;right:8px;bottom:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
-  .assistant-retry{display:inline-block;margin-top:6px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#334155;cursor:pointer}
-  .assistant-retry:hover{border-color:#93c5fd;color:#1d4ed8}
-
-  /* 字級控制 */
-  .assistant-panel.assistant-font-s .assistant-messages{font-size:11px}
-  .assistant-panel.assistant-font-l .assistant-messages{font-size:13px}
-  .assistant-font{display:flex;align-items:center;gap:4px}
-  .assistant-font-btn{border:1px solid #d1d5db;background:#fff;border-radius:6px;padding:2px 6px;font-size:12px;color:#334155;cursor:pointer}
-  .assistant-font-btn.active{border-color:#93c5fd;background:#f0f7ff;color:#1d4ed8}
-
-  /* 桌面：提供多種寬度尺寸 */
-  @media (min-width: 1024px){
-    .assistant-panel{max-height:85vh}
-    /* 桌面：加大工具圖示按鈕與圖標尺寸，避免過小難以辨識 */
-    .assistant-icon{width:36px;height:36px}
-    .assistant-icon svg{width:18px;height:18px}
-  }
-  /* Dock 模式 */
-  .assistant-panel.assistant-dock{right:16px;left:auto;top:16px;bottom:16px;border-radius:12px;max-height:calc(100vh - 32px)}
-  /* Modal 模式 */
-  .assistant-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:3999;backdrop-filter:saturate(120%) blur(2px);}
-  .assistant-panel.assistant-modal{left:50%;right:auto;top:5vh;bottom:auto;transform:translateX(-50%);width:min(960px,94vw);height:min(90vh,880px);border-radius:14px}
-  
-  /* --- Markdown 美化（僅限對話氣泡作用域）--- */
-  .assistant-msg{padding:12px 14px;border-radius:12px;margin:4px 0;line-height:1.58}
-  .assistant-msg a{color:#2563eb;text-decoration:none}
-  .assistant-msg a:hover{text-decoration:underline}
-  .assistant-msg h1,.assistant-msg h2,.assistant-msg h3,.assistant-msg h4,.assistant-msg h5,.assistant-msg h6{line-height:1.3;margin:10px 0 6px 0;color:#0f172a}
-  .assistant-msg h1{font-size:20px;font-weight:800}
-  .assistant-msg h2{font-size:18px;font-weight:700;border-bottom:1px dashed #e5e7eb;padding-bottom:4px}
-  .assistant-msg h3{font-size:16px;font-weight:700}
-  .assistant-msg h4{font-size:15px;font-weight:600}
-  .assistant-msg ol,.assistant-msg ul{margin:3px 0 6px 0;padding-left:1.3em}
-  .assistant-msg li{margin:3px 0}
-  .assistant-msg hr{border:0;border-top:1px solid #e5e7eb;margin:6px 0}
-  .assistant-msg blockquote{margin:6px 0;padding:8px 10px;border-left:3px solid #93c5fd;background:#f8fbff;color:#0f172a;border-radius:6px}
-  .assistant-msg img{max-width:100%;height:auto;display:block;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-  .assistant-msg table{width:100%;border-collapse:separate;border-spacing:0;table-layout:auto;margin:6px 0;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
-  .assistant-msg thead th{background:#f8fafc;font-weight:700}
-  .assistant-msg th,.assistant-msg td{border-bottom:1px solid #e5e7eb;padding:8px 10px;vertical-align:top}
-  .assistant-msg tr:last-child td{border-bottom:none}
-  .assistant-msg code{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:0 4px;font-size:90%;font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
-  .assistant-msg pre{background:#0b1220;color:#e5e7eb;border:1px solid #0b1220;border-radius:10px;padding:12px 14px;overflow:auto;position:relative}
-  .assistant-msg pre code{background:transparent;border:none;padding:0;color:inherit}
-  .assistant-msg .assistant-copy{position:absolute;top:8px;right:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#cbd5e1;opacity:.85;cursor:pointer}
-  .assistant-msg .assistant-copy:hover{opacity:1}
-  .assistant-assistant{background:#f8fafc;color:#0f172a;border:1px solid #e5e7eb}
-  /* 歷史彈窗：右上角簡潔關閉 */
-  #assistant-history-panel{position:absolute}
-  /* 標題列（含關閉） */
-  #assistant-history-panel .ah-head{position:sticky; top:0; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 8px 8px 12px; background:#fff; border-bottom:1px solid #eef2f7; z-index:2}
-  #assistant-history-panel .ah-titlebar{font-weight:700;color:#0f172a}
-  /* 右上角關閉（24x24），清晰不遮擋 */
-  #assistant-history-panel .ah-close{width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; color:#111827; background:#ffffff; border:1px solid #e5e7eb; box-shadow:0 2px 6px rgba(0,0,0,.06); cursor:pointer; font-size:16px; font-weight:700; line-height:1}
-  #assistant-history-panel .ah-close:hover{background:#f8fafc; color:#1d4ed8; border-color:#93c5fd}
-  @media (max-width: 600px){ .assistant-msg{ max-width:94%; } }
-  `;
-  if (!exist) document.head.appendChild(style);
-}
-
 // ---------- 尺寸控制（桌面端） ----------
 function getSavedPanelSize() { try { return localStorage.getItem('assistantPanelSize') || 'm'; } catch(_) { return 'm'; } }
 function savePanelSize(sz) { try { localStorage.setItem('assistantPanelSize', sz); } catch(_) {} }
@@ -751,8 +652,8 @@ function setPanelMode(panel, mode){
   panel.classList.toggle('assistant-modal', mode==='modal');
   savePanelMode(mode);
   // 切換控件顯示
-  // 背景遮罩
-  toggleBackdrop(mode==='modal');
+  // 背景遮罩（僅在面板可見的 modal 模式）
+  updateBackdrop();
   // 浮動模式時清除 dock 尺寸，避免殘留造成 1px 線
   if (mode !== 'dock') panel.style.width = '';
 }
@@ -775,6 +676,14 @@ function setDockWidth(panel, pct){
 }
 
 function togglePanelFull(panel){ const v = !getSavedFull(); panel.classList.toggle('assistant-full', v); saveFull(v); }
+
+// 遮罩只在「面板可見 + modal 模式」時存在，避免隱藏後仍壓暗整個畫面
+function updateBackdrop(){
+  const panel = document.getElementById('assistant-panel');
+  const visible = !!panel && !panel.classList.contains('assistant-hidden');
+  const modal = !!panel && panel.classList.contains('assistant-modal');
+  toggleBackdrop(visible && modal);
+}
 
 function toggleBackdrop(show){
   let bd = document.getElementById('assistant-backdrop');
@@ -817,16 +726,15 @@ async function toggleHistory(panel){
   pop = document.createElement('div');
   pop.id='assistant-history-panel';
   // 帶標題與關閉鈕的頭部
-  pop.style.cssText='position:absolute; right:12px; top:44px; z-index:2401; background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14); min-width:320px; max-height:60vh; overflow:auto;';
-  pop.innerHTML = `<div class=\"ah-head\"><div class=\"ah-titlebar\">${t('assistant.history')}</div><button class=\"ah-close\" title=\"${t('assistant.close')}\" aria-label=\"${t('assistant.close')}\">×</button></div>` + (idx.length ? idx.map(m=>`<div class="ah-item" data-id="${m.id}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;">
-    <div class="ah-meta" style="flex:1;min-width:0;">
-      <div class="ah-title" style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.title || t('assistant.session'))}</div>
-      <div class="ah-time" style="font-size:12px;color:#64748b;">${new Date(m.updatedAt||Date.now()).toLocaleString()}</div>
+  pop.innerHTML = `<div class="ah-head"><div class="ah-titlebar">${t('assistant.history')}</div><button class="ah-close" title="${t('assistant.close')}" aria-label="${t('assistant.close')}">×</button></div>` + (idx.length ? idx.map(m=>`<div class="ah-item" data-id="${m.id}">
+    <div class="ah-meta">
+      <div class="ah-title">${escapeHtml(m.title || t('assistant.session'))}</div>
+      <div class="ah-time">${formatDateTime(m.updatedAt || Date.now())}</div>
     </div>
     <button class="assistant-icon" data-act="open" title="${t('assistant.switch')}">${svgOpen()}</button>
     <button class="assistant-icon" data-act="rename" title="${t('assistant.rename')}">${svgEdit()}</button>
     <button class="assistant-icon" data-act="delete" title="${t('assistant.delete')}">${svgTrash()}</button>
-  </div>`).join('') : `<div style="padding:12px;color:#64748b;">${t('assistant.noSessions')}</div>`);
+  </div>`).join('') : `<div class="assistant-history-empty">${t('assistant.noSessions')}</div>`);
   panel.appendChild(pop);
   // 外部點擊與 Esc 關閉（選項 1+3）
   const histBtn = panel.querySelector('#assistant-history');
@@ -961,7 +869,6 @@ function exposeGlobalAPI(){
 
 function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-function svgChat(){return '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 3C6.477 3 2 6.94 2 11.8c0 1.946.72 3.746 1.934 5.19L3 21l4.2-1.758c1.362.515 2.87.8 4.5.8 5.523 0 10-3.94 10-8.8S17.523 3 12 3z"/></svg>'}
 function svgClose(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>'}
 function svgRefresh(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 3a5 5 0 1 0 3.905 8.12.5.5 0 1 1 .79.612A6 6 0 1 1 8 2v1z"/><path d="M8 0a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 1 1 .708.708L8.354 5.71a.5.5 0 0 1-.708 0L5.646 3.854a.5.5 0 1 1 .708-.708L7.5 4.293V.5A.5.5 0 0 1 8 0z"/></svg>'}
 // 「靠右全高 / 側欄模式」：以外框 + 右側實心欄位呈現，較直觀
@@ -973,7 +880,7 @@ function svgPin(){
 }
 function svgFull(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 1h5v1H2v4H1V1zm8 0h6v6h-1V2H9V1zM1 9h1v5h5v1H1V9zm13 0h1v7H9v-1h5V9z"/></svg>'}
 function svgSmall(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><rect x="9" y="9" width="6" height="6" rx="2"/><rect x="1" y="1" width="10" height="10" rx="2" fill="none" stroke="currentColor"/></svg>'}
-function svgMax(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 4a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3z"/></svg>'}
+function svgMax(){return '<svg viewBox="0 0 16 16" width="14" height="14"><rect x="1.6" y="1.6" width="12.8" height="12.8" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'}
 function svgPlus(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 1a.5.5 0 0 1 .5.5v6h6a.5.5 0 0 1 0 1h-6v6a.5.5 0 0 1-1 0v-6h-6a.5.5 0 0 1 0-1h6v-6A.5.5 0 0 1 8 1z"/></svg>'}
 function svgList(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M2 2.5a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2zm0 5a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2zm0 5a.5.5 0 0 0 0 1h12a.5.5 0 0 0 0-1H2z"/></svg>'}
 function svgOpen(){return '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4 4h6v1H5v6H4V4zm3 3h5v5H7V7z"/></svg>'}

@@ -6,6 +6,7 @@ import { t } from './i18n.js';
 
 // Vocabulary helpers: default book, add/dedupe, and AI completion
 
+// i18n-allow: 舊版預設書名，用來比對既有資料，翻譯了就認不出來
 const LEGACY_DEFAULT_BOOK_NAMES = ['生詞本', '单词本'];
 
 function getDefaultBookName() {
@@ -254,7 +255,7 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
         const articleId = state.currentArticleId || null;
         if (articleId && typeof storage.getArticleMetaById === 'function' && typeof storage.getOrCreateArticleWordbook === 'function') {
             try {
-                const meta = storage.getArticleMetaById(articleId) || { id: articleId, title: '未命名文章', sourceType: 'paste' };
+                const meta = storage.getArticleMetaById(articleId) || { id: articleId, title: t('errors.untitledArticle'), sourceType: 'paste' };
                 const res = storage.getOrCreateArticleWordbook(meta, { createWordbook: true });
                 if (res && res.wordbook) {
                     book = res.wordbook;

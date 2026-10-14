@@ -4,7 +4,7 @@ import * as state from '../../modules/state.js';
 import * as api from '../../modules/api.js';
 import * as storage from '../../modules/storage.js';
 import { OCR_CONFIG } from '../../ai-config.js';
-import { getLocale, t } from '../../modules/i18n.js';
+import { getLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { buildPrompt } from '../../modules/prompts/index.js';
 
 // 簡易 AI 批改（OCR→比對）
@@ -21,7 +21,7 @@ export function openDictationGradingHistory() {
   box.className = 'dg-history';
   if (!list.length) { box.innerHTML = `<p>${t('dictationGrader.emptyHistory')}</p>`; show(box); return; }
   const items = list.map(it => {
-    const timeText = new Date(it.createdAt).toLocaleString();
+    const timeText = formatDateTime(it.createdAt);
     return `<div class="dg-h-item" data-id="${it.id}">
       <img src="${it.thumbnail || ''}" alt="thumb">
       <div class="meta">
@@ -254,7 +254,7 @@ function buildModalContent(expected) {
       imagesCount: images.length,
       wordsCount: expected.length
     });
-    status.textContent = t('dictationGrader.saved', { time: new Date(rec.createdAt).toLocaleString(getLocale()) });
+    status.textContent = t('dictationGrader.saved', { time: formatDateTime(rec.createdAt) });
   });
 
   historyBtn.addEventListener('click', openHistory);
@@ -283,7 +283,7 @@ function buildModalContent(expected) {
     box.className = 'dg-history';
     if (!list.length) { box.innerHTML = `<p>${t('dictationGrader.emptyHistory')}</p>`; show(box); return; }
     const items = list.map(it => {
-      const timeText = new Date(it.createdAt).toLocaleString();
+      const timeText = formatDateTime(it.createdAt);
       return `<div class="dg-h-item" data-id="${it.id}">
         <img src="${it.thumbnail || ''}" alt="thumb">
         <div class="meta">
@@ -309,7 +309,7 @@ function buildModalContent(expected) {
       } else if (act === 'view') {
         report.innerHTML = '';
         renderMarkdownReport(report, rec.markdown || '');
-        status.textContent = t('dictationGrader.viewRecord', { time: new Date(rec.createdAt).toLocaleString() });
+        status.textContent = t('dictationGrader.viewRecord', { time: formatDateTime(rec.createdAt) });
         ui.openModal(); // 確保可見
       } else if (act === 'del') {
         if (confirm(t('dictationGrader.confirmDelete'))) { storage.deleteGradingRecord(id); openHistory(); }
@@ -359,7 +359,7 @@ function normalizeAIGrading(result) {
     const ok = !!it?.correct;
     if (ok) correct += 1;
     const errs = Array.isArray(it?.errors) ? it.errors : [];
-    const msg = ok ? '正確' : ('錯誤 → ' + errs.map(e => `建議：${e?.suggestion || e?.expected || ''}`).join('；'));
+    const msg = ok ? t('dictationGrader.correctShort') : t('dictationGrader.wrongWithHint', { hints: errs.map(e => t('dictationGrader.suggestionLabel', { text: e?.suggestion || e?.expected || '' })).join('；') });
     rows.push({
       expected: (errs[0]?.expected) || '',
       recognized: it?.line || it?.english || '',

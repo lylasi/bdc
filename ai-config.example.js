@@ -170,16 +170,21 @@ export const ARTICLE_IMPORT = {
   PROFILE: undefined,
   API_URL: undefined,
   API_KEY: undefined,
-  // 可選：你自己的 HTML 代理服務（例如 Cloudflare Worker），避免 CORS；格式例：'https://your-worker.example/fetch?url='
+  // 抓取 HTML 的端點，避免 CORS。留 undefined 代表不做第三方抓取；本機預覽可設成
+  // preview.py 內建的同源路由 '/fetch?url=' 與 '/extract?url='
+  // 也可以指向自架服務，例如 'https://your-worker.example/fetch?url='
   PROXY_URL: undefined,
-  // 可選：Worker 的正文抽取端點（優先於 PROXY_URL 用於擷取正文）；格式例：'https://your-worker.example/extract?url='
+  // 正文抽取端點（優先於 PROXY_URL）；例如 '/extract?url=' 或 'https://your-worker.example/extract?url='
   EXTRACT_URL: undefined,
   // 可選：Worker 的新聞 Feed 聚合端點；設定後「新聞」分頁才能拉取來源與文章列表
   FEED_URL: undefined,
-  // 可選：新聞來源清單（當 FEED_URL 未回傳來源時的後備）；每項格式：{ id, label }
+  // 可選：新聞來源清單（只在 FEED_URL 沒有回應時當後備）；每項格式：{ id, label }
+  // 必須與 Worker /feeds 實際回傳的 id 一致，否則點下去會得到 404 Unknown source
   SOURCES: [
-    // { id: 'guardian', label: 'The Guardian US' },
-    // { id: 'techcrunch', label: 'TechCrunch' }
+    // { id: 'bbc', label: 'BBC World' },
+    // { id: 'cnn', label: 'CNN World' },
+    // { id: 'nyt', label: 'NYTimes World' },
+    // { id: 'rt', label: 'RT News' }
   ],
   // 模型：可用 'provider:model'、物件或純字串（走全域）
   MODEL: AI_TASKS.articleCleanup,

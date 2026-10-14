@@ -16,6 +16,7 @@ import {
     saveGlobalSettings
 } from './settings.js';
 import { getCached, setCached } from './cache.js';
+import { t } from './i18n.js';
 
 const STATIC_AI_PROVIDERS = (__AI_PROVIDERS__ && typeof __AI_PROVIDERS__ === 'object')
     ? __AI_PROVIDERS__
@@ -109,7 +110,10 @@ export function extractBaseUrlFromApiUrl(apiUrl = '') {
     const raw = String(apiUrl || '').trim();
     if (!raw) return '';
     const normalized = raw.replace(/\/+$/, '');
-    return normalized.replace(/\/(v\d+\/)?chat\/completions$/i, '') || normalized;
+    // 只去掉結尾的 /chat/completions；版本前綴（/v1 等）保留，交給 derive* 決定要不要再拼。
+    // 先前寫法會連 /v1 一起吃掉，導致相對路徑 '/v1/chat/completions' 推導出
+    // '/v1/chat/completions/v1/models' 這種網址。
+    return normalized.replace(/\/chat\/completions$/i, '') || normalized;
 }
 
 export function deriveApiUrl(provider = {}) {
@@ -123,7 +127,9 @@ export function deriveModelsUrl(provider = {}) {
     const explicit = firstNonEmptyString(provider.modelsUrl);
     if (explicit) return explicit;
     const base = firstNonEmptyString(provider.baseUrl, extractBaseUrlFromApiUrl(provider.apiUrl));
-    return base ? joinUrl(base, '/v1/models') : '';
+    if (!base) return '';
+    // base 已含版本前綴（/v1）就不要再拼一次
+    return /\/v\d+$/.test(base) ? joinUrl(base, '/models') : joinUrl(base, '/v1/models');
 }
 
 function normalizeAllowedModelValue(value, providerId = 'default') {
@@ -438,11 +444,11 @@ function buildModelDiscoveryHeaders(apiKey = '') {
 }
 
 function describeDiscoveryError(error) {
-    if (!error) return '模型清單抓取失敗';
-    if (error.name === 'AbortError') return '模型清單抓取已取消';
-    if (error instanceof SyntaxError) return '模型清單回傳格式無法解析';
+    if (!error) return t('errors.modelListFailed');
+    if (error.name === 'AbortError') return t('errors.modelListCancelled');
+    if (error instanceof SyntaxError) return t('errors.modelListBadFormat');
     if (typeof error.message === 'string' && error.message.trim()) return error.message.trim();
-    return '模型清單抓取失敗';
+    return t('errors.modelListFailed');
 }
 
 export async function discoverProviderModels(providerId, { settings, secrets, refresh = false, signal, ttlMs = MODEL_DISCOVERY_TTL_MS } = {}) {
@@ -478,7 +484,7 @@ export async function discoverProviderModels(providerId, { settings, secrets, re
             models: cachedModels,
             updatedAt: cachedUpdatedAt,
             providerId: provider.provider,
-            error: '尚未設定可用的 modelsUrl'
+            error: t('errors.modelsUrlMissing')
         };
     }
 
@@ -492,7 +498,7 @@ export async function discoverProviderModels(providerId, { settings, secrets, re
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const payload = await resp.json();
         const models = normalizeModelDiscoveryPayload(payload, { providerId: provider.provider });
-        if (!models.length) throw new Error('模型清單為空');
+        if (!models.length) throw new Error(t('errors.modelListEmpty'));
         await writeModelDiscoveryCache(cacheKey, models);
         return {
             ok: true,
@@ -613,7 +619,7 @@ export function getTaskModelSelection(taskName, { settings, secrets, currentValu
 
     const unavailableCurrent = !!(value && !allowedSet.has(value));
     const options = unavailableCurrent
-        ? [{ value, label: `${value}（目前值，未在允許清單）`, unavailable: true }, ...allowedOptions]
+        ? [{ value, label: t('errors.modelNotAllowed', { value }), unavailable: true }, ...allowedOptions]
         : allowedOptions;
 
     return {

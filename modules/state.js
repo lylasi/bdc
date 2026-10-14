@@ -24,6 +24,15 @@ export let dictationWords = [];
 // 新增：默写会话状态（支持跨页面和刷新恢复）
 export let dictationSessionActive = false;
 export let dictationStartTime = null;
+// 懸浮播放器單詞列表要顯示哪些欄位（紙筆聽寫預設只給序號與狀態，避免答案外洩）
+export const DEFAULT_FLOAT_LIST_FIELDS = {
+    index: true,
+    status: true,
+    word: false,
+    phonetic: false,
+    meaning: false
+};
+
 export let dictationSettings = {
     selectedBookId: null,
     repeatTimes: 2,
@@ -32,7 +41,8 @@ export let dictationSettings = {
     loopMode: false,
     shuffleMode: false,
     listenOnlyMode: true,
-    showWordInfo: false
+    showWordInfo: false,
+    floatListFields: { ...DEFAULT_FLOAT_LIST_FIELDS }
 };
 
 // ---------------------------------
@@ -307,6 +317,18 @@ export function loadDictationSettings() {
             dictationSettings = { ...dictationSettings, ...loadedSettings };
             if (typeof dictationSettings.showWordInfo !== 'boolean') {
                 dictationSettings.showWordInfo = false;
+            }
+            // 欄位設定：舊資料只有 showWordInfo 一個開關，據此換算成欄位組合
+            const rawFields = dictationSettings.floatListFields;
+            if (rawFields && typeof rawFields === 'object') {
+                dictationSettings.floatListFields = {
+                    ...DEFAULT_FLOAT_LIST_FIELDS,
+                    ...Object.fromEntries(Object.entries(rawFields).map(([k, v]) => [k, v === true]))
+                };
+            } else {
+                dictationSettings.floatListFields = dictationSettings.showWordInfo
+                    ? { index: false, status: false, word: true, phonetic: true, meaning: true }
+                    : { ...DEFAULT_FLOAT_LIST_FIELDS };
             }
             if (typeof dictationSettings.readChineseVoice !== 'string') {
                 dictationSettings.readChineseVoice = 'none';

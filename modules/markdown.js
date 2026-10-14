@@ -1,22 +1,53 @@
 // 簡易 Markdown 轉 HTML（支援：標題、粗體、斜體、行內程式碼、連結、表格）
-// 使用場景：OCR 結果預覽、簡單報表
+// 使用場景：OCR 結果預覽、簡單報表、文章詳解的句子行內語法
 // 注意：為安全僅做最小語法替換，對文中 <>&"' 做轉義，連結/圖片 URL 走 scheme 白名單；不支援 HTML 直入。
 
+const escapeHtmlText = (s) => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+// URL 白名單檢查：僅允許 http(s)/mailto/tel 與相對路徑，圖片可額外允許 data:image/
+// 先移除控制字元與空白再判斷 scheme，避免 "java\tscript:" 之類繞過
+const safeUrl = (url, { allowDataImage = false } = {}) => {
+  const raw = String(url || '').trim();
+  const probe = raw.replace(/[\u0000-\u0020]/g, '').toLowerCase();
+  if (/^(https?:|mailto:|tel:)/.test(probe)) return raw;
+  if (allowDataImage && /^data:image\//.test(probe)) return raw;
+  const colon = probe.indexOf(':');
+  if (colon === -1) return raw; // 無 scheme 的相對路徑
+  const delim = probe.search(/[/?#]/);
+  if (delim !== -1 && delim < colon) return raw; // ":" 出現在路徑/查詢中，非 scheme
+  return '';
+};
+
+/**
+ * 只轉「行內」語法：粗體、斜體、行內程式碼、連結、刪除線。
+ * 給已經分好段落的文字用（例如文章詳解裡的一句），不會包 <p>。
+ * 先保護行內程式碼，避免 `**x**` 這種內容被當成粗體。
+ */
+export function inlineMarkdownToHtml(text) {
+  const codes = [];
+  const guarded = String(text == null ? '' : text)
+    .replace(/`([^`]+)`/g, (_m, code) => {
+      codes.push(code);
+      return `\u0000C${codes.length - 1}\u0000`;
+    });
+  let html = escapeHtmlText(guarded)
+    // 粗體用非貪婪且允許內容含單星號，這樣 **a *nested* thing** 才不會漏掉外層
+    .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([\s\S]+?)__/g, '<strong>$1</strong>')
+    .replace(/~~([\s\S]+?)~~/g, '<del>$1</del>')
+    // 斜體要求前後有邊界、且內容不以空白開頭或結尾，避免把「2 * 3 * 4」這種算式吃成斜體
+    .replace(/(^|[\s(（「『])\*(\S(?:[^*\n]*\S)?)\*/g, '$1<em>$2</em>')
+    .replace(/(^|[\s(（「『])_(\S(?:[^_\n]*\S)?)_/g, '$1<em>$2</em>')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m0, label, href) => {
+      const url = safeUrl(href);
+      return url ? `<a href="${escapeHtmlText(url)}" target="_blank" rel="noopener noreferrer">${label}</a>` : m0;
+    });
+  html = html.replace(/\u0000C(\d+)\u0000/g, (_m, i) => `<code>${escapeHtmlText(codes[Number(i)] || '')}</code>`);
+  return html;
+}
+
 export function markdownToHtml(md) {
-  const esc = (s) => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  // URL 白名單檢查：僅允許 http(s)/mailto/tel 與相對路徑，圖片可額外允許 data:image/
-  // 先移除控制字元與空白再判斷 scheme，避免 "java\tscript:" 之類繞過
-  const safeUrl = (url, { allowDataImage = false } = {}) => {
-    const raw = String(url || '').trim();
-    const probe = raw.replace(/[\u0000-\u0020]/g, '').toLowerCase();
-    if (/^(https?:|mailto:|tel:)/.test(probe)) return raw;
-    if (allowDataImage && /^data:image\//.test(probe)) return raw;
-    const colon = probe.indexOf(':');
-    if (colon === -1) return raw; // 無 scheme 的相對路徑
-    const delim = probe.search(/[/?#]/);
-    if (delim !== -1 && delim < colon) return raw; // ":" 出現在路徑/查詢中，非 scheme
-    return '';
-  };
+  const esc = escapeHtmlText;
   const L = String(md || '').replace(/\r\n/g,'\n').split('\n');
   const out = [];
   let i = 0;

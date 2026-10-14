@@ -254,110 +254,67 @@ export function displayMessage(message, type = 'info', duration = 3000) {
     if (!messageContainer) {
         messageContainer = document.createElement('div');
         messageContainer.id = 'message-container';
-        messageContainer.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            pointer-events: none;
-        `;
         document.body.appendChild(messageContainer);
     }
 
-    // 創建消息元素
+    // 創建消息元素（樣式集中在 styles.css 的 .message-toast）
     const messageElement = document.createElement('div');
     messageElement.className = `message-toast message-${type}`;
+    messageElement.setAttribute('role', type === 'error' ? 'alert' : 'status');
     messageElement.textContent = message;
-
-    // 設置樣式
-    messageElement.style.cssText = `
-        background: ${getMessageBgColor(type)};
-        color: ${getMessageTextColor(type)};
-        padding: 12px 16px;
-        margin-bottom: 8px;
-        border-radius: 6px;
-        border-left: 4px solid ${getMessageBorderColor(type)};
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        pointer-events: auto;
-        max-width: 320px;
-        word-wrap: break-word;
-        font-size: 14px;
-        line-height: 1.4;
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-    `;
-
-    // 添加到容器
     messageContainer.appendChild(messageElement);
 
-    // 動畫顯示
-    setTimeout(() => {
-        messageElement.style.transform = 'translateX(0)';
-    }, 10);
+    // 進場動畫
+    requestAnimationFrame(() => messageElement.classList.add('is-shown'));
 
-    // 自動移除
-    setTimeout(() => {
-        messageElement.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (messageElement.parentNode) {
-                messageElement.parentNode.removeChild(messageElement);
-            }
-        }, 300);
-    }, duration);
+    const dismiss = () => {
+        if (messageElement.dataset.closing) return;
+        messageElement.dataset.closing = '1';
+        clearTimeout(hideTimer);
+        messageElement.classList.remove('is-shown');
+        setTimeout(() => messageElement.remove(), 220);
+    };
+
+    // 自動移除（滑鼠移入時暫停計時，方便閱讀較長的錯誤訊息）
+    let hideTimer = setTimeout(dismiss, duration);
+    messageElement.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+    messageElement.addEventListener('mouseleave', () => { hideTimer = setTimeout(dismiss, 1200); });
 
     // 點擊移除
-    messageElement.addEventListener('click', () => {
-        messageElement.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (messageElement.parentNode) {
-                messageElement.parentNode.removeChild(messageElement);
-            }
-        }, 300);
-    });
-}
-
-/**
- * 獲取消息背景色
- */
-function getMessageBgColor(type) {
-    const colors = {
-        success: '#f0f9ff',
-        error: '#fef2f2',
-        warning: '#fffbeb',
-        info: '#f8fafc'
-    };
-    return colors[type] || colors.info;
-}
-
-/**
- * 獲取消息文字色
- */
-function getMessageTextColor(type) {
-    const colors = {
-        success: '#166534',
-        error: '#dc2626',
-        warning: '#d97706',
-        info: '#475569'
-    };
-    return colors[type] || colors.info;
-}
-
-/**
- * 獲取消息邊框色
- */
-function getMessageBorderColor(type) {
-    const colors = {
-        success: '#22c55e',
-        error: '#ef4444',
-        warning: '#f59e0b',
-        info: '#3b82f6'
-    };
-    return colors[type] || colors.info;
+    messageElement.addEventListener('click', dismiss);
 }
 
 // =================================
 // 選項彈窗系統
 // =================================
+
+/**
+ * 通用確認對話框（沿用選項彈窗樣式，取代原生 confirm）。
+ * @param {{title?: string, message?: string, confirmLabel?: string, cancelLabel?: string}} config
+ * @returns {Promise<boolean>} 使用者是否按下確認
+ */
+export function confirmAction(config = {}) {
+  const { title = '', message = '', confirmLabel = '', cancelLabel = '' } = config;
+
+  return new Promise((resolve) => {
+    const overlay = showOptionsModal({
+      title,
+      description: message,
+      options: [],
+      onConfirm: () => resolve(true),
+      onCancel: () => resolve(false)
+    });
+
+    if (confirmLabel) {
+      const confirmBtn = overlay.querySelector('#confirm-btn');
+      if (confirmBtn) confirmBtn.textContent = confirmLabel;
+    }
+    if (cancelLabel) {
+      const cancelBtn = overlay.querySelector('#cancel-btn');
+      if (cancelBtn) cancelBtn.textContent = cancelLabel;
+    }
+  });
+}
 
 /**
  * 顯示選項彈窗
@@ -377,96 +334,28 @@ export function showOptionsModal(config) {
     onCancel = () => {}
   } = config;
 
-  // 創建彈窗容器
+  // 沿用全域彈窗外殼（.modal-overlay / .modal-content），樣式見 styles.css
   const modalOverlay = document.createElement('div');
-  modalOverlay.className = 'options-modal-overlay';
-  modalOverlay.style.cssText = `
-    position: fixed; inset: 0; width: 100%; height: 100%;
-    background: rgba(17,24,39,0.5);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 10001; animation: fadeIn 0.2s ease;
-  `;
+  modalOverlay.className = 'modal-overlay options-modal-overlay';
 
-  // 創建彈窗內容
   const modalContent = document.createElement('div');
-  modalContent.className = 'options-modal-content';
-  modalContent.style.cssText = `
-    background: #fff; border-radius: 16px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
-    max-width: 560px; width: min(92vw, 560px);
-    max-height: 86vh; overflow-y: auto;
-    animation: slideIn 0.25s ease; transform-origin: center;
-  `;
+  modalContent.className = 'modal-content options-modal-content';
 
-  // 創建彈窗HTML
   modalContent.innerHTML = `
-    <div class="modal-header" style="padding: 18px 20px 12px 20px; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; background: #fff; z-index: 1;">
-      <h3 style="
-        margin: 0; font-size: 18px; font-weight: 700; color: #111827; line-height: 1.4;
-      ">${title || t('common.optionsTitle')}</h3>
-      ${description ? `
-        <p style="margin: 6px 0 0 0; font-size: 13px; color: #6b7280; line-height: 1.5;">${description}</p>
-      ` : ''}
+    <div class="modal-header">
+      <h3>${title || t('common.optionsTitle')}</h3>
+      ${description ? `<p class="om-desc">${description}</p>` : ''}
     </div>
 
-    <div class="modal-body" style="padding: 16px 20px;">
+    <div class="modal-body">
       <div id="options-container" class="om-grid"></div>
     </div>
 
-    <div class="modal-footer" style="padding: 12px 20px 16px 20px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid #e5e7eb; position: sticky; bottom: 0; background: #fff;">
-      <button id="cancel-btn" class="om-btn om-btn-ghost">${t('common.cancel')}</button>
-      <button id="confirm-btn" class="om-btn om-btn-primary">${t('common.confirm')}</button>
+    <div class="modal-footer modal-actions">
+      <button id="cancel-btn" class="btn-secondary cancel-btn">${t('common.cancel')}</button>
+      <button id="confirm-btn" class="btn-primary save-btn">${t('common.confirm')}</button>
     </div>
   `;
-
-  // 添加CSS動畫
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: scale(0.9) translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
-    .om-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 640px) { .om-grid { grid-template-columns: 1fr; } }
-    @media (min-width: 768px) { .om-grid { grid-template-columns: 1fr; } }
-    .option-item { margin: 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; transition: box-shadow .2s, border-color .2s; }
-    .option-item:hover { border-color: #c7d2fe; box-shadow: 0 2px 10px rgba(59,130,246,0.08); background: #fbfdff; }
-
-    .radio-card { display: grid; grid-template-columns: 24px 1fr; align-items: start; gap: 10px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 10px; cursor: pointer; }
-    .radio-card:hover { border-color: #93c5fd; background: #f8fafc; }
-    .radio-card input { margin-top: 3px; }
-
-    .switch { position: relative; display: inline-block; width: 44px; height: 24px; vertical-align: middle; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; inset: 0; background: #d1d5db; border-radius: 999px; transition: .2s; }
-    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; top: 2px; background: white; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
-    input:checked + .slider { background: #3b82f6; }
-    input:checked + .slider:before { transform: translateX(20px); }
-
-    .om-btn { padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease; }
-    .om-btn:active { transform: translateY(1px); }
-    .om-btn-ghost { background: #fff; color: #374151; border: 1px solid #d1d5db; }
-    .om-btn-ghost:hover { background: #f9fafb; border-color: #9ca3af; }
-    .om-btn-primary { background: #3b82f6; color: #fff; border: none; }
-    .om-btn-primary:hover { background: #2563eb; }
-
-    /* Mobile bottom-sheet style */
-    @media (max-width: 480px) {
-      .options-modal-overlay { align-items: flex-end; }
-      .options-modal-content { width: 100%; border-radius: 14px 14px 0 0; max-height: 92vh; }
-    }
-  `;
-  document.head.appendChild(style);
 
   modalOverlay.appendChild(modalContent);
 
@@ -479,13 +368,8 @@ export function showOptionsModal(config) {
   const confirmBtn = modalContent.querySelector('#confirm-btn');
 
   const closeModal = () => {
-    modalOverlay.style.animation = 'fadeIn 0.2s ease reverse';
-    setTimeout(() => {
-      if (modalOverlay.parentNode) {
-        modalOverlay.parentNode.removeChild(modalOverlay);
-      }
-      document.head.removeChild(style);
-    }, 200);
+    document.removeEventListener('keydown', handleEsc);
+    if (modalOverlay.parentNode) modalOverlay.parentNode.removeChild(modalOverlay);
   };
 
   cancelBtn.addEventListener('click', () => {
@@ -508,13 +392,12 @@ export function showOptionsModal(config) {
   });
 
   // ESC鍵關閉
-  const handleEsc = (e) => {
+  function handleEsc(e) {
     if (e.key === 'Escape') {
       onCancel();
       closeModal();
-      document.removeEventListener('keydown', handleEsc);
     }
-  };
+  }
   document.addEventListener('keydown', handleEsc);
 
   // 添加到頁面
@@ -547,31 +430,20 @@ function renderOptions(container, options) {
 
 // 創建單選選項
 function createRadioOption(option, index) {
-  const radioOptions = option.choices.map((choice, choiceIndex) => `
+  const radioOptions = option.choices.map((choice) => `
     <label class="radio-card">
       <input type="radio" name="option-${index}" value="${choice.value}" ${choice.value === option.default ? 'checked' : ''}>
       <div>
-        <div style="font-weight:600;color:#111827;font-size:14px;">${choice.label}</div>
-        ${choice.description ? `<div style=\"font-size:12px;color:#6b7280;margin-top:2px;\">${choice.description}</div>` : ''}
+        <div class="om-option-title">${choice.label}</div>
+        ${choice.description ? `<div class="om-option-desc">${choice.description}</div>` : ''}
       </div>
     </label>
   `).join('');
 
   return `
-    <div style="margin-bottom: 12px;">
-      <h4 style="
-        margin: 0 0 8px 0;
-        font-size: 14px;
-        font-weight: 600;
-        color: #1f2937;
-      ">${option.label}</h4>
-      ${option.description ? `
-        <p style="
-          margin: 0 0 12px 0;
-          font-size: 12px;
-          color: #6b7280;
-        ">${option.description}</p>
-      ` : ''}
+    <div class="om-field">
+      <h4 class="om-label">${option.label}</h4>
+      ${option.description ? `<p class="om-hint">${option.description}</p>` : ''}
     </div>
     <div class="radio-group" data-option-key="${option.key}">
       ${radioOptions}
@@ -583,10 +455,10 @@ function createRadioOption(option, index) {
 function createCheckboxOption(option, index) {
   const id = `chk-${option.key}-${index}`;
   return `
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <div class="om-row">
       <div>
-        <div style="font-weight:600;color:#111827;font-size:14px;">${option.label}</div>
-        ${option.description ? `<div style=\"font-size:12px;color:#6b7280;margin-top:2px;\">${option.description}</div>` : ''}
+        <div class="om-option-title">${option.label}</div>
+        ${option.description ? `<div class="om-option-desc">${option.description}</div>` : ''}
       </div>
       <label class="switch" for="${id}"><input id="${id}" type="checkbox" data-option-key="${option.key}" ${option.default ? 'checked' : ''}><span class="slider"></span></label>
     </div>
@@ -602,72 +474,31 @@ function createSelectOption(option, index) {
   `).join('');
 
   return `
-    <div style="margin-bottom: 8px;">
-      <label style="
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 4px;
-      ">${option.label}</label>
-      ${option.description ? `
-        <p style="
-          margin: 0 0 8px 0;
-          font-size: 12px;
-          color: #6b7280;
-        ">${option.description}</p>
-      ` : ''}
+    <div class="om-field">
+      <label class="om-label" for="sel-${option.key}-${index}">${option.label}</label>
+      ${option.description ? `<p class="om-hint">${option.description}</p>` : ''}
+      <select id="sel-${option.key}-${index}" data-option-key="${option.key}">
+        ${selectOptions}
+      </select>
     </div>
-    <select
-      data-option-key="${option.key}"
-      style="
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 14px;
-        background: white;
-        cursor: pointer;
-      "
-    >
-      ${selectOptions}
-    </select>
   `;
 }
 
 // 創建數字輸入選項
 function createNumberOption(option, index) {
   return `
-    <div style="margin-bottom: 8px;">
-      <label style="
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 4px;
-      ">${option.label}</label>
-      ${option.description ? `
-        <p style="
-          margin: 0 0 8px 0;
-          font-size: 12px;
-          color: #6b7280;
-        ">${option.description}</p>
-      ` : ''}
+    <div class="om-field">
+      <label class="om-label" for="num-${option.key}-${index}">${option.label}</label>
+      ${option.description ? `<p class="om-hint">${option.description}</p>` : ''}
+      <input
+        id="num-${option.key}-${index}"
+        type="number"
+        data-option-key="${option.key}"
+        value="${option.default || option.min || 1}"
+        min="${option.min || 1}"
+        max="${option.max || 100}"
+      >
     </div>
-    <input
-      type="number"
-      data-option-key="${option.key}"
-      value="${option.default || option.min || 1}"
-      min="${option.min || 1}"
-      max="${option.max || 100}"
-      style="
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 14px;
-      "
-    >
   `;
 }
 

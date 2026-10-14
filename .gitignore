@@ -6,6 +6,10 @@ modules/CLAUDE.md
 features/*/CLAUDE.md
 .claude/
 
+# Python 快取
+__pycache__/
+*.pyc
+
 # 系统文件
 .DS_Store
 Thumbs.db
@@ -64,6 +68,10 @@ rooveterinaryinc.roo-cline/
 
 # Playwright reports
 playwright-report/
+
+# 回歸測試產出的截圖與中間結果（可用 scripts/serve.py + tests/*.cjs 重新產生）
+docs/report/assets-ui-redesign/
+docs/report/root-audit/
 
 # 開發除錯殘留（瀏覽器測試截圖、console 輸出、頁面快照）
 .playwright-mcp/

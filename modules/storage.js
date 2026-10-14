@@ -1,5 +1,6 @@
 import * as state from './state.js';
 import { touch as syncTouch } from './sync-signals.js';
+import { t } from './i18n.js';
 
 // =================================
 // 本地存儲管理 (LocalStorage)
@@ -312,7 +313,7 @@ function generateWordEntryId() {
 export function addWordToWordbook(wordbookId, wordPayload) {
     const book = getWordbookById(wordbookId);
     if (!book) {
-        throw new Error(`找不到 ID 為 ${wordbookId} 的生詞本，無法新增單字。`);
+        throw new Error(t('errors.wordbookNotFound', { id: wordbookId }));
     }
     const words = Array.isArray(book.words) ? [...book.words] : [];
     const id = wordPayload && wordPayload.id ? wordPayload.id : generateWordEntryId();
@@ -366,7 +367,7 @@ export function removeWordFromWordbook(wordbookId, wordEntryId) {
 export function getOrCreateArticleWordbook(articleMetaInput, options = {}) {
     const createWordbook = options.createWordbook !== false;
     if (!articleMetaInput || !articleMetaInput.title || !articleMetaInput.sourceType) {
-        throw new Error('getOrCreateArticleWordbook 需要有效的 articleMetaInput（至少包含 title 與 sourceType）');
+        throw new Error(t('errors.articleMetaInvalid'));
     }
 
     const sourceType = articleMetaInput.sourceType;
@@ -430,7 +431,7 @@ export function getOrCreateArticleWordbook(articleMetaInput, options = {}) {
     } else if (createWordbook) {
         nextBook = {
             id: wordbookId,
-            name: articleMeta.title || '未命名文章',
+            name: articleMeta.title || t('errors.untitledArticle'),
             words: [],
             sourceType: 'article',
             articleId: articleMeta.id,

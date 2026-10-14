@@ -18,6 +18,7 @@ import {
   deriveApiUrl,
   deriveModelsUrl
 } from '../../modules/ai-models.js';
+import { THEMES, applyTheme, getSavedTheme } from '../../modules/theme.js';
 import { openDictationGradingHistory } from '../dictation/dictation-grader.js';
 import {
   listAssistantConversationMetas,
@@ -28,7 +29,7 @@ import {
 } from '../assistant/assistant.js';
 import * as backup from '../../modules/local-backup.js';
 import { markdownToHtml } from '../../modules/markdown.js';
-import { getLocale, setLocale, t } from '../../modules/i18n.js';
+import { getLocale, setLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { SUPPORTED_LOCALES } from '../../modules/i18n-config.js';
 
 export function initSync() {
@@ -50,6 +51,12 @@ export function initSync() {
       if (e.target === dom.appGearBtn || dom.appGearBtn.contains(e.target)) return;
       if (m.contains(e.target)) return;
       m.remove();
+    });
+    // ESC 關閉齒輪選單（與手機版「更多」抽屜一致）
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const m = document.getElementById('gear-menu');
+      if (m) m.remove();
     });
     // Auto-sync: listen to data change signals
     window.addEventListener('bdc:data-changed', (e) => {
@@ -126,7 +133,7 @@ async function handleSync() {
       updateStatus(t('sync.syncDone'));
       try { ui.displayMessage(t('sync.syncDone'), 'success', 2000); } catch(_) {}
     }
-    try { await backup.createBackup('手動同步後備份'); } catch(_) {}
+    try { await backup.createBackup(t('sync.backupNoteManual')); } catch(_) {}
   } catch (e) {
     console.warn(e);
     updateStatus(t('sync.syncFailed'));
@@ -145,7 +152,9 @@ function setBusy(b) {
 function updateStatus(text) {
   if (dom.syncStatus) {
     const ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
-    const ts = lastSyncAt ? `（上次：${new Date(lastSyncAt).toLocaleTimeString()}，v${ver}）` : (ver ? `（v${ver}）` : '');
+    const ts = lastSyncAt
+        ? t('sync.lastSyncWithVersion', { time: formatDateTime(lastSyncAt, { hour12: false, year: undefined, month: undefined, day: undefined }), version: ver })
+        : (ver ? t('sync.versionOnly', { version: ver }) : '');
     dom.syncStatus.textContent = (text || '') + ' ' + ts;
   }
 }
@@ -375,20 +384,23 @@ function showGlobalSettingsModal() {
   (function injectGsStyle(){
     const id = 'gs-asst-style'; if (document.getElementById(id)) return;
     const st = document.createElement('style'); st.id = id; st.textContent = `
-      /* AI 助手設定：更輕量的開關樣式 */
-      .gs-asst-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 12px;border:1px solid #e5e7eb;background:#f8fafc;border-radius:12px}
-      .gs-toggle{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#fff;border:1px solid #e5e7eb;cursor:pointer}
+      /* AI 助手設定：沿用設計令牌，與站內開關同一套靛藍主色 */
+      .gs-asst-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);background:var(--surface-2);border-radius:var(--r-md)}
+      .gs-toggle{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--line);cursor:pointer}
       .gs-visually-hidden{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-      .gs-switch{position:relative;width:38px;height:22px;border-radius:999px;background:#e5e7eb;border:1px solid #d1d5db;display:inline-block;vertical-align:middle;transition:background .2s,border-color .2s}
-      .gs-switch::after{content:'';position:absolute;top:1px;left:1px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:transform .2s}
-      .gs-toggle input:checked + .gs-switch{background:#3b82f6;border-color:#3b82f6}
+      .gs-switch{position:relative;width:38px;height:22px;border-radius:var(--r-pill);background:var(--line);border:1px solid var(--line-strong);display:inline-block;vertical-align:middle;transition:background .2s,border-color .2s}
+      .gs-switch::after{content:'';position:absolute;top:1px;left:1px;width:18px;height:18px;border-radius:50%;background:var(--surface);box-shadow:var(--sh-1);transition:transform .2s}
+      .gs-toggle input:checked + .gs-switch{background:var(--primary);border-color:var(--primary)}
       .gs-toggle input:checked + .gs-switch::after{transform:translateX(16px)}
-      .gs-toggle .gs-label{font-size:13px;color:#0f172a}
-      .gs-hint{color:#64748b;font-size:12px;margin-left:auto}
+      .gs-toggle input:focus-visible + .gs-switch{box-shadow:var(--ring)}
+      .gs-toggle .gs-label{font-size:var(--fs-sm);color:var(--ink-800)}
+      .gs-hint{color:var(--ink-500);font-size:var(--fs-xs);margin-left:auto}
     `; document.head.appendChild(st);
   })();
   const persistedSettings = loadGlobalSettings();
   const persistedSecrets = loadGlobalSecrets();
+  // 主題：開啟設定時以已儲存的選擇為準（避免上次預覽未儲存就關閉而殘留）
+  let draftTheme = applyTheme(getSavedTheme());
   const taskFields = getAiTaskFieldList();
   const aiState = {
     providers: listAIProviders({ settings: persistedSettings, secrets: persistedSecrets, includeDisabled: true }).map((provider) => ({
@@ -452,7 +464,7 @@ function showGlobalSettingsModal() {
     try {
       const d = new Date(value);
       if (Number.isNaN(d.getTime())) return '';
-      return d.toLocaleString(getLocale(), { hour12: false });
+      return formatDateTime(d, { hour12: false });
     } catch (_) {
       return '';
     }
@@ -633,7 +645,7 @@ function showGlobalSettingsModal() {
       if (!aiState.taskModels[key] && value) aiState.taskModels[key] = value;
       return `
         <div style="display:grid;grid-template-columns:minmax(120px,180px) 1fr;gap:8px;align-items:center;">
-          <div style="font-size:13px;color:#0f172a;">${escapeHtml(label)}</div>
+          <div style="font-size:13px;color:var(--ink-800);">${escapeHtml(label)}</div>
           <select data-ai-task-select="${escapeHtml(key)}" ${selection.disabled ? 'disabled' : ''} title="${selection.disabled ? t('qa.configureModel') : ''}">
             ${selection.options.map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === value ? 'selected' : ''}>${escapeHtml(option.label || option.value)}</option>`).join('')}
           </select>
@@ -771,6 +783,18 @@ function showGlobalSettingsModal() {
         </select>
         <div class="gs-hint" style="margin-top:6px">${escapeHtml(t('settings.languageHint'))}</div>
       </div>
+      <div class="auth-field">
+        <label>${escapeHtml(t('settings.theme'))}</label>
+        <div class="gs-theme-row" id="gs-theme-row" role="group" aria-label="${escapeHtml(t('settings.theme'))}">
+          ${THEMES.map((theme) => `
+            <button type="button" class="gs-theme-btn${theme.id === draftTheme ? ' active' : ''}" data-theme-id="${theme.id}"
+              aria-pressed="${theme.id === draftTheme ? 'true' : 'false'}">
+              <span class="gs-theme-dot" style="background:${theme.swatch}" aria-hidden="true"></span>
+              <span class="gs-theme-name">${escapeHtml(t(theme.labelKey))}</span>
+            </button>`).join('')}
+        </div>
+        <div class="gs-hint" style="margin-top:6px">${escapeHtml(t('settings.themeHint'))}</div>
+      </div>
       <div id="gs-ai-settings"></div>
       <div class="auth-field">
         <label>${t('settings.ttsSource')}</label>
@@ -812,28 +836,28 @@ function showGlobalSettingsModal() {
         <div id="gs-voice-box" style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px">
           <div>
             <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:#64748b">${t('settings.englishAmerican')}</div>
+              <div style="font-size:12px;color:var(--ink-500)">${t('settings.englishAmerican')}</div>
               <button id="gs-test-en-us" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
             </div>
             <select id="gs-voice-en-us" style="width:100%"><option value="">${t('settings.loading')}</option></select>
           </div>
           <div>
             <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:#64748b">${t('settings.englishBritish')}</div>
+              <div style="font-size:12px;color:var(--ink-500)">${t('settings.englishBritish')}</div>
               <button id="gs-test-en-gb" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
             </div>
             <select id="gs-voice-en-gb" style="width:100%"><option value="">${t('settings.loading')}</option></select>
           </div>
           <div>
             <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:#64748b">${t('settings.cantoneseVoice')}</div>
+              <div style="font-size:12px;color:var(--ink-500)">${t('settings.cantoneseVoice')}</div>
               <button id="gs-test-zh-hk" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
             </div>
             <select id="gs-voice-zh-hk" style="width:100%"><option value="">${t('settings.loading')}</option></select>
           </div>
           <div>
             <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:#64748b">${t('settings.mandarinVoice')}</div>
+              <div style="font-size:12px;color:var(--ink-500)">${t('settings.mandarinVoice')}</div>
               <button id="gs-test-zh-cn" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
             </div>
             <select id="gs-voice-zh-cn" style="width:100%"><option value="">${t('settings.loading')}</option></select>
@@ -874,7 +898,27 @@ function showGlobalSettingsModal() {
   dom.modalBody.innerHTML = html;
   renderAiSettingsSection();
   const $ = (id)=> dom.modalBody.querySelector(id);
-  $('#gs-cancel').onclick = ()=> ui.closeModal();
+  $('#gs-cancel').onclick = ()=>{ applyTheme(getSavedTheme()); ui.closeModal(); };
+
+  // 主題選擇：點了先即時預覽，按「儲存」才寫入設定；取消或關閉會還原
+  (function wireThemePicker(){
+    const row = dom.modalBody.querySelector('#gs-theme-row');
+    if (!row) return;
+    const markActive = (id) => {
+      row.querySelectorAll('.gs-theme-btn').forEach((btn) => {
+        const on = btn.getAttribute('data-theme-id') === id;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    };
+    row.addEventListener('click', (event) => {
+      const btn = event.target.closest('.gs-theme-btn');
+      if (!btn) return;
+      draftTheme = applyTheme(btn.getAttribute('data-theme-id'));
+      markActive(draftTheme);
+    });
+    markActive(draftTheme);
+  })();
   // 初始化預設單選狀態
   try {
     const use = settings?.ttsUse || 'remote';
@@ -928,6 +972,7 @@ function showGlobalSettingsModal() {
       const aiSecrets = buildDraftAiSecrets();
       saveGlobalSettings({
         ...aiSettings,
+        theme: draftTheme,
         language: { interfaceLocale },
         phonetics: { enabled: dom.modalBody.querySelector('#gs-phonetics-enabled')?.checked === true },
         tts: { use: ttsUse, baseUrlCustom: ttsUrlCustom, selectedVoices: sv },
@@ -1032,7 +1077,10 @@ function showGlobalSettingsModal() {
         let text;
         if (group === 'en-US') text = 'This is a test voice.';
         else if (group === 'en-GB') text = 'This is a British English test voice.';
+        // i18n-allow: 刻意用「該語音自己的語言」唸測試句（測粵語 voice 就用粵語句），不跟介面語言走
+        // i18n-allow: 用該語音自己的語言唸測試句
         else if (group === 'zh-HK') text = '呢個係測試語音。';
+        // i18n-allow: 同上，測試句跟著語音語言
         else text = '這是一段測試語音。';
         const ok = await speakText(text, id, 0);
         if (!ok) {
@@ -1055,6 +1103,7 @@ function showGlobalSettingsModal() {
             fb = cfg?.TTS_CONFIG?.voices?.english || '';
           }
           if (fb) {
+            // i18n-allow: 測試句刻意用該語音自己的語言，不跟介面語言
             let text = (group === 'zh-HK') ? '呢個係測試語音。' : (group === 'zh-CN' ? '這是一段測試語音。' : 'This is a test voice.');
             await speakText(text, fb, 0);
             if (hint) hint.textContent = t('settings.fallbackVoice');
@@ -1126,22 +1175,22 @@ async function showAssistantSessions(){
       /* 左右兩欄的總容器固定高度，確保內部出現滾動條 */
       #as-layout{display:grid;grid-template-columns:280px 1fr;gap:12px;height:72vh;overflow:hidden}
       #as-left-wrap{display:flex;flex-direction:column;gap:8px;height:100%}
-      #as-left{border:1px solid #e5e7eb;border-radius:10px;overflow:auto;background:#fff;flex:1}
-      #as-right{border:1px solid #e5e7eb;border-radius:10px;background:#fff;display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative}
-      #as-right-body{flex:1;padding:10px;overflow:auto;font-size:13px;display:flex;flex-direction:column;gap:2px}
-      #as-right-toolbar{position:sticky;bottom:0;background:#fff;border-top:1px solid #eef2f7;padding:8px;display:flex;gap:6px;align-items:center}
-      #as-right-toolbar .btn{padding:6px 10px;font-size:12px}
-      #as-left-toolbar .btn{padding:6px 8px;font-size:12px}
-      #as-question{flex:1;border:1px solid #d1d5db;border-radius:8px;padding:6px 8px;min-width:120px}
-      #as-left .as-item{padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer}
-      #as-left .as-item.active{background:#f1f5f9}
+      #as-left{border:1px solid var(--line);border-radius:var(--r-sm);overflow:auto;background:var(--surface);flex:1}
+      #as-right{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative}
+      #as-right-body{flex:1;padding:10px;overflow:auto;font-size:var(--fs-sm);display:flex;flex-direction:column;gap:2px}
+      #as-right-toolbar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:8px;display:flex;gap:6px;align-items:center}
+      #as-right-toolbar .btn{padding:6px 10px;font-size:var(--fs-xs)}
+      #as-left-toolbar .btn{padding:6px 8px;font-size:var(--fs-xs)}
+      #as-question{flex:1;border:1px solid var(--line-strong);border-radius:var(--r-xs);padding:6px 8px;min-width:120px}
+      #as-left .as-item{padding:10px 12px;border-bottom:1px dashed var(--line);cursor:pointer}
+      #as-left .as-item.active{background:var(--surface-3)}
       /* 預覽面板的 markdown 基本樣式（若未載入 assistant 風格時的降級樣式） */
-      #as-right-body .assistant-msg{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:10px 12px;border-radius:10px;margin:4px 0;box-sizing:border-box}
-      #as-right-body .assistant-user{background:#e6f0ff;color:#0f172a;border:1px solid #cfe0ff;align-self:flex-end;box-shadow:inset -3px 0 0 #60a5fa}
-      #as-right-body .assistant-assistant{background:#f6f8fb;color:#0f172a;border:1px solid #e5e7eb;align-self:flex-start;box-shadow:inset 3px 0 0 #cbd5e1}
+      #as-right-body .assistant-msg{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:10px 12px;border-radius:var(--r-md);margin:4px 0;box-sizing:border-box}
+      #as-right-body .assistant-user{background:var(--primary-050);color:var(--ink-800);border:1px solid var(--primary-100);align-self:flex-end;box-shadow:inset -3px 0 0 var(--primary)}
+      #as-right-body .assistant-assistant{background:var(--surface-2);color:var(--ink-800);border:1px solid var(--line);align-self:flex-start;box-shadow:inset 3px 0 0 var(--line-strong)}
       #as-right-body .assistant-msg{max-width:86%}
-      #as-right-body .assistant-msg pre{background:#0b1220;color:#e5e7eb;border:1px solid #0b1220;border-radius:10px;padding:12px 14px;overflow:auto;position:relative}
-      #as-right-body .assistant-msg .assistant-copy{position:absolute;top:8px;right:8px;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#cbd5e1;opacity:.85;cursor:pointer}
+      #as-right-body .assistant-msg pre{background:var(--ink-900);color:var(--paper-2);border:1px solid var(--ink-900);border-radius:var(--r-sm);padding:12px 14px;overflow:auto;position:relative}
+      #as-right-body .assistant-msg .assistant-copy{position:absolute;top:8px;right:8px;font-size:var(--fs-xs);padding:4px 8px;border-radius:var(--r-xs);border:1px solid var(--ink-600);background:var(--ink-900);color:var(--ink-300);opacity:.85;cursor:pointer}
       #as-right-body .assistant-msg .assistant-copy:hover{opacity:1}
       @media (max-width: 768px){
         #as-layout{grid-template-columns:1fr;height:70vh}
@@ -1171,12 +1220,12 @@ async function showAssistantSessions(){
 
   left.innerHTML = index.length ? index.map(m => {
     const title = (m.articleKey==='global' ? `${t('assistant.global')} · ` : '') + (m.title || t('assistant.session'));
-    const time = new Date(m.updatedAt || Date.now()).toLocaleString();
-    return `<div class="as-item" data-id="${m.id}" title="點擊預覽，雙擊直接在助手中開啟">
-      <div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(title)}</div>
-      <div style="font-size:12px;color:#64748b;">${time}</div>
+    const time = formatDateTime(m.updatedAt || Date.now());
+    return `<div class="as-item" data-id="${m.id}" title="${t('sync.sessionItemTitle')}">
+      <div style="font-weight:600;color:var(--ink-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(title)}</div>
+      <div style="font-size:12px;color:var(--ink-500);">${time}</div>
     </div>`;
-  }).join('') : `<div style="padding:12px;color:#64748b;">${t('assistant.noSessions')}</div>`;
+  }).join('') : `<div style="padding:12px;color:var(--ink-500);">${t('assistant.noSessions')}</div>`;
 
   layout.appendChild(leftWrap); layout.appendChild(right);
   dom.modalBody.innerHTML=''; dom.modalBody.appendChild(layout);
@@ -1187,20 +1236,20 @@ async function showAssistantSessions(){
   const rightToolbar = document.createElement('div'); rightToolbar.id = 'as-right-toolbar';
   rightToolbar.innerHTML = `<button id="as-open" class="btn primary" style="padding:6px 10px;font-size:12px;">${t('assistant.continueInAssistant')}</button>
   <button id="as-export" class="btn secondary" style="padding:6px 10px;font-size:12px;">${t('assistant.export')}</button>
-  <input id="as-question" type="text" placeholder="${t('assistant.questionPlaceholder')}" style="flex:1;border:1px solid #d1d5db;border-radius:8px;padding:6px 8px;">
+  <input id="as-question" type="text" placeholder="${t('assistant.questionPlaceholder')}" style="flex:1;border:1px solid var(--line-strong);border-radius:8px;padding:6px 8px;">
   <button id="as-send" class="btn primary" style="padding:6px 10px;font-size:12px;">${t('assistant.send')}</button>`;
   right.appendChild(rightBody); right.appendChild(rightToolbar);
 
   async function renderConversation(id){
     currentId = id; const meta = index.find(x=>x.id===id) || {}; currentArticleKey = meta.articleKey || 'global';
-    rightBody.innerHTML = `<div style="padding:8px;color:#64748b;">${t('assistant.loading')}</div>`;
+    rightBody.innerHTML = `<div style="padding:8px;color:var(--ink-500);">${t('assistant.loading')}</div>`;
     try {
       const msgs = await getAssistantConversationMessages(id);
       const html = msgs.map(m => {
         if (m.role === 'assistant') return `<div class=\"assistant-msg assistant-assistant\">${markdownToHtml(m.content||'')}</div>`;
         return `<div class=\"assistant-msg assistant-user\">${escapeHtml(m.content||'')}</div>`;
       }).join('');
-      rightBody.innerHTML = html || `<div style="padding:8px;color:#64748b;">${t('assistant.emptySession')}</div>`;
+      rightBody.innerHTML = html || `<div style="padding:8px;color:var(--ink-500);">${t('assistant.emptySession')}</div>`;
       // 為預覽面板中的程式碼塊補上複製按鈕
       try { rightBody.querySelectorAll('pre').forEach(pre => {
         if (pre.querySelector('.assistant-copy')) return;
@@ -1212,7 +1261,7 @@ async function showAssistantSessions(){
         });
         pre.appendChild(btn);
       }); } catch(_) {}
-    } catch(e) { rightBody.innerHTML = `<div style="padding:8px;color:#ef4444;">${t('assistant.loadFailed')}</div>`; }
+    } catch(e) { rightBody.innerHTML = `<div style="padding:8px;color:var(--danger);">${t('assistant.loadFailed')}</div>`; }
   }
 
   left.addEventListener('click', (ev) => {
@@ -1239,7 +1288,7 @@ async function showAssistantSessions(){
     try {
       const meta = await createAssistantConversation({ articleKey, title, messages: [] });
       index = listAssistantConversationMetas();
-      left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;"><div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?'全局 · ':'')+meta.title)}</div><div style="font-size:12px;color:#64748b;">${new Date(meta.updatedAt || Date.now()).toLocaleString()}</div></div>`;
+      left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed var(--line);cursor:pointer;"><div style="font-weight:600;color:var(--ink-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?t('sync.globalPrefix'):'')+meta.title)}</div><div style="font-size:12px;color:var(--ink-500);">${formatDateTime(meta.updatedAt || Date.now())}</div></div>`;
     } catch(_) {}
   });
   // 匯入
@@ -1251,7 +1300,7 @@ async function showAssistantSessions(){
       const articleKey = json.articleKey || 'global'; const title = json.title || t('assistant.importedSession'); const messages = Array.isArray(json.messages)? json.messages: [];
       const meta = await createAssistantConversation({ articleKey, title, messages });
       index = listAssistantConversationMetas();
-      left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed #eef2f7;cursor:pointer;"><div style="font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?'全局 · ':'')+meta.title)}</div><div style="font-size:12px;color:#64748b;">${new Date(meta.updatedAt || Date.now()).toLocaleString()}</div></div>`;
+      left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed var(--line);cursor:pointer;"><div style="font-weight:600;color:var(--ink-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?t('sync.globalPrefix'):'')+meta.title)}</div><div style="font-size:12px;color:var(--ink-500);">${formatDateTime(meta.updatedAt || Date.now())}</div></div>`;
     } catch(e) { alert(t('assistant.importFailed', { message: e?.message || '' })); }
   });
   // 重命名
@@ -1268,9 +1317,9 @@ async function showAssistantSessions(){
     const item = left.querySelector(`.as-item[data-id="${id}"]`);
     if (item) {
       const titleDiv = item.querySelector('div');
-      if (titleDiv) titleDiv.textContent = (updated.articleKey==='global' ? '全局 · ' : '') + updated.title;
+      if (titleDiv) titleDiv.textContent = (updated.articleKey === 'global' ? t('sync.globalPrefix') : '') + updated.title;
       const timeDiv = item.querySelector('div:nth-child(2)');
-      if (timeDiv) timeDiv.textContent = new Date(updated.updatedAt || Date.now()).toLocaleString();
+      if (timeDiv) timeDiv.textContent = formatDateTime(updated.updatedAt || Date.now());
     }
   });
   // 刪除
@@ -1285,8 +1334,8 @@ async function showAssistantSessions(){
       index = listAssistantConversationMetas();
       const node = left.querySelector(`.as-item[data-id="${id}"]`);
       if (node) node.remove();
-      if (!left.querySelector('.as-item')) left.innerHTML = `<div style="padding:12px;color:#64748b;">${t('assistant.noSessions')}</div>`;
-      if (currentId === id) { currentId = ''; rightBody.innerHTML = `<div style="padding:8px;color:#64748b;">${t('assistant.noSelection')}</div>`; }
+      if (!left.querySelector('.as-item')) left.innerHTML = `<div style="padding:12px;color:var(--ink-500);">${t('assistant.noSessions')}</div>`;
+      if (currentId === id) { currentId = ''; rightBody.innerHTML = `<div style="padding:8px;color:var(--ink-500);">${t('assistant.noSelection')}</div>`; }
     } catch (e) { alert(t('assistant.deleteFailed', { message: e?.message || '' })); }
   });
   // 匯出
@@ -1412,7 +1461,7 @@ async function doAutoSync(reason) {
       updateStatus(t('sync.syncDone'));
       // 自動同步成功不再彈出提示，避免干擾
     }
-    try { await backup.createBackup('自動同步後備份'); } catch(_) {}
+    try { await backup.createBackup(t('sync.backupNoteAuto')); } catch(_) {}
   } catch (e) {
     console.warn('[sync] auto sync failed:', e);
     updateStatus(t('sync.autoSyncFailed'));
@@ -1480,19 +1529,19 @@ function showBackupRestoreModal() {
   try { dom.modalTitle.textContent = t('sync.backupTitle'); } catch(_) {}
   const items = (function(){ try { return backup.listBackups(); } catch(_) { return []; } })();
   const listHtml = items.length ? items.map(it => {
-    const timeStr = new Date(parseInt(it.ts,10)||Date.now()).toLocaleString();
+    const timeStr = formatDateTime(parseInt(it.ts, 10) || Date.now());
     const sizeKB = Math.round((it.size||0)/102.4)/10; // 1 decimal
     const mkBadge = (text, color) => `<span class="bk-badge" style="display:inline-block;padding:1px 6px;margin-left:6px;border-radius:999px;font-size:11px;background:${color.bg};color:${color.fg};border:1px solid ${color.bd};vertical-align:middle;">${escapeHtml(text)}</span>`;
     let noteHtml = '';
     if (it.note) {
-      if (/自動同步/.test(it.note)) noteHtml = mkBadge(it.note, { bg:'#f0f9ff', fg:'#075985', bd:'#7dd3fc' });
-      else if (/手動/.test(it.note)) noteHtml = mkBadge(it.note, { bg:'#ecfdf5', fg:'#065f46', bd:'#6ee7b7' });
-      else noteHtml = `<span style="margin-left:6px;color:#64748b;">${escapeHtml(it.note)}</span>`;
+      if (/自動同步|自动同步/.test(it.note)) noteHtml = mkBadge(it.note, { bg:'var(--info-050)', fg:'var(--info)', bd:'var(--info)' });
+      else if (/手動|手动/.test(it.note)) noteHtml = mkBadge(it.note, { bg:'var(--ok-050)', fg:'var(--ok-600)', bd:'var(--ok)' });
+      else noteHtml = `<span style="margin-left:6px;color:var(--ink-500);">${escapeHtml(it.note)}</span>`;
     }
-    return `<div class="backup-item" data-id="${it.id}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #eee;">
+    return `<div class="backup-item" data-id="${it.id}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line);">
       <div class="bi-meta">
         <div class="bi-title">${timeStr}${noteHtml}</div>
-        <div class="bi-sub" style="color:#64748b;font-size:12px;">ID: ${it.id} · ${t('sync.approximately', { size: sizeKB })}</div>
+        <div class="bi-sub" style="color:var(--ink-500);font-size:12px;">ID: ${it.id} · ${t('sync.approximately', { size: sizeKB })}</div>
       </div>
       <div class="bi-actions" style="display:flex;gap:6px;">
         <button class="btn-secondary bi-restore" data-id="${it.id}">${t('sync.restore')}</button>
@@ -1500,7 +1549,7 @@ function showBackupRestoreModal() {
         <button class="btn-danger bi-delete" data-id="${it.id}">${t('sync.delete')}</button>
       </div>
     </div>`;
-  }).join('') : `<div style="color:#64748b;padding:8px 0;">${t('sync.noBackups')}</div>`;
+  }).join('') : `<div style="color:var(--ink-500);padding:8px 0;">${t('sync.noBackups')}</div>`;
 
   const html = `
     <div class="backup-modal" style="min-width:340px;">
@@ -1542,7 +1591,7 @@ function showBackupRestoreModal() {
       const ok = payload && typeof payload === 'object'
         && KNOWN.some(k => payload[k] && typeof payload[k] === 'object');
       if (!ok) { msg.textContent = t('sync.invalidBackup'); return; }
-      const res = backup.saveBackupPayload(payload, '手動·檔案匯入');
+      const res = backup.saveBackupPayload(payload, t('sync.backupNoteImport'));
       if (res && res.error) { msg.textContent = t('sync.importWriteFailed', { message: res.error?.message || t('sync.unknownError') }); return; }
       try { ui.displayMessage(t('sync.backupImported'), 'success'); } catch(_) {}
       showBackupRestoreModal();

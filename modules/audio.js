@@ -39,7 +39,7 @@ export function unlockAudioContext() {
 
 /**
  * 停止當前所有正在播放的音頻源。
- * 這包括 Web Audio API 的 source 和全局的 HTML Audio 元素。
+ * 這包括 Web Audio API 的 source、全局的 HTML Audio 元素，以及本機語音合成。
  */
 export function stopCurrentAudio() {
     // 停止 Web Audio API 音頻源
@@ -55,6 +55,91 @@ export function stopCurrentAudio() {
         state.globalAudioElement.onerror = null;
         state.globalAudioElement.pause();
         state.globalAudioElement.currentTime = 0;
+    }
+
+    // 停止本機語音合成（序號遞增讓舊回調自動失效）
+    localSpeechSeq++;
+    if (window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch (_) { /* 忽略不支援的環境 */ }
+    }
+}
+
+// ---------------------------------
+// 本機語音（Web Speech API）後備方案
+// ---------------------------------
+
+let localSpeechSeq = 0;
+
+/** 遠端 TTS 是否已設定（未設定時直接使用系統語音，避免討厭的錯誤彈窗） */
+export function isRemoteTtsConfigured() {
+    const url = getEffectiveBaseUrl(loadGlobalSettings());
+    if (!url || typeof url !== 'string') return false;
+    let host = url;
+    try { host = new URL(url, window.location.href).hostname; } catch (_) { /* 保持原字串 */ }
+    if (!host) return false;
+    if (/(^|\.)example\.(com|org|net)$/i.test(host)) return false;
+    if (/your-tts|yourtts|placeholder/i.test(url)) return false;
+    return true;
+}
+
+/** 依語系提示挑選系統語音 */
+function pickLocalVoice(langOrVoice) {
+    const synth = window.speechSynthesis;
+    if (!synth || typeof synth.getVoices !== 'function') return null;
+    const voices = synth.getVoices() || [];
+    if (!voices.length) return null;
+    const raw = String(langOrVoice || '').toLowerCase();
+    let wanted = 'en';
+    if (/cantonese|yue|zh-hk|zh_hk|粵|粤/.test(raw)) wanted = 'zh-hk';
+    else if (/chinese|mandarin|zh|中文|普通/.test(raw)) wanted = 'zh';
+    const exact = voices.find(v => (v.lang || '').toLowerCase() === wanted);
+    if (exact) return exact;
+    const byPrefix = voices.find(v => (v.lang || '').toLowerCase().startsWith(wanted.slice(0, 2)));
+    return byPrefix || voices[0];
+}
+
+/** 以系統語音朗讀（離線可用；音質依裝置而定） */
+function speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd) {
+    const synth = window.speechSynthesis;
+    const UtteranceCtor = window.SpeechSynthesisUtterance;
+    const plainText = text == null ? '' : String(text);
+    if (!synth || !UtteranceCtor || !plainText) {
+        if (!state.isDictationPaused && onEnd) onEnd();
+        return false;
+    }
+
+    const seq = ++localSpeechSeq;
+    try {
+        synth.cancel();
+        const utterance = new UtteranceCtor(plainText);
+        const voice = pickLocalVoice(langOrVoice);
+        if (voice) {
+            utterance.voice = voice;
+            utterance.lang = voice.lang;
+        } else {
+            const raw = String(langOrVoice || '').toLowerCase();
+            utterance.lang = /cantonese|yue|zh-hk/.test(raw)
+                ? 'zh-HK'
+                : (/chinese|mandarin|zh/.test(raw) ? 'zh-CN' : 'en-US');
+        }
+        const numericSpeed = Number(speed) || 0;
+        utterance.rate = Math.min(2, Math.max(0.5, 1 + numericSpeed / 100));
+        utterance.onstart = () => { if (seq === localSpeechSeq && onStart) onStart(); };
+        utterance.onend = () => {
+            if (seq !== localSpeechSeq) return;
+            if (!state.isDictationPaused && onEnd) onEnd();
+        };
+        utterance.onerror = (event) => {
+            if (seq !== localSpeechSeq) return;
+            console.warn('本機語音播放失敗:', event?.error || event);
+            if (!state.isDictationPaused && onEnd) onEnd();
+        };
+        synth.speak(utterance);
+        return true;
+    } catch (error) {
+        console.error('本機語音播放出錯:', error);
+        if (!state.isDictationPaused && onEnd) onEnd();
+        return false;
     }
 }
 
@@ -114,12 +199,24 @@ export async function downloadTextAsAudio(text, langOrVoice = 'english', speed =
 export async function speakText(text, langOrVoice = 'english', speed = 0, onStart, onEnd) {
     stopCurrentAudio();
 
+    // 未設定遠端 TTS（或設定仍為範例網址）時，直接使用系統語音，確保聽寫有聲音
+    if (!isRemoteTtsConfigured()) {
+        return speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd);
+    }
+
     const s = loadGlobalSettings();
     const sec = loadGlobalSecrets();
     const baseUrl = getEffectiveBaseUrl(s);
     const apiKey = (sec?.ttsApiKey && String(sec.ttsApiKey).trim()) || TTS_CONFIG.apiKey;
     const voice = resolveVoiceId(langOrVoice, s) || TTS_CONFIG.voices.english;
     const url = `${baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(apiKey)}`;
+    let fellBackToLocal = false;
+
+    const fallbackToLocal = () => {
+        if (fellBackToLocal) return true;
+        fellBackToLocal = true;
+        return speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd);
+    };
 
     try {
         state.globalAudioElement.src = url;
@@ -138,26 +235,20 @@ export async function speakText(text, langOrVoice = 'english', speed = 0, onStar
         state.globalAudioElement.onerror = (error) => {
             state.globalAudioElement.onended = null;
             state.globalAudioElement.onerror = null;
-            console.error('音頻播放錯誤:', error);
-            alert('無法播放語音，請檢查網絡連接或TTS服務。');
-            if (!state.isDictationPaused && onEnd) onEnd();
+            console.warn('遠端 TTS 播放失敗，改用系統語音:', error?.message || error);
+            fallbackToLocal();
         };
         
         await state.globalAudioElement.play();
         return true;
     } catch (error) {
         if (error.name === 'AbortError') {
+            // 暫停 / 停止 / 切換單詞時主動中斷播放，屬預期行為，不可觸發 onEnd（避免流程多走一格）
             console.log('Audio playback was aborted, which is expected on pause/stop.');
-        } else {
-            console.error('播放音頻時出錯:', error);
-            if (error.name === 'NotAllowedError') {
-                alert('音頻播放被阻止，請允許該網站播放音頻。');
-            } else {
-                alert('無法播放語音，請稍後再試。');
-            }
+            return false;
         }
-        if (!state.isDictationPaused && onEnd) onEnd();
-        return false;
+        console.warn('遠端 TTS 無法播放，改用系統語音:', error?.name || error);
+        return fallbackToLocal();
     }
 }
 

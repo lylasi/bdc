@@ -14,6 +14,7 @@ import { initSync } from './features/sync/sync.js';
 import { initAiAssistant } from './features/assistant/assistant.js';
 import { initPhonetics } from './features/phonetics/phonetics.js';
 import { initI18n, t } from './modules/i18n.js';
+import { initTheme } from './modules/theme.js';
 
 const MODULE_ALIAS_TO_BUTTON_ID = {
     v: 'vocabulary-btn',
@@ -55,8 +56,8 @@ function setupNavigation() {
                 // stopQuiz();
             }
 
-            dom.navBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            syncNavActive(btn);
+            closeNavMore();
 
             // 隱藏所有模組
             hideAllModules();
@@ -95,6 +96,63 @@ function setupNavigation() {
             updateModuleHashFromButtonId(btn.id);
         });
     });
+
+    setupNavMore();
+    syncNavActive(document.querySelector('.nav-btn.active'));
+}
+
+// 手機底部導覽：目前模組若收在「更多」抽屜內，抽屜按鈕同步高亮
+function syncNavActive(activeBtn) {
+    dom.navBtns.forEach(b => b.classList.remove('active'));
+    if (activeBtn) activeBtn.classList.add('active');
+
+    const inMoreList = !!(activeBtn && dom.navMoreList && dom.navMoreList.contains(activeBtn));
+    if (dom.navMoreBtn) {
+        dom.navMoreBtn.classList.toggle('active', inMoreList);
+    }
+}
+
+// 手機底部導覽的「更多」抽屜：點擊開合、點背景或 Esc 關閉
+function setupNavMore() {
+    if (!dom.navMoreBtn || !dom.navMoreList) return;
+
+    dom.navMoreBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const willOpen = !dom.navMoreList.classList.contains('is-open');
+        if (willOpen) { openNavMore(); } else { closeNavMore(); }
+    });
+
+    if (dom.navBackdrop) {
+        dom.navBackdrop.addEventListener('click', closeNavMore);
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeNavMore();
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) closeNavMore();
+    });
+}
+
+function openNavMore() {
+    if (!dom.navMoreList) return;
+    dom.navMoreList.classList.add('is-open');
+    dom.navMoreBtn.setAttribute('aria-expanded', 'true');
+    if (dom.navBackdrop) {
+        dom.navBackdrop.hidden = false;
+        dom.navBackdrop.classList.add('is-open');
+    }
+}
+
+function closeNavMore() {
+    if (!dom.navMoreList) return;
+    dom.navMoreList.classList.remove('is-open');
+    dom.navMoreBtn.setAttribute('aria-expanded', 'false');
+    if (dom.navBackdrop) {
+        dom.navBackdrop.classList.remove('is-open');
+        dom.navBackdrop.hidden = true;
+    }
 }
 
 // 隱藏所有模組的輔助函數
@@ -105,24 +163,10 @@ function hideAllModules() {
     hideQAModule();
 }
 
-// 根據視窗寬度切換主導航文案（移動端顯示短文案）
-function responsiveNavLabels() {
-    const isCompact = window.innerWidth <= 767;
-    const nav = document.querySelector('nav');
-    if (nav) {
-        nav.classList.toggle('nav-compact', isCompact);
-    }
-    document.querySelectorAll('.nav-btn .nav-text').forEach(el => {
-        const fullKey = el.getAttribute('data-i18n-full');
-        const shortKey = el.getAttribute('data-i18n-short');
-        const full = fullKey ? t(fullKey) : el.textContent;
-        const short = shortKey ? t(shortKey) : full;
-        el.textContent = isCompact ? short : full;
-    });
-}
-
 document.addEventListener('DOMContentLoaded', async () => {
     initI18n();
+    // 0. 套用使用者選定的配色主題（index.html 的 head 已先套一次，避免首次繪製閃色）
+    initTheme();
 
     // 1. 加载核心数据
     loadVocabularyBooks();
@@ -132,6 +176,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     initModal();
     setupNumberSteppers();
     initTooltip();
+
+    // 2.1 先接管主導覽：initQA 需要等待網路，期間點底部標籤也應該有反應
+    setupNavigation();
+    closeNavMore();
 
     // 3. 设置音频解锁
     document.body.addEventListener('click', unlockAudioContext, { once: true });
@@ -151,16 +199,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     try { initAiAssistant(); } catch (_) {}
 
     // 5. 填充初始视图
-    // 确保在导航设置前，为默认显示的模块（如此处为学习模块）填充内容
+    // 确保为默认显示的模块（如此处为学习模块）填充内容
     populateLearningBookSelector();
     populateWordSelect();
 
-    // 6. 初始化主导航
-    setupNavigation();
-    // 6.1 移動端壓縮文案（並監聽視窗縮放）
-    responsiveNavLabels();
-    window.addEventListener('resize', responsiveNavLabels);
-    document.addEventListener('bdc:locale-change', responsiveNavLabels);
+    // 6. 主導覽已於 2.1 接管
 
     // 7. 手動觸發一次change事件來更新初始狀態
     if(dom.listenOnlyMode) {

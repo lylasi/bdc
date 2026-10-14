@@ -1,0 +1,106 @@
+{
+  "tokenOffenders": [],
+  "iconInventory": {
+    "#ic-sliders 18x18": {
+      "count": 7,
+      "sample": "设置"
+    },
+    "#ic-book 18x18": {
+      "count": 7,
+      "sample": "单词本 词"
+    },
+    "#ic-pen 18x18": {
+      "count": 7,
+      "sample": "听写模式 听"
+    },
+    "#ic-bulb 18x18": {
+      "count": 7,
+      "sample": "学习模式 学"
+    },
+    "#ic-chat 18x18": {
+      "count": 7,
+      "sample": "问答训练 问"
+    },
+    "#ic-doc 18x18": {
+      "count": 7,
+      "sample": "文章详解"
+    },
+    "#ic-scan 18x18": {
+      "count": 7,
+      "sample": "图片识别"
+    },
+    "#ic-quiz 18x18": {
+      "count": 7,
+      "sample": "随堂测验"
+    },
+    "#ic-upload 16x16": {
+      "count": 1,
+      "sample": "导入单词本"
+    },
+    "#ic-plus 16x16": {
+      "count": 1,
+      "sample": "新增单词本"
+    },
+    "#ic-sparkle 16x16": {
+      "count": 2,
+      "sample": "补全资料"
+    },
+    "#ic-merge 16x16": {
+      "count": 1,
+      "sample": "合并"
+    },
+    "#ic-download 16x16": {
+      "count": 1,
+      "sample": "导出"
+    },
+    "#ic-edit 16x16": {
+      "count": 1,
+      "sample": "编辑"
+    },
+    "#ic-trash 16x16": {
+      "count": 1,
+      "sample": "删除"
+    },
+    "#ic-speaker 16x16": {
+      "count": 4,
+      "sample": "播放单词与释义"
+    },
+    "#ic-prev 16x16": {
+      "count": 1,
+      "sample": "上一个"
+    },
+    "#ic-next 16x16": {
+      "count": 1,
+      "sample": "下一个"
+    },
+    "#ic-check 16x16": {
+      "count": 1,
+      "sample": "检查"
+    },
+    "#ic-play 22x22": {
+      "count": 1,
+      "sample": "开始听写"
+    },
+    "#ic-play 18x18": {
+      "count": 1,
+      "sample": "朗读文章"
+    },
+    "#ic-stop 18x18": {
+      "count": 1,
+      "sample": "停止朗读"
+    },
+    "#ic-download 18x18": {
+      "count": 1,
+      "sample": "下载语音"
+    },
+    "#ic-camera 16x16": {
+      "count": 2,
+      "sample": "优先使用相机"
+    }
+  },
+  "modalOffenders": [],
+  "summary": {
+    "total": 298,
+    "failed": 0
+  }
+}

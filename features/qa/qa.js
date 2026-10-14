@@ -1,4 +1,4 @@
-﻿// 問答訓練模組主入口
+// 問答訓練模組主入口
 import * as dom from '../../modules/dom.js';
 import * as state from '../../modules/state.js';
 import { getStoredQASets, getAllQASets, loadQASet, saveQASet, deleteQASet, importQASet, exportQASet, getQASetStats, cleanupExpiredCache } from './qa-storage.js';
@@ -8,7 +8,7 @@ import { startAIChecking, clearCheckingCache, getCheckingCacheStats, recheckAnsw
 import { exportTrainingResultToPDF, exportQASetForHandwriting } from './qa-pdf.js';
 import { displayMessage, showOptionsModal, openModal, closeModal } from '../../modules/ui.js';
 import { loadGlobalSettings } from '../../modules/settings.js';
-import { t } from '../../modules/i18n.js';
+import { t, formatDateTime, createCollator } from '../../modules/i18n.js';
 import {
   getTaskModelSelection,
   saveTaskModelSelection
@@ -103,10 +103,10 @@ function initQASelectionToWordbook() {
       'z-index:9999',
       'padding:4px 8px',
       'font-size:12px',
-      'border:1px solid #d1d5db',
-      'border-radius:6px',
-      'background:#fff',
-      'color:#111827',
+      'border:1px solid var(--line-strong)',
+      'border-radius:var(--r-xs)',
+      'background:var(--surface)',
+      'color:var(--ink-800)',
       'box-shadow:0 2px 6px rgba(0,0,0,0.08)',
       'display:none',
       'min-height:unset'
@@ -513,7 +513,7 @@ function openQASetPreviewModal(qaSet) {
 
   dom.modalBody.innerHTML = `
     <div class="qa-view-modal">
-      <div class="qa-view-meta" style="margin-bottom:12px; color:#4b5563; font-size:13px;">
+      <div class="qa-view-meta" style="margin-bottom:12px; color:var(--ink-600); font-size:var(--fs-sm);">
         ${metaDesc ? `<div style="margin-bottom:4px;">${metaDesc}</div>` : ''}
         <div>${t('qa.questionTotal', { count: total })}</div>
       </div>
@@ -521,10 +521,10 @@ function openQASetPreviewModal(qaSet) {
         <button type="button" class="qa-chip-btn" id="qa-view-shuffle">${t('qa.shuffleOrder')}</button>
         <button type="button" class="qa-chip-btn" id="qa-view-reset">${t('qa.resetOrder')}</button>
         <button type="button" class="qa-chip-btn" id="qa-view-copy-questions">${t('qa.copyContent')}</button>
-        <span style="margin-left:6px; color:#6b7280; font-size:12px;">${t('qa.perPage')}</span>
-        <input id="qa-view-qpp" type="number" min="4" max="12" value="8" style="width:54px; padding:4px 6px; border:1px solid #d1d5db; border-radius:6px; font-size:12px;" />
-        <span style="color:#6b7280; font-size:12px;">${t('qa.lineCount')}</span>
-        <input id="qa-view-lines" type="number" min="1" max="3" value="1" style="width:46px; padding:4px 6px; border:1px solid #d1d5db; border-radius:6px; font-size:12px;" />
+        <span style="margin-left:6px; color:var(--ink-500); font-size:var(--fs-xs);">${t('qa.perPage')}</span>
+        <input id="qa-view-qpp" type="number" min="4" max="12" value="8" style="width:54px; padding:4px 6px; border:1px solid var(--line-strong); border-radius:var(--r-xs); font-size:var(--fs-xs);" />
+        <span style="color:var(--ink-500); font-size:var(--fs-xs);">${t('qa.lineCount')}</span>
+        <input id="qa-view-lines" type="number" min="1" max="3" value="1" style="width:46px; padding:4px 6px; border:1px solid var(--line-strong); border-radius:var(--r-xs); font-size:var(--fs-xs);" />
         <button type="button" class="qa-chip-btn" id="qa-view-export-questions">${t('qa.exportQuestions')}</button>
         <button type="button" class="qa-chip-btn" id="qa-view-export-with-answers">${t('qa.exportAnswers')}</button>
       </div>
@@ -649,20 +649,20 @@ async function handleEditQASet(qaId) {
   try {
     const summary = qaModuleState.qaSets.find(item => item.id === qaId);
     if (summary?.isPreset) {
-      displayMessage('預置問答集無法直接覆寫，請使用「套用範本」建立副本。', 'info');
+      displayMessage(t('qa.presetReadonly'), 'info');
       return;
     }
 
     const qaSet = await loadQASet(qaId);
     if (!qaSet) {
-      displayMessage('無法載入選定的問答集進行編輯。', 'error');
+      displayMessage(t('qa.cannotLoadForEdit'), 'error');
       return;
     }
 
     openQASetEditorModal(qaSet);
   } catch (error) {
     console.error('載入問答集進行編輯時出錯:', error);
-    displayMessage('載入問答集失敗，無法進行編輯。', 'error');
+    displayMessage(t('qa.loadForEditFailed'), 'error');
   }
 }
 
@@ -674,7 +674,7 @@ async function handleLoadTemplate() {
 
   const qaId = select.value;
   if (!qaId) {
-    displayMessage('請先選擇要套用的問答集。', 'warning');
+    displayMessage(t('qa.selectSetFirst'), 'warning');
     return;
   }
 
@@ -682,15 +682,15 @@ async function handleLoadTemplate() {
   try {
     const qaSet = await loadQASet(qaId);
     if (!qaSet) {
-      displayMessage('載入問答集失敗。', 'error');
+      displayMessage(t('qa.loadSetsFailed'), 'error');
       return;
     }
 
     fillFormWithQASet(qaSet, { treatAsTemplate: true });
-    displayMessage(`已套用「${qaSet.name}」作為範本。`, 'success');
+    displayMessage(t('qa.templateApplied', { name: qaSet.name }), 'success');
   } catch (error) {
     console.error('套用問答集範本時出錯:', error);
-    displayMessage('無法套用範本，請稍後再試。', 'error');
+    displayMessage(t('qa.templateApplyFailed'), 'error');
   } finally {
     button.disabled = false;
   }
@@ -708,7 +708,7 @@ function refreshCreatorTemplateSelector(selectedId = '') {
   placeholder.textContent = t('qa.selectExisting');
   select.appendChild(placeholder);
 
-  const collator = new Intl.Collator('zh-Hant', { sensitivity: 'base' });
+  const collator = createCollator({ sensitivity: 'base' });
   const sortedSets = [...qaModuleState.qaSets].sort((a, b) => collator.compare(a.name, b.name));
 
   sortedSets.forEach(set => {
@@ -776,24 +776,24 @@ function openQASetEditorModal(qaSet) {
       <form id="qa-editor-form" class="qa-editor-form">
         <div class="qa-editor-grid">
           <div class="form-group">
-            <label for="qa-edit-name">問答集名稱</label>
-            <input id="qa-edit-name" type="text" placeholder="輸入問答集名稱">
+            <label for="qa-edit-name">${t('qa.setNameLabel')}</label>
+            <input id="qa-edit-name" type="text" placeholder="${t('qa.namePlaceholder')}">
           </div>
           <div class="form-group">
-            <label for="qa-edit-description">描述</label>
-            <input id="qa-edit-description" type="text" placeholder="輸入問答集描述">
+            <label for="qa-edit-description">${t('qa.description')}</label>
+            <input id="qa-edit-description" type="text" placeholder="${t('qa.descriptionPlaceholder')}">
           </div>
           <div class="qa-form-row qa-pairs-row">
-            <label class="qa-input-label" for="qa-edit-pairs">問答對（每兩行一組：上一行問題、下一行答案）</label>
+            <label class="qa-input-label" for="qa-edit-pairs">${t('qa.pairsLabel')}</label>
             <div class="qa-pairs-field">
-              <textarea id="qa-edit-pairs" rows="10" placeholder="問題1？\n答案1。"></textarea>
+              <textarea id="qa-edit-pairs" rows="10" placeholder="${t('qa.pairsPlaceholder')}"></textarea>
             </div>
           </div>
         </div>
         <div id="qa-edit-preview" class="qa-preview"></div>
         <div class="qa-editor-actions">
-          <button type="button" class="btn secondary qa-edit-cancel">取消</button>
-          <button type="submit" class="btn primary qa-edit-save">保存變更</button>
+          <button type="button" class="btn secondary qa-edit-cancel">${t('qa.cancel')}</button>
+          <button type="submit" class="btn primary qa-edit-save">${t('qa.saveChanges')}</button>
         </div>
       </form>
     </div>
@@ -873,7 +873,7 @@ function openQASetEditorModal(qaSet) {
       }
     } catch (error) {
       console.error('更新問答集時出錯:', error);
-      displayMessage('更新失敗: ' + error.message, 'error');
+      displayMessage(t('qa.updateFailed', { message: error.message }), 'error');
     }
   });
 }
@@ -926,7 +926,7 @@ async function startQATraining(qaId) {
 
   } catch (error) {
     console.error('開始訓練時出錯:', error);
-    displayMessage('無法開始訓練: ' + error.message, 'error');
+    displayMessage(t('qa.startTrainingFailed', { message: error.message }), 'error');
   }
 }
 
@@ -987,58 +987,58 @@ async function handleQASetExport(qaId) {
   console.log(`處理問答集導出: ${qaId}`);
 
   showOptionsModal({
-    title: '📄 問答集導出選項',
-    description: '選擇導出格式和設定，適合不同的使用場景',
+    title: t('qa.exportOptionsTitle'),
+    description: t('qa.exportOptionsDescription'),
     options: [
       {
         key: 'exportType',
         type: 'radio',
-        label: '導出類型',
-        description: '選擇導出的用途',
+        label: t('qa.exportType'),
+        description: t('qa.exportTypeDesc'),
         default: 'handwriting',
         choices: [
           {
             value: 'handwriting',
-            label: '手寫默寫版',
-            description: '適合打印後手寫練習'
+            label: t('qa.exportHandwritingLabel'),
+            description: t('qa.exportHandwritingDesc')
           },
           {
             value: 'json',
-            label: 'JSON數據',
-            description: '原始數據格式，便於分享和備份'
+            label: t('qa.exportJsonLabel'),
+            description: t('qa.exportJsonDesc')
           }
         ]
       },
       {
         key: 'shuffleQuestions',
         type: 'checkbox',
-        label: '隨機打亂題目順序',
-        description: '避免記憶順序，提高練習效果',
+        label: t('qa.shuffleOption'),
+        description: t('qa.shuffleOptionDesc'),
         default: false
       },
       {
         key: 'includeAnswers',
         type: 'checkbox',
-        label: '包含標準答案',
-        description: '在PDF中顯示答案供對照',
+        label: t('qa.includeAnswers'),
+        description: t('qa.includeAnswersDesc'),
         default: false
       },
       {
         key: 'answerLines',
         type: 'select',
-        label: '答題行數',
-        description: '每道題目的答題空間',
+        label: t('qa.answerLines'),
+        description: t('qa.answerLinesDesc'),
         default: 1,
         choices: [
-          { value: 1, label: '一行（適合短答案）' },
-          { value: 2, label: '兩行（適合長答案）' }
+          { value: 1, label: t('qa.answerLinesOne') },
+          { value: 2, label: t('qa.answerLinesTwo') }
         ]
       },
       {
         key: 'questionsPerPage',
         type: 'number',
-        label: '每頁題目數量',
-        description: '控制每頁顯示的題目數量',
+        label: t('qa.perPageQuestions'),
+        description: t('qa.perPageQuestionsDesc'),
         default: 8,
         min: 4,
         max: 12
@@ -1165,8 +1165,8 @@ async function renderBatchTrainingInterface() {
     <div class="qa-batch-item" data-question-index="${it.index}">
       <div class="qa-batch-q"><span class="qa-qid-badge">${it.index + 1}</span> ${escapeHtml(it.question)}</div>
       <div class="qa-batch-a">
-        <textarea class="qa-batch-input compact" rows="2" style="min-height:56px;line-height:1.4;margin:4px 0;" placeholder="輸入答案...">${escapeHtml(it.userAnswer || '')}</textarea>
-        <button type="button" class="btn small primary btn-ai-check">AI校驗</button>
+        <textarea class="qa-batch-input compact" rows="2" style="min-height:56px;line-height:1.4;margin:4px 0;" placeholder="${t('qa.answerPlaceholderShort')}">${escapeHtml(it.userAnswer || '')}</textarea>
+        <button type="button" class="btn small primary btn-ai-check">${t('qa.checkShort')}</button>
       </div>
       <div class="qa-batch-feedback"></div>
     </div>
@@ -1178,7 +1178,7 @@ async function renderBatchTrainingInterface() {
     checkAll = document.createElement('button');
     checkAll.id = 'qa-batch-check-all';
     checkAll.className = 'btn primary';
-    checkAll.textContent = 'AI 校對全部';
+    checkAll.textContent = t('qa.checkAll');
     const actions = trainingArea.querySelector('.qa-training-actions');
     if (actions) actions.insertBefore(checkAll, actions.firstChild);
   }
@@ -1197,14 +1197,14 @@ async function renderBatchTrainingInterface() {
     // Loading 效果（與單題一致的體驗）
     if (holder) {
       holder.innerHTML = `
-        <div class="instant-feedback-status" style="padding:8px 10px;border:1px dashed #d1d5db;border-radius:8px;background:#f9fafb;">
-          <div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:#3b82f6;border-radius:9999px;margin-right:8px;vertical-align:-2px;animation:spin 0.8s linear infinite;"></div>
+        <div class="instant-feedback-status" style="padding:8px 10px;border:1px dashed var(--line-strong);border-radius:var(--r-xs);background:var(--surface-2);">
+          <div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid var(--line-strong);border-top-color:var(--primary);border-radius:var(--r-pill);margin-right:8px;vertical-align:-2px;animation:spin 0.8s linear infinite;"></div>
           <span>AI 正在校對本題...</span>
         </div>`;
     }
     const originalBtnText = btn.textContent;
     btn.disabled = true;
-    btn.textContent = 'AI 校驗中...';
+    btn.textContent = t('qa.aiChecking');
 
     // 將答案寫回 session
     const mod = await import('./qa-trainer.js');
@@ -1228,14 +1228,14 @@ async function renderBatchTrainingInterface() {
       }
     } catch (err) {
       if (holder) {
-        holder.innerHTML = `<div class="instant-feedback-status" style="padding:8px 10px;border:1px dashed #fecaca;border-radius:8px;background:#fff1f2;color:#991b1b;">AI 校對失敗：${escapeHtml(err?.message || '請稍後再試')}</div>`;
+        holder.innerHTML = `<div class="instant-feedback-status" style="padding:8px 10px;border:1px dashed var(--danger);border-radius:var(--r-xs);background:var(--danger-050);color:var(--danger-600);">${t('qa.aiCheckFailedWith', { message: err?.message || t('qa.checkFailed') })}</div>`;
       }
     } finally {
       // 返回原索引
       try { const m = await import('./qa-trainer.js'); if (m.goToQuestion) m.goToQuestion(progress2.currentIndex); } catch(_) {}
       // 還原按鈕
       btn.disabled = false;
-      btn.textContent = originalBtnText || 'AI校驗';
+      btn.textContent = originalBtnText || t('qa.checkCurrent');
     }
   };
 
@@ -1266,7 +1266,7 @@ async function renderBatchTrainingInterface() {
     }
     const trainingResult = {
       qaSetId: getSessionState().qaSetId,
-      qaSetName: getSessionState().qaSetName || '問答訓練',
+      qaSetName: getSessionState().qaSetName || t('qa.title'),
       totalQuestions: answers.length,
       answeredQuestions: answers.filter(x => (x.userAnswer && x.userAnswer.trim().length > 0)).length,
       answers,
@@ -1304,7 +1304,7 @@ function handleSubmitAnswer() {
   try {
     const answerInput = dom.qaModule?.querySelector('#qa-answer-input');
     if (!answerInput) {
-      throw new Error('找不到答案輸入框');
+      throw new Error(t('qa.answerInputMissing'));
     }
 
     const question = getCurrentQuestion();
@@ -1339,7 +1339,7 @@ function handleSubmitAnswer() {
 
   } catch (error) {
     console.error('提交答案時出錯:', error);
-    displayMessage('提交答案失敗: ' + error.message, 'error');
+    displayMessage(t('qa.submitAnswerFailed', { message: error.message }), 'error');
   }
 }
 
@@ -1352,7 +1352,7 @@ async function handleSubmitAndCheckCurrent(event) {
   try {
     const answerInput = dom.qaModule?.querySelector('#qa-answer-input');
     if (!answerInput) {
-      throw new Error('找不到答案輸入框');
+      throw new Error(t('qa.answerInputMissing'));
     }
 
     const answer = answerInput.value.trim();
@@ -1365,7 +1365,7 @@ async function handleSubmitAndCheckCurrent(event) {
     const progress = getTrainingProgress();
 
     if (!question || !progress) {
-      displayMessage('目前無法取得題目資訊', 'error');
+      displayMessage(t('qa.questionInfoUnavailable'), 'error');
       return;
     }
 
@@ -1380,7 +1380,7 @@ async function handleSubmitAndCheckCurrent(event) {
       button.textContent = t('qa.aiChecking');
     }
 
-    showInstantFeedbackLoading('AI 正在校對本題...');
+    showInstantFeedbackLoading(t('qa.aiChecking'));
 
     const answerPayload = {
       qid: question.qid,
@@ -1399,8 +1399,8 @@ async function handleSubmitAndCheckCurrent(event) {
     displayMessage(t('qa.aiCheckedQuestion', { number: progress.currentNumber }), 'success');
   } catch (error) {
     console.error('AI 校對失敗:', error);
-    displayMessage('AI 校對失敗：' + (error.message || '請稍後再試'), 'error');
-    showInstantFeedbackError(error.message || 'AI 校對失敗，請稍後再試。');
+    displayMessage(t('qa.aiCheckFailedWith', { message: error.message || t('qa.checkFailed') }), 'error');
+    showInstantFeedbackError(error.message || t('qa.feedbackFailed'));
   } finally {
     const button = dom.qaModule?.querySelector('#submit-and-check-btn');
     if (button) {
@@ -1411,7 +1411,7 @@ async function handleSubmitAndCheckCurrent(event) {
   }
 }
 
-function showInstantFeedbackLoading(message = 'AI 正在校對本題...') {
+function showInstantFeedbackLoading(message = t('qa.aiChecking')) {
   const container = dom.qaModule?.querySelector('#qa-instant-feedback');
   const content = dom.qaModule?.querySelector('#qa-instant-feedback-content');
   if (!container || !content) {
@@ -1535,7 +1535,7 @@ function handlePreviousQuestion() {
     }
   } catch (error) {
     console.error('切換到上一題時出錯:', error);
-    displayMessage('無法切換到上一題: ' + error.message, 'error');
+    displayMessage(t('qa.prevQuestionFailed', { message: error.message }), 'error');
   }
 }
 
@@ -1553,7 +1553,7 @@ function handleNextQuestion() {
     }
   } catch (error) {
     console.error('切換到下一題時出錯:', error);
-    displayMessage('無法切換到下一題: ' + error.message, 'error');
+    displayMessage(t('qa.nextQuestionFailed', { message: error.message }), 'error');
   }
 }
 
@@ -1585,11 +1585,11 @@ async function handleFinishTraining() {
       showReportView(trainingResult);
       // 自動執行 AI 校對，直接產出報告內容
       setTimeout(() => { handleAIChecking().catch(()=>{}); }, 50);
-      displayMessage('訓練完成！正在生成AI校對報告...', 'success');
+      displayMessage(t('qa.trainingDoneGenerating'), 'success');
     }
   } catch (error) {
     console.error('完成訓練時出錯:', error);
-    displayMessage('完成訓練失敗: ' + error.message, 'error');
+    displayMessage(t('qa.finishTrainingFailed', { message: error.message }), 'error');
   }
 }
 
@@ -1630,11 +1630,11 @@ async function handleDeleteQASet(qaId) {
 
   // 檢查是否為預置問答集
   if (qaSet.isPreset) {
-    displayMessage('無法刪除預置問答集', 'warning');
+    displayMessage(t('qa.presetCannotDelete'), 'warning');
     return;
   }
 
-  const confirmed = confirm(`確定要刪除問答集 "${qaSet.name}" 嗎？此操作無法復原。`);
+  const confirmed = confirm(t('qa.confirmDeleteSetNamed', { name: qaSet.name }));
   if (confirmed) {
     const success = await deleteQASet(qaId);
     if (success) {
@@ -1676,7 +1676,7 @@ function handleSaveQASet() {
     const pairsInput = document.getElementById('qa-pairs-input');
 
     if (!nameInput || !descInput || !pairsInput) {
-      throw new Error('找不到表單元素');
+      throw new Error(t('qa.formElementMissing'));
     }
 
     const name = nameInput.value.trim();
@@ -1713,7 +1713,7 @@ function handleSaveQASet() {
     }
   } catch (error) {
     console.error('保存問答集時出錯:', error);
-    displayMessage('保存失敗: ' + error.message, 'error');
+    displayMessage(t('qa.saveFailed', { message: error.message }), 'error');
   }
 }
 
@@ -1768,14 +1768,14 @@ function generateResultsHTML(trainingResult) {
       <div class="result-item ${statusClass}">
         <div class="result-header">
           <span class="question-number">Q${index + 1}</span>
-          <span class="result-status">${isAnswered ? '已保存' : '未回答'}</span>
+          <span class="result-status">${isAnswered ? t('qa.answeredSaved') : t('qa.answeredNot')}</span>
         </div>
         <div class="result-question">
           <strong>問題:</strong> ${escapeHtml(answer.question)}
         </div>
         <div class="result-answers">
           <div class="user-answer">
-            <strong>您的答案:</strong> ${answer.userAnswer ? escapeHtml(answer.userAnswer) : '<span class="no-answer">未回答</span>'}
+            <strong>${t('qa.yourAnswer')}</strong> ${answer.userAnswer ? escapeHtml(answer.userAnswer) : `<span class="no-answer">${t('qa.answeredNot')}</span>`}
           </div>
           <div class="correct-answer">
             <strong>標準答案:</strong> ${escapeHtml(answer.correctAnswer)}
@@ -1836,7 +1836,7 @@ function highlightPunctuationInUserAnswer(currentHTML, rawUser = '', rawCorrect 
     const correctEndPunc = /[.!?]$/.test(rawCorrect);
     const userEndPunc = /[.!?]$/.test(rawUser);
     if (correctEndPunc && !userEndPunc) {
-      html = html + '<span class="punc-missing-end" title="句末缺少標點"></span>';
+      html = html + `<span class="punc-missing-end" title="${t('qa.punctuationEndMissing')}"></span>`;
     }
 
     return html;
@@ -1852,17 +1852,17 @@ function detectLocalPunctuationIssues(rawUser = '', rawCorrect = '') {
 
   // Yes/No 後建議加逗號
   if (/^(\s*)(yes|no)\s+[a-z]/i.test(rawUser) && !/^(\s*)(yes|no),\s/i.test(rawUser)) {
-    msgs.push('"Yes/No" 後建議加逗號');
+    msgs.push(t('qa.commaAfterYesNo'));
   }
 
   // 連續空格
   if (/ {2,}/.test(rawUser)) {
-    msgs.push('請避免連續空格');
+    msgs.push(t('qa.avoidDoubleSpace'));
   }
 
   // 句末缺少標點（若標準答案有終止符）
   if (/[.!?]$/.test(rawCorrect) && !/[.!?]$/.test(rawUser)) {
-    msgs.push('句末缺少標點');
+    msgs.push(t('qa.punctuationEndMissing'));
   }
 
   return msgs;
@@ -2006,7 +2006,7 @@ async function handleAIChecking() {
   console.log('開始AI校對...');
 
   if (!currentTrainingResult) {
-    displayMessage('沒有可校對的訓練結果', 'warning');
+    displayMessage(t('qa.noCheckableResults'), 'warning');
     return;
   }
 
@@ -2018,7 +2018,7 @@ async function handleAIChecking() {
   // 禁用按鈕並顯示進度
   if (aiCheckBtn) {
     aiCheckBtn.disabled = true;
-    aiCheckBtn.textContent = 'AI 校對中...';
+    aiCheckBtn.textContent = t('qa.aiChecking');
   }
 
   if (progressDiv) {
@@ -2028,10 +2028,10 @@ async function handleAIChecking() {
   try {
     // 更新進度提示
     if (statusSpan) {
-      statusSpan.textContent = '正在進行AI智能校對...';
+      statusSpan.textContent = t('qa.checking');
     }
     if (detailsDiv) {
-      detailsDiv.textContent = '分析答案準確性和語法正確性';
+      detailsDiv.textContent = t('qa.checkingDetail');
     }
 
     // 執行AI校對
@@ -2046,26 +2046,26 @@ async function handleAIChecking() {
     if (checkingResult && checkingResult.checkedAnswers) {
       // 更新顯示為校對結果
       updateReportWithAIResults(checkingResult);
-      displayMessage('AI校對完成！', 'success');
+      displayMessage(t('qa.aiCheckDone'), 'success');
 
       // 更新進度提示為完成狀態
       if (statusSpan) {
-        statusSpan.textContent = `AI校對完成！處理了 ${checkingResult.checkedAnswers.length} 個答案`;
+        statusSpan.textContent = t('qa.aiCheckDoneCount', { count: checkingResult.checkedAnswers.length });
       }
       if (detailsDiv) {
-        detailsDiv.innerHTML = `<div>✅ 校對完成</div>`;
+        detailsDiv.innerHTML = `<div><svg class="icon" aria-hidden="true"><use href="#ic-check"></use></svg> ${t('qa.checkDoneShort')}</div>`;
       }
     } else {
-      throw new Error('AI校對返回無效結果');
+      throw new Error(t('qa.aiCheckInvalid'));
     }
 
   } catch (error) {
     console.error('AI校對失敗:', error);
-    displayMessage('AI校對失敗: ' + error.message, 'error');
+    displayMessage(t('qa.aiCheckFailedWith', { message: error.message }), 'error');
 
     // 更新錯誤狀態
     if (statusSpan) {
-      statusSpan.textContent = 'AI校對失敗';
+      statusSpan.textContent = t('qa.aiCheckFailed');
     }
     if (detailsDiv) {
       detailsDiv.textContent = error.message;
@@ -2074,7 +2074,7 @@ async function handleAIChecking() {
     // 恢復按鈕狀態
     if (aiCheckBtn) {
       aiCheckBtn.disabled = false;
-      aiCheckBtn.textContent = 'AI 校對全部題目';
+      aiCheckBtn.textContent = t('qa.checkAll');
     }
 
     // 隱藏進度提示（延遲3秒）
@@ -2116,20 +2116,20 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
   if (summary) {
     html += `
       <div class="ai-summary">
-        <h4>🤖 AI校對總結</h4>
+        <h4><svg class="icon" aria-hidden="true"><use href="#ic-sparkle"></use></svg> ${t('qa.checkSummaryTitle')}</h4>
         <div class="summary-stats" style="display:flex;gap:16px;margin:6px 0 8px 0;">
-          <div class="stat-item"><span class="stat-label">錯題</span> <span class="stat-value">${summary.incorrectCount ?? (Array.isArray(summary.incorrectDetails) ? summary.incorrectDetails.length : 0)}</span></div>
-          <div class="stat-item"><span class="stat-label">未作答</span> <span class="stat-value">${summary.unanswered ?? 0}</span></div>
-          ${summary.totalQuestions ? `<div class=\"stat-item\"><span class=\"stat-label\">總題數</span> <span class=\"stat-value\">${summary.totalQuestions}</span></div>` : ''}
+          <div class="stat-item"><span class="stat-label">${t('qa.incorrectCount')}</span> <span class="stat-value">${summary.incorrectCount ?? (Array.isArray(summary.incorrectDetails) ? summary.incorrectDetails.length : 0)}</span></div>
+          <div class="stat-item"><span class="stat-label">${t('qa.unanswered')}</span> <span class="stat-value">${summary.unanswered ?? 0}</span></div>
+          ${summary.totalQuestions ? `<div class=\"stat-item\"><span class=\"stat-label\">${t('qa.totalQuestionsLabel')}</span> <span class=\"stat-value\">${summary.totalQuestions}</span></div>` : ''}
         </div>
         ${Array.isArray(summary.incorrectDetails) && summary.incorrectDetails.length > 0 ? `
           <div class="error-overview">
-            <h5>❌ 錯題總覽（${summary.incorrectDetails.length}）</h5>
+            <h5><svg class="icon" aria-hidden="true"><use href="#ic-warning"></use></svg> ${t('qa.incorrectOverview', { count: summary.incorrectDetails.length })}</h5>
             <ul>
               ${summary.incorrectDetails.map(it => `
                 <li>Q${(it.displayIndex ?? 0) + 1}：${escapeHtml(it.reason)}
-                  ${it.userAnswer ? `<div class="mini-line"><em>您的答案</em>：${escapeHtml(it.userAnswer)}</div>` : ''}
-                  ${it.correctAnswer ? `<div class="mini-line"><em>參考答案</em>：${escapeHtml(it.correctAnswer)}</div>` : ''}
+                  ${it.userAnswer ? `<div class="mini-line"><em>${t('qa.yourAnswerLabel')}</em>：${escapeHtml(it.userAnswer)}</div>` : ''}
+                  ${it.correctAnswer ? `<div class="mini-line"><em>${t('qa.referenceAnswerLabel')}</em>：${escapeHtml(it.correctAnswer)}</div>` : ''}
                 </li>
               `).join('')}
             </ul>
@@ -2171,7 +2171,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
     let issues = collectIssueList(answer.errorAnalysis);
     const localPuncIssues = detectLocalPunctuationIssues(answer.userAnswer || '', answer.correctAnswer || '');
     if (localPuncIssues.length) {
-      issues = issues.concat(localPuncIssues.map(m => `【標點/格式】${m}`));
+      issues = issues.concat(localPuncIssues.map(m => t('qa.issueTagPunctuation', { text: m })));
     }
     const hasIssues = issues.length > 0;
     const isExact = (answer.isCorrect === true) && !hasIssues && (!difference || !difference.hasDifferences);
@@ -2205,7 +2205,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
         <div class="result-header">
           <span class="question-number">Q${questionNumber}</span>
           <span class="result-status">${answer.isCorrect === true ? (hasIssues ? t('qa.partialCorrect') : t('qa.correct')) : t('qa.needsImprovement')}</span>
-          ${collapsible ? `<button type=\"button\" class=\"ai-toggle-details btn small secondary\" aria-expanded=\"${!collapsedByDefault}\">${collapsedByDefault ? '顯示詳解' : '收合詳解'}</button>` : ''}
+          ${collapsible ? `<button type=\"button\" class=\"ai-toggle-details btn small secondary\" aria-expanded=\"${!collapsedByDefault}\">${collapsedByDefault ? t('qa.showDetails') : t('qa.hideDetails')}</button>` : ''}
         </div>
 
         <div class="ai-details" style="${collapsible && collapsedByDefault ? 'display:none;' : ''}">
@@ -2327,14 +2327,14 @@ async function handleExportPDF() {
   console.log('開始導出PDF...');
 
   if (!currentTrainingResult) {
-    displayMessage('沒有可導出的訓練結果', 'warning');
+    displayMessage(t('qa.noExportableResults'), 'warning');
     return;
   }
 
   const exportBtn = dom.qaModule.querySelector('#export-pdf-btn');
   if (exportBtn) {
     exportBtn.disabled = true;
-    exportBtn.textContent = '導出中...';
+    exportBtn.textContent = t('qa.exporting');
   }
 
   try {
@@ -2344,16 +2344,16 @@ async function handleExportPDF() {
     const success = await exportTrainingResultToPDF(currentTrainingResult, currentAICheckingResult, { errorText });
 
     if (success) {
-      displayMessage('PDF報告導出成功！', 'success');
+      displayMessage(t('qa.pdfExportSuccess'), 'success');
     }
   } catch (error) {
     console.error('PDF導出失敗:', error);
-    displayMessage('PDF導出失敗: ' + error.message, 'error');
+    displayMessage(t('qa.pdfExportFailed', { message: error.message }), 'error');
   } finally {
     // 恢復按鈕狀態
     if (exportBtn) {
       exportBtn.disabled = false;
-      exportBtn.textContent = '導出PDF';
+      exportBtn.textContent = t('qa.exportPdfShort');
     }
   }
 }
@@ -2362,8 +2362,8 @@ async function handleExportPDF() {
 function buildErrorTextReport(checkingResult, trainingResult) {
   const now = new Date();
   const header = [
-    `問答集：${trainingResult?.qaSetName || ''}`,
-    `日期：${now.toLocaleString()}`
+    t('qa.reportSetName', { name: trainingResult?.qaSetName || '' }),
+    t('qa.reportDate', { time: formatDateTime(now) })
   ];
   const lines = [];
   const answers = checkingResult?.checkedAnswers || [];
@@ -2374,7 +2374,7 @@ function buildErrorTextReport(checkingResult, trainingResult) {
     const diff = createDifferenceAnalysis(ans.userAnswer, ans.correctAnswer);
     let issues = collectIssueList(ans.errorAnalysis);
     const localPuncIssues = detectLocalPunctuationIssues(ans.userAnswer || '', ans.correctAnswer || '');
-    if (localPuncIssues.length) issues = issues.concat(localPuncIssues.map(m => `【標點/格式】${m}`));
+    if (localPuncIssues.length) issues = issues.concat(localPuncIssues.map(m => t('qa.issueTagPunctuation', { text: m })));
     const hasIssues = issues.length > 0 || (diff && (diff.missingTokens.length || diff.extraTokens.length));
     const isExact = (ans.isCorrect === true) && !hasIssues && (!diff || !diff.hasDifferences);
     if (isExact) return;
@@ -2382,27 +2382,27 @@ function buildErrorTextReport(checkingResult, trainingResult) {
     const qn = typeof ans.displayIndex === 'number' ? ans.displayIndex + 1 : (i + 1);
     const qText = trainingResult?.answers?.[qn - 1]?.question || ans.question || '';
     lines.push(`Q${qn} ${qText}`);
-    lines.push(`狀態：${ans.isCorrect === true ? '部分正確' : '錯誤'}`);
-    if (ans.userAnswer) lines.push(`你的答案：${ans.userAnswer}`);
-    if (ans.correctAnswer) lines.push(`參考答案：${ans.correctAnswer}`);
-    if (issues.length) lines.push(`需要修正：${issues.join('；')}`);
+    lines.push(`${t('qa.feedback')}${ans.isCorrect === true ? t('qa.partialCorrect') : t('qa.incorrect')}`);
+    if (ans.userAnswer) lines.push(t('qa.reportYourAnswer', { text: ans.userAnswer }));
+    if (ans.correctAnswer) lines.push(t('qa.reportReferenceAnswer', { text: ans.correctAnswer }));
+    if (issues.length) lines.push(t('qa.reportNeedsFix', { text: issues.join('；') }));
     if (diff && (diff.missingTokens.length || diff.extraTokens.length)) {
       const tags = [];
-      if (diff.missingTokens.length) tags.push(`缺少：${diff.missingTokens.join(', ')}`);
-      if (diff.extraTokens.length) tags.push(`多出：${diff.extraTokens.join(', ')}`);
-      lines.push(`差異：${tags.join('；')}`);
+      if (diff.missingTokens.length) tags.push(`${t('qa.missing')}${diff.missingTokens.join(', ')}`);
+      if (diff.extraTokens.length) tags.push(`${t('qa.extra')}${diff.extraTokens.join(', ')}`);
+      lines.push(t('qa.reportDiff', { text: tags.join('；') }));
     }
     lines.push('');
   });
 
   const incorrectCount = lines.filter(l => l.startsWith('Q')).length;
-  const summary = [`錯題（含部分正確）：${incorrectCount} / ${total}`, `未作答：${unanswered}`];
+  const summary = [t('qa.reportIncorrectSummary', { count: incorrectCount, total }), t('qa.reportUnansweredSummary', { count: unanswered })];
   return header.concat(summary, [''], lines).join('\n');
 }
 
 // 複製錯誤報告文字
 async function handleCopyReportText() {
-  if (!currentTrainingResult) { displayMessage('沒有可複製的報告', 'warning'); return; }
+  if (!currentTrainingResult) { displayMessage(t('qa.noCopyableReport'), 'warning'); return; }
   const text = buildErrorTextReport(currentAICheckingResult, currentTrainingResult);
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2411,10 +2411,10 @@ async function handleCopyReportText() {
       const ta = document.createElement('textarea');
       ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     }
-    displayMessage('已複製錯誤報告到剪貼簿', 'success');
+    displayMessage(t('qa.copiedReport'), 'success');
   } catch (err) {
     console.error('複製報告失敗', err);
-    displayMessage('複製失敗，請稍後再試', 'error');
+    displayMessage(t('qa.copyReportFailed'), 'error');
   }
 }
 
@@ -2423,11 +2423,11 @@ function handleRetryTraining() {
   console.log('重新開始訓練...');
 
   if (!currentTrainingResult) {
-    displayMessage('沒有訓練記錄', 'warning');
+    displayMessage(t('qa.noTrainingRecord'), 'warning');
     return;
   }
 
-  const confirmed = confirm(`確定要重新開始 "${currentTrainingResult.qaSetName}" 的訓練嗎？`);
+  const confirmed = confirm(t('qa.confirmRestartTraining', { name: currentTrainingResult.qaSetName }));
   if (confirmed) {
     // 啟動新的訓練
     startQATraining(currentTrainingResult.qaSetId);
@@ -2453,13 +2453,13 @@ export async function checkSingleQuestionWithAI(questionIndex) {
   console.log(`開始AI校驗第 ${questionIndex + 1} 題...`);
 
   if (!currentTrainingResult || !currentTrainingResult.answers[questionIndex]) {
-    displayMessage('找不到指定的題目數據', 'error');
+    displayMessage(t('qa.questionDataMissing'), 'error');
     return;
   }
 
   const answer = currentTrainingResult.answers[questionIndex];
   if (!(answer.userAnswer && String(answer.userAnswer).trim().length > 0)) {
-    displayMessage('該題目尚未輸入答案，無法進行校驗', 'warning');
+    displayMessage(t('qa.answerEmptyForCheck'), 'warning');
     return;
   }
 
@@ -2479,11 +2479,11 @@ export async function checkSingleQuestionWithAI(questionIndex) {
       progressContainer.remove();
     }
 
-    displayMessage(`第 ${questionIndex + 1} 題AI校驗完成！`, 'success');
+    displayMessage(t('qa.aiCheckQuestionDone', { number: questionIndex + 1 }), 'success');
 
   } catch (error) {
     console.error('單題校驗失敗:', error);
-    displayMessage(`第 ${questionIndex + 1} 題校驗失敗: ${error.message}`, 'error');
+    displayMessage(t('qa.aiCheckQuestionFailed', { number: questionIndex + 1, message: error.message }), 'error');
   }
 }
 
@@ -2497,7 +2497,7 @@ function createSingleCheckProgress(questionIndex) {
   progressDiv.innerHTML = `
     <div class="progress-indicator">
       <div class="spinner"></div>
-      <span>正在AI校驗第 ${questionIndex + 1} 題...</span>
+      <span>${t('qa.aiCheckingQuestion', { number: questionIndex + 1 })}</span>
     </div>
   `;
 
@@ -2532,7 +2532,7 @@ function generateSingleCheckResultHTML(result) {
   let issues = collectIssueList(result.errorAnalysis);
   const localPuncIssues = detectLocalPunctuationIssues(result.userAnswer || '', result.correctAnswer || '');
   if (localPuncIssues.length) {
-    issues = issues.concat(localPuncIssues.map(m => `【標點/格式】${m}`));
+    issues = issues.concat(localPuncIssues.map(m => t('qa.issueTagPunctuation', { text: m })));
   }
   const hasIssues = issues.length > 0 || (difference && (difference.missingTokens.length || difference.extraTokens.length));
 
@@ -2540,23 +2540,23 @@ function generateSingleCheckResultHTML(result) {
   let badgeHtml;
   let containerClass = 'ai-check-result compact';
   if (result.isCorrect === true && !hasIssues) {
-    badgeHtml = '<span class="badge" style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:9999px;font-size:12px;">正確</span>';
+    badgeHtml = `<span class="badge" style="background:var(--ok);color:#fff;padding:2px 8px;border-radius:var(--r-pill);font-size:var(--fs-xs);">${t('qa.correct')}</span>`;
   } else if (result.isCorrect === true && hasIssues) {
-    badgeHtml = '<span class="badge" style="background:#f59e0b;color:#111827;padding:2px 8px;border-radius:9999px;font-size:12px;">部分正確</span>';
+    badgeHtml = `<span class="badge" style="background:var(--accent);color:var(--ink-900);padding:2px 8px;border-radius:var(--r-pill);font-size:var(--fs-xs);">${t('qa.partialCorrect')}</span>`;
     containerClass += ' partial';
   } else {
-    badgeHtml = '<span class="badge" style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:9999px;font-size:12px;">錯誤</span>';
+    badgeHtml = `<span class="badge" style="background:var(--danger);color:#fff;padding:2px 8px;border-radius:var(--r-pill);font-size:var(--fs-xs);">${t('qa.incorrect')}</span>`;
     containerClass += ' incorrect';
   }
 
-  const ua = result.userAnswer ? escapeHtml(result.userAnswer) : '<span class="no-answer">未作答</span>';
-  const ca = result.correctAnswer ? escapeHtml(result.correctAnswer) : '<span class="no-answer">尚無標準答案</span>';
+  const ua = result.userAnswer ? escapeHtml(result.userAnswer) : `<span class="no-answer">${t('qa.unanswered')}</span>`;
+  const ca = result.correctAnswer ? escapeHtml(result.correctAnswer) : `<span class="no-answer">${t('qa.noStandardAnswer')}</span>`;
 
   const tags = difference && (difference.missingTokens.length || difference.extraTokens.length)
-    ? `<div class="difference-tags" style="margin-top:6px;">${difference.missingTokens.length ? `<span class="difference-tag missing">缺少：${difference.missingTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}${difference.extraTokens.length ? `<span class="difference-tag extra" style=\"margin-left:8px;\">多出：${difference.extraTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}</div>`
+    ? `<div class="difference-tags" style="margin-top:6px;">${difference.missingTokens.length ? `<span class="difference-tag missing">${t('qa.missing')}${difference.missingTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}${difference.extraTokens.length ? `<span class="difference-tag extra" style=\"margin-left:8px;\">${t('qa.extra')}${difference.extraTokens.map(token => escapeHtml(token)).join('、')}</span>` : ''}</div>`
     : '';
 
-  const feedback = result.teacherFeedback ? `<div class="mini-line" style="margin-top:6px;color:#374151;">${escapeHtml(result.teacherFeedback)}</div>` : '';
+  const feedback = result.teacherFeedback ? `<div class="mini-line" style="margin-top:6px;color:var(--ink-700);">${escapeHtml(result.teacherFeedback)}</div>` : '';
 
   return `
     <div class="${containerClass}">
@@ -2564,8 +2564,8 @@ function generateSingleCheckResultHTML(result) {
         ${badgeHtml}
       </div>
       <div class="result-answers" style="margin-top:6px;">
-        <div class="user-answer"><strong>你的答案：</strong> ${ua}</div>
-        <div class="correct-answer" style="margin-top:2px;"><strong>參考：</strong> ${ca}</div>
+        <div class="user-answer"><strong>${t('qa.yourAnswer')}</strong> ${ua}</div>
+        <div class="correct-answer" style="margin-top:2px;"><strong>${t('qa.referenceShort')}：</strong> ${ca}</div>
       </div>
       ${feedback}
       ${tags}

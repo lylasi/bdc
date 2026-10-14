@@ -1,5 +1,6 @@
 // QA專用存儲方法
 import { displayMessage } from '../../modules/ui.js';
+import { t } from '../../modules/i18n.js';
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 
 // 問答集存儲的localStorage鍵名
@@ -38,7 +39,7 @@ async function loadPresetQASet(manifestItem) {
 
     // 添加預置標記和清單信息
     qaSet.isPreset = true;
-    qaSet.category = manifestItem.category || qaSet.category || '未分類';
+    qaSet.category = manifestItem.category || qaSet.category || t('qa.uncategorized');
     qaSet.questionCount = qaSet.questions?.length || 0;
     qaSet.difficulty = qaSet.difficulty || 'unknown';
     qaSet.createdAt = qaSet.createdAt || new Date().toISOString();
@@ -76,8 +77,8 @@ export async function getAllQASets() {
             return {
               id: item.id,
               name: item.name,
-              category: item.category || '未分類',
-              description: '預置問答集',
+              category: item.category || t('qa.uncategorized'),
+              description: t('qa.presetDescription'),
               isPreset: true,
               questionCount: 0,
               difficulty: 'unknown',
@@ -99,8 +100,8 @@ export async function getAllQASets() {
           return {
             id: id || item.id,
             name: name || item.name,
-            category: category || item.category || '未分類',
-            description: description || '預置問答集',
+            category: category || item.category || t('qa.uncategorized'),
+            description: description || t('qa.presetDescription'),
             isPreset: true,
             questionCount: Array.isArray(questions) ? questions.length : 0,
             difficulty: difficulty || 'unknown',
@@ -178,7 +179,7 @@ export function saveQASet(qaSet) {
   try {
     // 數據完整性驗證
     if (!validateQASet(qaSet)) {
-      throw new Error('問答集數據格式無效');
+      throw new Error(t('qa.invalidSetData'));
     }
 
     const key = `qa-set-${qaSet.id}`;
@@ -191,7 +192,7 @@ export function saveQASet(qaSet) {
     return true;
   } catch (error) {
     console.error('儲存問答集時出錯:', error);
-    displayMessage('儲存問答集失敗: ' + error.message, 'error');
+    displayMessage(t('qa.saveSetFailed', { message: error.message }), 'error');
     return false;
   }
 }
@@ -204,7 +205,7 @@ export async function deleteQASet(id) {
     const isPreset = manifest.some(item => item.id === id);
 
     if (isPreset) {
-      throw new Error('無法刪除預置問答集');
+      throw new Error(t('qa.presetCannotDelete'));
     }
 
     const key = `qa-set-${id}`;
@@ -212,11 +213,11 @@ export async function deleteQASet(id) {
     // 檢查問答集是否存在
     const qaSet = await loadQASet(id);
     if (!qaSet) {
-      throw new Error('問答集不存在');
+      throw new Error(t('qa.setNotFound'));
     }
 
     if (qaSet.isPreset) {
-      throw new Error('無法刪除預置問答集');
+      throw new Error(t('qa.presetCannotDelete'));
     }
 
     // 從localStorage刪除
@@ -229,7 +230,7 @@ export async function deleteQASet(id) {
     return true;
   } catch (error) {
     console.error('刪除問答集時出錯:', error);
-    displayMessage('刪除問答集失敗: ' + error.message, 'error');
+    displayMessage(t('qa.deleteSetFailed', { message: error.message }), 'error');
     return false;
   }
 }
@@ -242,13 +243,13 @@ export async function importQASet(file) {
 
     // 驗證導入的數據
     if (!validateQASet(qaSet)) {
-      throw new Error('導入的問答集格式無效');
+      throw new Error(t('qa.invalidImportFormat'));
     }
 
     // 檢查是否已存在相同ID的問答集
     const existing = await loadQASet(qaSet.id);
     if (existing) {
-      const confirmed = confirm(`問答集 "${qaSet.name}" 已存在，是否覆蓋？`);
+      const confirmed = confirm(t('qa.confirmOverwriteSet', { name: qaSet.name }));
       if (!confirmed) {
         return false;
       }
@@ -258,7 +259,7 @@ export async function importQASet(file) {
     return saveQASet(qaSet);
   } catch (error) {
     console.error('導入問答集時出錯:', error);
-    displayMessage('導入問答集失敗: ' + error.message, 'error');
+    displayMessage(t('qa.importSetFailed', { message: error.message }), 'error');
     return false;
   }
 }
@@ -268,7 +269,7 @@ export async function exportQASet(id, format = 'json') {
   try {
     const qaSet = await loadQASet(id);
     if (!qaSet) {
-      throw new Error('問答集不存在');
+      throw new Error(t('qa.setNotFound'));
     }
 
     let content, filename, mimeType;
@@ -278,7 +279,7 @@ export async function exportQASet(id, format = 'json') {
       filename = `${qaSet.name}_${qaSet.id}.json`;
       mimeType = 'application/json';
     } else {
-      throw new Error('不支援的導出格式');
+      throw new Error(t('qa.unsupportedExportFormat'));
     }
 
     // 創建下載連結
@@ -296,7 +297,7 @@ export async function exportQASet(id, format = 'json') {
     return true;
   } catch (error) {
     console.error('導出問答集時出錯:', error);
-    displayMessage('導出問答集失敗: ' + error.message, 'error');
+    displayMessage(t('qa.exportSetFailed', { message: error.message }), 'error');
     return false;
   }
 }
@@ -341,7 +342,7 @@ function updateQASetsManifest(qaSet) {
   const manifestItem = {
     id: qaSet.id,
     name: qaSet.name,
-    category: qaSet.category || '未分類',
+    category: qaSet.category || t('qa.uncategorized'),
     questionCount: qaSet.questions.length,
     difficulty: qaSet.difficulty || 'unknown',
     description: qaSet.description || '',
