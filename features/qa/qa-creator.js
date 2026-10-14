@@ -133,11 +133,11 @@ export function generatePreviewHTML(pairs) {
           </div>
         </div>
         <div class="qa-question">
-          <span class="qa-label">Q:</span>
+          <span class="qa-label">Q</span>
           <div class="qa-editable" contenteditable="true" tabindex="0" data-role="question" aria-label="${t('qa.editQuestionAria', { qid: pair.qid })}">${escapeHtml(pair.question)}</div>
         </div>
         <div class="qa-answer">
-          <span class="qa-label">A:</span>
+          <span class="qa-label">A</span>
           <div class="qa-editable" contenteditable="true" tabindex="0" data-role="answer" aria-label="${t('qa.editAnswerAria', { qid: pair.qid })}">${escapeHtml(pair.answer)}</div>
         </div>
       </div>

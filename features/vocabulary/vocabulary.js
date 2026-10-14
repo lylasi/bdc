@@ -14,6 +14,16 @@ import { openLoginModal as openSyncLoginModal } from '../sync/sync.js';
 // Vocabulary Feature
 // =================================
 
+// 原生 alert/confirm 在部分環境（內嵌瀏覽器、被瀏覽器封鎖的對話框）不會顯示，
+// 這裡統一改用站內提示與站內確認彈窗。
+function notify(message, type = 'info', duration = 3600) {
+    ui.displayMessage(message, type, duration);
+}
+
+function askConfirm({ title = '', message = '', confirmLabel = '', cancelLabel = '', danger = false } = {}) {
+    return ui.confirmAction({ title, message, confirmLabel, cancelLabel, danger });
+}
+
 /**
  * 初始化单词本功能，绑定所有相关的事件监听器。
  */
@@ -26,6 +36,7 @@ export function initVocabulary() {
     dom.exportVocabBookBtn.addEventListener('click', exportActiveVocabBook);
     dom.mergeVocabBooksBtn.addEventListener('click', openModalForMergeBooks);
     if (dom.completeMissingBtn) dom.completeMissingBtn.addEventListener('click', openModalForCompleteMissing);
+    initWordPanelMoreMenu();
     if (dom.wordFilter) {
         dom.wordFilter.addEventListener('input', renderWordList);
     }
@@ -76,6 +87,117 @@ export function refreshVocabularyView() {
     }
 }
 
+// =================================
+// 手機版：單詞本操作收進「更多」選單
+// （桌面仍顯示原本的 chips；選單項目由實際按鈕生成，事件與禁用狀態只有一份來源）
+// =================================
+let wordPanelMenuEl = null;
+let wordPanelMoreBtnEl = null;
+let wordPanelMenuSources = [];
+
+function buildWordPanelMenuItem(sourceBtn) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'menu-item';
+    item.setAttribute('role', 'menuitem');
+    if (sourceBtn.id === 'delete-vocab-book-btn') item.classList.add('danger');
+
+    const icon = sourceBtn.querySelector('.icon');
+    if (icon) item.appendChild(icon.cloneNode(true));
+
+    const label = sourceBtn.querySelector('span[data-i18n]');
+    const text = document.createElement('span');
+    if (label?.dataset.i18n) text.dataset.i18n = label.dataset.i18n; // 語言切換時一起更新
+    text.textContent = label ? label.textContent : (sourceBtn.title || '');
+    item.appendChild(text);
+
+    item.addEventListener('click', () => {
+        closeWordPanelMenu();
+        if (!sourceBtn.disabled) sourceBtn.click();
+    });
+    return item;
+}
+
+function syncWordPanelMenuState() {
+    if (!wordPanelMenuEl) return;
+    wordPanelMenuEl.querySelectorAll('.menu-item').forEach((item, index) => {
+        const source = wordPanelMenuSources[index];
+        if (source) item.disabled = !!source.disabled;
+    });
+}
+
+function handleWordPanelMenuOutside(event) {
+    if (wordPanelMenuEl?.contains(event.target)) return;
+    if (wordPanelMoreBtnEl?.contains(event.target)) return;
+    closeWordPanelMenu();
+}
+
+function handleWordPanelMenuKeydown(event) {
+    if (event.key !== 'Escape') return;
+    closeWordPanelMenu();
+    wordPanelMoreBtnEl?.focus();
+}
+
+function openWordPanelMenu() {
+    if (!wordPanelMenuEl) return;
+    syncWordPanelMenuState();
+    wordPanelMenuEl.hidden = false;
+    wordPanelMoreBtnEl?.setAttribute('aria-expanded', 'true');
+    document.addEventListener('pointerdown', handleWordPanelMenuOutside, true);
+    document.addEventListener('keydown', handleWordPanelMenuKeydown);
+}
+
+function closeWordPanelMenu() {
+    if (!wordPanelMenuEl || wordPanelMenuEl.hidden) return;
+    wordPanelMenuEl.hidden = true;
+    wordPanelMoreBtnEl?.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('pointerdown', handleWordPanelMenuOutside, true);
+    document.removeEventListener('keydown', handleWordPanelMenuKeydown);
+}
+
+function initWordPanelMoreMenu() {
+    const panel = document.getElementById('vocab-words-panel');
+    wordPanelMoreBtnEl = document.getElementById('word-panel-more-btn');
+    if (!panel || !wordPanelMoreBtnEl) return;
+
+    wordPanelMenuSources = [
+        dom.completeMissingBtn,
+        dom.mergeVocabBooksBtn,
+        dom.exportVocabBookBtn,
+        dom.editVocabBookBtn,
+        dom.deleteVocabBookBtn
+    ].filter(Boolean);
+
+    wordPanelMenuEl = document.createElement('div');
+    wordPanelMenuEl.id = 'word-panel-menu';
+    wordPanelMenuEl.className = 'word-panel-menu';
+    wordPanelMenuEl.hidden = true;
+    wordPanelMenuEl.setAttribute('role', 'menu');
+
+    wordPanelMenuSources.forEach((sourceBtn) => {
+        // 刪除前加分隔線，降低誤觸
+        if (sourceBtn.id === 'delete-vocab-book-btn') {
+            const sep = document.createElement('div');
+            sep.className = 'menu-sep';
+            wordPanelMenuEl.appendChild(sep);
+        }
+        wordPanelMenuEl.appendChild(buildWordPanelMenuItem(sourceBtn));
+    });
+
+    panel.appendChild(wordPanelMenuEl);
+
+    wordPanelMoreBtnEl.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (wordPanelMenuEl.hidden) openWordPanelMenu();
+        else closeWordPanelMenu();
+    });
+
+    // 由手機轉回桌面（按鈕被 CSS 隱藏）時收起來，避免殘留
+    window.addEventListener('resize', () => {
+        if (window.getComputedStyle(wordPanelMoreBtnEl).display === 'none') closeWordPanelMenu();
+    });
+}
+
 export async function handleVocabularyQueryParams() {
     const params = new URLSearchParams(window.location.search);
     const manifestId = params.get('wordlist') || params.get('wordlistId');
@@ -89,13 +211,16 @@ export async function handleVocabularyQueryParams() {
             const matchedBook = defaultBooks.find(book => book.id === manifestId);
 
             if (!matchedBook) {
-                alert(t('vocabulary.presetNotFound', { id: manifestId }));
-            } else if (confirm(t('vocabulary.importDetectedParam', { name: matchedBook.name }))) {
+                notify(t('vocabulary.presetNotFound', { id: manifestId }), 'warning');
+            } else if (await askConfirm({
+                title: t('vocabulary.importSet'),
+                message: t('vocabulary.importDetectedParam', { name: matchedBook.name })
+            })) {
                 sources.push({ type: 'preset', value: matchedBook.path, name: matchedBook.name });
             }
         } catch (error) {
             console.error('加載預設單詞本清單失敗:', error);
-            alert(t('vocabulary.loadPresetListFailed'));
+            notify(t('vocabulary.loadPresetListFailed'), 'error');
         }
     }
 
@@ -103,12 +228,15 @@ export async function handleVocabularyQueryParams() {
         try {
             const resolvedUrl = new URL(urlParam, window.location.href).toString();
             const urlDisplayName = new URL(resolvedUrl).pathname.split('/').pop() || t('vocabulary.urlBook');
-            if (confirm(t('vocabulary.importDetectedUrl', { url: resolvedUrl }))) {
+            if (await askConfirm({
+                title: t('vocabulary.importSet'),
+                message: t('vocabulary.importDetectedUrl', { url: resolvedUrl })
+            })) {
                 sources.push({ type: 'url', value: resolvedUrl, name: urlDisplayName });
             }
         } catch (error) {
             console.error('wordlistUrl 參數無效:', error);
-            alert(t('vocabulary.invalidUrlParam', { url: urlParam }));
+            notify(t('vocabulary.invalidUrlParam', { url: urlParam }), 'warning');
         }
     }
 
@@ -121,9 +249,9 @@ export async function handleVocabularyQueryParams() {
     });
 
     if (summary.length > 0) {
-        alert(t('vocabulary.importDone', { summary: summary.join('\n') }));
+        notify(t('vocabulary.importDone', { summary: summary.join('\n') }), 'success', 6000);
     } else {
-        alert(t('vocabulary.noBooksImported'));
+        notify(t('vocabulary.noBooksImported'), 'warning');
     }
 }
 
@@ -670,7 +798,10 @@ async function importVocabularySources(sources, options = {}) {
 }
 
 function defaultConfirmOverwrite(bookName) {
-    return confirm(t('vocabulary.overwriteConfirm', { name: bookName }));
+    return askConfirm({
+        title: t('vocabulary.importSet'),
+        message: t('vocabulary.overwriteConfirm', { name: bookName })
+    });
 }
 
 async function importSharedVocabBooks() {
@@ -689,7 +820,7 @@ async function importSharedVocabBooks() {
             const url = new URL(urlPath, window.location.href);
             sources.push({ type: 'url', value: url.toString(), name: url.pathname.split('/').pop() || t('vocabulary.urlBook') });
         } catch (_) {
-            alert(t('vocabulary.invalidUrl', { url: urlPath }));
+            notify(t('vocabulary.invalidUrl', { url: urlPath }), 'warning');
             return;
         }
     }
@@ -699,7 +830,7 @@ async function importSharedVocabBooks() {
     }
 
     if (sources.length === 0) {
-        alert(t('vocabulary.selectSource'));
+        notify(t('vocabulary.selectSource'), 'warning');
         return;
     }
 
@@ -726,11 +857,11 @@ async function importSharedVocabBooks() {
             ? t('vocabulary.importComplete', { summary: summary.join('\n') })
             : t('vocabulary.importNoChanges');
 
-        alert(finalMessage);
+        notify(finalMessage, 'success', 6000);
         ui.closeModal();
     } catch (error) {
         console.error('批量導入單詞本失敗:', error);
-        alert(t('vocabulary.importProcessFailed'));
+        notify(t('vocabulary.importProcessFailed'), 'error');
     } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = t('vocabulary.importSelected');
@@ -741,7 +872,7 @@ async function saveBookWithAICompletion(bookId = null) {
     const bookNameInput = document.getElementById('modal-book-name');
     const name = bookNameInput.value.trim();
     if (!name) {
-        alert(t('vocabulary.nameRequired'));
+        notify(t('vocabulary.nameRequired'), 'warning');
         return;
     }
 
@@ -837,21 +968,32 @@ async function processWordsWithAI(book, wordsText) {
     if(progressContainer) progressContainer.innerHTML = `<p style="color: green;">${t('vocabulary.processDone')}</p>`;
 }
 
-function deleteActiveVocabBook() {
+async function deleteActiveVocabBook() {
     const book = state.vocabularyBooks.find(b => b.id === state.activeBookId);
-    if (book && confirm(t('vocabulary.deleteConfirm', { name: book.name }))) {
-        const removedId = state.activeBookId;
-        const nextBooks = state.vocabularyBooks.filter(b => b.id !== removedId);
-        state.setVocabularyBooks(nextBooks);
-        state.setActiveBookId(nextBooks.length > 0 ? nextBooks[0].id : null);
-        if (state.currentWordbookId === removedId) {
-            state.setCurrentWordbookId(null);
-        }
-        storage.saveVocabularyBooks();
-        storage.saveAppState();
-        renderVocabBookList();
-        updateActiveBookView();
+    if (!book) {
+        notify(t('vocabulary.selectBook'), 'warning');
+        return;
     }
+
+    const confirmed = await askConfirm({
+        title: t('vocabulary.deleteBook'),
+        message: t('vocabulary.deleteConfirm', { name: book.name }),
+        confirmLabel: t('vocabulary.deleteShort'),
+        danger: true
+    });
+    if (!confirmed) return;
+
+    const removedId = book.id;
+    const nextBooks = state.vocabularyBooks.filter(b => b.id !== removedId);
+    state.setVocabularyBooks(nextBooks);
+    state.setActiveBookId(nextBooks.length > 0 ? nextBooks[0].id : null);
+    if (state.currentWordbookId === removedId) {
+        state.setCurrentWordbookId(null);
+    }
+    storage.saveVocabularyBooks();
+    storage.saveAppState();
+    renderVocabBookList();
+    updateActiveBookView();
 }
 
 function parseWordsFromText(text) {
@@ -897,7 +1039,7 @@ function parseWordsFromText(text) {
 function exportActiveVocabBook() {
     const activeBook = state.vocabularyBooks.find(b => b.id === state.activeBookId);
     if (!activeBook) {
-        alert(t('vocabulary.exportNoActive'));
+        notify(t('vocabulary.exportNoActive'), 'warning');
         return;
     }
 
@@ -928,12 +1070,12 @@ function exportActiveVocabBook() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    alert(t('vocabulary.exported', { name: activeBook.name }));
+    notify(t('vocabulary.exported', { name: activeBook.name }), 'success');
 }
 
 function openModalForMergeBooks() {
     if (state.vocabularyBooks.length < 2) {
-        alert(t('vocabulary.mergeNeedTwo'));
+        notify(t('vocabulary.mergeNeedTwo'), 'warning');
         return;
     }
 
@@ -1034,7 +1176,7 @@ function mergeSelectedBooks() {
         return;
     }
     if (state.vocabularyBooks.some(b => b.name === newBookName)) {
-        alert(t('vocabulary.duplicateName', { name: newBookName }));
+        notify(t('vocabulary.duplicateName', { name: newBookName }), 'warning');
         return;
     }
 
@@ -1078,7 +1220,7 @@ function mergeSelectedBooks() {
     updateActiveBookView();
     ui.closeModal();
     const suffix = removeSources ? t('vocabulary.sourcesDeleted') : '';
-    alert(t('vocabulary.mergeSuccess', { count: selectedItems.length, name: newBookName, suffix }));
+    notify(t('vocabulary.mergeSuccess', { count: selectedItems.length, name: newBookName, suffix }), 'success');
 }
 
 function renderWordList() {

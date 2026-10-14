@@ -1,5 +1,11 @@
 [
   {
+    "id": "qa_6a_unit1_lets_give_a_hand",
+    "name": "6A Unit 1 - Let's Give a Hand",
+    "path": "qa-sets/qa_6a_unit1_lets_give_a_hand.json",
+    "category": "六年級 Q & A"
+  },
+  {
     "id": "qa_5b_unit1_chinese_new_year",
     "name": "5B Unit 1 - It's Chinese New Year",
     "path": "qa-sets/qa_5b_unit1_chinese_new_year.json",
@@ -22,11 +28,5 @@
     "name": "5B Unit 5 - Past Experiences",
     "path": "qa-sets/qa_5b_unit5_past_experiences.json",
     "category": "五年級 Q & A"
-  },
-  {
-    "id": "qa_6a_unit1_lets_give_a_hand",
-    "name": "6A Unit 1 - Let's Give a Hand",
-    "path": "qa-sets/qa_6a_unit1_lets_give_a_hand.json",
-    "category": "六年級 Q & A"
   }
 ]

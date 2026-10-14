@@ -290,11 +290,11 @@ export function displayMessage(message, type = 'info', duration = 3000) {
 
 /**
  * 通用確認對話框（沿用選項彈窗樣式，取代原生 confirm）。
- * @param {{title?: string, message?: string, confirmLabel?: string, cancelLabel?: string}} config
+ * @param {{title?: string, message?: string, confirmLabel?: string, cancelLabel?: string, danger?: boolean}} config
  * @returns {Promise<boolean>} 使用者是否按下確認
  */
 export function confirmAction(config = {}) {
-  const { title = '', message = '', confirmLabel = '', cancelLabel = '' } = config;
+  const { title = '', message = '', confirmLabel = '', cancelLabel = '', danger = false } = config;
 
   return new Promise((resolve) => {
     const overlay = showOptionsModal({
@@ -305,9 +305,11 @@ export function confirmAction(config = {}) {
       onCancel: () => resolve(false)
     });
 
-    if (confirmLabel) {
-      const confirmBtn = overlay.querySelector('#confirm-btn');
-      if (confirmBtn) confirmBtn.textContent = confirmLabel;
+    const confirmBtn = overlay.querySelector('#confirm-btn');
+    if (confirmBtn) {
+      if (confirmLabel) confirmBtn.textContent = confirmLabel;
+      // 破壞性操作（刪除等）用紅色確認鈕
+      if (danger) confirmBtn.classList.add('btn-danger');
     }
     if (cancelLabel) {
       const cancelBtn = overlay.querySelector('#cancel-btn');

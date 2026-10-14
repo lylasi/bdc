@@ -25,6 +25,7 @@ export default {
         "word": "英文单词或短语",
         "search": "查询与拆音",
         "uk": "英音",
+        accentDemoOnly: '口音未确认，英/美音只切换朗读与音素示范',
         "us": "美音",
         "play": "听单词发音",
         "stop": "停止播放",
@@ -152,6 +153,7 @@ export default {
         exportShort: '导出',
         mergeShort: '合并',
         completeMissingShort: '补全资料',
+        moreActions: '更多操作',
         filterLabel: '筛选单词',
         filterPlaceholder: '筛选单词或释义',
         filterEmpty: '没有匹配「{keyword}」的单词',
@@ -512,7 +514,7 @@ export default {
         insufficientKeyInfo: '未直接回应题目或关键信息不足',
         pdfCtorFailed: 'jsPDF 构造函数调用失败：{message}',
         pdfCtorMissing: 'jsPDF 载入失败：未找到构造函数',
-        pdfLibLoadFailed: '无法加载 jsPDF 库',
+        pdfLibLoadFailed: '无法加载 jsPDF 库（本地与备用 CDN 均不可用），请检查网络连接',
         noValidPairs: '没有找到有效的问答对',
         qidShouldStartAtOne: '问题编号应该从 1 开始连续编号',
         duplicateQid: '发现重复的问题编号',
@@ -635,7 +637,7 @@ export default {
         previewTitle: '查看问答集：{name}', questionTotal: '题目数量：{count}', shuffleOrder: '随机顺序', resetOrder: '重置', copyContent: '复制内容', perPage: '每页', lineCount: '行数', exportQuestions: '导出手写练习', exportAnswers: '导出答案', startPreviewTraining: '开始训练此问答集', close: '关闭', shuffledNotice: '已随机打乱题目顺序', resetNotice: '已重置为原顺序', nothingToCopy: '没有可复制的内容', contentCopied: '内容已复制（含序号、Q/A）', copyContentFailed: '复制内容失败', previewFailed: '无法预览问答集，请稍后再试。', exportQuestionsFailed: '导出手写练习 PDF 失败', exportAnswersFailed: '导出答案 PDF 失败'
     },
     qaPdf: {
-        loadSetFailed: '问答集加载失败', loadLibraryFailed: 'jsPDF 加载失败，请检查网络连接或刷新页面', answer: '答案：{answer}', ordered: '_顺序', shuffled: '_乱序', withAnswers: '_含答案', handwriting: '_手写版', exportSuccess: '手写练习 PDF 已成功导出！', exportFailed: '手写练习 PDF 导出失败：{message}', handwritingTitle: '{name} - 手写练习', identity: '日期：_______________    姓名：_______________    成绩：_______________', instructionsWithAnswers: '说明：请根据问题写出答案，答案已在题目下方提供参考。', instructions: '说明：请在横线上写出完整的英文答案，注意大小写和标点符号。', page: '第 {current} 页，共 {total} 页', reportTitle: '问答训练结果报告', errorSummary: '错误点汇总（精简）', reportFile: '问答训练报告_{name}_{date}.pdf', reportSuccess: 'PDF 报告已成功导出！', reportFailed: 'PDF 导出失败：{message}', setName: '问答集名称：{name}', trainingTime: '训练时间：{start} - {end}', duration: '训练时长：{duration}', mode: '训练模式：{mode}', random: '随机模式', sequential: '顺序模式', total: '题目总数：{count}', answered: '已作答：{count}', summary: '训练总结', incorrect: '错题数：{count}', unanswered: '未作答：{count}', details: '详细答案分析', questionNumber: '第 {number} 题', question: '问题：{text}', standardAnswer: '标准答案：{text}', userAnswer: '您的答案：{text}', noAnswer: '（未回答）', verdict: '判定：{result}', correct: '正确', wrong: '错误', feedback: '反馈：{text}', suggestion: '建议：{text}', generatedAt: '生成时间：{time}', durationShort: '{minutes}分{seconds}秒'
+        loadSetFailed: '问答集加载失败', loadLibraryFailed: 'jsPDF 加载失败，请检查网络连接或刷新页面', preparingEngine: '首次导出需准备 PDF 组件（含中文字型），请稍候…', answer: '答案：{answer}', ordered: '_顺序', shuffled: '_乱序', withAnswers: '_含答案', handwriting: '_手写版', exportSuccess: '手写练习 PDF 已成功导出！', exportFailed: '手写练习 PDF 导出失败：{message}', handwritingTitle: '{name} - 手写练习', identity: '日期：_______________    姓名：_______________    成绩：_______________', instructionsWithAnswers: '说明：请根据问题写出答案，答案已在题目下方提供参考。', instructions: '说明：请在横线上写出完整的英文答案，注意大小写和标点符号。', page: '第 {current} 页，共 {total} 页', reportTitle: '问答训练结果报告', errorSummary: '错误点汇总（精简）', reportFile: '问答训练报告_{name}_{date}.pdf', reportSuccess: 'PDF 报告已成功导出！', reportFailed: 'PDF 导出失败：{message}', setName: '问答集名称：{name}', trainingTime: '训练时间：{start} - {end}', duration: '训练时长：{duration}', mode: '训练模式：{mode}', random: '随机模式', sequential: '顺序模式', total: '题目总数：{count}', answered: '已作答：{count}', summary: '训练总结', incorrect: '错题数：{count}', unanswered: '未作答：{count}', details: '详细答案分析', questionNumber: '第 {number} 题', question: '问题：{text}', standardAnswer: '标准答案：{text}', userAnswer: '您的答案：{text}', noAnswer: '（未回答）', verdict: '判定：{result}', correct: '正确', wrong: '错误', feedback: '反馈：{text}', suggestion: '建议：{text}', generatedAt: '生成时间：{time}', durationShort: '{minutes}分{seconds}秒'
     },
     assistant: {
         title: 'AI 助手', model: '模型：', configureModel: '请先到全局设置配置 provider 与模型', global: '全局', article: '文章', smallWindow: '小窗口（右下角）', dockRight: '靠右全高', largeWindow: '居中大窗口', newSession: '新建会话', viewSessions: '查看会话', refreshContext: '刷新上下文', close: '关闭', inputPlaceholder: '输入与本文相关的问题，按 Enter 发送', send: '发送', streaming: '流式响应', fontSize: '字号：', small: '小', large: '大', contextRefreshed: '已刷新文章上下文，下次提问将使用最新内容', globalSession: '全局会话', contextPrefix: '以下是当前文章内容，仅作为上下文：', stop: '停止', error: '[错误] {message}', tryLater: '请稍后再试', retry: '重试', copy: '复制', copied: '已复制', history: '历史会话', session: '会话', switch: '切换', rename: '重命名', delete: '删除', noSessions: '还没有会话', renamePrompt: '输入新的会话名称：', confirmDelete: '确定删除此会话吗？'

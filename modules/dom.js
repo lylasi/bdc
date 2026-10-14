@@ -206,9 +206,5 @@ export const logoutBtn = document.getElementById('logout-btn');
 export const syncStatus = document.getElementById('sync-status');
 export const appGearBtn = document.getElementById('app-gear-btn');
 
-// Pronunciation practice dialog
+// Pronunciation practice (入口按鈕；彈窗內容由 features/phonetics/word-sheet.js 建立)
 export const phoneticsOpen = document.getElementById('phonetics-open');
-export const phoneticsDialog = document.getElementById('phonetics-dialog');
-export const phoneticsFrame = document.getElementById('phonetics-frame');
-export const phoneticsClose = document.getElementById('phonetics-close');
-export const phoneticsIndependent = document.getElementById('phonetics-independent');
