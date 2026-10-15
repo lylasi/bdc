@@ -53,7 +53,7 @@ function playFile(url) {
         try { audio.play()?.catch(error => finish(error)); } catch (error) { finish(error); }
     });
 }
-async function playPaths(paths, buttons = []) {
+async function playPaths(paths, buttons = [], doneKey = 'done', doneValues = {}) {
     stop();
     const version = playback;
     try {
@@ -63,7 +63,7 @@ async function playPaths(paths, buttons = []) {
             await playFile(paths[i]);
             buttons[i]?.classList.remove('active');
         }
-        if (version === playback) audioStatus('done');
+        if (version === playback) audioStatus(doneKey, false, doneValues);
     } catch (error) {
         if (version === playback && error.name !== 'AbortError') audioStatus('audioFailed', true);
     }
@@ -86,6 +86,11 @@ function selectReading(reading) {
         if (token.optional) el.title = t('phonetics.optional');
         if (token.type === 'sound') {
             el.type = 'button';
+            // 音標表沒收錄這個寫法，或該口音沒有錄音：先標出來，不要讓使用者點到才知道。
+            if (!token.variant?.audio) {
+                el.classList.add('unavailable');
+                el.title = t('phonetics.unavailable');
+            }
             el.addEventListener('click', () => {
                 dom.art.replaceChildren();
                 const articulation = token.card && window.getArticulation(token.card, accent);
@@ -165,10 +170,25 @@ dom.play.addEventListener('click', () => {
     playPaths([url]);
 });
 dom.sequence.addEventListener('click', () => {
-    const tokens = current?.tokens.filter(token => token.type === 'sound' && !token.optional) || [];
-    const missing = tokens.find(token => !token.variant?.audio);
-    if (missing) { stop(); audioStatus('missing', false, {symbol:missing.symbol}); return; }
-    playPaths(tokens.map(token => fileAudio(token.variant.audio)), [...dom.sounds.querySelectorAll('button')].filter((_, index) => !current.tokens.filter(token => token.type === 'sound')[index].optional));
+    const sounds = current?.tokens.filter(token => token.type === 'sound') || [];
+    const buttons = [...dom.sounds.querySelectorAll('button')];
+    const queue = sounds
+        .map((token, index) => ({ token, button: buttons[index] }))
+        .filter(item => !item.token.optional && item.token.variant?.audio);
+    const skipped = sounds.filter(token => !token.optional && !token.variant?.audio);
+    // 只有真的全部都沒有示範音時才不播；否則跳過缺示範的音，把其餘唸完。
+    if (!queue.length) {
+        stop();
+        if (skipped.length) audioStatus('missing', false, {symbol: skipped[0].symbol});
+        else audioStatus('done');
+        return;
+    }
+    playPaths(
+        queue.map(item => fileAudio(item.token.variant.audio)),
+        queue.map(item => item.button),
+        skipped.length ? 'skipped' : 'done',
+        { symbols: skipped.map(token => `/${token.symbol}/`).join('、') }
+    );
 });
 dom.stop.addEventListener('click', stop);
 window.addEventListener('pagehide', () => { stop(); controller?.abort(); request++; });

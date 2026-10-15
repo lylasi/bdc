@@ -35,6 +35,29 @@ export function voiceForAccent(settings, accent) {
     return selected || (accent === 'uk' ? 'en-GB-AbbiNeural' : 'en-US-JennyNeural');
 }
 
+// 音標表（phonetic-chart/data.js 的 PHONEME_CARDS）實際收錄、且每個都有示範錄音的寫法。
+// 用來約束 AI 只用示範得出來的符號；tests/phonetics.test.mjs 會比對兩邊是否一致。
+export const PHONEME_SYMBOLS = {
+    uk: [
+        'iː', 'ɪ', 'e', 'æ', 'ʌ', 'ɑː', 'ɒ', 'ɔː', 'ʊ', 'uː', 'ə', 'ɜː',
+        'eɪ', 'aɪ', 'ɔɪ', 'əʊ', 'aʊ', 'ɪə', 'eə', 'ʊə',
+        'p', 'b', 't', 'd', 'k', 'ɡ', 'f', 'v', 'θ', 'ð', 's', 'z', 'ʃ', 'ʒ', 'h', 'tʃ', 'dʒ',
+        'm', 'n', 'ŋ', 'l', 'r', 'w', 'j'
+    ],
+    us: [
+        'iː', 'ɪ', 'e', 'æ', 'ʌ', 'ɑː', 'ɔː', 'ʊ', 'uː', 'ə', 'ɜːr', 'ər',
+        'eɪ', 'aɪ', 'ɔɪ', 'oʊ', 'aʊ', 'ɪr', 'er', 'ʊr',
+        'p', 'b', 't', 'd', 'k', 'ɡ', 'f', 'v', 'θ', 'ð', 's', 'z', 'ʃ', 'ʒ', 'h', 'tʃ', 'dʒ',
+        'm', 'n', 'ŋ', 'l', 'r', 'w', 'j'
+    ]
+};
+export const phonemeSymbols = accent => PHONEME_SYMBOLS[accent] || PHONEME_SYMBOLS.uk;
+
+// 提示詞用的寫法說明：AI 常寫成 /ɛ/、/ɹ/、/ɝ/、/i/ 等，這些音其實都在表內，只是記法不同。
+export const IPA_NOTATION_RULE = 'Write IPA only in this app\'s notation: /e/ (not /ɛ/), /r/ (not /ɹ/), '
+    + '/ɡ/ (not g), /iː/ (not i), /uː/ (not u), /ɑː/ (not ɑ), /ɔː/ (not ɔ), /ɜː/ or /ɜːr/ (not ɜ or ɝ), '
+    + '/ə/ or /ər/ (not ɚ), /tʃ/ and /dʒ/ (not ligatures). Stress marks ˈ ˌ and syllable dots are allowed.';
+
 // Parenthesized sounds are optional, not extra mandatory sounds in the sequence.
 export function practiceTokens(ipa, accent, word, tokenize) {
     return ipa.split(/(\([^()]*\))/u).filter(Boolean).flatMap(part => {

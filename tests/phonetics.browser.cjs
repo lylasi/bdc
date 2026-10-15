@@ -18,7 +18,7 @@ const fs=require('fs'); const assert=require('assert/strict');
     aiCount++;const prompt=route.request().postDataJSON().messages[0].content;
     const accent=prompt.includes('required accent is us')?'us':'uk';
     const word=prompt.match(/JSON string: "([a-z -]+)"/)?.[1]||'apple';
-    const readings=word==='destroy buildings'?[{ipa:'dɪˈstrɔɪ ˈbɪldɪŋz'}]:word==='unlisted'?[]:word==='read'?[{ipa:'riːd',pos:'verb',meaning:'present'},{ipa:'red',pos:'verb',meaning:'past'}]:[{ipa:'ˈæp.əl',pos:'noun',meaning:'苹果'}];
+    const readings=word==='destroy buildings'?[{ipa:'dɪˈstrɔɪ ˈbɪldɪŋz'}]:word==='unlisted'?[]:word==='read'?[{ipa:'riːd',pos:'verb',meaning:'present'},{ipa:'red',pos:'verb',meaning:'past'}]:word==='shelter'?[{ipa:'ˈʃɛltə',pos:'noun',meaning:'庇护所'}]:[{ipa:'ˈæp.əl',pos:'noun',meaning:'苹果'}];
     return route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify({word,accent,readings})}}]})});
    }
    if(url.hostname==='mock-tts.test'||url.hostname==='local-tts.test') {
@@ -33,7 +33,7 @@ const fs=require('fs'); const assert=require('assert/strict');
    if(!localStorage.getItem('test-fixture')) {
     localStorage.setItem('test-fixture','1');
     localStorage.setItem('pen_global_settings',JSON.stringify({language:{interfaceLocale:locale},tts:{use:'remote',baseUrlRemote:'https://mock-tts.test',baseUrlLocal:'http://local-tts.test:8888',selectedVoices:{'en-GB':'en-GB-AbbiNeural','en-US':'en-US-JennyNeural'}},assistant:{enabled:false}}));
-    localStorage.setItem('vocabularyBooks',JSON.stringify([{id:'fixture-book',name:'Fixture',words:[{id:'ship-id',word:'ship',phonetic:'ʃɪp',meaning:'船'},{id:'apple-id',word:'apple',meaning:'苹果'}]}]));
+    localStorage.setItem('vocabularyBooks',JSON.stringify([{id:'fixture-book',name:'Fixture',words:[{id:'ship-id',word:'ship',phonetic:'ʃɪp',meaning:'船'},{id:'apple-id',word:'apple',meaning:'苹果'},{id:'shelter-id',word:'shelter',meaning:'庇护所'}]}]));
     localStorage.setItem('activeBookId','fixture-book');
    }
   },{locale});
@@ -50,7 +50,7 @@ const fs=require('fs'); const assert=require('assert/strict');
   await page.waitForTimeout(650);
   assert.equal(await page.locator('#phonetics-open').isVisible(),true);
   await page.locator('#vocabulary-btn').click();
-  assert.equal(await page.locator('#word-list .word-phonetics-btn').count(),2);
+  assert.equal(await page.locator('#word-list .word-phonetics-btn').count(),3);
   // 單詞本入口 → 只呈現該詞的拆音彈窗（不再內嵌查詞頁）
   await page.locator('#word-list .word-phonetics-btn').first().click();
   await page.locator('.phonetics-sheet .ps-sound').first().waitFor();
@@ -108,6 +108,17 @@ const fs=require('fs'); const assert=require('assert/strict');
   assert.match(await page.locator('.ps-source').innerText(),/AI/);
   assert.ok(aiCount>before);
   await page.screenshot({path:'/tmp/bdc-phonetics-'+locale+'.png'});
+  await page.locator('#app-modal .modal-close-btn').click();
+  // AI 回傳另一種常見寫法（/ˈʃɛltə/ 的 ɛ）：仍要對應到音標表的 /e/ 示範音，
+  // 逐音跟讀不可以整段中斷，也不可以出現「暫無獨立示範」。
+  await page.locator('#word-list .word-phonetics-btn').nth(2).click();
+  await page.locator('.ps-ipa').filter({hasText:'ˈʃɛltə'}).waitFor({timeout:10000});
+  assert.equal(await page.locator('.ps-sound.is-unavailable').count(),0);
+  assert.deepEqual(await page.locator('.ps-sound').allTextContents(),['ʃ','ɛ','l','t','ə']);
+  await page.locator('.ps-sequence').click();
+  await page.waitForTimeout(2500);
+  const notationStatus=await page.locator('.ps-status').innerText();
+  assert.equal(/暫無獨立示範|暂无独立示范|已略過|已跳过/.test(notationStatus),false);
   await page.locator('#app-modal .modal-close-btn').click();
   await page.locator('#app-gear-btn').click();await page.locator('#gm-settings').click();
   await page.locator('#gs-phonetics-enabled').uncheck();

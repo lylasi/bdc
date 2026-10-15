@@ -19,3 +19,5 @@
 @media(max-width:600px){#art-viewer{border-radius:0;padding:8px;padding-bottom:max(8px,env(safe-area-inset-bottom))}.art-frames{grid-template-columns:1fr}}
 
 .sounds .sound-word-gap{flex:0 0 14px;align-self:stretch;border-left:1px solid #dae4f7;margin-left:4px}
+
+.sounds button.unavailable{background:#f3f6fc;border-style:dashed;color:#7b8aa3}
