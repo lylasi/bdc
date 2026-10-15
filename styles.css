@@ -2910,6 +2910,29 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     line-height: 1.4;
 }
 .paragraph-pair.is-title .paragraph-chinese { border-top: 0; text-align: center; color: var(--ink-500); }
+/* 文章小標題（Markdown ## / ###）：原本只做行內渲染，`##` 會原樣顯示成文字 */
+.paragraph-pair.is-heading { border-color: transparent; box-shadow: none; background: transparent; }
+.paragraph-pair.is-heading .paragraph-english {
+    padding-left: var(--sp-3);
+    border-left: 3px solid var(--primary);
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    line-height: 1.45;
+    color: var(--ink-900);
+}
+.paragraph-pair.is-heading[data-heading-level="3"] .paragraph-english,
+.paragraph-pair.is-heading[data-heading-level="4"] .paragraph-english,
+.paragraph-pair.is-heading[data-heading-level="5"] .paragraph-english,
+.paragraph-pair.is-heading[data-heading-level="6"] .paragraph-english { font-size: var(--fs-md); }
+.paragraph-pair.is-heading .paragraph-chinese {
+    padding-left: var(--sp-3);
+    border-left: 3px solid var(--primary-100);
+    font-weight: 650;
+    color: var(--ink-700);
+}
+/* 清單段落（- x / 1. x）：原本 `- ` 會原樣顯示，現在換成 • 並縮排 */
+.paragraph-pair.is-list .paragraph-english,
+.paragraph-pair.is-list .paragraph-chinese { padding-left: var(--sp-4); }
 .paragraph-english.para-active { background: var(--primary-050); }
 /* 逐段分析狀態：作為段落卡底部的細狀態列，不搶走正文注意力 */
 .paragraph-pair .para-status {

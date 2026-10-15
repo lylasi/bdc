@@ -8,7 +8,7 @@
  */
 export const paragraphTranslationPrompt = {
     id: 'article.paragraphTranslation',
-    version: '1.0.0',
+    version: '1.1.0',
     languagePolicy: 'follow-interface',
     variants: {
         standard: `Translate the following English paragraph into the target Chinese language.
@@ -16,6 +16,7 @@ Return only strict JSON: {"chinese_translation":"..."}
 Do not return word_alignment or detailed_analysis.
 Keep English personal names unchanged.
 If the paragraph contains Markdown tables, lists, headings, images or links, preserve all Markdown markers and line structure exactly. Do not translate or rewrite image syntax or image alt text.
+Preserve inline emphasis markers exactly as they appear in the source: **bold** stays **bold**, *italic* stays *italic*, \`code\` stays \`code\`. Never translate, drop or move those markers, and never add new ones.
 
 Paragraph:
 """
@@ -25,6 +26,7 @@ Paragraph:
 Return only strict JSON: {"sentences":["translation 1","translation 2"]}
 The sentences array must contain exactly \${count} strings in the original order.
 Do not merge or split sentences. Do not include the English source sentences or numbering. Keep English personal names unchanged.
+If a sentence contains **bold**, *italic* or \`code\` markers, keep them in the same place in the translation.
 
 Sentences:
 \${numbered}`,

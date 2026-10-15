@@ -1501,6 +1501,49 @@ function parseTitleAndParagraphs(text) {
     return { title, paragraphs };
 }
 
+/**
+ * 認出 `## 小標題` / `### 小標題` 這種 Markdown 標題段落。
+ * 文章詳解原本只做「行內」渲染，`##` 會原樣顯示成文字，所以要在這裡先拆出來，
+ * 交給 renderParagraph 用標題樣式呈現。
+ */
+function splitMarkdownHeading(text) {
+    const m = String(text || '').trim().match(/^(#{1,6})\s+([\s\S]+)$/);
+    if (!m) return null;
+    const heading = m[2].trim();
+    if (!heading) return null;
+    return { level: Math.min(6, m[1].length), text: heading };
+}
+
+/**
+ * 整段都是 Markdown 清單項目（`- x` / `1. x`）時回 true。
+ * 文章詳解只做行內渲染，清單的 `- ` 會原樣顯示，所以要單獨處理。
+ */
+function isMarkdownListBlock(text) {
+    const lines = String(text || '').split('\n').filter(l => l.trim());
+    return lines.length > 0 && lines.every(l => /^\s*(?:[-*+]|\d+[.)])\s+\S/.test(l));
+}
+
+// 顯示用：把清單標記換成圓點（有序清單保留編號），其餘文字不動。
+function normalizeListMarkersForDisplay(text) {
+    return String(text || '').split('\n').map((line) => {
+        const m = line.match(/^\s*(?:[-*+]|(\d+)[.)])\s+/);
+        if (!m) return line;
+        return m[1] ? `${m[1]}. ${line.slice(m[0].length)}` : `• ${line.slice(m[0].length)}`;
+    }).join('\n');
+}
+
+/**
+ * 送翻譯前的清理：圖片只留 alt、連結只留文字，但**保留粗體／斜體標記**。
+ * 舊版送翻譯前會把 `**粗體**` 一起剝掉，導致譯文整段沒有加粗；
+ * 提示詞本來就要求「保留 Markdown 標記」，這裡把標記留著才有東西可保留。
+ */
+function prepareParagraphForTranslation(text) {
+    return String(text || '')
+        .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+        .trim();
+}
+
 // Detect if a multi-line text itself begins with a Markdown table (header + align row)
 function isMarkdownTableStart(text) {
     if (!text) return false;
@@ -1547,22 +1590,6 @@ function escapeAttr(s) {
 /** 只在 HTML 的文字片段做替換，避免動到標籤本身或屬性內容 */
 function replaceOutsideTags(html, regex, replacer) {
     return String(html).split(/(<[^>]*>)/).map((seg) => (seg.charAt(0) === '<' ? seg : seg.replace(regex, replacer))).join('');
-}
-
-/**
- * 送進 AI 前先把行內標記拿掉：譯文不該帶著 ** 或 [文字](網址) 回來。
- * 只移除標記、不改動句子邊界（換行與句末標點都保留）。
- */
-function stripInlineMarkdown(text) {
-    return String(text || '')
-        .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-        .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
-        .replace(/__([\s\S]+?)__/g, '$1')
-        .replace(/~~([\s\S]+?)~~/g, '$1')
-        .replace(/`([^`]+)`/g, '$1')
-        .replace(/(^|[\s(（「『])\*(\S(?:[^*\n]*\S)?)\*/g, '$1$2')
-        .replace(/(^|[\s(（「『])_(\S(?:[^_\n]*\S)?)_/g, '$1$2');
 }
 
 /** 句子要顯示的 HTML（行內 Markdown），表格之類沒有後續包字流程的地方再自行包 token */
@@ -1757,15 +1784,25 @@ async function analyzeArticle() {
 
     // Pre-render placeholders for incremental rendering
     const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-    dom.articleAnalysisContainer.innerHTML = items.map((p, i) => `
-        <div class="paragraph-pair${title && i === 0 ? ' is-title' : ''}" data-paragraph-index="${i}" data-english="${esc(p)}">
+    // 標題段落：去掉 `##` 再送分析與顯示，並用 is-heading 讓它長得像標題（見 styles.css）
+    const paragraphViews = items.map((p, i) => {
+        const heading = i > 0 || !title ? splitMarkdownHeading(p) : null;
+        const list = !heading && isMarkdownListBlock(p);
+        return {
+            display: heading ? heading.text : (list ? normalizeListMarkersForDisplay(p) : p),
+            headingLevel: heading ? heading.level : 0,
+            isList: list
+        };
+    });
+    dom.articleAnalysisContainer.innerHTML = paragraphViews.map((v, i) => `
+        <div class="paragraph-pair${title && i === 0 ? ' is-title' : ''}${v.headingLevel ? ' is-heading' : ''}${v.isList ? ' is-list' : ''}" data-paragraph-index="${i}"${v.headingLevel ? ` data-heading-level="${v.headingLevel}"` : ''} data-english="${esc(v.display)}">
             <div class="para-status" data-status="pending">
                 <span class="status-icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#ic-timer"></use></svg></span>
                 <span class="status-text">${t('article.analyzing')}</span>
                 <span class="elapsed" title="${t('article.elapsed')}"></span>
                 <button class="retry-paragraph-btn" data-index="${i}" style="display:none;">${t('article.retryParagraph')}</button>
             </div>
-            <div class="paragraph-english">${esc(p)}</div>
+            <div class="paragraph-english">${esc(v.display)}</div>
             <div class="paragraph-chinese"><em>${t('article.analyzing')}</em></div>
         </div>`).join('');
 
@@ -1787,7 +1824,8 @@ async function analyzeArticle() {
             if (idx >= total) return;
             // 啟動前延遲，平滑請求節奏
             await new Promise(r => setTimeout(r, SPACING_MS));
-            const text = items[idx];
+            // 標題段落用去掉 `##` 的顯示文字送分析與渲染
+            const text = paragraphViews[idx]?.display ?? items[idx];
             updateAnalysisProgress(completed, total, t('article.analyzingParagraph', { number: idx + 1 }));
             try {
                 // start timing for this paragraph
@@ -1801,7 +1839,7 @@ async function analyzeArticle() {
                     result = { chinese_translation: '', word_alignment: [], detailed_analysis: [] };
                 } else {
                     // 送進模型前先去掉行內標記：譯文不該帶著 ** 或 [文字](網址) 回來
-                    const textForAI = stripInlineMarkdown(stripMarkdownImagesFromText(text));
+                    const textForAI = prepareParagraphForTranslation(stripMarkdownImagesFromText(text));
                     const baseText = textForAI || text;
                     // 純文字段落改用按句翻譯：以渲染同款分句器預切，中英句對齊由構造保證
                     const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
@@ -1924,7 +1962,13 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
 
     let htmlContent = '';
     for (let i = 0; i < englishParagraphs.length; i++) {
-        const englishPara = englishParagraphs[i] || '';
+        const rawEnglish = englishParagraphs[i] || '';
+        // 標題段落（## / ###）：顯示時去掉標記，改用 is-heading 樣式呈現
+        const heading = i === 0 && title ? null : splitMarkdownHeading(rawEnglish);
+        const list = !heading && isMarkdownListBlock(rawEnglish);
+        const englishPara = heading ? heading.text : (list ? normalizeListMarkersForDisplay(rawEnglish) : rawEnglish);
+        const headingClass = `${heading ? ' is-heading' : ''}${list ? ' is-list' : ''}`;
+        const headingAttr = heading ? ` data-heading-level="${heading.level}"` : '';
         const chinesePara = stripSpanTags(chineseParagraphs[i] || '');
         
         const processedChinese = chinesePara;
@@ -1936,7 +1980,7 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             const zhTableHtml = pair.zh;
             const isTitle = !!title && i === 0;
             htmlContent += `
-                <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}\" data-paragraph-index=\"${i}\" data-english=\"${escapeAttr(englishPara)}\">
+                <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr} data-english=\"${escapeAttr(englishPara)}\">
                     <div class=\"paragraph-english\" data-markdown-table=\"1\">${engTableHtml}</div>
                     <div class=\"paragraph-chinese\" data-markdown-table=\"1\">${zhTableHtml}</div>
                 </div>`;
@@ -1949,7 +1993,7 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             if (pairImgs) {
                 const isTitle = !!title && i === 0;
                 htmlContent += `
-                    <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}\" data-paragraph-index=\"${i}\" data-english=\"${escapeAttr(englishPara)}\">
+                    <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr} data-english=\"${escapeAttr(englishPara)}\">
                         <div class=\"paragraph-english\" data-markdown-images=\"1\">${pairImgs.eng}</div>
                         <div class=\"paragraph-chinese\" data-markdown-images=\"1\"></div>
                     </div>`;
@@ -1983,11 +2027,11 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         const zhAligned = alignedZhSentences(paragraph_analysis && paragraph_analysis[i], sentences);
         const cleanedZh = cleanChinese(stripSpanTags(processedChinese || ''));
         const zhSentences = zhAligned || sentenceSplitZh(cleanedZh);
-        const zhHtml = zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\">${escapeAttr(z)}</span>`).join(' ');
+        const zhHtml = zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\">${inlineMarkdownToHtml(normalizeListMarkersForDisplay(z))}</span>`).join(' ');
 
         const isTitle = !!title && i === 0;
         htmlContent += `
-            <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}\" data-paragraph-index=\"${i}\" data-english=\"${escapeAttr(englishPara)}\">
+            <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr} data-english=\"${escapeAttr(englishPara)}\">
                 <div class=\"paragraph-english\">${englishHtml}</div>
                 <div class=\"paragraph-chinese\">${zhHtml}</div>
             </div>`;
@@ -3155,7 +3199,7 @@ async function retrySingleParagraph(idx, options = {}) {
     }
     try {
         paragraphStartTime[idx] = Date.now();
-        const result = await api.analyzeParagraph(stripInlineMarkdown(text), { timeoutMs, level, noCache: !!options.force });
+        const result = await api.analyzeParagraph(prepareParagraphForTranslation(text), { timeoutMs, level, noCache: !!options.force });
         renderParagraph(idx, text, result);
         // merge into aggregated dataset
         let aggregated = [];
@@ -3413,7 +3457,7 @@ function renderParagraph(index, englishPara, result) {
     // 優先用按句翻譯結果對齊（與英文 sent-index 一一對應）；否則回退中文標點分句
     const zhAligned = alignedZhSentences(result, sentences);
     const zhSentences = zhAligned || sentenceSplitZh(processedChinese || chinese || '');
-    const zhHtml = zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${index}\" data-sent-index=\"${sIdx}\">${esc(z)}</span>`).join(' ');
+    const zhHtml = zhSentences.map((z, sIdx) => `<span class="interactive-sentence-zh" data-para-index="${index}" data-sent-index="${sIdx}">${inlineMarkdownToHtml(z)}</span>`).join(' ');
     const failed = processedChinese ? false : true;
     chineseDiv.innerHTML = (processedChinese ? zhHtml : `<em>${t('article.analysisFailedInline')}</em>`);
 
@@ -3476,7 +3520,7 @@ async function retryFailedParagraphs() {
         const idx = indices[pick];
         const text = all[idx];
         try {
-            const baseText = stripInlineMarkdown(stripMarkdownImagesFromText(text)) || text;
+            const baseText = prepareParagraphForTranslation(stripMarkdownImagesFromText(text)) || text;
             const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
             const result = await api.analyzeParagraph(baseText, {
                 timeoutMs,
