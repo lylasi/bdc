@@ -137,6 +137,9 @@ export function initArticle() {
     document.addEventListener('bdc:locale-change', () => {
         updateArticleSourceBarFromDataset();
         populateArticleHistorySelect();
+        // 朗讀列只在第一次朗讀時建立，切換語言時要手動刷新它的文字
+        applyFloatingReaderTexts();
+        updateFloatingToggle();
         const mode = dom.readingModeSelect?.value;
         if (dom.prevChunkBtn && dom.nextChunkBtn) {
             dom.prevChunkBtn.textContent = t(mode === 'paragraph' ? 'article.previousParagraph' : 'article.previousSentence');
@@ -2337,21 +2340,52 @@ let _playToken = 0; // 用於避免競態：切段期間舊的 onEnd 不再推�
 let _floatingReader = null;
 let _englishOnly = false;   // 僅顯示英文
 let _followScroll = true;   // 是否跟隨朗讀自動捲動/淡化
+
+// 朗讀列上不會隨播放狀態改變的按鈕文字（建立時與切換介面語言時都要套用）
+const FLOATING_READER_LABELS = [
+    ['.fr-prev', 'article.previousSentence'],
+    ['.fr-next', 'article.nextSentence'],
+    ['.fr-en', 'article.englishOnly'],
+    ['.fr-follow', 'article.followScroll'],
+    ['.fr-stop', 'article.finishReading'],
+    ['.fr-close', 'article.close']
+];
+
+/**
+ * 套用朗讀列的標題與無障礙文字。
+ * 元素只在第一次朗讀時建立，之後切換介面語言不會重建，因此必須能手動刷新。
+ */
+function applyFloatingReaderTexts() {
+    if (!_floatingReader) return;
+    const handle = _floatingReader.querySelector('.fr-handle');
+    if (handle) handle.title = t('article.readerDrag');
+    _floatingReader.setAttribute('aria-label', t('article.readingControls'));
+    FLOATING_READER_LABELS.forEach(([selector, key]) => {
+        const button = _floatingReader.querySelector(selector);
+        if (!button) return;
+        button.title = t(key);
+        button.setAttribute('aria-label', t(key));
+    });
+}
+
 function ensureFloatingReader() {
     if (_floatingReader) return _floatingReader;
     const el = document.createElement('div');
     el.className = 'floating-reader';
+    el.setAttribute('role', 'toolbar');
     el.innerHTML = `
-        <span class="fr-handle" title="${t('article.readerDrag')}" aria-hidden="true"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-grip"/></svg></span>
-        <button type="button" class="fr-btn fr-prev" title="${t('article.previousSentence')}" aria-label="${t('article.previousSentence')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-prev"/></svg></button>
-        <button type="button" class="fr-btn fr-toggle" title="${t('article.pause')}" aria-label="${t('article.pause')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-pause"/></svg></button>
-        <button type="button" class="fr-btn fr-next" title="${t('article.nextSentence')}" aria-label="${t('article.nextSentence')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-next"/></svg></button>
-        <button type="button" class="fr-btn fr-en" title="${t('article.englishOnly')}" aria-label="${t('article.englishOnly')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-eye"/></svg></button>
-        <button type="button" class="fr-btn fr-follow" title="${t('article.followScroll')}" aria-label="${t('article.followScroll')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-follow"/></svg></button>
-        <button type="button" class="fr-btn fr-stop" title="${t('article.finishReading')}" aria-label="${t('article.finishReading')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-stop"/></svg></button>
-        <button type="button" class="fr-btn fr-close" title="${t('article.close')}" aria-label="${t('article.close')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-close"/></svg></button>
+        <span class="fr-handle" aria-hidden="true"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-grip"/></svg></span>
+        <button type="button" class="fr-btn fr-prev"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-prev"/></svg></button>
+        <button type="button" class="fr-btn fr-toggle"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-pause"/></svg></button>
+        <button type="button" class="fr-btn fr-next"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-next"/></svg></button>
+        <button type="button" class="fr-btn fr-en"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-eye"/></svg></button>
+        <button type="button" class="fr-btn fr-follow"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-follow"/></svg></button>
+        <button type="button" class="fr-btn fr-stop"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-stop"/></svg></button>
+        <button type="button" class="fr-btn fr-close"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-close"/></svg></button>
     `;
     document.body.appendChild(el);
+    _floatingReader = el;
+    applyFloatingReaderTexts();
     el.querySelector('.fr-prev').addEventListener('click', () => { try { playPrevChunk(); } catch(_) {} });
     el.querySelector('.fr-next').addEventListener('click', () => { try { playNextChunk(); } catch(_) {} });
     el.querySelector('.fr-toggle').addEventListener('click', () => { try { togglePauseResume(); updateFloatingToggle(); } catch(_) {} });
@@ -2402,18 +2436,21 @@ function ensureFloatingReader() {
     };
     handle.addEventListener('mousedown', onDown);
     handle.addEventListener('touchstart', onDown, { passive: true });
-    _floatingReader = el;
     return el;
 }
 
 function showFloatingReader() {
     const el = ensureFloatingReader();
+    applyFloatingReaderTexts();
     el.classList.add('is-visible');
+    // 讓底部訊息提示往上讓位，否則提示會蓋住整條播放控制
+    document.body.classList.add('has-floating-reader');
     updateFloatingToggle();
 }
 
 function hideFloatingReader() {
     if (_floatingReader) _floatingReader.classList.remove('is-visible');
+    document.body.classList.remove('has-floating-reader');
 }
 
 function updateFloatingToggle() {
@@ -2515,6 +2552,7 @@ function playCurrentChunk() {
 function playNextChunk() {
     // 防止在非播放状态下切换
     if (dom.stopReadArticleBtn.disabled) return;
+    showFloatingReader();
     
     if (state.currentChunkIndex < state.readingChunks.length - 1) {
         audio.stopCurrentAudio();
@@ -2534,6 +2572,7 @@ function playNextChunk() {
 function playPrevChunk() {
     // 防止在非播放状态下切换
     if (dom.stopReadArticleBtn.disabled) return;
+    showFloatingReader();
     
     if (state.currentChunkIndex > 0) {
         audio.stopCurrentAudio();
@@ -2552,6 +2591,9 @@ function playPrevChunk() {
 
 function togglePauseResume() {
     const wasPaused = state.isReadingChunkPaused;
+    // 朗讀進行中使用者又按了播放／暫停：把先前用「關閉」收掉的朗讀列帶回來，
+    // 否則關掉後就再也叫不回來（關閉只收起控制條，不會停止朗讀）。
+    if (!dom.stopReadArticleBtn.disabled) showFloatingReader();
     audio.stopCurrentAudio();
     state.setIsReadingChunkPaused(!wasPaused);
     if (wasPaused) {
@@ -3967,8 +4009,9 @@ function applySentenceHighlight(paraIdx, sentIdx, on) {
     const eng = document.querySelector(`.interactive-sentence[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
     const zh = document.querySelector(`.interactive-sentence-zh[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
     [eng, zh].forEach(el => { if (el) el.classList.toggle('sentence-active', !!on); });
-    // 僅在文章朗讀實際播放時啟用淡化，其餘情況不淡化
-    const isPlaying = !state.isReadingChunkPaused && !dom.stopReadArticleBtn.disabled;
+    // 僅在文章朗讀實際播放時啟用淡化，其餘情況不淡化；
+    // 使用者關掉朗讀列的「跟隨朗讀滾動」後就不該再自動淡化（該開關會移除 dim-others）。
+    const isPlaying = !state.isReadingChunkPaused && !dom.stopReadArticleBtn.disabled && _followScroll;
     dom.articleAnalysisContainer.classList.toggle('dim-others', !!isPlaying);
 }
 
