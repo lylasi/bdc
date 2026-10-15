@@ -114,6 +114,9 @@
 
     /* 聽寫懸浮播放器高度：供底部其他懸浮元件（AI 助手、訊息提示）避讓 */
     --float-player-h: 106px;
+
+    /* 文章浮動朗讀列高度（含與訊息提示之間的間距）：供底部訊息提示避讓 */
+    --float-reader-h: 70px;
 }
 
 /* ---- 配色主題：只換主色階與焦點環，語義色不變 ----
@@ -2330,7 +2333,9 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 12px);
     z-index: 1500;
     max-width: calc(100vw - 16px);
-    display: flex;
+    /* 預設隱藏：關閉／停止／朗讀結束都只切換 .is-visible，
+       這裡若直接寫 display:flex，關閉鍵就會按了沒反應。 */
+    display: none;
     align-items: center;
     gap: 2px;
     padding: 6px;
@@ -2340,6 +2345,7 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     border: 1px solid var(--line);
     box-shadow: var(--sh-3);
 }
+.floating-reader.is-visible { display: flex; }
 .floating-reader .fr-handle {
     display: inline-flex;
     align-items: center;
@@ -4828,6 +4834,13 @@ body.has-floating-player #message-container {
     body.has-floating-player #message-container {
         bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--sp-3) + var(--float-player-h) + var(--sp-2));
     }
+}
+
+/* 文章朗讀列顯示時（body.has-floating-reader）同理：
+   訊息提示的 z-index（4000）比朗讀列（1500）高且可點擊，貼在同一條基線上時
+   會整條蓋住播放控制，點「關閉」只會關掉提示。這裡讓提示往上讓位。 */
+body.has-floating-reader #message-container {
+    bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--sp-3) + var(--float-reader-h));
 }
 
 
