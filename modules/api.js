@@ -15,6 +15,7 @@ import {
 } from './ai-models.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
+import { IPA_NOTATION_RULE, phonemeSymbols } from './phonetics-data.js';
 
 export {
     getAIProviderRegistry,
@@ -467,7 +468,7 @@ export async function getWordAnalysis(word) {
             schema: 'v1'
         });
         if (cached) return cached;
-        const prompt = buildPrompt('dictionary.wordAnalysis', { word }, { locale });
+        const prompt = buildPrompt('dictionary.wordAnalysis', { word, notation: IPA_NOTATION_RULE }, { locale });
         const result = await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis' });
         await cache.setCached('dictionaryWordAnalysis', {
             word,
@@ -1604,7 +1605,12 @@ export async function getWordPronunciations(word, accent, { signal, refresh = fa
         const readings = validatePronunciations(hit, word, accent);
         if (readings.length) return readings;
     }
-    const prompt = buildPrompt('dictionary.pronunciation', { wordJSON: JSON.stringify(word), accent }, { locale });
+    const prompt = buildPrompt('dictionary.pronunciation', {
+        wordJSON: JSON.stringify(word),
+        accent,
+        symbols: phonemeSymbols(accent).join(' '),
+        notation: IPA_NOTATION_RULE
+    }, { locale });
     const data = await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis', signal, timeoutMs: 20000 });
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const readings = validatePronunciations(data, word, accent);

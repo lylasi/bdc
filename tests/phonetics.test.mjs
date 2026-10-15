@@ -93,3 +93,46 @@ test('phrases preserve complete IPA and reject non-English input', () => {
     assert.ok(tokens.some(token => token.type === 'mark' && token.symbol === ' '));
     assert.ok(tokens.filter(token => token.type === 'sound').every(token => token.variant?.audio));
 });
+
+test('other IPA notations the AI may return still find a playable sound', () => {
+    const context = vm.createContext({window:{}});
+    vm.runInContext(read('phonetic-chart/data.js'),context);
+    vm.runInContext(read('phonetic-chart/word-split.js'),context);
+    const split = context.window.WordSplit;
+    const cases = [
+        ['ˈʃeltə','shelter'], ['ˈʃɛltə','shelter'], ['ˈʃeltər','shelter'], ['ˈʃɛltɚ','shelter'],
+        ['ˈʃɛltɹ̩','shelter'], ['ˈɹʌn','run'], ['ˈhæpi','happy'], ['ˈbɝd','bird'], ['ˈbɜːd','bird'],
+        ['ˈtʃer','chair'], ['ˈsɑk','sock'], ['ˈnoʊz','nose'], ['ˈkæmərə','camera'], ['ˈstɔːri','story'],
+        ['ˈbʌtn̩','button']
+    ];
+    for (const accent of ['uk','us']) {
+        for (const [ipa, word] of cases) {
+            const sounds = data.practiceTokens(ipa, accent, word, split.tokenize).filter(t => t.type === 'sound' && !t.optional);
+            assert.ok(sounds.length, `${accent} ${ipa}`);
+            assert.ok(sounds.every(t => t.variant?.audio), `${accent} ${ipa} → ${sounds.map(t => t.symbol).join(' ')}`);
+        }
+        // A symbol the chart really does not have stays visible, flagged instead of silently dropped.
+        const unknown = split.tokenize('ˈbʌʔ', accent, 'button').find(t => t.symbol === 'ʔ');
+        assert.equal(unknown.unmatched, true);
+        assert.equal(unknown.variant, null);
+    }
+});
+
+test('prompt symbol list matches what the chart can actually play', () => {
+    const context = vm.createContext({window:{}});
+    vm.runInContext(read('phonetic-chart/data.js'),context);
+    for (const accent of ['uk','us']) {
+        const chart = [...new Set(context.window.PHONEME_CARDS.map(card => card.variants[accent])
+            .filter(variant => variant?.audio).map(variant => variant.symbol))].sort();
+        assert.deepEqual([...data.phonemeSymbols(accent)].sort(), chart);
+    }
+    assert.ok(data.IPA_NOTATION_RULE.includes('/ɛ/') && data.IPA_NOTATION_RULE.includes('/ɹ/'));
+});
+
+test('both dictionary prompts inject the notation rule', async () => {
+    const prompts = await import('data:text/javascript;base64,' + Buffer.from(read('modules/prompts/dictionary.js')).toString('base64'));
+    assert.ok(prompts.pronunciationPrompt.template.includes('${symbols}'));
+    assert.ok(prompts.pronunciationPrompt.template.includes('${notation}'));
+    assert.ok(prompts.wordAnalysisPrompt.template.includes('${notation}'));
+    assert.notEqual(prompts.pronunciationPrompt.version, '1.1.0');
+});

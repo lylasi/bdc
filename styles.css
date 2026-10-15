@@ -2456,6 +2456,13 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
 }
 .ps-sound:hover { border-color: var(--primary-100); color: var(--primary-700); }
 .ps-sound.is-playing { background: var(--primary-050); border-color: var(--primary); color: var(--primary-700); }
+.ps-sound.is-unavailable {
+    border-style: dashed;
+    background: var(--surface-2);
+    color: var(--ink-400);
+    font-weight: 600;
+}
+.ps-sound.is-unavailable:hover { border-color: var(--line); color: var(--ink-400); }
 .ps-mark { color: var(--ink-400); font-size: var(--fs-lg); }
 .ps-mark.is-gap { width: 10px; }
 .ps-optional { margin: 0; font-size: var(--fs-xs); color: var(--ink-400); }

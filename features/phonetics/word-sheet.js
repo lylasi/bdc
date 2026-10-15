@@ -198,6 +198,11 @@ function renderSounds(sheet, state) {
         if (token.optional) el.title = t('phonetics.optional');
         if (token.type === 'sound') {
             el.setAttribute('aria-label', token.symbol);
+            // 音標表沒收錄這個寫法，或該口音沒有錄音：先標出來，不要讓使用者點到才知道。
+            if (!token.variant?.audio) {
+                el.classList.add('is-unavailable');
+                el.title = t('phonetics.unavailable');
+            }
             el.addEventListener('click', () => {
                 renderArt(sheet, token, state.accent);
                 if (!token.variant?.audio) {
@@ -424,15 +429,27 @@ function bindSheet(sheet, state) {
 
     sheet.querySelector('.ps-sequence').addEventListener('click', async () => {
         audio.stopCurrentAudio();
-        const tokens = state.tokens.filter(token => token.type === 'sound' && !token.optional);
-        const missing = tokens.find(token => !token.variant?.audio);
-        if (missing) { stopAudio(); setStatus(sheet, 'missing', false, { symbol: missing.symbol }); return; }
+        const sounds = state.tokens.filter(token => token.type === 'sound');
         const buttons = [...sheet.querySelectorAll('.ps-sound')];
-        for (let i = 0; i < tokens.length; i++) {
-            if (session !== state.session) return;
-            await playUrl(assetUrl(tokens[i].variant.audio), buttons[i]);
+        const queue = sounds
+            .map((token, index) => ({ token, button: buttons[index] }))
+            .filter(item => !item.token.optional && item.token.variant?.audio);
+        const skipped = sounds.filter(token => !token.optional && !token.variant?.audio);
+        // 只有真的全部都沒有示範音時才放棄，否則跳過缺示範的音、把其餘唸完。
+        if (!queue.length) {
+            stopAudio();
+            if (skipped.length) setStatus(sheet, 'missing', false, { symbol: skipped[0].symbol });
+            else setStatus(sheet, 'done');
+            return;
         }
-        if (session === state.session) setStatus(sheet, 'done');
+        for (const { token, button } of queue) {
+            if (session !== state.session) return;
+            await playUrl(assetUrl(token.variant.audio), button);
+        }
+        if (session !== state.session) return;
+        setStatus(sheet, skipped.length ? 'skipped' : 'done', false, {
+            symbols: skipped.map(token => `/${token.symbol}/`).join('、')
+        });
     });
 }
 
