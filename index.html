@@ -1009,16 +1009,20 @@
           <h2 data-i18n="article.title">文章详解</h2>
           <div class="analysis-container">
             <div class="analysis-input">
-              <h3 data-i18n="article.inputTitle">输入文章</h3>
-              <div class="history-controls">
-                <select id="article-history-select">
-                  <option value="" data-i18n="article.historyRead">读取历史记录</option>
-                </select>
-                <button id="manage-history-btn" class="btn secondary" title="管理阅读记录" data-i18n="article.historyManage" data-i18n-title="article.historyManageTitle">
-                  管理记录
-                </button>
-                <button id="delete-history-btn" class="btn secondary" title="删除选中的历史记录" data-i18n="article.historyDelete" data-i18n-title="article.historyDeleteTitle">
-                  删除记录
+              <div class="analysis-input-head">
+                <h3 data-i18n="article.inputTitle">输入文章</h3>
+                <button
+                  id="article-history-btn"
+                  type="button"
+                  class="btn-tertiary history-entry-btn"
+                  title="打开阅读记录"
+                  data-i18n-title="article.historyOpenTitle"
+                  aria-label="打开阅读记录"
+                  data-i18n-aria-label="article.historyOpenTitle"
+                >
+                  <svg class="icon" aria-hidden="true"><use href="#ic-timer"/></svg>
+                  <span data-i18n="article.historyRecords">阅读记录</span>
+                  <span id="article-history-count" class="history-count hidden" aria-hidden="true">0</span>
                 </button>
               </div>
               <textarea
@@ -1182,6 +1186,13 @@
                     rel="noopener noreferrer"
                     data-i18n="article.openSource">打开原文</a
                   >
+                  <button
+                    type="button"
+                    id="article-history-status"
+                    class="article-history-status hidden"
+                    data-i18n="article.historyStatusUnsaved"
+                  >尚未存入阅读记录</button>
+                  <span id="article-history-undo" class="article-history-undo hidden" role="status" aria-live="polite"></span>
                 </div>
               </div>
               <div id="article-analysis-container">

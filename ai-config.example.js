@@ -76,10 +76,12 @@ export const SUPABASE = {
 
 // 同步後端設定（Cloudflare Worker + D1，或 selfhost/ 的 Node + SQLite／PostgreSQL）
 // - endpoint：Worker 網址或自建伺服器網址（例如 http://127.0.0.1:8787）
+// - publicBaseUrl：可選。管理員產生登入連結時使用的對外 SPA 網址；留空則用目前頁面網址。
 // - 通行碼不放這裡；由使用者登入時輸入，僅存於瀏覽器本機。
 // - poll 控制向伺服器輪詢學習資料更新的節奏（AI 設定同步另有版本檢查）。
 export const SYNC = {
   endpoint: '',
+  publicBaseUrl: '',
   poll: {
     baseMs: 90000,
     maxMs: 300000,

@@ -389,6 +389,68 @@ export function confirmAction(config = {}) {
 }
 
 /**
+ * 單行文字輸入彈窗（沿用站內彈窗外殼，取代原生 prompt）。
+ * @returns {Promise<string|null>} 取消時回傳 null
+ */
+export function promptAction(config = {}) {
+  const {
+    title = '',
+    message = '',
+    label = '',
+    value = '',
+    placeholder = '',
+    confirmLabel = '',
+    cancelLabel = ''
+  } = config;
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay options-modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-content options-modal-content prompt-modal">
+        <div class="modal-header">
+          <h3>${escapeHtml(title || t('common.optionsTitle'))}</h3>
+          ${message ? `<p class="om-desc">${escapeHtml(message)}</p>` : ''}
+        </div>
+        <div class="modal-body">
+          ${label ? `<label class="prompt-label" for="prompt-input">${escapeHtml(label)}</label>` : ''}
+          <input id="prompt-input" class="prompt-input" type="text" autocomplete="off"
+            placeholder="${escapeAttr(placeholder)}" aria-label="${escapeAttr(label || title)}">
+        </div>
+        <div class="modal-footer modal-actions">
+          <button id="prompt-cancel" class="btn-secondary" type="button">${escapeHtml(cancelLabel || t('common.cancel'))}</button>
+          <button id="prompt-confirm" class="btn-primary" type="button">${escapeHtml(confirmLabel || t('common.confirm'))}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#prompt-input');
+    input.value = String(value || '');
+    const cleanup = () => {
+      document.removeEventListener('keydown', onKey);
+      overlay.remove();
+    };
+    const submit = () => {
+      const next = input.value;
+      cleanup();
+      resolve(next);
+    };
+    const cancel = () => {
+      cleanup();
+      resolve(null);
+    };
+    const onKey = (event) => {
+      if (event.key === 'Escape') { event.preventDefault(); cancel(); }
+      else if (event.key === 'Enter') { event.preventDefault(); submit(); }
+    };
+    overlay.querySelector('#prompt-confirm').addEventListener('click', submit);
+    overlay.querySelector('#prompt-cancel').addEventListener('click', cancel);
+    overlay.addEventListener('click', (event) => { if (event.target === overlay) cancel(); });
+    document.addEventListener('keydown', onKey);
+    setTimeout(() => { try { input.focus(); input.select(); } catch (_) {} }, 20);
+  });
+}
+
+/**
  * 顯示選項彈窗
  * @param {Object} config - 彈窗配置
  * @param {string} config.title - 彈窗標題

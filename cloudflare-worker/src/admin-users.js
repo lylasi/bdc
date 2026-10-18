@@ -8,9 +8,13 @@
 // (enforced by the caller). Plaintext passcodes and recovery codes are
 // generated here, returned once, and never stored, logged or audited.
 
-import { json, errorJson, readJsonBody, rateLimit } from './http.js';
+import { json, errorJson, readJsonBody, readOptionalJsonBody, rateLimit } from './http.js';
 import { randomToken, sha256Hex } from './token.js';
-import { PAIRING_CODE_TTL_MS, randomPairingCode } from './device-pairing.js';
+import {
+  DEFAULT_PAIRING_CODE_TTL_SECONDS,
+  PAIRING_CODE_TTL_SECONDS,
+  randomPairingCode
+} from './device-pairing.js';
 
 const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -252,24 +256,67 @@ async function pairingCodeHandler(ctx, userId) {
 
   const row = await findUserById(env, userId);
   if (!row) return errorJson('user_not_found', 404, env, request);
-  // Admin accounts keep a single strong credential; pairing them would create
-  // a temporary path to admin privileges.
+  // Admin accounts keep a single strong credential; issuing a login code would
+  // create a temporary path to admin privileges.
   if (row.role === 'admin') return errorJson('admin_account_protected', 403, env, request);
+
+  // Older frontends send no body at all; treat that as the default lifetime.
+  let body;
+  try { body = await readOptionalJsonBody(request, MAX_BODY_BYTES); } catch (error) {
+    return errorJson(error.code || 'bad_json', error.status || 400, env, request);
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return errorJson('bad_json', 400, env, request);
+  }
+
+  let ttlSeconds = DEFAULT_PAIRING_CODE_TTL_SECONDS;
+  if (body.ttlSeconds !== undefined) {
+    ttlSeconds = Number(body.ttlSeconds);
+    if (!PAIRING_CODE_TTL_SECONDS.includes(ttlSeconds)) {
+      return errorJson('invalid_ttl', 400, env, request);
+    }
+  }
 
   const code = randomPairingCode();
   const codeHash = await sha256Hex(code);
   const createdAt = new Date();
   const createdAtIso = createdAt.toISOString();
-  const expiresAt = new Date(createdAt.getTime() + PAIRING_CODE_TTL_MS).toISOString();
+  const expiresAt = new Date(createdAt.getTime() + ttlSeconds * 1000).toISOString();
 
   const insert = env.DB
     .prepare('INSERT INTO pairing_codes (code_hash, user_id, created_by, created_at, expires_at, used_at) VALUES (?, ?, ?, ?, ?, ?)')
     .bind(codeHash, userId, user.user_id, createdAtIso, expiresAt, null);
-  const audit = auditStatement(env, user.user_id, 'user_pairing_code', userId, { expiresAt }, createdAtIso);
+  const audit = auditStatement(env, user.user_id, 'user_pairing_code', userId, {
+    expiresAt,
+    ttlSeconds
+  }, createdAtIso);
   await runWithAudit(env, [insert, audit]);
 
   // The plaintext code is returned once and never stored.
-  return json({ userId, code, expiresAt }, 200, env, request);
+  return json({ userId, code, expiresAt, ttlSeconds }, 200, env, request);
+}
+
+async function revokePairingCodesHandler(ctx, userId) {
+  const { request, env, user } = ctx;
+  const limit = rateLimit(`admin-users-pair-revoke:${user.user_id}`, 30, 60 * 1000);
+  if (!limit.ok) return rateLimited(env, request, limit.retryAfter);
+  if (!USER_ID_RE.test(userId)) return errorJson('invalid_user_id', 400, env, request);
+
+  const row = await findUserById(env, userId);
+  if (!row) return errorJson('user_not_found', 404, env, request);
+  if (row.role === 'admin') return errorJson('admin_account_protected', 403, env, request);
+
+  const changedAt = new Date().toISOString();
+  const revoke = env.DB
+    .prepare('DELETE FROM pairing_codes WHERE user_id = ? AND used_at IS NULL')
+    .bind(userId);
+  const audit = auditStatement(env, user.user_id, 'user_pairing_codes_revoke', userId, {}, changedAt);
+  const results = await runWithAudit(env, [revoke, audit]);
+  const revoked = results && results[0] && results[0].meta && Number(results[0].meta.changes)
+    ? Number(results[0].meta.changes)
+    : 0;
+
+  return json({ userId, revoked }, 200, env, request);
 }
 
 /**
@@ -298,6 +345,12 @@ export async function handleAdminUsersRoute(ctx) {
   if (pairingMatch) {
     if (request.method !== 'POST') return errorJson('method_not_allowed', 405, env, request);
     return pairingCodeHandler(ctx, decodeUserId(pairingMatch[1]));
+  }
+
+  const pairingsMatch = path.match(/^\/admin\/users\/([^/]+)\/pairing-codes$/);
+  if (pairingsMatch) {
+    if (request.method !== 'DELETE') return errorJson('method_not_allowed', 405, env, request);
+    return revokePairingCodesHandler(ctx, decodeUserId(pairingsMatch[1]));
   }
 
   const updateMatch = path.match(/^\/admin\/users\/([^/]+)$/);

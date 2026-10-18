@@ -7,6 +7,7 @@
 
 import { SYNC } from '../ai-config.js';
 import { lwwMerge } from './sync-core.js';
+import * as articleStore from './article-store.js';
 import { t } from './i18n.js';
 
 const TOKEN_KEY = 'sync_token';
@@ -17,7 +18,30 @@ const ROLE_KEY = 'sync_role';
 export const AUTH_EVENT = 'bdc:auth-change';
 export const MIN_AI_PASSCODE_LENGTH = 32;
 
+// Matches both legacy 12-character pairing codes and current 16-character
+// login codes. Input may contain spaces or hyphens; normalize before testing.
+export const LOGIN_CODE_RE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{12,32}$/;
+
+export function normalizeLoginCode(value) {
+  return String(value == null ? '' : value)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
 let sessionGeneration = 0;
+let loginAttempt = 0;
+let authCapabilitiesPromise = null;
+
+function beginLoginAttempt() {
+  loginAttempt += 1;
+  return loginAttempt;
+}
+
+function assertLoginAttemptCurrent(attempt) {
+  if (attempt !== loginAttempt) {
+    throw authError('stale_login', t('errors.loginSuperseded'), 409);
+  }
+}
 
 // 向伺服器確認更新的預設參數（可由 ai-config.js 的 SYNC.poll 覆寫；各欄位用途見 ai-config.example.js）
 // baseMs：正常檢查間隔；maxMs：沒操作時自動拉長到的最慢間隔；
@@ -89,6 +113,34 @@ export function getAuthSnapshot() {
     generation: sessionGeneration,
     loggedIn: !!(token && userId)
   };
+}
+
+/**
+ * Ask the sync backend which login methods it supports. Older Workers and the
+ * self-host server do not implement the endpoint; in that case login-code UI is
+ * hidden instead of failing later. Network failures keep the UI available so a
+ * temporary outage does not remove the only way to sign in.
+ */
+export function getAuthCapabilities({ force = false } = {}) {
+  if (!force && authCapabilitiesPromise) return authCapabilitiesPromise;
+  authCapabilitiesPromise = (async () => {
+    try {
+      const res = await apiRequest('/auth-capabilities', { method: 'GET' }, { token: '', timeoutMs: 6000 });
+      if (res.status === 401 || res.status === 404) {
+        return { pairingLogin: false, loginLinks: false, passwordLogin: false };
+      }
+      if (!res.ok) return { pairingLogin: true, loginLinks: true, passwordLogin: false };
+      const data = await res.json().catch(() => ({}));
+      return {
+        pairingLogin: data.pairingLogin !== false,
+        loginLinks: data.loginLinks !== false,
+        passwordLogin: data.passwordLogin === true
+      };
+    } catch (_) {
+      return { pairingLogin: true, loginLinks: true, passwordLogin: false };
+    }
+  })();
+  return authCapabilitiesPromise;
 }
 
 /**
@@ -256,13 +308,37 @@ function commitSession(token, data) {
   if (!userId) throw new Error(t('errors.serverNoUser'));
   const role = data.role === 'admin' ? 'admin' : 'user';
   const previousUser = getStoredUserId();
+  let previous = null;
   sessionGeneration += 1;
   try {
+    previous = {
+      token: localStorage.getItem(TOKEN_KEY),
+      userId: localStorage.getItem(USER_ID_KEY),
+      label: localStorage.getItem(LABEL_KEY),
+      role: localStorage.getItem(ROLE_KEY)
+    };
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_ID_KEY, userId);
     localStorage.setItem(LABEL_KEY, data.label || '');
     localStorage.setItem(ROLE_KEY, role);
-  } catch (_) {}
+  } catch (_) {
+    // Never leave a half-written session behind: it would look logged in on
+    // the next request but carry a token from a different storage operation.
+    try {
+      if (previous) {
+        for (const [key, value] of [[TOKEN_KEY, previous.token], [USER_ID_KEY, previous.userId], [LABEL_KEY, previous.label], [ROLE_KEY, previous.role]]) {
+          if (value == null) localStorage.removeItem(key);
+          else localStorage.setItem(key, value);
+        }
+      } else {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_ID_KEY);
+        localStorage.removeItem(LABEL_KEY);
+        localStorage.removeItem(ROLE_KEY);
+      }
+    } catch (_) {}
+    throw new Error(t('errors.loginStorageFailed'));
+  }
   const user = { id: userId, email: data.label || userId, role };
   rememberIdentity();
   emitAuth(previousUser && previousUser !== userId ? 'ACCOUNT_CHANGED' : 'SIGNED_IN', user);
@@ -336,6 +412,7 @@ export const auth = {
   async signInWithToken(token) {
     const code = String(token || '').trim();
     if (!code) throw new Error(t('errors.passcodeRequired'));
+    const attempt = beginLoginAttempt();
     let res;
     try {
       res = await apiRequest('/me', { method: 'GET' }, { token: code });
@@ -345,15 +422,42 @@ export const auth = {
     if (res.status === 401) throw new Error(t('errors.passcodeWrong'));
     if (!res.ok) throw new Error(t('errors.loginFailed', { status: res.status }));
     const data = await res.json().catch(() => ({}));
+    assertLoginAttemptCurrent(attempt);
     return commitSession(code, data);
   },
 
-  // 裝置配對登入：用管理員產生的一次性配對碼換取長期 session token。
+  // 登入碼登入：使用者只需輸入管理員產生的一次性登入碼；後端由碼查出帳號。
   // 不影響原本通行碼，其他已登入裝置也不會被登出。
+  async signInWithLoginCode(loginCode) {
+    const code = normalizeLoginCode(loginCode);
+    if (!code) throw authError('pairing_required', t('errors.pairingRequired'));
+    if (!LOGIN_CODE_RE.test(code)) throw authError('pairing_format', t('errors.pairingFormat'));
+    const attempt = beginLoginAttempt();
+    let res;
+    try {
+      res = await apiRequest('/pair', {
+        method: 'POST',
+        body: JSON.stringify({ code, deviceLabel: detectDeviceLabel() })
+      }, { token: '', timeoutMs: 10000 });
+    } catch (e) {
+      throw new Error(e?.message || t('errors.cannotReachSync'));
+    }
+    if (res.status === 403) throw authError('pairing_invalid', t('errors.pairingInvalid'), 403);
+    if (res.status === 429) throw authError('rate_limited', t('errors.pairingRateLimited'), 429);
+    if (!res.ok) throw new Error(t('errors.pairingFailed', { status: res.status }));
+    const data = await res.json().catch(() => ({}));
+    if (!data || !data.token) throw new Error(t('errors.pairingFailed', { status: res.status }));
+    assertLoginAttemptCurrent(attempt);
+    return commitSession(String(data.token), data);
+  },
+
+  // 裝置配對登入（v1 相容）：保留 userId 欄位；新流程請用 signInWithLoginCode。
   async signInWithPairingCode(userId, pairingCode) {
     const uid = String(userId || '').trim();
-    const code = String(pairingCode || '').trim();
+    const code = normalizeLoginCode(pairingCode);
     if (!uid || !code) throw authError('pairing_required', t('errors.pairingRequired'));
+    if (!LOGIN_CODE_RE.test(code)) throw authError('pairing_format', t('errors.pairingFormat'));
+    const attempt = beginLoginAttempt();
     let res;
     try {
       res = await apiRequest('/pair', {
@@ -368,6 +472,7 @@ export const auth = {
     if (!res.ok) throw new Error(t('errors.pairingFailed', { status: res.status }));
     const data = await res.json().catch(() => ({}));
     if (!data || !data.token) throw new Error(t('errors.pairingFailed', { status: res.status }));
+    assertLoginAttemptCurrent(attempt);
     return commitSession(String(data.token), data);
   },
 
@@ -436,7 +541,16 @@ export async function pushSnapshot(expectedVersion, payload) {
     method: 'POST',
     body: JSON.stringify({ expected_version: expectedVersion ?? 0, payload })
   }, { timeoutMs: 20000 });
-  if (res.status === 409) return { conflict: true };
+  if (res.status === 409) {
+    // 409 有多種意思：一般是版本衝突，但「帳戶已改用逐篇文章儲存」要讓呼叫端
+    // 顯示不同的處理方式，不能一律當成重試衝突。
+    const body = await res.json().catch(() => null);
+    const code = body && body.code ? String(body.code) : '';
+    if (code === 'articles_legacy_write_blocked' || (body && body.upgradeRequired)) {
+      return { conflict: true, code: code || 'client_upgrade_required', upgradeRequired: true };
+    }
+    return { conflict: true, code, version: body && Number.isInteger(body.version) ? body.version : undefined };
+  }
   if (res.status === 401) {
     const err = new Error(t('errors.unauthorized'));
     err.code = 'unauthorized';
@@ -473,6 +587,15 @@ function isLikelyAccidentalWipe(localPayload, remotePayload) {
   }
 }
 
+/** 舊文章資料尚未全部匯入 /articles 之前，快照必須保留遠端文章群組。 */
+function needsLegacyArticlePassthrough() {
+  try {
+    return !articleStore.isMigrated() || articleStore.getGatePending();
+  } catch (_) {
+    return true;
+  }
+}
+
 // High-level sync: pull → LWW merge → conditional push with expected_version
 export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
   const remote = await pullSnapshot();          // { version, updated_at, payload } | null
@@ -485,6 +608,11 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
   }
 
   const merged = lwwMerge(local.payload, remote?.payload || {});
+  // 文章還沒完成遷移（本機或雲端舊資料尚未匯入）之前，保留雲端快照裡的文章群組，
+  // 避免第一次推快照就把它刪掉。遷移完成、伺服器閘門開啟後就不再附帶。
+  if (needsLegacyArticlePassthrough() && remote?.payload?.articles) {
+    merged.articles = remote.payload.articles;
+  }
   const needPush = JSON.stringify(merged) !== JSON.stringify(remote?.payload || {});
 
   if (needPush) {

@@ -213,14 +213,15 @@ async function flowArticleExtra(browser) {
     await page.evaluate(() => { document.querySelector('#article-library-list button, #article-library-list li, #article-library-list > *')?.click(); });
     await page.waitForTimeout(2500);
     const hist = await page.evaluate(() => ({
-        selectValue: document.getElementById('article-history-select').value,
-        options: Array.from(document.getElementById('article-history-select').options).map(o => o.textContent.slice(0, 40)),
+        historyCount: document.getElementById('article-history-count')?.textContent?.trim() || '',
+        statusText: document.getElementById('article-history-status')?.textContent?.trim() || '',
         inputLen: document.getElementById('article-input').value.length,
         sourceLabel: document.getElementById('article-source-label')?.textContent.trim()
     }));
     ok(`從文章庫載入後：${JSON.stringify(hist)}`);
-    if (hist.inputLen > 0 && !hist.selectValue) {
-        record('article', 'low', '從文章庫載入文章後，「讀取歷史記錄」下拉仍停在預設選項，無法反映目前文章', JSON.stringify(hist));
+    // 從文章庫匯入是「另一篇」：輸入框有內容、但還沒分析前不應被標成已存入記錄
+    if (hist.inputLen > 0 && /已存入/.test(hist.statusText || '')) {
+        record('article', 'low', '從文章庫匯入新文章後，狀態列誤報為已存入閱讀記錄', JSON.stringify(hist));
     }
 
     await page.screenshot({ path: path.join(ASSETS, 'regression-article.png') });

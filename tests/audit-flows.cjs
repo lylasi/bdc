@@ -946,7 +946,9 @@ async function flowArticle(browser) {
     let check = trap(page, c, 'article', '初始');
     const initial = await page.evaluate(() => ({
         textarea: document.getElementById('article-input')?.value?.slice(0, 40),
-        historyOptions: Array.from(document.getElementById('article-history-select')?.options || []).map(o => o.textContent),
+        historyCount: document.getElementById('article-history-count')?.textContent?.trim() || '',
+        historyEntry: !!document.getElementById('article-history-btn'),
+        historyStatus: document.getElementById('article-history-status')?.textContent?.trim() || '',
         sourceBarVisible: document.getElementById('article-source-bar') ? getComputedStyle(document.getElementById('article-source-bar')).display !== 'none' : null,
         analysisHtml: document.getElementById('article-analysis-container')?.innerHTML.length
     }));
@@ -982,7 +984,7 @@ async function flowArticle(browser) {
             await page.waitForTimeout(2500);
             const loaded = await page.evaluate(() => ({
                 input: document.getElementById('article-input')?.value?.length,
-                history: document.getElementById('article-history-select')?.value,
+                historyStatus: document.getElementById('article-history-status')?.textContent?.trim() || '',
                 analysisLen: document.getElementById('article-analysis-container')?.innerHTML.length,
                 modalOpen: !document.getElementById('article-library-modal').classList.contains('hidden')
             }));
@@ -1053,16 +1055,19 @@ async function flowArticle(browser) {
     }
     check();
 
-    // 歷史記錄下拉
-    check = trap(page, c, 'article', '歷史記錄');
-    await page.click('#manage-history-btn').catch(() => {});
+    // 閱讀記錄（單一入口：按鈕 + 清單彈窗）
+    check = trap(page, c, 'article', '閱讀記錄');
+    await page.click('#article-history-btn').catch(() => {});
     await page.waitForTimeout(800);
     const histModal = await page.evaluate(() => ({
         open: !document.getElementById('app-modal').classList.contains('hidden'),
         title: document.getElementById('modal-title').textContent.trim(),
+        rows: document.querySelectorAll('.ar-history-item').length,
+        hasSearch: !!document.getElementById('ar-history-search'),
         body: document.getElementById('modal-body').textContent.trim().replace(/\s+/g, ' ').slice(0, 150)
     }));
-    ok(`歷史管理：${JSON.stringify(histModal)}`);
+    ok(`閱讀記錄：${JSON.stringify(histModal)}`);
+    if (!histModal.hasSearch) record('article', 'high', '閱讀記錄彈窗缺少搜尋框', JSON.stringify(histModal));
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
     check();

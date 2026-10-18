@@ -1,6 +1,7 @@
 import * as dom from './modules/dom.js';
 import * as state from './modules/state.js';
-import { loadVocabularyBooks, loadAnalyzedArticles } from './modules/storage.js';
+import { loadVocabularyBooks } from './modules/storage.js';
+import * as articleStore from './modules/article-store.js';
 import { initModal, setupNumberSteppers, initTooltip, displayMessage, confirmAction } from './modules/ui.js';
 import { unlockAudioContext } from './modules/audio.js';
 import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView } from './features/vocabulary/vocabulary.js';
@@ -10,7 +11,7 @@ import { initQuiz, populateQuizBookSelector, stopQuiz } from './features/quiz/qu
 import { initArticle, showCurrentArticleIfAvailable } from './features/article/article.js';
 import { initOCR } from './features/ocr/ocr.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
-import { initSync, openLoginModal } from './features/sync/sync.js';
+import { initSync, openLoginModal, captureLoginLinkFromUrl, consumePendingLoginLink } from './features/sync/sync.js';
 import { initAiAssistant } from './features/assistant/assistant.js';
 import { initPhonetics } from './features/phonetics/phonetics.js';
 import { initI18n, t } from './modules/i18n.js';
@@ -235,6 +236,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Login links use `#login=<CODE>`. Capture and strip the fragment before
+    // routing, QA loading or any module reads location.hash. The exchange runs
+    // after initSync() has wired the auth callbacks.
+    captureLoginLinkFromUrl();
+
     // 0. One-time migration of legacy AI provider settings into the device profile.
     //    The old AI secrets are only removed after the new profile is written and
     //    read back successfully.
@@ -253,7 +259,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 1. 加载核心数据
     loadVocabularyBooks();
-    loadAnalyzedArticles();
+    // 文章改為逐篇存在 IndexedDB；先完成（含一次性的舊資料遷移）再讓功能模組讀取。
+    const articleInit = await step('articleStore', () => articleStore.initArticleStore());
+    await step('articleMigration', async () => {
+        const result = await articleStore.migrateLegacyLocalData();
+        if (!result.ok) {
+            // 遷移失敗：保留原資料，先用唯讀的舊清單撐住畫面，並明確告知使用者。
+            articleStore.hydrateLegacyFallback();
+            displayMessage(t('article.migrationFailed'), 'error', 9000);
+            console.error('[bdc] 文章遷移失敗:', result.error);
+        }
+    });
+    if (articleInit && articleInit.fallbackMode) {
+        console.warn('[bdc] IndexedDB 不可用，文章改用 localStorage 後備（容量有限）');
+    }
 
     // 2. 初始化通用UI组件
     initModal();
@@ -278,6 +297,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await step('ocr', () => initOCR());
     await step('qa', () => initQA());
     await step('sync', () => initSync());
+    // Exchange a captured `#login=` code now that auth callbacks and the login
+    // modal are ready. A failure opens the manual login-code dialog prefilled.
+    await step('loginLink', () => consumePendingLoginLink());
     // 僅注入 UI，不修改全局 DOM/CSS
     await step('assistant', () => initAiAssistant());
     // AI catalog / credential sync are independent of the learning-data sync:
@@ -306,7 +328,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await step('routing', () => handleModuleRouting({ ensureHash: true }));
     window.addEventListener('hashchange', () => {
-        try { handleModuleRouting(); } catch (error) { console.error('[bdc] 路由切換失敗:', error); }
+        try {
+            if (captureLoginLinkFromUrl()) {
+                consumePendingLoginLink().catch((error) => {
+                    console.error('[bdc] 登入連結處理失敗:', error);
+                });
+                return;
+            }
+            handleModuleRouting();
+        } catch (error) { console.error('[bdc] 路由切換失敗:', error); }
     });
 
     // 8. 處理透過 URL 傳入的單詞本導入需求

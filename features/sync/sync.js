@@ -2,8 +2,20 @@
 // Provides: Login (single passcode), Logout, and "Sync Now" button
 
 import * as dom from '../../modules/dom.js';
+import * as state from '../../modules/state.js';
 import { buildLocalSnapshot, applyMergedSnapshot, restoreSnapshotLocally } from '../../modules/sync-core.js';
-import { syncNow, auth, subscribeSnapshotChanges, unsubscribeChannel, getAuthGeneration, getStoredSyncUserId, getAuthSnapshot } from '../../modules/sync-cloudflare.js';
+import {
+  syncNow,
+  auth,
+  subscribeSnapshotChanges,
+  unsubscribeChannel,
+  getAuthGeneration,
+  getStoredSyncUserId,
+  getAuthSnapshot,
+  getAuthCapabilities,
+  normalizeLoginCode,
+  LOGIN_CODE_RE
+} from '../../modules/sync-cloudflare.js';
 import * as ui from '../../modules/ui.js';
 import {
   loadGlobalSettings,
@@ -37,11 +49,27 @@ import {
   deleteAssistantConversation
 } from '../assistant/assistant.js';
 import * as backup from '../../modules/local-backup.js';
+import * as articleStore from '../../modules/article-store.js';
+import { syncArticles } from '../../modules/article-sync.js';
 import { markdownToHtml } from '../../modules/markdown.js';
 import { getLocale, setLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { SUPPORTED_LOCALES } from '../../modules/i18n-config.js';
 
 let aiProviderController = null;
+
+// A login link is captured synchronously during startup and exchanged after
+// auth callbacks are wired. It never survives a reload: the fragment is
+// stripped immediately so it does not leak through history, screenshots or
+// referrers.
+const PENDING_MERGE_KEY = 'sync_pending_merge_user';
+let pendingLoginCode = '';
+let pendingLoginInvalid = false;
+let suppressAutoSyncForLoginLink = false;
+let loginLinkBusy = false;
+// Set when a login-link sign-in chose "only sign in" on a device that already
+// has local learning data. Auto-sync stays paused until the user explicitly
+// confirms a merge, including after a reload.
+let pendingMergePaused = false;
 
 function destroyAIProviderSettings() {
   try { aiProviderController?.destroy(); } catch (_) {}
@@ -51,6 +79,10 @@ function destroyAIProviderSettings() {
 export function initSync() {
   try {
     console.log('[sync] initSync()');
+    pendingMergePaused = isPendingMergeForCurrentUser();
+    if (pendingMergePaused) {
+      try { ui.displayMessage(t('sync.mergePendingStatus'), 'warning', 8000); } catch (_) {}
+    }
     document.addEventListener('bdc:modal-closed', destroyAIProviderSettings);
     wireAuthUI();
     if (dom.syncNowBtn) {
@@ -101,10 +133,24 @@ function wireAuthUI() {
     updateStatus(user ? (user.email || t('sync.loggedIn')) : t('sync.loggedOutState'));
     attachRealtime(user);
     setGearLoginState(!!user, user?.email || '');
-    if (user) {
+    if (!user) {
+      clearPendingMerge();
+      return;
+    }
+    const pendingUser = readPendingMergeUser();
+    if (pendingUser && pendingUser !== user.id) clearPendingMerge();
+    if (readPendingMergeUser() === user.id && !hasMeaningfulLocalData()) clearPendingMerge();
+    pendingMergePaused = readPendingMergeUser() === user.id;
+    if (pendingMergePaused) {
+      updateStatus(t('sync.mergePendingStatus'));
+      return;
+    }
+    if (!suppressAutoSyncForLoginLink && !pendingLoginCode) {
       try { scheduleAutoSync('login'); } catch(_) {}
     }
   });
+
+  refreshArticleScope().catch(() => {});
 
   // 初始化一次（避免等待事件）
   auth.getSession().then(({ data }) => {
@@ -114,7 +160,16 @@ function wireAuthUI() {
     updateStatus(user ? (user.email || t('sync.loggedIn')) : t('sync.loggedOutState'));
     attachRealtime(user);
     setGearLoginState(!!user, user?.email || '');
-    if (user) {
+    if (!user) return;
+    const pendingUser = readPendingMergeUser();
+    if (pendingUser && pendingUser !== user.id) clearPendingMerge();
+    if (readPendingMergeUser() === user.id && !hasMeaningfulLocalData()) clearPendingMerge();
+    pendingMergePaused = readPendingMergeUser() === user.id;
+    if (pendingMergePaused) {
+      updateStatus(t('sync.mergePendingStatus'));
+      return;
+    }
+    if (!suppressAutoSyncForLoginLink && !pendingLoginCode) {
       try { scheduleAutoSync('init-session'); } catch(_) {}
     }
   }).catch(() => {});
@@ -144,6 +199,7 @@ async function handleLogout() {
     if (!ok) return;
   }
   try { await auth.signOut(); } catch (_) {}
+  clearPendingMerge();
   updateAuthButtons(null);
   updateStatus(t('sync.loggedOut'));
 }
@@ -169,6 +225,68 @@ function createSyncGuard() {
   };
 }
 
+/** 文章儲存範圍（endpoint + user）切換後重新載入，並通知文章模組清空目前畫面。 */
+const GUEST_ADOPT_ASKED_KEY = 'bdc:articles:guest-adopt-asked';
+
+async function refreshArticleScope({ offerGuestMerge = false } = {}) {
+  const result = await articleStore.refreshScope();
+  if (result && result.changed) {
+    try { document.dispatchEvent(new CustomEvent('bdc:articles-scope-changed')); } catch (_) {}
+  }
+  if (offerGuestMerge && !articleStore.isGuestScope()) {
+    try { await offerGuestArticleMerge(); } catch (_) {}
+  }
+  return result;
+}
+
+/**
+ * 登入後，訪客範圍若有文章，明確詢問是否帶入目前帳戶。
+ * 不做隱式歸屬：使用者不確認就不會上傳 (IMPL: 文章逐篇儲存第一階段)。
+ */
+async function offerGuestArticleMerge() {
+  let asked = '';
+  try { asked = localStorage.getItem(GUEST_ADOPT_ASKED_KEY) || ''; } catch (_) {}
+  const userId = getStoredSyncUserId();
+  if (asked === userId) return;
+  const count = await articleStore.guestArticleCount();
+  if (!count) return;
+  try { localStorage.setItem(GUEST_ADOPT_ASKED_KEY, userId); } catch (_) {}
+  const ok = await ui.confirmAction({
+    title: t('sync.guestArticlesTitle'),
+    message: t('sync.guestArticlesMessage', { count }),
+    confirmLabel: t('sync.guestArticlesConfirm'),
+    cancelLabel: t('sync.guestArticlesSkip')
+  });
+  if (!ok) return;
+  const result = await articleStore.adoptGuestArticles();
+  if (result && result.ok) {
+    ui.displayMessage(t('sync.guestArticlesMerged', { count: result.imported }), 'success', 3000);
+    try { document.dispatchEvent(new CustomEvent('bdc:articles-scope-changed')); } catch (_) {}
+    try { scheduleAutoSync('articles:guest-adopt'); } catch (_) {}
+  } else {
+    ui.displayMessage(t('sync.articleSyncFailed'), 'error');
+  }
+}
+
+/**
+ * 文章同步是一個獨立階段：即使快照沒有任何變更也要執行，失敗也不阻斷其他群組。
+ * 回傳 `{ ok, info }` 或 `{ ok:false, error }`，不拋出（除了 stale session）。
+ */
+async function runArticleSyncPhase() {
+  try {
+    const info = await syncArticles();
+    if (info && info.pushed && (info.pushed.failed || info.pushed.conflicts)) {
+      updateStatus(t('sync.articleSyncPending'));
+    }
+    return { ok: true, info };
+  } catch (e) {
+    if (e && e.code === 'stale_session') throw e;
+    if (e && e.code === 'unauthorized') throw e;
+    console.warn('[sync] article sync failed:', e && (e.code || e.message));
+    return { ok: false, error: e };
+  }
+}
+
 async function handleSync() {
   console.log('[sync] handleSync()');
   // 必須登入後才能同步
@@ -179,11 +297,28 @@ async function handleSync() {
     return;
   }
 
+  // Auto-sync is paused after a login-link sign-in that skipped merging local
+  // data. A manual "Sync now" is the explicit consent to merge.
+  if (isPendingMergeForCurrentUser()) {
+    const current = getAuthSnapshot();
+    const ok = await ui.confirmAction({
+      title: t('sync.mergePendingTitle'),
+      message: t('sync.mergePendingMessage', { user: current.label || current.userId }),
+      confirmLabel: t('sync.mergePendingConfirm'),
+      cancelLabel: t('settings.cancel')
+    });
+    if (!ok) return;
+    clearPendingMerge();
+  }
+
   let guard = null;
   try {
     setBusy(true);
     updateStatus(t('sync.syncing'));
     guard = createSyncGuard();
+    // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
+    const articlePhase = await runArticleSyncPhase();
+    if (guard.stale()) return;
     const info = await syncNow(guard.build, guard.apply);
     if (guard.stale()) return;
     lastSyncAt = Date.now();
@@ -194,6 +329,8 @@ async function handleSync() {
     if (info && info.restoredFromRemote) {
       updateStatus(t('sync.restoredEmpty'));
       try { ui.displayMessage(t('sync.restoredEmptyMessage'), 'warning', 5000); } catch(_) {}
+    } else if (!articlePhase.ok) {
+      updateStatus(t('sync.articleSyncFailed'));
     } else {
       updateStatus(t('sync.syncDone'));
       try { ui.displayMessage(t('sync.syncDone'), 'success', 2000); } catch(_) {}
@@ -290,59 +427,221 @@ function showLoginModal() {
   const forgotBtn = dom.modalBody.querySelector('#auth-forgot');
   if (forgotBtn) forgotBtn.onclick = () => showResetTokenModal();
   const pairBtn = dom.modalBody.querySelector('#auth-pair');
-  if (pairBtn) pairBtn.onclick = () => showPairingLoginModal();
+  if (pairBtn) pairBtn.onclick = () => showLoginCodeModal();
+  getAuthCapabilities().then((caps) => {
+    const btn = dom.modalBody.querySelector('#auth-pair');
+    if (btn && !caps.pairingLogin) btn.remove();
+  }).catch(() => {});
 }
 
-// 新裝置配對登入：管理員產生一次性配對碼，使用者在這裡換取長期登入。
-function showPairingLoginModal() {
+function loginCodeErrorMessage(error) {
+  if (error?.code === 'pairing_invalid') return t('errors.pairingInvalid');
+  if (error?.code === 'pairing_format') return t('errors.pairingFormat');
+  if (error?.code === 'rate_limited') return t('errors.pairingRateLimited');
+  if (error?.code === 'stale_login') return t('errors.loginSuperseded');
+  return t('sync.error', { message: error?.message || t('sync.tryLater') });
+}
+
+// 登入碼登入：管理員產生一次性登入碼（或直接給連結／二維碼），
+// 使用者在這裡換取長期 session。若本機已有學習資料，登入後再詢問是否合併。
+function showLoginCodeModal(options = {}) {
   try { ui.openModal(); } catch(_) {}
   try { dom.modalTitle.textContent = t('sync.pairingLoginTitle'); } catch(_) {}
+  const initialCode = String(options.code || '');
+  const notice = options.notice || t('sync.pairingHint');
   const html = `
     <div class="auth-modal" style="min-width:300px;">
       <div class="auth-field">
-        <label for="pair-uid">${t('sync.userId')}</label>
-        <input id="pair-uid" type="text" placeholder="${t('sync.userIdPlaceholder')}" autocomplete="username" autocapitalize="none" spellcheck="false">
-      </div>
-      <div class="auth-field">
         <label for="pair-code">${t('sync.pairingCode')}</label>
-        <input id="pair-code" type="text" placeholder="${t('sync.pairingCodePlaceholder')}" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false">
+        <input id="pair-code" type="text" maxlength="64" value="${escapeHtml(initialCode)}" placeholder="${t('sync.pairingCodePlaceholder')}" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false">
       </div>
       <div class="auth-actions">
         <button id="pair-back" class="btn-secondary" type="button">${t('sync.backToPasscode')}</button>
         <button id="pair-submit" class="btn-primary" type="button">${t('sync.pairingSubmit')}</button>
       </div>
-      <div id="pair-msg" class="auth-msg">${t('sync.pairingHint')}</div>
+      <div id="pair-msg" class="auth-msg">${escapeHtml(notice)}</div>
     </div>`;
   dom.modalBody.innerHTML = html;
-  const uidEl = dom.modalBody.querySelector('#pair-uid');
   const codeEl = dom.modalBody.querySelector('#pair-code');
   const submitBtn = dom.modalBody.querySelector('#pair-submit');
   const backBtn = dom.modalBody.querySelector('#pair-back');
   const msg = dom.modalBody.querySelector('#pair-msg');
 
-  const doPair = async () => {
-    const uid = (uidEl.value || '').trim();
+  const doLogin = async () => {
     const code = (codeEl.value || '').trim();
-    if (!uid || !code) { msg.textContent = t('errors.pairingRequired'); return; }
+    if (!code) { msg.textContent = t('errors.pairingRequired'); return; }
     submitBtn.disabled = true; submitBtn.textContent = t('sync.pairingLoggingIn');
     try {
-      await auth.signInWithPairingCode(uid, code);
+      const caps = await getAuthCapabilities();
+      if (!caps.pairingLogin) {
+        msg.textContent = t('sync.loginCodeCapabilityMissing');
+        return;
+      }
+      if (!(await confirmAccountSwitch())) {
+        msg.textContent = t('sync.loginCodeSwitchCancelled');
+        return;
+      }
+      suppressAutoSyncForLoginLink = true;
+      const result = await auth.signInWithLoginCode(code);
       msg.textContent = t('sync.pairingSuccess');
+      await afterLoginCode(result, { notify: false });
       try { ui.closeModal(); } catch(_) {}
     } catch (e) {
-      msg.textContent = t('sync.error', { message: e?.message || t('sync.tryLater') });
+      msg.textContent = loginCodeErrorMessage(e);
     } finally {
+      suppressAutoSyncForLoginLink = false;
       submitBtn.disabled = false; submitBtn.textContent = t('sync.pairingSubmit');
     }
   };
 
   if (backBtn) backBtn.onclick = () => showLoginModal();
-  submitBtn.onclick = doPair;
-  for (const el of [uidEl, codeEl]) {
-    if (!el) continue;
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); doPair(); }
+  submitBtn.onclick = doLogin;
+  if (codeEl) {
+    codeEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
     });
+    try { codeEl.focus(); } catch (_) {}
+  }
+}
+
+function readPendingMergeUser() {
+  try { return localStorage.getItem(PENDING_MERGE_KEY) || ''; } catch (_) { return ''; }
+}
+
+function isPendingMergeForCurrentUser() {
+  const userId = getStoredSyncUserId();
+  return !!userId && readPendingMergeUser() === userId;
+}
+
+function setPendingMerge(userId) {
+  try { localStorage.setItem(PENDING_MERGE_KEY, String(userId || '')); } catch (_) {}
+  pendingMergePaused = true;
+}
+
+function clearPendingMerge() {
+  try { localStorage.removeItem(PENDING_MERGE_KEY); } catch (_) {}
+  pendingMergePaused = false;
+}
+
+// Only user-created content counts. Settings and seeded defaults alone do not
+// justify asking about a merge, and they must never be uploaded silently.
+function hasMeaningfulLocalData() {
+  try {
+    if (Array.isArray(state.vocabularyBooks) && state.vocabularyBooks.length > 0) return true;
+    if (Array.isArray(state.analyzedArticles) && state.analyzedArticles.length > 0) return true;
+    const qaManifest = JSON.parse(localStorage.getItem('qa-sets') || '[]');
+    if (Array.isArray(qaManifest) && qaManifest.length > 0) return true;
+    const conversations = listAssistantConversationMetas();
+    if (Array.isArray(conversations) && conversations.length > 0) return true;
+  } catch (_) {}
+  return false;
+}
+
+async function confirmAccountSwitch() {
+  const current = getAuthSnapshot();
+  if (!current.loggedIn) return true;
+  return ui.confirmAction({
+    title: t('sync.loginCodeSwitchTitle'),
+    message: t('sync.loginCodeSwitchMessage', { user: current.label || current.userId }),
+    confirmLabel: t('sync.loginCodeSwitchConfirm'),
+    cancelLabel: t('settings.cancel')
+  });
+}
+
+async function afterLoginCode(result, { notify = true } = {}) {
+  const userId = result?.user_id || '';
+  const label = result?.label || userId;
+  if (notify) ui.displayMessage(t('sync.loginCodeLinkSuccess', { user: label }), 'success', 3500);
+
+  if (!hasMeaningfulLocalData()) {
+    clearPendingMerge();
+    suppressAutoSyncForLoginLink = false;
+    scheduleAutoSync('login-link');
+    return;
+  }
+
+  // Login-link auto-login is not consent to upload this device's data to the
+  // account. Ask explicitly; "only sign in" keeps auto-sync paused until the
+  // user later confirms a merge from "Sync now".
+  const shouldMerge = await ui.confirmAction({
+    title: t('sync.loginCodeMergeTitle'),
+    message: t('sync.loginCodeMergeMessage', { user: label }),
+    confirmLabel: t('sync.loginCodeMergeConfirm'),
+    cancelLabel: t('sync.loginCodeMergeSkip')
+  });
+  if (shouldMerge) {
+    clearPendingMerge();
+    suppressAutoSyncForLoginLink = false;
+    scheduleAutoSync('login-link-merge');
+    return;
+  }
+  setPendingMerge(userId);
+  suppressAutoSyncForLoginLink = false;
+  updateStatus(t('sync.mergePendingStatus'));
+  ui.displayMessage(t('sync.loginCodeMergeSkipped'), 'warning', 6000);
+}
+
+function stripLoginHash() {
+  try {
+    const url = new URL(window.location.href);
+    url.hash = '';
+    window.history.replaceState(null, '', url.pathname + url.search);
+  } catch (_) {
+    try { window.history.replaceState(null, '', window.location.pathname + window.location.search); } catch (_) {}
+  }
+}
+
+/**
+ * Capture `#login=<CODE>` before routing reads the fragment, then remove it.
+ * The code is kept only in memory until initSync() has wired auth callbacks.
+ * Returns the normalized code when one was captured.
+ */
+export function captureLoginLinkFromUrl() {
+  let hash = '';
+  try { hash = String(window.location.hash || ''); } catch (_) { return ''; }
+  if (!/^#login=/i.test(hash)) return '';
+  const raw = hash.slice(1);
+  const separator = raw.indexOf('=');
+  const value = separator >= 0 ? raw.slice(separator + 1).split('&')[0] : '';
+  let decoded = value;
+  try { decoded = decodeURIComponent(value); } catch (_) {}
+  const code = normalizeLoginCode(decoded);
+  stripLoginHash();
+  pendingLoginCode = LOGIN_CODE_RE.test(code) ? code : '';
+  return pendingLoginCode;
+}
+
+/**
+ * Exchange the captured link code. Called after initSync(), and again on a
+ * later hashchange. On failure the manual login-code dialog opens prefilled so
+ * the user can retry without the fragment being put back into the URL.
+ */
+export async function consumePendingLoginLink() {
+  if (loginLinkBusy) return false;
+  const code = pendingLoginCode;
+  pendingLoginCode = '';
+  if (!code) return false;
+  loginLinkBusy = true;
+  try {
+    const caps = await getAuthCapabilities();
+    if (!caps.loginLinks && !caps.pairingLogin) {
+      showLoginCodeModal({ code, notice: t('sync.loginCodeCapabilityMissing') });
+      return false;
+    }
+    if (!(await confirmAccountSwitch())) {
+      showLoginCodeModal({ code, notice: t('sync.loginCodeSwitchCancelled') });
+      return false;
+    }
+    suppressAutoSyncForLoginLink = true;
+    const result = await auth.signInWithLoginCode(code);
+    await afterLoginCode(result);
+    return true;
+  } catch (error) {
+    showLoginCodeModal({ code, notice: loginCodeErrorMessage(error) });
+    return false;
+  } finally {
+    suppressAutoSyncForLoginLink = false;
+    loginLinkBusy = false;
   }
 }
 
@@ -1532,6 +1831,10 @@ function runAutoSyncTimer() {
 }
 
 function scheduleAutoSync(reason) {
+  if (pendingMergePaused) {
+    updateStatus(t('sync.mergePendingStatus'));
+    return;
+  }
   const now = Date.now();
   const group = extractTouchedGroup(reason);
   const isLocalDataChange = !!group;
@@ -1567,6 +1870,7 @@ function scheduleAutoSync(reason) {
 }
 
 async function doAutoSync(reason) {
+  if (pendingMergePaused) return;
   const { data } = await auth.getSession();
   if (!data?.session) return; // not logged in
   if (syncInFlight) {
@@ -1578,6 +1882,9 @@ async function doAutoSync(reason) {
     syncInFlight = true;
     updateStatus(t('sync.autoSyncing'));
     guard = createSyncGuard();
+    // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
+    const articlePhase = await runArticleSyncPhase();
+    if (guard.stale()) return;
     const info = await syncNow(guard.build, guard.apply);
     if (guard.stale()) return;
     lastSyncAt = Date.now();

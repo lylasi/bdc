@@ -100,6 +100,46 @@ export async function readJsonBody(request, maxBytes) {
 }
 
 /**
+ * Like `readJsonBody`, but an empty body is treated as `{}`. Use this for
+ * endpoints whose request body is optional (for example, an admin generating a
+ * login code with the default lifetime).
+ */
+export async function readOptionalJsonBody(request, maxBytes) {
+  const limit = Number(maxBytes) || 0;
+  const declared = Number(request.headers.get('Content-Length') || 0);
+  if (limit && declared && declared > limit) {
+    const err = new Error('payload too large');
+    err.code = 'payload_too_large';
+    err.status = 413;
+    throw err;
+  }
+  let text;
+  try {
+    text = await request.text();
+  } catch (_) {
+    const err = new Error('bad body');
+    err.code = 'bad_json';
+    err.status = 400;
+    throw err;
+  }
+  if (limit && text.length > limit) {
+    const err = new Error('payload too large');
+    err.code = 'payload_too_large';
+    err.status = 413;
+    throw err;
+  }
+  if (!text.trim()) return {};
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    const err = new Error('bad json');
+    err.code = 'bad_json';
+    err.status = 400;
+    throw err;
+  }
+}
+
+/**
  * Small in-isolate sliding-window limiter. It is a best-effort abuse brake, not
  * a global quota: each Worker isolate keeps its own counters.
  */

@@ -3,6 +3,7 @@
 // Note: This is a convenience rollback; clearing site data will remove backups.
 
 import { buildLocalSnapshot } from './sync-core.js';
+import * as articleStore from './article-store.js';
 
 const PREFIX = 'bdc:backup:v1:';
 const INDEX_KEY = 'bdc:backup:index:v1';
@@ -102,11 +103,19 @@ export function saveBackupPayload(payload, note = '') {
   }
 }
 
-// Convenience: build a fresh local snapshot and save its payload as a backup
+// Convenience: build a fresh local snapshot and save its payload as a backup.
+// 文章已不再放在快照裡，因此這裡另外附上完整文章文件（原文＋分析＋來源＋
+// 閱讀時間），備份才能從空白裝置離線還原全部文章。
 export async function createBackup(note = '') {
   try {
     const snap = await buildLocalSnapshot();
-    return saveBackupPayload(snap?.payload || {}, note);
+    const payload = { ...(snap?.payload || {}) };
+    try {
+      payload.articleDocuments = articleStore.exportDocuments();
+    } catch (_) {
+      payload.articleDocuments = [];
+    }
+    return saveBackupPayload(payload, note);
   } catch (e) {
     return { error: e };
   }

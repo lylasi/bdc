@@ -30,6 +30,8 @@ function check(name, ok, detail) {
         { userId: 'alice', label: 'Alice', role: 'user', email: '', createdAt: null }
     ];
     let sequence = 0;
+    let lastPairingTtl = null;
+    let pairingCodes = [];
 
     await context.addInitScript((endpoint) => {
         globalThis.__BDC_SYNC_ENDPOINT__ = endpoint;
@@ -59,6 +61,9 @@ function check(name, ok, detail) {
         if (path === '/snapshot' && method === 'POST') return json({ conflict: false, version: 1 });
         if (path === '/ai-catalog' && method === 'GET') return json({ version: 0, config: { schemaVersion: 1, providers: [], tasks: {} }, credentials: {} });
         if (path === '/ai-credentials' && method === 'GET') return json({ items: [] });
+        if (path === '/auth-capabilities' && method === 'GET') {
+            return json({ pairingLogin: true, loginLinks: true, passwordLogin: false });
+        }
         if (path === '/admin/users' && method === 'GET') {
             return json({ users: users.map((user) => ({ ...user })), currentUserId: 'admin' });
         }
@@ -87,13 +92,29 @@ function check(name, ok, detail) {
             const found = users.find((user) => user.userId === decodeURIComponent(pairingMatch[1]));
             if (!found) return json({ error: 'user_not_found', code: 'user_not_found' }, 404);
             if (found.role === 'admin') return json({ error: 'admin_account_protected', code: 'admin_account_protected' }, 403);
+            const body = JSON.parse(request.postData() || '{}');
+            lastPairingTtl = body.ttlSeconds === undefined ? 604800 : Number(body.ttlSeconds);
+            const code = 'ABCDEFGHJKLMNPQR';
+            pairingCodes.push({ userId: found.userId, code });
             return json({
                 userId: found.userId,
-                code: 'ABCDEFGHJKLM',
-                expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString()
+                code,
+                ttlSeconds: lastPairingTtl,
+                expiresAt: new Date(Date.now() + lastPairingTtl * 1000).toISOString()
             });
         }
+        const pairingsMatch = path.match(/^\/admin\/users\/([^/]+)\/pairing-codes$/);
+        if (pairingsMatch && method === 'DELETE') {
+            const userId = decodeURIComponent(pairingsMatch[1]);
+            const before = pairingCodes.length;
+            pairingCodes = pairingCodes.filter((item) => item.userId !== userId);
+            return json({ userId, revoked: before - pairingCodes.length });
+        }
         if (path === '/pair' && method === 'POST') {
+            const body = JSON.parse(request.postData() || '{}');
+            if (body.code === 'BADBADBADBADBADB') {
+                return json({ error: 'pairing_invalid', code: 'pairing_invalid' }, 403);
+            }
             return json({
                 token: 'z'.repeat(43),
                 user_id: 'alice',
@@ -177,15 +198,31 @@ function check(name, ok, detail) {
         await page.waitForTimeout(500);
         check('編輯後列表顯示新備註', /Carol 2/.test(await page.locator('.admin-users-rows').innerText()));
 
-        check('管理員列沒有配對碼按鈕', (await page.locator('[data-user-pair="admin"]').count()) === 0);
+        check('管理員列沒有登入碼按鈕', (await page.locator('[data-user-pair="admin"]').count()) === 0);
+        check('工具列提供登入碼有效期選項', await page.isVisible('[data-pair-ttl]'));
         await page.click('[data-user-pair="carol"]');
-        await page.waitForTimeout(300);
-        check('產生配對碼後顯示配對卡片', await page.isVisible('.admin-users-pairing'));
-        check('配對卡片包含一次性配對碼', /ABCDEFGHJKLM/.test(await page.locator('.admin-users-pairing').innerText()));
-        check('配對卡片顯示有效期', /有效期至/.test(await page.locator('.admin-users-pairing').innerText()));
+        await page.waitForTimeout(400);
+        check('產生登入碼後顯示登入卡片', await page.isVisible('.admin-users-pairing'));
+        check('登入卡片包含一次性登入碼', /ABCD-EFGH-JKLM-NPQR/.test(await page.locator('.admin-users-pairing').innerText()));
+        check('登入卡片顯示登入連結', /#login=ABCDEFGHJKLMNPQR/.test(await page.locator('.admin-users-pairing').innerText()));
+        check('登入卡片顯示二維碼', (await page.locator('.admin-users-pairing [data-pairing-qr] svg').count()) === 1);
+        check('登入卡片顯示有效期', /有效期至/.test(await page.locator('.admin-users-pairing').innerText()));
+        check('預設登入碼有效期為 7 天', lastPairingTtl === 604800, lastPairingTtl);
         await page.click('[data-pairing-done]');
         await page.waitForTimeout(200);
-        check('按完成後配對卡片消失', (await page.locator('.admin-users-pairing').count()) === 0);
+        check('按完成後登入卡片消失', (await page.locator('.admin-users-pairing').count()) === 0);
+
+        await page.selectOption('[data-pair-ttl]', '600');
+        await page.click('[data-user-pair="carol"]');
+        await page.waitForTimeout(400);
+        check('重新產生使用所選有效期', lastPairingTtl === 600, lastPairingTtl);
+        await page.click('[data-pairing-revoke="carol"]');
+        await page.waitForTimeout(200);
+        check('撤銷前顯示確認對話框', await page.isVisible('#confirm-btn'));
+        await page.click('#confirm-btn');
+        await page.waitForTimeout(400);
+        check('撤銷後登入卡片消失', (await page.locator('.admin-users-pairing').count()) === 0);
+        check('撤銷後顯示已撤銷數量', /已撤销[\s\S]*2/.test(await page.locator('[data-admin-users-body]').innerText()));
 
         await page.click('[data-user-reset="carol"]');
         await page.waitForTimeout(200);
@@ -205,7 +242,7 @@ function check(name, ok, detail) {
         await page.waitForTimeout(400);
         check('zh-HK 面板標題正確', /管理用戶/.test(await page.innerText('.admin-users-panel .ai-admin-head h3')));
         check('zh-HK 重設按鈕文案正確', (await page.innerText('[data-user-reset="carol"]')) === '重設通行碼');
-        check('zh-HK 配對按鈕文案正確', (await page.innerText('[data-user-pair="carol"]')) === '產生配對碼');
+        check('zh-HK 登入碼按鈕文案正確', (await page.innerText('[data-user-pair="carol"]')) === '產生登入碼');
 
         // 新裝置配對登入：清除登入狀態後從登入彈窗走一次配對流程。
         await page.evaluate(() => localStorage.clear());
@@ -213,13 +250,12 @@ function check(name, ok, detail) {
         await page.waitForTimeout(700);
         await page.click('#login-btn');
         await page.waitForTimeout(300);
-        check('登入彈窗提供裝置配對入口', await page.isVisible('#auth-pair'));
+        check('登入彈窗提供登入碼入口', await page.isVisible('#auth-pair'));
         check('登入彈窗提示本機會記住登入', /记住登录状态|記住登入狀態/.test(await page.innerText('#auth-msg')));
         await page.click('#auth-pair');
         await page.waitForTimeout(300);
-        check('配對表單顯示用戶代號與配對碼', (await page.isVisible('#pair-uid')) && (await page.isVisible('#pair-code')));
-        await page.fill('#pair-uid', 'alice');
-        await page.fill('#pair-code', 'abcdefgh-jklm');
+        check('登入碼表單只需登入碼', !(await page.isVisible('#pair-uid')) && (await page.isVisible('#pair-code')));
+        await page.fill('#pair-code', 'abcdefgh-jklm-npqr');
         await page.click('#pair-submit');
         await page.waitForTimeout(600);
         const stored = await page.evaluate(() => ({
@@ -227,8 +263,46 @@ function check(name, ok, detail) {
             userId: localStorage.getItem('sync_user_id'),
             role: localStorage.getItem('sync_role')
         }));
-        check('配對成功後儲存 session token', stored.token === 'z'.repeat(43), stored);
-        check('配對成功後儲存用戶身分', stored.userId === 'alice' && stored.role === 'user', stored);
+        check('登入碼登入後儲存 session token', stored.token === 'z'.repeat(43), stored);
+        check('登入碼登入後儲存用戶身分', stored.userId === 'alice' && stored.role === 'user', stored);
+
+        // 直接開啟登入連結：應在初始化時捕獲、清除 fragment 並自動登入。
+        await page.evaluate(() => localStorage.clear());
+        await page.goto(`${BASE}?login-link=1#login=ABCDEFGHJKLMNPQR`, { waitUntil: 'load' });
+        await page.waitForTimeout(1200);
+        const linkStored = await page.evaluate(() => ({
+            token: localStorage.getItem('sync_token'),
+            userId: localStorage.getItem('sync_user_id'),
+            hash: location.hash
+        }));
+        check('登入連結自動登入', linkStored.token === 'z'.repeat(43) && linkStored.userId === 'alice', linkStored);
+        check('登入連結 fragment 已移除', !/login=/i.test(linkStored.hash), linkStored.hash);
+
+        // 已登入時開啟另一個登入連結，先確認才切換；取消後保留原登入。
+        await page.goto(`${BASE}?switch-account=1#login=ABCDEFGHJKLMNPQR`, { waitUntil: 'load' });
+        await page.waitForTimeout(600);
+        check('已登入時開啟登入連結先顯示切換確認', await page.isVisible('#confirm-btn'));
+        await page.click('#cancel-btn');
+        await page.waitForTimeout(300);
+        const cancelled = await page.evaluate(() => ({
+            token: localStorage.getItem('sync_token'),
+            userId: localStorage.getItem('sync_user_id')
+        }));
+        check('取消切換後保留原登入', cancelled.token === 'z'.repeat(43) && cancelled.userId === 'alice', cancelled);
+        check('取消切換後顯示手動登入碼表單', await page.isVisible('#pair-code'));
+
+        // 無效或已使用的連結：回到手動表單顯示錯誤，且不留下 session。
+        await page.evaluate(() => localStorage.clear());
+        await page.goto(`${BASE}?invalid-link=1#login=BADBADBADBADBADB`, { waitUntil: 'load' });
+        await page.waitForTimeout(900);
+        const invalidStored = await page.evaluate(() => ({
+            token: localStorage.getItem('sync_token'),
+            hash: location.hash
+        }));
+        check('無效登入連結不會建立 session', !invalidStored.token, invalidStored);
+        check('無效登入連結顯示手動登入碼表單', await page.isVisible('#pair-code'));
+        check('無效登入連結顯示錯誤訊息', /无效|無效/.test(await page.innerText('#pair-msg')));
+        check('無效登入連結 fragment 已移除', !/login=/i.test(invalidStored.hash), invalidStored.hash);
 
         check('沒有頁面例外', pageErrors.length === 0, pageErrors);
     } finally {

@@ -1,4 +1,5 @@
 import * as state from './state.js';
+import * as articleStore from './article-store.js';
 import { touch as syncTouch } from './sync-signals.js';
 import { t } from './i18n.js';
 
@@ -484,34 +485,56 @@ export function loadAppState() {
     }
 }
 
-// --- 文章分析歷史記錄存儲 ---
+// --- 文章分析歷史記錄存儲（已搬到 IndexedDB 逐篇儲存） ---
+//
+// 文章不再寫進同一個大 JSON（analyzedArticles）或同步快照。這個檔案只保留
+// 相容轉接層，讓舊呼叫端仍能運作；真正的讀寫在 modules/article-store.js。
+// 任何寫入失敗都會回報 `{ ok: false }`，不再靜默吞掉。
 
 /**
- * 保存已分析的文章列表。
+ * 保存已分析的文章清單（相容函式）。
+ * 新的儲存方式逐篇寫入 IndexedDB，因此這個函式只會觸發一次全量刷寫。
  */
-export function saveAnalyzedArticles(options = {}) {
+export async function saveAnalyzedArticles(options = {}) {
     const normalizedOptions = normalizePersistOptions(options);
-    localStorage.setItem('analyzedArticles', JSON.stringify(state.analyzedArticles));
-    updateGroupPersistence('articlesUpdatedAt', 'articles', normalizedOptions);
+    const list = Array.isArray(state.analyzedArticles) ? state.analyzedArticles : [];
+    let failed = 0;
+    for (const item of list) {
+        const result = await articleStore.saveArticle({
+            articleId: item.articleId,
+            article: item.article,
+            result: item.result,
+            title: item.title,
+            sourceType: item.sourceType,
+            sourceUrl: item.sourceUrl
+        }, { skipOutbox: normalizedOptions.skipOutbox === true, touch: false });
+        if (!result.ok) failed += 1;
+    }
+    if (failed) return { ok: false, error: 'article_save_failed', failed };
+    return { ok: true, count: list.length };
 }
 
 /**
- * 從 localStorage 加載已分析的文章列表。
+ * 載入文章清單（相容函式）。實際資料由 article-store 在啟動時 hydrate。
  */
 export function loadAnalyzedArticles() {
-    const articles = safeParseArray('analyzedArticles');
-    state.setAnalyzedArticles(articles);
+    // 由 main.js 呼叫 articleStore.initArticleStore() 完成；這裡不再讀取
+    // localStorage，避免新舊兩份資料同時存在。
+    return state.analyzedArticles;
 }
 
-export function deleteAnalyzedArticleByIndex(index, options = {}) {
+export async function deleteAnalyzedArticleByIndex(index, options = {}) {
     const normalizedIndex = Number.parseInt(index, 10);
     if (Number.isNaN(normalizedIndex) || normalizedIndex < 0) return null;
     const articles = Array.isArray(state.analyzedArticles) ? [...state.analyzedArticles] : [];
     if (normalizedIndex >= articles.length) return null;
-    const removed = articles.splice(normalizedIndex, 1)[0] || null;
-    state.setAnalyzedArticles(articles);
-    saveAnalyzedArticles(options);
-    if (options.deleteMeta !== false && removed && removed.articleId) {
+    const removed = articles[normalizedIndex] || null;
+    if (!removed || !removed.articleId) return null;
+    const result = await articleStore.deleteArticle(removed.articleId, {
+        skipOutbox: options.skipOutbox === true
+    });
+    if (!result.ok) return null;
+    if (options.deleteMeta !== false) {
         deleteArticleMetaById(removed.articleId, {
             ...options,
             preserveUpdatedAt: true,
@@ -521,19 +544,45 @@ export function deleteAnalyzedArticleByIndex(index, options = {}) {
     return removed;
 }
 
-export function clearAnalyzedArticles(options = {}) {
+export async function clearAnalyzedArticles(options = {}) {
     const removed = Array.isArray(state.analyzedArticles) ? [...state.analyzedArticles] : [];
-    state.setAnalyzedArticles([]);
-    saveAnalyzedArticles(options);
-    if (options.deleteMeta !== false) {
-        const ids = Array.from(new Set(removed.map(item => item && item.articleId).filter(Boolean)));
-        ids.forEach(id => deleteArticleMetaById(id, {
-            ...options,
-            preserveUpdatedAt: true,
-            suppressSyncTouch: true
-        }));
+    for (const item of removed) {
+        if (!item || !item.articleId) continue;
+        await articleStore.deleteArticle(item.articleId, { skipOutbox: options.skipOutbox === true });
+        if (options.deleteMeta !== false) {
+            deleteArticleMetaById(item.articleId, {
+                ...options,
+                preserveUpdatedAt: true,
+                suppressSyncTouch: true
+            });
+        }
     }
     return removed;
+}
+
+/**
+ * 保存單個文章的分析結果。
+ * 如果已存在，則更新；否則，新增。
+ * @param {string} article - 文章原文
+ * @param {object} result - 分析結果對象
+ * @param {object} [extra] - 額外資訊（例如 { articleId }）
+ * @returns {Promise<{ok:boolean,error?:string}>} 持久化結果（呼叫端必須處理失敗）
+ */
+export async function saveAnalysisResult(article, result, extra = {}) {
+    const articleId = extra && extra.articleId ? String(extra.articleId) : '';
+    const record = articleId ? articleStore.getRecord(articleId) : null;
+    const saved = await articleStore.saveArticle({
+        articleId,
+        article,
+        result,
+        title: record?.title,
+        sourceType: record?.sourceType,
+        sourceUrl: record?.sourceUrl
+    });
+    if (!saved.ok) {
+        console.warn('[storage] 文章未能寫入本機儲存:', saved.error);
+    }
+    return saved;
 }
 
 // --- 默寫 AI 批改歷史（LocalStorage） ---
@@ -585,34 +634,3 @@ export function clearGradingHistory(options = {}) {
     saveGradingHistoryList([], options);
 }
 
-/**
- * 保存單個文章的分析結果。
- * 如果已存在，則更新；否則，新增。
- * @param {string} article - 文章原文
- * @param {object} result - 分析結果對象
- * @param {object} [extra] - 額外資訊（例如 { articleId }）
- */
-export function saveAnalysisResult(article, result, extra = {}) {
-    const articles = [...state.analyzedArticles];
-    const articleId = extra && extra.articleId ? String(extra.articleId) : null;
-    let existingIndex = -1;
-    if (articleId) {
-        existingIndex = articles.findIndex(item => item && item.articleId === articleId);
-    }
-    if (existingIndex === -1) {
-        existingIndex = articles.findIndex(item => item && item.article === article);
-    }
-
-    const base = { article, result };
-    if (articleId) {
-        base.articleId = articleId;
-    }
-
-    if (existingIndex > -1) {
-        articles[existingIndex] = { ...articles[existingIndex], ...base };
-    } else {
-        articles.push(base);
-    }
-    state.setAnalyzedArticles(articles);
-    saveAnalyzedArticles(); // 持久化到localStorage（會觸發 articlesUpdatedAt）
-}

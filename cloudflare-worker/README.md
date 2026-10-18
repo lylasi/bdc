@@ -89,8 +89,8 @@ node add-user.mjs --admin <user_id> [label]  # 新帳戶直接設為 admin（既
 
 ## 遷移順序（正式切換）
 
-1. 備份 D1。
-2. 套用 migration。
+1. 備份 D1（`npx wrangler d1 export bdc-sync --remote --output backup-<date>.sql`）。
+2. 套用 migration（`001`～`004`；`004_article_storage.sql` 只新增文章表，不改既有資料）。
 3. 設定 `AI_CREDENTIAL_KEY_V1`、`AI_CATALOG_DIGEST_KEY`、`AI_CREDENTIAL_KEY_VERSION`，指定首名管理員。
 4. 部署新 Worker。
 5. 在私密發布副本移除靜態 AI 預設並通過掃描，再部署新版前端（`ai-config.js` 不再提供 API_URL／API_KEY／供應商／任務模型）。
@@ -106,8 +106,18 @@ node add-user.mjs --admin <user_id> [label]  # 新帳戶直接設為 admin（既
 | POST | `/pair` | 未登入；`{ userId, code, deviceLabel? }` → 一次性 session token |
 | GET | `/me` | `{ user_id, label, role }` |
 | GET | `/version` | 快照版本 |
-| GET | `/snapshot` | 快照或 `null` |
-| POST | `/snapshot` | body `{ expected_version, payload }`；衝突回 409 |
+| GET | `/snapshot` | 快照或 `null`；帳戶已遷移到逐篇文章儲存後不再回傳舊 `articles` 群組 |
+| POST | `/snapshot` | body `{ expected_version, payload }`；衝突回 409；舊格式文章群組回 409 `articles_legacy_write_blocked` |
+| GET | `/articles?cursor=N&limit=` | 文章增量同步（伺服器游標）；`resetRequired` 表示需完整重同步 |
+| GET | `/articles?full=1&includeDeleted=1` | 完整文章清單（僅 metadata，不含正文） |
+| POST | `/articles/batch` | `{ ids: [...] }` → 最多 50 篇完整文件 |
+| POST | `/articles` | 新增；`clientMutationId` 提供冪等重試 |
+| GET | `/articles/:id` | 單篇完整文件 |
+| PUT | `/articles/:id` | `{ expectedRevision, ... }` 原子版本檢查；衝突回 409 `article_revision_conflict` |
+| DELETE | `/articles/:id` | `{ expectedRevision }` 軟刪除（tombstone，可復原） |
+| POST | `/articles/:id/restore` | `{ expectedRevision }` 復原 |
+| POST | `/articles/import` | 舊快照文章匯入（冪等，保留原 ID）；`{ final: true }` 開啟舊寫入閘門 |
+| GET | `/articles/usage` | `{ count, totalBytes, limits, legacyWriteBlocked }` |
 | GET | `/ai-credentials` | 個人憑證中繼資料（不含 Key） |
 | GET | `/ai-credentials/:providerId` | 解密後的 Key、binding、version |
 | PUT | `/ai-credentials/:providerId` | `{ expectedVersion, mutationId, binding, apiKey }`，CAS 寫入 |
@@ -125,7 +135,7 @@ node add-user.mjs --admin <user_id> [label]  # 新帳戶直接設為 admin（既
 
 ### 錯誤碼
 
-`unauthorized`(401)、`passcode_upgrade_required`(403)、`origin_not_allowed`(403)、`admin_required`(403)、`admin_account_protected`(403)、`pairing_invalid`(403)、`credential_not_found`(404)、`credential_missing`(404)、`user_not_found`(404)、`version_conflict`(409)、`catalog_version_conflict`(409)、`mutation_conflict`(409)、`user_exists`(409)、`email_exists`(409)、`invalid_*`(400)、`payload_too_large`(413)、`rate_limited`(429)、`credential_unavailable`(503)。前端一律用 `t()` 翻譯穩定錯誤碼，不直接顯示英文。
+`unauthorized`(401)、`article_not_found`(404)、`article_revision_conflict`(409)、`article_already_deleted`(409)、`article_id_exists`(409)、`article_quota_exceeded`(409)、`article_count_exceeded`(409)、`articles_legacy_write_blocked`(409)、`article_too_large`(413)、`expected_revision_required`(400)、`passcode_upgrade_required`(403)、`origin_not_allowed`(403)、`admin_required`(403)、`admin_account_protected`(403)、`pairing_invalid`(403)、`credential_not_found`(404)、`credential_missing`(404)、`user_not_found`(404)、`version_conflict`(409)、`catalog_version_conflict`(409)、`mutation_conflict`(409)、`user_exists`(409)、`email_exists`(409)、`invalid_*`(400)、`payload_too_large`(413)、`rate_limited`(429)、`credential_unavailable`(503)。前端一律用 `t()` 翻譯穩定錯誤碼，不直接顯示英文。
 
 ### 金鑰加密
 
@@ -141,6 +151,26 @@ node add-user.mjs --admin <user_id> [label]  # 新帳戶直接設為 admin（既
 - 相同 `mutationId` 且內容相同 → 回原成功結果（不增加版本）；同 ID 不同內容 → 409。
 - 發布：`baseVersion` 必須等於當前最大版本；`INSERT ... ON CONFLICT(version) DO NOTHING` 保證只有一位管理員成功。
 - 發布歷史保留 10 版；使用者只能下載當前版本的共享 Key。
+
+## 文章逐篇儲存（第一階段）
+
+文章不再放在 `snapshots.payload.articles`，而是 `articles` 表每篇一列，擁有人以
+`users.user_id` 關聯（`label` 可改名、`token_hash` 會輪替，兩者都不是身份）。
+
+- `articles`：原文、分析 JSON、來源、`revision`、建立／修改時間、`deleted_at`、
+  `legacy_article_id`（舊資料冪等映射）與 `size_bytes`。
+- `article_changes`：每位使用者單調遞增的 `seq`，客戶端以游標增量同步；文章寫入與
+  變更記錄在同一個 D1 batch（交易）內完成。
+- `article_state`：`next_seq`、`legacy_write_blocked`、`migrated_at`。
+
+產品限制在 `shared/article-protocol.mjs`：單篇 800 KB（原文＋分析 JSON 的 UTF-8
+位元組）、每人 50 MB、400 篇提示／1,000 篇上限、原文 20k 字元提示／100k 上限。
+超限回 413／409，不刪除既有資料。
+
+舊客戶端升級流程：新版客戶端會先把本機與雲端快照中的文章以 `POST /articles/import`
+逐篇匯入（保留原文章 ID，重試不會重複），完成後以 `{ final: true }` 開啟閘門；此後
+`POST /snapshot` 若仍帶有非空文章群組會回 409 `articles_legacy_write_blocked`，
+其他群組照常同步。`GET /snapshot` 也會隱藏舊文章群組，避免新裝置重複匯入。
 
 ## 備份與輪換
 

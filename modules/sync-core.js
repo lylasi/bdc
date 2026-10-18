@@ -6,12 +6,10 @@ import * as cache from './cache.js';
 import {
   saveVocabularyBooks,
   saveAppState,
-  saveAnalyzedArticles,
-  getAllArticleMetas,
-  replaceArticleMetas,
   getGradingHistory,
   saveGradingHistory
 } from './storage.js';
+import * as articleStore from './article-store.js';
 import { loadGlobalSettings } from './settings.js';
 import { sanitizeAISettings } from './ai-settings-sanitize.js';
 import { applyRemoteAISettings, getAIProfileUpdatedAt } from './ai-profile-storage.js';
@@ -148,54 +146,6 @@ async function writeAssistantSnapshotPayload(payload, options = {}) {
   } catch (_) {}
 }
 
-// Compact policy for articles:
-// - sentence_analysis: keep only 1 per (sentence+context); prefer latest updatedAt
-// - phrase_analysis: for each (sentence+context), keep top 3 by updatedAt
-function compactAnalyzedArticles(arr) {
-  try {
-    if (!Array.isArray(arr)) return [];
-    const out = [];
-    for (const item of arr) {
-      const r = item && item.result ? { ...item.result } : null;
-      if (!r) { out.push(item); continue; }
-      // sentence_analysis
-      if (Array.isArray(r.sentence_analysis)) {
-        const map = new Map();
-        const keyOf = (s, c) => `${String(s || '').trim()}||${String(c || '').trim()}`.toLowerCase();
-        for (const it of r.sentence_analysis) {
-          const k = keyOf(it?.sentence, it?.context || it?._context);
-          const prev = map.get(k);
-          if (!prev) map.set(k, it);
-          else {
-            const pa = String(prev?.updatedAt || '');
-            const pb = String(it?.updatedAt || '');
-            if (pb > pa) map.set(k, it); else map.set(k, prev);
-          }
-        }
-        r.sentence_analysis = Array.from(map.values());
-      }
-      // phrase_analysis
-      if (Array.isArray(r.phrase_analysis)) {
-        const buckets = new Map();
-        const keySC = (s, c) => `${String(s || '').trim()}||${String(c || '').trim()}`.toLowerCase();
-        for (const it of r.phrase_analysis) {
-          const k = keySC(it?.sentence, it?.context || it?._context);
-          if (!buckets.has(k)) buckets.set(k, []);
-          buckets.get(k).push(it);
-        }
-        const merged = [];
-        for (const list of buckets.values()) {
-          list.sort((a, b) => String(b?.updatedAt || '').localeCompare(String(a?.updatedAt || '')));
-          merged.push(...list.slice(0, 3));
-        }
-        r.phrase_analysis = merged;
-      }
-      out.push({ ...item, result: r });
-    }
-    return out;
-  } catch (_) { return Array.isArray(arr) ? arr : []; }
-}
-
 async function applyDictationPayload(remote, force = false) {
   const remoteGroup = remote?.dictation;
   if (remoteGroup && typeof remoteGroup === 'object') {
@@ -266,27 +216,42 @@ function applyVocabularyPayload(remote, force = false) {
   }
 }
 
-function applyArticlesPayload(remote, force = false) {
-  const remoteA = remote?.articles;
-  if (!remoteA || typeof remoteA !== 'object') return;
-  const localUpdatedAt = getLocalUpdatedAt('articlesUpdatedAt', false);
-  if (!shouldApplyGroup(remoteA.updatedAt, localUpdatedAt, force)) return;
-
-  if (Array.isArray(remoteA.analyzedArticles)) {
-    const compacted = compactAnalyzedArticles(remoteA.analyzedArticles);
-    state.setAnalyzedArticles(compacted);
-    saveAnalyzedArticles({
-      preserveUpdatedAt: true,
-      updatedAtOverride: remoteA.updatedAt,
-      suppressSyncTouch: true
+// 文章已搬到逐篇儲存：舊快照裡的 articles 群組只當成「一次性匯入來源」。
+// 已存在的本機記錄不覆蓋；匯入後由文章同步走 /articles 接口，不再回寫快照。
+async function applyArticlesPayload(remote) {
+  const legacy = remote?.articles;
+  if (!legacy || typeof legacy !== 'object') return;
+  const metas = Array.isArray(legacy.articleMetas) ? legacy.articleMetas : [];
+  const metaById = new Map();
+  for (const meta of metas) {
+    if (meta && meta.id) metaById.set(String(meta.id), meta);
+  }
+  const entries = [];
+  for (const item of Array.isArray(legacy.analyzedArticles) ? legacy.analyzedArticles : []) {
+    if (!item || typeof item.article !== 'string' || !item.article.trim()) continue;
+    const id = item.articleId ? String(item.articleId) : '';
+    const meta = id ? metaById.get(id) : null;
+    entries.push({
+      articleId: id || (meta && meta.id) || '',
+      article: item.article,
+      result: item.result === undefined ? null : item.result,
+      title: meta?.title || item.title || '',
+      sourceType: meta?.sourceType || item.sourceType,
+      sourceUrl: meta?.sourceUrl || item.sourceUrl,
+      createdAt: meta?.createdAt || item.createdAt,
+      updatedAt: item.result?.updatedAt || meta?.updatedAt || ''
     });
   }
-  if (Array.isArray(remoteA.articleMetas)) {
-    replaceArticleMetas(remoteA.articleMetas, {
-      preserveUpdatedAt: true,
-      updatedAtOverride: remoteA.updatedAt,
-      suppressSyncTouch: true
-    });
+  // 沒有文章的 meta 也一併保留，避免生詞本與來源關聯斷掉
+  for (const meta of metas) {
+    if (!meta || !meta.id) continue;
+    if (entries.some((entry) => entry.articleId === String(meta.id))) continue;
+    entries.push({ articleId: String(meta.id), article: '', title: meta.title || '', sourceType: meta.sourceType, sourceUrl: meta.sourceUrl, createdAt: meta.createdAt });
+  }
+  try {
+    await articleStore.importLegacyArticles(entries.filter((entry) => entry.article && entry.article.trim()));
+  } catch (error) {
+    console.warn('[sync] 舊文章匯入失敗:', error && error.code ? error.code : 'unknown');
   }
 }
 
@@ -355,7 +320,15 @@ async function applySnapshotPayload(payload, force = false) {
   const remote = payload || {};
   await applyDictationPayload(remote, force);
   applyVocabularyPayload(remote, force);
-  applyArticlesPayload(remote, force);
+  await applyArticlesPayload(remote);
+  // 備份／匯出帶的完整文章文件（新格式）：離線還原時一併寫回逐篇儲存。
+  if (Array.isArray(remote.articleDocuments) && remote.articleDocuments.length) {
+    try {
+      await articleStore.importDocuments(remote.articleDocuments, { replace: force === true });
+    } catch (error) {
+      console.warn('[sync] 文章文件還原失敗:', error && error.code ? error.code : 'unknown');
+    }
+  }
   applyQAPayload(remote, force);
   applyAISettingsPayload(remote, force);
   await applyAssistantPayload(remote, force);
@@ -371,7 +344,6 @@ export async function buildLocalSnapshot() {
   const dictationUpdatedAt = getLocalUpdatedAt(DICTATION_UPDATED_AT_KEY, false) || String(dictation.updatedAt || '');
   // Do NOT auto-create timestamps when missing; treat as unknown so remote wins on first run after local wipe
   const vocabularyUpdatedAt = getLocalUpdatedAt('vocabularyUpdatedAt', false);
-  const articlesUpdatedAt = getLocalUpdatedAt('articlesUpdatedAt', false);
 
   // QA group (user-created only)
   const qaManifest = (() => {
@@ -402,9 +374,8 @@ export async function buildLocalSnapshot() {
   const globalSettings = loadGlobalSettings();
   const aiSettingsUpdatedAt = getAIProfileUpdatedAt();
 
-  // Compact articles before push to reduce payload
-  const compactArticles = compactAnalyzedArticles(state.analyzedArticles);
-  const articleMetas = getAllArticleMetas();
+  // 文章不再放進快照：每篇獨立資料列，由 modules/article-sync.js 以自己的游標同步。
+  // 保留 `articles` 之外的群組語意，其他資料照舊走 snapshot LWW。
   const gradingHistory = getGradingHistory();
 
   return {
@@ -423,11 +394,6 @@ export async function buildLocalSnapshot() {
         updatedAt: vocabularyUpdatedAt,
         books: state.vocabularyBooks,
         activeBookId: state.activeBookId
-      },
-      articles: {
-        updatedAt: articlesUpdatedAt,
-        analyzedArticles: compactArticles,
-        articleMetas
       },
       qa: {
         updatedAt: qaUpdatedAt,
@@ -488,14 +454,9 @@ export function lwwMerge(localPayload, remotePayload) {
     out.vocabulary = lv;
   }
 
-  // articles group-level LWW
-  const la = localPayload?.articles;
-  const ra = remotePayload?.articles;
-  const lats = String(la?.updatedAt || '');
-  const rats = String(ra?.updatedAt || '');
-  if (la && (!ra || lats > rats)) {
-    out.articles = la;
-  }
+  // 文章群組不再參與快照合併（獨立逐篇同步）。遠端舊群組只在套用時匯入，
+  // 不會被回寫，避免舊客戶端把已刪除的文章帶回來。
+  delete out.articles;
 
   // qa group-level LWW
   const lq = localPayload?.qa;

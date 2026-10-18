@@ -6,10 +6,18 @@
 //
 // Routes:
 //   OPTIONS *                                     CORS preflight
+//   GET  /auth-capabilities                       supported login methods (no auth)
 //   GET  /me                                      { user_id, label, role }
 //   GET  /version                                 { version }
 //   GET  /snapshot                                { version, updated_at, payload } | null
 //   POST /snapshot                                CAS write (409 on conflict)
+//   GET  /articles                                article list / incremental cursor sync
+//   POST /articles                                create one article (idempotent)
+//   POST /articles/batch                          read several article documents
+//   POST /articles/import                         import legacy snapshot articles
+//   GET  /articles/usage                          article count / byte usage
+//   GET|PUT|DELETE /articles/:id                  read / CAS update / soft delete
+//   POST /articles/:id/restore                    undo a soft delete (CAS)
 //   POST /pair                                    device pairing code → session token (no auth)
 //   POST /reset-token                             recovery-code reset (no auth)
 //   POST /change-token                            change own passcode
@@ -22,7 +30,8 @@
 //   POST /admin/users                             admin creates a user (one-time secret)
 //   PUT  /admin/users/:id                         admin edits label/email
 //   POST /admin/users/:id/reset-passcode          admin resets a non-admin user
-//   POST /admin/users/:id/pairing-code            admin issues a one-time pairing code
+//   POST /admin/users/:id/pairing-code            admin issues a one-time login code
+//   DELETE /admin/users/:id/pairing-codes         admin revokes unused login codes
 //
 // Secrets (set with `wrangler secret put`): AI_CREDENTIAL_KEY_V1,
 // AI_CATALOG_DIGEST_KEY. Plain vars: AI_CREDENTIAL_KEY_VERSION, ALLOWED_ORIGINS.
@@ -40,6 +49,8 @@ import { handleCatalogRoute } from './ai-catalog.js';
 import { handleAdminUsersRoute } from './admin-users.js';
 import { handlePairRequest } from './device-pairing.js';
 import { sanitizeSnapshotPayload } from './snapshot-sanitize.js';
+import { handleArticlesRoute, isLegacyArticleWriteBlocked } from './articles.js';
+import { snapshotCarriesArticles } from '../../shared/article-protocol.mjs';
 import { sha256Hex } from './token.js';
 
 const MIN_AI_PASSCODE_LENGTH = 32;
@@ -182,7 +193,13 @@ async function handleSnapshot(request, env, user, path) {
     if (!row) return json(null, 200, env, request);
     let payload = {};
     try { payload = JSON.parse(row.payload || '{}'); } catch (_) { payload = {}; }
-    return json({ version: row.version, updated_at: row.updated_at, payload: sanitizeSnapshotPayload(payload) }, 200, env, request);
+    payload = sanitizeSnapshotPayload(payload);
+    // 帳戶已改用逐篇文章儲存後，快照不再回傳舊的文章群組，避免新裝置把
+    // 已刪除或過期的文章當成最新資料重新匯入。其他群組維持不變。
+    if (snapshotCarriesArticles(payload) && await isLegacyArticleWriteBlocked(env, user.user_id)) {
+      delete payload.articles;
+    }
+    return json({ version: row.version, updated_at: row.updated_at, payload }, 200, env, request);
   }
 
   if (path === '/snapshot' && request.method === 'POST') {
@@ -193,7 +210,19 @@ async function handleSnapshot(request, env, user, path) {
     const expected = Number.isInteger(body && body.expected_version) ? body.expected_version : 0;
     const payload = body ? body.payload : undefined;
     if (payload === undefined || payload === null) return errorJson('missing_payload', 400, env, request);
-    const payloadStr = JSON.stringify(sanitizeSnapshotPayload(payload));
+    const sanitized = sanitizeSnapshotPayload(payload);
+    // 舊客戶端仍會把整包文章塞進快照。文章搬到獨立表之後，這條路徑必須關閉，
+    // 否則兩個寫入來源會互相覆蓋；其他群組的更新不受影響。
+    if (snapshotCarriesArticles(sanitized) && await isLegacyArticleWriteBlocked(env, user.user_id)) {
+      return json({
+        error: 'articles_legacy_write_blocked',
+        code: 'articles_legacy_write_blocked',
+        conflict: true,
+        upgradeRequired: true
+      }, 409, env, request);
+    }
+    if (sanitized && typeof sanitized === 'object') delete sanitized.articles;
+    const payloadStr = JSON.stringify(sanitized);
     const updatedAt = new Date().toISOString();
     const row = await env.DB
       .prepare('SELECT version FROM snapshots WHERE user_id = ?')
@@ -250,6 +279,17 @@ export default {
     const origin = request.headers.get('Origin');
     if (origin && !isOriginAllowed(env, request)) return errorJson('origin_not_allowed', 403, env, request);
 
+    if (path === '/auth-capabilities') {
+      if (request.method !== 'GET') return errorJson('method_not_allowed', 405, env, request);
+      return json({
+        pairingLogin: true,
+        loginLinks: true,
+        // Password login is deliberately not implemented yet. The frontend
+        // uses this flag so it does not advertise a method the Worker lacks.
+        passwordLogin: false
+      }, 200, env, request);
+    }
+
     if (path === '/pair') {
       if (request.method !== 'POST') return errorJson('method_not_allowed', 405, env, request);
       return handlePairRequest({ request, env });
@@ -280,6 +320,16 @@ export default {
 
       if (path === '/version' || path === '/snapshot') {
         return handleSnapshot(request, env, user, path);
+      }
+
+      if (path === '/articles' || path.startsWith('/articles/')) {
+        return handleArticlesRoute({
+          request,
+          env,
+          url,
+          user,
+          rest: path.slice('/articles'.length)
+        });
       }
 
       if (path === '/ai-credentials' || path.startsWith('/ai-credentials/')) {

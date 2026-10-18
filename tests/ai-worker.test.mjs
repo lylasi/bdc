@@ -690,17 +690,19 @@ test('device pairing: one-time codes, session auth and revocation', async () => 
     }), env);
     assert.equal(issued.status, 200);
     const issuedBody = await issued.json();
-    assert.match(issuedBody.code, /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{12}$/);
+    assert.match(issuedBody.code, /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{16}$/);
     assert.equal(issuedBody.userId, 'alice');
-    assert.ok(issuedBody.expiresAt > new Date().toISOString());
+    assert.equal(issuedBody.ttlSeconds, 604800);
+    assert.ok(Date.parse(issuedBody.expiresAt) - Date.now() > 6.9 * 24 * 60 * 60 * 1000);
     // Only the hash is stored.
     assert.ok(db.pairingCodes.has(sha256(issuedBody.code)));
     assert.equal(JSON.stringify([...db.pairingCodes.values()]).includes(issuedBody.code), false);
 
-    // Pairing accepts lowercase and separators; it returns a 43-character token.
+    // Login accepts lowercase/separators and a case-insensitive user id, and
+    // returns a 43-character session token.
     const formatted = issuedBody.code.toLowerCase().match(/.{1,4}/g).join('-');
     const paired = await worker.fetch(req('/pair', {
-        method: 'POST', token: '', body: { userId: 'alice', code: formatted, deviceLabel: 'test' }
+        method: 'POST', token: '', body: { userId: 'ALICE', code: formatted, deviceLabel: 'test' }
     }), env);
     assert.equal(paired.status, 200);
     const pairedBody = await paired.json();
@@ -722,6 +724,16 @@ test('device pairing: one-time codes, session auth and revocation', async () => 
     // Pairing does not invalidate the original passcode.
     const originalMe = await worker.fetch(req('/me', { token: ALICE_TOKEN }), env);
     assert.equal(originalMe.status, 200);
+
+    // Legacy 12-character codes still work, and userId is optional: the code
+    // itself identifies the account.
+    const legacyCode = 'ABCDEFGHJKLM';
+    db.addPairingCode({ code: legacyCode, userId: 'alice' });
+    const legacyPaired = await worker.fetch(req('/pair', {
+        method: 'POST', token: '', body: { code: legacyCode }
+    }), env);
+    assert.equal(legacyPaired.status, 200);
+    assert.equal((await legacyPaired.json()).user_id, 'alice');
 
     // A pairing code is single-use.
     const reused = await worker.fetch(req('/pair', {
@@ -773,6 +785,81 @@ test('device pairing: one-time codes, session auth and revocation', async () => 
     assert.ok(db.audits.some((item) => item.action === 'user_pairing_code'));
     assert.equal(JSON.stringify(db.audits).includes(issuedBody.code), false);
     assert.equal(JSON.stringify(db.audits).includes(pairedBody.token), false);
+});
+
+test('login code TTL options, default and revocation', async () => {
+    const db = new FakeD1();
+    db.addUser({ token: ADMIN_TOKEN, userId: 'admin', role: 'admin' });
+    db.addUser({ token: ALICE_TOKEN, userId: 'alice' });
+    const env = makeEnv(db);
+
+    const invalid = await worker.fetch(req('/admin/users/alice/pairing-code', {
+        method: 'POST', token: ADMIN_TOKEN, body: { ttlSeconds: 3600 }
+    }), env);
+    assert.equal(invalid.status, 400);
+    assert.equal((await invalid.json()).code, 'invalid_ttl');
+
+    const oneDay = await worker.fetch(req('/admin/users/alice/pairing-code', {
+        method: 'POST', token: ADMIN_TOKEN, body: { ttlSeconds: 86400 }
+    }), env);
+    const oneDayBody = await oneDay.json();
+    assert.equal(oneDayBody.ttlSeconds, 86400);
+    const oneDayMs = Date.parse(oneDayBody.expiresAt) - Date.now();
+    assert.ok(oneDayMs > 23.9 * 3600 * 1000 && oneDayMs <= 24 * 3600 * 1000 + 5000);
+
+    const tenMinutes = await worker.fetch(req('/admin/users/alice/pairing-code', {
+        method: 'POST', token: ADMIN_TOKEN, body: { ttlSeconds: 600 }
+    }), env);
+    assert.equal((await tenMinutes.json()).ttlSeconds, 600);
+
+    const thirtyDays = await worker.fetch(req('/admin/users/alice/pairing-code', {
+        method: 'POST', token: ADMIN_TOKEN, body: { ttlSeconds: 2592000 }
+    }), env);
+    assert.equal((await thirtyDays.json()).ttlSeconds, 2592000);
+
+    // Empty body keeps the seven-day default.
+    const defaulted = await worker.fetch(req('/admin/users/alice/pairing-code', {
+        method: 'POST', token: ADMIN_TOKEN
+    }), env);
+    assert.equal((await defaulted.json()).ttlSeconds, 604800);
+
+    const denied = await worker.fetch(req('/admin/users/alice/pairing-codes', {
+        method: 'DELETE', token: ALICE_TOKEN
+    }), env);
+    assert.equal(denied.status, 403);
+
+    const adminProtected = await worker.fetch(req('/admin/users/admin/pairing-codes', {
+        method: 'DELETE', token: ADMIN_TOKEN
+    }), env);
+    assert.equal(adminProtected.status, 403);
+    assert.equal((await adminProtected.json()).code, 'admin_account_protected');
+
+    const revoke = await worker.fetch(req('/admin/users/alice/pairing-codes', {
+        method: 'DELETE', token: ADMIN_TOKEN
+    }), env);
+    assert.equal(revoke.status, 200);
+    const revokeBody = await revoke.json();
+    assert.equal(revokeBody.userId, 'alice');
+    assert.equal(revokeBody.revoked, 4);
+    assert.equal([...db.pairingCodes.values()].filter((row) => row.user_id === 'alice' && !row.used_at).length, 0);
+    assert.ok(db.audits.some((item) => item.action === 'user_pairing_codes_revoke'));
+
+    const afterRevoke = await worker.fetch(req('/pair', {
+        method: 'POST', token: '', body: { code: oneDayBody.code }
+    }), env);
+    assert.equal(afterRevoke.status, 403);
+});
+
+test('auth capabilities expose login-code support', async () => {
+    const db = new FakeD1();
+    const env = makeEnv(db);
+    const res = await worker.fetch(req('/auth-capabilities'), env);
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), {
+        pairingLogin: true,
+        loginLinks: true,
+        passwordLogin: false
+    });
 });
 
 test('passcode change and recovery reset revoke paired sessions', async () => {

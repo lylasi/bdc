@@ -13,12 +13,140 @@ import { ARTICLE_IMPORT } from '../../ai-config.js';
 import { getAllQASets, loadQASet } from '../qa/qa-storage.js';
 import * as cache from '../../modules/cache.js';
 import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
-import { t, formatDateTime, createCollator } from '../../modules/i18n.js';
+import { t, formatDateTime, createCollator, getLocaleTag } from '../../modules/i18n.js';
 import { inlineMarkdownToHtml } from '../../modules/markdown.js';
+import * as articleStore from '../../modules/article-store.js';
+import * as articleSync from '../../modules/article-sync.js';
 
 // =================================
 // Article Analysis Feature
 // =================================
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 文章身份與非同步工作歸屬
+//
+// 「編輯已載入的記錄」與「匯入另一篇」是兩件事：
+//   * 載入閱讀記錄 → articleContext.recordId 指著那篇；
+//   * 任何匯入入口（文章庫／網址／OCR／檔案／問答集）→ 先清掉 recordId，
+//     分析時才會建立新記錄，不會把 B 寫進 A；
+//   * 重新分析同一篇（含手改內文）→ 沿用 recordId 與文章專屬生詞本。
+//
+// 每個非同步工作（主分析、重試、詞／句／片語）啟動時固定
+// { runId, articleId, controller }，回應時只寫回自己那一篇，DOM 也只在自己的
+// run 仍是目前工作時更新。
+// ─────────────────────────────────────────────────────────────────────────────
+const articleContext = {
+    recordId: null,
+    origin: 'idle'   // 'loaded' | 'analyzed' | 'imported' | 'idle'
+};
+
+let runSeq = 0;
+let activeRun = null;
+
+function beginImportContext() {
+    articleContext.recordId = null;
+    articleContext.origin = 'imported';
+}
+
+/** 所有匯入入口都經過這裡：先換編輯上下文，再決定是否命中既有來源。 */
+function applyImportedArticle(text, meta = {}) {
+    beginImportContext();
+    if (dom.articleInput) dom.articleInput.value = text;
+    clearCurrentArticleSourceMeta();
+    const sourceType = meta.sourceType || 'paste';
+    setCurrentArticleSourceMeta({
+        sourceType,
+        sourceUrl: meta.sourceUrl || '',
+        title: meta.title || ''
+    });
+    try { notifyAssistantArticleChanged(); } catch (_) {}
+    if (typeof updateHistoryIndicators === 'function') updateHistoryIndicators();
+}
+
+function setLoadedArticleContext(recordId, meta = {}) {
+    articleContext.recordId = recordId || null;
+    articleContext.origin = recordId ? 'loaded' : 'idle';
+    if (recordId && typeof state.setCurrentArticleId === 'function') state.setCurrentArticleId(recordId);
+    if (recordId && typeof state.setCurrentWordbookId === 'function') state.setCurrentWordbookId(recordId);
+    if (meta && meta.sourceType) {
+        setCurrentArticleSourceMeta({
+            sourceType: meta.sourceType,
+            sourceUrl: meta.sourceUrl || '',
+            title: meta.title || ''
+        });
+    }
+}
+
+function resetArticleContext() {
+    articleContext.recordId = null;
+    articleContext.origin = 'idle';
+    try {
+        if (typeof state.setCurrentArticleId === 'function') state.setCurrentArticleId(null);
+        if (typeof state.setCurrentWordbookId === 'function') state.setCurrentWordbookId(null);
+    } catch (_) { /* ignore */ }
+}
+
+/**
+ * 決定這次分析要寫進哪一篇：
+ *   1. 正在編輯已載入的記錄 → 沿用（重新分析不換 ID、不裂出生詞本）
+ *   2. 本機已有相同網址的記錄 → 沿用該篇（同帳戶內）
+ *   3. 其他 → 建立新 ID
+ */
+function resolveAnalysisArticleId() {
+    if (articleContext.recordId && articleStore.getRecord(articleContext.recordId)) {
+        return { id: articleContext.recordId, reused: true };
+    }
+    const ds = (dom.articleInput && dom.articleInput.dataset) || {};
+    if ((ds.sourceType || 'paste') === 'url' && (ds.sourceUrl || '').trim()) {
+        const url = ds.sourceUrl.trim();
+        const existing = articleStore.getRecords().find((record) => (
+            record && record.sourceType === 'url' && (record.sourceUrl || '').trim() === url
+        ));
+        if (existing) return { id: existing.articleId, reused: true };
+    }
+    return { id: null, reused: false };
+}
+
+function createRun(articleId, controller) {
+    runSeq += 1;
+    return {
+        runId: runSeq,
+        articleId: articleId || null,
+        controller,
+        startedAt: Date.now(),
+        cancelled: false
+    };
+}
+
+function isRunActive(run) {
+    return !!run && activeRun === run && run.cancelled !== true;
+}
+
+/** 分析按鈕的狀態只能由「目前的工作」決定；取消後一定要還原，否則會卡在停用。 */
+function resetAnalyzeButton() {
+    if (!dom.analyzeArticleBtn) return;
+    dom.analyzeArticleBtn.disabled = false;
+    dom.analyzeArticleBtn.textContent = t('article.analyze');
+}
+
+function cancelActiveRun(reason) {
+    const run = activeRun;
+    activeRun = null;
+    if (!run) {
+        resetAnalyzeButton();
+        return;
+    }
+    run.cancelled = true;
+    try { run.controller?.abort(reason || 'article-switched'); } catch (_) {}
+    // 舊工作不會再走到自己的 finally，這裡負責把共用 UI 還原
+    resetAnalyzeButton();
+    const inline = dom.articleAnalysisContainer?.querySelector('.inline-progress');
+    if (inline) inline.remove();
+}
+
+function isCurrentArticle(articleId) {
+    return !!articleId && articleContext.recordId === articleId;
+}
 
 // 對 AI 助手通報：文章內容已變更，請按新上下文切換對話（不覆寫使用者已選會話）。
 async function notifyAssistantArticleChanged() {
@@ -137,7 +265,8 @@ function buildArticleMetaInput(articleText, parsedTitle) {
 export function initArticle() {
     document.addEventListener('bdc:locale-change', () => {
         updateArticleSourceBarFromDataset();
-        populateArticleHistorySelect();
+        refreshHistoryModal();
+        updateHistoryIndicators();
         // 朗讀列只在第一次朗讀時建立，切換語言時要手動刷新它的文字
         applyFloatingReaderTexts();
         updateFloatingToggle();
@@ -148,10 +277,29 @@ export function initArticle() {
         }
     });
     dom.analyzeArticleBtn.addEventListener('click', analyzeArticle);
-    dom.clearArticleBtn.addEventListener('click', clearArticleInput);
-    dom.articleHistorySelect.addEventListener('change', loadSelectedArticle);
-    if (dom.manageHistoryBtn) dom.manageHistoryBtn.addEventListener('click', openArticleHistoryManager);
-    dom.deleteHistoryBtn.addEventListener('click', deleteSelectedArticleHistory);
+    dom.clearArticleBtn.addEventListener('click', () => clearArticleInput());
+    if (dom.articleHistoryBtn) dom.articleHistoryBtn.addEventListener('click', openArticleHistory);
+    if (dom.articleHistoryStatus) {
+        dom.articleHistoryStatus.addEventListener('click', toggleHistoryFromStatus);
+        dom.articleHistoryStatus.type = 'button';
+    }
+    // 復原按鈕可能在文章頁或閱讀記錄彈窗內，用事件委派避免每次重繪都要重新綁定
+    document.addEventListener('click', (event) => {
+        const button = event.target && event.target.closest ? event.target.closest('.article-history-undo-btn') : null;
+        if (!button) return;
+        event.preventDefault();
+        undoLastDelete();
+    });
+    // 輸入框內容變動 → 狀態列（尚未存入 / 草稿）即時更新
+    dom.articleInput.addEventListener('input', () => {
+        updateHistoryIndicators();
+    });
+    // 帳戶切換：範圍內的資料由 article-store 重新載入，畫面不得沿用上一個帳戶的文章
+    document.addEventListener('bdc:articles-scope-changed', () => {
+        clearArticleInput({ keepDraft: false });
+        updateHistoryIndicators();
+    });
+    window.addEventListener('bdc:articles-change', () => { updateHistoryIndicators(); });
     dom.readArticleBtn.addEventListener('click', handleReadButtonClick);
     dom.stopReadArticleBtn.addEventListener('click', stopReadArticle);
     dom.downloadAudioBtn.addEventListener('click', downloadAudio);
@@ -260,7 +408,7 @@ export function initArticle() {
         try { applyDim(); } catch(_) {}
     }
 
-    populateArticleHistorySelect();
+    updateHistoryIndicators();
     try { updateArticleSourceBarFromDataset(); } catch (_) {}
 
     // 選字快速加入生詞本（文章詳解區）
@@ -507,13 +655,10 @@ function openArticleImportModal() {
         if (applyBtn) applyBtn.addEventListener('click', () => {
             const md = (afterEl && afterEl.textContent && afterEl.textContent.trim()) || (beforeEl && beforeEl.textContent) || '';
             if (md && dom.articleInput) {
-                dom.articleInput.value = md;
                 const rawUrl = (urlInput && urlInput.value) ? urlInput.value.trim() : '';
-                if (rawUrl) {
-                    setCurrentArticleSourceMeta({ sourceType: 'url', sourceUrl: rawUrl });
-                } else {
-                    setCurrentArticleSourceMeta({ sourceType: 'paste' });
-                }
+                applyImportedArticle(md, rawUrl
+                    ? { sourceType: 'url', sourceUrl: rawUrl }
+                    : { sourceType: 'paste' });
                 try { ui.closeModal(); } catch(_) {}
                 try { dom.articleInput.focus(); } catch (_) {}
                 // 通知 AI 助手：文章已切換
@@ -540,10 +685,7 @@ function openArticleImportModal() {
                     let after = merged;
                     try { after = await api.aiCleanArticleMarkdown(merged, { timeoutMs: 25000, model: modelSelect && modelSelect.value, keepImages: keepImagesChk ? !!keepImagesChk.checked : true, onNotice: onImportNotice }); } catch(_) {}
                     if (autoApplyChk && autoApplyChk.checked) {
-                        if (dom.articleInput) {
-                            dom.articleInput.value = after;
-                            setCurrentArticleSourceMeta({ sourceType: 'file' });
-                        }
+                        applyImportedArticle(after, { sourceType: 'file' });
                         try { ui.closeModal(); } catch(_) {}
                         try { dom.articleInput.focus(); } catch(_) {}
                         try { notifyAssistantArticleChanged(); } catch(_) {}
@@ -590,14 +732,11 @@ function openArticleImportModal() {
                             try {
                                 const after = await api.aiExtractArticleFromHtml(html, { url: (urlInput && urlInput.value) || '', keepImages: keepImagesChk ? !!keepImagesChk.checked : true, model: modelSelect && modelSelect.value, timeoutMs: 30000, onNotice: onImportNotice });
                                 if (autoApplyChk && autoApplyChk.checked) {
-                                    if (dom.articleInput) {
-                                        dom.articleInput.value = after;
+                                    {
                                         const rawUrl = (urlInput && urlInput.value) ? urlInput.value.trim() : '';
-                                        if (rawUrl) {
-                                            setCurrentArticleSourceMeta({ sourceType: 'url', sourceUrl: rawUrl });
-                                        } else {
-                                            setCurrentArticleSourceMeta({ sourceType: 'paste' });
-                                        }
+                                        applyImportedArticle(after, rawUrl
+                                            ? { sourceType: 'url', sourceUrl: rawUrl }
+                                            : { sourceType: 'paste' });
                                     }
                                     try { ui.closeModal(); } catch(_) {}
                                     try { dom.articleInput.focus(); } catch(_) {}
@@ -650,10 +789,7 @@ function openArticleImportModal() {
                         throw new Error((e && e.message) ? e.message : t('article.directFetchFailed'));
                     }
                     if (autoApplyChk && autoApplyChk.checked) {
-                        if (dom.articleInput) {
-                            dom.articleInput.value = after;
-                            setCurrentArticleSourceMeta({ sourceType: 'url', sourceUrl: url });
-                        }
+                        applyImportedArticle(after, { sourceType: 'url', sourceUrl: url });
                         try { ui.closeModal(); } catch(_) {}
                         try { dom.articleInput.focus(); } catch (_) {}
                         try { notifyAssistantArticleChanged(); } catch(_) {}
@@ -677,14 +813,11 @@ function openArticleImportModal() {
                             after = await api.aiCleanArticleMarkdown(before, { timeoutMs: 25000, model: modelSelect && modelSelect.value, keepImages: keepImagesChk ? !!keepImagesChk.checked : true, onNotice: onImportNotice, onProgress });
                         } catch (_) { /* keep before */ }
                             if (autoApplyChk && autoApplyChk.checked) {
-                                if (dom.articleInput) {
-                                    dom.articleInput.value = after;
-                                    setCurrentArticleSourceMeta({
-                                        sourceType: 'url',
-                                        sourceUrl: url,
-                                        title: res && res.title ? String(res.title) : ''
-                                    });
-                                }
+                                applyImportedArticle(after, {
+                                    sourceType: 'url',
+                                    sourceUrl: url,
+                                    title: res && res.title ? String(res.title) : ''
+                                });
                                 try { ui.closeModal(); } catch(_) {}
                                 try { dom.articleInput.focus(); } catch (_) {}
                                 try { notifyAssistantArticleChanged(); } catch(_) {}
@@ -694,14 +827,11 @@ function openArticleImportModal() {
                             if (previewBox) previewBox.style.display = 'block';
                         }
                         } else {
-                            if (dom.articleInput) {
-                                dom.articleInput.value = before;
-                                setCurrentArticleSourceMeta({
-                                    sourceType: 'url',
-                                    sourceUrl: url,
-                                    title: res && res.title ? String(res.title) : ''
-                                });
-                            }
+                            applyImportedArticle(before, {
+                                sourceType: 'url',
+                                sourceUrl: url,
+                                title: res && res.title ? String(res.title) : ''
+                            });
                             try { ui.closeModal(); } catch(_) {}
                             try { dom.articleInput.focus(); } catch (_) {}
                             try { notifyAssistantArticleChanged(); } catch(_) {}
@@ -870,16 +1000,9 @@ function openArticleImportModal() {
             if (!md) return;
             previewText = md;
             if (!forcePreview && autoApplyChk && autoApplyChk.checked && dom.articleInput) {
-                dom.articleInput.value = md;
-                if (previewUrl) {
-                    setCurrentArticleSourceMeta({
-                        sourceType: 'url',
-                        sourceUrl: previewUrl,
-                        title: previewTitle
-                    });
-                } else {
-                    setCurrentArticleSourceMeta({ sourceType: 'paste' });
-                }
+                applyImportedArticle(md, previewUrl
+                    ? { sourceType: 'url', sourceUrl: previewUrl, title: previewTitle }
+                    : { sourceType: 'paste' });
                 try { ui.closeModal(); } catch (_) {}
                 try { dom.articleInput.focus(); } catch (_) {}
                 try { notifyAssistantArticleChanged(); } catch (_) {}
@@ -944,16 +1067,9 @@ function openArticleImportModal() {
         }
         if (applyBtn) applyBtn.addEventListener('click', () => {
             if (previewText && dom.articleInput) {
-                dom.articleInput.value = previewText;
-                if (previewUrl) {
-                    setCurrentArticleSourceMeta({
-                        sourceType: 'url',
-                        sourceUrl: previewUrl,
-                        title: previewTitle
-                    });
-                } else {
-                    setCurrentArticleSourceMeta({ sourceType: 'paste' });
-                }
+                applyImportedArticle(previewText, previewUrl
+                    ? { sourceType: 'url', sourceUrl: previewUrl, title: previewTitle }
+                    : { sourceType: 'paste' });
                 try { ui.closeModal(); } catch (_) {}
                 try { dom.articleInput.focus(); } catch (_) {}
                 try { notifyAssistantArticleChanged(); } catch (_) {}
@@ -1118,8 +1234,7 @@ function openArticleImportModal() {
         if (applyBtn) applyBtn.addEventListener('click', () => {
             const text = (resultPre && resultPre.textContent) || '';
             if (text && dom.articleInput) {
-                dom.articleInput.value = text;
-                setCurrentArticleSourceMeta({ sourceType: 'ocr' });
+                applyImportedArticle(text, { sourceType: 'ocr' });
                 try { ui.closeModal(); } catch(_) {}
                 try { dom.articleInput.focus(); } catch(_) {}
                 // OCR 套用 → 通知助手切換上下文
@@ -1230,7 +1345,7 @@ function openArticleImportModal() {
             const qaSet = await loadQASet(id);
             if (!qaSet) { ui.displayMessage(t('article.loadQaFailed'), 'error'); return; }
             const md = qaSetToMarkdownForArticle(qaSet);
-            if (dom.articleInput) dom.articleInput.value = md;
+            applyImportedArticle(md, { sourceType: 'paste' });
             try { ui.closeModal(); } catch(_) {}
             try { dom.articleInput.focus(); } catch(_) {}
             try { notifyAssistantArticleChanged(); } catch(_) {}
@@ -1371,52 +1486,50 @@ function mergeDetailedAnalyses(existing, incoming) {
 // --- Persist helpers (merge & save to analyzedArticles for sync) ---
 function _safeString(x) { return (x || '').toString(); }
 
-function persistSentenceAnalysis(sentence, context, data) {
-    try {
-        const articleText = (dom.articleInput.value || '').trim();
-        if (!articleText) return;
-        const currentArticleId = state.currentArticleId || null;
-        const rec = (state.analyzedArticles || []).find(it => (currentArticleId && it.articleId === currentArticleId) || it.article === articleText);
-        if (!rec || !rec.result) return;
-        const arr = Array.isArray(rec.result.sentence_analysis) ? rec.result.sentence_analysis : [];
-        const keyOf = (s, c) => `${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
-        const next = [...arr];
-        const normalized = { ...data, sentence, context, updatedAt: new Date().toISOString() };
-        const idx = next.findIndex(x => keyOf(x.sentence, x.context || x._context) === keyOf(sentence, context));
-        if (idx >= 0) next[idx] = normalized; else next.push(normalized);
-        const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
-        storage.saveAnalysisResult(articleText, { ...rec.result, sentence_analysis: next }, extra);
-    } catch (_) { /* ignore */ }
+/**
+ * 詞／句／片語詳解都寫回「請求開始時」所屬的文章，而不是回應回來時的目前文章。
+ * 目標文章已被刪除時直接丟棄，不會復活已刪除的記錄。
+ */
+function persistSentenceAnalysis(sentence, context, data, targetArticleId) {
+    const articleId = targetArticleId || articleContext.recordId;
+    if (!articleId) return;
+    const record = articleStore.getRecord(articleId);
+    if (!record || !record.result) return;
+    const arr = Array.isArray(record.result.sentence_analysis) ? record.result.sentence_analysis : [];
+    const keyOf = (s, c) => `${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
+    const next = [...arr];
+    const normalized = { ...data, sentence, context, updatedAt: new Date().toISOString() };
+    const idx = next.findIndex(x => keyOf(x.sentence, x.context || x._context) === keyOf(sentence, context));
+    if (idx >= 0) next[idx] = normalized; else next.push(normalized);
+    articleStore.saveAnalysis(articleId, { ...record.result, sentence_analysis: next })
+        .then((result) => { if (!result.ok) console.warn('[article] 句子解析未能寫入本機:', result.error); })
+        .catch(() => {});
 }
 
-function persistPhraseAnalysis(selection, sentence, context, data) {
+function persistPhraseAnalysis(selection, sentence, context, data, targetArticleId) {
+    const articleId = targetArticleId || articleContext.recordId;
+    if (!articleId) return;
+    const record = articleStore.getRecord(articleId);
+    if (!record || !record.result) return;
+    const arr = Array.isArray(record.result.phrase_analysis) ? record.result.phrase_analysis : [];
+    const keyOf = (sel, s, c) => `${_safeString(sel).trim()}||${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
+    const next = [...arr];
+    const normalized = { ...(data || {}), selection: data?.selection || selection, sentence, context, updatedAt: new Date().toISOString() };
+    const idx = next.findIndex(x => keyOf(x.selection, x.sentence, x.context || x._context) === keyOf(normalized.selection, sentence, context));
+    if (idx >= 0) next[idx] = normalized; else next.push(normalized);
+    // 保留策略：每句（sentence+context）最多 3 條片語解析（依 updatedAt 取最新）
+    let merged = next;
     try {
-        const articleText = (dom.articleInput.value || '').trim();
-        if (!articleText) return;
-        const currentArticleId = state.currentArticleId || null;
-        const rec = (state.analyzedArticles || []).find(it => (currentArticleId && it.articleId === currentArticleId) || it.article === articleText);
-        if (!rec || !rec.result) return;
-        const arr = Array.isArray(rec.result.phrase_analysis) ? rec.result.phrase_analysis : [];
-        const keyOf = (sel, s, c) => `${_safeString(sel).trim()}||${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
-        const next = [...arr];
-        const normalized = { ...(data || {}), selection: data?.selection || selection, sentence, context, updatedAt: new Date().toISOString() };
-        const idx = next.findIndex(x => keyOf(x.selection, x.sentence, x.context || x._context) === keyOf(normalized.selection, sentence, context));
-        if (idx >= 0) next[idx] = normalized; else next.push(normalized);
-        // 保留策略：每句（sentence+context）最多 3 條片語解析（依 updatedAt 取最新）
-        try {
-            const scKey = (s, c) => `${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
-            const targetKey = scKey(sentence, context);
-            const group = next.filter(x => scKey(x.sentence, x.context || x._context) === targetKey);
-            const others = next.filter(x => scKey(x.sentence, x.context || x._context) !== targetKey);
-            group.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
-            const trimmed = group.slice(0, 3);
-            const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
-            storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: [...others, ...trimmed] }, extra);
-        } catch (_) {
-            const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
-            storage.saveAnalysisResult(articleText, { ...rec.result, phrase_analysis: next }, extra);
-        }
-    } catch (_) { /* ignore */ }
+        const scKey = (s, c) => `${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
+        const targetKey = scKey(sentence, context);
+        const group = next.filter(x => scKey(x.sentence, x.context || x._context) === targetKey);
+        const others = next.filter(x => scKey(x.sentence, x.context || x._context) !== targetKey);
+        group.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+        merged = [...others, ...group.slice(0, 3)];
+    } catch (_) { /* 保留完整內容 */ }
+    articleStore.saveAnalysis(articleId, { ...record.result, phrase_analysis: merged })
+        .then((result) => { if (!result.ok) console.warn('[article] 片語解析未能寫入本機:', result.error); })
+        .catch(() => {});
 }
 
 // Markdown helpers: detect and group table blocks so they are treated as a single paragraph.
@@ -1650,7 +1763,7 @@ function sentenceAnalyzeButtonHtml(paraIdx, sentIdx) {
 /** 把英文句與其解析鍵包成 sentence-wrap，句子本體隨段落自然斷行 */
 function sentenceWrapHtml(paraIdx, sentIdx, sentence, innerHtml) {
     return `<span class="sentence-wrap">`
-        + `<span class="interactive-sentence" data-para-index="${paraIdx}" data-sent-index="${sentIdx}" data-sentence="${escapeAttr(sentence)}">${innerHtml}</span>`
+        + `<span class="interactive-sentence" data-para-index="${paraIdx}" data-sent-index="${sentIdx}" data-sentence="${escapeAttr(sentence)}" data-article-id="${escapeAttr(articleContext.recordId || '')}">${innerHtml}</span>`
         + sentenceAnalyzeButtonHtml(paraIdx, sentIdx)
         + `</span>`;
 }
@@ -1767,31 +1880,60 @@ async function analyzeArticle() {
         return;
     }
 
-    // Abort previous run if exists
+    // 先取消上一個工作：舊請求不得再寫入任何文章、也不得再更新畫面。
+    cancelActiveRun('cancelled-by-new-run');
     if (currentAnalysisAbort) {
         try { currentAnalysisAbort.abort('cancelled-by-new-run'); } catch (_) { /* noop */ }
     }
-    currentAnalysisAbort = new AbortController();
+    const controller = new AbortController();
+    currentAnalysisAbort = controller;
+
+    // 文章身份：重新分析沿用原 ID；匯入的新內容一律建立新 ID。
+    const resolved = resolveAnalysisArticleId();
+    const articleId = resolved.id || articleStore.newArticleId();
+    const run = createRun(articleId, controller);
+    activeRun = run;
+    articleContext.recordId = articleId;
+    articleContext.origin = resolved.reused ? articleContext.origin : 'imported';
+    if (typeof state.setCurrentArticleId === 'function') state.setCurrentArticleId(articleId);
+    if (typeof state.setCurrentWordbookId === 'function') state.setCurrentWordbookId(articleId);
 
     dom.analyzeArticleBtn.disabled = true;
     dom.analyzeArticleBtn.textContent = t('article.analyzing');
-    
+
     const { title, paragraphs } = parseTitleAndParagraphs(articleText);
 
-    // 在分析開始前，根據目前文章內容與來源建立/取得文章專屬生詞本
+    // 文章專屬生詞本：id 與文章相同，重新分析不會裂出第二本。
     let articleMeta = null;
     try {
-        const articleMetaInput = buildArticleMetaInput(articleText, title);
+        const articleMetaInput = { ...buildArticleMetaInput(articleText, title), id: articleId };
         const res = storage.getOrCreateArticleWordbook(articleMetaInput, { createWordbook: false });
         articleMeta = res && res.articleMeta ? res.articleMeta : articleMetaInput;
     } catch (err) {
         console.warn('初始化文章生詞本失敗（將回退到預設生詞本）:', err);
     }
+    const metaForRecord = buildArticleMetaInput(articleText, title);
+    // 先把「正在分析的這篇」存成記錄：中斷或重新載入都找得回來，也不會覆蓋別篇。
+    const initialSave = await articleStore.saveArticle({
+        articleId,
+        article: articleText,
+        result: articleStore.getRecord(articleId)?.result || null,
+        title: articleMeta?.title || metaForRecord.title,
+        sourceType: articleMeta?.sourceType || metaForRecord.sourceType,
+        sourceUrl: articleMeta?.sourceUrl || metaForRecord.sourceUrl
+    }, { touch: false });
+    if (!initialSave.ok) {
+        ui.displayMessage(t('article.historySaveFailed'), 'error', 6000);
+    }
+    updateHistoryIndicators();
+
     const items = title ? [title, ...paragraphs] : paragraphs; // 將標題也納入分析列表
     if (items.length === 0) {
         ui.displayMessage(t('article.invalidArticle'), 'warning');
-        dom.analyzeArticleBtn.disabled = false;
-        dom.analyzeArticleBtn.textContent = t('article.analyze');
+        if (isRunActive(run)) {
+            dom.analyzeArticleBtn.disabled = false;
+            dom.analyzeArticleBtn.textContent = t('article.analyze');
+        }
         return;
     }
 
@@ -1824,7 +1966,7 @@ async function analyzeArticle() {
     try {
         const total = items.length;
         let completed = 0;
-        let paragraphAnalyses = new Array(total);
+        const paragraphAnalyses = new Array(total);
 
         // 降低段落併發，避免觸發 429；並在拉起任務時加入間隔
         const CONCURRENCY = Math.min(2, total);
@@ -1835,10 +1977,12 @@ async function analyzeArticle() {
         let aggregatedDetails = [];
 
         const runNext = async () => {
+            if (!isRunActive(run)) return;
             const idx = nextIndex++;
             if (idx >= total) return;
             // 啟動前延遲，平滑請求節奏
             await new Promise(r => setTimeout(r, SPACING_MS));
+            if (!isRunActive(run)) return;
             // 標題段落用去掉 `##` 的顯示文字送分析與渲染
             const text = paragraphViews[idx]?.display ?? items[idx];
             updateAnalysisProgress(completed, total, t('article.analyzingParagraph', { number: idx + 1 }));
@@ -1850,8 +1994,8 @@ async function analyzeArticle() {
                 if (cached) {
                     result = cached;
                 } else if (isPureMarkdownImageParagraph(text)) {
-                    // 純圖片段落：不送 AI；中文留空，僅顯示一次圖片
-                    result = { chinese_translation: '', word_alignment: [], detailed_analysis: [] };
+                    // 純圖片段落：不送 AI；中文留空，僅顯示一次圖片（不算失敗段）
+                    result = { chinese_translation: '', word_alignment: [], detailed_analysis: [], skipped: true };
                 } else {
                     // 送進模型前先去掉行內標記：譯文不該帶著 ** 或 [文字](網址) 回來
                     const textForAI = prepareParagraphForTranslation(stripMarkdownImagesFromText(text));
@@ -1865,12 +2009,14 @@ async function analyzeArticle() {
                         const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
                         result = await api.analyzeParagraph(baseText, {
                             timeoutMs,
-                            signal: currentAnalysisAbort.signal,
+                            signal: controller.signal,
                             level: 'quick',
                             sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
                         });
                     }
                 }
+                // 回應回來時這條工作可能已被取消／切換：結果不寫入目前的 DOM，也不改歸屬。
+                if (!isRunActive(run)) return;
                 if (!cached) paragraphCache.set(text, result);
                 paragraphAnalyses[idx] = result;
                 // Incremental DOM update
@@ -1880,7 +2026,7 @@ async function analyzeArticle() {
                     dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(aggregatedDetails);
                 }
             } catch (error) {
-                if (currentAnalysisAbort.signal.aborted) throw error;
+                if (!isRunActive(run) || controller.signal.aborted) throw error;
                 console.error(`分析第 ${idx + 1} 段時出錯:`, error);
                 // 失敗時不偽造譯文，避免「分析失敗」文案被存入歷史與同步快照；
                 // renderParagraph 對空譯文會顯示失敗狀態與「重試本段」
@@ -1891,8 +2037,10 @@ async function analyzeArticle() {
                 // finalize elapsed time
                 if (paragraphStartTime[idx]) paragraphElapsedMs[idx] = Math.max(0, Date.now() - paragraphStartTime[idx]);
                 completed += 1;
-                updateAnalysisProgress(completed, total, t('article.completedParagraphs', { count: completed }));
-                await runNext();
+                if (isRunActive(run)) {
+                    updateAnalysisProgress(completed, total, t('article.completedParagraphs', { count: completed }));
+                    await runNext();
+                }
             }
         };
 
@@ -1900,36 +2048,61 @@ async function analyzeArticle() {
         for (let i = 0; i < CONCURRENCY; i++) runners.push(runNext());
         await Promise.all(runners);
 
+        if (!isRunActive(run)) return;
+
         const finalResult = {
             // Join translated paragraphs with visible newlines; keep it single-line JS string
-            chinese_translation: paragraphAnalyses.map(p => p.chinese_translation).join('\n\n'),
-            word_alignment: paragraphAnalyses.flatMap(p => p.word_alignment || []),
-            detailed_analysis: paragraphAnalyses.flatMap(p => p.detailed_analysis || []),
-            paragraph_analysis: paragraphAnalyses
+            chinese_translation: paragraphAnalyses.map(p => (p && p.chinese_translation) || '').join('\n\n'),
+            word_alignment: paragraphAnalyses.flatMap(p => (p && p.word_alignment) || []),
+            // 保留頂層獨有項目：按需取得的單字詳解只存在這裡，不做事後有損精簡。
+            detailed_analysis: mergeDetailedAnalyses(
+                paragraphAnalyses.flatMap(p => (p && p.detailed_analysis) || []),
+                articleStore.getRecord(articleId)?.result?.detailed_analysis || []
+            ),
+            paragraph_analysis: paragraphAnalyses,
+            updatedAt: new Date().toISOString()
         };
 
         dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(finalResult.detailed_analysis || []);
-        // 僅更新資料與歷史快取，不做全量重繪（保留逐段增量渲染）
-        const currentArticleId = (articleMeta && articleMeta.id) || state.currentArticleId || null;
-        const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
-        storage.saveAnalysisResult(articleText, finalResult, extra);
+        const saved = await articleStore.saveArticle({
+            articleId,
+            article: articleText,
+            result: finalResult,
+            title: articleMeta?.title || metaForRecord.title,
+            sourceType: articleMeta?.sourceType || metaForRecord.sourceType,
+            sourceUrl: articleMeta?.sourceUrl || metaForRecord.sourceUrl
+        });
+        if (!saved.ok) {
+            // 分析成功但寫入失敗要分開呈現：結果仍在畫面上，提供重試與匯出。
+            ui.displayMessage(t('article.historySaveFailed'), 'error', 8000);
+            if (dom.articleHistoryStatus) {
+                dom.articleHistoryStatus.hidden = false;
+                dom.articleHistoryStatus.classList.remove('hidden');
+                dom.articleHistoryStatus.dataset.state = 'failed';
+                dom.articleHistoryStatus.textContent = t('article.historyStatusSaveFailed');
+            }
+        }
         if (dom.retryFailedParagraphsBtn) {
             dom.retryFailedParagraphsBtn.classList.toggle('hidden', lastFailedIndices.length === 0);
         }
-        populateArticleHistorySelect();
+        await updateHistoryIndicators();
 
     } catch (error) {
-        if (currentAnalysisAbort?.signal?.aborted) {
+        if (!isRunActive(run)) return;
+        if (controller.signal.aborted) {
             dom.articleAnalysisContainer.innerHTML = `<p>${t('article.cancelled')}</p>`;
         } else {
             console.error('分析文章時出錯:', error);
             dom.articleAnalysisContainer.innerHTML = `<p class="analysis-error">${t('article.analysisFailed')}</p>`;
         }
     } finally {
-        dom.analyzeArticleBtn.disabled = false;
-        dom.analyzeArticleBtn.textContent = t('article.analyze');
-        const inline = dom.articleAnalysisContainer.querySelector('.inline-progress');
-        if (inline) inline.remove();
+        if (isRunActive(run)) {
+            dom.analyzeArticleBtn.disabled = false;
+            dom.analyzeArticleBtn.textContent = t('article.analyze');
+            const inline = dom.articleAnalysisContainer.querySelector('.inline-progress');
+            if (inline) inline.remove();
+        }
+        if (currentAnalysisAbort === controller) currentAnalysisAbort = null;
     }
 }
 
@@ -2076,211 +2249,687 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
     dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(detailed_analysis || []);
 }
 
-function clearArticleInput() {
+function clearArticleInput(options = {}) {
+    cancelActiveRun('cancelled-by-clear');
+    if (options.keepDraft !== true) saveCurrentDraft({ force: true });
     dom.articleInput.value = '';
     dom.articleAnalysisContainer.innerHTML = `<p>${t('article.initialHint')}</p>`;
-    dom.articleHistorySelect.value = '';
+    dom.articleAnalysisContainer.dataset.analysis = '[]';
     clearCurrentArticleSourceMeta();
-    try {
-        if (typeof state.setCurrentArticleId === 'function') state.setCurrentArticleId(null);
-        if (typeof state.setCurrentWordbookId === 'function') state.setCurrentWordbookId(null);
-    } catch (_) { /* ignore */ }
-    if (currentAnalysisAbort) {
-        try { currentAnalysisAbort.abort('cancelled-by-clear'); } catch (_) { /* noop */ }
-    }
-    // 文章清空 → 綁定到全局對話
-    try { notifyAssistantArticleChanged(); } catch(_) {}
+    resetArticleContext();
+    try { notifyAssistantArticleChanged(); } catch (_) {}
     if (dom.retryFailedParagraphsBtn) dom.retryFailedParagraphsBtn.classList.add('hidden');
+    updateHistoryIndicators();
 }
 
-function buildArticleHistoryLabel(item) {
-    const meta = item && item.articleId ? storage.getArticleMetaById(item.articleId) : null;
-    const { title, paragraphs } = parseTitleAndParagraphs(item?.article || '');
-    const fallback = title || paragraphs.find(p => p && p.trim()) || (item?.article || '').trim() || t('article.untitled');
-    return (meta?.title || fallback).trim().slice(0, 40);
+// ─────────────────────────────────────────────────────────────────────────────
+// 閱讀記錄（單一入口 + 清單彈窗）
+// ─────────────────────────────────────────────────────────────────────────────
+
+const HISTORY_SORT = { recent: 'recent', updated: 'updated', title: 'title' };
+const historyUi = {
+    sort: HISTORY_SORT.recent,
+    source: 'all',
+    query: '',
+    open: false,
+    menuKey: ''
+};
+// 每次刪除各自保存一份可復原快照；連續刪除不會覆蓋前一次。
+const historyUndoStack = [];
+const HISTORY_UNDO_LIMIT = 20;
+
+function currentDraftSnapshot() {
+    const text = (dom.articleInput && dom.articleInput.value) || '';
+    if (!text.trim()) return null;
+    const ds = (dom.articleInput && dom.articleInput.dataset) || {};
+    return {
+        text,
+        sourceType: ds.sourceType || 'paste',
+        sourceUrl: ds.sourceUrl || '',
+        title: ds.sourceTitle || '',
+        recordId: articleContext.recordId || ''
+    };
 }
 
-function buildArticleHistorySummary(item) {
-    const { paragraphs } = parseTitleAndParagraphs(item?.article || '');
-    const summary = paragraphs.find(p => p && p.trim()) || (item?.article || '').trim() || t('article.noContent');
-    return summary.replace(/\s+/g, ' ').slice(0, 120);
+function recordHasUnsavedInput(record) {
+    if (!record) return !!(dom.articleInput && dom.articleInput.value.trim());
+    return String(dom.articleInput?.value || '').trim() !== String(record.article || '').trim();
 }
 
-function buildArticleHistoryRecords() {
-    const list = Array.isArray(state.analyzedArticles) ? state.analyzedArticles : [];
-    return list.map((item, index) => {
-        const meta = item && item.articleId ? storage.getArticleMetaById(item.articleId) : null;
-        return {
-            index,
-            item,
-            meta,
-            label: buildArticleHistoryLabel(item),
-            summary: buildArticleHistorySummary(item)
-        };
+/** 切換文章／刪除目前文章之前，先把目前輸入存成可恢復的草稿。 */
+function saveCurrentDraft(options = {}) {
+    const snapshot = currentDraftSnapshot();
+    if (!snapshot) return false;
+    const record = snapshot.recordId ? articleStore.getRecord(snapshot.recordId) : null;
+    if (record && !recordHasUnsavedInput(record) && !options.force) return false;
+    articleStore.saveDraft(snapshot).then(() => updateHistoryIndicators()).catch(() => {});
+    return true;
+}
+
+function sourceLabel(sourceType) {
+    const map = {
+        url: t('article.sourceUrl'),
+        file: t('article.sourceFile'),
+        ocr: t('article.sourceOcr'),
+        paste: t('article.sourcePaste')
+    };
+    return map[sourceType] || t('article.sourcePaste');
+}
+
+function recordTimestamp(record) {
+    return record.lastOpenedAt || record.updatedAt || record.createdAt || '';
+}
+
+function relativeTime(value) {
+    if (!value) return t('article.unknownTime');
+    const ms = new Date(value).getTime();
+    if (Number.isNaN(ms)) return t('article.unknownTime');
+    const diff = ms - Date.now();
+    const abs = Math.abs(diff);
+    try {
+        const rtf = new Intl.RelativeTimeFormat(getLocaleTag(), { numeric: 'auto' });
+        if (abs < 60 * 1000) return rtf.format(Math.round(diff / 1000), 'second');
+        if (abs < 60 * 60 * 1000) return rtf.format(Math.round(diff / (60 * 1000)), 'minute');
+        if (abs < 24 * 60 * 60 * 1000) return rtf.format(Math.round(diff / (60 * 60 * 1000)), 'hour');
+        if (abs < 30 * 24 * 60 * 60 * 1000) return rtf.format(Math.round(diff / (24 * 60 * 60 * 1000)), 'day');
+        return formatDateTime(value, { year: 'numeric', month: '2-digit', day: '2-digit' });
+    } catch (_) {
+        return formatDateTime(value);
+    }
+}
+
+function recordTitle(record) {
+    const title = String(record?.title || '').trim();
+    if (title) return title;
+    const { title: parsed, paragraphs } = parseTitleAndParagraphs(record?.article || '');
+    return (parsed || paragraphs.find((p) => p && p.trim()) || t('article.untitled')).trim().slice(0, 80);
+}
+
+function recordSummary(record) {
+    const { paragraphs } = parseTitleAndParagraphs(record?.article || '');
+    const text = paragraphs.find((p) => p && p.trim()) || record?.article || '';
+    return String(text).replace(/\s+/g, ' ').slice(0, 120);
+}
+
+function recordFailedParagraphs(record) {
+    const paragraphs = Array.isArray(record?.result?.paragraph_analysis) ? record.result.paragraph_analysis : [];
+    // API 在翻譯失敗時會回最小兜底（空譯文），這種段落也要算未完成，
+    // 但純圖片段落（skipped）與中文原文段落不算失敗。
+    return paragraphs.filter((item) => {
+        if (!item || item.skipped) return false;
+        if (item.failed === true) return true;
+        return !String(item.chinese_translation || '').trim();
+    }).length;
+}
+
+function recordStatusText(record) {
+    if (!record?.result) return t('article.notAnalyzed');
+    const failed = recordFailedParagraphs(record);
+    if (failed > 0) return t('article.historyPartial', { count: failed });
+    return t('article.analyzed');
+}
+
+function buildHistoryEntries() {
+    const records = articleStore.getRecords();
+    const query = historyUi.query.trim().toLowerCase();
+    let list = records.filter((record) => {
+        if (historyUi.source !== 'all' && (record.sourceType || 'paste') !== historyUi.source) return false;
+        if (!query) return true;
+        const haystack = `${record.title || ''}\n${record.article || ''}`.toLowerCase();
+        return haystack.includes(query);
+    });
+    if (historyUi.sort === HISTORY_SORT.title) {
+        const collator = createCollator();
+        list = list.sort((a, b) => collator.compare(recordTitle(a), recordTitle(b)));
+    } else if (historyUi.sort === HISTORY_SORT.updated) {
+        list = list.sort((a, b) => String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || '')));
+    } else {
+        list = list.sort((a, b) => String(recordTimestamp(b)).localeCompare(String(recordTimestamp(a))));
+    }
+    return list;
+}
+
+function groupLabel(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return t('article.historyEarlier');
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const time = date.getTime();
+    if (time >= startOfToday) return t('article.historyToday');
+    if (time >= startOfToday - 24 * 60 * 60 * 1000) return t('article.historyYesterday');
+    if (time >= startOfToday - 7 * 24 * 60 * 60 * 1000) return t('article.historyThisWeek');
+    return t('article.historyEarlier');
+}
+
+function historyRowHtml(record) {
+    const isCurrent = isCurrentArticle(record.articleId);
+    const title = recordTitle(record);
+    const summary = recordSummary(record);
+    const timeText = relativeTime(recordTimestamp(record));
+    const status = recordStatusText(record);
+    const dirty = record.dirty || record.pending ? `<span class="ar-history-dirty" title="${escapeAttr(t('article.historyPendingSync'))}">${escapeHtml(t('article.historyPendingSyncShort'))}</span>` : '';
+    const conflict = record.conflict ? `<span class="ar-history-conflict">${escapeHtml(t('article.historyConflict'))}</span>` : '';
+    return `
+        <div class="ar-history-item${isCurrent ? ' is-current' : ''}" data-key="${escapeAttr(record.articleId)}" role="listitem" tabindex="0">
+            <button type="button" class="ar-history-open" data-act="open">
+                <span class="ar-history-title">${escapeHtml(title)}</span>
+                <span class="ar-history-meta">${escapeHtml(timeText)} · ${escapeHtml(sourceLabel(record.sourceType))} · ${escapeHtml(status)}${dirty}${conflict}</span>
+                <span class="ar-history-summary">${escapeHtml(summary)}</span>
+            </button>
+            <div class="ar-history-side">
+                ${isCurrent ? `<span class="ar-history-badge">${escapeHtml(t('article.historyCurrent'))}</span>` : ''}
+                <button type="button" class="ar-history-more" data-act="more" aria-haspopup="menu" aria-expanded="false" aria-label="${escapeAttr(t('article.historyMoreActions'))}">⋯</button>
+            </div>
+        </div>`;
+}
+
+function renderHistoryList(container) {
+    const entries = buildHistoryEntries();
+    const list = container.querySelector('.ar-history-list');
+    if (!list) return;
+    if (!entries.length) {
+        list.innerHTML = `<div class="ar-history-empty">
+            <p class="ar-history-empty-title">${escapeHtml(t('article.historyEmptyTitle'))}</p>
+            <p class="ar-history-empty-hint">${escapeHtml(t('article.historyEmptyHint'))}</p>
+        </div>`;
+        return;
+    }
+    const useGroups = historyUi.sort !== HISTORY_SORT.title;
+    let html = '';
+    let lastGroup = '';
+    for (const record of entries) {
+        if (useGroups) {
+            const group = groupLabel(recordTimestamp(record));
+            if (group !== lastGroup) {
+                html += `<div class="ar-history-group" role="presentation">${escapeHtml(group)}</div>`;
+                lastGroup = group;
+            }
+        }
+        html += historyRowHtml(record);
+    }
+    list.innerHTML = html;
+    // 點「更多」時就地展開，不重建整份清單（避免捲動位置跳動）
+    list.querySelectorAll('.ar-history-more').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const row = button.closest('.ar-history-item');
+            if (!row) return;
+            toggleRowMenu(row, button);
+        });
+    });
+    list.querySelectorAll('.ar-history-open').forEach((button) => {
+        button.addEventListener('click', () => {
+            const key = button.closest('.ar-history-item')?.getAttribute('data-key');
+            if (key) openReadingRecord(key);
+        });
     });
 }
 
-function loadArticleHistoryRecord(index) {
-    const item = (state.analyzedArticles || [])[index];
-    if (!item) return false;
-    dom.articleHistorySelect.value = String(index);
-    dom.articleInput.value = item.article;
-    clearCurrentArticleSourceMeta();
-    const articleId = item.articleId || null;
-    if (articleId && typeof storage.getArticleMetaById === 'function') {
-        try {
-            const meta = storage.getArticleMetaById(articleId);
-            if (meta) {
-                setCurrentArticleSourceMeta({
-                    sourceType: meta.sourceType || 'paste',
-                    sourceUrl: meta.sourceUrl || '',
-                    title: meta.title || ''
-                });
-            } else {
-                setCurrentArticleSourceMeta({ sourceType: 'paste' });
-            }
-        } catch (_) {
-            setCurrentArticleSourceMeta({ sourceType: 'paste' });
+function closeRowMenus(root) {
+    (root || document).querySelectorAll('.ar-history-menu').forEach((node) => node.remove());
+    (root || document).querySelectorAll('.ar-history-more[aria-expanded="true"]').forEach((node) => node.setAttribute('aria-expanded', 'false'));
+}
+
+function toggleRowMenu(row, trigger) {
+    const host = row.parentElement;
+    const existing = row.querySelector('.ar-history-menu');
+    closeRowMenus(host);
+    if (existing) return;
+    const key = row.getAttribute('data-key');
+    trigger.setAttribute('aria-expanded', 'true');
+    const menu = document.createElement('div');
+    menu.className = 'ar-history-menu';
+    menu.setAttribute('role', 'menu');
+    menu.innerHTML = `
+        <button type="button" role="menuitem" data-act="rename">${escapeHtml(t('article.historyRename'))}</button>
+        <button type="button" role="menuitem" data-act="delete">${escapeHtml(t('article.historyDelete'))}</button>`;
+    row.appendChild(menu);
+    menu.addEventListener('click', (event) => {
+        const button = event.target.closest('button');
+        if (!button) return;
+        event.stopPropagation();
+        closeRowMenus(host);
+        if (button.dataset.act === 'rename') renameReadingRecord(key);
+        else if (button.dataset.act === 'delete') deleteReadingRecord(key);
+    });
+    // 點別處關閉（只掛一次，靠旗標避免重複）
+    if (!toggleRowMenu._wired) {
+        toggleRowMenu._wired = true;
+        document.addEventListener('click', (event) => {
+            if (event.target.closest && event.target.closest('.ar-history-menu')) return;
+            if (event.target.closest && event.target.closest('.ar-history-more')) return;
+            closeRowMenus();
+        });
+    }
+}
+
+async function openReadingRecord(recordId) {
+    const record = articleStore.getRecord(recordId);
+    if (!record) {
+        ui.displayMessage(t('article.analysisRecordMissing'), 'warning');
+        return;
+    }
+    saveCurrentDraft();
+    cancelActiveRun('load-record');
+    applyRecordToView(record);
+    await articleStore.touchOpened(recordId);
+    try { ui.closeModal(); } catch (_) {}
+    updateHistoryIndicators();
+    if (window.matchMedia && window.matchMedia('(min-width: 900px)').matches) {
+        try { dom.articleAnalysisContainer.querySelector('.paragraph-pair')?.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+    } else {
+        try { dom.articleAnalysisContainer.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {}
+    }
+}
+
+function applyRecordToView(record) {
+    dom.articleInput.value = record.article || '';
+    setLoadedArticleContext(record.articleId, {
+        sourceType: record.sourceType || 'paste',
+        sourceUrl: record.sourceUrl || '',
+        title: record.title || ''
+    });
+    if (record.result) {
+        displayArticleAnalysis(record.article || '', record.result);
+    } else {
+        dom.articleAnalysisContainer.innerHTML = `<p>${escapeHtml(t('article.historyNotAnalyzedHint'))}</p>`;
+        dom.articleAnalysisContainer.dataset.analysis = '[]';
+    }
+    if (dom.retryFailedParagraphsBtn) {
+        const failed = recordFailedParagraphs(record);
+        dom.retryFailedParagraphsBtn.classList.toggle('hidden', failed === 0);
+    }
+    try { notifyAssistantArticleChanged(); } catch (_) {}
+}
+
+async function renameReadingRecord(recordId) {
+    const record = articleStore.getRecord(recordId);
+    if (!record) return;
+    const nextTitle = await ui.promptAction({
+        title: t('article.historyRename'),
+        message: t('article.historyRenamePrompt'),
+        label: t('article.historyRenameLabel'),
+        value: recordTitle(record),
+        confirmLabel: t('article.historyRenameConfirm'),
+        cancelLabel: t('common.cancel')
+    });
+    if (nextTitle === null || nextTitle === undefined) return;
+    const result = await articleStore.renameArticle(recordId, nextTitle);
+    if (!result.ok) {
+        ui.displayMessage(t('article.historyRenameFailed'), 'error');
+        return;
+    }
+    ui.displayMessage(t('article.historyRenamed'), 'success', 1800);
+    refreshHistoryModal();
+    updateHistoryIndicators();
+}
+
+async function deleteReadingRecord(recordId) {
+    const record = articleStore.getRecord(recordId);
+    if (!record) return;
+    const isCurrent = isCurrentArticle(recordId);
+    if (isCurrent && recordHasUnsavedInput(record)) {
+        const okDelete = await ui.confirmAction({
+            title: t('article.historyDelete'),
+            message: t('article.historyDeleteCurrentUnsaved'),
+            confirmLabel: t('article.historyDelete'),
+            cancelLabel: t('common.cancel'),
+            danger: true
+        });
+        if (!okDelete) return;
+    }
+    // 復原需要完整快照：記錄本身 + 刪除當下的順序
+    const snapshot = { ...record };
+    saveCurrentDraft({ force: true });
+    const result = await articleStore.deleteArticle(recordId);
+    if (!result.ok) {
+        ui.displayMessage(t('article.historyDeleteFailed'), 'error');
+        return;
+    }
+    historyUndoStack.push({ snapshot, at: Date.now() });
+    if (historyUndoStack.length > HISTORY_UNDO_LIMIT) historyUndoStack.shift();
+    if (isCurrent) {
+        cancelActiveRun('record-deleted');
+        dom.articleAnalysisContainer.innerHTML = `<p>${escapeHtml(t('article.historyCurrentDeleted'))}</p>`;
+        dom.articleAnalysisContainer.dataset.analysis = '[]';
+        resetArticleContext();
+    }
+    refreshHistoryModal();
+    updateHistoryIndicators();
+    showUndoBar();
+}
+
+async function undoLastDelete() {
+    const entry = historyUndoStack.pop();
+    if (!entry) return;
+    const result = await articleStore.restoreArticle(entry.snapshot);
+    if (!result.ok) {
+        ui.displayMessage(t('article.historyUndoFailed'), 'error');
+        return;
+    }
+    ui.displayMessage(t('article.historyUndone', { title: recordTitle(entry.snapshot) }), 'success', 2200);
+    refreshHistoryModal();
+    updateHistoryIndicators();
+    showUndoBar();
+}
+
+let undoBarTimer = 0;
+function undoSlots() {
+    return [
+        document.getElementById('article-history-undo'),
+        document.querySelector('.ar-history-undo')
+    ].filter(Boolean);
+}
+
+/** 刪除後的復原提示同時出現在文章頁狀態列與閱讀記錄彈窗內（彈窗開著時也按得到）。 */
+function showUndoBar() {
+    const latest = historyUndoStack[historyUndoStack.length - 1];
+    for (const bar of undoSlots()) {
+        if (!latest) {
+            bar.hidden = true;
+            bar.classList.add('hidden', 'is-empty');
+            bar.innerHTML = '';
+            continue;
         }
-    } else {
-        setCurrentArticleSourceMeta({ sourceType: 'paste' });
+        bar.hidden = false;
+        bar.classList.remove('hidden', 'is-empty');
+        bar.innerHTML = `<span class="undo-text">${escapeHtml(t('article.historyDeleted', { title: recordTitle(latest.snapshot) }))}${historyUndoStack.length > 1 ? ` <span class="undo-more">${escapeHtml(t('article.historyUndoMore', { count: historyUndoStack.length - 1 }))}</span>` : ''}</span>
+            <button type="button" class="btn-ghost btn-mini article-history-undo-btn">${escapeHtml(t('article.historyUndo'))}</button>`;
     }
-    displayArticleAnalysis(item.article, item.result);
-    try { notifyAssistantArticleChanged(); } catch(_) {}
-    return true;
+    clearTimeout(undoBarTimer);
+    undoBarTimer = setTimeout(() => {
+        for (const bar of undoSlots()) {
+            bar.hidden = true;
+            bar.classList.add('hidden');
+        }
+    }, 12000);
 }
 
-function removeArticleHistoryRecord(index) {
-    const removed = storage.deleteAnalyzedArticleByIndex(index);
-    if (!removed) return false;
-    populateArticleHistorySelect();
-    clearArticleInput();
-    return true;
+function historyFooterHtml(container) {
+    const usageText = t('article.historyStorage', {
+        count: articleStore.getRecords().length,
+        size: formatBytes(articleStore.getRecords().reduce((sum, item) => sum + (Number(item.sizeBytes) || 0), 0))
+    });
+    return `<span class="ar-history-usage" id="ar-history-usage">${escapeHtml(usageText)}</span>
+        <span class="ar-history-undo hidden" hidden></span>
+        <button type="button" class="btn-secondary" id="ar-history-clear">${escapeHtml(t('article.clearAll'))}</button>`;
 }
 
-function openArticleHistoryManager() {
-    const records = buildArticleHistoryRecords();
-    const container = document.createElement('div');
-    container.className = 'article-history-manager';
-    if (!records.length) {
-        container.innerHTML = `<p>${t('article.noHistory')}</p>`;
-    } else {
-        const items = records.map(({ index, item, meta, label, summary }) => {
-            const updatedAt = item?.result?.updatedAt || meta?.updatedAt || null;
-            const createdAt = meta?.createdAt || null;
-            const timeValue = updatedAt || createdAt;
-            const timeText = timeValue
-                ? formatDateTime(typeof timeValue === 'number' ? timeValue : String(timeValue))
-                : t('article.unknownTime');
-            const sourceMap = {
-                url: t('article.sourceUrl'),
-                file: t('article.sourceFile'),
-                ocr: t('article.sourceOcr'),
-                paste: t('article.sourcePaste')
-            };
-            const sourceType = meta?.sourceType || 'paste';
-            const sourceText = sourceMap[sourceType] || t('article.sourcePaste');
-            const hasResult = item?.result ? t('article.analyzed') : t('article.notAnalyzed');
-            const safeLabel = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            const safeSummary = summary.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `<div class="article-history-item" data-index="${index}">
-                <div class="article-history-main">
-                    <div class="article-history-title">${safeLabel}</div>
-                    <div class="article-history-meta">${sourceText} · ${timeText} · ${hasResult}</div>
-                    <div class="article-history-summary">${safeSummary}</div>
-                </div>
-                <div class="article-history-ops">
-                    <button type="button" class="btn-secondary" data-act="load">${t('article.load')}</button>
-                    <button type="button" class="btn-secondary" data-act="del">${t('article.delete')}</button>
-                </div>
-            </div>`;
-        }).join('');
-        container.innerHTML = `<div class="article-history-toolbar"><button type="button" id="article-history-clear" class="btn-secondary">${t('article.clearAll')}</button></div><div class="article-history-list">${items}</div>`;
-    }
-    dom.modalTitle.textContent = t('article.historyManager');
-    dom.modalBody.innerHTML = '';
-    dom.modalBody.appendChild(container);
-    ui.openModal();
-    try { document.querySelector('#app-modal .modal-content')?.classList.add('modal-large'); } catch (_) {}
-    container.addEventListener('click', async (e) => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
-        if (btn.id === 'article-history-clear') {
-            if (!records.length) return;
-            const okClearAll = await ui.confirmAction({
-                title: t('article.clearAll'),
-                message: t('article.confirmClearHistory'),
-                confirmLabel: t('article.clearAll'),
-                cancelLabel: t('common.cancel'),
-                danger: true
-            });
-            if (okClearAll) {
-                storage.clearAnalyzedArticles();
-                populateArticleHistorySelect();
-                clearArticleInput();
-                ui.closeModal();
-            }
+function formatBytes(bytes) {
+    const value = Number(bytes) || 0;
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function updateHistoryUsage(container) {
+    const el = container.querySelector('#ar-history-usage');
+    if (!el) return;
+    const records = articleStore.getRecords();
+    el.textContent = t('article.historyStorage', {
+        count: records.length,
+        size: formatBytes(records.reduce((sum, item) => sum + (Number(item.sizeBytes) || 0), 0))
+    });
+}
+
+function refreshHistoryModal() {
+    const container = document.querySelector('.ar-history');
+    if (!container) return;
+    renderHistoryList(container);
+    updateHistoryUsage(container);
+    renderDraftRow(container);
+    renderConflictRow(container);
+}
+
+function renderDraftRow(container) {
+    const host = container.querySelector('.ar-history-draft');
+    if (!host) return;
+    articleStore.readDraft().then((draft) => {
+        if (!draft || !String(draft.text || '').trim()) {
+            host.hidden = true;
+            host.innerHTML = '';
             return;
         }
-        const row = btn.closest('.article-history-item');
-        if (!row) return;
-        const index = Number.parseInt(row.getAttribute('data-index'), 10);
-        if (Number.isNaN(index)) return;
-        const action = btn.getAttribute('data-act');
-        if (action === 'load') {
-            loadArticleHistoryRecord(index);
-            ui.closeModal();
-        } else if (action === 'del') {
-            const okDeleteOne = await ui.confirmAction({
-                title: t('article.historyDelete'),
-                message: t('article.confirmDeleteHistory'),
-                confirmLabel: t('article.delete'),
-                cancelLabel: t('common.cancel'),
-                danger: true
+        host.hidden = false;
+        host.innerHTML = `<div class="ar-draft-item">
+            <div class="ar-draft-main">
+                <div class="ar-draft-title">${escapeHtml(t('article.historyDraftTitle'))}</div>
+                <div class="ar-draft-meta">${escapeHtml(relativeTime(draft.savedAt))} · ${escapeHtml(draft.title || draft.text.slice(0, 40))}</div>
+            </div>
+            <div class="ar-draft-actions">
+                <button type="button" class="btn-secondary" data-act="restore-draft">${escapeHtml(t('article.historyDraftRestore'))}</button>
+                <button type="button" class="btn-tertiary" data-act="discard-draft">${escapeHtml(t('article.historyDraftDiscard'))}</button>
+            </div>
+        </div>`;
+        host.querySelector('[data-act="restore-draft"]')?.addEventListener('click', async () => {
+            const latest = await articleStore.readDraft();
+            if (!latest) return;
+            applyImportedArticle(latest.text, {
+                sourceType: latest.sourceType || 'paste',
+                sourceUrl: latest.sourceUrl || '',
+                title: latest.title || ''
             });
-            if (okDeleteOne) {
-                removeArticleHistoryRecord(index);
-                openArticleHistoryManager();
+            if (latest.recordId && isCurrentArticle(latest.recordId)) {
+                articleContext.recordId = latest.recordId;
+                articleContext.origin = 'loaded';
             }
+            await articleStore.clearDraft();
+            try { ui.closeModal(); } catch (_) {}
+            updateHistoryIndicators();
+            ui.displayMessage(t('article.historyDraftRestored'), 'success', 2000);
+        });
+        host.querySelector('[data-act="discard-draft"]')?.addEventListener('click', async () => {
+            await articleStore.clearDraft();
+            renderDraftRow(container);
+            updateHistoryIndicators();
+        });
+    }).catch(() => {});
+}
+
+function renderConflictRow(container) {
+    const host = container.querySelector('.ar-history-conflicts');
+    if (!host) return;
+    const conflicts = articleStore.getConflicts();
+    if (!conflicts.length) {
+        host.hidden = true;
+        host.innerHTML = '';
+        return;
+    }
+    host.hidden = false;
+    host.innerHTML = `<div class="ar-conflict-title">${escapeHtml(t('article.historyConflictsTitle'))}</div>
+        ${conflicts.map((conflict) => {
+            const record = articleStore.getRecord(conflict.articleId);
+            const title = record ? recordTitle(record) : conflict.articleId;
+            return `<div class="ar-conflict-item" data-key="${escapeAttr(conflict.articleId)}">
+                <div class="ar-conflict-main">
+                    <div class="ar-conflict-name">${escapeHtml(title)}</div>
+                    <div class="ar-conflict-meta">${escapeHtml(t('article.historyConflictHint'))}</div>
+                </div>
+                <div class="ar-conflict-actions">
+                    <button type="button" class="btn-secondary" data-act="keep-mine">${escapeHtml(t('article.historyConflictKeepMine'))}</button>
+                    <button type="button" class="btn-tertiary" data-act="save-copy">${escapeHtml(t('article.historyConflictSaveCopy'))}</button>
+                    <button type="button" class="btn-tertiary" data-act="use-remote">${escapeHtml(t('article.historyConflictUseRemote'))}</button>
+                </div>
+            </div>`;
+        }).join('')}`;
+    host.querySelectorAll('.ar-conflict-item').forEach((row) => {
+        const key = row.getAttribute('data-key');
+        row.querySelector('[data-act="keep-mine"]')?.addEventListener('click', async () => {
+            row.classList.add('is-busy');
+            try { await articleSync.resolveKeepMine(key); } catch (_) {}
+            row.classList.remove('is-busy');
+            refreshHistoryModal();
+        });
+        row.querySelector('[data-act="save-copy"]')?.addEventListener('click', async () => {
+            row.classList.add('is-busy');
+            try { await articleSync.resolveSaveCopy(key); } catch (_) {}
+            row.classList.remove('is-busy');
+            refreshHistoryModal();
+        });
+        row.querySelector('[data-act="use-remote"]')?.addEventListener('click', async () => {
+            row.classList.add('is-busy');
+            try { await articleSync.resolveUseRemote(key); } catch (_) {}
+            row.classList.remove('is-busy');
+            refreshHistoryModal();
+        });
+    });
+}
+
+function openArticleHistory() {
+    historyUi.open = true;
+    historyUi.menuKey = '';
+    try { ui.openModal(); } catch (_) {}
+    try { dom.modalTitle.textContent = t('article.historyRecords'); } catch (_) {}
+    try { document.querySelector('#app-modal .modal-content')?.classList.add('modal-large'); } catch (_) {}
+    const container = document.createElement('div');
+    container.className = 'ar-history';
+    container.innerHTML = `
+        <div class="ar-history-toolbar">
+            <input type="search" id="ar-history-search" class="ar-history-search" autocomplete="off"
+                placeholder="${escapeAttr(t('article.historySearchPlaceholder'))}" aria-label="${escapeAttr(t('article.historySearchLabel'))}">
+            <select id="ar-history-sort" class="ar-history-sort" aria-label="${escapeAttr(t('article.historySortLabel'))}">
+                <option value="recent">${escapeHtml(t('article.historySortRecent'))}</option>
+                <option value="updated">${escapeHtml(t('article.historySortUpdated'))}</option>
+                <option value="title">${escapeHtml(t('article.historySortTitle'))}</option>
+            </select>
+        </div>
+        <div class="ar-history-filters" role="group" aria-label="${escapeAttr(t('article.historyFilterLabel'))}">
+            ${[['all', 'article.historySourceAll'], ['url', 'article.sourceUrl'], ['file', 'article.sourceFile'], ['ocr', 'article.sourceOcr'], ['paste', 'article.sourcePaste']]
+                .map(([value, key]) => `<button type="button" class="ar-history-filter${historyUi.source === value ? ' active' : ''}" data-source="${value}" aria-pressed="${historyUi.source === value}">${escapeHtml(t(key))}</button>`)
+                .join('')}
+        </div>
+        <div class="ar-history-draft" hidden></div>
+        <div class="ar-history-conflicts" hidden></div>
+        <div class="ar-history-search-note">${escapeHtml(t('article.historySearchScope'))}</div>
+        <div class="ar-history-list" role="list"></div>
+        <div class="ar-history-footer">${historyFooterHtml(container)}</div>`;
+    dom.modalBody.innerHTML = '';
+    dom.modalBody.appendChild(container);
+    const search = container.querySelector('#ar-history-search');
+    search.value = historyUi.query;
+    container.querySelector('#ar-history-sort').value = historyUi.sort;
+    search.addEventListener('input', () => {
+        historyUi.query = search.value || '';
+        renderHistoryList(container);
+    });
+    container.querySelector('#ar-history-sort').addEventListener('change', (event) => {
+        historyUi.sort = event.target.value;
+        renderHistoryList(container);
+    });
+    container.querySelectorAll('.ar-history-filter').forEach((button) => {
+        button.addEventListener('click', () => {
+            historyUi.source = button.dataset.source || 'all';
+            container.querySelectorAll('.ar-history-filter').forEach((item) => {
+                const active = item.dataset.source === historyUi.source;
+                item.classList.toggle('active', active);
+                item.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+            renderHistoryList(container);
+        });
+    });
+    container.addEventListener('keydown', (event) => {
+        const row = event.target.closest && event.target.closest('.ar-history-item');
+        if (!row) return;
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            openReadingRecord(row.getAttribute('data-key'));
+        } else if (event.key === 'Delete') {
+            // Delete 只在列本身取得焦點時生效；搜尋框維持文字編輯。
+            event.preventDefault();
+            deleteReadingRecord(row.getAttribute('data-key'));
+        } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const rows = Array.from(container.querySelectorAll('.ar-history-item'));
+            const index = rows.indexOf(row);
+            const next = rows[index + (event.key === 'ArrowDown' ? 1 : -1)];
+            if (next) next.focus();
         }
     });
+    container.querySelector('#ar-history-clear')?.addEventListener('click', async () => {
+        const okClear = await ui.confirmAction({
+            title: t('article.clearAll'),
+            message: t('article.confirmClearHistory'),
+            confirmLabel: t('article.clearAll'),
+            cancelLabel: t('common.cancel'),
+            danger: true
+        });
+        if (!okClear) return;
+        const records = articleStore.getRecords().slice();
+        for (const record of records) {
+            historyUndoStack.push({ snapshot: { ...record }, at: Date.now() });
+        }
+        while (historyUndoStack.length > HISTORY_UNDO_LIMIT) historyUndoStack.shift();
+        for (const record of records) await articleStore.deleteArticle(record.articleId);
+        if (isCurrentArticle(articleContext.recordId)) clearArticleInput({ keepDraft: true });
+        renderHistoryList(container);
+        updateHistoryUsage(container);
+        showUndoBar();
+        updateHistoryIndicators();
+        ui.displayMessage(t('article.historyClearDone'), 'success', 2000);
+    }, { once: true });
+    renderHistoryList(container);
+    renderDraftRow(container);
+    renderConflictRow(container);
+    showUndoBar();
+    // 桌面聚焦搜尋框；手機聚焦第一列（避免行動端鍵盤一開就擋住清單）
+    setTimeout(() => {
+        const isWide = window.matchMedia && window.matchMedia('(min-width: 900px)').matches;
+        if (isWide) search.focus();
+        else container.querySelector('.ar-history-item')?.focus();
+    }, 30);
 }
 
-function populateArticleHistorySelect() {
-    dom.articleHistorySelect.innerHTML = `<option value="">${t('article.historyRead')}</option>`;
-    buildArticleHistoryRecords().forEach(({ index, label }) => {
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = label;
-        dom.articleHistorySelect.appendChild(option);
-    });
+async function updateHistoryIndicators() {
+    const count = articleStore.getRecords().length;
+    if (dom.articleHistoryCount) {
+        dom.articleHistoryCount.textContent = String(count);
+        dom.articleHistoryCount.classList.toggle('hidden', count === 0);
+    }
+    const statusEl = dom.articleHistoryStatus;
+    if (!statusEl) return;
+    const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
+    const pendingSync = record && (record.dirty || record.pending);
+    const edited = !!record && recordHasUnsavedInput(record);
+    if (record && articleContext.origin === 'imported') {
+        // 匯入的新內容還沒成為記錄：不能沿用上一篇的「已存入」
+        statusEl.hidden = false;
+        statusEl.classList.remove('hidden');
+        statusEl.textContent = t('article.historyStatusUnsaved');
+        statusEl.dataset.state = 'unsaved';
+        statusEl.disabled = false;
+    } else if (record && edited) {
+        // 已載入記錄但內文被改過：分析後才會更新這一篇，現在還不算已存入
+        statusEl.hidden = false;
+        statusEl.classList.remove('hidden');
+        statusEl.textContent = t('article.historyStatusEdited');
+        statusEl.dataset.state = 'pending';
+        statusEl.disabled = false;
+    } else if (record) {
+        statusEl.hidden = false;
+        statusEl.classList.remove('hidden');
+        statusEl.textContent = t('article.historyStatusSaved', { time: relativeTime(record.lastOpenedAt || record.updatedAt) });
+        statusEl.dataset.state = pendingSync ? 'pending' : 'saved';
+        statusEl.disabled = false;
+    } else if ((dom.articleInput?.value || '').trim()) {
+        const draft = await articleStore.readDraft().catch(() => null);
+        const currentText = (dom.articleInput?.value || '').trim();
+        // 只有「目前輸入就是那份草稿」才顯示草稿狀態，否則會誤導使用者
+        const matchesDraft = !!draft && String(draft.text || '').trim() === currentText;
+        statusEl.hidden = false;
+        statusEl.classList.remove('hidden');
+        statusEl.textContent = matchesDraft
+            ? t('article.historyStatusDraft', { time: relativeTime(draft.savedAt) })
+            : t('article.historyStatusUnsaved');
+        statusEl.dataset.state = 'unsaved';
+        statusEl.disabled = false;
+    } else {
+        statusEl.hidden = true;
+        statusEl.classList.add('hidden');
+    }
 }
 
-function loadSelectedArticle() {
-    const selectedIndex = dom.articleHistorySelect.value;
-    if (selectedIndex === '') {
-        clearArticleInput();
-        return;
-    }
-    loadArticleHistoryRecord(selectedIndex);
-}
-
-async function deleteSelectedArticleHistory() {
-    const selectedIndex = dom.articleHistorySelect.value;
-    if (selectedIndex === '') {
-        ui.displayMessage(t('article.selectHistory'), 'warning');
-        return;
-    }
-    const okDeleteSelected = await ui.confirmAction({
-        title: t('article.historyDelete'),
-        message: t('article.confirmDeleteHistory'),
-        confirmLabel: t('article.delete'),
-        cancelLabel: t('common.cancel'),
-        danger: true
-    });
-    if (okDeleteSelected) {
-        removeArticleHistoryRecord(selectedIndex);
-    }
+function toggleHistoryFromStatus() {
+    openArticleHistory();
 }
 
 /**
@@ -2293,30 +2942,12 @@ export function showCurrentArticleIfAvailable() {
         ui.displayMessage(t('article.noArticleRecord'), 'info', 3500);
         return false;
     }
-    const list = state.analyzedArticles || [];
-    const rec = list.find(it => it && it.articleId === articleId);
-    if (!rec || !rec.article) {
+    const record = articleStore.getRecord(articleId);
+    if (!record || !record.article) {
         ui.displayMessage(t('article.analysisRecordMissing'), 'warning', 5000);
         return false;
     }
-
-    dom.articleInput.value = rec.article;
-    try {
-        const meta = (typeof storage.getArticleMetaById === 'function') ? storage.getArticleMetaById(articleId) : null;
-        if (meta) {
-            setCurrentArticleSourceMeta({
-                sourceType: meta.sourceType || 'paste',
-                sourceUrl: meta.sourceUrl || '',
-                title: meta.title || ''
-            });
-        } else {
-            setCurrentArticleSourceMeta({ sourceType: 'paste' });
-        }
-    } catch (_) {
-        setCurrentArticleSourceMeta({ sourceType: 'paste' });
-    }
-    displayArticleAnalysis(rec.article, rec.result);
-    try { notifyAssistantArticleChanged(); } catch (_) {}
+    applyRecordToView(record);
     return true;
 }
 
@@ -2817,16 +3448,12 @@ async function loadArticleFromLibrary(path) {
         // 將標題一併插入正文最前面，以 Markdown 風格 # 開頭展示
         const titleText = (article && article.title) ? String(article.title) : '';
         const title = titleText ? `# ${titleText}\n\n` : '';
-        dom.articleInput.value = `${title}${article.content || ''}`.trim();
-        try {
-            setCurrentArticleSourceMeta({
-                sourceType: 'file',
-                sourceUrl: path,
-                title: titleText
-            });
-        } catch (_) {}
-        // 從文章庫載入 → 通知助手切換上下文
-        try { notifyAssistantArticleChanged(); } catch(_) {}
+        // 從文章庫匯入是「另一篇」：先解除目前的文章綁定，避免寫進上一篇
+        applyImportedArticle(`${title}${article.content || ''}`.trim(), {
+            sourceType: 'file',
+            sourceUrl: path,
+            title: titleText
+        });
         closeArticleLibrary();
     } catch (error) {
         console.error(`無法從 ${path} 加載文章:`, error);
@@ -2935,7 +3562,7 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
             if (chunkItem) chunkItem.after(box);
             else card.appendChild(box);
             // 持久化片語解析
-            try { persistPhraseAnalysis(phrase, sentence, context, res); } catch (_) {}
+            try { persistPhraseAnalysis(phrase, sentence, context, res, card.dataset.articleId || ''); } catch (_) {}
             applySentenceDim(paraIdx, sentIdx, true);
             const closeBtn = box.querySelector('.phrase-close');
             if (closeBtn) closeBtn.addEventListener('click', () => {
@@ -2995,7 +3622,7 @@ try {
                              </div>`;
             const chunkItem = chunkBtn.closest('.chunk-item');
             if (chunkItem) chunkItem.after(box); else card.appendChild(box);
-            try { persistPhraseAnalysis(phrase, sentence, context, res); } catch (_) {}
+            try { persistPhraseAnalysis(phrase, sentence, context, res, card.dataset.articleId || ''); } catch (_) {}
             applySentenceDim(paraIdx, sentIdx, true);
             const closeBtn = box.querySelector('.phrase-close');
             if (closeBtn) closeBtn.addEventListener('click', () => {
@@ -3082,6 +3709,8 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
 });
 
 function showArticleWordAnalysis(clickedElement, analysisArray) {
+    // 點擊當下的文章就是這次請求的歸屬；回應回來時不再讀取「目前文章」。
+    const targetArticleId = articleContext.recordId || '';
     const wordText = clickedElement.dataset.word || clickedElement.textContent;
 
     // 句子直接取自包裹的 interactive-sentence（渲染時已寫入 data-sentence），
@@ -3171,24 +3800,21 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
             }
         };
         showArticleWordAnalysis._lazyCache.set(lazyKey, normalized);
+        // 持久化新增的詞詳解到「點擊時」所屬的文章；文章已刪除就不復活。
+        try {
+            const record = targetArticleId ? articleStore.getRecord(targetArticleId) : null;
+            if (record && record.result) {
+                const updated = {
+                    ...record.result,
+                    // 頂層 detailed_analysis 是這些按需詳解唯一的家，不可省略或精簡
+                    detailed_analysis: mergeDetailedAnalyses(record.result.detailed_analysis || [], [normalized])
+                };
+                articleStore.saveAnalysis(targetArticleId, updated).catch(() => {});
+            }
+        } catch (_) { /* 持久化失敗不影響顯示 */ }
+        if (!isCurrentArticle(targetArticleId)) return;
         const merged = mergeDetailedAnalyses(analysisArray, [normalized]);
         dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(merged);
-        // 持久化新增的詞詳解到當前文章的分析結果，便於跨端同步
-        try {
-            const articleText = (dom.articleInput.value || '').trim();
-            if (articleText) {
-                const currentArticleId = state.currentArticleId || null;
-                const current = (state.analyzedArticles || []).find(it => (currentArticleId && it.articleId === currentArticleId) || it.article === articleText);
-                if (current && current.result) {
-                    const updated = {
-                        ...current.result,
-                        detailed_analysis: mergeDetailedAnalyses(current.result.detailed_analysis || [], [normalized])
-                    };
-                    const extra = currentArticleId ? { articleId: currentArticleId } : undefined;
-                    storage.saveAnalysisResult(articleText, updated, extra);
-                }
-            }
-        } catch (_) { /* ignore persistence errors */ }
         showTooltip(normalized, sentence, paraEnglish, wordText);
     }).catch(err => {
         console.warn('懶載詳解失敗:', err);
@@ -3274,6 +3900,8 @@ function wrapChineseWithPairId(container, zh, pairId) {
 async function retrySingleParagraph(idx, options = {}) {
     const articleText = dom.articleInput.value.trim();
     if (!articleText) return;
+    // 固定這次重試所屬的文章：切換文章後才回來的結果不得寫進別篇
+    const targetArticleId = articleContext.recordId || '';
     const { title, paragraphs } = parseTitleAndParagraphs(articleText);
     const all = title ? [title, ...paragraphs] : paragraphs;
     if (idx < 0 || idx >= all.length) return;
@@ -3305,6 +3933,7 @@ async function retrySingleParagraph(idx, options = {}) {
                 sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
             });
         }
+        if (!isCurrentArticle(targetArticleId)) return;
         renderParagraph(idx, text, result);
         // merge into aggregated dataset
         let aggregated = [];
@@ -3313,6 +3942,20 @@ async function retrySingleParagraph(idx, options = {}) {
             aggregated = mergeDetailedAnalyses(aggregated, result.detailed_analysis);
             dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(aggregated);
         }
+        // 把重試成功的段落寫回記錄（重新載入後不會退回失敗狀態）
+        try {
+            const record = targetArticleId ? articleStore.getRecord(targetArticleId) : null;
+            if (record && record.result) {
+                const paragraphAnalysis = Array.isArray(record.result.paragraph_analysis) ? [...record.result.paragraph_analysis] : [];
+                paragraphAnalysis[idx] = result;
+                const updated = {
+                    ...record.result,
+                    paragraph_analysis: paragraphAnalysis,
+                    detailed_analysis: mergeDetailedAnalyses(record.result.detailed_analysis || [], result?.detailed_analysis || [])
+                };
+                articleStore.saveAnalysis(targetArticleId, updated).catch(() => {});
+            }
+        } catch (_) { /* 持久化失敗只影響跨端一致性 */ }
         // remove from failed list if present
         lastFailedIndices = (lastFailedIndices || []).filter(i => i !== idx);
         if (dom.retryFailedParagraphsBtn) dom.retryFailedParagraphsBtn.classList.toggle('hidden', lastFailedIndices.length === 0);
@@ -3880,6 +4523,8 @@ function initArticleSelectionToWordbook() {
 }
 
 async function toggleSentenceCard(sentenceEl) {
+    // 請求開始時就記住所屬文章；回應回來後只寫回這一篇，也只在它仍是目前文章時更新畫面
+    const targetArticleId = articleContext.recordId || '';
     const paraIdx = parseInt(sentenceEl.getAttribute('data-para-index'), 10) || 0;
     const sentIdx = parseInt(sentenceEl.getAttribute('data-sent-index'), 10) || 0;
     const sentence = sentenceEl.getAttribute('data-sentence') || sentenceEl.textContent;
@@ -3914,10 +4559,16 @@ async function toggleSentenceCard(sentenceEl) {
 
         try {
             const data = await analyzeSentenceDedupe(sentence, context, { timeoutMs: 22000, conciseKeypoints: true, includeStructure: true });
+            // 已切換到其他文章：結果只寫回原文章，不再更新目前畫面
+            if (!isCurrentArticle(targetArticleId)) {
+                persistSentenceAnalysis(sentence, context, data, targetArticleId);
+                return;
+            }
             renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx);
-            // 持久化句子解析
-            persistSentenceAnalysis(sentence, context, data);
+            // 持久化句子解析（寫回請求開始時所屬的文章）
+            persistSentenceAnalysis(sentence, context, data, targetArticleId);
         } catch (e) {
+            if (!isCurrentArticle(targetArticleId)) return;
             card.classList.add('is-error');
             card.textContent = t('article.analysisRetry');
         }
@@ -3941,9 +4592,13 @@ async function toggleSentenceCard(sentenceEl) {
 
     try {
         const data = await analyzeSentenceDedupe(sentence, context, { timeoutMs: 22000, conciseKeypoints: true, includeStructure: true });
+        if (!isCurrentArticle(targetArticleId)) {
+            persistSentenceAnalysis(sentence, context, data, targetArticleId);
+            return;
+        }
         renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx);
-        // 持久化句子解析
-        persistSentenceAnalysis(sentence, context, data);
+        // 持久化句子解析（寫回請求開始時所屬的文章）
+        persistSentenceAnalysis(sentence, context, data, targetArticleId);
         // 首次渲染即整句高亮
         applySentenceHighlight(paraIdx, sentIdx, true);
         // 片語級標記已移除，僅保留整句高亮
@@ -3988,6 +4643,8 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     card.dataset.sentIdx = sentIdx;
     card.dataset.sentence = sentence;
     card.dataset.context = context;
+    // 請求所屬文章固定在卡片上，之後的片語詳解一律寫回這一篇
+    card.dataset.articleId = articleContext.recordId || '';
 
     card.innerHTML = `
         <div class="sentence-card-head">
@@ -4078,7 +4735,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     } catch (_) {}
     if (refresh) refresh.addEventListener('click', async ()=>{
         refresh.disabled = true; refresh.textContent = t('article.refreshing');
-        try { const fresh = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true }); renderSentenceCard(card, fresh, sentence, context, paraIdx, sentIdx); persistSentenceAnalysis(sentence, context, fresh); }
+        try { const fresh = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true }); renderSentenceCard(card, fresh, sentence, context, paraIdx, sentIdx); persistSentenceAnalysis(sentence, context, fresh, sentenceEl.getAttribute('data-article-id') || ''); }
         finally { refresh.disabled = false; refresh.textContent = t('article.refresh'); }
     });
     if (selBtn) selBtn.addEventListener('click', async ()=>{

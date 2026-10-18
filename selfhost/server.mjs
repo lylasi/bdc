@@ -7,8 +7,14 @@
 //   GET  /version
 //   GET  /snapshot
 //   POST /snapshot
+//   GET|POST /articles, /articles/batch, /articles/import, /articles/usage
+//   GET|PUT|DELETE /articles/:id, POST /articles/:id/restore
 //   POST /change-token
 //   POST /reset-token
+//
+// 文章 API 直接重用 Cloudflare Worker 的實作（cloudflare-worker/src/articles.js）
+// 與共用的協議驗證（shared/article-protocol.mjs），兩個後端因此有一致的路由、
+// SQL 語意、錯誤碼與冪等規則。
 //
 // AI provider credentials/catalog endpoints are not implemented. Point the
 // frontend at SYNC.endpoint = http://<host>:<port> for learning-data sync; use
@@ -21,6 +27,9 @@ import { createServer } from 'node:http';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sanitizeSnapshotPayload } from './snapshot-sanitize.js';
+import { handleArticlesRoute, isLegacyArticleWriteBlocked } from '../cloudflare-worker/src/articles.js';
+import { snapshotCarriesArticles } from '../shared/article-protocol.mjs';
+import { createD1Adapter, createSqliteDatabase, readResponseBody, toWebRequest } from './d1-adapter.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MIN_TOKEN_LENGTH = 32;
@@ -62,7 +71,8 @@ function originAllowed(origin) {
 function corsHeaders(req) {
   const origin = req.headers.origin || '';
   const headers = {
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    // 文章 API 需要 PUT / DELETE（更新與軟刪除）；少了這兩個，瀏覽器預檢會擋下。
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Max-Age': '600',
     Vary: 'Origin',
@@ -119,6 +129,20 @@ async function readJson(req, maxBytes) {
   }
 }
 
+/** 讀取原始 body（文章 API 需要把原文轉給共用的 Web Request 實作）。 */
+async function readText(req, maxBytes) {
+  const declared = Number(req.headers['content-length'] || 0);
+  if (declared && maxBytes && declared > maxBytes) throw new HttpError('payload_too_large', 413);
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (maxBytes && size > maxBytes) throw new HttpError('payload_too_large', 413);
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
 function sha256Hex(text) {
   return createHash('sha256').update(String(text)).digest('hex');
 }
@@ -173,17 +197,7 @@ async function createDatabase() {
     mkdirSync(dirname(file), { recursive: true });
     const db = new DatabaseSync(file);
     db.exec(await readFile(join(HERE, 'schema.sql'), 'utf8'));
-    return {
-      driver: 'sqlite',
-      target: file,
-      all: async (sql, params = []) => db.prepare(sql).all(...params),
-      get: async (sql, params = []) => db.prepare(sql).get(...params),
-      run: async (sql, params = []) => {
-        const result = db.prepare(sql).run(...params);
-        return { changes: Number(result.changes), lastInsertRowid: result.lastInsertRowid };
-      },
-      close: async () => db.close()
-    };
+    return { ...createSqliteDatabase(db), target: file };
   }
 
   if (driver === 'postgres') {
@@ -215,6 +229,25 @@ async function createDatabase() {
       run: async (sql, params = []) => {
         const result = await pool.query(convert(sql), params);
         return { changes: result.rowCount };
+      },
+      // PostgreSQL 的交易必須在同一個連線上，因此這裡保留一個 client 跑完整批。
+      batch: async (statements = []) => {
+        const client = await pool.connect();
+        const results = [];
+        try {
+          await client.query('BEGIN');
+          for (const statement of statements) {
+            const result = await client.query(convert(statement.sql), statement.params || []);
+            results.push({ changes: result.rowCount });
+          }
+          await client.query('COMMIT');
+          return results;
+        } catch (error) {
+          try { await client.query('ROLLBACK'); } catch (_) {}
+          throw error;
+        } finally {
+          client.release();
+        }
       },
       close: async () => pool.end()
     };
@@ -300,10 +333,15 @@ async function handleSnapshot(req, res, user, path) {
     } catch (_) {
       payload = {};
     }
+    let sanitized = sanitizeSnapshotPayload(payload);
+    if (snapshotCarriesArticles(sanitized)
+      && await isLegacyArticleWriteBlocked({ DB: createD1Adapter(db) }, user.user_id)) {
+      delete sanitized.articles;
+    }
     return sendJson(req, res, {
       version: Number(row.version),
       updated_at: row.updated_at,
-      payload: sanitizeSnapshotPayload(payload)
+      payload: sanitized
     });
   }
 
@@ -313,7 +351,19 @@ async function handleSnapshot(req, res, user, path) {
     const payload = body ? body.payload : undefined;
     if (payload === undefined || payload === null) return fail(req, res, 'missing_payload', 400);
 
-    const payloadText = JSON.stringify(sanitizeSnapshotPayload(payload));
+    const sanitized = sanitizeSnapshotPayload(payload);
+    // 帳戶已啟用逐篇文章儲存後，舊快照的文章群組不得再寫入（見實作計劃）。
+    if (snapshotCarriesArticles(sanitized)
+      && await isLegacyArticleWriteBlocked({ DB: createD1Adapter(db) }, user.user_id)) {
+      return sendJson(req, res, {
+        error: 'articles_legacy_write_blocked',
+        code: 'articles_legacy_write_blocked',
+        conflict: true,
+        upgradeRequired: true
+      }, 409);
+    }
+    if (sanitized && typeof sanitized === 'object') delete sanitized.articles;
+    const payloadText = JSON.stringify(sanitized);
     const updatedAt = new Date().toISOString();
     const row = await db.get('SELECT version FROM snapshots WHERE user_id = ?', [user.user_id]);
     const current = row ? Number(row.version) : 0;
@@ -398,6 +448,25 @@ async function handle(req, res) {
 
   if (path === '/version' || path === '/snapshot') {
     return handleSnapshot(req, res, user, path);
+  }
+
+  if (path === '/articles' || path.startsWith('/articles/')) {
+    const bodyText = req.method === 'GET' || req.method === 'HEAD' ? undefined : await readText(req, 4 * 1024 * 1024);
+    const webRequest = toWebRequest({
+      method: req.method,
+      url: url.toString(),
+      headers: req.headers,
+      bodyText
+    });
+    const webResponse = await handleArticlesRoute({
+      request: webRequest,
+      env: { DB: createD1Adapter(db) },
+      url,
+      user,
+      rest: path.slice('/articles'.length)
+    });
+    const payload = await readResponseBody(webResponse);
+    return sendJson(req, res, payload === null ? {} : payload, webResponse.status);
   }
 
   if (

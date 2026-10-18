@@ -325,11 +325,25 @@ export default {
         adminUsersCreatedAt: '创建于 {time}',
         adminUsersUnknownTime: '创建时间未知',
         adminUsersLimited: '仅显示前 {count} 位用户',
-        adminUsersPair: '生成配对码',
-        adminUsersPairTitle: '为 {user} 生成配对码',
-        adminUsersPairWarning: '配对码 10 分钟内有效且只能使用一次，仅用于新装置登录，不会让现有装置退出。请通过安全渠道交给用户。',
-        adminUsersPairCode: '配对码',
+        adminUsersPair: '生成登录码',
+        adminUsersPairTitle: '为 {user} 生成登录码',
+        adminUsersPairWarning: '登录码在有效期内只能使用一次，仅用于新装置登录，不会让现有装置退出。登录链接和二维码等同于登录凭据，请通过安全渠道交给用户。',
+        adminUsersPairCode: '登录码',
         adminUsersPairExpires: '有效期至 {time}',
+        adminUsersPairTtl: '登录码有效期',
+        adminUsersPairTtl10m: '10 分钟',
+        adminUsersPairTtl24h: '24 小时',
+        adminUsersPairTtl7d: '7 天',
+        adminUsersPairTtl30d: '30 天',
+        adminUsersPairLink: '登录链接',
+        adminUsersCopyLink: '复制链接',
+        adminUsersPairQrAlt: '登录链接二维码',
+        adminUsersPairLinkHint: '登录链接会使用当前页面网址；如果管理面板不是从用户访问的网址打开，请在 ai-config.js 设置 SYNC.publicBaseUrl。',
+        adminUsersPairRevoke: '撤销未使用登录码',
+        adminUsersPairRevoked: '已撤销 {user} 的 {count} 个未使用登录码',
+        adminUsersPairRevokeConfirm: '确定撤销 {user} 所有未使用的登录码吗？已显示的登录链接和二维码会立即失效。',
+        adminUsersPairRegenerate: '重新生成',
+        adminUsersPairMultiWarning: '重新生成不会撤销之前未使用的登录码；如已外流请按“撤销未使用登录码”。',
         aiAllowCrossOriginModels: '允许跨来源模型列表',
         aiAllowCrossOriginHint: '仅在你确认模型列表端点属于同一服务时开启；密钥只会送往 API 地址。',
         aiImportDevice: '从「此设备」导入供应商',
@@ -423,11 +437,16 @@ export default {
         adminUsersResetFailed: '重置通行码失败',
         adminUsersRateLimited: '操作过于频繁，请稍后再试',
         adminUsersAdminProtected: '管理员账户的通行码请由部署者重置',
-        adminUsersPairFailed: '生成配对码失败',
-        pairingRequired: '请输入用户代号与配对码',
-        pairingInvalid: '配对码无效、已过期或已使用',
+        adminUsersPairFailed: '生成登录码失败',
+        adminUsersPairRevokeFailed: '撤销登录码失败',
+        adminUsersPairInvalidTtl: '登录码有效期不正确',
+        pairingRequired: '请输入登录码',
+        pairingInvalid: '登录码无效、已过期或已使用',
+        pairingFormat: '请输入 12–32 位登录码',
         pairingRateLimited: '尝试次数过多，请稍后再试',
-        pairingFailed: '配对登录失败（{status}）',
+        pairingFailed: '登录码登录失败（{status}）',
+        loginStorageFailed: '登录状态保存失败，请检查浏览器存储设置',
+        loginSuperseded: '登录已被新的操作取代，请重试',
         passcodeTooShort: '通行码至少需要 32 个字符',
     },
     vocabulary: {
@@ -784,7 +803,7 @@ export default {
         analysisFailedInline: '分析失败',
         sourceAlreadyChinese: '原文已是中文，无需翻译',
         retryingProgress: '重试中... ({done}/{total})',
-        title: '文章详解', inputTitle: '输入文章', historyRead: '读取历史记录', historyManage: '管理记录', historyManageTitle: '管理阅读记录', historyDelete: '删除记录', historyDeleteTitle: '删除选中的历史记录', inputPlaceholder: '在这里输入或粘贴您想分析的文章...', analyze: '分析文章', import: '导入...', importTitle: '从网址或图片导入文章', retryFailed: '重试失败段', clear: '清除重写', library: '从文章库选取', compactHint: '当前文章详解采用精简模式：仅输出中文翻译。', readingControls: '朗读控制', read: '朗读文章', stopReading: '停止朗读', downloadAudio: '下载语音', mode: '模式：', full: '全文', paragraph: '段落', sentence: '句子', dimming: '淡化强度：', dimmingTitle: '调整非当前句子的淡化程度', repeat: '重复：', repeatTitle: '设置段落/句子朗读的重复次数', repeatSlider: '滑动设置重复次数', speed: '语速：', previousSentence: '上一句', nextSentence: '下一句', previousParagraph: '上一段', nextParagraph: '下一段', result: '分析结果', maskAria: '翻译遮罩', maskLabel: '迷雾', maskTitle: '翻译遮罩：默认开启；鼠标移入/按住显示', sourceEmpty: '来源：—', sourcePrefix: '来源：', sourceUrl: '网页 / 新闻', sourceFile: '文章库 / 文件', sourceOcr: '图片 OCR', sourcePaste: '粘贴文字', openSource: '打开原文', initialHint: '请先输入文章并点击分析按钮。', untitled: '未命名文章', importModal: '导入文章', importUrl: '网址导入', importNews: '新闻来源', importOcr: '图片 OCR', importQa: '问答集', pasteUrl: '粘贴网址', fetch: '提取', chooseFile: '选择文件', chooseFileTitle: '从本机文件导入 .md/.txt', sourceList: '来源列表', cleanupOptions: '清洗选项', aiCleanup: 'AI 清洗内容（更适合阅读）', keepImages: '保留图片', autoApply: '提取后自动应用', skipThirdParty: '跳过第三方转换', cleanupModel: '清洗模型', configureModel: '请先到全局设置配置 provider 与模型', dropTextFile: '拖放 .md / .txt 到此，或聚焦后按 Ctrl+V 粘贴全文', beforeCleanup: '清洗前', afterCleanup: '清洗后', applyInput: '应用到输入框', chooseImages: '选择图片', preferCamera: '优先使用相机', addImages: '新增图片', clearImages: '清空', ocrModel: 'OCR 模型', dropImages: '拖放图片到此，或在此窗口粘贴截图', prompt: '提示词', promptPlaceholder: '例如：仅输出图片中的文章正文，保留原始换行；忽略 UI 元素与噪声', extractImageText: '提取图片文字', mergeOutput: '合并输出', ocrPreview: 'OCR 结果预览', ocrHint: '使用 AI 视觉模型提取图片中的文本，保留原始换行与标点。', remove: '移除', selectImagesFirst: '请先选择图片', extracting: '提取中...', imageNumber: '图片 {number}', ocrFailed: 'OCR 失败：{message}', selectQa: '选择问答集', importAsArticle: '导入为文章', preview: '预览', preset: '（预置）', selectQaFirst: '请先选择问答集', loadQaFailed: '加载问答集失败', qaDefault: '问答集', importHint: '将通过 r.jina.ai 尝试提取阅读版内容；如果失败则改用简单提取。', enterArticle: '请输入要分析的文章！', analyzing: '分析中...', preparing: '准备中...', analyzingParagraph: '正在分析第 {number} 段...', completedParagraphs: '已完成 {count} 段分析', retryParagraph: '重试本段', elapsed: '耗时', cancelled: '已取消此次分析。', analysisFailed: '分析失败！请检查 API Key 或网络连接后再试。', invalidArticle: '请输入有效的文章内容！', invalidResponse: 'API 返回的数据格式不完整。', noHistory: '尚无阅读记录。', unknownTime: '未记录时间', analyzed: '已分析', notAnalyzed: '未分析', load: '加载', delete: '删除', clearAll: '清空全部', historyManager: '阅读记录管理', confirmClearHistory: '确定清空全部阅读记录？此操作不可撤回。', confirmDeleteHistory: '确定删除此阅读记录？', selectHistory: '请先选择一个历史记录！', noContent: '无内容', noLibraryMatch: '没有符合条件的文章。', loadingLibrary: '正在加载文章列表...', emptyLibrary: '文章库为空。', loadLibraryFailed: '加载文章列表失败。', allCategories: '全部分类', uncategorized: '未分类', articleCount: '{count} 篇', loadArticleFailed: '加载文章失败！'
+        title: '文章详解', inputTitle: '输入文章', historyDelete: '删除记录', inputPlaceholder: '在这里输入或粘贴您想分析的文章...', analyze: '分析文章', import: '导入...', importTitle: '从网址或图片导入文章', retryFailed: '重试失败段', clear: '清除重写', library: '从文章库选取', compactHint: '当前文章详解采用精简模式：仅输出中文翻译。', readingControls: '朗读控制', read: '朗读文章', stopReading: '停止朗读', downloadAudio: '下载语音', mode: '模式：', full: '全文', paragraph: '段落', sentence: '句子', dimming: '淡化强度：', dimmingTitle: '调整非当前句子的淡化程度', repeat: '重复：', repeatTitle: '设置段落/句子朗读的重复次数', repeatSlider: '滑动设置重复次数', speed: '语速：', previousSentence: '上一句', nextSentence: '下一句', previousParagraph: '上一段', nextParagraph: '下一段', result: '分析结果', maskAria: '翻译遮罩', maskLabel: '迷雾', maskTitle: '翻译遮罩：默认开启；鼠标移入/按住显示', sourceEmpty: '来源：—', sourcePrefix: '来源：', sourceUrl: '网页 / 新闻', sourceFile: '文章库 / 文件', sourceOcr: '图片 OCR', sourcePaste: '粘贴文字', openSource: '打开原文', initialHint: '请先输入文章并点击分析按钮。', untitled: '未命名文章', importModal: '导入文章', importUrl: '网址导入', importNews: '新闻来源', importOcr: '图片 OCR', importQa: '问答集', pasteUrl: '粘贴网址', fetch: '提取', chooseFile: '选择文件', chooseFileTitle: '从本机文件导入 .md/.txt', sourceList: '来源列表', cleanupOptions: '清洗选项', aiCleanup: 'AI 清洗内容（更适合阅读）', keepImages: '保留图片', autoApply: '提取后自动应用', skipThirdParty: '跳过第三方转换', cleanupModel: '清洗模型', configureModel: '请先到全局设置配置 provider 与模型', dropTextFile: '拖放 .md / .txt 到此，或聚焦后按 Ctrl+V 粘贴全文', beforeCleanup: '清洗前', afterCleanup: '清洗后', applyInput: '应用到输入框', chooseImages: '选择图片', preferCamera: '优先使用相机', addImages: '新增图片', clearImages: '清空', ocrModel: 'OCR 模型', dropImages: '拖放图片到此，或在此窗口粘贴截图', prompt: '提示词', promptPlaceholder: '例如：仅输出图片中的文章正文，保留原始换行；忽略 UI 元素与噪声', extractImageText: '提取图片文字', mergeOutput: '合并输出', ocrPreview: 'OCR 结果预览', ocrHint: '使用 AI 视觉模型提取图片中的文本，保留原始换行与标点。', remove: '移除', selectImagesFirst: '请先选择图片', extracting: '提取中...', imageNumber: '图片 {number}', ocrFailed: 'OCR 失败：{message}', selectQa: '选择问答集', importAsArticle: '导入为文章', preview: '预览', preset: '（预置）', selectQaFirst: '请先选择问答集', loadQaFailed: '加载问答集失败', qaDefault: '问答集', importHint: '将通过 r.jina.ai 尝试提取阅读版内容；如果失败则改用简单提取。', enterArticle: '请输入要分析的文章！', analyzing: '分析中...', preparing: '准备中...', analyzingParagraph: '正在分析第 {number} 段...', completedParagraphs: '已完成 {count} 段分析', retryParagraph: '重试本段', elapsed: '耗时', cancelled: '已取消此次分析。', analysisFailed: '分析失败！请检查 API Key 或网络连接后再试。', invalidArticle: '请输入有效的文章内容！', invalidResponse: 'API 返回的数据格式不完整。', noHistory: '尚无阅读记录。', unknownTime: '未记录时间', analyzed: '已分析', notAnalyzed: '未分析', load: '加载', delete: '删除', clearAll: '清空全部', confirmClearHistory: '确定清空全部阅读记录？文章专属单词本仍会保留。', confirmDeleteHistory: '确定删除此阅读记录？', noContent: '无内容', noLibraryMatch: '没有符合条件的文章。', loadingLibrary: '正在加载文章列表...', emptyLibrary: '文章库为空。', loadLibraryFailed: '加载文章列表失败。', allCategories: '全部分类', uncategorized: '未分类', articleCount: '{count} 篇', loadArticleFailed: '加载文章失败！'
         ,noArticleRecord: '找不到对应的文章记录，请先在文章详解中载入或分析一篇文章。'
         ,readerDrag: '拖动'
         ,pause: '暂停'
@@ -800,6 +819,62 @@ export default {
         ,downloadAudioFailed: '下载音频失败，可能是文字过长或网络问题。请尝试切换为句子/段落模式下载。'
         ,analysisRecordMissing: '这篇文章的分析记录已删除，无法自动还原原文。请重新导入或粘贴文章内容后再分析。'
         ,doneStatus: '完成', failedStatus: '解析失败', refresh: '重新获取', refreshing: '重新获取中...', sentenceAnalysis: '句子解析', sentenceNoTranslation: '（本句暂无中文译文）', processing: '处理中…', cleaning: 'AI 清洗中…', cleaningProgress: 'AI 清洗中…（{done}/{total}）', fetching: '提取中…', cleanupTruncated: '内容较长，AI 清洗已达到模型输出上限，结果可能缺少尾段；建议分段导入。', extractTruncated: '内容较长，AI 提取已达到模型输出上限，结果可能缺少尾段；建议分段导入。', sourcesFallbackHint: '新闻来源端点没有响应，当前显示的是 ai-config.js 中配置的备用来源清单，可能与服务端实际支持的来源不一致。', collapse: '收起', close: '关闭', closeWindow: '关闭窗口', details: '详解', detailsLoading: '详解加载中...', loading: '加载中...', loadingDetails: '正在加载详解...', analyzeSelection: '分析选中内容', selectPhraseHint: '选中句中短语后点击', collapseArea: '点击此区域收起', collapseAreaAria: '点击右侧空白区域可收起', selectPhraseFirst: '请先在该句中选中短语', analyzingSelection: '分析中...', phraseLabel: '短语：', usageLabel: '用法：', roleLabel: '作用：', meaningLabel: '意思：', pronunciation: '发音', analyzePhrase: '分析短语', analyzeOtherPhrase: '自定义短语...', phrasePrompt: '输入要分析的短语', analysisRetry: '分析失败，请稍后再试', analysisRetryShort: '分析失败，请稍后重试', noAnalysisData: '未找到分析数据。', retry: '重试', retrying: '重试中...', addToWordbook: '加入单词本', addSelectedToWordbook: '加入单词本（选中）', selectWordOrPhrase: '请先在该句中选中词语或短语', wordAnalysisFailed: '分析失败。'
+        ,historyRecords: '阅读记录'
+        ,historyOpenTitle: '打开阅读记录'
+        ,historyStatusEdited: '内容已修改，尚未分析'
+        ,historyStatusSaved: '已存入阅读记录 · {time}'
+        ,historyStatusUnsaved: '尚未存入阅读记录'
+        ,historyStatusDraft: '已暂存草稿 · {time}'
+        ,historyStatusSaveFailed: '内容未能存入本机，请重试或导出'
+        ,historySearchPlaceholder: '搜索标题或正文'
+        ,historySearchLabel: '搜索阅读记录'
+        ,historySearchScope: '搜索范围：已下载到本机的文章全文'
+        ,historyFilterLabel: '按来源筛选'
+        ,historySortLabel: '排序方式'
+        ,historySortRecent: '最近阅读'
+        ,historySortUpdated: '最近更新'
+        ,historySortTitle: '标题 A→Z'
+        ,historySourceAll: '全部来源'
+        ,historyToday: '今天'
+        ,historyYesterday: '昨天'
+        ,historyThisWeek: '本周'
+        ,historyEarlier: '更早'
+        ,historyCurrent: '当前'
+        ,historyMoreActions: '更多操作'
+        ,historyEmptyTitle: '还没有阅读记录'
+        ,historyEmptyHint: '分析文章后会自动存入这里'
+        ,historyRename: '重命名'
+        ,historyRenamePrompt: '输入新的标题'
+        ,historyRenameLabel: '标题'
+        ,historyRenameConfirm: '保存'
+        ,historyRenamed: '已重命名'
+        ,historyRenameFailed: '重命名失败，请重试'
+        ,historyDeleteCurrentUnsaved: '当前文章有未保存的修改。删除后输入内容会保留为草稿，可随时找回。确定删除？'
+        ,historyDeleteFailed: '删除失败，请重试'
+        ,historyDeleted: '已删除《{title}》'
+        ,historyUndo: '撤销'
+        ,historyUndoMore: '另有 {count} 笔可撤销'
+        ,historyUndone: '已恢复《{title}》'
+        ,historyUndoFailed: '恢复失败，请重试'
+        ,historyClearDone: '已清空阅读记录'
+        ,historyStorage: '共 {count} 篇 · 约 {size}'
+        ,historyPartial: '{count} 段未完成'
+        ,historyPendingSync: '本机修改尚未同步到云端'
+        ,historyPendingSyncShort: '未同步'
+        ,historyConflict: '版本冲突'
+        ,historyConflictHint: '云端版本已更新，本机修改仍保留'
+        ,historyConflictsTitle: '需要处理的版本冲突'
+        ,historyConflictKeepMine: '保留本机修改'
+        ,historyConflictSaveCopy: '另存为副本'
+        ,historyConflictUseRemote: '使用云端版本'
+        ,historyDraftTitle: '未保存的草稿'
+        ,historyDraftRestore: '恢复'
+        ,historyDraftDiscard: '丢弃'
+        ,historyDraftRestored: '已恢复草稿'
+        ,historyCurrentDeleted: '当前文章已从阅读记录中删除，可用「撤销」恢复。'
+        ,historyNotAnalyzedHint: '这篇文章尚未完成分析，点击「分析文章」即可开始。'
+        ,historySaveFailed: '分析结果未能存入本机，内容仍在画面上，请重试或导出。'
+        ,migrationFailed: '文章迁移未完成，暂时显示旧版阅读记录；原资料已保留，请重试。'
     },
     qa: {
         setNameLabel: '问答集名称',
@@ -967,6 +1042,13 @@ export default {
         ,new: '新建', import: '导入', modifyTitle: '修改标题', continueInAssistant: '在助手中继续', export: '导出', questionPlaceholder: '输入问题…', loading: '加载中...', emptySession: '此会话还没有消息', loadFailed: '加载失败', articleKeyPrompt: '请输入文章键（留空为全局）', sessionName: '会话名称', importedSession: '导入会话', importFailed: '导入失败：{message}', selectSession: '请先选择一个会话', sessionMissing: '会话不存在', noSelection: '未选择会话', deleteFailed: '删除失败：{message}'
     },
     sync: {
+        guestArticlesTitle: '把访客文章带进这个账户？',
+        guestArticlesMessage: '这台装置上有 {count} 篇尚未登录时保存的文章。要带进现在的账户并同步吗？',
+        guestArticlesConfirm: '带进账户',
+        guestArticlesSkip: '先不处理',
+        guestArticlesMerged: '已带进 {count} 篇文章',
+        articleSyncPending: '文章同步未完成，稍后会自动重试',
+        articleSyncFailed: '文章同步失败',
         backupNoteManual: '手动同步后备份',
         backupNoteAuto: '自动同步后备份',
         backupNoteImport: '手动·文件导入',
@@ -974,7 +1056,7 @@ export default {
         versionOnly: '（v{version}）',
         sessionItemTitle: '点击预览，双击直接在助手中开启',
         globalPrefix: '全局 · ',
-        loggedOut: '已退出登录', loggedIn: '已登录', loggedOutState: '未登录', loginFirst: '请先登录', syncing: '同步中...', autoSyncing: '自动同步中...', restoredEmpty: '已从云端恢复（检测到本机为空）', restoredEmptyMessage: '检测到本机为空，已自动从云端恢复', restoredAutomatic: '已从云端恢复（自动检测）', syncDone: '同步完成', syncFailed: '同步失败', autoSyncFailed: '自动同步失败', unknownError: '未知错误', login: '登录', passcode: '通行码', passcodePlaceholder: '输入您的通行码', show: '显示', hide: '隐藏', forgot: '忘记通行码', loginHint: '数据相互独立，请使用分配给您的通行码登录。', loginRememberHint: '本机会记住登录状态；只有首次在这台装置登录或退出登录后，才需要再次输入通行码。', pairingLogin: '使用装置配对码', pairingLoginTitle: '装置配对登录', pairingHint: '在已登录的管理员装置上生成一次性配对码，然后在这里输入用户代号与配对码。', pairingCode: '配对码', pairingCodePlaceholder: '例如 ABCD-EFGH-JKLM', pairingSubmit: '配对并登录', pairingLoggingIn: '配对中...', pairingSuccess: '配对成功，已登录', backToPasscode: '返回通行码登录', enterPasscode: '请输入通行码', loggingIn: '登录中...', loginSuccess: '登录成功', error: '错误：{message}', tryLater: '请稍后再试', loginUnavailable: '登录模块暂时不可用', changePasscode: '更改通行码', newPasscode: '新通行码', minSix: '至少 32 位', confirmPasscode: '确认新通行码', enterAgain: '再输入一次', updatePasscode: '更新通行码', changeHint: '修改后本机将自动更新；其他设备需要使用新通行码重新登录。', passcodeTooShort: '新通行码至少 32 位', mismatch: '两次输入不一致', updating: '更新中...', updatedPasscode: '已更新通行码', resetPasscode: '用恢复码重置通行码', userId: '用户代号', userIdPlaceholder: '例如 alice', recoveryCode: '恢复码', recoveryPlaceholder: '创建账号时获得的恢复码', backLogin: '返回登录', resetAndLogin: '重置并登录', resetHint: '忘记通行码时，使用“用户代号 + 恢复码”设置新通行码。', fillRecovery: '请填写用户代号与恢复码', processing: '处理中...', resetSuccess: '重置成功，已登录', backupTitle: '本机备份与恢复', restore: '恢复', export: '导出', delete: '删除', noBackups: '还没有备份', close: '关闭', createBackup: '创建新备份', importBackup: '导入备份文件', clearCache: '清理本机缓存', backupCreated: '已创建备份', backupCreateFailed: '创建备份失败：{message}', fileTooLarge: '文件过大（>25MB），请确认是否为备份文件', readFileFailed: '读取文件失败', invalidJson: '导入失败：文件不是有效的 JSON', invalidBackup: '文件格式不符，找不到可恢复的备份数据', importWriteFailed: '导入失败：{message}', backupImported: '已导入备份，请在列表点击“恢复”应用到本机', cacheCleared: '已清理本机缓存', clearFailed: '清理失败：{message}', backupMissing: '备份不存在或已损坏', restoredLocal: '已从备份恢复（仅本机）', restoreFailed: '恢复失败：{message}', backupExported: '已导出备份', exportFailed: '导出失败', backupDeleted: '已删除备份', deleteFailed: '删除失败', settings: '设置', approximately: '约 {size} KB',
+        loggedOut: '已退出登录', loggedIn: '已登录', loggedOutState: '未登录', loginFirst: '请先登录', syncing: '同步中...', autoSyncing: '自动同步中...', restoredEmpty: '已从云端恢复（检测到本机为空）', restoredEmptyMessage: '检测到本机为空，已自动从云端恢复', restoredAutomatic: '已从云端恢复（自动检测）', syncDone: '同步完成', syncFailed: '同步失败', autoSyncFailed: '自动同步失败', unknownError: '未知错误', login: '登录', passcode: '通行码', passcodePlaceholder: '输入您的通行码', show: '显示', hide: '隐藏', forgot: '忘记通行码', loginHint: '数据相互独立，请使用分配给您的通行码登录。', loginRememberHint: '本机会记住登录状态；只有首次在这台装置登录或退出登录后，才需要再次输入通行码。', pairingLogin: '使用登录码', pairingLoginTitle: '登录码登录', pairingHint: '在已登录的管理员装置上生成一次性登录码，或直接打开管理员发给你的登录链接。', pairingCode: '登录码', pairingCodePlaceholder: '例如 ABCD-EFGH-JKLM-NPQR', pairingSubmit: '使用登录码登录', pairingLoggingIn: '登录中...', pairingSuccess: '登录成功', loginCodeSwitchTitle: '切换账号？', loginCodeSwitchMessage: '你目前以 {user} 登录。继续会切换到这个登录码对应的账号。', loginCodeSwitchConfirm: '切换账号', loginCodeSwitchCancelled: '已取消切换；登录码尚未使用。', loginCodeMergeTitle: '合并本机数据？', loginCodeMergeMessage: '这个装置已有本机学习数据。要将它合并并同步到 {user} 的云端账号吗？选择“仅登录”会暂停自动同步，之后可按“立即同步”再合并。', loginCodeMergeConfirm: '合并并同步', loginCodeMergeSkip: '仅登录', loginCodeMergeSkipped: '已登录，自动同步已暂停。按“立即同步”可合并本机数据。', loginCodeLinkSuccess: '已通过登录链接登录为 {user}', loginCodeLinkFailed: '登录链接处理失败：{message}', loginCodeCapabilityMissing: '此同步服务不支持登录码登录。', mergePendingTitle: '合并本机数据？', mergePendingMessage: '自动同步已暂停，因为上次通过登录链接登录时未选择合并本机数据。要现在合并并同步到 {user} 吗？', mergePendingConfirm: '合并并同步', mergePendingStatus: '自动同步已暂停，按“立即同步”合并本机数据', backToPasscode: '返回通行码登录', enterPasscode: '请输入通行码', loggingIn: '登录中...', loginSuccess: '登录成功', error: '错误：{message}', tryLater: '请稍后再试', loginUnavailable: '登录模块暂时不可用', changePasscode: '更改通行码', newPasscode: '新通行码', minSix: '至少 32 位', confirmPasscode: '确认新通行码', enterAgain: '再输入一次', updatePasscode: '更新通行码', changeHint: '修改后本机将自动更新；其他设备需要使用新通行码重新登录。', passcodeTooShort: '新通行码至少 32 位', mismatch: '两次输入不一致', updating: '更新中...', updatedPasscode: '已更新通行码', resetPasscode: '用恢复码重置通行码', userId: '用户代号', userIdPlaceholder: '例如 alice', recoveryCode: '恢复码', recoveryPlaceholder: '创建账号时获得的恢复码', backLogin: '返回登录', resetAndLogin: '重置并登录', resetHint: '忘记通行码时，使用“用户代号 + 恢复码”设置新通行码。', fillRecovery: '请填写用户代号与恢复码', processing: '处理中...', resetSuccess: '重置成功，已登录', backupTitle: '本机备份与恢复', restore: '恢复', export: '导出', delete: '删除', noBackups: '还没有备份', close: '关闭', createBackup: '创建新备份', importBackup: '导入备份文件', clearCache: '清理本机缓存', backupCreated: '已创建备份', backupCreateFailed: '创建备份失败：{message}', fileTooLarge: '文件过大（>25MB），请确认是否为备份文件', readFileFailed: '读取文件失败', invalidJson: '导入失败：文件不是有效的 JSON', invalidBackup: '文件格式不符，找不到可恢复的备份数据', importWriteFailed: '导入失败：{message}', backupImported: '已导入备份，请在列表点击“恢复”应用到本机', cacheCleared: '已清理本机缓存', clearFailed: '清理失败：{message}', backupMissing: '备份不存在或已损坏', restoredLocal: '已从备份恢复（仅本机）', restoreFailed: '恢复失败：{message}', backupExported: '已导出备份', exportFailed: '导出失败', backupDeleted: '已删除备份', deleteFailed: '删除失败', settings: '设置', approximately: '约 {size} KB',
         minThirtyTwo: '至少 32 位',
         generatePasscode: '生成随机通行码',
         generatedPasscodeHint: '已生成高强度通行码，请立即保存；离开后无法再次查看。',

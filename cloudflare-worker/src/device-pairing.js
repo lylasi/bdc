@@ -1,23 +1,33 @@
-// Device pairing: exchange a short-lived one-time code for a long-lived
-// session token. The user's primary passcode (users.token_hash) stays valid,
-// so pairing a new device does not log out existing devices.
+// Login codes: exchange a one-time code for a long-lived session token.
+// The user's primary passcode (users.token_hash) stays valid, so signing in on
+// a device does not log out existing devices.
 //
-// Codes are 12 characters from an unambiguous alphabet (~60 bits), valid for
-// 10 minutes, single-use, and stored as SHA-256 hashes only.
+// New codes are 16 characters from an unambiguous alphabet (80 bits),
+// single-use, and stored as SHA-256 hashes only. The default lifetime is seven
+// days; administrators can choose 10 minutes, 24 hours, 7 days or 30 days.
+// Legacy 12-character codes remain accepted until they expire.
 
 import { json, errorJson, readJsonBody, rateLimit, getClientKey } from './http.js';
 import { randomToken, sha256Hex } from './token.js';
 
-export const PAIRING_CODE_TTL_MS = 10 * 60 * 1000;
+export const PAIRING_CODE_LENGTH = 16;
+export const PAIRING_CODE_TTL_SECONDS = Object.freeze([600, 86400, 604800, 2592000]);
+export const DEFAULT_PAIRING_CODE_TTL_SECONDS = 604800;
+// Kept for callers that still use the millisecond constant. New code should
+// send an explicit ttlSeconds value.
+export const PAIRING_CODE_TTL_MS = DEFAULT_PAIRING_CODE_TTL_SECONDS * 1000;
 export const SESSION_TTL_MS = 180 * 24 * 60 * 60 * 1000;
 
 const PAIRING_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-const PAIRING_CODE_RE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{12}$/;
+// 12-character codes are the v1 format; 16 is the current default. The upper
+// bound leaves room for future formats without accepting arbitrary input.
+const PAIRING_CODE_RE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{12,32}$/;
 const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const MAX_BODY_BYTES = 4 * 1024;
 
-export function randomPairingCode() {
-  const bytes = crypto.getRandomValues(new Uint8Array(12));
+export function randomPairingCode(length = PAIRING_CODE_LENGTH) {
+  const size = Math.max(12, Math.min(32, Number(length) || PAIRING_CODE_LENGTH));
+  const bytes = crypto.getRandomValues(new Uint8Array(size));
   let code = '';
   // 256 is divisible by the 32-character alphabet, so modulo is unbiased.
   for (const byte of bytes) code += PAIRING_ALPHABET[byte % PAIRING_ALPHABET.length];
@@ -58,9 +68,9 @@ export async function handlePairRequest(ctx) {
     return errorJson('pairing_invalid', 403, env, request);
   }
 
-  const userId = String(body.userId || '').trim();
+  const userIdInput = String(body.userId || '').trim();
   const code = normalizePairingCode(body.code);
-  if (!USER_ID_RE.test(userId) || !PAIRING_CODE_RE.test(code)) {
+  if (!PAIRING_CODE_RE.test(code) || (userIdInput && !USER_ID_RE.test(userIdInput))) {
     return errorJson('pairing_invalid', 403, env, request);
   }
 
@@ -68,13 +78,20 @@ export async function handlePairRequest(ctx) {
   const nowIso = now.toISOString();
   const codeHash = await sha256Hex(code);
   const row = await pairingCodeRow(env, codeHash);
-  if (!row || row.user_id !== userId || row.used_at || !(row.expires_at > nowIso)) {
+  if (!row || row.used_at || !(row.expires_at > nowIso)) {
+    return errorJson('pairing_invalid', 403, env, request);
+  }
+
+  // The code alone identifies the account. userId is optional and only acts as
+  // an extra check for clients that still display a user-id field. User ids are
+  // case-insensitive; the stored canonical id is always used below.
+  if (userIdInput && row.user_id.toLowerCase() !== userIdInput.toLowerCase()) {
     return errorJson('pairing_invalid', 403, env, request);
   }
 
   const user = await env.DB
     .prepare('SELECT user_id, label, role FROM users WHERE user_id = ?')
-    .bind(userId)
+    .bind(row.user_id)
     .first();
   if (!user || user.role === 'admin') return errorJson('pairing_invalid', 403, env, request);
 

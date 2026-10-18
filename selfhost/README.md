@@ -192,11 +192,35 @@ pg_dump "$DATABASE_URL" > bdc-sync-backup.sql
 | GET | `/me` | `{ user_id, label, role }` |
 | GET | `/version` | `{ version }` |
 | GET | `/snapshot` | `{ version, updated_at, payload }` 或 `null` |
-| POST | `/snapshot` | `{ expected_version, payload }`；版本不符回 409 |
+| POST | `/snapshot` | `{ expected_version, payload }`；版本不符回 409；舊格式文章群組回 409 `articles_legacy_write_blocked` |
+| GET | `/articles?cursor=N&limit=` | 文章增量同步（伺服器游標） |
+| GET | `/articles?full=1&includeDeleted=1` | 完整文章清單（僅 metadata） |
+| POST | `/articles/batch` | `{ ids: [...] }` 批次讀取完整文件（最多 50） |
+| POST | `/articles` | 新增（`clientMutationId` 冪等） |
+| GET | `/articles/:id` | 單篇完整文件 |
+| PUT | `/articles/:id` | `{ expectedRevision, ... }` 原子版本檢查 |
+| DELETE | `/articles/:id` | `{ expectedRevision }` 軟刪除 |
+| POST | `/articles/:id/restore` | `{ expectedRevision }` 復原 |
+| POST | `/articles/import` | 舊文章匯入（保留原 ID；`final: true` 開啟閘門） |
+| GET | `/articles/usage` | 用量與限制 |
 | POST | `/change-token` | `{ new_token }`，需登入，至少 32 字元 |
 | POST | `/reset-token` | `{ user_id, recovery_code, new_token }`，免登入 |
 
 `/ai-credentials`、`/ai-catalog`、`/admin/*` 會回 `501 not_supported`。
+
+## 文章逐篇儲存
+
+`articles`、`article_changes`、`article_state` 三張表由 `schema.sql` 在啟動時以
+`IF NOT EXISTS` 建立，既有安裝直接重啟即可取得；若想先手動套用，見
+`migrations/001_article_storage.sql`（可重複執行）。**套用前請先備份資料庫**。
+
+文章 API 直接重用 Cloudflare Worker 的實作（`../cloudflare-worker/src/articles.js`）
+與共用驗證（`../shared/article-protocol.mjs`），因此兩個後端的路由、SQL 語意、
+錯誤碼、`expectedRevision` 衝突規則與冪等行為一致；`tests/articles-protocol.test.mjs`
+會把同一份情境分別跑在兩邊。
+
+瀏覽器需要 `PUT`／`DELETE`（更新與刪除），CORS 已允許這兩個方法；若前面有反向代理，
+請一併放行。
 
 ## 疑難排解
 

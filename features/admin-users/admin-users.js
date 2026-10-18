@@ -16,12 +16,21 @@ import {
     AUTH_EVENT
 } from '../../modules/sync-cloudflare.js';
 import { t, formatDateTime } from '../../modules/i18n.js';
-import { displayMessage, escapeHtml } from '../../modules/ui.js';
+import { displayMessage, escapeHtml, confirmAction } from '../../modules/ui.js';
+import { renderQrSvg } from '../../modules/qr.js';
+import { SYNC } from '../../ai-config.js';
 
 const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_LABEL_LENGTH = 120;
 const LIST_LIMIT = 1000;
+const DEFAULT_PAIR_TTL_SECONDS = 604800;
+const PAIR_TTL_OPTIONS = [
+    { seconds: 600, labelKey: 'settings.adminUsersPairTtl10m' },
+    { seconds: 86400, labelKey: 'settings.adminUsersPairTtl24h' },
+    { seconds: 604800, labelKey: 'settings.adminUsersPairTtl7d' },
+    { seconds: 2592000, labelKey: 'settings.adminUsersPairTtl30d' }
+];
 
 let panel = null;
 let escHandler = null;
@@ -43,6 +52,7 @@ function emptyView() {
         resetConfirm: '',
         credentials: null,
         pairing: null,
+        pairTtl: DEFAULT_PAIR_TTL_SECONDS,
         limited: false
     };
 }
@@ -118,6 +128,7 @@ function render() {
     if (!el) return;
     el.innerHTML = renderHtml();
     bind();
+    mountPairingQr();
 }
 
 function renderHtml() {
@@ -142,6 +153,12 @@ function renderList() {
         <div class="admin-users-toolbar">
             <span class="gs-hint">${escapeHtml(t('settings.adminUsersCount', { count: view.users.length }))}</span>
             ${view.limited ? `<span class="gs-hint">${escapeHtml(t('settings.adminUsersLimited', { count: LIST_LIMIT }))}</span>` : ''}
+            <label class="admin-users-ttl">
+                <span>${escapeHtml(t('settings.adminUsersPairTtl'))}</span>
+                <select data-pair-ttl ${view.busy ? 'disabled' : ''}>
+                    ${PAIR_TTL_OPTIONS.map((option) => `<option value="${option.seconds}"${option.seconds === view.pairTtl ? ' selected' : ''}>${escapeHtml(t(option.labelKey))}</option>`).join('')}
+                </select>
+            </label>
             <span class="admin-users-toolbar-actions">
                 <button type="button" class="btn-secondary gs-ai-small" data-admin-users-refresh ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersRefresh'))}</button>
                 <button type="button" class="btn-primary gs-ai-small" data-admin-users-create ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersCreate'))}</button>
@@ -245,22 +262,81 @@ function renderCredentials() {
     </section>`;
 }
 
+function formatPairingCode(code) {
+    const normalized = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const groups = normalized.match(/.{1,4}/g);
+    return groups ? groups.join('-') : '';
+}
+
+function publicBaseUrl() {
+    return String((SYNC && SYNC.publicBaseUrl) || '').trim();
+}
+
+function buildLoginUrl(code) {
+    const rawCode = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    let base = null;
+    try {
+        base = new URL(window.location.href);
+    } catch (_) {}
+    const configured = publicBaseUrl();
+    if (configured) {
+        try { base = new URL(configured, base ? base.href : undefined); } catch (_) {}
+    }
+    if (!base) return `#login=${encodeURIComponent(rawCode)}`;
+    base.hash = '';
+    // A routing query (`?word=...`) belongs to the current view, not a login
+    // link, so drop it when falling back to the current address.
+    if (!configured) base.search = '';
+    return `${base.href.replace(/#.*$/, '')}#login=${encodeURIComponent(rawCode)}`;
+}
+
 function renderPairing() {
     const pairing = view.pairing;
     const expires = formatTime(pairing.expiresAt);
+    const formattedCode = formatPairingCode(pairing.code);
+    const linkHint = publicBaseUrl() ? '' : `<p class="gs-hint">${escapeHtml(t('settings.adminUsersPairLinkHint'))}</p>`;
     return `<section class="admin-users-credentials admin-users-pairing" role="status">
         <h4>${escapeHtml(t('settings.adminUsersPairTitle', { user: pairing.userId }))}</h4>
         <p class="admin-users-warning">${escapeHtml(t('settings.adminUsersPairWarning'))}</p>
-        <div class="admin-users-credential-row">
-            <span>${escapeHtml(t('settings.adminUsersPairCode'))}</span>
-            <code>${escapeHtml(pairing.code)}</code>
-            <button type="button" class="btn-secondary gs-ai-small" data-copy-pairing>${escapeHtml(t('settings.adminUsersCopy'))}</button>
+        <div class="admin-users-pair-grid">
+            <div class="admin-users-pair-info">
+                <div class="admin-users-credential-row">
+                    <span>${escapeHtml(t('settings.adminUsersPairCode'))}</span>
+                    <code>${escapeHtml(formattedCode)}</code>
+                    <button type="button" class="btn-secondary gs-ai-small" data-copy-pairing>${escapeHtml(t('settings.adminUsersCopy'))}</button>
+                </div>
+                <div class="admin-users-credential-row">
+                    <span>${escapeHtml(t('settings.adminUsersPairLink'))}</span>
+                    <code>${escapeHtml(pairing.loginUrl)}</code>
+                    <button type="button" class="btn-secondary gs-ai-small" data-copy-pairing-link>${escapeHtml(t('settings.adminUsersCopyLink'))}</button>
+                </div>
+                ${expires ? `<p class="gs-hint">${escapeHtml(t('settings.adminUsersPairExpires', { time: expires }))}</p>` : ''}
+                ${linkHint}
+                <p class="gs-hint">${escapeHtml(t('settings.adminUsersPairMultiWarning'))}</p>
+            </div>
+            <div class="admin-users-pair-qr" data-pairing-qr role="img" aria-label="${escapeHtml(t('settings.adminUsersPairQrAlt'))}"></div>
         </div>
-        ${expires ? `<p class="gs-hint">${escapeHtml(t('settings.adminUsersPairExpires', { time: expires }))}</p>` : ''}
         <div class="ai-admin-actions">
+            <button type="button" class="btn-secondary" data-pairing-regenerate="${escapeHtml(pairing.userId)}" ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersPairRegenerate'))}</button>
+            <button type="button" class="btn-secondary btn-danger" data-pairing-revoke="${escapeHtml(pairing.userId)}" ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersPairRevoke'))}</button>
             <button type="button" class="btn-primary" data-pairing-done>${escapeHtml(t('settings.adminUsersCredentialsDone'))}</button>
         </div>
     </section>`;
+}
+
+function mountPairingQr() {
+    const el = body()?.querySelector('[data-pairing-qr]');
+    if (!el || !view.pairing || !view.pairing.loginUrl) return;
+    try {
+        renderQrSvg(el, view.pairing.loginUrl, {
+            cellSize: 4,
+            margin: 12,
+            title: t('settings.adminUsersPairQrAlt'),
+            alt: t('settings.adminUsersPairLink')
+        });
+    } catch (_) {
+        el.innerHTML = '';
+    }
 }
 
 function renderResetConfirm() {
@@ -325,12 +401,27 @@ function bind() {
     el.querySelectorAll('[data-user-pair]').forEach((button) => {
         button.addEventListener('click', () => generatePairingCode(button.dataset.userPair));
     });
+    el.querySelector('[data-pair-ttl]')?.addEventListener('change', (event) => {
+        const value = Number(event.target.value);
+        view.pairTtl = PAIR_TTL_OPTIONS.some((option) => option.seconds === value)
+            ? value
+            : DEFAULT_PAIR_TTL_SECONDS;
+    });
     el.querySelector('[data-pairing-done]')?.addEventListener('click', () => {
         view.pairing = null;
         render();
     });
+    el.querySelector('[data-pairing-regenerate]')?.addEventListener('click', (event) => {
+        generatePairingCode(event.currentTarget.dataset.pairingRegenerate);
+    });
+    el.querySelector('[data-pairing-revoke]')?.addEventListener('click', (event) => {
+        revokePairingCodes(event.currentTarget.dataset.pairingRevoke);
+    });
     el.querySelector('[data-copy-pairing]')?.addEventListener('click', (event) => {
-        copyCredential(event.currentTarget, view.pairing && view.pairing.code);
+        copyCredential(event.currentTarget, formatPairingCode(view.pairing && view.pairing.code));
+    });
+    el.querySelector('[data-copy-pairing-link]')?.addEventListener('click', (event) => {
+        copyCredential(event.currentTarget, view.pairing && view.pairing.loginUrl);
     });
     el.querySelector('[data-reset-confirm]')?.addEventListener('click', resetPasscode);
     el.querySelector('[data-reset-cancel]')?.addEventListener('click', () => {
@@ -577,7 +668,8 @@ async function generatePairingCode(userId) {
     const captured = captureAuthSession();
     try {
         const res = await apiRequest(`/admin/users/${encodeURIComponent(userId)}/pairing-code`, {
-            method: 'POST'
+            method: 'POST',
+            body: JSON.stringify({ ttlSeconds: view.pairTtl })
         }, { timeoutMs: 15000 });
         if (!isAuthSessionCurrent(captured)) return;
         view.busy = false;
@@ -592,11 +684,55 @@ async function generatePairingCode(userId) {
             render();
             return;
         }
+        const code = String(data.code || '');
         view.pairing = {
             userId: String(data.userId || userId),
-            code: String(data.code),
+            code,
+            loginUrl: buildLoginUrl(code),
             expiresAt: data.expiresAt || ''
         };
+        render();
+    } catch (_) {
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        view.error = t('errors.cannotReachSync');
+        render();
+    }
+}
+
+async function revokePairingCodes(userId) {
+    if (view.busy || !userId) return;
+    const ok = await confirmAction({
+        title: t('settings.adminUsersPairRevoke'),
+        message: t('settings.adminUsersPairRevokeConfirm', { user: userId }),
+        confirmLabel: t('settings.adminUsersPairRevoke'),
+        cancelLabel: t('settings.cancel'),
+        danger: true
+    });
+    if (!ok) return;
+
+    view.busy = true;
+    view.error = '';
+    view.notice = '';
+    render();
+    const captured = captureAuthSession();
+    try {
+        const res = await apiRequest(`/admin/users/${encodeURIComponent(userId)}/pairing-codes`, {
+            method: 'DELETE'
+        }, { timeoutMs: 15000 });
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        if (!res.ok) {
+            view.error = await describeError(res, 'errors.adminUsersPairRevokeFailed');
+            render();
+            return;
+        }
+        const data = await res.json().catch(() => ({}));
+        view.pairing = null;
+        view.notice = t('settings.adminUsersPairRevoked', {
+            user: userId,
+            count: Number(data && data.revoked) || 0
+        });
         render();
     } catch (_) {
         if (!isAuthSessionCurrent(captured)) return;
@@ -623,6 +759,7 @@ async function describeError(res, fallbackKey) {
         invalid_user_id: 'errors.adminUsersInvalidUserId',
         invalid_label: 'errors.adminUsersInvalidLabel',
         invalid_email: 'errors.adminUsersInvalidEmail',
+        invalid_ttl: 'errors.adminUsersPairInvalidTtl',
         admin_account_protected: 'errors.adminUsersAdminProtected'
     };
     if (keys[code]) return t(keys[code]);
