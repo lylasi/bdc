@@ -76,7 +76,13 @@ export const SUPABASE = {
 
 // 同步後端設定（Cloudflare Worker + D1，或 selfhost/ 的 Node + SQLite／PostgreSQL）
 // - endpoint：Worker 網址或自建伺服器網址（例如 http://127.0.0.1:8787）
-// - publicBaseUrl：可選。管理員產生登入連結時使用的對外 SPA 網址；留空則用目前頁面網址。
+// - publicBaseUrl：可選。管理員在「設定 → 工具 → 管理用戶」替他人產生登入連結／QR 時使用的網址前綴。
+//     留空（預設，建議）：連結以「管理員當下開啟面板的網址」為準——去掉 # 與 ?query 後接上 #login=<碼>。
+//         從 https://你的正式網域 開面板 → 產生公開連結；從 http://192.168.x.x:8000 開 → 只有同網段可開。
+//     有值：不論從哪個網址開面板，連結與 QR 一律使用這個前綴（適合固定對外網址）。
+//     格式：必須是完整絕對網址並含 scheme（https:// 或 http://），且該網址要能開啟本 SPA；
+//         只寫「192.168.x.x:8000」會被 new URL() 當成自訂 scheme，產生壞掉的連結。
+//     範圍：只影響「產生出來的連結／QR」；登入驗證、API 呼叫與 CORS 仍走 SYNC.endpoint。
 // - 通行碼不放這裡；由使用者登入時輸入，僅存於瀏覽器本機。
 // - poll 控制向伺服器輪詢學習資料更新的節奏（AI 設定同步另有版本檢查）。
 export const SYNC = {
