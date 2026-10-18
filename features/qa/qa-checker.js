@@ -55,8 +55,7 @@ function getQaRequestConfig(modelOverride) {
     apiKey: configConnection.apiKey,
     provider: configConnection.provider,
     profile: configConnection.profile,
-    settings,
-    secrets
+    settings
   });
   return {
     settings,
@@ -83,9 +82,18 @@ export async function startAIChecking(trainingResult, options = {}) {
   await loadAIConfig();
 
   const selectedModel = getSelectedQaModel();
-  const availability = getQaRequestConfig(selectedModel);
-
-  if (!aiConfig || !availability.apiUrl || !availability.apiKey || !availability.model) {
+  let availability;
+  try {
+    availability = getQaRequestConfig(selectedModel);
+  } catch (error) {
+    console.warn('[qa] AI provider unavailable:', error && error.code ? error.code : 'unknown');
+    displayMessage(t('qa.aiUnavailable'), 'warning');
+    return performBasicChecking(trainingResult);
+  }
+  const keyReady = availability.authMode === 'none'
+    || !!availability.apiKey
+    || availability.requiresManagedCredential === true;
+  if (!availability.apiUrl || !availability.model || !keyReady) {
     displayMessage(t('qa.aiUnavailable'), 'warning');
     return performBasicChecking(trainingResult);
   }

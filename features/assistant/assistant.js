@@ -8,10 +8,11 @@ import {
   saveTaskModelSelection,
   stringifyModelSpec
 } from '../../modules/ai-models.js';
-import { requestAI, resolveAIRequestConfig, resolveAITaskSpec } from '../../modules/api.js';
+import { requestAI, resolveAITaskSpec, streamAIResponse } from '../../modules/api.js';
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 import * as cache from '../../modules/cache.js';
 import { markdownToHtml } from '../../modules/markdown.js';
+import { confirmAction } from '../../modules/ui.js';
 import { getLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { buildPrompt } from '../../modules/prompts/index.js';
 
@@ -31,11 +32,7 @@ function getAssistantModelSelection(currentValue) {
 }
 
 function getAssistantModelSpec(modelOverride) {
-  return getAssistantModelSelection(modelOverride).value || resolveAITaskSpec('assistant') || 'gpt-4.1-mini';
-}
-
-function getAssistantRequestConfig(modelOverride) {
-  return resolveAIRequestConfig({ task: 'assistant', model: getAssistantModelSpec(modelOverride) });
+  return getAssistantModelSelection(modelOverride).value || resolveAITaskSpec('assistant') || '';
 }
 
 export function initAiAssistant() {
@@ -549,49 +546,31 @@ function migrateLegacyStore() {
 }
 
 async function onceCompletions(messages, signal, modelOverride) {
+  const model = getAssistantModelSpec(modelOverride);
+  if (!model) throw new Error(t('settings.aiModelNotSelected'));
   const data = await requestAI({
-    model: getAssistantModelSpec(modelOverride),
+    model,
     messages,
     temperature: 0.2,
     signal,
     taskType: 'assistant'
   });
-  return (data?.choices?.[0]?.message?.content || data?.output_text || '').trim();
+  return String(data?.text || data?.choices?.[0]?.message?.content || '').trim();
 }
 
 async function streamCompletions(messages, signal, onDelta, modelOverride) {
-  const resolved = getAssistantRequestConfig(modelOverride);
-  const resp = await fetch(resolved.apiUrl, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resolved.apiKey}` },
-    body: JSON.stringify({ model: resolved.model, messages, temperature: 0.2, stream: true }), signal
+  const model = getAssistantModelSpec(modelOverride);
+  if (!model) throw new Error(t('settings.aiModelNotSelected'));
+  // The shared adapter layer handles SSE framing, finish reasons and errors for
+  // every supported protocol (Chat Completions / Anthropic / Gemini).
+  await streamAIResponse({
+    model,
+    messages,
+    temperature: 0.2,
+    signal,
+    taskType: 'assistant',
+    onDelta
   });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  const reader = resp.body.getReader();
-  const dec = new TextDecoder();
-  let acc = '';
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    acc += dec.decode(value, { stream: true });
-    let idx;
-    while ((idx = acc.indexOf('\n\n')) !== -1) {
-      const chunk = acc.slice(0, idx).trim();
-      acc = acc.slice(idx + 2);
-      if (!chunk) continue;
-      const lines = chunk.split('\n');
-      for (const line of lines) {
-        const m = line.match(/^data:\s*(.*)$/);
-        if (!m) continue;
-        const payload = m[1];
-        if (payload === '[DONE]') return;
-        try {
-          const json = JSON.parse(payload);
-          const delta = json?.choices?.[0]?.delta?.content || '';
-          if (delta) onDelta(delta);
-        } catch(_) {}
-      }
-    }
-  }
 }
 
 // ---------- 尺寸控制（桌面端） ----------
@@ -773,7 +752,14 @@ async function toggleHistory(panel){
     }
     if (act === 'delete') {
       ev.stopPropagation();
-      if (!confirm(t('assistant.confirmDelete'))) return;
+      const confirmed = await confirmAction({
+        title: t('assistant.delete'),
+        message: t('assistant.confirmDelete'),
+        confirmLabel: t('assistant.delete'),
+        cancelLabel: t('common.cancel'),
+        danger: true
+      });
+      if (!confirmed) return;
       const deleted = await deleteAssistantConversation(id);
       if (!deleted) return;
       item.remove();

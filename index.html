@@ -12,12 +12,81 @@
         document.documentElement.dataset.theme = themes.indexOf(saved) >= 0 ? saved : 'teal';
       } catch (e) {}
     </script>
+    <script>
+      // 啟動失敗兜底：main.js 或它相依的模組（例如未建立的 ai-config.js）載入失敗時，
+      // 瀏覽器只會在 console 留一行資源錯誤，使用者看到的卻是半個白畫面。
+      // 這裡用傳統 script 搶先註冊，確保模組圖斷掉時仍能給出可行動的訊息。
+      (function () {
+        var shown = false;
+        function showStartupFailure(detail) {
+          if (shown) return;
+          shown = true;
+          var isHK = false;
+          try {
+            var s = JSON.parse(localStorage.getItem('pen_global_settings') || '{}');
+            isHK = s && s.language && s.language.interfaceLocale === 'zh-HK';
+          } catch (e) {}
+          var text = isHK
+            ? {
+                title: '應用未能啟動',
+                body: '頁面需要的程式檔案載入失敗，最常見的原因是專案根目錄缺少 ai-config.js。',
+                steps: '請在專案根目錄執行 cp ai-config.example.js ai-config.js，然後重新整理頁面。',
+                detail: '技術細節'
+              }
+            : {
+                title: '应用未能启动',
+                body: '页面需要的程序文件加载失败，最常见的原因是项目根目录缺少 ai-config.js。',
+                steps: '请在项目根目录执行 cp ai-config.example.js ai-config.js，然后刷新页面。',
+                detail: '技术细节'
+              };
+          var box = document.createElement('div');
+          box.setAttribute('role', 'alert');
+          box.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#f6f7f9;font:15px/1.7 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#1f2937;';
+          var card = document.createElement('div');
+          card.style.cssText = 'max-width:560px;width:100%;background:#fff;border:1px solid #e3e6eb;border-radius:14px;padding:24px;box-shadow:0 8px 28px rgba(15,23,42,.08);';
+          var h = document.createElement('h1');
+          h.textContent = text.title;
+          h.style.cssText = 'margin:0 0 12px;font-size:19px;';
+          var p1 = document.createElement('p');
+          p1.textContent = text.body;
+          p1.style.cssText = 'margin:0 0 10px;';
+          var p2 = document.createElement('p');
+          p2.textContent = text.steps;
+          p2.style.cssText = 'margin:0 0 16px;color:#0f766e;font-weight:600;';
+          var pre = document.createElement('pre');
+          pre.textContent = String(detail || '');
+          pre.style.cssText = 'margin:0;padding:10px 12px;background:#f3f4f6;border-radius:8px;font-size:12px;white-space:pre-wrap;word-break:break-all;color:#4b5563;max-height:180px;overflow:auto;';
+          card.appendChild(h); card.appendChild(p1); card.appendChild(p2);
+          if (detail) {
+            var sum = document.createElement('details');
+            var sm = document.createElement('summary');
+            sm.textContent = text.detail;
+            sm.style.cssText = 'cursor:pointer;font-size:13px;color:#6b7280;margin-bottom:8px;';
+            sum.appendChild(sm); sum.appendChild(pre);
+            card.appendChild(sum);
+          }
+          box.appendChild(card);
+          function mount() { document.body ? document.body.appendChild(box) : document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(box); }); }
+          mount();
+        }
+
+        window.__bdcStartupFailure = showStartupFailure;
+
+        // 模組 script 載入失敗會在 script 元素上觸發 error（需 capture）
+        window.addEventListener('error', function (ev) {
+          var t = ev.target;
+          if (t && t.tagName === 'SCRIPT' && t.type === 'module') {
+            showStartupFailure('Failed to load: ' + (t.src || '(inline)'));
+          }
+        }, true);
+      })();
+    </script>
     <title data-i18n="app.documentTitle">背单词应用</title>
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230f766e'/%3E%3Cpath d='M7 6.5h6.5L17 10v7.5H7z' fill='none' stroke='white' stroke-width='1.7' stroke-linejoin='round'/%3E%3Cpath d='M13 6.5V10h3.8' fill='none' stroke='white' stroke-width='1.7'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="styles.css?v=20261014g" />
+    <link rel="stylesheet" href="styles.css?v=20261018-settings-autosave" />
   </head>
   <body>
     <div class="app-layout">
@@ -64,11 +133,13 @@
         <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3"/></symbol>
         <symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 11v5.5"/><path d="M12 8h.01" stroke-width="2.4"/></symbol>
         <symbol id="ic-warning" viewBox="0 0 24 24"><path d="M12 4.2 20.8 19.8H3.2z"/><path d="M12 10v4.4"/><path d="M12 17.2h.01" stroke-width="2.4"/></symbol>
+        <symbol id="ic-flame" viewBox="0 0 24 24"><path d="M12 3.4c.7 3.1-2.3 4.6-2.3 7.5a2.3 2.3 0 0 0 4.6 0c0-1.3-.6-2.3-1-3.1 2.7 1.5 4.5 3.8 4.5 6.3a5.8 5.8 0 0 1-11.6 0c0-4.1 3.5-6.9 5.8-10.7z"/></symbol>
+        <symbol id="ic-blade" viewBox="0 0 24 24"><path d="M4 20 19.6 4.4a1.4 1.4 0 0 0-2-2L2 18z"/><path d="M6.4 13.2 11 17.8"/></symbol>
       </svg>
 
       <header class="app-bar">
         <div class="brand">
-          <span class="brand-mark" aria-hidden="true"><svg class="icon"><use href="#ic-app"/></svg></span>
+          <span class="brand-mark" aria-hidden="true"><svg class="icon brand-mark-icon"><use href="#ic-app"/></svg><img class="brand-mark-img" alt="" hidden /></span>
           <span class="brand-text">
             <h1 class="brand-title" data-i18n="app.title">PEN子背单词</h1>
             <span class="brand-sub" data-i18n="app.subtitle">纸上听写 · 单词 · 学习</span>
@@ -491,11 +562,11 @@
                         <label data-i18n="dictation.chinese">朗读中文意思：</label>
                         <div class="chinese-voice-options">
                           <label class="voice-toggle">
-                            <input type="checkbox" id="read-chinese-mandarin" />
+                            <input type="checkbox" id="read-chinese-mandarin" aria-label="朗读普通话" data-i18n-aria-label="dictation.mandarinAria" />
                             <span data-i18n="dictation.mandarinShort">普</span>
                           </label>
                           <label class="voice-toggle">
-                            <input type="checkbox" id="read-chinese-cantonese" />
+                            <input type="checkbox" id="read-chinese-cantonese" aria-label="朗读粤语" data-i18n-aria-label="dictation.cantoneseAria" />
                             <span data-i18n="dictation.cantoneseShort">粤</span>
                           </label>
                         </div>
@@ -507,7 +578,7 @@
                         <small data-i18n="dictation.loopHint">播完最后一个后回到第一个</small>
                       </span>
                       <label class="switch">
-                        <input type="checkbox" id="loop-mode" />
+                        <input type="checkbox" id="loop-mode" aria-label="循环播放" data-i18n-aria-label="dictation.loop" />
                         <span class="slider" aria-hidden="true"></span>
                       </label>
                     </div>
@@ -517,7 +588,7 @@
                         <small data-i18n="dictation.shuffleHint">打乱单词顺序后再开始</small>
                       </span>
                       <label class="switch">
-                        <input type="checkbox" id="shuffle-mode" />
+                        <input type="checkbox" id="shuffle-mode" aria-label="随机顺序" data-i18n-aria-label="dictation.shuffle" />
                         <span class="slider" aria-hidden="true"></span>
                       </label>
                     </div>
@@ -1368,11 +1439,8 @@
             <main id="modal-body">
               <!-- JS動態生成 -->
             </main>
-            <footer id="modal-actions">
-              <div class="modal-actions">
-                <!-- 按鈕將由JS動態生成 -->
-              </div>
-            </footer>
+            <!-- 面板專用的固定底部列：只有寫入內容的面板才會顯示（見 modules/ui.js closeModal） -->
+            <footer id="modal-actions" hidden></footer>
           </div>
         </div>
       </div>

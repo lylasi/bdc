@@ -197,6 +197,7 @@ export const qaModelSelectReport = document.getElementById('qa-model-select-repo
 export const appModal = document.getElementById('app-modal');
 export const modalTitle = document.getElementById('modal-title');
 export const modalBody = document.getElementById('modal-body');
+export const modalActions = document.getElementById('modal-actions');
 export const modalCloseBtn = appModal.querySelector('.modal-close-btn');
 
 // --- 同步/登入控制 ---

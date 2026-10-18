@@ -2,11 +2,11 @@
 import * as dom from '../../modules/dom.js';
 import * as state from '../../modules/state.js';
 import { getStoredQASets, getAllQASets, loadQASet, saveQASet, deleteQASet, importQASet, exportQASet, getQASetStats, cleanupExpiredCache } from './qa-storage.js';
-import { initCreator, parseQAPairs, saveNewSet, clearForm, handleTextInputChange, fillFormWithQASet, qaSetToText } from './qa-creator.js';
+import { initCreator, parseQAPairs, analyzeQAPairs, saveNewSet, clearForm, handleTextInputChange, fillFormWithQASet, qaSetToText } from './qa-creator.js';
 import { startTraining, getCurrentQuestion, getCurrentAnswer, getTrainingProgress, getSessionState, submitAnswer, nextQuestion, previousQuestion, finishTraining, pauseTraining, resumeTraining, cancelTraining, restoreTrainingProgress, saveTrainingProgress, saveAnswerDraft } from './qa-trainer.js';
 import { startAIChecking, clearCheckingCache, getCheckingCacheStats, recheckAnswer } from './qa-checker.js';
 import { exportTrainingResultToPDF, exportQASetForHandwriting, prefetchPdfEngine } from './qa-pdf.js';
-import { displayMessage, showOptionsModal, openModal, closeModal } from '../../modules/ui.js';
+import { displayMessage, showOptionsModal, openModal, closeModal, escapeHtml, escapeAttr, confirmAction } from '../../modules/ui.js';
 import { loadGlobalSettings } from '../../modules/settings.js';
 import { t, formatDateTime, createCollator } from '../../modules/i18n.js';
 import {
@@ -55,8 +55,12 @@ export async function init() {
   // 問答區選字：顯示「加入生詞本」懸浮按鈕（簡化版）
   try { initQASelectionToWordbook(); } catch (_) {}
 
-  // 載入問答集
-  await loadQASets();
+  // 載入問答集（失敗也要讓模組進入可用狀態，否則整個「問答訓練」分頁會是空的）
+  try {
+    await loadQASets();
+  } catch (error) {
+    console.error('載入問答集失敗，模組仍以空清單繼續:', error);
+  }
 
   // 準備 AI 校對模型選擇器（可在訓練與報告頁使用）
   try { setupQAModelSelectors(); } catch(_) {}
@@ -250,9 +254,9 @@ function initEventListeners() {
 
     const backToQAListBtn = dom.qaModule.querySelector('#back-to-qa-list-btn');
     if (backToQAListBtn) {
-      backToQAListBtn.addEventListener('click', () => {
+      backToQAListBtn.addEventListener('click', async () => {
         if (getSessionState().isActive) {
-          if (cancelTraining()) {
+          if (await cancelTraining()) {
             showManagementView();
           }
         } else {
@@ -363,15 +367,22 @@ async function loadQASets() {
 
   } catch (error) {
     console.error('載入問答集時出錯:', error);
-    displayMessage(t('qa.loadSetsFailed'), 'error');
+    try { displayMessage(t('qa.loadSetsFailed'), 'error'); } catch (_) {}
 
-    // 降級到只顯示用戶創建的問答集
-    qaModuleState.qaSets = getStoredQASets().map(set => ({
-      ...set,
-      isPreset: Boolean(set.isPreset)
-    }));
-    updateQASetsDisplay();
-    refreshCreatorTemplateSelector();
+    // 降級到只顯示用戶創建的問答集。
+    // 這裡位在 catch 區塊內，任何二次拋錯都會直接冒出 init() 的 await 鏈，
+    // 讓 main.js 後續的 sync / 助手 / 路由全部不執行，因此格外防禦。
+    try {
+      const stored = getStoredQASets();
+      qaModuleState.qaSets = (Array.isArray(stored) ? stored : []).map(set => ({
+        ...set,
+        isPreset: Boolean(set && set.isPreset)
+      }));
+      updateQASetsDisplay();
+      refreshCreatorTemplateSelector();
+    } catch (fallbackError) {
+      console.error('問答集降級顯示也失敗:', fallbackError);
+    }
   }
 }
 
@@ -396,7 +407,7 @@ function updateQASetsDisplay() {
     const categoryDiv = document.createElement('div');
     categoryDiv.className = 'qa-category';
     categoryDiv.innerHTML = `
-      <h4 class="category-title">${category}</h4>
+      <h4 class="category-title">${escapeHtml(category)}</h4>
       <div class="qa-category-list">
         ${categoryQAs.map(qa => createQASetCard(qa)).join('')}
       </div>
@@ -422,12 +433,12 @@ function updateQASetsDisplay() {
 // 創建問答集卡片HTML
 function createQASetCard(qaSet) {
   return `
-    <div class="qa-set-card" data-qa-id="${qaSet.id}">
+    <div class="qa-set-card" data-qa-id="${escapeAttr(qaSet.id)}">
       <div class="qa-set-header">
-        <h5 class="qa-set-name">${qaSet.name}</h5>
-        <span class="qa-set-count">${t('qa.questionsCount', { count: qaSet.questionCount })}</span>
+        <h5 class="qa-set-name">${escapeHtml(qaSet.name)}</h5>
+        <span class="qa-set-count">${escapeHtml(t('qa.questionsCount', { count: qaSet.questionCount }))}</span>
       </div>
-      <div class="qa-set-description">${qaSet.description}</div>
+      <div class="qa-set-description">${escapeHtml(qaSet.description)}</div>
       <div class="qa-set-actions">
         <button class="btn small secondary view-btn">${t('qa.view')}</button>
         <button class="btn small primary start-training-btn">${t('qa.startTraining')}</button>
@@ -862,14 +873,17 @@ function openQASetEditorModal(qaSet) {
     closeModal();
   });
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     try {
       const name = nameInput.value.trim();
       const description = descInput.value.trim();
       const text = pairsInput.value.trim();
-      const pairs = parseQAPairs(text);
+      const { pairs, warnings } = analyzeQAPairs(text);
+
+      // 保存前先讓使用者決定：有內容沒被採用時，直接存下去等於默默丟資料
+      if (!(await confirmSaveWithWarnings(warnings))) return;
 
       const savedQASet = saveNewSet(name, description, pairs, qaSet);
 
@@ -898,6 +912,8 @@ function openQASetEditorModal(qaSet) {
         refreshCreatorTemplateSelector(savedQASet.id);
 
         displayMessage(t('qa.setUpdated', { name: savedQASet.name }), 'success');
+        // 有內容沒被採用時要說出來，不能只回報「已更新」
+        if (warnings.length) displayMessage(t('qa.saveWithWarning'), 'warning', 6000);
         closeModal();
       }
     } catch (error) {
@@ -922,7 +938,13 @@ async function startQATraining(qaId) {
         displayMessage(t('qa.continueTraining'), 'info');
         return;
       } else {
-        const confirmed = confirm(t('qa.confirmNewTraining'));
+        const confirmed = await confirmAction({
+          title: t('qa.newTrainingTitle'),
+          message: t('qa.confirmNewTraining'),
+          confirmLabel: t('qa.startNewTraining'),
+          cancelLabel: t('qa.keepTraining'),
+          danger: true
+        });
         if (!confirmed) {
           showTrainingView();
           updateTrainingInterface();
@@ -1228,7 +1250,7 @@ async function renderBatchTrainingInterface() {
       holder.innerHTML = `
         <div class="instant-feedback-status" style="padding:8px 10px;border:1px dashed var(--line-strong);border-radius:var(--r-xs);background:var(--surface-2);">
           <div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid var(--line-strong);border-top-color:var(--primary);border-radius:var(--r-pill);margin-right:8px;vertical-align:-2px;animation:spin 0.8s linear infinite;"></div>
-          <span>AI 正在校對本題...</span>
+          <span>${escapeHtml(t('qa.checkingThisQuestion'))}</span>
         </div>`;
     }
     const originalBtnText = btn.textContent;
@@ -1608,7 +1630,7 @@ async function handleFinishTraining() {
       await syncBatchAnswersToSession();
     }
 
-    const trainingResult = finishTraining();
+    const trainingResult = await finishTraining();
     if (trainingResult) {
       // 切換到報告視圖
       showReportView(trainingResult);
@@ -1663,7 +1685,13 @@ async function handleDeleteQASet(qaId) {
     return;
   }
 
-  const confirmed = confirm(t('qa.confirmDeleteSetNamed', { name: qaSet.name }));
+  const confirmed = await confirmAction({
+    title: t('qa.deleteSetTitle'),
+    message: t('qa.confirmDeleteSetNamed', { name: qaSet.name }),
+    confirmLabel: t('qa.delete'),
+    cancelLabel: t('common.cancel'),
+    danger: true
+  });
   if (confirmed) {
     const success = await deleteQASet(qaId);
     if (success) {
@@ -1696,7 +1724,30 @@ function handleImportQASet() {
 }
 
 // 處理保存問答集
-function handleSaveQASet() {
+/**
+ * 保存前的把關：解析時若有內容沒被採用，先讓使用者看到並自己決定。
+ *
+ * 先前只在保存完成後用提示條說「有一行沒有被採用」，資料其實已經寫進去了，
+ * 使用者只能自己回頭比對。改為在寫入前確認：
+ *  - 按「返回修改」→ 不保存，留在表單裡補齊
+ *  - 按「仍然保存」→ 明確知道會丟掉哪些內容
+ *
+ * @param {Array<{key: string, params?: Object}>} warnings
+ * @returns {Promise<boolean>} 是否繼續保存
+ */
+async function confirmSaveWithWarnings(warnings) {
+  if (!Array.isArray(warnings) || warnings.length === 0) return true;
+  const detail = warnings.map(w => t(w.key, w.params || {})).join('\n');
+  const proceed = await confirmAction({
+    title: t('qa.saveWarningTitle'),
+    message: `${detail}\n\n${t('qa.saveWarningBody')}`,
+    confirmLabel: t('qa.saveAnyway'),
+    cancelLabel: t('qa.backToEdit')
+  });
+  return !!proceed;
+}
+
+async function handleSaveQASet() {
   console.log('保存問答集...');
 
   try {
@@ -1712,7 +1763,11 @@ function handleSaveQASet() {
     const description = descInput.value.trim();
     const text = pairsInput.value.trim();
 
-    const pairs = parseQAPairs(text);
+    const { pairs, warnings } = analyzeQAPairs(text);
+
+    // 保存前先讓使用者決定：有內容沒被採用時，直接存下去等於默默丟資料
+    if (!(await confirmSaveWithWarnings(warnings))) return;
+
     const savedQASet = saveNewSet(name, description, pairs);
 
     if (savedQASet) {
@@ -1735,6 +1790,8 @@ function handleSaveQASet() {
       refreshCreatorTemplateSelector(savedQASet.id);
 
       displayMessage(t('qa.setSaved', { name: savedQASet.name }), 'success');
+      // 有內容沒被採用時要說出來，不能只回報「已保存」
+      if (warnings.length) displayMessage(t('qa.saveWithWarning'), 'warning', 6000);
 
       setTimeout(() => {
         showManagementView();
@@ -1800,14 +1857,14 @@ function generateResultsHTML(trainingResult) {
           <span class="result-status">${isAnswered ? t('qa.answeredSaved') : t('qa.answeredNot')}</span>
         </div>
         <div class="result-question">
-          <strong>問題:</strong> ${escapeHtml(answer.question)}
+          <strong>${escapeHtml(t('qa.question'))}</strong> ${escapeHtml(answer.question)}
         </div>
         <div class="result-answers">
           <div class="user-answer">
             <strong>${t('qa.yourAnswer')}</strong> ${answer.userAnswer ? escapeHtml(answer.userAnswer) : `<span class="no-answer">${t('qa.answeredNot')}</span>`}
           </div>
           <div class="correct-answer">
-            <strong>標準答案:</strong> ${escapeHtml(answer.correctAnswer)}
+            <strong>${escapeHtml(t('qa.standardAnswerLabel'))}</strong> ${escapeHtml(answer.correctAnswer)}
           </div>
         </div>
       </div>
@@ -1897,13 +1954,7 @@ function detectLocalPunctuationIssues(rawUser = '', rawCorrect = '') {
   return msgs;
 }
 
-// HTML轉義函數
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
+// escapeHtml / escapeAttr 由 modules/ui.js 統一提供（站內所有 HTML 轉義只留一份實作）
 function createDifferenceAnalysis(userAnswer = '', correctAnswer = '') {
   const userText = userAnswer ?? '';
   const correctText = correctAnswer ?? '';
@@ -2169,7 +2220,7 @@ function generateAICheckedResultsHTML(checkedAnswers, summary, options = {}) {
           <div class="recommendations">
             <h5>${t('qa.learningAdvice')}</h5>
             <ul>
-              ${summary.recommendedActions.map(action => `<li>${action}</li>`).join('')}
+              ${summary.recommendedActions.map(action => `<li>${escapeHtml(action)}</li>`).join('')}
             </ul>
           </div>
         ` : ''}
@@ -2448,7 +2499,7 @@ async function handleCopyReportText() {
 }
 
 // 處理重新訓練
-function handleRetryTraining() {
+async function handleRetryTraining() {
   console.log('重新開始訓練...');
 
   if (!currentTrainingResult) {
@@ -2456,7 +2507,13 @@ function handleRetryTraining() {
     return;
   }
 
-  const confirmed = confirm(t('qa.confirmRestartTraining', { name: currentTrainingResult.qaSetName }));
+  const confirmed = await confirmAction({
+    title: t('qa.retryTraining'),
+    message: t('qa.confirmRestartTraining', { name: currentTrainingResult.qaSetName }),
+    confirmLabel: t('qa.retryTraining'),
+    cancelLabel: t('common.cancel'),
+    danger: true
+  });
   if (confirmed) {
     // 啟動新的訓練
     startQATraining(currentTrainingResult.qaSetId);

@@ -75,6 +75,7 @@ docs/report/root-audit/
 
 # 開發除錯殘留（瀏覽器測試截圖、console 輸出、頁面快照）
 .playwright-mcp/
+.playwright-cli/
 console-*.txt
 playwright-*.txt
 playwright-*.md
@@ -97,3 +98,9 @@ cloudflare-worker/.wrangler/
 
 # 拆音工具內置示範音訊（非快取）
 !phonetic-chart/audio/**/*.mp3
+
+# 自建同步後端（selfhost/）的本機資料庫與執行資料
+selfhost/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

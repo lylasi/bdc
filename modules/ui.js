@@ -6,6 +6,52 @@ import * as state from './state.js';
 // 通用 UI 組件
 // =================================
 
+/**
+ * 轉義要放進 HTML 字串（innerHTML / 樣板字串）的動態文字。
+ *
+ * 站內的彈窗、清單、提示常常要插入「使用者可控」的內容——詞書名稱、單詞與釋義、
+ * 問答集名稱、從網址／檔案匯入的資料、AI 與 OCR 的輸出。這些字串一旦直接串進
+ * innerHTML，就會被當成標記解析，形成注入。
+ *
+ * 用法：所有要插進 HTML 的動態值都必須經過這個函式；
+ * 能改用 textContent / createTextNode 的地方優先那樣做。
+ */
+export function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[ch]));
+}
+
+/** 轉義要放進 HTML 屬性值（尤其是被引號包住）的動態文字 */
+export function escapeAttr(value) {
+    return escapeHtml(value);
+}
+
+/**
+ * 給「要放進 innerHTML 的翻譯字串」用的 t()：插值參數會先轉義。
+ *
+ * 問題模式：`el.innerHTML` 裡放 `t(key, { word: entry.word })`。
+ * t() 只做字串替換、不轉義，於是任何被塞進 {word} 的外部資料
+ * （詞書內容、匯入檔、AI/OCR 輸出）都能在頁面上解析成標記。
+ *
+ * 用法：參數是**純資料**時改用 tHtml；參數本身是 HTML 片段
+ * （例如 {link} 帶一整段 <a>）時仍用 t()，並自行確保片段安全。
+ */
+export function tHtml(key, params = {}) {
+    const safe = {};
+    for (const [name, value] of Object.entries(params)) {
+        // 數字／布林等非字串值不需要轉義，避免把 1e3 之類弄成字串比較
+        safe[name] = (value === null || value === undefined) ? ''
+            : (typeof value === 'object' ? escapeHtml(JSON.stringify(value)) : escapeHtml(value));
+    }
+    return t(key, safe);
+}
+
 // --- Modal (模態框) ---
 
 /**
@@ -22,6 +68,13 @@ export function closeModal() {
     dom.appModal.classList.add('hidden');
     try { dom.appModal.querySelector('.modal-content')?.classList.remove('modal-large'); } catch (_) {}
     dom.modalBody.innerHTML = ''; // 清理內容以防下次打開時殘留
+    // 固定底部列只有需要它的面板（例如全域設定）會填入內容；關閉時一併清掉，
+    // 否則下一個面板會帶著上一個的按鈕。
+    if (dom.modalActions) {
+        dom.modalActions.hidden = true;
+        dom.modalActions.innerHTML = '';
+    }
+    try { document.dispatchEvent(new CustomEvent('bdc:modal-closed')); } catch (_) {}
 }
 
 /**
@@ -261,7 +314,22 @@ export function displayMessage(message, type = 'info', duration = 3000) {
     const messageElement = document.createElement('div');
     messageElement.className = `message-toast message-${type}`;
     messageElement.setAttribute('role', type === 'error' ? 'alert' : 'status');
-    messageElement.textContent = message;
+    const textEl = document.createElement('span');
+    textEl.className = 'message-toast__text';
+    textEl.textContent = message;
+    messageElement.appendChild(textEl);
+
+    // 提示條本體不吃點擊（pointer-events: none），只有這顆關閉鈕可點。
+    // 先前整條都可點，等於在畫面底部中央放了一塊 440×N 的點擊攔截區：
+    // 文章「朗读控制」那一列、聽寫設定列正好在同一條基線上，提示顯示期間就點不到，
+    // 加上滑鼠移入會暫停自動消失，使用者會被卡住。
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'message-toast__close';
+    closeBtn.setAttribute('aria-label', t('common.dismiss'));
+    closeBtn.textContent = '×';
+    messageElement.appendChild(closeBtn);
+
     messageContainer.appendChild(messageElement);
 
     // 進場動畫
@@ -275,12 +343,14 @@ export function displayMessage(message, type = 'info', duration = 3000) {
         setTimeout(() => messageElement.remove(), 220);
     };
 
-    // 自動移除（滑鼠移入時暫停計時，方便閱讀較長的錯誤訊息）
+    // 自動移除
     let hideTimer = setTimeout(dismiss, duration);
-    messageElement.addEventListener('mouseenter', () => clearTimeout(hideTimer));
-    messageElement.addEventListener('mouseleave', () => { hideTimer = setTimeout(dismiss, 1200); });
 
-    // 點擊移除
+    closeBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        dismiss();
+    });
+    // 點整條也能關（只有本體可點時才需要；現在本體不吃事件，保留給鍵盤焦點情境）
     messageElement.addEventListener('click', dismiss);
 }
 
@@ -345,8 +415,8 @@ export function showOptionsModal(config) {
 
   modalContent.innerHTML = `
     <div class="modal-header">
-      <h3>${title || t('common.optionsTitle')}</h3>
-      ${description ? `<p class="om-desc">${description}</p>` : ''}
+      <h3>${escapeHtml(title || t('common.optionsTitle'))}</h3>
+      ${description ? `<p class="om-desc">${escapeHtml(description)}</p>` : ''}
     </div>
 
     <div class="modal-body">
@@ -354,8 +424,8 @@ export function showOptionsModal(config) {
     </div>
 
     <div class="modal-footer modal-actions">
-      <button id="cancel-btn" class="btn-secondary cancel-btn">${t('common.cancel')}</button>
-      <button id="confirm-btn" class="btn-primary save-btn">${t('common.confirm')}</button>
+      <button id="cancel-btn" class="btn-secondary cancel-btn">${escapeHtml(t('common.cancel'))}</button>
+      <button id="confirm-btn" class="btn-primary save-btn">${escapeHtml(t('common.confirm'))}</button>
     </div>
   `;
 
@@ -434,20 +504,20 @@ function renderOptions(container, options) {
 function createRadioOption(option, index) {
   const radioOptions = option.choices.map((choice) => `
     <label class="radio-card">
-      <input type="radio" name="option-${index}" value="${choice.value}" ${choice.value === option.default ? 'checked' : ''}>
+      <input type="radio" name="option-${index}" value="${escapeAttr(choice.value)}" ${choice.value === option.default ? 'checked' : ''}>
       <div>
-        <div class="om-option-title">${choice.label}</div>
-        ${choice.description ? `<div class="om-option-desc">${choice.description}</div>` : ''}
+        <div class="om-option-title">${escapeHtml(choice.label)}</div>
+        ${choice.description ? `<div class="om-option-desc">${escapeHtml(choice.description)}</div>` : ''}
       </div>
     </label>
   `).join('');
 
   return `
     <div class="om-field">
-      <h4 class="om-label">${option.label}</h4>
-      ${option.description ? `<p class="om-hint">${option.description}</p>` : ''}
+      <h4 class="om-label">${escapeHtml(option.label)}</h4>
+      ${option.description ? `<p class="om-hint">${escapeHtml(option.description)}</p>` : ''}
     </div>
-    <div class="radio-group" data-option-key="${option.key}">
+    <div class="radio-group" data-option-key="${escapeAttr(option.key)}">
       ${radioOptions}
     </div>
   `;
@@ -455,14 +525,14 @@ function createRadioOption(option, index) {
 
 // 創建復選框選項
 function createCheckboxOption(option, index) {
-  const id = `chk-${option.key}-${index}`;
+  const id = `chk-${escapeAttr(option.key)}-${index}`;
   return `
     <div class="om-row">
       <div>
-        <div class="om-option-title">${option.label}</div>
-        ${option.description ? `<div class="om-option-desc">${option.description}</div>` : ''}
+        <div class="om-option-title">${escapeHtml(option.label)}</div>
+        ${option.description ? `<div class="om-option-desc">${escapeHtml(option.description)}</div>` : ''}
       </div>
-      <label class="switch" for="${id}"><input id="${id}" type="checkbox" data-option-key="${option.key}" ${option.default ? 'checked' : ''}><span class="slider"></span></label>
+      <label class="switch" for="${id}"><input id="${id}" type="checkbox" data-option-key="${escapeAttr(option.key)}" ${option.default ? 'checked' : ''}><span class="slider"></span></label>
     </div>
   `;
 }
@@ -470,16 +540,16 @@ function createCheckboxOption(option, index) {
 // 創建下拉選項
 function createSelectOption(option, index) {
   const selectOptions = option.choices.map(choice => `
-    <option value="${choice.value}" ${choice.value === option.default ? 'selected' : ''}>
-      ${choice.label}
+    <option value="${escapeAttr(choice.value)}" ${choice.value === option.default ? 'selected' : ''}>
+      ${escapeHtml(choice.label)}
     </option>
   `).join('');
 
   return `
     <div class="om-field">
-      <label class="om-label" for="sel-${option.key}-${index}">${option.label}</label>
-      ${option.description ? `<p class="om-hint">${option.description}</p>` : ''}
-      <select id="sel-${option.key}-${index}" data-option-key="${option.key}">
+      <label class="om-label" for="sel-${escapeAttr(option.key)}-${index}">${escapeHtml(option.label)}</label>
+      ${option.description ? `<p class="om-hint">${escapeHtml(option.description)}</p>` : ''}
+      <select id="sel-${escapeAttr(option.key)}-${index}" data-option-key="${escapeAttr(option.key)}">
         ${selectOptions}
       </select>
     </div>
@@ -490,15 +560,15 @@ function createSelectOption(option, index) {
 function createNumberOption(option, index) {
   return `
     <div class="om-field">
-      <label class="om-label" for="num-${option.key}-${index}">${option.label}</label>
-      ${option.description ? `<p class="om-hint">${option.description}</p>` : ''}
+      <label class="om-label" for="num-${escapeAttr(option.key)}-${index}">${escapeHtml(option.label)}</label>
+      ${option.description ? `<p class="om-hint">${escapeHtml(option.description)}</p>` : ''}
       <input
-        id="num-${option.key}-${index}"
+        id="num-${escapeAttr(option.key)}-${index}"
         type="number"
-        data-option-key="${option.key}"
-        value="${option.default || option.min || 1}"
-        min="${option.min || 1}"
-        max="${option.max || 100}"
+        data-option-key="${escapeAttr(option.key)}"
+        value="${escapeAttr(option.default || option.min || 1)}"
+        min="${escapeAttr(option.min || 1)}"
+        max="${escapeAttr(option.max || 100)}"
       >
     </div>
   `;

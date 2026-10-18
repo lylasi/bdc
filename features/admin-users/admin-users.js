@@ -1,0 +1,669 @@
+// Admin user management (v1).
+//
+// Lists users, creates role=user accounts with a one-time passcode/recovery
+// code, edits label/email, and resets non-admin credentials. Role changes,
+// admin credential resets and account deletion stay deployer-only.
+//
+// Plaintext credentials live only in this panel's memory until the admin
+// dismisses them; closing the panel drops them.
+
+import {
+    apiRequest,
+    auth,
+    getAuthSnapshot,
+    captureAuthSession,
+    isAuthSessionCurrent,
+    AUTH_EVENT
+} from '../../modules/sync-cloudflare.js';
+import { t, formatDateTime } from '../../modules/i18n.js';
+import { displayMessage, escapeHtml } from '../../modules/ui.js';
+
+const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_LABEL_LENGTH = 120;
+const LIST_LIMIT = 1000;
+
+let panel = null;
+let escHandler = null;
+let initialized = false;
+let view = emptyView();
+
+function emptyView() {
+    return {
+        users: [],
+        currentUserId: '',
+        loading: false,
+        busy: false,
+        error: '',
+        notice: '',
+        mode: 'list', // list | create | edit
+        editingId: '',
+        form: { userId: '', label: '', email: '' },
+        formError: '',
+        resetConfirm: '',
+        credentials: null,
+        pairing: null,
+        limited: false
+    };
+}
+
+export function initAdminUsers() {
+    if (initialized) return;
+    initialized = true;
+    try {
+        window.addEventListener(AUTH_EVENT, (event) => {
+            const detail = event && event.detail ? event.detail : {};
+            if (detail.event === 'SIGNED_OUT' || detail.event === 'ACCOUNT_CHANGED' || detail.event === 'SESSION_INVALID') {
+                close();
+            }
+        });
+    } catch (_) {}
+}
+
+export function openAdminUsersPanel() {
+    const snapshot = getAuthSnapshot();
+    if (!snapshot.loggedIn) {
+        try { window.dispatchEvent(new CustomEvent('bdc:request-login')); } catch (_) {}
+        return;
+    }
+    if (snapshot.role !== 'admin') {
+        displayMessage(t('errors.aiAdminRequired'), 'error');
+        return;
+    }
+    if (panel) return;
+
+    view = emptyView();
+    panel = document.createElement('div');
+    panel.className = 'ai-admin-overlay';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-label', t('settings.adminUsersTitle'));
+    panel.innerHTML = `<div class="ai-admin-panel admin-users-panel">
+        <div class="ai-admin-head">
+            <h3>${escapeHtml(t('settings.adminUsersTitle'))}</h3>
+            <button type="button" class="btn-secondary" data-admin-users-close>${escapeHtml(t('settings.cancel'))}</button>
+        </div>
+        <div class="ai-admin-body" data-admin-users-body>${escapeHtml(t('settings.loading'))}</div>
+    </div>`;
+    document.body.appendChild(panel);
+    panel.querySelector('[data-admin-users-close]').addEventListener('click', close);
+    panel.addEventListener('click', (event) => { if (event.target === panel) close(); });
+    escHandler = (event) => { if (event.key === 'Escape') close(); };
+    document.addEventListener('keydown', escHandler);
+    loadUsers();
+}
+
+function close() {
+    view = emptyView();
+    if (escHandler) {
+        document.removeEventListener('keydown', escHandler);
+        escHandler = null;
+    }
+    if (!panel) return;
+    try { panel.remove(); } catch (_) {}
+    panel = null;
+}
+
+function body() {
+    return panel ? panel.querySelector('[data-admin-users-body]') : null;
+}
+
+function formatTime(value) {
+    if (!value) return '';
+    try { return formatDateTime(value, { hour12: false }); } catch (_) { return ''; }
+}
+
+function render() {
+    const el = body();
+    if (!el) return;
+    el.innerHTML = renderHtml();
+    bind();
+}
+
+function renderHtml() {
+    return [
+        view.error ? `<div class="ai-admin-empty error" role="alert">${escapeHtml(view.error)}</div>` : '',
+        view.notice ? `<div class="ai-admin-empty" role="status">${escapeHtml(view.notice)}</div>` : '',
+        view.credentials ? renderCredentials() : '',
+        view.pairing ? renderPairing() : '',
+        view.mode === 'create' ? renderCreateForm() : '',
+        view.mode === 'edit' ? renderEditForm() : '',
+        view.resetConfirm ? renderResetConfirm() : '',
+        renderList()
+    ].join('');
+}
+
+function renderList() {
+    if (view.loading) return `<div class="ai-admin-empty">${escapeHtml(t('settings.loading'))}</div>`;
+    const rows = view.users.length
+        ? view.users.map(renderUser).join('')
+        : `<div class="ai-admin-empty">${escapeHtml(t('settings.adminUsersEmpty'))}</div>`;
+    return `<section class="admin-users-list">
+        <div class="admin-users-toolbar">
+            <span class="gs-hint">${escapeHtml(t('settings.adminUsersCount', { count: view.users.length }))}</span>
+            ${view.limited ? `<span class="gs-hint">${escapeHtml(t('settings.adminUsersLimited', { count: LIST_LIMIT }))}</span>` : ''}
+            <span class="admin-users-toolbar-actions">
+                <button type="button" class="btn-secondary gs-ai-small" data-admin-users-refresh ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersRefresh'))}</button>
+                <button type="button" class="btn-primary gs-ai-small" data-admin-users-create ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersCreate'))}</button>
+            </span>
+        </div>
+        <div class="admin-users-rows">${rows}</div>
+    </section>`;
+}
+
+function renderUser(user) {
+    const id = escapeHtml(user.userId);
+    const isSelf = user.userId === view.currentUserId;
+    const isAdmin = user.role === 'admin';
+    const created = formatTime(user.createdAt);
+    return `<div class="admin-users-row">
+        <div class="admin-users-main">
+            <span class="admin-users-id">${id}</span>
+            ${isSelf ? `<span class="gs-ai-badge">${escapeHtml(t('settings.adminUsersYou'))}</span>` : ''}
+            <span class="gs-ai-badge">${escapeHtml(t(isAdmin ? 'settings.adminUsersRoleAdmin' : 'settings.adminUsersRoleUser'))}</span>
+            <span class="admin-users-label">${escapeHtml(user.label || t('settings.adminUsersNoLabel'))}</span>
+            ${user.email ? `<span class="admin-users-email">${escapeHtml(user.email)}</span>` : ''}
+            ${created ? `<span class="admin-users-time">${escapeHtml(t('settings.adminUsersCreatedAt', { time: created }))}</span>` : ''}
+        </div>
+        <div class="admin-users-actions">
+            <button type="button" class="btn-secondary gs-ai-small" data-user-edit="${id}" ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersEdit'))}</button>
+            ${isAdmin
+                ? `<span class="gs-hint">${escapeHtml(t('settings.adminUsersAdminProtected'))}</span>`
+                : `<button type="button" class="btn-secondary gs-ai-small" data-user-pair="${id}" ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersPair'))}</button>
+                   <button type="button" class="btn-secondary gs-ai-small" data-user-reset="${id}" ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersReset'))}</button>`}
+        </div>
+    </div>`;
+}
+
+function renderCreateForm() {
+    return `<section class="ai-admin-newform admin-users-form">
+        <h4>${escapeHtml(t('settings.adminUsersCreateTitle'))}</h4>
+        <div class="ai-admin-grid">
+            <label>${escapeHtml(t('settings.adminUsersUserId'))}
+                <input type="text" data-form-user-id maxlength="64" value="${escapeHtml(view.form.userId)}" autocomplete="off" spellcheck="false">
+            </label>
+            <label>${escapeHtml(t('settings.adminUsersLabel'))}
+                <input type="text" data-form-label maxlength="${MAX_LABEL_LENGTH}" value="${escapeHtml(view.form.label)}" autocomplete="off">
+            </label>
+            <label class="ai-admin-wide">${escapeHtml(t('settings.adminUsersEmail'))}
+                <input type="email" data-form-email maxlength="254" value="${escapeHtml(view.form.email)}" autocomplete="off" spellcheck="false">
+            </label>
+        </div>
+        <p class="gs-hint">${escapeHtml(t('settings.adminUsersUserIdHint'))}</p>
+        <p class="gs-hint">${escapeHtml(t('settings.adminUsersEmailHint'))}</p>
+        ${view.formError ? `<p class="gs-ai-error" role="alert">${escapeHtml(view.formError)}</p>` : ''}
+        <div class="ai-admin-actions">
+            <button type="button" class="btn-primary" data-form-submit ${view.busy ? 'disabled' : ''}>${escapeHtml(view.busy ? t('settings.adminUsersBusy') : t('settings.adminUsersCreateSubmit'))}</button>
+            <button type="button" class="btn-secondary" data-form-cancel ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.cancel'))}</button>
+        </div>
+    </section>`;
+}
+
+function renderEditForm() {
+    const user = view.users.find((item) => item.userId === view.editingId);
+    if (!user) return '';
+    return `<section class="ai-admin-newform admin-users-form">
+        <h4>${escapeHtml(t('settings.adminUsersEditTitle', { user: user.userId }))}</h4>
+        <div class="ai-admin-grid">
+            <label>${escapeHtml(t('settings.adminUsersUserId'))}
+                <input type="text" value="${escapeHtml(user.userId)}" readonly disabled>
+            </label>
+            <label>${escapeHtml(t('settings.adminUsersLabel'))}
+                <input type="text" data-form-label maxlength="${MAX_LABEL_LENGTH}" value="${escapeHtml(view.form.label)}" autocomplete="off">
+            </label>
+            <label class="ai-admin-wide">${escapeHtml(t('settings.adminUsersEmail'))}
+                <input type="email" data-form-email maxlength="254" value="${escapeHtml(view.form.email)}" autocomplete="off" spellcheck="false">
+            </label>
+        </div>
+        <p class="gs-hint">${escapeHtml(t('settings.adminUsersUserIdHint'))}</p>
+        ${view.formError ? `<p class="gs-ai-error" role="alert">${escapeHtml(view.formError)}</p>` : ''}
+        <div class="ai-admin-actions">
+            <button type="button" class="btn-primary" data-form-submit ${view.busy ? 'disabled' : ''}>${escapeHtml(view.busy ? t('settings.adminUsersBusy') : t('settings.adminUsersSave'))}</button>
+            <button type="button" class="btn-secondary" data-form-cancel ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.cancel'))}</button>
+        </div>
+    </section>`;
+}
+
+function renderCredentials() {
+    const credentials = view.credentials;
+    return `<section class="admin-users-credentials" role="alert">
+        <h4>${escapeHtml(t('settings.adminUsersCredentialsTitle', { user: credentials.userId }))}</h4>
+        <p class="admin-users-warning">${escapeHtml(t('settings.adminUsersCredentialsWarning'))}</p>
+        <div class="admin-users-credential-row">
+            <span>${escapeHtml(t('settings.adminUsersPasscode'))}</span>
+            <code>${escapeHtml(credentials.passcode)}</code>
+            <button type="button" class="btn-secondary gs-ai-small" data-copy-passcode>${escapeHtml(t('settings.adminUsersCopy'))}</button>
+        </div>
+        <div class="admin-users-credential-row">
+            <span>${escapeHtml(t('settings.adminUsersRecoveryCode'))}</span>
+            <code>${escapeHtml(credentials.recoveryCode)}</code>
+            <button type="button" class="btn-secondary gs-ai-small" data-copy-recovery>${escapeHtml(t('settings.adminUsersCopy'))}</button>
+        </div>
+        <div class="ai-admin-actions">
+            <button type="button" class="btn-primary" data-credentials-done>${escapeHtml(t('settings.adminUsersCredentialsDone'))}</button>
+        </div>
+    </section>`;
+}
+
+function renderPairing() {
+    const pairing = view.pairing;
+    const expires = formatTime(pairing.expiresAt);
+    return `<section class="admin-users-credentials admin-users-pairing" role="status">
+        <h4>${escapeHtml(t('settings.adminUsersPairTitle', { user: pairing.userId }))}</h4>
+        <p class="admin-users-warning">${escapeHtml(t('settings.adminUsersPairWarning'))}</p>
+        <div class="admin-users-credential-row">
+            <span>${escapeHtml(t('settings.adminUsersPairCode'))}</span>
+            <code>${escapeHtml(pairing.code)}</code>
+            <button type="button" class="btn-secondary gs-ai-small" data-copy-pairing>${escapeHtml(t('settings.adminUsersCopy'))}</button>
+        </div>
+        ${expires ? `<p class="gs-hint">${escapeHtml(t('settings.adminUsersPairExpires', { time: expires }))}</p>` : ''}
+        <div class="ai-admin-actions">
+            <button type="button" class="btn-primary" data-pairing-done>${escapeHtml(t('settings.adminUsersCredentialsDone'))}</button>
+        </div>
+    </section>`;
+}
+
+function renderResetConfirm() {
+    return `<section class="admin-users-confirm" role="alertdialog" aria-label="${escapeHtml(t('settings.adminUsersReset'))}">
+        <p>${escapeHtml(t('settings.adminUsersResetConfirm', { user: view.resetConfirm }))}</p>
+        <div class="ai-admin-actions">
+            <button type="button" class="btn-primary btn-danger" data-reset-confirm ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.adminUsersResetConfirmAction'))}</button>
+            <button type="button" class="btn-secondary" data-reset-cancel ${view.busy ? 'disabled' : ''}>${escapeHtml(t('settings.cancel'))}</button>
+        </div>
+    </section>`;
+}
+
+function bind() {
+    const el = body();
+    if (!el) return;
+
+    el.querySelector('[data-admin-users-refresh]')?.addEventListener('click', () => loadUsers());
+    el.querySelector('[data-admin-users-create]')?.addEventListener('click', () => {
+        view.mode = 'create';
+        view.editingId = '';
+        view.form = { userId: '', label: '', email: '' };
+        view.formError = '';
+        view.notice = '';
+        view.resetConfirm = '';
+        view.credentials = null;
+        view.pairing = null;
+        render();
+        focusFirst('[data-form-user-id]');
+    });
+    el.querySelector('[data-form-cancel]')?.addEventListener('click', () => {
+        view.mode = 'list';
+        view.editingId = '';
+        view.form = { userId: '', label: '', email: '' };
+        view.formError = '';
+        render();
+    });
+    el.querySelector('[data-form-user-id]')?.addEventListener('input', (event) => {
+        view.form.userId = event.target.value;
+    });
+    el.querySelector('[data-form-label]')?.addEventListener('input', (event) => {
+        view.form.label = event.target.value;
+    });
+    el.querySelector('[data-form-email]')?.addEventListener('input', (event) => {
+        view.form.email = event.target.value;
+    });
+    el.querySelector('[data-form-submit]')?.addEventListener('click', () => {
+        if (view.mode === 'edit') submitEdit();
+        else submitCreate();
+    });
+    el.querySelectorAll('[data-user-edit]').forEach((button) => {
+        button.addEventListener('click', () => startEdit(button.dataset.userEdit));
+    });
+    el.querySelectorAll('[data-user-reset]').forEach((button) => {
+        button.addEventListener('click', () => {
+            view.resetConfirm = button.dataset.userReset;
+            view.formError = '';
+            view.notice = '';
+            view.pairing = null;
+            render();
+        });
+    });
+    el.querySelectorAll('[data-user-pair]').forEach((button) => {
+        button.addEventListener('click', () => generatePairingCode(button.dataset.userPair));
+    });
+    el.querySelector('[data-pairing-done]')?.addEventListener('click', () => {
+        view.pairing = null;
+        render();
+    });
+    el.querySelector('[data-copy-pairing]')?.addEventListener('click', (event) => {
+        copyCredential(event.currentTarget, view.pairing && view.pairing.code);
+    });
+    el.querySelector('[data-reset-confirm]')?.addEventListener('click', resetPasscode);
+    el.querySelector('[data-reset-cancel]')?.addEventListener('click', () => {
+        view.resetConfirm = '';
+        render();
+    });
+    el.querySelector('[data-credentials-done]')?.addEventListener('click', () => {
+        view.credentials = null;
+        render();
+    });
+    el.querySelector('[data-copy-passcode]')?.addEventListener('click', (event) => {
+        copyCredential(event.currentTarget, view.credentials && view.credentials.passcode);
+    });
+    el.querySelector('[data-copy-recovery]')?.addEventListener('click', (event) => {
+        copyCredential(event.currentTarget, view.credentials && view.credentials.recoveryCode);
+    });
+}
+
+function focusFirst(selector) {
+    const input = body()?.querySelector(selector);
+    if (!input) return;
+    try { input.focus(); } catch (_) {}
+}
+
+function startEdit(userId) {
+    const user = view.users.find((item) => item.userId === userId);
+    if (!user) return;
+    view.mode = 'edit';
+    view.editingId = String(userId || '');
+    view.form = {
+        userId: user.userId,
+        label: user.label || '',
+        email: user.email || ''
+    };
+    view.formError = '';
+    view.notice = '';
+    view.resetConfirm = '';
+    view.pairing = null;
+    render();
+    focusFirst('[data-form-label]');
+}
+
+async function loadUsers() {
+    if (!panel) return;
+    view.loading = true;
+    view.error = '';
+    render();
+
+    const captured = captureAuthSession();
+    try {
+        const res = await apiRequest('/admin/users', { method: 'GET' }, { timeoutMs: 15000 });
+        if (!isAuthSessionCurrent(captured)) return;
+        if (res.status === 401) {
+            await auth.invalidateSession();
+            view.error = t('errors.aiLoginRequired');
+        } else if (res.status === 403) {
+            view.error = t('errors.aiAdminRequired');
+        } else if (!res.ok) {
+            view.error = t('errors.adminUsersLoadFailed');
+        } else {
+            const data = await res.json().catch(() => null);
+            if (!data || !Array.isArray(data.users)) {
+                view.error = t('errors.adminUsersLoadFailed');
+            } else {
+                view.users = data.users;
+                view.currentUserId = String(data.currentUserId || '');
+                view.limited = data.users.length >= LIST_LIMIT;
+            }
+        }
+    } catch (_) {
+        if (!isAuthSessionCurrent(captured)) return;
+        view.error = t('errors.cannotReachSync');
+    }
+    view.loading = false;
+    render();
+}
+
+async function submitCreate() {
+    if (view.busy) return;
+    const el = body();
+    if (!el) return;
+    const userId = String(el.querySelector('[data-form-user-id]')?.value || '').trim();
+    const label = String(el.querySelector('[data-form-label]')?.value || '').trim();
+    const email = String(el.querySelector('[data-form-email]')?.value || '').trim();
+    view.form = { userId, label, email };
+
+    if (!USER_ID_RE.test(userId)) {
+        view.formError = t('settings.adminUsersInvalidUserId');
+        render();
+        return;
+    }
+    if (label.length > MAX_LABEL_LENGTH) {
+        view.formError = t('settings.adminUsersInvalidLabel');
+        render();
+        return;
+    }
+    if (email && !EMAIL_RE.test(email)) {
+        view.formError = t('settings.adminUsersInvalidEmail');
+        render();
+        return;
+    }
+
+    view.busy = true;
+    view.formError = '';
+    render();
+    const captured = captureAuthSession();
+    try {
+        const res = await apiRequest('/admin/users', {
+            method: 'POST',
+            body: JSON.stringify({ userId, label, email })
+        }, { timeoutMs: 15000 });
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        if (!res.ok) {
+            view.formError = await describeError(res, 'errors.adminUsersCreateFailed');
+            render();
+            return;
+        }
+        const data = await res.json().catch(() => null);
+        if (!data || !data.passcode || !data.recoveryCode) {
+            view.formError = t('errors.adminUsersCreateFailed');
+            render();
+            return;
+        }
+        const createdId = String((data.user && data.user.userId) || userId);
+        view.credentials = { userId: createdId, passcode: data.passcode, recoveryCode: data.recoveryCode };
+        view.mode = 'list';
+        view.form = { userId: '', label: '', email: '' };
+        view.notice = t('settings.adminUsersCreated', { user: createdId });
+        await loadUsers();
+    } catch (_) {
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        view.formError = t('errors.cannotReachSync');
+        render();
+    }
+}
+
+async function submitEdit() {
+    if (view.busy) return;
+    const userId = view.editingId;
+    const user = view.users.find((item) => item.userId === userId);
+    if (!user) {
+        view.mode = 'list';
+        render();
+        return;
+    }
+    const el = body();
+    if (!el) return;
+    const label = String(el.querySelector('[data-form-label]')?.value || '').trim();
+    const email = String(el.querySelector('[data-form-email]')?.value || '').trim();
+    view.form.label = label;
+    view.form.email = email;
+
+    if (label.length > MAX_LABEL_LENGTH) {
+        view.formError = t('settings.adminUsersInvalidLabel');
+        render();
+        return;
+    }
+    if (email && !EMAIL_RE.test(email)) {
+        view.formError = t('settings.adminUsersInvalidEmail');
+        render();
+        return;
+    }
+
+    view.busy = true;
+    view.formError = '';
+    render();
+    const captured = captureAuthSession();
+    try {
+        const res = await apiRequest(`/admin/users/${encodeURIComponent(userId)}`, {
+            method: 'PUT',
+            body: JSON.stringify({ label, email })
+        }, { timeoutMs: 15000 });
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        if (!res.ok) {
+            view.formError = await describeError(res, 'errors.adminUsersUpdateFailed');
+            render();
+            return;
+        }
+        view.mode = 'list';
+        view.editingId = '';
+        view.form = { userId: '', label: '', email: '' };
+        view.notice = t('settings.adminUsersUpdated', { user: userId });
+        await loadUsers();
+    } catch (_) {
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        view.formError = t('errors.cannotReachSync');
+        render();
+    }
+}
+
+async function resetPasscode() {
+    if (view.busy) return;
+    const userId = view.resetConfirm;
+    if (!userId) return;
+
+    view.busy = true;
+    view.resetConfirm = '';
+    view.error = '';
+    view.pairing = null;
+    render();
+    const captured = captureAuthSession();
+    try {
+        const res = await apiRequest(`/admin/users/${encodeURIComponent(userId)}/reset-passcode`, {
+            method: 'POST'
+        }, { timeoutMs: 15000 });
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        if (!res.ok) {
+            view.error = await describeError(res, 'errors.adminUsersResetFailed');
+            render();
+            return;
+        }
+        const data = await res.json().catch(() => null);
+        if (!data || !data.passcode || !data.recoveryCode) {
+            view.error = t('errors.adminUsersResetFailed');
+            render();
+            return;
+        }
+        const resetId = String((data.user && data.user.userId) || userId);
+        view.credentials = { userId: resetId, passcode: data.passcode, recoveryCode: data.recoveryCode };
+        view.notice = t('settings.adminUsersResetDone', { user: resetId });
+        await loadUsers();
+    } catch (_) {
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        view.error = t('errors.cannotReachSync');
+        render();
+    }
+}
+
+async function generatePairingCode(userId) {
+    if (view.busy) return;
+    view.busy = true;
+    view.error = '';
+    view.notice = '';
+    view.resetConfirm = '';
+    view.credentials = null;
+    view.pairing = null;
+    render();
+    const captured = captureAuthSession();
+    try {
+        const res = await apiRequest(`/admin/users/${encodeURIComponent(userId)}/pairing-code`, {
+            method: 'POST'
+        }, { timeoutMs: 15000 });
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        if (!res.ok) {
+            view.error = await describeError(res, 'errors.adminUsersPairFailed');
+            render();
+            return;
+        }
+        const data = await res.json().catch(() => null);
+        if (!data || !data.code) {
+            view.error = t('errors.adminUsersPairFailed');
+            render();
+            return;
+        }
+        view.pairing = {
+            userId: String(data.userId || userId),
+            code: String(data.code),
+            expiresAt: data.expiresAt || ''
+        };
+        render();
+    } catch (_) {
+        if (!isAuthSessionCurrent(captured)) return;
+        view.busy = false;
+        view.error = t('errors.cannotReachSync');
+        render();
+    }
+}
+
+async function describeError(res, fallbackKey) {
+    if (res.status === 401) {
+        try { await auth.invalidateSession(); } catch (_) {}
+        return t('errors.aiLoginRequired');
+    }
+    let code = '';
+    try {
+        const data = await res.clone().json();
+        code = String((data && data.code) || '');
+    } catch (_) {}
+    const keys = {
+        user_exists: 'errors.adminUsersUserExists',
+        email_exists: 'errors.adminUsersEmailExists',
+        user_not_found: 'errors.adminUsersNotFound',
+        invalid_user_id: 'errors.adminUsersInvalidUserId',
+        invalid_label: 'errors.adminUsersInvalidLabel',
+        invalid_email: 'errors.adminUsersInvalidEmail',
+        admin_account_protected: 'errors.adminUsersAdminProtected'
+    };
+    if (keys[code]) return t(keys[code]);
+    if (res.status === 403) return t('errors.aiAdminRequired');
+    if (res.status === 429) return t('errors.adminUsersRateLimited');
+    return t(fallbackKey);
+}
+
+async function copyCredential(button, text) {
+    if (!button || !text) return;
+    const ok = await copyText(text);
+    if (!ok) {
+        displayMessage(t('settings.adminUsersCopyFailed'), 'error');
+        return;
+    }
+    const original = button.textContent;
+    button.textContent = t('settings.adminUsersCopied');
+    setTimeout(() => {
+        if (button.isConnected) button.textContent = original;
+    }, 1500);
+}
+
+async function copyText(text) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch (_) {}
+    try {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        const ok = document.execCommand('copy');
+        area.remove();
+        return ok;
+    } catch (_) {
+        return false;
+    }
+}

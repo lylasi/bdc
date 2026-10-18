@@ -12,7 +12,9 @@ import {
   getGradingHistory,
   saveGradingHistory
 } from './storage.js';
-import { loadGlobalSettings, saveGlobalSettings } from './settings.js';
+import { loadGlobalSettings } from './settings.js';
+import { sanitizeAISettings } from './ai-settings-sanitize.js';
+import { applyRemoteAISettings, getAIProfileUpdatedAt } from './ai-profile-storage.js';
 import { t } from './i18n.js';
 
 const ASSISTANT_LEGACY_KEY = 'assistantConversations';
@@ -47,73 +49,6 @@ function shouldApplyGroup(remoteUpdatedAt, localUpdatedAt, force = false) {
 
 function isPlainObject(value) {
   return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function sanitizeStringArray(values) {
-  if (!Array.isArray(values)) return [];
-  return Array.from(new Set(values.map(value => String(value || '').trim()).filter(Boolean)));
-}
-
-function sanitizeDiscoveredModels(values) {
-  if (!Array.isArray(values)) return [];
-  return values.map((item) => {
-    if (typeof item === 'string') return item.trim();
-    if (!isPlainObject(item)) return null;
-    const sanitized = {};
-    for (const key of ['id', 'providerId', 'value', 'label', 'ownedBy', 'created', 'contextWindow']) {
-      const value = item[key];
-      if (value !== undefined && value !== null) sanitized[key] = value;
-    }
-    return sanitized;
-  }).filter(item => typeof item === 'string' ? !!item : !!item && Object.keys(item).length > 0);
-}
-
-function sanitizeTaskMappings(record) {
-  if (!isPlainObject(record)) return {};
-  const out = {};
-  for (const [key, value] of Object.entries(record)) {
-    if (typeof value === 'string') {
-      const normalized = value.trim();
-      if (normalized) out[key] = normalized;
-      continue;
-    }
-    if (!isPlainObject(value)) continue;
-    const sanitized = {};
-    for (const field of ['provider', 'profile', 'model', 'apiUrl']) {
-      const fieldValue = value[field];
-      if (typeof fieldValue === 'string' && fieldValue.trim()) sanitized[field] = fieldValue.trim();
-    }
-    if (sanitized.model) out[key] = sanitized;
-  }
-  return out;
-}
-
-function sanitizeAISettings(ai) {
-  const source = isPlainObject(ai) ? ai : {};
-  const providers = {};
-  if (isPlainObject(source.providers)) {
-    for (const [id, provider] of Object.entries(source.providers)) {
-      if (!id || id === '__proto__' || id === 'prototype' || id === 'constructor' || !isPlainObject(provider)) continue;
-      providers[id] = {
-        label: typeof provider.label === 'string' ? provider.label : id,
-        enabled: provider.enabled !== false,
-        baseUrl: typeof provider.baseUrl === 'string' ? provider.baseUrl : '',
-        apiUrl: typeof provider.apiUrl === 'string' ? provider.apiUrl : '',
-        modelsUrl: typeof provider.modelsUrl === 'string' ? provider.modelsUrl : '',
-        allowedModels: sanitizeStringArray(provider.allowedModels),
-        discoveredModels: sanitizeDiscoveredModels(provider.discoveredModels),
-        lastDiscoveryAt: typeof provider.lastDiscoveryAt === 'string' ? provider.lastDiscoveryAt : '',
-        discoveryStatus: typeof provider.discoveryStatus === 'string' ? provider.discoveryStatus : '',
-        discoveryError: typeof provider.discoveryError === 'string' ? provider.discoveryError : ''
-      };
-    }
-  }
-  return {
-    apiUrl: typeof source.apiUrl === 'string' ? source.apiUrl : '',
-    providers,
-    models: sanitizeTaskMappings(source.models),
-    tasks: sanitizeTaskMappings(source.tasks)
-  };
 }
 
 function hasSyncableAISettings(ai) {
@@ -406,17 +341,14 @@ function applyAISettingsPayload(remote, force = false) {
   const remoteGroup = remote?.aiSettings;
   if (!remoteGroup || typeof remoteGroup !== 'object') return;
   const remoteUpdatedAt = normalizeUpdatedAt(remoteGroup.updatedAt);
-  const localSettings = loadGlobalSettings();
-  const legacyLocalUpdatedAt = hasSyncableAISettings(localSettings?.ai) ? (localSettings?.updatedAt || '') : '';
-  const localUpdatedAt = normalizeUpdatedAt(localSettings?.ai?.updatedAt, legacyLocalUpdatedAt);
+  const localUpdatedAt = getAIProfileUpdatedAt();
   if (!shouldApplyGroup(remoteUpdatedAt, localUpdatedAt, force)) return;
-  saveGlobalSettings({
-    ai: sanitizeAISettings(remoteGroup.settings)
-  }, {
-    preserveUpdatedAt: true,
-    updatedAtOverride: remoteUpdatedAt,
-    suppressSyncTouch: true
-  });
+  try {
+    applyRemoteAISettings(sanitizeAISettings(remoteGroup.settings), remoteUpdatedAt);
+  } catch (error) {
+    // A failed local write must not abort the rest of the snapshot restore.
+    console.warn('[sync] AI settings apply failed:', error && error.code ? error.code : 'unknown');
+  }
 }
 
 async function applySnapshotPayload(payload, force = false) {
@@ -468,8 +400,7 @@ export async function buildLocalSnapshot() {
   const assistantPayload = await buildAssistantSnapshotPayload();
   const assistantUpdatedAt = getLocalUpdatedAt(ASSISTANT_UPDATED_AT_KEY, false);
   const globalSettings = loadGlobalSettings();
-  const legacyAiSettingsUpdatedAt = hasSyncableAISettings(globalSettings?.ai) ? (globalSettings?.updatedAt || '') : '';
-  const aiSettingsUpdatedAt = normalizeUpdatedAt(globalSettings?.ai?.updatedAt, legacyAiSettingsUpdatedAt);
+  const aiSettingsUpdatedAt = getAIProfileUpdatedAt();
 
   // Compact articles before push to reduce payload
   const compactArticles = compactAnalyzedArticles(state.analyzedArticles);

@@ -30,7 +30,7 @@ function getSelectedQuizWords() {
 function startQuiz() {
     const wordsForQuiz = getSelectedQuizWords();
     if (!wordsForQuiz || wordsForQuiz.length < 4) {
-        alert(t('quiz.needFourWords'));
+        ui.displayMessage(t('quiz.needFourWords'), 'warning');
         return;
     }
     
@@ -51,7 +51,17 @@ function startQuiz() {
     showCurrentQuestion();
 }
 
-function stopQuiz() {
+/**
+ * 結束測驗並回到設定畫面。
+ *
+ * 除了「结束测验」按鈕，main.js 在使用者於測驗中切換模組、並確認要離開時也會呼叫它。
+ * 若只切換畫面而不呼叫，state.quizInProgress 會一直停在 true，
+ * 之後每次切模組都會再跳一次確認對話框（永遠離不開）。
+ *
+ * @param {Object} [options]
+ * @param {boolean} [options.silent] 不顯示「測驗已停止」提示（由呼叫端自行提示時使用）
+ */
+export function stopQuiz({ silent = false } = {}) {
     state.setQuizInProgress(false);
     state.setCurrentQuestionIndex(0);
     state.setQuizScore(0);
@@ -67,7 +77,7 @@ function stopQuiz() {
     dom.quizOptions.innerHTML = '';
     updateQuizProgress();
 
-    alert(t('quiz.stopped'));
+    if (!silent) ui.displayMessage(t('quiz.stopped'), 'info');
 }
 
 function generateQuizQuestions() {

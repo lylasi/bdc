@@ -2,13 +2,14 @@ import * as state from '../../modules/state.js';
 import * as dom from '../../modules/dom.js';
 import * as storage from '../../modules/storage.js';
 import * as ui from '../../modules/ui.js';
+import { escapeHtml, escapeAttr } from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
 import {
     getTaskModelSelection,
     saveTaskModelSelection
 } from '../../modules/ai-models.js';
-import { AI_MODELS, OCR_CONFIG, ARTICLE_IMPORT } from '../../ai-config.js';
+import { ARTICLE_IMPORT } from '../../ai-config.js';
 import { getAllQASets, loadQASet } from '../qa/qa-storage.js';
 import * as cache from '../../modules/cache.js';
 import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
@@ -333,7 +334,7 @@ function onImportNotice(code) {
 
 // 導入文章（網址/圖片OCR）— 使用一顆按鈕彈窗，避免佔版面
 function openArticleImportModal() {
-    const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+    const esc = escapeHtml;
     const body = dom.modalBody;
     if (!body) return;
     body.innerHTML = '';
@@ -387,12 +388,10 @@ function openArticleImportModal() {
     };
 
     const getArticleCleanupModelSelection = () => getTaskModelSelection('articleCleanup', {
-        currentValue: LS.get(LS_KEYS.cleanModel, ''),
-        preferredCandidates: [ARTICLE_IMPORT?.DEFAULT_MODEL, ARTICLE_IMPORT?.MODEL]
+        currentValue: LS.get(LS_KEYS.cleanModel, '')
     });
     const getArticleOCRModelSelection = () => getTaskModelSelection('imageOCR', {
-        currentValue: LS.get(LS_KEYS.ocrModel, ''),
-        preferredCandidates: [OCR_CONFIG?.DEFAULT_MODEL, OCR_CONFIG?.MODEL]
+        currentValue: LS.get(LS_KEYS.ocrModel, '')
     });
     const persistArticleCleanupModel = (value) => {
         const normalized = String(value || '');
@@ -410,7 +409,7 @@ function openArticleImportModal() {
         const optionsHtml = (selection.options || [])
             .map(option => `<option value="${esc(option.value)}">${esc(option.label || option.value)}</option>`)
             .join('');
-        const control = optionsHtml
+        const control = optionsHtml && !selection.disabled
             ? `<select id="${selectId}" class="import-input short">${optionsHtml}</select>`
             : `<span class="form-hint">${t('article.configureModel')}</span>`;
         return `<span class="model-label">${labelText}</span>${control}`;
@@ -427,6 +426,7 @@ function openArticleImportModal() {
                     <label class="label" for="imp-url">${t('article.pasteUrl')}</label>
                     <div class="controls">
                         <input id="imp-url" class="import-input" type="url" placeholder="https://example.com/article">
+                        <p id="imp-url-error" class="field-error" role="alert" hidden></p>
                     </div>
                     <div class="form-actions">
                         <button id="imp-fetch" class="btn-primary">${t('article.fetch')}</button>
@@ -464,6 +464,20 @@ function openArticleImportModal() {
         const $ = (sel) => wrap.querySelector(sel);
         const urlInput = $('#imp-url');
         const fetchBtn = $('#imp-fetch');
+        const urlErrorEl = $('#imp-url-error');
+        // 就地驗證：彈窗還開著的時候，欄位旁的訊息比底部提示條可靠
+        //（提示條會被遮罩壓住、且幾秒後消失，使用者常常來不及看到）。
+        const showUrlError = (message) => {
+            if (!urlErrorEl) return;
+            urlErrorEl.textContent = message || '';
+            urlErrorEl.hidden = !message;
+            if (urlInput) {
+                if (message) urlInput.setAttribute('aria-invalid', 'true');
+                else urlInput.removeAttribute('aria-invalid');
+            }
+            if (message && urlInput) { try { urlInput.focus(); } catch (_) {} }
+        };
+        if (urlInput) urlInput.addEventListener('input', () => showUrlError(''));
         const fileInput = $('#imp-url-file');
         const pickBtn = $('#imp-url-pick');
         const aiCleanChk = $('#imp-ai-clean');
@@ -614,7 +628,8 @@ function openArticleImportModal() {
         }
         fetchBtn.addEventListener('click', async () => {
             const url = (urlInput.value || '').trim();
-            if (!url) { alert(t('article.enterUrl')); return; }
+            if (!url) { showUrlError(t('article.enterUrl')); return; }
+            showUrlError('');
             fetchBtn.disabled = true; fetchBtn.textContent = t('article.fetching');
             try {
                 const wantsAiClean = aiCleanChk && aiCleanChk.checked;
@@ -693,7 +708,7 @@ function openArticleImportModal() {
                         }
                 }
             } catch (e) {
-                alert(t('article.fetchFailed', { message: e?.message || e }));
+                ui.displayMessage(t('article.fetchFailed', { message: e?.message || e }), 'error');
             } finally {
                 fetchBtn.disabled = false; fetchBtn.textContent = t('article.fetchShort');
             }
@@ -876,7 +891,7 @@ function openArticleImportModal() {
         };
 
         const importArticleFromNews = async (sourceId, articleUrl, triggerBtn, forcePreviewOnly = false) => {
-            if (!articleUrl) { alert(t('article.missingUrl')); return; }
+            if (!articleUrl) { ui.displayMessage(t('article.missingUrl'), 'warning'); return; }
             const btnState = triggerBtn ? { el: triggerBtn, text: triggerBtn.textContent } : null;
             if (btnState) { btnState.el.disabled = true; btnState.el.textContent = t('article.processing'); }
             try {
@@ -903,7 +918,7 @@ function openArticleImportModal() {
                 if (!md) throw new Error(t('article.articleContentMissing'));
                 applyMarkdown(md.trim(), { forcePreview: forcePreviewOnly });
             } catch (err) {
-                alert(t('article.articleImportFailed', { message: err?.message || err }));
+                ui.displayMessage(t('article.articleImportFailed', { message: err?.message || err }), 'error');
             } finally {
                 if (btnState) { btnState.el.disabled = false; btnState.el.textContent = btnState.text; }
             }
@@ -1135,7 +1150,7 @@ function openArticleImportModal() {
         if (modelSel) modelSel.addEventListener('change', () => persistArticleOCRModel(modelSel.value));
         runBtn.addEventListener('click', async () => {
             const files = selectedFiles.length ? selectedFiles.slice() : Array.from(fileInput.files || []);
-            if (!files.length) { alert(t('article.selectImagesFirst')); return; }
+            if (!files.length) { ui.displayMessage(t('article.selectImagesFirst'), 'warning'); return; }
             runBtn.disabled = true; runBtn.textContent = t('article.extracting');
             try {
                 const texts = [];
@@ -1150,7 +1165,7 @@ function openArticleImportModal() {
                 if (resultPre) resultPre.textContent = finalText.trim();
                 if (previewBox) previewBox.style.display = 'block';
             } catch (e) {
-                alert(t('article.ocrFailed', { message: e?.message || e }));
+                ui.displayMessage(t('article.ocrFailed', { message: e?.message || e }), 'error');
             } finally {
                 runBtn.disabled = false; runBtn.textContent = t('article.extractImageText');
             }
@@ -1211,9 +1226,9 @@ function openArticleImportModal() {
 
         applyBtn.addEventListener('click', async () => {
             const id = select.value;
-            if (!id) { alert(t('article.selectQaFirst')); return; }
+            if (!id) { ui.displayMessage(t('article.selectQaFirst'), 'warning'); return; }
             const qaSet = await loadQASet(id);
-            if (!qaSet) { alert(t('article.loadQaFailed')); return; }
+            if (!qaSet) { ui.displayMessage(t('article.loadQaFailed'), 'error'); return; }
             const md = qaSetToMarkdownForArticle(qaSet);
             if (dom.articleInput) dom.articleInput.value = md;
             try { ui.closeModal(); } catch(_) {}
@@ -1253,11 +1268,14 @@ function openArticleImportModal() {
 function qaSetToMarkdownForArticle(qaSet) {
     if (!qaSet || !Array.isArray(qaSet.questions)) return '';
     const header = `# ${qaSet.name || t('article.qaDefault')}\n\n` + (qaSet.description ? `${qaSet.description}\n\n` : '');
+    // 不要用 `1. Q:` 這種 Markdown 有序清單寫法：文章詳解會把行首的「1.」判定成清單，
+    // 因而關閉逐句翻譯；英文被切成「1.」「Q:」「A:」三句、中文只有兩句時就會綁錯譯句。
+    // 改用 `Q1:` / `A1:` 標籤，保留題號，同時讓整段被視為普通散文走逐句對齊。
     const body = qaSet.questions.map((q, i) => {
         const num = i + 1;
         const qq = (q?.question || '').trim();
         const aa = (q?.answer || '').trim();
-        return `${num}. Q: ${qq}\nA: ${aa}`;
+        return `Q${num}: ${qq}\nA${num}: ${aa}`;
     }).join('\n\n');
     return header + body + '\n';
 }
@@ -1581,14 +1599,8 @@ function parseMarkdownTableFromText(text) {
     return { headers: header, rows };
 }
 
-function escapeHtml(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-}
-
-/** 與 escapeHtml 同義；命名用來標明「這段文字要塞進 HTML 屬性」 */
-function escapeAttr(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-}
+// escapeHtml / escapeAttr 由 modules/ui.js 統一提供（站內只留一份 HTML 轉義實作）；
+// 這個檔案原本另外自己宣告了一份同名函式，兩份長期容易走鐘。
 
 /** 只在 HTML 的文字片段做替換，避免動到標籤本身或屬性內容 */
 function replaceOutsideTags(html, regex, replacer) {
@@ -1737,7 +1749,7 @@ function renderMarkdownImagesPairHTML(engText, zhText) {
     const toHTML = (imgs) => {
         if (!imgs.length) return '';
         const blocks = imgs.map(({ alt, url }) => {
-            const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+            const esc = escapeHtml;
             const a = esc(alt);
             const u = esc(url);
             return `<div class=\"md-image\"><img src=\"${u}\" alt=\"${a}\" loading=\"lazy\" referrerpolicy=\"no-referrer\"></div>`;
@@ -1751,7 +1763,7 @@ function renderMarkdownImagesPairHTML(engText, zhText) {
 async function analyzeArticle() {
     const articleText = dom.articleInput.value.trim();
     if (!articleText) {
-        alert(t('article.enterArticle'));
+        ui.displayMessage(t('article.enterArticle'), 'warning');
         return;
     }
 
@@ -1777,7 +1789,7 @@ async function analyzeArticle() {
     }
     const items = title ? [title, ...paragraphs] : paragraphs; // 將標題也納入分析列表
     if (items.length === 0) {
-        alert(t('article.invalidArticle'));
+        ui.displayMessage(t('article.invalidArticle'), 'warning');
         dom.analyzeArticleBtn.disabled = false;
         dom.analyzeArticleBtn.textContent = t('article.analyze');
         return;
@@ -1786,7 +1798,7 @@ async function analyzeArticle() {
     updateAnalysisProgress(0, items.length, t('article.preparing'));
 
     // Pre-render placeholders for incremental rendering
-    const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+    const esc = escapeHtml;
     // 標題段落：去掉 `##` 再送分析與顯示，並用 is-heading 讓它長得像標題（見 styles.css）
     const paragraphViews = items.map((p, i) => {
         const heading = i > 0 || !title ? splitMarkdownHeading(p) : null;
@@ -1844,14 +1856,20 @@ async function analyzeArticle() {
                     // 送進模型前先去掉行內標記：譯文不該帶著 ** 或 [文字](網址) 回來
                     const textForAI = prepareParagraphForTranslation(stripMarkdownImagesFromText(text));
                     const baseText = textForAI || text;
-                    // 純文字段落改用按句翻譯：以渲染同款分句器預切，中英句對齊由構造保證
-                    const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
-                    result = await api.analyzeParagraph(baseText, {
-                        timeoutMs,
-                        signal: currentAnalysisAbort.signal,
-                        level: 'quick',
-                        sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
-                    });
+                    if (isPredominantlyChinese(baseText)) {
+                        // 已經是中文的段落（問答集描述、中文題目／答案等）不需再翻譯；
+                        // 直接沿用原文，避免模型因「無英文可翻」而回傳空值造成解析失敗。
+                        result = buildChineseSourceResult(text);
+                    } else {
+                        // 純文字段落改用按句翻譯：以渲染同款分句器預切，中英句對齊由構造保證
+                        const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
+                        result = await api.analyzeParagraph(baseText, {
+                            timeoutMs,
+                            signal: currentAnalysisAbort.signal,
+                            level: 'quick',
+                            sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
+                        });
+                    }
                 }
                 if (!cached) paragraphCache.set(text, result);
                 paragraphAnalyses[idx] = result;
@@ -1972,18 +1990,23 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         const englishPara = heading ? heading.text : (list ? normalizeListMarkersForDisplay(rawEnglish) : rawEnglish);
         const headingClass = `${heading ? ' is-heading' : ''}${list ? ' is-list' : ''}`;
         const headingAttr = heading ? ` data-heading-level="${heading.level}"` : '';
-        const chinesePara = stripSpanTags(chineseParagraphs[i] || '');
-        
+        // 原文已是中文（例如問答集描述）時不重複顯示翻譯，改顯示提示。
+        const sourceIsChinese = isPredominantlyChinese(prepareParagraphForTranslation(englishPara));
+        const sourceLangAttr = sourceIsChinese ? ' data-source-language="zh"' : '';
+        const chinesePara = sourceIsChinese ? '' : stripSpanTags(chineseParagraphs[i] || '');
+
         const processedChinese = chinesePara;
 
         // 若是 Markdown 表格段落，直接以表格渲染
         if (isMarkdownTableStart(englishPara)) {
             const pair = renderMarkdownTablePairHTML(englishPara, chinesePara, i);
             const engTableHtml = pair.eng;
-            const zhTableHtml = pair.zh;
+            const zhTableHtml = sourceIsChinese
+                ? `<span class="source-language-note">${escapeHtml(t('article.sourceAlreadyChinese'))}</span>`
+                : pair.zh;
             const isTitle = !!title && i === 0;
             htmlContent += `
-                <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr} data-english=\"${escapeAttr(englishPara)}\">
+                <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr}${sourceLangAttr} data-english=\"${escapeAttr(englishPara)}\">
                     <div class=\"paragraph-english\" data-markdown-table=\"1\">${engTableHtml}</div>
                     <div class=\"paragraph-chinese\" data-markdown-table=\"1\">${zhTableHtml}</div>
                 </div>`;
@@ -1996,7 +2019,7 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             if (pairImgs) {
                 const isTitle = !!title && i === 0;
                 htmlContent += `
-                    <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr} data-english=\"${escapeAttr(englishPara)}\">
+                    <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr}${sourceLangAttr} data-english=\"${escapeAttr(englishPara)}\">
                         <div class=\"paragraph-english\" data-markdown-images=\"1\">${pairImgs.eng}</div>
                         <div class=\"paragraph-chinese\" data-markdown-images=\"1\"></div>
                     </div>`;
@@ -2030,11 +2053,13 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         const zhAligned = alignedZhSentences(paragraph_analysis && paragraph_analysis[i], sentences);
         const cleanedZh = cleanChinese(stripSpanTags(processedChinese || ''));
         const zhSentences = zhAligned || sentenceSplitZh(cleanedZh);
-        const zhHtml = zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\">${inlineMarkdownToHtml(normalizeListMarkersForDisplay(z))}</span>`).join(' ');
+        const zhHtml = sourceIsChinese
+            ? `<span class="source-language-note">${escapeHtml(t('article.sourceAlreadyChinese'))}</span>`
+            : zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\">${inlineMarkdownToHtml(normalizeListMarkersForDisplay(z))}</span>`).join(' ');
 
         const isTitle = !!title && i === 0;
         htmlContent += `
-            <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr} data-english=\"${escapeAttr(englishPara)}\">
+            <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr}${sourceLangAttr} data-english=\"${escapeAttr(englishPara)}\">
                 <div class=\"paragraph-english\">${englishHtml}</div>
                 <div class=\"paragraph-chinese\">${zhHtml}</div>
             </div>`;
@@ -2177,12 +2202,19 @@ function openArticleHistoryManager() {
     dom.modalBody.appendChild(container);
     ui.openModal();
     try { document.querySelector('#app-modal .modal-content')?.classList.add('modal-large'); } catch (_) {}
-    container.addEventListener('click', (e) => {
+    container.addEventListener('click', async (e) => {
         const btn = e.target.closest('button');
         if (!btn) return;
         if (btn.id === 'article-history-clear') {
             if (!records.length) return;
-            if (confirm(t('article.confirmClearHistory'))) {
+            const okClearAll = await ui.confirmAction({
+                title: t('article.clearAll'),
+                message: t('article.confirmClearHistory'),
+                confirmLabel: t('article.clearAll'),
+                cancelLabel: t('common.cancel'),
+                danger: true
+            });
+            if (okClearAll) {
                 storage.clearAnalyzedArticles();
                 populateArticleHistorySelect();
                 clearArticleInput();
@@ -2199,7 +2231,14 @@ function openArticleHistoryManager() {
             loadArticleHistoryRecord(index);
             ui.closeModal();
         } else if (action === 'del') {
-            if (confirm(t('article.confirmDeleteHistory'))) {
+            const okDeleteOne = await ui.confirmAction({
+                title: t('article.historyDelete'),
+                message: t('article.confirmDeleteHistory'),
+                confirmLabel: t('article.delete'),
+                cancelLabel: t('common.cancel'),
+                danger: true
+            });
+            if (okDeleteOne) {
                 removeArticleHistoryRecord(index);
                 openArticleHistoryManager();
             }
@@ -2226,13 +2265,20 @@ function loadSelectedArticle() {
     loadArticleHistoryRecord(selectedIndex);
 }
 
-function deleteSelectedArticleHistory() {
+async function deleteSelectedArticleHistory() {
     const selectedIndex = dom.articleHistorySelect.value;
     if (selectedIndex === '') {
-        alert(t('article.selectHistory'));
+        ui.displayMessage(t('article.selectHistory'), 'warning');
         return;
     }
-    if (confirm(t('article.confirmDeleteHistory'))) {
+    const okDeleteSelected = await ui.confirmAction({
+        title: t('article.historyDelete'),
+        message: t('article.confirmDeleteHistory'),
+        confirmLabel: t('article.delete'),
+        cancelLabel: t('common.cancel'),
+        danger: true
+    });
+    if (okDeleteSelected) {
         removeArticleHistoryRecord(selectedIndex);
     }
 }
@@ -2290,9 +2336,12 @@ function buildReadingChunks(mode) {
 
     if (hasRendered) {
         const paraEls = Array.from(area.querySelectorAll('.paragraph-pair .paragraph-english'));
+        // 原文已是中文的段落不交給英文 TTS 朗讀
+        const isChineseSourcePara = (el) => el.parentElement?.dataset?.sourceLanguage === 'zh';
         // full 模式改為逐句朗讀（視覺效果更好，支援逐句高亮/淡化）
         if (mode === 'paragraph') {
             paraEls.forEach(el => {
+                if (isChineseSourcePara(el)) return;
                 const text = Array.from(el.querySelectorAll('.interactive-sentence')).map(s => s.textContent.trim()).join(' ')
                     || el.textContent.trim();
                 if (text) chunks.push({ type: 'paragraph', text, el });
@@ -2301,6 +2350,7 @@ function buildReadingChunks(mode) {
         }
         // sentence / full mode：逐句
         paraEls.forEach(el => {
+            if (isChineseSourcePara(el)) return;
             // 跳過純圖片段（避免朗讀 Markdown 或圖片連結）
             if (el.dataset && el.dataset.markdownImages === '1') return;
             if (el.querySelector && el.querySelector('img')) return;
@@ -2482,7 +2532,7 @@ function updateFloatingToggle() {
 function readArticle() {
     const text = dom.articleInput.value.trim();
     if (!text) {
-        alert(t('article.enterArticleToRead'));
+        ui.displayMessage(t('article.enterArticleToRead'), 'warning');
         return;
     }
     const mode = dom.readingModeSelect.value;
@@ -2666,7 +2716,7 @@ function highlightCurrentChunk(chunk) {
 
 async function downloadAudio() {
     const raw = dom.articleInput.value.trim();
-    if (!raw) { alert(t('article.enterArticle')); return; }
+    if (!raw) { ui.displayMessage(t('article.enterArticle'), 'warning'); return; }
     // 構造下載文本：
     const mode = dom.readingModeSelect.value;
     const chunks = (function() {
@@ -2693,7 +2743,7 @@ async function downloadAudio() {
         await audio.downloadTextAsAudio(textToDownload, 'english', state.currentSpeed, fname, { pitch: 0, style: 'general', download: true });
     } catch (err) {
         console.error('下載音頻失敗:', err);
-        alert(t('article.downloadAudioFailed'));
+        ui.displayMessage(t('article.downloadAudioFailed'), 'error');
     }
 }
 
@@ -2712,12 +2762,12 @@ function renderArticleLibraryList(filter = {}) {
         return;
     }
     dom.articleLibraryList.innerHTML = items.map(article => `
-        <div class="article-library-item" data-path="${article.path}" data-category="${(article.category||'').replace(/\"/g,'&quot;')}">
-            <h4>${article.title}</h4>
-            <p class="description">${article.description}</p>
+        <div class="article-library-item" data-path="${escapeAttr(article.path)}" data-category="${escapeAttr(article.category || '')}">
+            <h4>${escapeHtml(article.title)}</h4>
+            <p class="description">${escapeHtml(article.description)}</p>
             <div class="meta">
-                <span class="difficulty">${article.difficulty}</span>
-                <span class="category">${article.category || t('article.uncategorized')}</span>
+                <span class="difficulty">${escapeHtml(article.difficulty)}</span>
+                <span class="category">${escapeHtml(article.category || t('article.uncategorized'))}</span>
             </div>
         </div>`).join('');
     dom.articleLibraryList.querySelectorAll('.article-library-item').forEach(item => {
@@ -2745,7 +2795,7 @@ async function openArticleLibrary() {
             const cats = Array.from(new Set(_articleLibraryData.map(a => a.category || t('article.uncategorized'))));
             const prev = dom.articleCategoryFilter.value || '';
             dom.articleCategoryFilter.innerHTML = [`<option value="">${t('article.allCategories')}</option>`]
-                .concat(cats.map(c => `<option value="${String(c).replace(/\"/g,'&quot;')}">${c}</option>`))
+                .concat(cats.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`))
                 .join('');
             dom.articleCategoryFilter.value = prev;
             dom.articleCategoryFilter.onchange = () => {
@@ -2780,7 +2830,7 @@ async function loadArticleFromLibrary(path) {
         closeArticleLibrary();
     } catch (error) {
         console.error(`無法從 ${path} 加載文章:`, error);
-        alert(t('article.loadArticleFailed'));
+        ui.displayMessage(t('article.loadArticleFailed'), 'error');
     }
 }
 
@@ -2872,7 +2922,7 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
             const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
             const box = document.createElement('div');
             box.className = 'phrase-explain-box';
-            const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+            const esc = escapeHtml;
             const ex = Array.isArray(res.analysis?.examples) ? res.analysis.examples.slice(0,2) : [];
             box.innerHTML = `<div class="phrase-explain-head">
                                <div><strong>${esc(res.selection || phrase)}</strong>：${esc(res.analysis?.meaning || '')}
@@ -2896,7 +2946,7 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
             });
         } catch (err) {
             console.warn('片語詳解請求失敗:', err);
-            alert(t('article.analysisRetry'));
+            ui.displayMessage(t('article.analysisRetry'), 'warning');
         } finally {
             chunkBtn.disabled = false; chunkBtn.textContent = t('article.details');
         }
@@ -2933,7 +2983,7 @@ try {
             const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
             const box = document.createElement('div');
             box.className = 'phrase-explain-box';
-            const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+            const esc = escapeHtml;
             const ex = [];
             try { const arr = res?.analysis?.examples; if (Array.isArray(arr)) arr.slice(0,2).forEach(x => ex.push(x)); } catch (_) {}
             box.innerHTML = `<div class="phrase-explain-head">
@@ -2954,7 +3004,7 @@ try {
             });
         } catch (err) {
             console.warn('片語詳解請求失敗(Modal):', err);
-            alert(t('article.analysisRetry'));
+            ui.displayMessage(t('article.analysisRetry'), 'warning');
         } finally {
             chunkBtn.disabled = false; chunkBtn.textContent = t('article.details');
         }
@@ -3018,7 +3068,7 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
     try {
         const res = await api.analyzeSelection(selection, sentence, context, { timeoutMs: 15000 });
         if (resultBox) {
-            const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+            const esc = escapeHtml;
             const ex = Array.isArray(res.analysis?.examples) ? res.analysis.examples.slice(0,2) : [];
             const phon = (res.analysis?.phonetic || '').replace(/^\/|\/$/g, '');
             resultBox.innerHTML = `<div><strong>${t('article.phraseLabel')}</strong> ${esc(res.selection || selection)}${phon ? ` <span class=\"tooltip-phonetic\">/${esc(phon)}/</span>` : ''}</div>
@@ -3049,16 +3099,16 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         && normText(item.sentence) === normText(sentence)) || null;
 
     const showTooltip = (data, sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText) => {
-        const escAttr = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+        const escAttr = escapeAttr;
         if (data && data.analysis) {
             const analysis = data.analysis;
-            const phonetic = analysis.phonetic ? ` /${analysis.phonetic.replace(/^\/|\/$/g, '')}/` : '';
+            const phonetic = analysis.phonetic ? ` /${escapeHtml(analysis.phonetic.replace(/^\/|\/$/g, ''))}/` : '';
             ui.repositionTooltip(clickedElement);
             dom.analysisTooltip.innerHTML = `
-                <div class="tooltip-title">${data.word}<span class="tooltip-phonetic">${phonetic}</span> (${analysis.pos})</div>
+                <div class="tooltip-title">${escapeHtml(data.word)}<span class="tooltip-phonetic">${phonetic}</span> (${escapeHtml(analysis.pos)})</div>
                 <div class="tooltip-content">
-                    <p><strong>${t('article.roleLabel')}</strong> ${analysis.role}</p>
-                    <p><strong>${t('article.meaningLabel')}</strong> ${analysis.meaning}</p>
+                    <p><strong>${t('article.roleLabel')}</strong> ${escapeHtml(analysis.role)}</p>
+                    <p><strong>${t('article.meaningLabel')}</strong> ${escapeHtml(analysis.meaning)}</p>
                 </div>
                 <div class="tooltip-actions">
                     <button class="btn-ghost btn-mini btn-play-word" data-word="${escAttr(data.word || defaultPhrase)}">${t('article.pronunciation')}</button>
@@ -3241,7 +3291,20 @@ async function retrySingleParagraph(idx, options = {}) {
     }
     try {
         paragraphStartTime[idx] = Date.now();
-        const result = await api.analyzeParagraph(prepareParagraphForTranslation(text), { timeoutMs, level, noCache: !!options.force });
+        const baseText = prepareParagraphForTranslation(stripMarkdownImagesFromText(text)) || text;
+        let result;
+        if (isPredominantlyChinese(baseText)) {
+            // 中文段落不送翻譯；沿用原文並在中文欄顯示「原文已是中文」
+            result = buildChineseSourceResult(text);
+        } else {
+            const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
+            result = await api.analyzeParagraph(baseText, {
+                timeoutMs,
+                level,
+                noCache: !!options.force,
+                sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
+            });
+        }
         renderParagraph(idx, text, result);
         // merge into aggregated dataset
         let aggregated = [];
@@ -3299,11 +3362,15 @@ function flashParagraphSuccess(index) {
 function renderParagraph(index, englishPara, result) {
     const container = document.querySelector(`.paragraph-pair[data-paragraph-index="${index}"]`);
     if (!container) return;
-    const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+    const esc = escapeHtml;
     const escapeRegex = (string) => string ? string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') : '';
     const englishDiv = container.querySelector('.paragraph-english');
     const chineseDiv = container.querySelector('.paragraph-chinese');
     const statusDiv = container.querySelector('.para-status');
+    // 原文本身已是中文時不顯示重複譯文，也讓朗讀流程跳過這一段。
+    const sourceIsChinese = isPredominantlyChinese(prepareParagraphForTranslation(englishPara));
+    if (sourceIsChinese) container.dataset.sourceLanguage = 'zh';
+    else container.removeAttribute('data-source-language');
 
     const alignment = (result && Array.isArray(result.word_alignment)) ? result.word_alignment : [];
     let chinese = result?.chinese_translation || '';
@@ -3324,7 +3391,9 @@ function renderParagraph(index, englishPara, result) {
                 bindAnalyzeButtonToLastWord(englishDiv);
             }
             if (chineseDiv) {
-                chineseDiv.innerHTML = pair.zh;
+                chineseDiv.innerHTML = sourceIsChinese
+                    ? `<span class="source-language-note">${escapeHtml(t('article.sourceAlreadyChinese'))}</span>`
+                    : pair.zh;
                 chineseDiv.dataset.markdownTable = '1';
             }
         }
@@ -3451,7 +3520,9 @@ function renderParagraph(index, englishPara, result) {
             }
         });
         flushZh();
-        chineseDiv.innerHTML = zhBlocks.join('') || `<em>${t('article.analysisFailedInline')}</em>`;
+        chineseDiv.innerHTML = sourceIsChinese
+            ? `<span class="source-language-note">${escapeHtml(t('article.sourceAlreadyChinese'))}</span>`
+            : (zhBlocks.join('') || `<em>${t('article.analysisFailedInline')}</em>`);
 
         if (statusDiv) {
             const textSpan = statusDiv.querySelector('.status-text');
@@ -3500,8 +3571,10 @@ function renderParagraph(index, englishPara, result) {
     const zhAligned = alignedZhSentences(result, sentences);
     const zhSentences = zhAligned || sentenceSplitZh(processedChinese || chinese || '');
     const zhHtml = zhSentences.map((z, sIdx) => `<span class="interactive-sentence-zh" data-para-index="${index}" data-sent-index="${sIdx}">${inlineMarkdownToHtml(z)}</span>`).join(' ');
-    const failed = processedChinese ? false : true;
-    chineseDiv.innerHTML = (processedChinese ? zhHtml : `<em>${t('article.analysisFailedInline')}</em>`);
+    const failed = sourceIsChinese ? false : (processedChinese ? false : true);
+    chineseDiv.innerHTML = sourceIsChinese
+        ? `<span class="source-language-note">${escapeHtml(t('article.sourceAlreadyChinese'))}</span>`
+        : (processedChinese ? zhHtml : `<em>${t('article.analysisFailedInline')}</em>`);
 
     if (statusDiv) {
         const textSpan = statusDiv.querySelector('.status-text');
@@ -3563,13 +3636,18 @@ async function retryFailedParagraphs() {
         const text = all[idx];
         try {
             const baseText = prepareParagraphForTranslation(stripMarkdownImagesFromText(text)) || text;
-            const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
-            const result = await api.analyzeParagraph(baseText, {
-                timeoutMs,
-                signal: currentAnalysisAbort.signal,
-                level,
-                sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
-            });
+            let result;
+            if (isPredominantlyChinese(baseText)) {
+                result = buildChineseSourceResult(text);
+            } else {
+                const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
+                result = await api.analyzeParagraph(baseText, {
+                    timeoutMs,
+                    signal: currentAnalysisAbort.signal,
+                    level,
+                    sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
+                });
+            }
             renderParagraph(idx, text, result);
             if (Array.isArray(result?.detailed_analysis)) {
                 aggregatedDetails = aggregatedDetails.concat(result.detailed_analysis);
@@ -3628,7 +3706,21 @@ function sentenceSplit(text) {
         if (buf.trim()) parts.push(buf.trim());
     }
     if (!parts.length) parts = [guarded];
-    return parts.map(restore);
+    // Intl.Segmenter 會把行首的「1.」獨立成一句，但中文分句會把題號併進下一句。
+    // 兩邊句數不一致時，data-sent-index 就會把英文句綁到錯誤的中文譯句；
+    // 這裡把純題號併回下一句，讓中英分句結果一致。
+    const merged = [];
+    for (let i = 0; i < parts.length; i += 1) {
+        const current = parts[i];
+        const next = parts[i + 1];
+        if (next !== undefined && /^\(?\d+[.)]$/.test(current.trim())) {
+            merged.push(`${current.trim()} ${next}`.trim());
+            i += 1;
+        } else {
+            merged.push(current);
+        }
+    }
+    return merged.map(restore);
 }
 
 function sentenceSplitZh(text) {
@@ -3639,12 +3731,50 @@ function sentenceSplitZh(text) {
     return parts.map(s => s.trim()).filter(Boolean);
 }
 
+// 段落是否以中文為主：至少有 2 個中文字，且中文字數不少於英文字母數的一半。
+// 問答集描述、中文題目／答案都屬於這種情況；送翻譯只會拿到原樣回覆或空值，
+// 因此直接沿用原文，既不浪費請求，也不會被誤判為「分析失敗」。
+function isPredominantlyChinese(text) {
+    const value = String(text || '');
+    if (!value.trim()) return false;
+    const cjk = (value.match(/[㐀-䶿一-鿿豈-﫿]/g) || []).length;
+    if (cjk < 2) return false;
+    const latin = (value.match(/[A-Za-z]/g) || []).length;
+    return cjk * 2 >= latin;
+}
+
+// 中文原文段落：中文欄不再重複原文，改由呼叫端顯示「原文已是中文」提示。
+// sentences 仍按渲染用分句器建立，讓英文欄與既有互動邏輯保持一致。
+function buildChineseSourceResult(text) {
+    const source = String(text || '').trim();
+    const sentences = sentenceSplit(source);
+    return {
+        chinese_translation: source,
+        sentences: sentences.map(sentence => ({ en: sentence, zh: sentence })),
+        word_alignment: [],
+        detailed_analysis: []
+    };
+}
+
+// 問答集導入的段落：`Q1: ...\nA1: ...`（新格式）或 `1. Q: ...\nA: ...`（舊格式）。
+// 舊格式行首的「1.」符合 Markdown 有序清單標記，但整段其實是 Q/A 散文；
+// 若照清單處理而關閉逐句翻譯，英文與中文的分句數只要不同，hover/朗讀就會綁錯譯句。
+function isQAParagraph(text) {
+    const value = String(text || '').trim();
+    if (!value) return false;
+    const hasQuestion = /^(?:\d+[.)]\s*)?Q\d*\s*[:：]/i.test(value);
+    const hasAnswer = /(?:^|\n)\s*(?:\d+[.)]\s*)?A\d*\s*[:：]/i.test(value);
+    return hasQuestion && hasAnswer;
+}
+
 // 純文字段落（無表格/清單/標題/引用/圖片）才適用按句翻譯模式，避免破壞 Markdown 結構
 function isPlainProseParagraph(text) {
-    const t = String(text || '');
-    if (!t.trim()) return false;
-    if (isMarkdownTableStart(t)) return false;
-    const lines = t.split('\n').map(l => l.trim()).filter(Boolean);
+    const value = String(text || '');
+    if (!value.trim()) return false;
+    if (isMarkdownTableStart(value)) return false;
+    // Q/A 段落即使帶著舊格式的 `1.` 題號，也應走逐句翻譯，確保中英逐句對齊。
+    if (isQAParagraph(value)) return true;
+    const lines = value.split('\n').map(l => l.trim()).filter(Boolean);
     return !lines.some(l => /^(#{1,6}\s|[-*+]\s|\d+[.)]\s|>\s|\||!\[)/.test(l));
 }
 
@@ -3838,7 +3968,7 @@ async function toggleSentenceCard(sentenceEl) {
 }
 
 function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
-    const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+    const esc = escapeHtml;
     const translation = esc(data.translation || '');
     const chunks = Array.isArray(data.chunks) ? data.chunks : [];
     const points = Array.isArray(data.key_points) ? data.key_points : [];
@@ -3955,7 +4085,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         const sentenceEl = card.previousElementSibling;
         const selection = window.getSelection();
         const text = (selection && selection.toString && selection.toString().trim()) || '';
-        if (!text) { alert(t('article.selectPhraseFirst')); return; }
+        if (!text) { ui.displayMessage(t('article.selectPhraseFirst'), 'warning'); return; }
         selBtn.disabled = true; selBtn.textContent = t('article.analyzingSelection');
         try {
             const res = await api.analyzeSelection(text, sentence, context, { timeoutMs: 15000 });
@@ -3969,7 +4099,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
             // 持久化片語解析
             try { persistPhraseAnalysis(text, sentence, context, res); } catch (_) {}
         } catch (e) {
-            alert(t('article.analysisRetry'));
+            ui.displayMessage(t('article.analysisRetry'), 'warning');
         } finally {
             selBtn.disabled = false; selBtn.textContent = t('article.analyzeSelection');
         }
@@ -3984,7 +4114,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     addBtn.addEventListener('click', async () => {
         const selection = window.getSelection();
         const text = (selection && selection.toString && selection.toString().trim()) || '';
-        if (!text) { alert(t('article.selectWordOrPhrase')); return; }
+        if (!text) { ui.displayMessage(t('article.selectWordOrPhrase'), 'warning'); return; }
         const prev = addBtn.textContent;
         addBtn.disabled = true; addBtn.textContent = t('qa.adding'); addBtn.setAttribute('aria-busy','true');
         try {

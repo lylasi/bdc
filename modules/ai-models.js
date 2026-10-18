@@ -1,29 +1,39 @@
+// AI provider registry, task resolution and model discovery.
+//
+// Two sources only:
+//   1. personal providers + keys from the account/device AI profile
+//   2. the admin-published managed catalog (shared keys stay in memory)
+//
+// There is no static provider/task fallback any more. A named provider never
+// borrows another provider's URL or key.
+
 import {
-    API_URL,
-    API_KEY,
-    AI_PROVIDERS as __AI_PROVIDERS__,
-    AI_PROFILES as __AI_PROFILES__,
-    AI_TASKS as __AI_TASKS__,
-    AI_MODELS as __AI_MODELS__,
-    OCR_CONFIG,
-    ARTICLE_IMPORT,
-    QA_CHECK,
-    ASSISTANT as __ASSISTANT__
-} from '../ai-config.js';
+    loadAIProfile,
+    updateAIProfile,
+    isManagedProviderId,
+    isPersonalProviderId
+} from './ai-profile-storage.js';
 import {
-    loadGlobalSettings,
-    loadGlobalSecrets,
-    saveGlobalSettings
-} from './settings.js';
+    getManagedProviders,
+    getManagedProvider,
+    getManagedCredential,
+    getManagedTaskSpec,
+    peekManagedCredential,
+    isManagedUsable,
+    getCatalogState
+} from './ai-catalog.js';
+import {
+    getAdapter,
+    deriveProviderEndpoints,
+    fetchProviderModels,
+    describeDetectionError,
+    adapterCapabilities
+} from './ai-protocols/index.js';
 import { getCached, setCached } from './cache.js';
 import { t } from './i18n.js';
+import { touch as syncTouch } from './sync-signals.js';
 
-const STATIC_AI_PROVIDERS = (__AI_PROVIDERS__ && typeof __AI_PROVIDERS__ === 'object')
-    ? __AI_PROVIDERS__
-    : ((__AI_PROFILES__ && typeof __AI_PROFILES__ === 'object') ? __AI_PROFILES__ : {});
-const STATIC_LEGACY_AI_MODELS = (__AI_MODELS__ && typeof __AI_MODELS__ === 'object') ? __AI_MODELS__ : {};
-const STATIC_AI_TASKS = (__AI_TASKS__ && typeof __AI_TASKS__ === 'object') ? __AI_TASKS__ : STATIC_LEGACY_AI_MODELS;
-const ASSISTANT = __ASSISTANT__ || {};
+export const MODEL_DISCOVERY_TTL_MS = 24 * 60 * 60 * 1000;
 
 const TASK_ALIASES = {
     qaCheck: 'qaChecking',
@@ -31,7 +41,9 @@ const TASK_ALIASES = {
     ocr: 'imageOCR'
 };
 
-export const MODEL_DISCOVERY_TTL_MS = 24 * 60 * 60 * 1000;
+const TASK_CAPABILITY = {
+    imageOCR: 'images'
+};
 
 function isPlainObject(value) {
     return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -47,7 +59,7 @@ export function firstNonEmptyString(...vals) {
 export function stringifyModelSpec(spec) {
     if (!spec) return '';
     if (typeof spec === 'object') {
-        const provider = firstNonEmptyString(spec.provider, spec.profile);
+        const provider = firstNonEmptyString(spec.provider, spec.providerId, spec.profile);
         const model = firstNonEmptyString(spec.model);
         return provider ? `${provider}:${model}` : model;
     }
@@ -74,17 +86,7 @@ export function hasModelSpec(spec) {
     return false;
 }
 
-function getTaskMappingValue(record, taskName) {
-    if (!isPlainObject(record)) return undefined;
-    for (const key of getTaskLookupKeys(taskName)) {
-        if (Object.prototype.hasOwnProperty.call(record, key) && hasModelSpec(record[key])) {
-            return record[key];
-        }
-    }
-    return undefined;
-}
-
-function uniqStrings(values = []) {
+function uniqueStrings(values = []) {
     const out = [];
     const seen = new Set();
     for (const value of values) {
@@ -96,447 +98,475 @@ function uniqStrings(values = []) {
     return out;
 }
 
-function trimTrailingSlash(url = '') {
-    return String(url || '').trim().replace(/\/+$/, '');
+function modelError(code, message, extra = {}) {
+    const err = new Error(message || code);
+    err.code = code;
+    Object.assign(err, extra);
+    return err;
 }
 
-function joinUrl(baseUrl = '', suffix = '') {
-    const base = trimTrailingSlash(baseUrl);
-    if (!base) return '';
-    return `${base}${suffix}`;
+function normalizeProviderModels(provider) {
+    const allowed = Array.isArray(provider.allowedModels) ? uniqueStrings(provider.allowedModels) : [];
+    const discovered = Array.isArray(provider.discoveredModels)
+        ? provider.discoveredModels.map((item) => (typeof item === 'string' ? item : item && item.id)).filter(Boolean)
+        : [];
+    return { allowed, discovered };
 }
 
-export function extractBaseUrlFromApiUrl(apiUrl = '') {
-    const raw = String(apiUrl || '').trim();
-    if (!raw) return '';
-    const normalized = raw.replace(/\/+$/, '');
-    // 只去掉結尾的 /chat/completions；版本前綴（/v1 等）保留，交給 derive* 決定要不要再拼。
-    // 先前寫法會連 /v1 一起吃掉，導致相對路徑 '/v1/chat/completions' 推導出
-    // '/v1/chat/completions/v1/models' 這種網址。
-    return normalized.replace(/\/chat\/completions$/i, '') || normalized;
+function capabilityForTask(taskName) {
+    return TASK_CAPABILITY[normalizeTaskName(taskName)] || 'text';
 }
 
-export function deriveApiUrl(provider = {}) {
-    const explicit = firstNonEmptyString(provider.apiUrl);
-    if (explicit) return explicit;
-    const base = firstNonEmptyString(provider.baseUrl, extractBaseUrlFromApiUrl(provider.apiUrl));
-    return base ? joinUrl(base, '/chat/completions') : '';
+function providerSupports(provider, capability) {
+    const caps = provider && provider.capabilities ? provider.capabilities : adapterCapabilities(provider?.format);
+    if (!caps || !caps[capability]) return true;
+    return caps[capability] !== 'no';
 }
 
-export function deriveModelsUrl(provider = {}) {
-    const explicit = firstNonEmptyString(provider.modelsUrl);
-    if (explicit) return explicit;
-    const base = firstNonEmptyString(provider.baseUrl, extractBaseUrlFromApiUrl(provider.apiUrl));
-    if (!base) return '';
-    // base 已含版本前綴（/v1）就不要再拼一次
-    return /\/v\d+$/.test(base) ? joinUrl(base, '/models') : joinUrl(base, '/v1/models');
+function modelCapabilityState(provider, modelId, capability) {
+    const models = Array.isArray(provider?.models) ? provider.models : [];
+    const entry = models.find((item) => item.id === modelId);
+    const state = entry?.capabilities?.[capability];
+    if (state === 'yes' || state === 'no') return state;
+    const discovered = Array.isArray(provider?.discoveredModels) ? provider.discoveredModels : [];
+    const disc = discovered.find((item) => item.id === modelId || item === modelId);
+    if (disc && disc.capabilities && (disc.capabilities[capability] === 'yes' || disc.capabilities[capability] === 'no')) {
+        return disc.capabilities[capability];
+    }
+    return 'unknown';
 }
 
-function normalizeAllowedModelValue(value, providerId = 'default') {
-    const raw = stringifyModelSpec(value);
-    if (!raw) return '';
-    if (raw.includes(':')) return raw;
-    return `${providerId || 'default'}:${raw}`;
+function isModelAllowedForProvider(provider, modelId) {
+    const id = String(modelId || '').trim();
+    if (!id) return false;
+    if (provider.source === 'managed') {
+        const models = Array.isArray(provider.models) ? provider.models : [];
+        return models.some((model) => model.id === id);
+    }
+    const { allowed, discovered } = normalizeProviderModels(provider);
+    if (allowed.length) return allowed.includes(id);
+    if (discovered.length) return discovered.includes(id);
+    return true;
 }
 
-function normalizeAllowedModels(values, providerId = 'default') {
-    if (!Array.isArray(values)) return [];
-    return uniqStrings(values.map((value) => normalizeAllowedModelValue(value, providerId)).filter(Boolean));
+function isModelUsableForTask(provider, modelId, taskName) {
+    const capability = capabilityForTask(taskName);
+    if (!providerSupports(provider, capability)) return false;
+    const state = modelCapabilityState(provider, modelId, capability);
+    return state !== 'no';
 }
 
-function normalizeDiscoveredModels(values, providerId = 'default') {
-    if (!Array.isArray(values)) return [];
-    return values
-        .map((value) => normalizeModelEntry(value, { providerId }))
-        .filter(Boolean);
-}
-
-export function getStaticProviderRegistry() {
-    return {
-        default: { apiUrl: API_URL, apiKey: API_KEY },
-        ...STATIC_AI_PROVIDERS
-    };
-}
-
-export function getStaticAITasks() {
-    return { ...STATIC_AI_TASKS };
-}
-
-export function getStaticLegacyAIModels() {
-    return { ...STATIC_LEGACY_AI_MODELS };
-}
-
-function normalizeProviderRecord(id, providerValue, secretValue, fallbackDefault = {}) {
-    const provider = isPlainObject(providerValue) ? providerValue : {};
-    const secret = isPlainObject(secretValue) ? secretValue : {};
-    const merged = { ...provider, ...secret };
-    const baseUrl = firstNonEmptyString(
-        merged.baseUrl,
-        extractBaseUrlFromApiUrl(merged.apiUrl),
-        id === 'default' ? fallbackDefault.baseUrl : ''
-    );
-    const apiUrl = firstNonEmptyString(merged.apiUrl, deriveApiUrl({ baseUrl }), id === 'default' ? fallbackDefault.apiUrl : '');
-    const modelsUrl = firstNonEmptyString(merged.modelsUrl, deriveModelsUrl({ baseUrl }), id === 'default' ? fallbackDefault.modelsUrl : '');
-    const allowedModels = normalizeAllowedModels(merged.allowedModels, id);
-    const discoveredModels = normalizeDiscoveredModels(merged.discoveredModels, id);
-    return {
-        ...merged,
-        id,
-        label: firstNonEmptyString(merged.label, id === 'default' ? 'default' : id),
-        enabled: merged.enabled !== false,
-        baseUrl,
-        apiUrl,
-        modelsUrl,
-        apiKey: firstNonEmptyString(merged.apiKey, id === 'default' ? fallbackDefault.apiKey : ''),
-        allowedModels,
-        discoveredModels,
-        lastDiscoveryAt: firstNonEmptyString(merged.lastDiscoveryAt),
-        discoveryStatus: firstNonEmptyString(merged.discoveryStatus),
-        discoveryError: typeof merged.discoveryError === 'string' ? merged.discoveryError : ''
-    };
-}
-
-export function getAIProviderRegistry({ settings, secrets } = {}) {
-    const s = settings || loadGlobalSettings();
-    const sec = secrets || loadGlobalSecrets();
-    const staticProviders = getStaticProviderRegistry();
-    const localProviders = isPlainObject(s?.ai?.providers) ? s.ai.providers : {};
-    const secretProviders = isPlainObject(sec?.aiProviders) ? sec.aiProviders : {};
-    const defaultSeed = {
-        ...(isPlainObject(staticProviders.default) ? staticProviders.default : {}),
-        ...(isPlainObject(localProviders.default) ? localProviders.default : {}),
-        ...(isPlainObject(secretProviders.default) ? secretProviders.default : {}),
-        apiUrl: firstNonEmptyString(localProviders?.default?.apiUrl, s?.ai?.apiUrl, staticProviders.default?.apiUrl, API_URL),
-        apiKey: firstNonEmptyString(secretProviders?.default?.apiKey, sec?.aiApiKey, staticProviders.default?.apiKey, API_KEY)
-    };
-    const fallbackDefault = normalizeProviderRecord('default', defaultSeed, defaultSeed, {
-        baseUrl: extractBaseUrlFromApiUrl(defaultSeed.apiUrl),
-        apiUrl: defaultSeed.apiUrl,
-        apiKey: defaultSeed.apiKey,
-        modelsUrl: deriveModelsUrl(defaultSeed)
-    });
-    const providerIds = new Set([
-        'default',
-        ...Object.keys(staticProviders),
-        ...Object.keys(localProviders),
-        ...Object.keys(secretProviders)
-    ]);
-    const providers = {};
-    for (const id of providerIds) {
-        const seed = {
-            ...(isPlainObject(staticProviders[id]) ? staticProviders[id] : {}),
-            ...(isPlainObject(localProviders[id]) ? localProviders[id] : {})
+function personalProviders(profile) {
+    const out = {};
+    for (const [id, provider] of Object.entries(profile.providers)) {
+        if (!isPersonalProviderId(id) || provider.enabled === false) continue;
+        const credential = profile.credentials[id] || null;
+        out[id] = {
+            ...provider,
+            id,
+            source: 'personal',
+            apiKey: credential && credential.apiKey ? credential.apiKey : '',
+            credential: credential ? {
+                version: credential.version,
+                syncMode: credential.syncMode,
+                binding: credential.binding,
+                conflict: credential.conflict,
+                pending: credential.pending,
+                keyStamp: credential.keyStamp || ''
+            } : null,
+            binding: credential ? credential.binding : null,
+            capabilities: adapterCapabilities(provider.format)
         };
-        const secret = isPlainObject(secretProviders[id]) ? secretProviders[id] : {};
-        providers[id] = normalizeProviderRecord(id, seed, secret, fallbackDefault);
-    }
-    providers.default = normalizeProviderRecord('default', defaultSeed, defaultSeed, fallbackDefault);
-    return providers;
-}
-
-export function listAIProviders({ settings, secrets, includeDisabled = true } = {}) {
-    const providers = Object.values(getAIProviderRegistry({ settings, secrets }));
-    const filtered = includeDisabled ? providers : providers.filter((provider) => provider.enabled !== false);
-    return filtered.sort((a, b) => {
-        if (a.id === 'default') return -1;
-        if (b.id === 'default') return 1;
-        return String(a.label || a.id).localeCompare(String(b.label || b.id));
-    });
-}
-
-export function getProviderConnection(providerId, { settings, secrets } = {}) {
-    const providers = getAIProviderRegistry({ settings, secrets });
-    const pid = firstNonEmptyString(providerId) || 'default';
-    const provider = isPlainObject(providers[pid]) ? providers[pid] : {};
-    const fallback = isPlainObject(providers.default) ? providers.default : {};
-    return {
-        provider: pid,
-        profile: pid,
-        baseUrl: firstNonEmptyString(provider.baseUrl, pid === 'default' ? '' : fallback.baseUrl),
-        apiUrl: firstNonEmptyString(provider.apiUrl, pid === 'default' ? '' : fallback.apiUrl, API_URL),
-        apiKey: firstNonEmptyString(provider.apiKey, pid === 'default' ? '' : fallback.apiKey, API_KEY),
-        modelsUrl: firstNonEmptyString(provider.modelsUrl, pid === 'default' ? '' : fallback.modelsUrl)
-    };
-}
-
-function getLocalTaskMappingValue(taskName = 'default', settings) {
-    const s = settings || loadGlobalSettings();
-    const localModels = isPlainObject(s?.ai?.models) ? s.ai.models : {};
-    const localTasks = isPlainObject(s?.ai?.tasks) ? s.ai.tasks : {};
-    return getTaskMappingValue(localModels, taskName)
-        ?? getTaskMappingValue(localTasks, taskName);
-}
-
-function getStaticTaskMappingValue(taskName = 'default') {
-    return getTaskMappingValue(STATIC_AI_TASKS, taskName)
-        ?? getTaskMappingValue(STATIC_LEGACY_AI_MODELS, taskName);
-}
-
-export function getStoredTaskModel(taskName = 'default', { settings } = {}) {
-    return getLocalTaskMappingValue(taskName, settings) ?? '';
-}
-
-export function resolveAITaskSpec(taskName = 'default', { settings, override } = {}) {
-    if (hasModelSpec(override)) return override;
-    return getLocalTaskMappingValue(taskName, settings)
-        ?? getStaticTaskMappingValue(taskName)
-        ?? '';
-}
-
-export function getPreferredTaskSpec(taskNames = [], { settings, override } = {}) {
-    if (hasModelSpec(override)) return override;
-    const s = settings || loadGlobalSettings();
-    for (const taskName of taskNames) {
-        const spec = getLocalTaskMappingValue(taskName, s);
-        if (hasModelSpec(spec)) return spec;
-    }
-    for (const taskName of taskNames) {
-        const spec = getStaticTaskMappingValue(taskName);
-        if (hasModelSpec(spec)) return spec;
-    }
-    return '';
-}
-
-export function normalizeModelSpec(spec, { settings, secrets } = {}) {
-    const s = settings || loadGlobalSettings();
-    const sec = secrets || loadGlobalSecrets();
-    if (spec && typeof spec === 'object') {
-        const providerId = firstNonEmptyString(spec.provider, spec.profile);
-        const provider = getProviderConnection(providerId, { settings: s, secrets: sec });
-        return {
-            model: firstNonEmptyString(spec.model),
-            apiUrl: firstNonEmptyString(spec.apiUrl, provider.apiUrl),
-            apiKey: firstNonEmptyString(spec.apiKey, provider.apiKey),
-            provider: providerId || provider.provider || 'default',
-            profile: providerId || provider.provider || 'default'
-        };
-    }
-    const raw = stringifyModelSpec(spec);
-    const hasPrefix = raw.includes(':');
-    const providerId = hasPrefix ? raw.slice(0, raw.indexOf(':')) : null;
-    const provider = getProviderConnection(providerId, { settings: s, secrets: sec });
-    return {
-        model: hasPrefix ? raw.slice(raw.indexOf(':') + 1) : raw,
-        apiUrl: provider.apiUrl,
-        apiKey: provider.apiKey,
-        provider: providerId || provider.provider || 'default',
-        profile: providerId || provider.provider || 'default'
-    };
-}
-
-export function resolveAIRequestConfig({ task = 'default', model, apiUrl, apiKey, provider, profile, settings, secrets } = {}) {
-    const s = settings || loadGlobalSettings();
-    const sec = secrets || loadGlobalSecrets();
-    const chosenSpec = hasModelSpec(model) ? model : resolveAITaskSpec(task, { settings: s });
-    const explicitProvider = firstNonEmptyString(provider, profile, chosenSpec && typeof chosenSpec === 'object' ? firstNonEmptyString(chosenSpec.provider, chosenSpec.profile) : '');
-    const resolvedModel = normalizeModelSpec(chosenSpec, { settings: s, secrets: sec });
-    const resolvedProvider = explicitProvider ? getProviderConnection(explicitProvider, { settings: s, secrets: sec }) : null;
-    return {
-        task: normalizeTaskName(task),
-        spec: chosenSpec,
-        model: resolvedModel.model,
-        provider: explicitProvider || resolvedModel.provider || 'default',
-        profile: explicitProvider || resolvedModel.provider || 'default',
-        apiUrl: firstNonEmptyString(apiUrl, resolvedProvider?.apiUrl, resolvedModel.apiUrl),
-        apiKey: firstNonEmptyString(apiKey, resolvedProvider?.apiKey, resolvedModel.apiKey)
-    };
-}
-
-export function normalizeModelEntry(raw, { providerId = 'default' } = {}) {
-    if (!raw) return null;
-
-    const parseValue = (value, fallbackProviderId) => {
-        const spec = String(value || '').trim();
-        if (!spec) return null;
-        if (!spec.includes(':')) {
-            return {
-                providerId: fallbackProviderId || 'default',
-                id: spec,
-                value: `${fallbackProviderId || 'default'}:${spec}`
-            };
-        }
-        const idx = spec.indexOf(':');
-        const parsedProviderId = spec.slice(0, idx).trim() || fallbackProviderId || 'default';
-        const parsedId = spec.slice(idx + 1).trim();
-        if (!parsedId) return null;
-        return {
-            providerId: parsedProviderId,
-            id: parsedId,
-            value: `${parsedProviderId}:${parsedId}`
-        };
-    };
-
-    if (typeof raw === 'string') {
-        const parsed = parseValue(raw, providerId);
-        if (!parsed) return null;
-        return {
-            id: parsed.id,
-            providerId: parsed.providerId,
-            value: parsed.value,
-            label: parsed.id,
-            ownedBy: '',
-            raw
-        };
-    }
-    if (!isPlainObject(raw)) return null;
-
-    const explicitProviderId = firstNonEmptyString(raw.providerId, raw.provider, raw.profile, providerId);
-    const parsedValue = parseValue(firstNonEmptyString(raw.value), explicitProviderId);
-    const parsedId = parseValue(firstNonEmptyString(raw.id, raw.model, raw.name, raw.slug, raw.key), explicitProviderId);
-    const resolved = parsedValue || parsedId;
-    if (!resolved) return null;
-
-    return {
-        id: resolved.id,
-        providerId: resolved.providerId,
-        value: resolved.value,
-        label: firstNonEmptyString(raw.label, raw.display_name, raw.displayName, raw.name, resolved.id),
-        ownedBy: firstNonEmptyString(raw.owned_by, raw.ownedBy),
-        created: raw.created,
-        contextWindow: raw.context_window || raw.contextWindow || raw.max_context_length,
-        raw
-    };
-}
-
-function normalizeModelDiscoveryPayload(payload, { providerId = 'default' } = {}) {
-    let items = [];
-    if (Array.isArray(payload)) {
-        items = payload;
-    } else if (Array.isArray(payload?.data)) {
-        items = payload.data;
-    } else if (Array.isArray(payload?.models)) {
-        items = payload.models;
-    } else if (isPlainObject(payload)) {
-        for (const value of Object.values(payload)) {
-            if (Array.isArray(value)) items.push(...value);
-        }
-    }
-    const seen = new Set();
-    const out = [];
-    for (const item of items) {
-        const normalized = normalizeModelEntry(item, { providerId });
-        if (!normalized || seen.has(normalized.value)) continue;
-        seen.add(normalized.value);
-        out.push(normalized);
     }
     return out;
 }
 
-async function readModelDiscoveryCache(cacheKey) {
-    const cached = await getCached('aiProviderModels', cacheKey);
-    return isPlainObject(cached) ? cached : null;
+function managedProviders() {
+    const out = {};
+    for (const provider of getManagedProviders({ includeDisabled: false })) {
+        const cached = peekManagedCredential(provider.id);
+        out[provider.id] = {
+            ...provider,
+            apiKey: cached && cached.apiKey ? cached.apiKey : '',
+            allowedModels: provider.allowedModels || [],
+            discoveredModels: (provider.models || []).map((model) => ({ id: model.id, label: model.label, capabilities: model.capabilities })),
+            capabilities: adapterCapabilities(provider.format)
+        };
+    }
+    return out;
 }
 
-async function writeModelDiscoveryCache(cacheKey, models = []) {
-    await setCached('aiProviderModels', cacheKey, {
-        updatedAt: Date.now(),
-        models
-    }, 0);
-}
-
-function buildModelDiscoveryHeaders(apiKey = '') {
-    const headers = { Accept: 'application/json' };
-    const key = firstNonEmptyString(apiKey);
-    if (!key) return headers;
-    headers.Authorization = `Bearer ${key}`;
-    headers['x-api-key'] = key;
-    return headers;
-}
-
-function describeDiscoveryError(error) {
-    if (!error) return t('errors.modelListFailed');
-    if (error.name === 'AbortError') return t('errors.modelListCancelled');
-    if (error instanceof SyntaxError) return t('errors.modelListBadFormat');
-    if (typeof error.message === 'string' && error.message.trim()) return error.message.trim();
-    return t('errors.modelListFailed');
-}
-
-export async function discoverProviderModels(providerId, { settings, secrets, refresh = false, signal, ttlMs = MODEL_DISCOVERY_TTL_MS } = {}) {
-    const s = settings || loadGlobalSettings();
-    const sec = secrets || loadGlobalSecrets();
-    const provider = getProviderConnection(providerId, { settings: s, secrets: sec });
-    const cacheKey = {
-        providerId: provider.provider,
-        modelsUrl: provider.modelsUrl,
-        apiUrl: provider.apiUrl,
-        schema: 'v1'
+export function getAIProviderRegistry() {
+    const profile = loadAIProfile();
+    return {
+        ...personalProviders(profile),
+        ...managedProviders()
     };
-    const cached = await readModelDiscoveryCache(cacheKey);
-    const cachedModels = Array.isArray(cached?.models) ? cached.models : [];
-    const cachedUpdatedAt = Number(cached?.updatedAt || 0);
-    const isFresh = !!(cachedUpdatedAt && (Date.now() - cachedUpdatedAt) < ttlMs);
-
-    if (!refresh && cachedModels.length && isFresh) {
-        return {
-            ok: true,
-            source: 'cache',
-            models: cachedModels,
-            updatedAt: cachedUpdatedAt,
-            providerId: provider.provider,
-            error: ''
-        };
-    }
-
-    if (!provider.modelsUrl) {
-        return {
-            ok: false,
-            source: cachedModels.length ? 'stale-cache' : 'none',
-            models: cachedModels,
-            updatedAt: cachedUpdatedAt,
-            providerId: provider.provider,
-            error: t('errors.modelsUrlMissing')
-        };
-    }
-
-    try {
-        const resp = await fetch(provider.modelsUrl, {
-            method: 'GET',
-            signal,
-            cache: refresh ? 'no-store' : 'default',
-            headers: buildModelDiscoveryHeaders(provider.apiKey)
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const payload = await resp.json();
-        const models = normalizeModelDiscoveryPayload(payload, { providerId: provider.provider });
-        if (!models.length) throw new Error(t('errors.modelListEmpty'));
-        await writeModelDiscoveryCache(cacheKey, models);
-        return {
-            ok: true,
-            source: 'network',
-            models,
-            updatedAt: Date.now(),
-            providerId: provider.provider,
-            error: ''
-        };
-    } catch (error) {
-        return {
-            ok: false,
-            source: cachedModels.length ? 'stale-cache' : 'error',
-            models: cachedModels,
-            updatedAt: cachedUpdatedAt,
-            providerId: provider.provider,
-            error: describeDiscoveryError(error)
-        };
-    }
 }
 
-export function getAllowedModelOptions({ settings, secrets, providerId, includeDisabledProviders = false } = {}) {
-    const providers = listAIProviders({ settings, secrets, includeDisabled: true });
+export function listAIProviders({ includeDisabled = false } = {}) {
+    const registry = getAIProviderRegistry();
+    const profile = loadAIProfile();
+    const managedAll = includeDisabled ? getManagedProviders({ includeDisabled: true }) : [];
+    const items = [];
+    for (const [id, provider] of Object.entries(registry)) {
+        if (includeDisabled || provider.enabled !== false) items.push(provider);
+    }
+    for (const provider of managedAll) {
+        if (!items.some((item) => item.id === provider.id)) {
+            items.push({
+                ...provider,
+                source: 'managed',
+                apiKey: '',
+                capabilities: adapterCapabilities(provider.format),
+                allowedModels: provider.allowedModels || []
+            });
+        }
+    }
+    for (const [id, provider] of Object.entries(profile.providers)) {
+        if (includeDisabled && !items.some((item) => item.id === id)) {
+            items.push({ ...provider, source: 'personal', apiKey: '', allowedModels: provider.allowedModels || [] });
+        }
+    }
+    return items.sort((a, b) => {
+        if (a.source !== b.source) return a.source === 'personal' ? -1 : 1;
+        return String(a.label || a.name || a.id).localeCompare(String(b.label || b.name || b.id));
+    });
+}
+
+export function getProviderConnection(providerId) {
+    const pid = firstNonEmptyString(providerId);
+    const registry = getAIProviderRegistry();
+    const provider = registry[pid];
+    if (!provider) {
+        return {
+            provider: pid,
+            profile: pid,
+            baseUrl: '',
+            apiUrl: '',
+            apiKey: '',
+            modelsUrl: '',
+            format: '',
+            authMode: '',
+            source: '',
+            missing: true
+        };
+    }
+    return {
+        provider: pid,
+        profile: pid,
+        baseUrl: provider.baseUrl || '',
+        apiUrl: provider.apiUrl || '',
+        apiKey: provider.apiKey || '',
+        modelsUrl: provider.modelsUrl || '',
+        format: provider.format || 'openai-chat',
+        authMode: provider.authMode || 'bearer',
+        source: provider.source || '',
+        label: provider.label || provider.name || pid,
+        missing: false
+    };
+}
+
+function getStoredMapping(taskName, settings) {
+    const profile = loadAIProfile();
+    for (const key of getTaskLookupKeys(taskName)) {
+        if (Object.prototype.hasOwnProperty.call(profile.taskModels, key)) {
+            const value = profile.taskModels[key];
+            if (hasModelSpec(value)) return value;
+        }
+    }
+    // Settings mirror is accepted for compatibility, but profile is authoritative.
+    const mirror = settings && isPlainObject(settings.ai) ? settings.ai : null;
+    if (mirror) {
+        const models = isPlainObject(mirror.models) ? mirror.models : {};
+        const tasks = isPlainObject(mirror.tasks) ? mirror.tasks : {};
+        for (const key of getTaskLookupKeys(taskName)) {
+            if (hasModelSpec(models[key])) return models[key];
+            if (hasModelSpec(tasks[key])) return tasks[key];
+        }
+    }
+    return '';
+}
+
+export function getStoredTaskModel(taskName = 'default', { settings } = {}) {
+    return getStoredMapping(taskName, settings);
+}
+
+function getPersonalDefaultSpec() {
+    const profile = loadAIProfile();
+    const spec = String(profile.defaultModel || '').trim();
+    if (!spec) return '';
+    const resolution = splitSpec(spec);
+    const provider = profile.providers[resolution.providerId];
+    if (!provider || provider.enabled === false) return '';
+    if (!isModelAllowedForProvider({ ...provider, source: 'personal' }, resolution.model)) return '';
+    return spec;
+}
+
+function getManagedTaskSpecSafe(taskName) {
+    if (!isManagedUsable()) return '';
+    return getManagedTaskSpec(normalizeTaskName(taskName));
+}
+
+/**
+ * Explicit task selection > personal default > admin task default.
+ * An explicit selection is never silently replaced when it becomes unavailable.
+ */
+export function resolveAITaskSpec(taskName = 'default', { settings } = {}) {
+    const stored = getStoredMapping(taskName, settings);
+    if (hasModelSpec(stored)) {
+        const resolution = splitSpec(stringifyModelSpec(stored));
+        if (resolution.providerId === 'default') {
+            return getManagedTaskSpecSafe(taskName) || stored;
+        }
+        return stored;
+    }
+    const personal = getPersonalDefaultSpec();
+    if (personal && isModelUsableForTask(getAIProviderRegistry()[splitSpec(personal).providerId] || {}, splitSpec(personal).model, taskName)) {
+        return personal;
+    }
+    return getManagedTaskSpecSafe(taskName);
+}
+
+export function getPreferredTaskSpec(taskNames = [], { settings, override } = {}) {
+    if (hasModelSpec(override)) return override;
+    for (const taskName of taskNames) {
+        const stored = getStoredMapping(taskName, settings);
+        if (hasModelSpec(stored)) {
+            const resolution = splitSpec(stringifyModelSpec(stored));
+            if (resolution.providerId === 'default') {
+                const managed = getManagedTaskSpecSafe(taskName);
+                if (managed) return managed;
+                continue;
+            }
+            return stored;
+        }
+    }
+    const personal = getPersonalDefaultSpec();
+    if (personal) return personal;
+    for (const taskName of taskNames) {
+        const managed = getManagedTaskSpecSafe(taskName);
+        if (managed) return managed;
+    }
+    return '';
+}
+
+function splitSpec(spec) {
+    if (spec && typeof spec === 'object') {
+        return {
+            providerId: firstNonEmptyString(spec.provider, spec.providerId, spec.profile),
+            model: firstNonEmptyString(spec.model)
+        };
+    }
+    const raw = String(spec || '').trim();
+    const index = raw.indexOf(':');
+    if (index === -1) return { providerId: '', model: raw };
+    return {
+        providerId: raw.slice(0, index).trim(),
+        model: raw.slice(index + 1).trim()
+    };
+}
+
+function findProviderForModel(model) {
+    const id = String(model || '').trim();
+    if (!id) return '';
+    const profile = loadAIProfile();
+    const personalDefault = splitSpec(profile.defaultModel || '');
+    if (personalDefault.model === id && profile.providers[personalDefault.providerId]?.enabled !== false) {
+        return personalDefault.providerId;
+    }
+    const candidates = Object.entries(profile.providers)
+        .filter(([, provider]) => provider.enabled !== false && isModelAllowedForProvider({ ...provider, source: 'personal' }, id))
+        .map(([providerId]) => providerId);
+    if (candidates.length === 1) return candidates[0];
+    return '';
+}
+
+function bindingMatchesProvider(credential, provider) {
+    if (!credential || !credential.binding) return false;
+    const binding = credential.binding;
+    return String(binding.format || '') === String(provider.format || '')
+        && String(binding.apiUrl || '') === String(provider.apiUrl || '')
+        && String(binding.modelsUrl || '') === String(provider.modelsUrl || '')
+        && String(binding.authMode || '') === String(provider.authMode || '');
+}
+
+export function normalizeModelSpec(spec, { task = 'default' } = {}) {
+    const split = splitSpec(spec);
+    let providerId = split.providerId;
+    const model = split.model;
+    if (providerId === 'default') {
+        const managed = getManagedTaskSpecSafe(task);
+        providerId = splitSpec(managed).providerId;
+    }
+    if (!providerId) providerId = findProviderForModel(model);
+    const provider = getAIProviderRegistry()[providerId] || null;
+    return {
+        model,
+        apiUrl: provider ? provider.apiUrl : '',
+        apiKey: provider ? (provider.apiKey || '') : '',
+        provider: providerId || 'default',
+        profile: providerId || 'default',
+        source: provider ? provider.source : '',
+        format: provider ? provider.format : '',
+        authMode: provider ? provider.authMode : '',
+        missingProvider: !provider
+    };
+}
+
+/**
+ * Synchronous resolution for UI / cache keys. Managed shared keys are fetched
+ * asynchronously by resolveAIRequestConfigAsync; this function never returns a
+ * shared key it does not already have in memory.
+ */
+export function resolveAIRequestConfig({ task = 'default', model, apiUrl, apiKey, provider, profile, settings } = {}) {
+    const canonicalTask = normalizeTaskName(task);
+    const chosenSpec = hasModelSpec(model) ? model : resolveAITaskSpec(canonicalTask, { settings });
+    if (!hasModelSpec(chosenSpec)) throw modelError('model_not_selected', 'no model selected');
+    const split = splitSpec(chosenSpec);
+    let providerId = firstNonEmptyString(provider, profile, split.providerId);
+    if (providerId === 'default') providerId = splitSpec(getManagedTaskSpecSafe(canonicalTask)).providerId;
+    if (!providerId) providerId = findProviderForModel(split.model);
+    if (!providerId) throw modelError('model_provider_missing', 'no provider for model', { model: split.model });
+
+    const registry = getAIProviderRegistry();
+    const record = registry[providerId];
+    if (!record || record.enabled === false) {
+        const known = loadAIProfile().providers[providerId] || getManagedProvider(providerId);
+        throw modelError(known ? 'provider_disabled' : 'provider_missing', 'provider unavailable', { providerId });
+    }
+    if (!isModelAllowedForProvider(record, split.model)) {
+        throw modelError('model_not_allowed', 'model not allowed for provider', { providerId, model: split.model });
+    }
+    if (!isModelUsableForTask(record, split.model, canonicalTask)) {
+        throw modelError('model_not_capable', 'model lacks required capability', { providerId, model: split.model });
+    }
+    if (!record.apiUrl) throw modelError('provider_endpoint_missing', 'provider endpoint missing', { providerId });
+
+    // Task-level URL/key overrides are rejected: they could send a shared key
+    // to an arbitrary host.
+    if (firstNonEmptyString(apiUrl) && firstNonEmptyString(apiUrl) !== record.apiUrl) {
+        throw modelError('task_override_rejected', 'endpoint override rejected', { providerId });
+    }
+    if (firstNonEmptyString(apiKey) && firstNonEmptyString(apiKey) !== record.apiKey) {
+        throw modelError('task_override_rejected', 'key override rejected', { providerId });
+    }
+
+    let resolvedKey = record.apiKey || '';
+    const requiresAuth = record.authMode && record.authMode !== 'none';
+    if (record.source === 'personal' && requiresAuth) {
+        const credential = record.credential;
+        if (!credential || !record.apiKey) {
+            throw modelError('ai_key_missing', 'personal key missing', { providerId });
+        }
+        if (credential.bindingVerified === false || !bindingMatchesProvider(credential, record)) {
+            throw modelError('ai_key_binding_mismatch', 'credential binding mismatch', { providerId });
+        }
+        resolvedKey = record.apiKey;
+    }
+    if (record.source === 'managed') {
+        if (!isManagedUsable()) {
+            throw modelError(
+                getCatalogState().status === 'expired' ? 'managed_session_expired' : 'managed_login_required',
+                'managed session unavailable',
+                { providerId }
+            );
+        }
+        if (!record.apiUrl) throw modelError('managed_provider_unavailable', 'managed provider unavailable', { providerId });
+    }
+
+    return {
+        task: canonicalTask,
+        spec: chosenSpec,
+        model: split.model,
+        provider: providerId,
+        profile: providerId,
+        apiUrl: record.apiUrl,
+        apiKey: resolvedKey,
+        modelsUrl: record.modelsUrl || '',
+        authMode: record.authMode || 'bearer',
+        format: record.format || 'openai-chat',
+        source: record.source,
+        label: record.label || record.name || providerId,
+        binding: record.source === 'personal' ? (record.credential ? record.credential.binding : null) : null,
+        requiresManagedCredential: record.source === 'managed' && requiresAuth
+    };
+}
+
+/** Async resolution used by every AI request: fetches a managed key on demand. */
+export async function resolveAIRequestConfigAsync(options = {}) {
+    const config = resolveAIRequestConfig(options);
+    if (!config.requiresManagedCredential) return config;
+    const credential = await getManagedCredential(config.provider);
+    const expected = {
+        format: config.format,
+        apiUrl: config.apiUrl,
+        modelsUrl: config.modelsUrl,
+        authMode: config.authMode
+    };
+    if (credential.binding && (
+        credential.binding.format !== expected.format
+        || credential.binding.apiUrl !== expected.apiUrl
+        || credential.binding.modelsUrl !== expected.modelsUrl
+        || credential.binding.authMode !== expected.authMode
+    )) {
+        throw modelError('managed_binding_mismatch', 'managed credential binding mismatch', { providerId: config.provider });
+    }
+    return { ...config, apiKey: credential.apiKey, credentialRevision: credential.credentialRevision };
+}
+
+export function normalizeModelEntry(raw, { providerId = '' } = {}) {
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+        const value = raw.trim();
+        if (!value) return null;
+        if (value.includes(':')) {
+            const index = value.indexOf(':');
+            const pid = value.slice(0, index).trim();
+            const id = value.slice(index + 1).trim();
+            if (!id) return null;
+            return { id, providerId: pid, value: `${pid}:${id}`, label: id, ownedBy: '', raw };
+        }
+        return { id: value, providerId, value: providerId ? `${providerId}:${value}` : value, label: value, ownedBy: '', raw };
+    }
+    if (!isPlainObject(raw)) return null;
+    const id = firstNonEmptyString(raw.id, raw.model, raw.name, raw.slug, raw.key);
+    if (!id) return null;
+    const pid = firstNonEmptyString(raw.providerId, raw.provider, raw.profile, providerId);
+    return {
+        id,
+        providerId: pid,
+        value: pid ? `${pid}:${id}` : id,
+        label: firstNonEmptyString(raw.label, raw.display_name, raw.displayName, raw.name, id),
+        ownedBy: firstNonEmptyString(raw.owned_by, raw.ownedBy),
+        created: raw.created,
+        contextWindow: raw.context_window || raw.contextWindow || raw.max_context_length,
+        capabilities: isPlainObject(raw.capabilities) ? raw.capabilities : {},
+        raw
+    };
+}
+
+export function getAllowedModelOptions({ providerId } = {}) {
+    const registry = getAIProviderRegistry();
     const out = [];
     const seen = new Set();
-    for (const provider of providers) {
+    for (const provider of Object.values(registry)) {
         if (providerId && provider.id !== providerId) continue;
-        if (!includeDisabledProviders && provider.enabled === false) continue;
-        const allowedModels = normalizeAllowedModels(provider.allowedModels, provider.id);
-        for (const value of allowedModels) {
-            if (!value || seen.has(value)) continue;
+        if (provider.enabled === false) continue;
+        const { allowed, discovered } = normalizeProviderModels(provider);
+        const ids = provider.source === 'managed'
+            ? (provider.models || []).map((model) => model.id)
+            : (allowed.length ? allowed : discovered);
+        for (const id of ids) {
+            const value = `${provider.id}:${id}`;
+            if (!id || seen.has(value)) continue;
             seen.add(value);
-            const model = value.includes(':') ? value.slice(value.indexOf(':') + 1) : value;
             out.push({
                 value,
-                label: value,
+                label: `${provider.label || provider.name || provider.id} · ${id}`,
                 providerId: provider.id,
-                model,
+                model: id,
+                source: provider.source,
                 allowed: true
             });
         }
@@ -544,106 +574,207 @@ export function getAllowedModelOptions({ settings, secrets, providerId, includeD
     return out;
 }
 
-function getTaskSpecificDefaultCandidates(taskName = 'default') {
+export function getTaskModelSelection(taskName, { currentValue, preferredCandidates = [], includeCurrent = true } = {}) {
     const canonical = normalizeTaskName(taskName);
-    const values = [];
-    const push = (value) => {
-        const raw = stringifyModelSpec(value);
-        if (raw) values.push(raw);
-    };
-    switch (canonical) {
-    case 'imageOCR':
-        push(OCR_CONFIG?.DEFAULT_MODEL);
-        push(OCR_CONFIG?.MODEL);
-        push(STATIC_AI_TASKS?.imageOCR);
-        push(STATIC_AI_TASKS?.articleAnalysis);
-        push(STATIC_LEGACY_AI_MODELS?.imageOCR);
-        break;
-    case 'qaChecking':
-        push(QA_CHECK?.DEFAULT_MODEL);
-        push(QA_CHECK?.MODEL);
-        push(STATIC_AI_TASKS?.qaChecking);
-        push(STATIC_LEGACY_AI_MODELS?.answerChecking);
-        push(STATIC_LEGACY_AI_MODELS?.sentenceChecking);
-        break;
-    case 'assistant':
-        if (Array.isArray(ASSISTANT?.MODELS)) ASSISTANT.MODELS.forEach(push);
-        push(ASSISTANT?.DEFAULT_MODEL);
-        push(ASSISTANT?.MODEL);
-        push(STATIC_AI_TASKS?.assistant);
-        push(STATIC_LEGACY_AI_MODELS?.assistant);
-        push(STATIC_LEGACY_AI_MODELS?.articleAnalysis);
-        break;
-    case 'articleCleanup':
-        if (Array.isArray(ARTICLE_IMPORT?.MODELS)) ARTICLE_IMPORT.MODELS.forEach(push);
-        push(ARTICLE_IMPORT?.DEFAULT_MODEL);
-        push(ARTICLE_IMPORT?.MODEL);
-        push(STATIC_AI_TASKS?.articleCleanup);
-        push(STATIC_AI_TASKS?.articleAnalysis);
-        break;
-    default:
-        push(resolveAITaskSpec(canonical));
-        break;
-    }
-    return uniqStrings(values);
-}
-
-export function getTaskModelSelection(taskName, { settings, secrets, currentValue, preferredCandidates = [], includeCurrent = true } = {}) {
-    const allowedOptions = getAllowedModelOptions({ settings, secrets });
-    const allowedValues = allowedOptions.map((option) => option.value);
-    const allowedSet = new Set(allowedValues);
-    const storedValue = getStoredTaskModel(taskName, { settings });
+    const registry = getAIProviderRegistry();
+    const options = getAllowedModelOptions().filter((option) => {
+        if (option.source === 'managed' && !isManagedUsable()) return false;
+        const provider = registry[option.providerId];
+        return provider && isModelUsableForTask(provider, option.model, canonical);
+    });
+    const optionValues = new Set(options.map((option) => option.value));
+    const storedValue = stringifyModelSpec(getStoredMapping(canonical));
     const fallbackCurrent = stringifyModelSpec(currentValue);
     const effectiveCurrent = storedValue || fallbackCurrent;
-    const candidates = uniqStrings([
+    const managedDefault = getManagedTaskSpecSafe(canonical);
+    const personalDefault = getPersonalDefaultSpec();
+    const candidates = uniqueStrings([
         storedValue,
         includeCurrent ? fallbackCurrent : '',
         ...preferredCandidates.map((value) => stringifyModelSpec(value)),
-        ...getTaskSpecificDefaultCandidates(taskName),
-        ...allowedValues
+        personalDefault,
+        managedDefault,
+        ...options.map((option) => option.value)
     ]);
 
     let value = '';
     for (const candidate of candidates) {
         if (!candidate) continue;
-        if (allowedSet.has(candidate)) {
-            value = candidate;
-            break;
-        }
-        if (includeCurrent && candidate === effectiveCurrent) {
-            value = candidate;
-            break;
-        }
+        if (optionValues.has(candidate)) { value = candidate; break; }
+        if (includeCurrent && candidate === effectiveCurrent) { value = candidate; break; }
     }
-    if (!value) value = allowedValues[0] || '';
+    if (!value) value = options[0]?.value || '';
 
-    const unavailableCurrent = !!(value && !allowedSet.has(value));
-    const options = unavailableCurrent
-        ? [{ value, label: t('errors.modelNotAllowed', { value }), unavailable: true }, ...allowedOptions]
-        : allowedOptions;
+    const unavailableCurrent = !!(value && !optionValues.has(value));
+    const placeholder = options.length ? [] : [{ value: '', label: t('settings.aiNoProviderConfigured'), unavailable: true }];
+    const finalOptions = unavailableCurrent
+        ? [{ value, label: t('settings.aiModelUnavailable', { value }), unavailable: true }, ...options]
+        : (options.length ? options : placeholder);
 
     return {
         value,
-        options,
-        allowedValues,
-        disabled: allowedOptions.length === 0,
+        options: finalOptions,
+        allowedValues: [...optionValues],
+        disabled: options.length === 0,
         unavailableCurrent
     };
 }
 
-export function saveTaskModelSelection(taskName, value, { settings } = {}) {
-    const s = settings || loadGlobalSettings();
+export function saveTaskModelSelection(taskName, value) {
     const canonical = normalizeTaskName(taskName);
-    const models = { ...(s?.ai?.models || {}) };
-    const tasks = { ...(s?.ai?.tasks || {}) };
-    for (const key of getTaskLookupKeys(taskName)) {
-        delete models[key];
-        delete tasks[key];
-    }
     const normalized = stringifyModelSpec(value);
-    if (normalized) {
-        models[canonical] = normalized;
-        tasks[canonical] = normalized;
-    }
-    return saveGlobalSettings({ ai: { models, tasks } });
+    const profile = updateAIProfile((draft) => {
+        for (const key of getTaskLookupKeys(taskName)) {
+            if (key !== canonical) delete draft.taskModels[key];
+        }
+        if (normalized) draft.taskModels[canonical] = normalized;
+        else delete draft.taskModels[canonical];
+        return draft;
+    });
+    try { syncTouch('aiSettings'); } catch (_) {}
+    return profile;
 }
+
+export function setPersonalDefaultModel(spec) {
+    const normalized = stringifyModelSpec(spec);
+    const profile = updateAIProfile((draft) => {
+        draft.defaultModel = normalized;
+        return draft;
+    });
+    try { syncTouch('aiSettings'); } catch (_) {}
+    return profile;
+}
+
+export function getPersonalDefaultModel() {
+    return loadAIProfile().defaultModel || '';
+}
+
+function scopeCacheToken() {
+    const scope = loadAIProfile().scope || {};
+    return `${scope.endpoint || ''}|${scope.userId || 'device'}`;
+}
+
+function discoveryErrorText(code) {
+    if (!code) return t('errors.modelListFailed');
+    return describeDetectionError(code);
+}
+
+export async function discoverProviderModels(providerId, { refresh = false, signal, ttlMs = MODEL_DISCOVERY_TTL_MS } = {}) {
+    const id = firstNonEmptyString(providerId);
+    const provider = getAIProviderRegistry()[id];
+    if (!provider) {
+        return { ok: false, source: 'none', models: [], updatedAt: 0, providerId: id, error: t('errors.modelsUrlMissing') };
+    }
+    if (!provider.modelsUrl) {
+        return { ok: false, source: 'none', models: [], updatedAt: 0, providerId: id, error: t('errors.modelsUrlMissing') };
+    }
+    const catalogState = getCatalogState();
+    const cacheKey = {
+        schema: 'v2',
+        scope: scopeCacheToken(),
+        providerId: id,
+        source: provider.source,
+        format: provider.format,
+        apiUrl: provider.apiUrl,
+        modelsUrl: provider.modelsUrl,
+        catalogVersion: provider.source === 'managed' ? catalogState.version : 0,
+        credentialVersion: provider.credential ? provider.credential.version : 0,
+        keyStamp: provider.credential ? (provider.credential.keyStamp || '') : ''
+    };
+    const cached = await getCached('aiProviderModels', cacheKey);
+    const cachedModels = Array.isArray(cached?.models) ? cached.models : [];
+    const cachedUpdatedAt = Number(cached?.updatedAt || 0);
+    const fresh = !!(cachedUpdatedAt && Date.now() - cachedUpdatedAt < ttlMs);
+    if (!refresh && cachedModels.length && fresh) {
+        return { ok: true, source: 'cache', models: cachedModels, updatedAt: cachedUpdatedAt, providerId: id, error: '' };
+    }
+
+    let apiKey = provider.apiKey || '';
+    if (provider.source === 'managed') {
+        try {
+            const credential = await getManagedCredential(id);
+            apiKey = credential.apiKey || '';
+        } catch (error) {
+            return {
+                ok: false,
+                source: cachedModels.length ? 'stale-cache' : 'none',
+                models: cachedModels,
+                updatedAt: cachedUpdatedAt,
+                providerId: id,
+                error: error && error.code ? describeDetectionError(error.code) : t('errors.modelListFailed')
+            };
+        }
+    }
+
+    const result = await fetchProviderModels({
+        provider,
+        apiKey,
+        signal,
+        allowCrossOrigin: provider.source === 'managed' || provider.allowCrossOriginModels === true
+    });
+    if (!result.ok) {
+        return {
+            ok: false,
+            source: cachedModels.length ? 'stale-cache' : 'error',
+            models: cachedModels,
+            updatedAt: cachedUpdatedAt,
+            providerId: id,
+            error: discoveryErrorText(result.errorCode)
+        };
+    }
+    const models = result.models.map((item) => normalizeModelEntry(item, { providerId: id })).filter(Boolean);
+    await setCached('aiProviderModels', cacheKey, { updatedAt: Date.now(), models }, 0);
+    return { ok: true, source: 'network', models, updatedAt: Date.now(), providerId: id, error: '' };
+}
+
+// Compatibility shims: static AI configuration no longer exists.
+export function getStaticProviderRegistry() {
+    return {};
+}
+
+export function getStaticAITasks() {
+    return {};
+}
+
+export function getStaticLegacyAIModels() {
+    return {};
+}
+
+export function extractBaseUrlFromApiUrl(apiUrl = '') {
+    const raw = String(apiUrl || '').trim();
+    if (!raw) return '';
+    return raw.replace(/\/+$/, '').replace(/\/chat\/completions$/i, '') || raw;
+}
+
+export function deriveApiUrl(provider = {}) {
+    try {
+        return deriveProviderEndpoints({
+            format: provider.format || 'openai-chat',
+            baseUrl: provider.baseUrl,
+            apiUrl: provider.apiUrl,
+            modelsUrl: provider.modelsUrl
+        }).apiUrl;
+    } catch (_) {
+        return firstNonEmptyString(provider.apiUrl);
+    }
+}
+
+export function deriveModelsUrl(provider = {}) {
+    try {
+        return deriveProviderEndpoints({
+            format: provider.format || 'openai-chat',
+            baseUrl: provider.baseUrl,
+            apiUrl: provider.apiUrl,
+            modelsUrl: provider.modelsUrl
+        }).modelsUrl;
+    } catch (_) {
+        return firstNonEmptyString(provider.modelsUrl);
+    }
+}
+
+export function getProviderFormatInfo(format) {
+    const adapter = getAdapter(format);
+    return adapter ? { id: adapter.id, capabilities: { ...adapter.capabilities }, authModes: [...adapter.authModes], defaultAuthMode: adapter.defaultAuthMode } : null;
+}
+
+export { isManagedProviderId, isPersonalProviderId };

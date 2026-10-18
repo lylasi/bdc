@@ -482,17 +482,92 @@ def extract_article_payload(html, source_url):
 
     return {'title': title, 'markdown': markdown, 'contentHtml': content, 'sourceUrl': source_url}
 
+class DevHTTPServer(ThreadingHTTPServer):
+    """開發伺服器本體。
+
+    socketserver.TCPServer.request_queue_size 預設只有 5，而這個頁面一開場就會
+    平行抓大約 60 個 ES module；佇列一滿，核心就會直接丟掉多餘的連線，
+    瀏覽器端看到的是間歇性的 net::ERR_CONNECTION_RESET / ERR_SOCKET_NOT_CONNECTED，
+    對應到應用就是「偶爾有模組沒載入、初始化只完成一半」。
+    把 backlog 放大即可（實測連續 10 次啟動巡檢不再出現重置）。
+    """
+
+    daemon_threads = True
+    allow_reuse_address = True
+    request_queue_size = 128
+
+
 class ServeHandler(SimpleHTTPRequestHandler):
     """靜態檔 + /v1 代理 + /fetch、/extract 文章抓取；一律停用快取。"""
 
     ai_proxy = None
     article_fetch = True
 
+    # 這個伺服器會綁 0.0.0.0（--lan），且常被拿來當「快速開個站」用。
+    # SimpleHTTPRequestHandler 預設會把整個專案目錄連同 .git、測試腳本一起送出去。
+    # 這些路徑瀏覽器本來就不需要，直接在傳輸層擋掉。
+    #
+    # 注意：ai-config.js 不能擋——modules/settings.js 等模組會直接 import 它，
+    # 擋掉等於整個應用起不來。它仍然會被提供，因此**部署時必須自行排除**，
+    # 這也是啟動訊息會特別提醒的原因。
+    DENY_PREFIXES = (
+        '/.git',            # 版本庫（含 config、objects、refs）
+        '/.venv',           # 本機虛擬環境
+        '/.claude',
+        '/.dsh',
+        '/.playwright-cli',  # 瀏覽器巡檢產物（頁面快照、console 記錄）
+        '/tests',           # 巡檢腳本，含大量本機路徑與斷言
+        '/node_modules',
+        '/scripts',         # 伺服器／資料生成腳本
+        '/docs/report/root-audit',   # 巡檢產物（截圖與 JSON）
+    )
+    DENY_BASENAMES = (
+        '.ds_store',
+        'pen_global_secrets.json',
+    )
+    DENY_SUFFIXES = (
+        '.pem', '.key', '.p12', '.crt',
+    )
+
+    def _is_denied(self):
+        """路徑是否屬於「不該由靜態伺服器提供」的檔案。"""
+        import posixpath
+        path = urllib.parse.urlsplit(self.path).path
+        # 先正規化，避免用 /./ 、// 、%2e%2e 之類的寫法繞過前綴比對
+        try:
+            path = urllib.parse.unquote(path)
+        except Exception:
+            return True
+        path = posixpath.normpath(path)
+        if not path.startswith('/'):
+            path = '/' + path
+        lowered = path.lower()
+        for prefix in self.DENY_PREFIXES:
+            if lowered == prefix or lowered.startswith(prefix + '/'):
+                return True
+        basename = posixpath.basename(lowered)
+        if basename in self.DENY_BASENAMES:
+            return True
+        if lowered.endswith(self.DENY_SUFFIXES):
+            return True
+        return False
+
     def end_headers(self):
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         self.send_header('Pragma', 'no-cache')
         self.send_header('Expires', '0')
         super().end_headers()
+
+    def send_head(self):
+        if self._is_denied():
+            self.send_error(404, 'Not Found')
+            return None
+        return super().send_head()
+
+    def list_directory(self, path):
+        # 目錄列表本身就是一種資訊洩漏（會列出整個專案結構），一律不提供
+        self.send_error(404, 'Not Found')
+        return None
 
     def _send_payload(self, payload, status=200, ctype='application/json; charset=utf-8'):
         if isinstance(payload, str):
@@ -596,7 +671,7 @@ def main():
     host = '0.0.0.0' if args.lan else '127.0.0.1'
     shown = (lan_address() or '<本機區域網 IP>') if args.lan else '127.0.0.1'
     handler = partial(ServeHandler, directory=str(ROOT))
-    server = ThreadingHTTPServer((host, args.port), handler)
+    server = DevHTTPServer((host, args.port), handler)
     extra = []
     if ServeHandler.ai_proxy:
         extra.append('AI 走同源 /v1 代理')
@@ -604,6 +679,10 @@ def main():
         extra.append('文章抓取 /fetch、/extract')
     suffix = ('  （%s）' % '；'.join(extra)) if extra else ''
     print('http://%s:%d/%s' % (shown, args.port, suffix), flush=True)
+    print('（本機開發伺服器：已封鎖 /.git、/tests、/scripts 等路徑；'
+          'ai-config.js 仍需提供給前端模組載入，部署時請務必自行排除該檔）', flush=True)
+    if args.lan:
+        print('⚠ 目前綁定 0.0.0.0，同網段裝置都能存取此站；ai-config.js 對它們同樣可讀。', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

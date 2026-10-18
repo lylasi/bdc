@@ -1,0 +1,15 @@
+{
+  "name": "bdc-selfhost-sync",
+  "private": true,
+  "type": "module",
+  "description": "Self-hosted BDC learning-data sync server (SQLite / PostgreSQL)",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

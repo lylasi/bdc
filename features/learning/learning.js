@@ -2,6 +2,7 @@ import * as state from '../../modules/state.js';
 import * as dom from '../../modules/dom.js';
 import * as storage from '../../modules/storage.js';
 import * as ui from '../../modules/ui.js';
+import { escapeHtml } from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import { t } from '../../modules/i18n.js';
 import * as audio from '../../modules/audio.js';
@@ -38,16 +39,54 @@ export function initLearning() {
     });
 }
 
-/** 上一個 / 下一個單詞 */
+/**
+ * 上一個 / 下一個單詞。
+ *
+ * 原本是「環繞」：未選取時按「上一個」會直接跳到**最後一個**單詞，
+ * 在第一個單詞按「上一個」也會跳到最後一個，而且沒有任何提示。
+ * 學習情境下這等於默默把使用者的位置換掉，所以改成：
+ *  - 尚未選取：兩個方向都從第一個單詞開始；
+ *  - 已經在最前／最後：停在原地，並在「第 n / 共 m」的位置用同一行顯示提示。
+ */
 function stepWord(delta) {
     const options = Array.from(dom.wordSelect.options).filter(opt => opt.value);
     if (!options.length) return;
     const currentIndex = options.findIndex(opt => opt.value === dom.wordSelect.value);
-    const baseIndex = currentIndex === -1 ? (delta > 0 ? -1 : options.length) : currentIndex;
-    const nextIndex = (baseIndex + delta + options.length) % options.length;
+
+    let nextIndex;
+    if (currentIndex === -1) {
+        nextIndex = 0;
+    } else {
+        nextIndex = currentIndex + delta;
+        if (nextIndex < 0) {
+            nextIndex = 0;
+            showWordNavHint(t('learning.alreadyFirst'));
+        } else if (nextIndex >= options.length) {
+            nextIndex = options.length - 1;
+            showWordNavHint(t('learning.alreadyLast'));
+        }
+    }
+
+    if (nextIndex === currentIndex) {
+        // 停在原地時仍要讓提示有機會顯示（位置標籤被提示暫時取代）
+        dom.wordSelect.scrollIntoView?.({ block: 'nearest' });
+        return;
+    }
+
     dom.wordSelect.value = options[nextIndex].value;
     displayWordDetails();
     dom.wordSelect.scrollIntoView?.({ block: 'nearest' });
+}
+
+let _wordNavHintTimer = null;
+/** 借用「第 n / 共 m」那一行顯示短提示，時間到再還原 */
+function showWordNavHint(message) {
+    if (!dom.wordPosition) return;
+    dom.wordPosition.textContent = message;
+    clearTimeout(_wordNavHintTimer);
+    _wordNavHintTimer = setTimeout(() => {
+        try { updateWordPosition(); } catch (_) {}
+    }, 1800);
 }
 
 /** 更新「第 n / 共 m 個」提示 */
@@ -135,7 +174,7 @@ function clearWordDetails() {
 function speakCurrentWord() {
     const selectedId = dom.wordSelect.value;
     if (!selectedId) {
-        alert(t('learning.selectWord'));
+        ui.displayMessage(t('learning.selectWord'), 'warning');
         return;
     }
 
@@ -149,7 +188,7 @@ function speakCurrentWord() {
 async function generateExamples() {
     const selectedId = dom.wordSelect.value;
     if (!selectedId) {
-        alert(t('learning.selectWord'));
+        ui.displayMessage(t('learning.selectWord'), 'warning');
         return;
     }
 
@@ -166,7 +205,7 @@ async function generateExamples() {
             displayExamples(word);
         } catch (error) {
             console.error('生成例句時出錯:', error);
-            alert(t('learning.generateFailed'));
+            ui.displayMessage(t('learning.generateFailed'), 'error');
         } finally {
             dom.generateExamplesBtn.disabled = false;
             dom.generateExamplesBtn.textContent = t('learning.generateExamples');
@@ -189,13 +228,15 @@ function displayExamples(word) {
         div.className = 'example-item';
 
         if (!example.alignment) {
-            div.innerHTML = `<p class="example-english">${example.english}</p><p class="example-chinese">${example.chinese}</p>`;
+            div.innerHTML = `<p class="example-english">${escapeHtml(example.english)}</p><p class="example-chinese">${escapeHtml(example.chinese)}</p>`;
             dom.examplesContainer.appendChild(div);
             return;
         }
 
-        let processedEnglish = example.english;
-        let processedChinese = example.chinese;
+        // 先轉義再標記互動單詞：例句由 AI 產生（或轉述文章／OCR 內容），
+        // 直接串進 innerHTML 會被當成標記解析。
+        let processedEnglish = escapeHtml(example.english);
+        let processedChinese = escapeHtml(example.chinese);
 
         const sortedAlignment = [...example.alignment].sort((a, b) => (b.en?.length || 0) - (a.en?.length || 0));
 
@@ -203,11 +244,13 @@ function displayExamples(word) {
             if (pair.en && pair.zh) {
                 const pairId = `${word.id}-${index}-${pair.en.replace(/[^a-zA-Z0-9]/g, '')}`;
 
-                const enRegex = new RegExp(`(?<!<span[^>]*>)\\b(${escapeRegex(pair.en)})\\b(?!<\\/span>)`, 'gi');
-                processedEnglish = processedEnglish.replace(enRegex, `<span class="interactive-word" data-pair-id="${pairId}">${pair.en}</span>`);
+                const safeEn = escapeHtml(pair.en);
+                const safeZh = escapeHtml(pair.zh);
+                const enRegex = new RegExp(`(?<!<span[^>]*>)\\b(${escapeRegex(escapeHtml(pair.en))})\\b(?!<\\/span>)`, 'gi');
+                processedEnglish = processedEnglish.replace(enRegex, `<span class="interactive-word" data-pair-id="${escapeHtml(pairId)}">${safeEn}</span>`);
 
-                const zhRegex = new RegExp(`(?<!<span[^>]*>)(${escapeRegex(pair.zh)})(?!<\\/span>)`, 'g');
-                processedChinese = processedChinese.replace(zhRegex, `<span class="interactive-word" data-pair-id="${pairId}">${pair.zh}</span>`);
+                const zhRegex = new RegExp(`(?<!<span[^>]*>)(${escapeRegex(escapeHtml(pair.zh))})(?!<\\/span>)`, 'g');
+                processedChinese = processedChinese.replace(zhRegex, `<span class="interactive-word" data-pair-id="${escapeHtml(pairId)}">${safeZh}</span>`);
             }
         });
 
@@ -224,11 +267,11 @@ async function checkSentence() {
     const userSentence = dom.sentenceInput.value.trim();
 
     if (!selectedId) {
-        alert(t('learning.selectWord'));
+        ui.displayMessage(t('learning.selectWord'), 'warning');
         return;
     }
     if (!userSentence) {
-        alert(t('learning.enterSentence'));
+        ui.displayMessage(t('learning.enterSentence'), 'warning');
         return;
     }
 
@@ -253,12 +296,12 @@ async function checkSentence() {
                 dom.sentenceFeedback.className = 'feedback-correct';
             } else {
                 const suggestion = feedback.replace(/^(不正確。建議：|不正确。建议：)/, '').trim();
-                dom.sentenceFeedback.innerHTML = `${t('learning.sentenceHasIssues')}<div class="feedback-suggestion">${t('learning.suggestion')}${suggestion}</div>`;
+                dom.sentenceFeedback.innerHTML = `${escapeHtml(t('learning.sentenceHasIssues'))}<div class="feedback-suggestion">${escapeHtml(t('learning.suggestion'))}${escapeHtml(suggestion)}</div>`;
                 dom.sentenceFeedback.className = 'feedback-incorrect';
             }
         } catch (error) {
             console.error('檢查例句時出錯:', error);
-            alert(t('learning.requestFailed'));
+            ui.displayMessage(t('learning.requestFailed'), 'error');
             dom.sentenceFeedback.textContent = t('learning.checkFailed');
             dom.sentenceFeedback.className = 'feedback-incorrect';
         } finally {

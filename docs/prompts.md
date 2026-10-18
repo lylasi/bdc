@@ -1,11 +1,12 @@
 # AI 提示詞總覽（Prompts Inventory）
 
-說明：本文件彙整專案中所有發送至 AI 的「上下文提示詞 / 指令模板」，並標註用途、程式位置、模型鍵與回退順序，方便集中維護與調整。若需快速跳轉，可依下方各區塊中的檔案路徑打開對應程式碼。
+說明：本文件彙整專案中所有發送至 AI 的「上下文提示詞 / 指令模板」，並標註用途與程式位置，方便集中維護與調整。模型選擇統一由 AI profile 的任務映射處理，詳見下方維護建議。
 
 維護建議：
 - 儘量維持「只輸出 JSON」類請求的嚴格格式，降低前端解析成本。
 - 與「香港繁體中文」用字相關的規則請保持一致（如：網上/上載/電郵/巴士/的士/單車/軟件/網絡/連結/相片）。
-- 如需調整模型，優先在 `ai-config.js` 內的 `AI_MODELS.*` 或以本機偏好 `settings.ai.models.*` 覆蓋，避免在程式中散落硬編。
+- 如需調整模型，使用應用內「管理預設供應商」的任務映射，或個人供應商的任務模型設定；不要在程式或 `ai-config.js` 散落硬編。
+- 模型解析統一由 `modules/ai-models.js` 的 `getPreferredTaskSpec` 處理：呼叫端 override → 任務映射（`profile.taskModels`，相容舊 `settings.ai.models`）→ 個人預設 → 管理員預設。舊版 `AI_MODELS` 已移除，下列各節不再逐項列舉模型優先序。
 
 ---
 
@@ -13,7 +14,6 @@
 
 用途：單詞音標、詞性、中文意思。
 - 位置：modules/api.js:150
-- 模型優先序：`settings.ai.models.wordAnalysis` → `AI_MODELS.wordAnalysis`
 
 提示詞：
 ```
@@ -26,7 +26,6 @@ Please provide a detailed analysis for the word "${word}". Return the result in 
 
 1) 生成例句（3 條 + 中譯 + 對齊）
 - 位置：modules/api.js:166
-- 模型優先序：`settings.ai.models.exampleGeneration` → `AI_MODELS.exampleGeneration`
 
 提示詞：
 ```
@@ -35,7 +34,6 @@ Please provide a detailed analysis for the word "${word}". Return the result in 
 
 2) 造句檢查（正確/錯誤 + 建議 + 知識點）
 - 位置：modules/api.js:178
-- 模型優先序：`settings.ai.models.sentenceChecking` → `AI_MODELS.sentenceChecking`
 
 提示詞：
 ```
@@ -48,7 +46,6 @@ Please provide a detailed analysis for the word "${word}". Return the result in 
 
 1) 段落分析（最小輸出：只翻譯）
 - 位置：modules/api.js:206（instructions 與 prompt），fallback：modules/api.js:279
-- 模型優先序：`settings.ai.models.articleAnalysis` → `AI_MODELS.articleAnalysis`（內部仍保留到 `AI_MODELS.wordAnalysis` 的極端回退）
 
 指令（instructions，片段被嵌入至主提示）：
 ```
@@ -85,7 +82,6 @@ ${paragraph}
 
 2) 句子詳解卡（含對齊/分塊/關鍵點 或精簡版）
 - 位置：modules/api.js:336（主提示），fallback：modules/api.js:360
-- 模型優先序：`settings.ai.models.articleAnalysis` → `AI_MODELS.articleAnalysis`
 
 含結構版（includeStructure=true）：
 ```
@@ -121,7 +117,6 @@ ${keyPointRule}
 
 3) 點字彈窗（單詞詳解）
 - 位置：modules/api.js:392
-- 模型優先序：`settings.ai.models.articleWordTooltip` → `AI_MODELS.articleWordTooltip` → `settings.ai.models.wordAnalysis` → `AI_MODELS.wordAnalysis`
 
 提示詞：
 ```
@@ -133,7 +128,6 @@ ${keyPointRule}
 
 4) 片語解析（句卡「詳解」與工具提示「片語解析」）
 - 位置：modules/api.js:404
-- 模型優先序：`settings.ai.models.articlePhraseAnalysis` → `AI_MODELS.articlePhraseAnalysis` → `settings.ai.models.wordAnalysis` → `AI_MODELS.wordAnalysis`
 
 提示詞：
 ```
@@ -151,7 +145,6 @@ ${keyPointRule}
 
 1) 單張圖片取字（可併發）
 - 位置：modules/api.js:416
-- 模型優先序：`opts.model` → `settings.ai.models.imageOCR|ocr` → `OCR_CONFIG.DEFAULT_MODEL|MODEL` → `AI_MODELS.imageOCR`
 
 預設提示詞（可在 UI 覆蓋）：
 ```
@@ -170,7 +163,6 @@ ${keyPointRule}
 
 2) 默寫批改（多張圖片 + 標準詞表）
 - 位置：modules/api.js:493
-- 模型優先序：`opts.model` → `settings.ai.models.imageOCR|ocr` → `OCR_CONFIG.DEFAULT_MODEL|MODEL` → `AI_MODELS.imageOCR`
 
 預設提示詞（JSON 版）：
 ```
@@ -195,7 +187,6 @@ ${keyPointRule}
 
 用途：將抓到的完整 HTML 交給 AI，抽取「正文」並輸出乾淨 Markdown（不翻譯）。
 - 位置：modules/api.js:848
-- 模型優先序：`opts.model` → `ARTICLE_IMPORT.DEFAULT_MODEL|MODEL` → `AI_MODELS.articleAnalysis`
 
 System（系統訊息）：
 ```
@@ -226,12 +217,9 @@ ${html}
 
 ---
 
-## 本機偏好（settings.ai.models.*）與覆蓋說明
+## 任務模型覆蓋
 
-- 來源：localStorage（鍵名 `pen_global_settings`），透過 `modules/settings.js` 的 `loadGlobalSettings()`/`saveGlobalSettings()` 讀寫。
-- 用法：可在瀏覽器 Console 覆蓋，例如：
-```
-saveGlobalSettings({ ai: { models: { articleWordTooltip: 'tbai:gemini-2.5-flash-nothinking' } } })
-```
-- 目的：提供不改動程式碼與版本控制的細粒度模型/端點切換。
+- 來源：帳戶／裝置的 AI profile（`bdc_ai_profile_v1:*`）內的 `taskModels`；`pen_global_settings` 只保留相容鏡像，profile 為準。
+- 用法：在「設定 → 我的供應商」或「管理預設供應商」的任務設定逐項選擇模型，不要手改 localStorage。
+- 解析順序見 `modules/ai-models.js` 的 `getPreferredTaskSpec`；舊版 `AI_MODELS` 與 `settings.ai.models` 不再是設定入口。
 

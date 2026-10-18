@@ -546,11 +546,18 @@ function rgbToHex(rgb) {
         await mergeCtx.close();
 
         /* ============ J. 全域設定：配色主題可切換並記住 ============ */
+        // [id, 主色, 名稱, 紙面底色, 品牌圖標]：紙面會跟主色做極淡色偏，卡片維持純白
         const THEME_EXPECT = [
-            ['teal', '#0f766e', '墨青'],
-            ['indigo', '#4f46e5', '靛蓝'],
-            ['violet', '#7c3aed', '紫罗兰'],
-            ['slate', '#475569', '石墨']
+            ['teal', '#0f766e', '墨青', '#f5f4f1', '#ic-app'],
+            ['blue', '#1d4ed8', '海蓝', '#f1f2f6', '#ic-app'],
+            ['indigo', '#4f46e5', '靛蓝', '#f1f1f6', '#ic-app'],
+            ['violet', '#7c3aed', '紫罗兰', '#f3f1f6', '#ic-app'],
+            ['slate', '#475569', '石墨', '#f1f3f6', '#ic-app'],
+            ['forest', '#15803d', '森林绿', '#f1f6f3', '#ic-app'],
+            ['candy', '#db2777', '糖果粉', '#f6f1f3', '#ic-app'],
+            ['coffee', '#8a5a2b', '咖啡棕', '#f6f3f1', '#ic-app'],
+            ['flame', '#c2410c', '火影', '#f6f2f1', '#ic-flame'],
+            ['night', '#1f2937', '夜刃', '#eceef1', '#ic-blade']
         ];
         const themeCtx = await newContext(browser, { width: 1440, height: 900 });
         const themePage = await themeCtx.newPage();
@@ -574,8 +581,8 @@ function rgbToHex(rgb) {
             active: el.classList.contains('active'),
             pressed: el.getAttribute('aria-pressed')
         })));
-        check('設定彈窗有四個配色選項且標示目前主題',
-            picker.length === 4 && picker.every((p, i) => p.id === THEME_EXPECT[i][0] && p.text === THEME_EXPECT[i][2])
+        check('設定彈窗有八個配色選項且標示目前主題',
+            picker.length === THEME_EXPECT.length && picker.every((p, i) => p.id === THEME_EXPECT[i][0] && p.text === THEME_EXPECT[i][2])
             && picker.filter((p) => p.active).length === 1 && picker[0].pressed === 'true',
             picker);
 
@@ -586,14 +593,17 @@ function rgbToHex(rgb) {
             applied.push(await themePage.evaluate(() => ({
                 theme: document.documentElement.dataset.theme,
                 primary: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(),
                 meta: document.querySelector('meta[name="theme-color"]')?.getAttribute('content'),
                 faviconHasColor: (document.querySelector('link[rel="icon"]')?.getAttribute('href') || '')
                     .includes(encodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--primary').trim())),
-                active: document.querySelector('.gs-theme-btn.active')?.getAttribute('data-theme-id')
+                active: document.querySelector('.gs-theme-btn.active')?.getAttribute('data-theme-id'),
+                icon: document.querySelector('.brand-mark use')?.getAttribute('href')
             })));
         }
-        check('四套主題都能即時套用（主色／theme-color／favicon／選中態同步）',
+        check('每套主題都能即時套用（主色／紙面底色／品牌圖標／theme-color／favicon／選中態同步）',
             applied.every((row, i) => row.theme === THEME_EXPECT[i][0] && row.primary === THEME_EXPECT[i][1]
+                && row.paper === THEME_EXPECT[i][3] && row.icon === THEME_EXPECT[i][4]
                 && row.meta === THEME_EXPECT[i][1] && row.faviconHasColor && row.active === THEME_EXPECT[i][0]),
             applied);
 

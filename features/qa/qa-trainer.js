@@ -2,6 +2,7 @@
 import { loadQASet } from './qa-storage.js';
 import { displayMessage } from '../../modules/ui.js';
 import { t } from '../../modules/i18n.js';
+import { confirmAction } from '../../modules/ui.js';
 
 // 訓練狀態管理
 let currentSession = {
@@ -177,7 +178,7 @@ export function goToQuestion(index) {
 }
 
 // 完成訓練
-export function finishTraining() {
+export async function finishTraining() {
   if (!currentSession.isActive) {
     throw new Error(t('qa.noActiveSession'));
   }
@@ -186,7 +187,14 @@ export function finishTraining() {
   const unansweredCount = currentSession.answers.filter(a => !(a.userAnswer && a.userAnswer.trim().length > 0)).length;
 
   if (unansweredCount > 0) {
-    const confirmed = confirm(t('qa.unansweredConfirm', { count: unansweredCount }));
+    // 原生 confirm 在部分環境不會顯示，使用者會看到「按了沒反應」，改用站內確認框
+    const confirmed = await confirmAction({
+      title: t('qa.finishTitle'),
+      message: t('qa.unansweredConfirm', { count: unansweredCount }),
+      confirmLabel: t('qa.finish'),
+      cancelLabel: t('qa.keepTraining'),
+      danger: true
+    });
     if (!confirmed) {
       return false;
     }
@@ -220,6 +228,12 @@ export function finishTraining() {
   // 結束會話
   currentSession.isActive = false;
 
+  // 一併清掉本機保存的進度快照。
+  // 少了這一步，localStorage 裡會留著「isActive: true」的舊快照，
+  // 下次開啟應用時 restoreTrainingProgress() 會把一個已經完成的訓練當成
+  // 「未完成的會話」恢復，使用者會看到可續練的殘留進度。
+  clearSavedProgress();
+
   console.log('訓練完成:', trainingResult);
   return trainingResult;
 }
@@ -247,14 +261,22 @@ export function resumeTraining() {
 }
 
 // 取消訓練
-export function cancelTraining() {
+export async function cancelTraining() {
   if (!currentSession.isActive) {
     return true;
   }
 
-  const confirmed = confirm(t('qa.cancelTrainingConfirm'));
+  const confirmed = await confirmAction({
+    title: t('qa.cancelTrainingTitle'),
+    message: t('qa.cancelTrainingConfirm'),
+    confirmLabel: t('qa.confirmCancelTraining'),
+    cancelLabel: t('qa.keepTraining'),
+    danger: true
+  });
   if (confirmed) {
     resetSession();
+    // 取消同樣要清掉保存的進度，否則下次啟動會把已取消的訓練恢復回來
+    clearSavedProgress();
     console.log('訓練已取消');
     return true;
   }

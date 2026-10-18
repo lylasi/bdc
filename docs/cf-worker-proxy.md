@@ -23,7 +23,7 @@ Cloudflare Worker Proxy for Article Import
 - 成功會回傳 `text/html`；若內容過大或非 HTML，會回應 413/415。
 
 4) 在前端專案配置
-- 檔案：ai-config.js:105 起的 `ARTICLE_IMPORT.PROXY_URL`
+- 檔案：`ai-config.js` 的 `ARTICLE_IMPORT.PROXY_URL`
 - 例：
   `PROXY_URL: 'https://<你的-worker>.workers.dev/fetch?url=',`
 - 儲存後，前端導入視窗（文章詳解 → 導入…）勾選「跳過第三方轉換」，貼上網址擷取即可。

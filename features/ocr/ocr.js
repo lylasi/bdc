@@ -171,7 +171,7 @@ async function handleFileSelect(e) {
     try {
         await addImagesFromFiles(files);
     } catch (err) {
-        alert(t('ocr.readFailed', { message: err?.message || err }));
+        ui.displayMessage(t('ocr.readFailed', { message: err?.message || err }), 'error');
     }
 }
 
@@ -185,7 +185,7 @@ async function openCamera() {
             const msg = isSecure
               ? t('ocr.cameraUnsupported')
               : t('ocr.insecureCamera');
-            alert(msg);
+            ui.displayMessage(msg, 'warning', 6000);
             try {
                 if (dom.ocrImageInput) {
                     dom.ocrImageInput.setAttribute('capture', 'environment');
@@ -197,7 +197,7 @@ async function openCamera() {
             return;
         }
         if (!isSecure) {
-            alert(t('ocr.insecureCameraShort'));
+            ui.displayMessage(t('ocr.insecureCameraShort'), 'warning', 6000);
         }
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
         mediaStream = stream;
@@ -206,7 +206,7 @@ async function openCamera() {
             dom.ocrCameraArea?.classList.remove('hidden');
         }
     } catch (err) {
-        alert(t('ocr.cameraAccessFailed', { message: err?.message || err }));
+        ui.displayMessage(t('ocr.cameraAccessFailed', { message: err?.message || err }), 'error');
         try {
             if (dom.ocrImageInput) {
                 dom.ocrImageInput.setAttribute('capture', 'environment');
@@ -258,22 +258,28 @@ async function captureFromCamera() {
         // 可視需要關閉相機
         // closeCamera();
     } catch (err) {
-        alert(t('ocr.captureFailed', { message: err?.message || err }));
+        ui.displayMessage(t('ocr.captureFailed', { message: err?.message || err }), 'error');
     }
 }
 
 async function runOCR() {
     const list = images.length ? images.slice() : (lastImageDataUrl ? [{ id: 'single', dataUrl: lastImageDataUrl, name: 'image' }] : []);
     if (!list.length) {
-        alert(t('ocr.uploadFirst'));
+        ui.displayMessage(t('ocr.uploadFirst'), 'warning');
         return;
     }
     const hint = (dom.ocrHint && dom.ocrHint.value && dom.ocrHint.value.trim()) || undefined;
     const model = dom.ocrModelSelect && dom.ocrModelSelect.value ? dom.ocrModelSelect.value : undefined;
     const merge = !!(dom.ocrMergeOutput && dom.ocrMergeOutput.checked);
 
+    // 完成後要顯示在按鈕上的文字。實際顯示時機在 finally（見下方）：
+    // 先前寫成「setBusy(true, 完成文字) + setTimeout(setBusy(false), 1000)」，
+    // 但 finally 會緊接著同步執行 setBusy(false)，完成文字一瞬間就被還原，
+    // 使用者永遠看不到「识别失败」。
+    let completionLabel = '';
+
     try {
-        if (currentRun) { alert(t('ocr.taskRunning')); return; }
+        if (currentRun) { ui.displayMessage(t('ocr.taskRunning'), 'warning'); return; }
         currentRun = { abort: new AbortController(), cancelled: false, perItem: new Map(), counters: { total: list.length, success: 0, failed: 0, cancelled: 0, completed: 0 } };
         setControlsRunning(true);
         const MAX = Math.max(1, parseInt(OCR_CONFIG?.maxConcurrency ?? 5, 10) || 5);
@@ -350,16 +356,43 @@ async function runOCR() {
             } catch (_) {}
             if (dom.ocrDisplayMode && dom.ocrDisplayMode.value === 'md') renderResultPreview();
         }
-        try { ui.displayMessage(t('ocr.completedSummary', { total: currentRun?.counters?.total||list.length, success: currentRun?.counters?.success||0, failed: currentRun?.counters?.failed||0, cancelled: currentRun?.counters?.cancelled||0 }), 'success', 2200); } catch(_) {}
-        try { setBusy(true, t('ocr.completed')); setTimeout(() => setBusy(false), 1000); } catch(_) {}
+        // 提示型別要反映實際結果：全部失敗卻顯示綠色「識別完成」會讓人以為成功了
+        const counters = currentRun?.counters || {};
+        const totalCount = counters.total || list.length;
+        const successCount = counters.success || 0;
+        const failedCount = counters.failed || 0;
+        const cancelledCount = counters.cancelled || 0;
+        const summary = t('ocr.completedSummary', { total: totalCount, success: successCount, failed: failedCount, cancelled: cancelledCount });
+        const summaryType = (successCount === 0 && failedCount > 0) ? 'error'
+            : (failedCount > 0 || cancelledCount > 0) ? 'warning'
+            : 'success';
+        try { ui.displayMessage(summary, summaryType, summaryType === 'success' ? 2200 : 6000); } catch(_) {}
+        completionLabel = (successCount === 0 && failedCount > 0) ? t('ocr.allFailed') : t('ocr.completed');
     } catch (err) {
-        alert(t('ocr.recognizeFailed', { message: err?.message || err }));
+        ui.displayMessage(t('ocr.recognizeFailed', { message: err?.message || err }), 'error');
     } finally {
         setBusy(false);
         setControlsRunning(false);
         currentRun = null;
         updateProgressUI(true);
+        // setBusy(false) 會把按鈕還原成原文，所以在它之後才顯示完成態
+        if (completionLabel) flashRunButtonLabel(completionLabel, 2200);
     }
+}
+
+/** 暫時把「開始識別」按鈕的文字換成完成態，時間到再還原 */
+function flashRunButtonLabel(text, duration = 2200) {
+    try {
+        if (!dom.ocrRunBtn) return;
+        const restore = dom.ocrRunBtn.dataset._label || t('ocr.run');
+        dom.ocrRunBtn.textContent = text;
+        clearTimeout(flashRunButtonLabel._timer);
+        flashRunButtonLabel._timer = setTimeout(() => {
+            // 期間若又開始新的一輪，讓 setBusy 去管按鈕文字
+            if (dom.ocrRunBtn && dom.ocrRunBtn.disabled) return;
+            dom.ocrRunBtn.textContent = restore;
+        }, duration);
+    } catch (_) {}
 }
 
 function clearOCR() {
@@ -608,18 +641,14 @@ async function handleClipboardPaste(event) {
         const files = imgs.map(it => it.getAsFile()).filter(Boolean);
         const added = await addImagesFromFiles(files);
         if (added > 0) ui.displayMessage(t('ocr.added', { count: added }), 'success', 1800);
-    } catch (err) { alert(t('ocr.pasteFailed', { message: err?.message || err })); }
+    } catch (err) { ui.displayMessage(t('ocr.pasteFailed', { message: err?.message || err }), 'error'); }
 }
 
 function initModelSelect() {
     if (!dom.ocrModelSelect) return;
     const legacyValue = loadLegacyModelSelection();
     const selection = getTaskModelSelection('imageOCR', {
-        currentValue: legacyValue,
-        preferredCandidates: [
-            OCR_CONFIG?.DEFAULT_MODEL,
-            OCR_CONFIG?.MODEL
-        ]
+        currentValue: legacyValue
     });
     dom.ocrModelSelect.innerHTML = '';
     for (const option of selection.options) {

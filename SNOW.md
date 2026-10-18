@@ -7,14 +7,15 @@
 
 ## Overview
 
-“PEN 子背單詞”是一個純靜態前端應用，旨在提供全面的英語單詞學習體驗。它採用現代 JavaScript (ES Modules) 技術，無需後端服務器即可在瀏覽器中獨立運行。該應用集成了多種學習工具，從基礎的單詞本管理，到高級的 AI 輔助功能，如文章分析、圖片文字識別（OCR）和智能問答訓練。此外，項目還通過 Supabase 實現了數據的雲端同步，確保用戶在不同設備間的學習進度保持一致。其模塊化的架構設計清晰，易於維護和擴展。
+“PEN 子背單詞”是一個純靜態前端應用，旨在提供全面的英語單詞學習體驗。它採用現代 JavaScript (ES Modules) 技術，前端可直接部署到任何靜態主機。該應用集成了多種學習工具，從基礎的單詞本管理，到高級的 AI 輔助功能，如文章分析、圖片文字識別（OCR）和智能問答訓練。雲端同步使用 Cloudflare Worker + D1，確保用戶在不同設備間的學習進度保持一致。其模塊化的架構設計清晰，易於維護和擴展。
 
-## Current Status (2025-12-06)
+## Current Status (2026-10-18)
 
 - **模組化重構已落地**：`main.js` 目前負責初始化九大功能模組，舊版 `app.js` 已下線，PLAN.md 中的拆分指引僅供歷史參考。
-- **問答訓練模組 GA**：`features/qa/` 已提供問答集治理、AI 校對與 PDF 導出；`docs/prd.md`（2025-01-16）描述的故事點均有對應實作，但仍在持續微調響應式樣式（`index.html`, `styles.css` 目前存在本地修改）。
-- **AI / 雲端相依**：`ai-config.js` 需配置 QA 校對模型、TTS 與 Supabase，否則僅能使用離線/本地功能；請確保 API Key 不進版本控制。
-- **品質現況**：尚無自動化測試。重大改動仍依賴瀏覽器手動巡檢，尤其是 QA 模組的批次校對、PDF 導出與 mobile 體驗。
+- **問答訓練模組 GA**：`features/qa/` 已提供問答集治理、AI 校對與 PDF 導出；`docs/prd.md`（2025-01-16）描述的故事點均有對應實作，但仍在持續微調響應式樣式。
+- **AI / 雲端相依**：`ai-config.js` 只保留 TTS、`SYNC.endpoint` 與非 AI 參數；預設 AI 供應商由管理員發布到 D1，個人供應商與 Key 存於帳戶／裝置的本機 profile。缺少供應商時仍可使用離線功能。
+- **局域網**：AI 供應商可填區網 HTTP 網址（例如 `http://192.168.1.100:11434/v1`），但受服務 CORS、防火牆與瀏覽器混合內容／本地網路權限限制；`python3 scripts/serve.py --lan` 只改變前端綁定位址，AI 仍由瀏覽器直連（或另加 `--ai-proxy`）。
+- **品質現況**：AI 模組有 `node:test` 單元／Worker 測試；其餘重大改動仍依賴瀏覽器巡檢與 `tests/*.cjs` Playwright 腳本。
 - **文件現況**：README.md 已補齊核心摘要；進階說明請查閱本檔、`CLAUDE.md` 及 `docs/`。
 
 ## Technology Stack
@@ -22,8 +23,8 @@
 - **Language/Runtime**: HTML5, CSS3, JavaScript (ES2022)
 - **Framework(s)**: Vanilla JS (無主框架)
 - **Key Dependencies**:
-  - **Cloud Sync**: Supabase
-  - **AI Services**: 通過 `modules/api.js` 封裝的外部 AI 接口
+  - **Cloud Sync**: Cloudflare Worker + D1；另附 `selfhost/` Node + SQLite／PostgreSQL（學習資料同步）
+  - **AI Services**: `modules/api.js` + `modules/ai-protocols/`，瀏覽器直連供應商
   - **Local Storage**: IndexedDB 和 localStorage 雙層快取
 - **Build Tools**: 無。通過 `npx serve` 或 `http-server` 直接運行。
 
@@ -56,7 +57,7 @@
 ├── articles/               # 預設文章數據 (JSON)
 ├── qa-sets/                # 問答訓練數據 (JSON)
 ├── scripts/                # 工具腳本 (如更新語音列表)
-├── ai-config.example.js    # AI 服務配置範例文件
+├── ai-config.example.js    # 非 AI 設定範例（TTS、SYNC.endpoint）
 └── AGENTS.md/CLAUDE.md     # 給開發者和 AI 代理的詳細項目文檔
 ```
 
@@ -69,7 +70,7 @@
 - **文章詳解**: 導入文章進行 AI 分析，支持段落/句子級朗讀和翻譯遮罩。
 - **圖片文字識別 (OCR)**: 從圖片或攝像頭捕獲文字，支持高級提示詞和 Markdown 預覽。
 - **問答訓練**: 創建和訓練自定義問答集，支持 AI 校對和 PDF 導出。
-- **雲端同步**: 通過 Supabase 在多設備間同步學習數據。
+- **雲端同步**: 通過 Cloudflare Worker + D1，或 `selfhost/` 自建 SQLite／PostgreSQL，在多設備間同步學習數據。
 - **AI 助手**: 在文章閱讀時提供上下文輔助。
 
 ## Getting Started
@@ -84,8 +85,8 @@
 此項目無需傳統安裝。只需一個本地 HTTP 服務器即可運行。
 
 1.  **克隆或下載項目到本地。**
-2.  **配置 AI (可選)**:
-    如果需要使用 AI 功能，複製 `ai-config.example.js` 為 `ai-config.js`，並填入您的 API 金鑰和模型配置。
+2.  **配置非 AI 服務 (可選)**:
+    複製 `ai-config.example.js` 為 `ai-config.js`，填入 TTS、`SYNC.endpoint` 等非 AI 設定。AI 供應商不要在檔案內設定：管理員用「管理預設供應商」發布，一般使用者用「我的供應商」新增。
     ```bash
     cp ai-config.example.js ai-config.js
     ```
@@ -119,11 +120,13 @@
     - **DOM 操作**: 所有 DOM 選擇器必須在 `modules/dom.js` 中定義。
     - **狀態管理**: 全局狀態應在 `modules/state.js` 中管理。
     - **代碼風格**: 遵循項目已有的風格（ES2022, 4 空格縮進, 單引號）。
-3.  **測試**: 在瀏覽器中手動測試相關功能。由於缺乏自動化測試，重大變更後建議對所有核心模組進行回歸測試。
+3.  **測試**: AI 模組可執行 `node --test tests/ai-worker.test.mjs tests/ai-units.test.mjs`；其餘功能以瀏覽器手動巡檢或 `tests/*.cjs` Playwright 腳本回歸。
 
 ## Configuration
 
-- **AI/雲端配置**: 核心配置位於根目錄的 `ai-config.js` 文件中（此文件不應提交到版本控制）。它控制著 AI 模型選擇、API 端點、TTS 服務和雲端同步等功能。
+- **非 AI 配置**: `ai-config.js`（不應提交版本控制）只保留 TTS、`SYNC.endpoint`、限流與文章抓取等非秘密參數。
+- **自建同步**: `selfhost/` 提供 Node + SQLite／PostgreSQL 的學習資料同步；把 `SYNC.endpoint` 指向它即可，詳見 `selfhost/README.md`。
+- **AI 配置**: 共享預設由管理員在應用內發布到 D1；個人供應商與 Key 存在帳戶／裝置的本機 profile，登入後可選擇同步 Key。
 - **應用內配置**: 用戶特定的偏好設置（如朗讀速度、界面主題等）存儲在瀏覽器的 `localStorage` 中。
 
 ## Architecture

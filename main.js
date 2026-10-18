@@ -1,20 +1,25 @@
 import * as dom from './modules/dom.js';
 import * as state from './modules/state.js';
 import { loadVocabularyBooks, loadAnalyzedArticles } from './modules/storage.js';
-import { initModal, setupNumberSteppers, initTooltip } from './modules/ui.js';
+import { initModal, setupNumberSteppers, initTooltip, displayMessage, confirmAction } from './modules/ui.js';
 import { unlockAudioContext } from './modules/audio.js';
 import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView } from './features/vocabulary/vocabulary.js';
 import { initLearning, populateLearningBookSelector, populateWordSelect } from './features/learning/learning.js';
 import { initDictation, populateDictationBookSelector, togglePauseDictation } from './features/dictation/dictation.js';
-import { initQuiz, populateQuizBookSelector } from './features/quiz/quiz.js';
+import { initQuiz, populateQuizBookSelector, stopQuiz } from './features/quiz/quiz.js';
 import { initArticle, showCurrentArticleIfAvailable } from './features/article/article.js';
 import { initOCR } from './features/ocr/ocr.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
-import { initSync } from './features/sync/sync.js';
+import { initSync, openLoginModal } from './features/sync/sync.js';
 import { initAiAssistant } from './features/assistant/assistant.js';
 import { initPhonetics } from './features/phonetics/phonetics.js';
 import { initI18n, t } from './modules/i18n.js';
 import { initTheme } from './modules/theme.js';
+import { migrateLegacyAISettings } from './modules/ai-profile-storage.js';
+import { initAICatalog } from './modules/ai-catalog.js';
+import { initAICredentialSync } from './modules/ai-credential-sync.js';
+import { initAiAdmin } from './features/ai-admin/ai-admin.js';
+import { initAdminUsers } from './features/admin-users/admin-users.js';
 
 const MODULE_ALIAS_TO_BUTTON_ID = {
     v: 'vocabulary-btn',
@@ -46,18 +51,49 @@ const BUTTON_ID_TO_PRIMARY_ALIAS = {
     'ocr-btn': 'ocr'
 };
 
+let leaveQuizPromptOpen = false;
+
 function setupNavigation() {
     dom.navBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             if (state.quizInProgress && btn.id !== 'quiz-btn') {
-                if (!confirm(t('quiz.leaveConfirmation'))) { return; }
-                // 需要一个 stopQuiz 的引用，暂时从 quiz 模块导出
-                // import { stopQuiz } from './features/quiz/quiz.js';
-                // stopQuiz();
+                // 原生 confirm 在部分環境（內嵌瀏覽器、被封鎖的對話框）不會顯示，
+                // 使用者會看到「按了沒反應」，因此改用站內確認框。
+                if (leaveQuizPromptOpen) return; // 避免連點時疊出多個確認框
+                leaveQuizPromptOpen = true;
+                let leave = false;
+                try {
+                    leave = await confirmAction({
+                        title: t('quiz.leaveTitle'),
+                        message: t('quiz.leaveConfirmation'),
+                        confirmLabel: t('quiz.leaveConfirm'),
+                        cancelLabel: t('quiz.leaveStay'),
+                        danger: true
+                    });
+                } catch (error) {
+                    console.error('[bdc] 離開測驗確認框失敗，預設留在測驗:', error);
+                    leave = false;
+                } finally {
+                    leaveQuizPromptOpen = false;
+                }
+                if (!leave) { return; }
+
+                // 使用者確認離開 → 真正結束測驗。
+                // 少了這一步，state.quizInProgress 會一直是 true，
+                // 之後每次切換模組都會再跳一次確認，等於被困住。
+                try {
+                    stopQuiz({ silent: true });
+                } catch (error) {
+                    console.error('[bdc] 結束測驗失敗，仍繼續導覽:', error);
+                    state.setQuizInProgress(false);
+                }
             }
 
             syncNavActive(btn);
             closeNavMore();
+
+            // 讓 CSS 知道目前在哪個模組（訊息提示需要對不同頁面的底部控制列避讓）
+            markActiveModule(btn.id);
 
             // 隱藏所有模組
             hideAllModules();
@@ -98,7 +134,27 @@ function setupNavigation() {
     });
 
     setupNavMore();
-    syncNavActive(document.querySelector('.nav-btn.active'));
+    const initiallyActive = document.querySelector('.nav-btn.active');
+    syncNavActive(initiallyActive);
+    if (initiallyActive) markActiveModule(initiallyActive.id);
+}
+
+// 目前所在模組（供 CSS 針對不同頁面的底部控制列調整懸浮元件位置）
+// 這裡用可讀的模組名而不是 hash 別名（'a' / 'v' / 'qa'…），CSS 選擇器才看得懂。
+const BUTTON_ID_TO_MODULE_NAME = {
+    'vocabulary-btn': 'vocabulary',
+    'learning-btn': 'learning',
+    'dictation-btn': 'dictation',
+    'quiz-btn': 'quiz',
+    'article-btn': 'article',
+    'qa-btn': 'qa',
+    'ocr-btn': 'ocr'
+};
+
+function markActiveModule(buttonId) {
+    const name = BUTTON_ID_TO_MODULE_NAME[buttonId];
+    if (!name) return;
+    document.body.dataset.module = name;
 }
 
 // 手機底部導覽：目前模組若收在「更多」抽屜內，抽屜按鈕同步高亮
@@ -164,6 +220,33 @@ function hideAllModules() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // 每個初始化步驟獨立容錯：單一模組（或它相依的網路資源）失敗時，
+    // 其餘模組、主導覽與 URL 路由仍要能運作。
+    // 先前這裡是線性 await，任何一步拋錯都會讓後面全部不執行，
+    // 使用者只看到「畫面半殘但沒有任何錯誤訊息」。
+    const failedSteps = [];
+    async function step(name, fn) {
+        try {
+            return await fn();
+        } catch (error) {
+            failedSteps.push({ name, error });
+            console.error(`[bdc] 初始化步驟「${name}」失敗:`, error);
+            return undefined;
+        }
+    }
+
+    // 0. One-time migration of legacy AI provider settings into the device profile.
+    //    The old AI secrets are only removed after the new profile is written and
+    //    read back successfully.
+    try {
+        const migration = migrateLegacyAISettings();
+        if (migration && migration.migrated) {
+            console.info('[bdc] legacy AI settings migrated:', migration.migratedIds?.length || 0);
+        }
+    } catch (error) {
+        console.warn('[bdc] AI settings migration failed:', error && error.code ? error.code : error);
+    }
+
     initI18n();
     // 0. 套用使用者選定的配色主題（index.html 的 head 已先套一次，避免首次繪製閃色）
     initTheme();
@@ -186,37 +269,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.addEventListener('touchend', unlockAudioContext, { once: true });
 
     // 4. 初始化所有功能模块
-    initVocabulary();
-    initLearning();
-    initPhonetics();
-    initDictation();
-    initQuiz();
-    initArticle();
-    initOCR();
-    await initQA();
-    initSync();
+    await step('vocabulary', () => initVocabulary());
+    await step('learning', () => initLearning());
+    await step('phonetics', () => initPhonetics());
+    await step('dictation', () => initDictation());
+    await step('quiz', () => initQuiz());
+    await step('article', () => initArticle());
+    await step('ocr', () => initOCR());
+    await step('qa', () => initQA());
+    await step('sync', () => initSync());
     // 僅注入 UI，不修改全局 DOM/CSS
-    try { initAiAssistant(); } catch (_) {}
+    await step('assistant', () => initAiAssistant());
+    // AI catalog / credential sync are independent of the learning-data sync:
+    // a failure in either must not block the rest of the app.
+    await step('aiCatalog', () => initAICatalog());
+    await step('aiCredentialSync', () => initAICredentialSync());
+    await step('aiAdmin', () => initAiAdmin());
+    await step('adminUsers', () => initAdminUsers());
 
     // 5. 填充初始视图
     // 确保为默认显示的模块（如此处为学习模块）填充内容
-    populateLearningBookSelector();
-    populateWordSelect();
+    await step('populateLearning', () => { populateLearningBookSelector(); populateWordSelect(); });
 
     // 6. 主導覽已於 2.1 接管
 
-    // 7. 手動觸發一次change事件來更新初始狀態
-    if(dom.listenOnlyMode) {
-        dom.listenOnlyMode.dispatchEvent(new Event('change'));
-    }
+    document.addEventListener('bdc:request-login', () => {
+        try { openLoginModal(); } catch (_) {}
+    });
 
-    handleModuleRouting({ ensureHash: true });
-    window.addEventListener('hashchange', () => handleModuleRouting());
+    // 7. 手動觸發一次change事件來更新初始狀態
+    await step('listenOnlyMode', () => {
+        if (dom.listenOnlyMode) {
+            dom.listenOnlyMode.dispatchEvent(new Event('change'));
+        }
+    });
+
+    await step('routing', () => handleModuleRouting({ ensureHash: true }));
+    window.addEventListener('hashchange', () => {
+        try { handleModuleRouting(); } catch (error) { console.error('[bdc] 路由切換失敗:', error); }
+    });
 
     // 8. 處理透過 URL 傳入的單詞本導入需求
-    await handleVocabularyQueryParams();
+    await step('vocabularyQueryParams', () => handleVocabularyQueryParams());
 
-    console.log("应用程序已完全初始化。");
+    // 9. 讓使用者知道有模組沒起來，而不是面對一個沒有反應的畫面
+    if (failedSteps.length) {
+        try {
+            const names = failedSteps.map(s => s.name).join(', ');
+            displayMessage(t('app.partialInitWarning', { modules: names }), 'warning', 8000);
+        } catch (_) { /* 提示失敗也不能再拋 */ }
+    }
+
+    console.log(failedSteps.length
+        ? `应用程序已初始化，但有 ${failedSteps.length} 个模块失败：${failedSteps.map(s => s.name).join(', ')}`
+        : '应用程序已完全初始化。');
 
     // 監聽頁面可見性變化，以處理背景播放問題
     document.addEventListener('visibilitychange', () => {

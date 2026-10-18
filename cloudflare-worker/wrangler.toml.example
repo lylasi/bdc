@@ -2,10 +2,24 @@ name = "bdc-sync-api"
 main = "src/worker.js"
 compatibility_date = "2026-01-01"
 
-# CORS 允許的前端網域。先用 "*" 可跑；建議改成你的網站網域，例如：
-#   ALLOW_ORIGIN = "https://your-site.pages.dev"
+# ── 非秘密設定 ────────────────────────────────────────────────
+# ALLOWED_ORIGINS：用逗號分隔的完整前端 origin 清單（不要加路徑）。
+#   未設定時可暫用舊的 ALLOW_ORIGIN（含 "*"），但正式環境請列出網域。
+# AI_CREDENTIAL_KEY_VERSION：目前用來「加密新資料」的主密鑰版本。
+#   舊版本密鑰要保留在 Worker Secret 中，供輪換期間解密舊資料。
 [vars]
-ALLOW_ORIGIN = "*"
+ALLOWED_ORIGINS = "https://your-site.example"
+# ALLOW_ORIGIN = "*"            # 舊欄位；僅在 ALLOWED_ORIGINS 未設定時使用
+AI_CREDENTIAL_KEY_VERSION = "1"
+
+# ── 秘密（不要寫在 wrangler.toml）────────────────────────────
+# 以指令設定，每個環境使用不同的隨機值：
+#   openssl rand -base64 32 | npx wrangler secret put AI_CREDENTIAL_KEY_V1
+#   openssl rand -base64 32 | npx wrangler secret put AI_CATALOG_DIGEST_KEY
+# 主密鑰：AES-256-GCM 金鑰（32 bytes，Base64 或 64 字元 hex）。
+# 摘要密鑰：HMAC 用的獨立秘密，與主密鑰分開保管。
+# 輪換時新增 AI_CREDENTIAL_KEY_V2，把 AI_CREDENTIAL_KEY_VERSION 改成 2，
+# 但先保留 V1 以便解密既有資料。
 
 # 執行 `wrangler d1 create bdc-sync` 後，把回傳的 database_id 填到下方。
 # 注意：請複製本檔為 wrangler.toml 再填入，wrangler.toml 已被 .gitignore 忽略，不會上傳。

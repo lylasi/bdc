@@ -1,9 +1,10 @@
 import * as ui from '../../modules/ui.js';
+import { confirmAction, escapeHtml, escapeAttr } from '../../modules/ui.js';
 import * as dom from '../../modules/dom.js';
 import * as state from '../../modules/state.js';
 import * as api from '../../modules/api.js';
 import * as storage from '../../modules/storage.js';
-import { OCR_CONFIG } from '../../ai-config.js';
+import { getTaskModelSelection, saveTaskModelSelection } from '../../modules/ai-models.js';
 import { getLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { buildPrompt } from '../../modules/prompts/index.js';
 
@@ -22,10 +23,10 @@ export function openDictationGradingHistory() {
   if (!list.length) { box.innerHTML = `<p>${t('dictationGrader.emptyHistory')}</p>`; show(box); return; }
   const items = list.map(it => {
     const timeText = formatDateTime(it.createdAt);
-    return `<div class="dg-h-item" data-id="${it.id}">
-      <img src="${it.thumbnail || ''}" alt="thumb">
+    return `<div class="dg-h-item" data-id="${escapeAttr(it.id)}">
+      <img src="${escapeAttr(it.thumbnail || '')}" alt="thumb">
       <div class="meta">
-        <div class="time">${timeText}</div>
+        <div class="time">${escapeHtml(timeText)}</div>
         <div class="sub">${t('dictationGrader.meta', { model: it.model || '-', images: it.imagesCount || 0, words: it.wordsCount || 0 })}</div>
       </div>
       <div class="ops">
@@ -35,17 +36,28 @@ export function openDictationGradingHistory() {
     </div>`;
   }).join('');
   box.innerHTML = `<div class="dg-h-toolbar"><button id="dg-h-clear" class="btn-secondary">${t('dictationGrader.clearAll')}</button></div><div class="dg-h-list">${items}</div>`;
-  box.addEventListener('click', (e) => {
+  box.addEventListener('click', async (e) => {
     const btn = e.target.closest('button'); if (!btn) return;
+    // 工具列的「清空全部」不在 .dg-h-item 裡面，必須先處理，
+    // 否則會被下面的 item 判斷直接 return 掉（按了完全沒反應）。
+    if (btn.id === 'dg-h-clear') {
+      const confirmed = await confirmAction({
+        title: t('dictationGrader.clearAll'),
+        message: t('dictationGrader.confirmClear'),
+        confirmLabel: t('dictationGrader.clearAll'),
+        cancelLabel: t('common.cancel'),
+        danger: true
+      });
+      if (confirmed) { storage.clearGradingHistory(); openDictationGradingHistory(); }
+      return;
+    }
     const item = e.target.closest('.dg-h-item'); if (!item) return;
     const id = item.getAttribute('data-id');
     const recList = storage.getGradingHistory();
     const rec = recList.find(x => x.id === id);
     if (!rec) return;
     const act = btn.getAttribute('data-act');
-    if (btn.id === 'dg-h-clear') {
-      if (confirm(t('dictationGrader.confirmClear'))) { storage.clearGradingHistory(); openDictationGradingHistory(); }
-    } else if (act === 'view') {
+    if (act === 'view') {
       const container = document.createElement('div');
       container.className = 'dictation-grader-wrap';
       const tools = document.createElement('div');
@@ -75,7 +87,14 @@ export function openDictationGradingHistory() {
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
       });
     } else if (act === 'del') {
-      if (confirm(t('dictationGrader.confirmDelete'))) { storage.deleteGradingRecord(id); openDictationGradingHistory(); }
+      const confirmed = await confirmAction({
+        title: t('dictationGrader.delete'),
+        message: t('dictationGrader.confirmDelete'),
+        confirmLabel: t('dictationGrader.delete'),
+        cancelLabel: t('common.cancel'),
+        danger: true
+      });
+      if (confirmed) { storage.deleteGradingRecord(id); openDictationGradingHistory(); }
     }
   });
   show(box);
@@ -120,7 +139,7 @@ function buildModalContent(expected) {
   wrap.innerHTML = `
     <div class="dg-form">
       <div class="dg-row">
-        <label>上傳相片：</label>
+        <label>${t('dictationGrader.uploadPhotoLabel')}</label>
         <input id="dg-file" type="file" accept="image/*" multiple>
         <div class="dg-inline" style="gap:6px;">
           <button id="dg-take-photo" class="btn-secondary">${t('dictationGrader.takePhoto')}</button>
@@ -128,22 +147,22 @@ function buildModalContent(expected) {
         </div>
       </div>
       <div class="dg-row">
-        <label>選項：</label>
+        <label>${t('dictationGrader.optionsLabel')}</label>
         <label class="dg-inline"><input type="checkbox" id="dg-include-meaning" checked> ${t('dictationGrader.includeMeaning')}</label>
         <label class="dg-inline"><input type="checkbox" id="dg-strict" > ${t('dictationGrader.strictCase')}</label>
       </div>
       <!-- 批改方式（已固定使用 AI，保留結構方便日後需要時再開） -->
       <div class="dg-row" style="display:none;">
-        <label>批改方式：</label>
+        <label>${t('dictationGrader.gradeMethodLabel')}</label>
         <label class="dg-inline"><input type="radio" name="dg-mode" id="dg-mode-local"> ${t('dictationGrader.localMode')}</label>
         <label class="dg-inline"><input type="radio" name="dg-mode" id="dg-mode-ai" checked> ${t('dictationGrader.aiMode')}</label>
       </div>
       <div class="dg-row">
-        <label>OCR 模型：</label>
+        <label>${t('dictationGrader.ocrModelLabel')}</label>
         <select id="dg-model"></select>
       </div>
       <div class="dg-row dg-ai-prompt" style="display:none; align-items:flex-start;">
-        <label>AI 提示詞：</label>
+        <label>${t('dictationGrader.promptLabel')}</label>
         <textarea id="dg-ai-prompt" rows="6" style="flex:1; width:100%;" placeholder="${t('dictationGrader.promptPlaceholder')}"></textarea>
       </div>
       <div class="dg-actions">
@@ -244,7 +263,7 @@ function buildModalContent(expected) {
   });
 
   saveBtn.addEventListener('click', () => {
-    if (!lastMarkdown) { alert(t('dictationGrader.noResult')); return; }
+    if (!lastMarkdown) { ui.displayMessage(t('dictationGrader.noResult'), 'warning'); return; }
     const thumb = previews.querySelector('img')?.src || '';
     const rec = storage.saveGradingRecord({
       type: 'dictation-ai-grading',
@@ -284,10 +303,10 @@ function buildModalContent(expected) {
     if (!list.length) { box.innerHTML = `<p>${t('dictationGrader.emptyHistory')}</p>`; show(box); return; }
     const items = list.map(it => {
       const timeText = formatDateTime(it.createdAt);
-      return `<div class="dg-h-item" data-id="${it.id}">
-        <img src="${it.thumbnail || ''}" alt="thumb">
+      return `<div class="dg-h-item" data-id="${escapeAttr(it.id)}">
+        <img src="${escapeAttr(it.thumbnail || '')}" alt="thumb">
         <div class="meta">
-          <div class="time">${timeText}</div>
+          <div class="time">${escapeHtml(timeText)}</div>
           <div class="sub">${t('dictationGrader.meta', { model: it.model || '-', images: it.imagesCount || 0, words: it.wordsCount || 0 })}</div>
         </div>
         <div class="ops">
@@ -297,22 +316,27 @@ function buildModalContent(expected) {
       </div>`;
     }).join('');
     box.innerHTML = `<div class="dg-h-toolbar"><button id="dg-h-clear" class="btn-secondary">${t('dictationGrader.clearAll')}</button></div><div class="dg-h-list">${items}</div>`;
-    box.addEventListener('click', (e) => {
+    box.addEventListener('click', async (e) => {
       const btn = e.target.closest('button'); if (!btn) return;
+      // 同外部歷史入口：工具列的「清空全部」不在 .dg-h-item 內，必須先處理
+      if (btn.id === 'dg-h-clear') {
+        const okClear = await confirmAction({ title: t('dictationGrader.clearAll'), message: t('dictationGrader.confirmClear'), confirmLabel: t('dictationGrader.clearAll'), cancelLabel: t('common.cancel'), danger: true });
+        if (okClear) { storage.clearGradingHistory(); openHistory(); }
+        return;
+      }
       const item = e.target.closest('.dg-h-item'); if (!item) return;
       const id = item.getAttribute('data-id');
       const rec = list.find(x => x.id === id);
       if (!rec) return;
       const act = btn.getAttribute('data-act');
-      if (btn.id === 'dg-h-clear') {
-        if (confirm(t('dictationGrader.confirmClear'))) { storage.clearGradingHistory(); openHistory(); }
-      } else if (act === 'view') {
+      if (act === 'view') {
         report.innerHTML = '';
         renderMarkdownReport(report, rec.markdown || '');
         status.textContent = t('dictationGrader.viewRecord', { time: formatDateTime(rec.createdAt) });
         ui.openModal(); // 確保可見
       } else if (act === 'del') {
-        if (confirm(t('dictationGrader.confirmDelete'))) { storage.deleteGradingRecord(id); openHistory(); }
+        const okDel = await confirmAction({ title: t('dictationGrader.delete'), message: t('dictationGrader.confirmDelete'), confirmLabel: t('dictationGrader.delete'), cancelLabel: t('common.cancel'), danger: true });
+        if (okDel) { storage.deleteGradingRecord(id); openHistory(); }
       }
     });
     show(box);
@@ -337,10 +361,13 @@ function buildModalContent(expected) {
 
 function renderReport(container, data) {
   const rows = [];
-  const pad = (s) => (s == null ? '' : String(s));
-  const esc = (s) => pad(s);
+  // 表格內容來自 OCR／AI 批改結果（外部可控字串），必須轉義後才進 innerHTML。
+  // 這裡原本只是一層字串轉換（pad），沒有做任何轉義。
+  const esc = (s) => escapeHtml(s == null ? '' : s);
+  // 這一段會被塞進 t() 的 {suggestion} 參數，t() 不轉義，所以要先把值轉義好
+  const escParam = (s) => escapeHtml(s == null ? '' : s);
   for (const r of data.rows) {
-    rows.push(`<tr class="${r.ok ? 'ok' : 'err'}"><td>${esc(r.expected)}</td><td>${esc(r.recognized)}</td><td>${esc(r.meaning || '')}</td><td>${r.ok ? t('dictationGrader.correct') : t('dictationGrader.wrongSuggestion', { suggestion: esc(r.suggest) })}</td></tr>`);
+    rows.push(`<tr class="${r.ok ? 'ok' : 'err'}"><td>${esc(r.expected)}</td><td>${esc(r.recognized)}</td><td>${esc(r.meaning || '')}</td><td>${r.ok ? t('dictationGrader.correct') : t('dictationGrader.wrongSuggestion', { suggestion: escParam(r.suggest) })}</td></tr>`);
   }
   container.innerHTML = `
     <table class="dg-table">
@@ -477,18 +504,20 @@ function markdownFirstTableToCsv(md) {
 function populateModelOptions(selectEl) {
   if (!selectEl) return;
   const saved = loadSavedModel();
-  const models = Array.isArray(OCR_CONFIG?.MODELS) && OCR_CONFIG.MODELS.length
-    ? OCR_CONFIG.MODELS
-    : [OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || 'gpt-4o-mini'];
+  const selection = getTaskModelSelection('imageOCR', { currentValue: saved });
   selectEl.innerHTML = '';
-  for (const m of models) {
+  for (const option of selection.options) {
     const opt = document.createElement('option');
-    opt.value = m; opt.textContent = m;
+    opt.value = option.value;
+    opt.textContent = option.label || option.value;
     selectEl.appendChild(opt);
   }
-  selectEl.value = saved || (OCR_CONFIG?.DEFAULT_MODEL || OCR_CONFIG?.MODEL || models[0]);
+  if (selection.value) selectEl.value = selection.value;
+  selectEl.disabled = !!selection.disabled;
+  if (selection.disabled) selectEl.title = t('dictationGrader.configureModel');
   selectEl.addEventListener('change', () => {
     try { localStorage.setItem('ocr.model', selectEl.value); } catch(_) {}
+    try { saveTaskModelSelection('imageOCR', selectEl.value || ''); } catch(_) {}
   });
 }
 

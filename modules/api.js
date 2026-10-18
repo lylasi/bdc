@@ -1,4 +1,4 @@
-import { API_URL, API_KEY, AI_LIMITS, OCR_CONFIG, ARTICLE_IMPORT } from '../ai-config.js';
+import { AI_LIMITS, OCR_CONFIG, ARTICLE_IMPORT } from '../ai-config.js';
 import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 import { getLocale, t } from './i18n.js';
 import { buildMessages, buildPrompt, getPromptVersion } from './prompts/index.js';
@@ -10,9 +10,14 @@ import {
     normalizeModelSpec,
     normalizeTaskName,
     resolveAIRequestConfig,
+    resolveAIRequestConfigAsync,
     resolveAITaskSpec,
     firstNonEmptyString
 } from './ai-models.js';
+import { requireAdapter } from './ai-protocols/index.js';
+import { createSseParser } from './ai-protocols/common.js';
+import { isManagedUsable } from './ai-catalog.js';
+import { AUTH_EVENT } from './sync-cloudflare.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
 import { IPA_NOTATION_RULE, phonemeSymbols } from './phonetics-data.js';
@@ -24,6 +29,7 @@ export {
     normalizeModelSpec,
     normalizeTaskName,
     resolveAIRequestConfig,
+    resolveAIRequestConfigAsync,
     resolveAITaskSpec
 };
 
@@ -283,101 +289,200 @@ function buildModelCandidates(primary, fallback) {
     return out;
 }
 
-export function resolveConfigConnection(config = {}, { settings, secrets } = {}) {
+
+/**
+ * Legacy config objects (OCR_CONFIG / QA_CHECK / ARTICLE_IMPORT) may still name
+ * an explicit provider, but they can no longer carry endpoint or key overrides.
+ * All connection data comes from the account profile / managed catalog.
+ */
+export function resolveConfigConnection(config = {}) {
     const cfg = isPlainObject(config) ? config : {};
-    const explicitProvider = firstNonEmptyString(cfg.PROFILE, cfg.provider, cfg.profile);
-    const hasExplicitConnection = !!firstNonEmptyString(cfg.API_URL, cfg.API_KEY, explicitProvider);
-    if (!hasExplicitConnection) {
-        return {
-            apiUrl: undefined,
-            apiKey: undefined,
-            provider: undefined,
-            profile: undefined
-        };
-    }
-    const resolved = resolveAIRequestConfig({
-        task: 'default',
-        model: '',
-        apiUrl: cfg.API_URL,
-        apiKey: cfg.API_KEY,
-        provider: explicitProvider,
-        profile: explicitProvider,
-        settings,
-        secrets
-    });
+    const explicitProvider = firstNonEmptyString(cfg.PROVIDER, cfg.provider, cfg.profile);
     return {
-        apiUrl: firstNonEmptyString(cfg.API_URL, resolved.apiUrl),
-        apiKey: firstNonEmptyString(cfg.API_KEY, resolved.apiKey),
-        provider: resolved.provider,
-        profile: resolved.profile
+        apiUrl: undefined,
+        apiKey: undefined,
+        provider: explicitProvider || undefined,
+        profile: explicitProvider || undefined
     };
 }
 
-// Small, reusable AI request helper with timeout and retry.
+const activeControllers = new Set();
+
+function registerController(controller, source = '') {
+    const entry = { controller, source, aborted: false };
+    activeControllers.add(entry);
+    return () => activeControllers.delete(entry);
+}
+
+function abortAIRequests({ managedOnly = false } = {}) {
+    for (const entry of Array.from(activeControllers)) {
+        if (managedOnly && entry.source !== 'managed') continue;
+        try { entry.controller.abort(); } catch (_) {}
+        entry.aborted = true;
+        activeControllers.delete(entry);
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener(AUTH_EVENT, (event) => {
+        const detail = event && event.detail ? event.detail : {};
+        if (detail.event === 'SIGNED_OUT' || detail.event === 'ACCOUNT_CHANGED') abortAIRequests();
+        if (detail.event === 'SESSION_INVALID') abortAIRequests({ managedOnly: true });
+    });
+    window.addEventListener('bdc:ai-catalog-change', () => {
+        try {
+            if (!isManagedUsable()) abortAIRequests({ managedOnly: true });
+        } catch (_) {}
+    });
+}
+
+function localizeAIError(error) {
+    if (!error) return error;
+    const map = {
+        ai_key_missing: 'errors.aiKeyMissing',
+        ai_key_binding_mismatch: 'errors.aiKeyBindingMismatch',
+        managed_login_required: 'errors.aiLoginRequired',
+        managed_session_expired: 'errors.aiSessionExpired',
+        managed_credential_missing: 'errors.aiCredentialMissing',
+        managed_provider_unavailable: 'errors.aiProviderUnavailable',
+        provider_missing: 'errors.aiProviderUnavailable',
+        provider_disabled: 'errors.aiProviderUnavailable',
+        provider_endpoint_missing: 'errors.aiProviderEndpointMissing',
+        model_not_selected: 'errors.aiModelNotSelected',
+        model_not_allowed: 'errors.aiModelNotAllowed',
+        model_not_capable: 'errors.aiModelNotCapable',
+        model_provider_missing: 'errors.aiModelProviderMissing',
+        model_refusal: 'errors.aiRefusal',
+        task_override_rejected: 'errors.aiOverrideRejected',
+        unsupported_format: 'errors.aiUnsupportedFormat',
+        unsupported_auth_mode: 'errors.aiUnsupportedAuthMode',
+        network_or_cors: 'errors.aiNetworkBlocked',
+        request_timeout: 'errors.aiTimeout',
+        provider_auth_failed: 'errors.aiProviderAuthFailed',
+        provider_forbidden: 'errors.aiProviderForbidden',
+        provider_rate_limited: 'errors.aiProviderRateLimited',
+        provider_server_error: 'errors.aiProviderServerError',
+        image_not_inline: 'errors.aiImageInlineOnly',
+        catalog_version_conflict: 'errors.aiCatalogChanged',
+        passcode_upgrade_required: 'errors.aiPasscodeUpgrade'
+    };
+    const key = map[error.code];
+    if (key) {
+        const translated = t(key);
+        if (translated && translated !== key) error.message = translated;
+    }
+    return error;
+}
+
+async function readErrorPayload(response) {
+    try { return await response.json(); } catch (_) { return null; }
+}
+
+/**
+ * Unified AI request entry point. Resolves the account profile / managed
+ * catalog, asks the protocol adapter to build the request, and normalises the
+ * response to the shape expected by existing callers.
+ */
 export async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat, apiUrl, apiKey, taskType = 'default', provider, profile }) {
-    // AbortController per request; chain with external signal if provided
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
-    const composed = signal ? new AbortController() : null;
-    if (signal && composed) {
-        const onAbort = () => composed.abort(signal.reason);
-        signal.addEventListener('abort', onAbort, { once: true });
-        // When composed aborts, also abort ac
-        composed.signal.addEventListener('abort', () => ac.abort(composed.signal.reason), { once: true });
+    const onAbort = () => ac.abort(signal && signal.reason);
+    if (signal) {
+        if (signal.aborted) ac.abort(signal.reason);
+        else signal.addEventListener('abort', onAbort, { once: true });
     }
 
-    // reasoning 模型會把「思考」算進 completion 額度，導致 JSON 被砍斷（finish_reason==='length'）。
-    // 用可變的 effectiveMaxTokens，命中截斷時加倍重試一次。
+    // reasoning models count their thinking against max_tokens; retry once with
+    // a doubled budget when the provider reports a length stop.
     let effectiveMaxTokens = (typeof maxTokens === 'number') ? maxTokens : undefined;
+    let unregister = () => {};
 
     const fetchOnce = async () => {
-        const s = loadGlobalSettings();
-        const sec = loadGlobalSecrets();
-        const resolved = resolveAIRequestConfig({
-            task: taskType,
-            model,
-            apiUrl,
-            apiKey,
-            provider,
-            profile,
-            settings: s,
-            secrets: sec
-        });
-        const finalModel = resolved.model;
-        const body = {
-            model: finalModel,
-            messages,
-            temperature
-        };
-        if (typeof effectiveMaxTokens === 'number') body.max_tokens = effectiveMaxTokens;
-        if (responseFormat) {
-            body.response_format = typeof responseFormat === 'string' ? { type: responseFormat } : responseFormat;
-        }
-        const { maxConcurrency, minIntervalMs } = getLimitConfig(resolved.task);
-        const queueKey = queueKeyForRequest({ endpoint: resolved.apiUrl, profile: resolved.profile, model: finalModel, taskType: resolved.task });
-        return await enqueueAIRequest(queueKey, async () => {
-            const resp = await fetch(resolved.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${resolved.apiKey}`
-                },
-                body: JSON.stringify(body),
-                signal: ac.signal
+        let resolved;
+        try {
+            resolved = await resolveAIRequestConfigAsync({
+                task: taskType,
+                model,
+                apiUrl,
+                apiKey,
+                provider,
+                profile
             });
+        } catch (error) {
+            throw localizeAIError(error);
+        }
+        unregister();
+        unregister = registerController(ac, resolved.source);
+        const adapter = requireAdapter(resolved.format);
+        const request = adapter.buildRequest({
+            provider: resolved,
+            apiKey: resolved.apiKey,
+            model: resolved.model,
+            messages,
+            temperature,
+            maxTokens: effectiveMaxTokens,
+            responseFormat,
+            stream: false
+        });
+        const { maxConcurrency, minIntervalMs } = getLimitConfig(resolved.task);
+        const queueKey = queueKeyForRequest({
+            endpoint: resolved.apiUrl,
+            profile: resolved.provider,
+            model: resolved.model,
+            taskType: resolved.task
+        });
+        return await enqueueAIRequest(queueKey, async () => {
+            let resp;
+            try {
+                resp = await fetch(request.url, {
+                    method: 'POST',
+                    headers: request.headers,
+                    body: JSON.stringify(request.body),
+                    signal: ac.signal,
+                    redirect: 'error',
+                    cache: 'no-store'
+                });
+            } catch (error) {
+                throw localizeAIError(error);
+            }
             if (!resp.ok) {
-                let errPayload = null;
-                try { errPayload = await resp.json(); } catch (_) { /* ignore */ }
-                const err = new Error(`AI request failed ${resp.status}`);
+                const payload = await readErrorPayload(resp);
+                const detail = payload?.error?.message || (typeof payload?.error === 'string' ? payload.error : '') || payload?.message || '';
+                const err = new Error(detail ? `HTTP ${resp.status}: ${String(detail).slice(0, 200)}` : `HTTP ${resp.status}`);
                 err.status = resp.status;
-                err.payload = errPayload;
+                err.payload = payload;
+                err.code = resp.status === 401 ? 'provider_auth_failed'
+                    : resp.status === 403 ? 'provider_forbidden'
+                        : resp.status === 429 ? 'provider_rate_limited'
+                            : resp.status >= 500 ? 'provider_server_error'
+                                : 'provider_request_failed';
                 try {
                     const ra = resp.headers.get && resp.headers.get('retry-after');
                     if (ra) err.retryAfter = parseFloat(ra);
-                } catch(_) {}
-                throw err;
+                } catch (_) {}
+                throw localizeAIError(err);
             }
-            return resp.json();
+            const json = await resp.json();
+            const parsed = adapter.parseResponse(json);
+            if (parsed.refusal && !parsed.text) {
+                const err = new Error('model refusal');
+                err.code = 'model_refusal';
+                err.finishReason = parsed.finishReason;
+                throw localizeAIError(err);
+            }
+            return {
+                ...parsed,
+                text: parsed.text || '',
+                choices: [{
+                    message: { role: 'assistant', content: parsed.text || '' },
+                    finish_reason: parsed.finishReason || ''
+                }],
+                usage: parsed.usage || null,
+                providerId: resolved.provider,
+                model: resolved.model,
+                source: resolved.source,
+                raw: json
+            };
         }, { maxConcurrency, minIntervalMs });
     };
 
@@ -385,40 +490,149 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
     let attempt = 0;
     let lastErr = null;
     let truncationRetried = false;
-    while (attempt <= maxRetries) {
-        try {
-            const json = await fetchOnce();
-            // 截斷偵測：若回應因 max_tokens 被砍斷，且還有額度可加，則加倍重試一次而不是把殘骸往下傳。
-            const finishReason = json?.choices?.[0]?.finish_reason;
-            if (finishReason === 'length' && typeof effectiveMaxTokens === 'number' && !truncationRetried) {
-                truncationRetried = true;
-                effectiveMaxTokens = Math.min(effectiveMaxTokens * 2, 4000);
-                continue; // 不佔用 429/5xx 的重試額度
-            }
-            clearTimeout(timer);
-            return json;
-        } catch (err) {
-            lastErr = err;
-            // Abort or client-side timeout: do not retry
-            if (err?.name === 'AbortError') break;
-            const status = err?.status || 0;
-            // Retry on 429/5xx
-            if (status === 429 || (status >= 500 && status < 600)) {
-                let backoff;
-                if (status === 429 && err && typeof err.retryAfter === 'number' && !Number.isNaN(err.retryAfter)) {
-                    backoff = Math.min(err.retryAfter * 1000 + Math.random() * 250, 15000);
-                } else {
-                    backoff = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 250, 5000);
+    try {
+        while (attempt <= maxRetries) {
+            try {
+                const json = await fetchOnce();
+                if (json.finishReason === 'length' && typeof effectiveMaxTokens === 'number' && !truncationRetried) {
+                    truncationRetried = true;
+                    effectiveMaxTokens = Math.min(effectiveMaxTokens * 2, 4000);
+                    continue;
                 }
-                await new Promise(r => setTimeout(r, backoff));
-                attempt += 1;
-                continue;
+                return json;
+            } catch (err) {
+                lastErr = err;
+                if (err?.name === 'AbortError') break;
+                const status = err?.status || 0;
+                if (status === 429 || (status >= 500 && status < 600)) {
+                    let backoff;
+                    if (status === 429 && typeof err.retryAfter === 'number' && !Number.isNaN(err.retryAfter)) {
+                        backoff = Math.min(err.retryAfter * 1000 + Math.random() * 250, 15000);
+                    } else {
+                        backoff = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 250, 5000);
+                    }
+                    await new Promise((r) => setTimeout(r, backoff));
+                    attempt += 1;
+                    continue;
+                }
+                break;
             }
-            break;
         }
+        throw lastErr || new Error('AI request failed');
+    } finally {
+        clearTimeout(timer);
+        if (signal) signal.removeEventListener('abort', onAbort);
+        unregister();
     }
-    clearTimeout(timer);
-    throw lastErr || new Error('AI request failed');
+}
+
+/**
+ * Streaming entry point shared by the assistant. Uses the same adapter layer as
+ * requestAI so a provider that works for one-shot calls also streams correctly.
+ */
+export async function streamAIResponse({
+    model,
+    messages,
+    temperature = 0.2,
+    maxTokens,
+    signal,
+    taskType = 'assistant',
+    timeoutMs = 120000,
+    onDelta
+}) {
+    let resolved;
+    try {
+        resolved = await resolveAIRequestConfigAsync({ task: taskType, model });
+    } catch (error) {
+        throw localizeAIError(error);
+    }
+    const adapter = requireAdapter(resolved.format);
+    const request = adapter.buildRequest({
+        provider: resolved,
+        apiKey: resolved.apiKey,
+        model: resolved.model,
+        messages,
+        temperature,
+        maxTokens,
+        stream: true
+    });
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
+    const onAbort = () => ac.abort(signal && signal.reason);
+    if (signal) {
+        if (signal.aborted) ac.abort(signal.reason);
+        else signal.addEventListener('abort', onAbort, { once: true });
+    }
+    const unregister = registerController(ac, resolved.source);
+    try {
+        const resp = await fetch(request.url, {
+            method: 'POST',
+            headers: request.headers,
+            body: JSON.stringify(request.body),
+            signal: ac.signal,
+            redirect: 'error',
+            cache: 'no-store'
+        });
+        if (!resp.ok) {
+            const payload = await readErrorPayload(resp);
+            const detail = payload?.error?.message || payload?.message || '';
+            const err = new Error(detail ? `HTTP ${resp.status}: ${String(detail).slice(0, 200)}` : `HTTP ${resp.status}`);
+            err.status = resp.status;
+            err.code = resp.status === 401 ? 'provider_auth_failed'
+                : resp.status === 403 ? 'provider_forbidden'
+                    : resp.status === 429 ? 'provider_rate_limited'
+                        : resp.status >= 500 ? 'provider_server_error'
+                            : 'provider_request_failed';
+            throw localizeAIError(err);
+        }
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        const parser = createSseParser();
+        let text = '';
+        let finishReason = '';
+        const handle = (events) => {
+            for (const event of events) {
+                const parsed = adapter.parseStreamEvent(event);
+                if (parsed.errorCode) {
+                    const err = new Error(parsed.errorMessage || 'provider stream error');
+                    err.code = parsed.errorCode;
+                    throw localizeAIError(err);
+                }
+                if (parsed.text) {
+                    text += parsed.text;
+                    try { if (typeof onDelta === 'function') onDelta(parsed.text); } catch (_) {}
+                }
+                if (parsed.finishReason) finishReason = parsed.finishReason;
+                if (parsed.done) return true;
+            }
+            return false;
+        };
+        let finished = false;
+        while (!finished) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            const events = parser.push(decoder.decode(value, { stream: true }));
+            finished = handle(events);
+        }
+        if (!finished) handle(parser.flush());
+        return { text, finishReason, providerId: resolved.provider, model: resolved.model, source: resolved.source };
+    } catch (error) {
+        if (error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
+            const err = new Error('aborted');
+            err.name = 'AbortError';
+            err.code = 'request_aborted';
+            throw err;
+        }
+        throw localizeAIError(error);
+    } finally {
+        clearTimeout(timer);
+        if (signal) signal.removeEventListener('abort', onAbort);
+        unregister();
+    }
+}
+
+export function cancelAllAIRequests() {
+    abortAIRequests();
 }
 
 /**
@@ -857,11 +1071,7 @@ export async function ocrExtractTextFromImage(imageDataUrl, opts = {}) {
     const sec = loadGlobalSecrets();
     const model = hasModelSpec(modelOverride)
       ? modelOverride
-      : firstNonEmptyString(
-            getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], { settings: s }),
-            OCR_CONFIG?.DEFAULT_MODEL,
-            OCR_CONFIG?.MODEL
-        );
+      : getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], { settings: s });
     const modelHasProvider = (typeof model === 'string' && model.includes(':'))
         || (isPlainObject(model) && !!firstNonEmptyString(model.provider, model.profile));
     const connection = modelHasProvider
@@ -925,11 +1135,7 @@ export async function aiGradeHandwriting(imageDataUrls = [], expectedList = [], 
     const sec = loadGlobalSecrets();
     const model = hasModelSpec(modelOverride)
       ? modelOverride
-      : firstNonEmptyString(
-            getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], { settings: s }),
-            OCR_CONFIG?.DEFAULT_MODEL,
-            OCR_CONFIG?.MODEL
-        );
+      : getPreferredTaskSpec(['imageOCR', 'articleAnalysis'], { settings: s });
     const modelHasProvider = (typeof model === 'string' && model.includes(':'))
         || (isPlainObject(model) && !!firstNonEmptyString(model.provider, model.profile));
     const connection = modelHasProvider
@@ -1393,11 +1599,7 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
     const sec = loadGlobalSecrets();
     const model = hasModelSpec(modelOverride)
       ? modelOverride
-      : firstNonEmptyString(
-            getPreferredTaskSpec(['articleCleanup', 'articleAnalysis', 'wordAnalysis'], { settings: s }),
-            ARTICLE_IMPORT?.DEFAULT_MODEL,
-            ARTICLE_IMPORT?.MODEL
-        );
+      : getPreferredTaskSpec(['articleCleanup', 'articleAnalysis', 'wordAnalysis'], { settings: s });
     const modelHasProvider = (typeof model === 'string' && model.includes(':'))
         || (isPlainObject(model) && !!firstNonEmptyString(model.provider, model.profile));
     const connection = modelHasProvider
@@ -1455,10 +1657,7 @@ export async function aiExtractArticleFromHtml(html, opts = {}) {
     const sec = loadGlobalSecrets();
     const model = hasModelSpec(modelOverride)
       ? modelOverride
-      : getPreferredTaskSpec(['articleCleanup', 'articleAnalysis', 'wordAnalysis'], {
-            settings: s,
-            override: ARTICLE_IMPORT?.DEFAULT_MODEL || ARTICLE_IMPORT?.MODEL
-        });
+      : getPreferredTaskSpec(['articleCleanup', 'articleAnalysis', 'wordAnalysis'], { settings: s });
     const connection = resolveConfigConnection(ARTICLE_IMPORT, { settings: s, secrets: sec });
 
     const temperature = (typeof temp === 'number') ? temp : (ARTICLE_IMPORT?.temperature ?? 0.1);

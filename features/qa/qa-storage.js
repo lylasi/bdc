@@ -1,5 +1,5 @@
 // QA專用存儲方法
-import { displayMessage } from '../../modules/ui.js';
+import { displayMessage, confirmAction } from '../../modules/ui.js';
 import { t } from '../../modules/i18n.js';
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 
@@ -56,7 +56,14 @@ async function loadPresetQASet(manifestItem) {
 export function getStoredQASets() {
   try {
     const stored = localStorage.getItem(QA_SETS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    // localStorage 是可被外部改寫的；型別不符（null / 物件 / 數字）時若直接回傳，
+    // 呼叫端的 .map() 會拋 TypeError，並沿著 await 鏈把整個啟動流程帶走。
+    if (Array.isArray(parsed)) return parsed;
+    try { localStorage.setItem(`${QA_SETS_KEY}.corrupt`, stored); } catch (_) {}
+    console.warn(`[qa-storage] localStorage 鍵 "${QA_SETS_KEY}" 內容不是陣列，已備份至 "${QA_SETS_KEY}.corrupt" 並回退為空陣列`);
+    return [];
   } catch (error) {
     console.error('載入用戶問答集清單時出錯:', error);
     return [];
@@ -249,7 +256,13 @@ export async function importQASet(file) {
     // 檢查是否已存在相同ID的問答集
     const existing = await loadQASet(qaSet.id);
     if (existing) {
-      const confirmed = confirm(t('qa.confirmOverwriteSet', { name: qaSet.name }));
+      const confirmed = await confirmAction({
+        title: t('qa.importSet'),
+        message: t('qa.confirmOverwriteSet', { name: qaSet.name }),
+        confirmLabel: t('common.confirm'),
+        cancelLabel: t('common.cancel'),
+        danger: true
+      });
       if (!confirmed) {
         return false;
       }

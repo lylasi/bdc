@@ -2,6 +2,7 @@ import * as state from '../../modules/state.js';
 import * as dom from '../../modules/dom.js';
 import * as storage from '../../modules/storage.js';
 import * as ui from '../../modules/ui.js';
+import { escapeHtml, escapeAttr, tHtml } from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
 import { t } from '../../modules/i18n.js';
@@ -296,8 +297,8 @@ function showNoBookOnboarding() {
     dom.modalTitle.textContent = t('vocabulary.beforeStart');
     dom.modalBody.innerHTML = `
         <div class="input-group" style="display:block;">
-            <p>目前還沒有任何單詞本。</p>
-            <p>建議先「導入單詞本」或「新建單詞本」，之後就可以在學習 / 默寫 / 測驗等功能中使用。</p>
+            <p>${t('vocabulary.onboardingEmpty')}</p>
+            <p>${t('vocabulary.onboardingSuggestion')}</p>
             <p style="margin-top:8px;color:var(--ink-500);">${t('vocabulary.cloudAccountHint')}</p>
         </div>
         <div class="modal-actions">
@@ -412,7 +413,7 @@ async function openModalForCompleteMissing() {
     dom.modalTitle.textContent = t('vocabulary.completeMissingTitle');
     dom.modalBody.innerHTML = `
         <div class="input-group" style="display:block;">
-            <p>${t('vocabulary.currentBookLabel')}<strong>${book.name}</strong></p>
+            <p>${t('vocabulary.currentBookLabel')}<strong>${escapeHtml(book.name)}</strong></p>
             <p>${t('vocabulary.missingSummary', { total: book.words.length, missing: missing.length })}</p>
             <small class="form-hint">${t('vocabulary.completeMissingHint')}</small>
         </div>
@@ -467,7 +468,7 @@ async function runCompleteMissing(book, missingList) {
         const after = { phon: entry.phonetic, meaning: entry.meaning };
         if ((after.phon && after.phon !== 'n/a' && !before.phon) || (after.meaning && !before.meaning)) updated += 1; else skipped += 1;
         done += 1;
-        if (progress) progress.innerHTML = `<p>${t('vocabulary.completing', { word: entry.word, done, total })}</p>`;
+        if (progress) progress.innerHTML = `<p>${tHtml('vocabulary.completing', { word: entry.word, done, total })}</p>`;
     };
 
     // limit concurrency
@@ -582,7 +583,7 @@ function openModalForEditBook() {
     dom.modalBody.innerHTML = `
         <div class="input-group">
             <label for="modal-book-name">${t('vocabulary.bookName')}</label>
-            <input type="text" id="modal-book-name" value="${book.name}">
+            <input type="text" id="modal-book-name" value="${escapeAttr(book.name)}">
         </div>
         ${isArticleBook ? `
         <div class="input-group">
@@ -592,7 +593,7 @@ function openModalForEditBook() {
         </div>` : ''}
         <div class="input-group">
             <label for="modal-vocab-content">${t('vocabulary.wordFormat')}</label>
-            <textarea id="modal-vocab-content">${wordsText}</textarea>
+            <textarea id="modal-vocab-content">${escapeHtml(wordsText)}</textarea>
             <small class="form-hint">${t('vocabulary.wordFormatHint')}</small>
             <div id="modal-ai-progress" class="import-progress"></div>
         </div>
@@ -624,8 +625,8 @@ async function openModalForImportBook() {
              return `
                 <div class="import-preset-item-wrapper">
                     <label for="${safeId}" class="import-preset-item">
-                        <input type="checkbox" id="${safeId}" value="${book.path}" data-name="${book.name}" data-id="${book.id || ''}" class="import-checkbox">
-                        <span class="import-preset-name">${book.name}</span>
+                        <input type="checkbox" id="${safeId}" value="${escapeAttr(book.path)}" data-name="${escapeAttr(book.name)}" data-id="${escapeAttr(book.id || '')}" class="import-checkbox">
+                        <span class="import-preset-name">${escapeHtml(book.name)}</span>
                     </label>
                 </div>
             `;
@@ -876,6 +877,15 @@ async function saveBookWithAICompletion(bookId = null) {
         return;
     }
 
+    // 同名詞書在下拉選單裡長得一模一樣，只能靠 id 分辨，切換時很容易誤操作。
+    // 匯入路徑本來就會問「要覆寫嗎」，這裡補上建立／改名時的擋查。
+    const duplicated = state.vocabularyBooks.some(b => b.id !== bookId && String(b.name || '').trim() === name);
+    if (duplicated) {
+        notify(t('vocabulary.duplicateName', { name }), 'warning', 4200);
+        try { bookNameInput.focus(); bookNameInput.select(); } catch (_) {}
+        return;
+    }
+
     const saveBtn = dom.appModal.querySelector('.save-btn');
     saveBtn.disabled = true;
     saveBtn.textContent = t('vocabulary.processing');
@@ -945,7 +955,7 @@ async function processWordsWithAI(book, wordsText) {
         let wordObject = preliminaryWords[i];
 
         if (!wordObject.meaning.trim() || !wordObject.phonetic.trim()) {
-            if(progressContainer) progressContainer.innerHTML = `<p>${t('vocabulary.analyzingProgress', { word: wordObject.word, done: i + 1, total: preliminaryWords.length })}</p>`;
+            if(progressContainer) progressContainer.innerHTML = `<p>${tHtml('vocabulary.analyzingProgress', { word: wordObject.word, done: i + 1, total: preliminaryWords.length })}</p>`;
             try {
                 const mod = await import('../../modules/vocab.js');
                 await mod.ensureWordDetails(wordObject, { allowDeferForPhrase: false });
@@ -1083,31 +1093,31 @@ function openModalForMergeBooks() {
     dom.modalBody.innerHTML = `
         <div class="merge-layout">
             <div class="merge-selection-panel">
-                <h4>選擇要合併的單詞本 (至少2個)</h4>
+                <h4>${t('vocabulary.mergeSelectBooks')}</h4>
                 <div id="merge-book-list" class="import-preset-list">
                     ${state.vocabularyBooks.map(book => `
-                        <div class="import-preset-item-wrapper" data-book-id="${book.id}">
-                            <div class="import-preset-item">${book.name} ${t('vocabulary.wordCountSuffix', { count: book.words.length })}</div>
+                        <div class="import-preset-item-wrapper" data-book-id="${escapeAttr(book.id)}">
+                            <div class="import-preset-item">${escapeHtml(book.name)} ${t('vocabulary.wordCountSuffix', { count: book.words.length })}</div>
                         </div>
                     `).join('')}
                 </div>
             </div>
             <div class="merge-preview-panel">
-                <h4>合併預覽</h4>
+                <h4>${t('vocabulary.mergePreviewTitle')}</h4>
                 <div class="input-group">
                     <label for="modal-merge-book-name">${t('vocabulary.newMergedName')}</label>
                     <input type="text" id="modal-merge-book-name" placeholder="${t('vocabulary.mergedNamePlaceholder')}">
                 </div>
                 <div id="merge-preview-details">
-                    <p><strong>已選單詞本:</strong> <span id="merge-selected-count">0</span></p>
+                    <p><strong>${t('vocabulary.mergeSelectedBooks')}</strong> <span id="merge-selected-count">0</span></p>
                     <ul id="merge-selected-list"></ul>
-                    <p><strong>去重後總詞數:</strong> <span id="merge-total-words">0</span></p>
+                    <p><strong>${t('vocabulary.mergeTotalWords')}</strong> <span id="merge-total-words">0</span></p>
                 </div>
                 <small class="form-hint">${t('vocabulary.dedupeHint')}</small>
                 <div class="input-group" style="margin-top:10px;">
                     <label class="checkbox-inline">
                         <input type="checkbox" id="merge-remove-sources">
-                        <span>合併後刪除已選單詞本</span>
+                        <span>${t('vocabulary.mergeRemoveSources')}</span>
                     </label>
                     <small class="form-hint">${t('vocabulary.keepSourcesHint')}</small>
                 </div>
@@ -1161,7 +1171,7 @@ function updateMergePreview() {
     });
 
     selectedCountSpan.textContent = selectedItems.length;
-    selectedListUl.innerHTML = selectedBooks.map(name => `<li>${name}</li>`).join('');
+    selectedListUl.innerHTML = selectedBooks.map(name => `<li>${escapeHtml(name)}</li>`).join('');
     totalWordsSpan.textContent = mergedWords.size;
 
     confirmBtn.disabled = !(selectedItems.length >= 2 && newBookName);
@@ -1224,6 +1234,7 @@ function mergeSelectedBooks() {
 }
 
 function renderWordList() {
+    stopIncrementalWordRender();
     dom.wordList.innerHTML = '';
     const activeBook = state.vocabularyBooks.find(b => b.id === state.activeBookId);
 
@@ -1244,47 +1255,128 @@ function renderWordList() {
     updateWordFilterCount(wordsToRender.length, activeBook.words.length);
 
     if (wordsToRender.length === 0) {
-        dom.wordList.innerHTML = `<li class="word-item-placeholder">${t('vocabulary.filterEmpty', { keyword: dom.wordFilter?.value || '' })}</li>`;
+        dom.wordList.innerHTML = `<li class="word-item-placeholder">${tHtml('vocabulary.filterEmpty', { keyword: dom.wordFilter?.value || '' })}</li>`;
         return;
     }
 
     const phoneticsEnabled = loadGlobalSettings().phonetics?.enabled === true;
-    wordsToRender.forEach(word => {
-        const li = document.createElement('li');
-        li.className = 'word-item';
-        li.innerHTML = `
-            <div class="word-text">
-                <strong data-word-id="${word.id}">${word.word}</strong>
-                ${word.phonetic ? `<span class="phonetic">/${word.phonetic}/</span>` : ''}
-                ${word.meaning ? `<span class="meaning" data-word-id="${word.id}">${word.meaning}</span>` : ''}
-            </div>
-            <div class="word-actions">
-                <button class="play-btn" title="${t('vocabulary.playWord')}" aria-label="${t('vocabulary.playWord')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-speaker"/></svg></button>
-            </div>
-        `;
 
-        if (phoneticsEnabled) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'word-phonetics-btn';
-            button.title = t('phonetics.practice');
-            button.setAttribute('aria-label', `${t('phonetics.practice')}: ${word.word}`);
-            button.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 10v4M8 6v12M12 3v18M16 6v12M20 10v4"/></svg>';
-            button.addEventListener('click', event => {
-                event.stopPropagation();
-                openPhonetics(word);
-            });
-            li.querySelector('.word-actions').appendChild(button);
-        }
+    // 一次渲染全部詞條在大型詞書上會產生數萬個 DOM 節點
+    // （實測 12000 詞 → 40878 節點、清單高 263994px、渲染 3 秒），
+    // 捲動與切換都會卡。改成先渲染一批，捲到底再繼續補。
+    startIncrementalWordRender(wordsToRender, phoneticsEnabled);
+}
 
-        const playBtn = li.querySelector('.play-btn');
-        playBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            playWordAndMeaning(word);
+const WORD_RENDER_CHUNK = 150;
+
+/** 目前的增量渲染狀態（換書／換關鍵字時整組重來） */
+let wordRenderState = { words: [], rendered: 0, phoneticsEnabled: false, observer: null, sentinel: null };
+
+function startIncrementalWordRender(words, phoneticsEnabled) {
+    stopIncrementalWordRender();
+    dom.wordList.innerHTML = '';
+    wordRenderState = { words, rendered: 0, phoneticsEnabled, observer: null, sentinel: null };
+
+    if (!words.length) return;
+
+    // 哨兵排在清單最後，進入視窗就再補一批（同時顯示「已載入 n / 共 m」）
+    // 必須先掛進 DOM：appendWordChunk() 是 insertBefore(fragment, sentinel)
+    const sentinel = document.createElement('li');
+    sentinel.className = 'word-item-sentinel';
+    wordRenderState.sentinel = sentinel;
+    dom.wordList.appendChild(sentinel);
+
+    appendWordChunk();
+
+    if (typeof IntersectionObserver === 'function') {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries.some(e => e.isIntersecting)) appendWordChunk();
+        }, { rootMargin: '600px 0px' });
+        observer.observe(sentinel);
+        wordRenderState.observer = observer;
+    } else {
+        // 沒有 IntersectionObserver 的環境就退回一次渲染全部，功能不受影響
+        while (wordRenderState.rendered < wordRenderState.words.length) appendWordChunk();
+    }
+}
+
+/** 補上下一批詞條；回傳是否還有剩餘 */
+function appendWordChunk() {
+    const st = wordRenderState;
+    if (!st || st.rendered >= st.words.length) return false;
+
+    const end = Math.min(st.rendered + WORD_RENDER_CHUNK, st.words.length);
+    const fragment = document.createDocumentFragment();
+    for (let i = st.rendered; i < end; i += 1) {
+        fragment.appendChild(buildWordItem(st.words[i], st.phoneticsEnabled));
+    }
+    st.rendered = end;
+    if (st.sentinel) dom.wordList.insertBefore(fragment, st.sentinel);
+    else dom.wordList.appendChild(fragment);
+
+    updateWordRenderStatus();
+    return st.rendered < st.words.length;
+}
+
+function stopIncrementalWordRender() {
+    const st = wordRenderState;
+    if (st) {
+        try { st.observer?.disconnect(); } catch (_) {}
+        try { st.sentinel?.remove(); } catch (_) {}
+    }
+    wordRenderState = { words: [], rendered: 0, phoneticsEnabled: false, observer: null, sentinel: null };
+}
+
+/** 未載入完時，把「已載入 n / 共 m」寫在哨兵那一行 */
+function updateWordRenderStatus() {
+    const st = wordRenderState;
+    if (!st?.sentinel) return;
+    if (st.rendered >= st.words.length) {
+        try { st.observer?.disconnect(); } catch (_) {}
+        st.sentinel.remove();
+        return;
+    }
+    st.sentinel.textContent = t('vocabulary.pagingStatus', { shown: st.rendered, total: st.words.length });
+}
+
+/** 建立單一詞條 DOM（含事件綁定） */
+function buildWordItem(word, phoneticsEnabled) {
+    const li = document.createElement('li');
+    li.className = 'word-item';
+    // 詞條內容來自 AI 文章分析、OCR 辨識與外部匯入的詞表，屬外部可控字串，
+    // 一律轉義後才放進 innerHTML（含 data-word-id 屬性值）。
+    li.innerHTML = `
+        <div class="word-text">
+            <strong data-word-id="${escapeAttr(word.id)}">${escapeHtml(word.word)}</strong>
+            ${word.phonetic ? `<span class="phonetic">/${escapeHtml(word.phonetic)}/</span>` : ''}
+            ${word.meaning ? `<span class="meaning" data-word-id="${escapeAttr(word.id)}">${escapeHtml(word.meaning)}</span>` : ''}
+        </div>
+        <div class="word-actions">
+            <button class="play-btn" title="${escapeAttr(t('vocabulary.playWord'))}" aria-label="${escapeAttr(t('vocabulary.playWord'))}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-speaker"/></svg></button>
+        </div>
+    `;
+
+    if (phoneticsEnabled) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'word-phonetics-btn';
+        button.title = t('phonetics.practice');
+        button.setAttribute('aria-label', `${t('phonetics.practice')}: ${word.word}`);
+        button.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 10v4M8 6v12M12 3v18M16 6v12M20 10v4"/></svg>';
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            openPhonetics(word);
         });
+        li.querySelector('.word-actions').appendChild(button);
+    }
 
-        dom.wordList.appendChild(li);
+    const playBtn = li.querySelector('.play-btn');
+    playBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playWordAndMeaning(word);
     });
+
+    return li;
 }
 
 /** 更新篩選結果提示 */

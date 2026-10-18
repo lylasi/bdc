@@ -3,7 +3,7 @@
 
 import * as dom from '../../modules/dom.js';
 import { buildLocalSnapshot, applyMergedSnapshot, restoreSnapshotLocally } from '../../modules/sync-core.js';
-import { syncNow, auth, subscribeSnapshotChanges, unsubscribeChannel } from '../../modules/sync-cloudflare.js';
+import { syncNow, auth, subscribeSnapshotChanges, unsubscribeChannel, getAuthGeneration, getStoredSyncUserId, getAuthSnapshot } from '../../modules/sync-cloudflare.js';
 import * as ui from '../../modules/ui.js';
 import {
   loadGlobalSettings,
@@ -11,14 +11,23 @@ import {
   saveGlobalSettings,
   saveGlobalSecrets
 } from '../../modules/settings.js';
-import {
-  listAIProviders,
-  getTaskModelSelection,
-  discoverProviderModels,
-  deriveApiUrl,
-  deriveModelsUrl
-} from '../../modules/ai-models.js';
+import { mountAIProviderSettings } from './ai-provider-settings.js';
+import { openAdminUsersPanel } from '../admin-users/admin-users.js';
+import { getCredentialSyncState } from '../../modules/ai-credential-sync.js';
 import { THEMES, applyTheme, getSavedTheme } from '../../modules/theme.js';
+import {
+  getArtSettings,
+  saveArtSettings,
+  applyArtSettings,
+  applyThemeArt,
+  getThemeArtMeta,
+  getThemeDefaultArt,
+  setThemeArtFromFile,
+  removeThemeArt,
+  getThemeIconMeta,
+  setThemeIconFromFile,
+  removeThemeIcon
+} from '../../modules/theme-art.js';
 import { openDictationGradingHistory } from '../dictation/dictation-grader.js';
 import {
   listAssistantConversationMetas,
@@ -32,9 +41,17 @@ import { markdownToHtml } from '../../modules/markdown.js';
 import { getLocale, setLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { SUPPORTED_LOCALES } from '../../modules/i18n-config.js';
 
+let aiProviderController = null;
+
+function destroyAIProviderSettings() {
+  try { aiProviderController?.destroy(); } catch (_) {}
+  aiProviderController = null;
+}
+
 export function initSync() {
   try {
     console.log('[sync] initSync()');
+    document.addEventListener('bdc:modal-closed', destroyAIProviderSettings);
     wireAuthUI();
     if (dom.syncNowBtn) {
       dom.syncNowBtn.addEventListener('click', handleSync);
@@ -75,11 +92,7 @@ function wireAuthUI() {
     showLoginModal();
   });
 
-  if (dom.logoutBtn) dom.logoutBtn.addEventListener('click', async () => {
-    try { await auth.signOut(); } catch (_) {}
-    updateAuthButtons(null);
-    updateStatus(t('sync.loggedOut'));
-  });
+  if (dom.logoutBtn) dom.logoutBtn.addEventListener('click', handleLogout);
 
   auth.onAuthStateChange((event, session) => {
     const user = session?.user || null;
@@ -107,20 +120,72 @@ function wireAuthUI() {
   }).catch(() => {});
 }
 
+function generateStrongPasscode() {
+  const bytes = new Uint8Array(32);
+  try { crypto.getRandomValues(bytes); } catch (_) {
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function handleLogout() {
+  const sync = getCredentialSyncState();
+  const hasUnsynced = sync.pending.length > 0 || sync.conflicts.length > 0;
+  if (hasUnsynced) {
+    const ok = await ui.confirmAction({
+      title: t('sync.logout'),
+      message: t('sync.logoutUnsynced'),
+      confirmLabel: t('sync.logoutConfirm'),
+      cancelLabel: t('settings.cancel'),
+      danger: true
+    });
+    if (!ok) return;
+  }
+  try { await auth.signOut(); } catch (_) {}
+  updateAuthButtons(null);
+  updateStatus(t('sync.loggedOut'));
+}
+
+function createSyncGuard() {
+  const userId = getStoredSyncUserId();
+  const generation = getAuthGeneration();
+  const stale = () => getAuthGeneration() !== generation || getStoredSyncUserId() !== userId;
+  return {
+    stale,
+    build: async () => {
+      if (stale()) {
+        const err = new Error('stale session');
+        err.code = 'stale_session';
+        throw err;
+      }
+      return buildLocalSnapshot();
+    },
+    apply: async (snapshot) => {
+      if (stale()) return;
+      await applyMergedSnapshot(snapshot);
+    }
+  };
+}
+
 async function handleSync() {
   console.log('[sync] handleSync()');
   // 必須登入後才能同步
   const { data } = await auth.getSession();
   if (!data?.session) {
     updateStatus(t('sync.loginFirst'));
-    alert(t('sync.loginFirst'));
+    ui.displayMessage(t('sync.loginFirst'), 'warning');
     return;
   }
 
+  let guard = null;
   try {
     setBusy(true);
     updateStatus(t('sync.syncing'));
-    const info = await syncNow(buildLocalSnapshot, applyMergedSnapshot);
+    guard = createSyncGuard();
+    const info = await syncNow(guard.build, guard.apply);
+    if (guard.stale()) return;
     lastSyncAt = Date.now();
     try { localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
     if (info && typeof info.version === 'number') {
@@ -135,9 +200,16 @@ async function handleSync() {
     }
     try { await backup.createBackup(t('sync.backupNoteManual')); } catch(_) {}
   } catch (e) {
+    if (e && e.code === 'stale_session') return;
+    if (e && e.code === 'unauthorized') {
+      // Only the session that issued this request may be signed out.
+      if (!(guard && guard.stale())) await auth.invalidateSession();
+      updateStatus(t('sync.loggedOutState'));
+      return;
+    }
     console.warn(e);
     updateStatus(t('sync.syncFailed'));
-    alert(`${t('sync.syncFailed')}：${e?.message || t('sync.unknownError')}`);
+    ui.displayMessage(`${t('sync.syncFailed')}：${e?.message || t('sync.unknownError')}`, 'error');
   } finally {
     setBusy(false);
   }
@@ -178,10 +250,11 @@ function showLoginModal() {
         </div>
       </div>
       <div class="auth-actions">
+        <button id="auth-pair" class="btn-secondary" type="button">${t('sync.pairingLogin')}</button>
         <button id="auth-forgot" class="btn-secondary" type="button">${t('sync.forgot')}</button>
         <button id="auth-submit" class="btn-primary" type="button">${t('sync.login')}</button>
       </div>
-      <div id="auth-msg" class="auth-msg">${t('sync.loginHint')}</div>
+      <div id="auth-msg" class="auth-msg">${t('sync.loginHint')}<br>${t('sync.loginRememberHint')}</div>
     </div>`;
   dom.modalBody.innerHTML = html;
   const tokenEl = dom.modalBody.querySelector('#auth-token');
@@ -216,11 +289,66 @@ function showLoginModal() {
   });
   const forgotBtn = dom.modalBody.querySelector('#auth-forgot');
   if (forgotBtn) forgotBtn.onclick = () => showResetTokenModal();
+  const pairBtn = dom.modalBody.querySelector('#auth-pair');
+  if (pairBtn) pairBtn.onclick = () => showPairingLoginModal();
+}
+
+// 新裝置配對登入：管理員產生一次性配對碼，使用者在這裡換取長期登入。
+function showPairingLoginModal() {
+  try { ui.openModal(); } catch(_) {}
+  try { dom.modalTitle.textContent = t('sync.pairingLoginTitle'); } catch(_) {}
+  const html = `
+    <div class="auth-modal" style="min-width:300px;">
+      <div class="auth-field">
+        <label for="pair-uid">${t('sync.userId')}</label>
+        <input id="pair-uid" type="text" placeholder="${t('sync.userIdPlaceholder')}" autocomplete="username" autocapitalize="none" spellcheck="false">
+      </div>
+      <div class="auth-field">
+        <label for="pair-code">${t('sync.pairingCode')}</label>
+        <input id="pair-code" type="text" placeholder="${t('sync.pairingCodePlaceholder')}" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false">
+      </div>
+      <div class="auth-actions">
+        <button id="pair-back" class="btn-secondary" type="button">${t('sync.backToPasscode')}</button>
+        <button id="pair-submit" class="btn-primary" type="button">${t('sync.pairingSubmit')}</button>
+      </div>
+      <div id="pair-msg" class="auth-msg">${t('sync.pairingHint')}</div>
+    </div>`;
+  dom.modalBody.innerHTML = html;
+  const uidEl = dom.modalBody.querySelector('#pair-uid');
+  const codeEl = dom.modalBody.querySelector('#pair-code');
+  const submitBtn = dom.modalBody.querySelector('#pair-submit');
+  const backBtn = dom.modalBody.querySelector('#pair-back');
+  const msg = dom.modalBody.querySelector('#pair-msg');
+
+  const doPair = async () => {
+    const uid = (uidEl.value || '').trim();
+    const code = (codeEl.value || '').trim();
+    if (!uid || !code) { msg.textContent = t('errors.pairingRequired'); return; }
+    submitBtn.disabled = true; submitBtn.textContent = t('sync.pairingLoggingIn');
+    try {
+      await auth.signInWithPairingCode(uid, code);
+      msg.textContent = t('sync.pairingSuccess');
+      try { ui.closeModal(); } catch(_) {}
+    } catch (e) {
+      msg.textContent = t('sync.error', { message: e?.message || t('sync.tryLater') });
+    } finally {
+      submitBtn.disabled = false; submitBtn.textContent = t('sync.pairingSubmit');
+    }
+  };
+
+  if (backBtn) backBtn.onclick = () => showLoginModal();
+  submitBtn.onclick = doPair;
+  for (const el of [uidEl, codeEl]) {
+    if (!el) continue;
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doPair(); }
+    });
+  }
 }
 
 // 對外暴露：提供給其他功能模組開啟登入彈窗
 export function openLoginModal() {
-  try { showLoginModal(); } catch (_) { alert(t('sync.loginUnavailable')); }
+  try { showLoginModal(); } catch (_) { ui.displayMessage(t('sync.loginUnavailable'), 'error'); }
 }
 
 // 已登入下，自助修改通行碼
@@ -232,8 +360,9 @@ function showChangeTokenModal() {
       <div class="auth-field">
         <label for="ct-new">${t('sync.newPasscode')}</label>
         <div class="auth-pass-row" style="display:flex;gap:8px;align-items:center;">
-          <input id="ct-new" type="password" placeholder="${t('sync.minSix')}" style="flex:1;">
+          <input id="ct-new" type="password" placeholder="${t('sync.minThirtyTwo')}" style="flex:1;">
           <button id="ct-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">${t('sync.show')}</button>
+          <button id="ct-generate" class="btn-secondary" type="button" style="white-space:nowrap;">${t('sync.generatePasscode')}</button>
         </div>
       </div>
       <div class="auth-field">
@@ -252,10 +381,16 @@ function showChangeTokenModal() {
   const msg = dom.modalBody.querySelector('#ct-msg');
   const toggle = dom.modalBody.querySelector('#ct-toggle');
   if (toggle) toggle.onclick = () => { const showText = n1.type === 'password'; n1.type = showText ? 'text' : 'password'; toggle.textContent = showText ? t('sync.hide') : t('sync.show'); };
+  dom.modalBody.querySelector('#ct-generate')?.addEventListener('click', () => {
+    const value = generateStrongPasscode();
+    n1.type = 'text'; n2.type = 'text';
+    n1.value = value; n2.value = value;
+    msg.textContent = t('sync.generatedPasscodeHint');
+  });
   btn.onclick = async () => {
     const a = (n1.value || '').trim();
     const b = (n2.value || '').trim();
-    if (a.length < 6) { msg.textContent = t('sync.passcodeTooShort'); return; }
+    if (a.length < 32) { msg.textContent = t('sync.passcodeTooShort'); return; }
     if (a !== b) { msg.textContent = t('sync.mismatch'); return; }
     btn.disabled = true; btn.textContent = t('sync.updating');
     try {
@@ -287,8 +422,9 @@ function showResetTokenModal() {
       <div class="auth-field">
         <label for="rt-new">${t('sync.newPasscode')}</label>
         <div class="auth-pass-row" style="display:flex;gap:8px;align-items:center;">
-          <input id="rt-new" type="password" placeholder="${t('sync.minSix')}" style="flex:1;">
+          <input id="rt-new" type="password" placeholder="${t('sync.minThirtyTwo')}" style="flex:1;">
           <button id="rt-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">${t('sync.show')}</button>
+          <button id="rt-generate" class="btn-secondary" type="button" style="white-space:nowrap;">${t('sync.generatePasscode')}</button>
         </div>
       </div>
       <div class="auth-actions">
@@ -306,13 +442,19 @@ function showResetTokenModal() {
   const msg = dom.modalBody.querySelector('#rt-msg');
   const toggle = dom.modalBody.querySelector('#rt-toggle');
   if (toggle) toggle.onclick = () => { const showText = nw.type === 'password'; nw.type = showText ? 'text' : 'password'; toggle.textContent = showText ? t('sync.hide') : t('sync.show'); };
+  dom.modalBody.querySelector('#rt-generate')?.addEventListener('click', () => {
+    const value = generateStrongPasscode();
+    nw.type = 'text';
+    nw.value = value;
+    msg.textContent = t('sync.generatedPasscodeHint');
+  });
   if (back) back.onclick = () => showLoginModal();
   btn.onclick = async () => {
     const u = (uid.value || '').trim();
     const r = (rec.value || '').trim();
     const a = (nw.value || '').trim();
     if (!u || !r) { msg.textContent = t('sync.fillRecovery'); return; }
-    if (a.length < 6) { msg.textContent = t('sync.passcodeTooShort'); return; }
+    if (a.length < 32) { msg.textContent = t('sync.passcodeTooShort'); return; }
     btn.disabled = true; btn.textContent = t('sync.processing');
     try {
       await auth.resetToken(u, r, a);
@@ -342,20 +484,23 @@ function toggleGearMenu() {
     if (mVer) { ver = parseInt(mVer[1], 10) || 0; try { if (ver>0) localStorage.setItem('lastSnapshotVersion', String(ver)); } catch(_) {} }
   }
   const loggedIn = !!email;
+  // 每個 .mi-text 都帶 data-i18n：選單是「開啟當下」才建立的，
+  // 若只寫死 t() 的結果，之後切換介面語言時這份已經在畫面上的選單不會更新
+  // （applyTranslations 只認 data-i18n 屬性），使用者會看到舊語言的文案。
   m.innerHTML = `
     <div class="menu-item" id="gm-sync">
       <span class="mi-icon" aria-hidden="true">${svgSync()}</span>
-      <span class="mi-text">${t('menu.syncNow')}</span>
+      <span class="mi-text" data-i18n="menu.syncNow">${t('menu.syncNow')}</span>
       <span class="meta">${ver ? 'v'+ver : ''}${timeText ? ' · ' + timeText.replace(/:\\d{2}$/, '') : ''}</span>
     </div>
-    ${loggedIn ? '' : `<div class="menu-item" id="gm-login"><span class="mi-icon">${svgLogin()}</span><span class="mi-text">${t('menu.login')}</span></div>`}
-    ${loggedIn ? `<div class="menu-item" id="gm-change-token"><span class="mi-icon">${svgKey()}</span><span class="mi-text">${t('menu.changePasscode')}</span></div>` : ''}
-    ${loggedIn ? `<div class="menu-item" id="gm-logout"><span class="mi-icon">${svgLogout()}</span><span class="mi-text">${t('menu.logout')}</span><span class="meta">${escapeHtml(email)}</span></div>` : ''}
+    ${loggedIn ? '' : `<div class="menu-item" id="gm-login"><span class="mi-icon">${svgLogin()}</span><span class="mi-text" data-i18n="menu.login">${t('menu.login')}</span></div>`}
+    ${loggedIn ? `<div class="menu-item" id="gm-change-token"><span class="mi-icon">${svgKey()}</span><span class="mi-text" data-i18n="menu.changePasscode">${t('menu.changePasscode')}</span></div>` : ''}
+    ${loggedIn ? `<div class="menu-item" id="gm-logout"><span class="mi-icon">${svgLogout()}</span><span class="mi-text" data-i18n="menu.logout">${t('menu.logout')}</span><span class="meta">${escapeHtml(email)}</span></div>` : ''}
     <div class="menu-divider"></div>
-    <div class="menu-item" id="gm-settings"><span class="mi-icon">${svgGear()}</span><span class="mi-text">${t('menu.globalSettings')}</span></div>
-    <div class="menu-item" id="gm-grading-history"><span class="mi-icon">${svgHistory()}</span><span class="mi-text">${t('menu.gradingHistory')}</span></div>
-    <div class="menu-item" id="gm-assistant"><span class="mi-icon">${svgChat()}</span><span class="mi-text">${t('menu.assistantSessions')}</span></div>
-    <div class="menu-item" id="gm-backup-panel"><span class="mi-icon">${svgRestore()}</span><span class="mi-text">${t('menu.backupRestore')}</span></div>
+    <div class="menu-item" id="gm-settings"><span class="mi-icon">${svgGear()}</span><span class="mi-text" data-i18n="menu.globalSettings">${t('menu.globalSettings')}</span></div>
+    <div class="menu-item" id="gm-grading-history"><span class="mi-icon">${svgHistory()}</span><span class="mi-text" data-i18n="menu.gradingHistory">${t('menu.gradingHistory')}</span></div>
+    <div class="menu-item" id="gm-assistant"><span class="mi-icon">${svgChat()}</span><span class="mi-text" data-i18n="menu.assistantSessions">${t('menu.assistantSessions')}</span></div>
+    <div class="menu-item" id="gm-backup-panel"><span class="mi-icon">${svgRestore()}</span><span class="mi-text" data-i18n="menu.backupRestore">${t('menu.backupRestore')}</span></div>
     <div class="menu-status">${status}</div>`;
   document.body.appendChild(m);
   const sync = m.querySelector('#gm-sync');
@@ -369,66 +514,28 @@ function toggleGearMenu() {
   if (sync) sync.addEventListener('click', () => { handleSync(); m.remove(); });
   if (login) login.addEventListener('click', () => { showLoginModal(); m.remove(); });
   if (changeToken) changeToken.addEventListener('click', () => { showChangeTokenModal(); m.remove(); });
-  if (logout) logout.addEventListener('click', async () => { try { await auth.signOut(); } catch(_){} updateAuthButtons(null); updateStatus(t('sync.loggedOut')); m.remove(); });
+  if (logout) logout.addEventListener('click', async () => { m.remove(); await handleLogout(); });
   if (settings) settings.addEventListener('click', () => { showGlobalSettingsModal(); m.remove(); });
   if (gradingHistory) gradingHistory.addEventListener('click', () => { try { openDictationGradingHistory(); } catch(_) {} m.remove(); });
   if (assistantSessions) assistantSessions.addEventListener('click', () => { showAssistantSessions(); m.remove(); });
   if (backupPanel) backupPanel.addEventListener('click', () => { showBackupRestoreModal(); m.remove(); });
 }
 
+// 全域設定：左側分類 + 右側卡片，任何變更即時寫入本機設定（不再需要「儲存」按鈕）。
+// #gs-save 保留為「完成」：既有巡檢腳本與使用習慣都以它關閉面板。
+let gsActiveTab = 'general';
+let gsCleanup = null;
+
 function showGlobalSettingsModal() {
+  try { gsCleanup?.(); } catch (_) {}
+  gsCleanup = null;
   try { ui.openModal(); } catch(_) {}
   try { dom.modalTitle.textContent = t('settings.globalTitle'); } catch(_) {}
   try { const mc = dom.appModal.querySelector('.modal-content'); if (mc) mc.classList.add('modal-large'); } catch(_) {}
-  // 注入本面板私有樣式（避免全局污染）
-  (function injectGsStyle(){
-    const id = 'gs-asst-style'; if (document.getElementById(id)) return;
-    const st = document.createElement('style'); st.id = id; st.textContent = `
-      /* AI 助手設定：沿用設計令牌，與站內開關同一套靛藍主色 */
-      .gs-asst-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);background:var(--surface-2);border-radius:var(--r-md)}
-      .gs-toggle{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--line);cursor:pointer}
-      .gs-visually-hidden{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-      .gs-switch{position:relative;width:38px;height:22px;border-radius:var(--r-pill);background:var(--line);border:1px solid var(--line-strong);display:inline-block;vertical-align:middle;transition:background .2s,border-color .2s}
-      .gs-switch::after{content:'';position:absolute;top:1px;left:1px;width:18px;height:18px;border-radius:50%;background:var(--surface);box-shadow:var(--sh-1);transition:transform .2s}
-      .gs-toggle input:checked + .gs-switch{background:var(--primary);border-color:var(--primary)}
-      .gs-toggle input:checked + .gs-switch::after{transform:translateX(16px)}
-      .gs-toggle input:focus-visible + .gs-switch{box-shadow:var(--ring)}
-      .gs-toggle .gs-label{font-size:var(--fs-sm);color:var(--ink-800)}
-      .gs-hint{color:var(--ink-500);font-size:var(--fs-xs);margin-left:auto}
-    `; document.head.appendChild(st);
-  })();
+
+  let disposed = false;
   const persistedSettings = loadGlobalSettings();
   const persistedSecrets = loadGlobalSecrets();
-  // 主題：開啟設定時以已儲存的選擇為準（避免上次預覽未儲存就關閉而殘留）
-  let draftTheme = applyTheme(getSavedTheme());
-  const taskFields = getAiTaskFieldList();
-  const aiState = {
-    providers: listAIProviders({ settings: persistedSettings, secrets: persistedSecrets, includeDisabled: true }).map((provider) => ({
-      id: provider.id,
-      label: provider.label || provider.id,
-      enabled: provider.enabled !== false,
-      baseUrl: provider.baseUrl || '',
-      apiUrl: provider.apiUrl || '',
-      modelsUrl: provider.modelsUrl || '',
-      apiKey: provider.apiKey || '',
-      allowedModels: Array.isArray(provider.allowedModels) ? provider.allowedModels.slice() : [],
-      discoveredModels: Array.isArray(provider.discoveredModels) ? provider.discoveredModels.slice() : [],
-      lastDiscoveryAt: provider.lastDiscoveryAt || '',
-      discoveryStatus: provider.discoveryStatus || '',
-      discoveryError: provider.discoveryError || ''
-    })),
-    taskModels: {}
-  };
-  taskFields.forEach(({ key }) => {
-    const currentValue = (persistedSettings?.ai?.models && persistedSettings.ai.models[key])
-      || (persistedSettings?.ai?.tasks && persistedSettings.ai.tasks[key])
-      || '';
-    aiState.taskModels[key] = getTaskModelSelection(key, {
-      settings: persistedSettings,
-      secrets: persistedSecrets,
-      currentValue
-    }).value || '';
-  });
   const settings = {
     interfaceLocale: persistedSettings?.language?.interfaceLocale || getLocale(),
     ttsUrlCustom: persistedSettings?.tts?.baseUrlCustom || '',
@@ -437,685 +544,712 @@ function showGlobalSettingsModal() {
     readZh: (persistedSettings?.reading && persistedSettings.reading.chineseVariant) || 'zh-CN',
     selectedVoices: (persistedSettings?.tts && persistedSettings.tts.selectedVoices) || {},
     assistantEnabled: persistedSettings?.assistant?.enabled !== false,
-    assistantStream: persistedSettings?.assistant?.stream !== false
+    assistantStream: persistedSettings?.assistant?.stream !== false,
+    phoneticsEnabled: persistedSettings?.phonetics?.enabled === true
   };
-  const secrets = {
-    ttsKey: persistedSecrets?.ttsApiKey || ''
-  };
+  const secrets = { ttsKey: persistedSecrets?.ttsApiKey || '' };
+  try { applyTheme(getSavedTheme()); } catch (_) {}
+  const authSnapshot = getAuthSnapshot();
+  const isAdmin = authSnapshot.loggedIn && authSnapshot.role === 'admin';
 
-  const normalizeModelValue = (providerId, value) => {
-    const raw = String(value || '').trim();
-    if (!raw) return '';
-    return raw.includes(':') ? raw : `${providerId}:${raw}`;
-  };
-  const dedupeStrings = (values = []) => {
-    const out = [];
-    const seen = new Set();
-    values.forEach((value) => {
-      const raw = String(value || '').trim();
-      if (!raw || seen.has(raw)) return;
-      seen.add(raw);
-      out.push(raw);
-    });
-    return out;
-  };
-  const formatDiscoveryTime = (value) => {
-    if (!value) return '';
-    try {
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return '';
-      return formatDateTime(d, { hour12: false });
-    } catch (_) {
-      return '';
-    }
-  };
-  const describeDiscoveryState = (row) => {
-    if (row.discoveryStatus === 'success') return t('settings.fetched');
-    if (row.discoveryStatus === 'loading') return t('settings.fetching');
-    if (row.discoveryStatus === 'error') return t('settings.fetchFailed');
-    return t('settings.notFetched');
-  };
-  const buildDraftAiSettings = () => {
-    const providers = {};
-    aiState.providers.forEach((row) => {
-      const providerRecord = {
-        label: row.label || row.id,
-        enabled: row.enabled !== false,
-        baseUrl: String(row.baseUrl || '').trim(),
-        apiUrl: String(row.apiUrl || '').trim(),
-        modelsUrl: String(row.modelsUrl || '').trim(),
-        allowedModels: dedupeStrings(row.allowedModels || []),
-        discoveredModels: Array.isArray(row.discoveredModels) ? row.discoveredModels.slice() : [],
-        lastDiscoveryAt: row.lastDiscoveryAt || '',
-        discoveryStatus: row.discoveryStatus || '',
-        discoveryError: row.discoveryError || ''
-      };
-      if (!providerRecord.apiUrl) providerRecord.apiUrl = deriveApiUrl(providerRecord);
-      if (!providerRecord.modelsUrl) providerRecord.modelsUrl = deriveModelsUrl(providerRecord);
-      providers[row.id] = providerRecord;
-    });
-    const defaultProvider = providers.default || {};
-    const models = {};
-    taskFields.forEach(({ key }) => {
-      const value = String(aiState.taskModels[key] || '').trim();
-      if (!value) return;
-      models[key] = value;
-    });
-    return {
-      ai: {
-        apiUrl: defaultProvider.apiUrl || '',
-        models,
-        providers,
-        tasks: { ...models }
-      }
-    };
-  };
-  const buildDraftAiSecrets = () => {
-    const aiProviders = {};
-    aiState.providers.forEach((row) => {
-      const apiKey = String(row.apiKey || '').trim();
-      if (apiKey) aiProviders[row.id] = { apiKey };
-    });
-    return {
-      aiApiKey: aiProviders.default?.apiKey || '',
-      aiProviders
-    };
-  };
-  const renderAiSettingsSection = () => {
-    const host = dom.modalBody.querySelector('#gs-ai-settings');
-    if (!host) return;
-    const modelDetailsOpenState = new Map(
-      Array.from(host.querySelectorAll('[data-ai-provider-model-details]')).map((element) => [
-        element.getAttribute('data-ai-provider-model-details') || '',
-        element.open
-      ])
-    );
-    const draftSettings = buildDraftAiSettings();
-    const draftSecrets = buildDraftAiSecrets();
-    const providerCardsHtml = aiState.providers.map((row) => {
-      const discovered = Array.isArray(row.discoveredModels) ? row.discoveredModels : [];
-      const discoveredEntries = discovered.map((item) => ({
-        value: item?.value || normalizeModelValue(row.id, item?.id || item?.model || item?.label || ''),
-        label: item?.label || item?.id || item?.model || item?.value || '',
-        meta: '',
-        isManual: false
-      })).filter((item) => item.value);
-      const discoveredSet = new Set(discoveredEntries.map((item) => item.value));
-      const manualEntries = (row.allowedModels || [])
-        .filter((value) => value && !discoveredSet.has(value))
-        .map((value) => ({
-          value,
-          label: value,
-          meta: t('settings.manualAdded'),
-          isManual: true
-        }));
-      const combinedEntries = [...discoveredEntries, ...manualEntries];
-      const selectedCount = combinedEntries.filter((item) => (row.allowedModels || []).includes(item.value)).length;
-      const defaultModelListOpen = combinedEntries.length > 0 && combinedEntries.length <= 8;
-      const isModelListOpen = modelDetailsOpenState.has(row.id)
-        ? modelDetailsOpenState.get(row.id)
-        : defaultModelListOpen;
-      const statusText = describeDiscoveryState(row);
-      const statusClass = row.discoveryStatus === 'success'
-        ? 'success'
-        : (row.discoveryStatus === 'error' ? 'error' : 'muted');
-      const lastText = formatDiscoveryTime(row.lastDiscoveryAt);
-      return `
-        <div class="gs-ai-provider-card" data-ai-provider-card="${escapeHtml(row.id)}">
-          <div class="gs-ai-provider-header">
-            <div class="gs-ai-provider-header-main">
-              <div class="gs-ai-provider-title">${escapeHtml(row.label || row.id)}</div>
-              <div class="gs-ai-provider-id">ID: ${escapeHtml(row.id)}</div>
-              <label class="checkbox-inline"><input data-ai-provider-enabled="${escapeHtml(row.id)}" type="checkbox" ${row.enabled !== false ? 'checked' : ''}> <span>${t('settings.enabled')}</span></label>
-            </div>
-            <div class="gs-ai-provider-actions">
-              <span class="gs-ai-discovery-state ${statusClass}">${escapeHtml(statusText)}</span>
-              ${lastText ? `<span class="gs-ai-provider-time">${escapeHtml(lastText)}</span>` : ''}
-              <button type="button" class="btn-secondary" data-ai-provider-discover="${escapeHtml(row.id)}">${t('settings.fetchModels')}</button>
-              ${row.id !== 'default' ? `<button type="button" class="btn-secondary" data-ai-provider-remove="${escapeHtml(row.id)}">${t('settings.remove')}</button>` : ''}
-            </div>
-          </div>
-          <div class="gs-ai-provider-fields">
-            <label class="gs-ai-provider-field">
-              <span class="gs-ai-provider-field-label">${t('settings.name')}</span>
-              <input data-ai-provider-label="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.label || row.id)}" placeholder="${t('settings.displayName')}">
-            </label>
-            <label class="gs-ai-provider-field">
-              <span class="gs-ai-provider-field-label">Base URL</span>
-              <input data-ai-provider-base="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.baseUrl || '')}" placeholder="https://api.example.com/v1">
-            </label>
-            <label class="gs-ai-provider-field">
-              <span class="gs-ai-provider-field-label">${t('settings.apiUrlOptional')}</span>
-              <input data-ai-provider-api="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.apiUrl || '')}" placeholder="${t('settings.deriveApiUrl')}">
-            </label>
-            <label class="gs-ai-provider-field">
-              <span class="gs-ai-provider-field-label">${t('settings.modelsUrlOptional')}</span>
-              <input data-ai-provider-models="${escapeHtml(row.id)}" type="text" value="${escapeHtml(row.modelsUrl || '')}" placeholder="${t('settings.deriveModelsUrl')}">
-            </label>
-            <label class="gs-ai-provider-field">
-              <span class="gs-ai-provider-field-label">${t('settings.apiKeyLocal')}</span>
-              <input data-ai-provider-key="${escapeHtml(row.id)}" type="password" value="${escapeHtml(row.apiKey || '')}" placeholder="sk-...">
-            </label>
-          </div>
-          <div class="gs-ai-provider-model-section">
-            ${combinedEntries.length ? `
-              <details class="gs-ai-model-details" data-ai-provider-model-details="${escapeHtml(row.id)}" ${isModelListOpen ? 'open' : ''}>
-                <summary>
-                  <span class="gs-ai-model-summary-main">
-                    <span class="gs-ai-model-summary-title">${t('settings.allowedModels')}</span>
-                    <span class="gs-ai-model-summary-meta">${t('settings.selectedModels', { selected: selectedCount, total: combinedEntries.length })}</span>
-                  </span>
-                </summary>
-                <div class="gs-ai-model-details-body">
-                  <div class="gs-ai-model-hint">${t('settings.modelHint')}</div>
-                  <div class="gs-ai-model-grid" data-ai-provider-model-list="${escapeHtml(row.id)}">
-                    ${combinedEntries.map((item) => `
-                      <label class="gs-ai-model-option" title="${escapeHtml(item.label || item.value)}">
-                        <input class="gs-ai-model-checkbox" data-ai-provider-allowed="${escapeHtml(row.id)}" type="checkbox" value="${escapeHtml(item.value)}" ${(row.allowedModels || []).includes(item.value) ? 'checked' : ''}>
-                        <span class="gs-ai-model-card">
-                          <span class="gs-ai-model-indicator" aria-hidden="true"></span>
-                          <span class="gs-ai-model-content">
-                            <span class="gs-ai-model-name">${escapeHtml(item.label || item.value)}</span>
-                            ${item.meta ? `<span class="gs-ai-model-meta">${escapeHtml(item.meta)}</span>` : ''}
-                          </span>
-                        </span>
-                      </label>
-                    `).join('')}
-                  </div>
-                </div>
-              </details>
-            ` : `
-              <div class="gs-ai-model-empty" data-ai-provider-model-list="${escapeHtml(row.id)}">${t('settings.noModels')}</div>
-            `}
-            <div class="gs-ai-provider-manual-row">
-              <input data-ai-provider-manual-input="${escapeHtml(row.id)}" type="text" placeholder="${t('settings.manualModel')}">
-              <button type="button" class="btn-secondary" data-ai-provider-manual-add="${escapeHtml(row.id)}">${t('settings.addModel')}</button>
-            </div>
-            ${row.discoveryError ? `<div class="gs-ai-provider-error">${escapeHtml(row.discoveryError)}</div>` : ''}
-          </div>
-        </div>`;
-    }).join('');
-    const taskRowsHtml = taskFields.map(({ key, label }) => {
-      const selection = getTaskModelSelection(key, {
-        settings: draftSettings,
-        secrets: draftSecrets,
-        currentValue: aiState.taskModels[key] || ''
-      });
-      const value = String(selection.value || '');
-      if (!aiState.taskModels[key] && value) aiState.taskModels[key] = value;
-      return `
-        <div style="display:grid;grid-template-columns:minmax(120px,180px) 1fr;gap:8px;align-items:center;">
-          <div style="font-size:13px;color:var(--ink-800);">${escapeHtml(label)}</div>
-          <select data-ai-task-select="${escapeHtml(key)}" ${selection.disabled ? 'disabled' : ''} title="${selection.disabled ? t('qa.configureModel') : ''}">
-            ${selection.options.map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === value ? 'selected' : ''}>${escapeHtml(option.label || option.value)}</option>`).join('')}
-          </select>
-        </div>`;
-    }).join('');
-    host.innerHTML = `
-      <div class="auth-field">
-        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap;">
-          <label style="margin:0">${t('settings.providerSettings')}</label>
-          <button id="gs-ai-provider-add" type="button" class="btn-secondary">${t('settings.addProvider')}</button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px;">
-          ${providerCardsHtml}
-        </div>
-        <div class="gs-hint" style="margin-top:6px">${t('settings.providerHint')}</div>
+  const TABS = [
+    { id: 'general', labelKey: 'settings.tabGeneral', icon: 'ic-sliders' },
+    { id: 'voice', labelKey: 'settings.tabVoice', icon: 'ic-speaker' },
+    { id: 'ai', labelKey: 'settings.tabAi', icon: 'ic-sparkle' },
+    { id: 'tools', labelKey: 'settings.tabTools', icon: 'ic-bulb' }
+  ];
+  if (!TABS.some((tab) => tab.id === gsActiveTab)) gsActiveTab = 'general';
+
+  const navHtml = TABS.map((tab) => `
+    <button type="button" class="gs-nav-btn${tab.id === gsActiveTab ? ' active' : ''}"
+      role="tab" id="gs-tab-${tab.id}" aria-controls="gs-panel-${tab.id}" data-gs-tab="${tab.id}"
+      aria-selected="${tab.id === gsActiveTab ? 'true' : 'false'}" tabindex="${tab.id === gsActiveTab ? '0' : '-1'}">
+      <svg class="gs-nav-icon" aria-hidden="true"><use href="#${tab.icon}"/></svg>
+      <span>${escapeHtml(t(tab.labelKey))}</span>
+    </button>`).join('');
+
+  const savedThemeId = getSavedTheme();
+  const themeButtons = THEMES.map((theme) => `
+    <button type="button" class="gs-theme-btn${theme.id === savedThemeId ? ' active' : ''}" data-theme-id="${theme.id}"
+      aria-pressed="${theme.id === savedThemeId ? 'true' : 'false'}">
+      <span class="gs-theme-dot" style="background:${theme.swatch}" aria-hidden="true"></span>
+      <span class="gs-theme-name">${escapeHtml(t(theme.labelKey))}</span>
+    </button>`).join('');
+
+  const voiceRows = [
+    ['en-US', 'settings.englishAmerican', 'gs-test-en-us'],
+    ['en-GB', 'settings.englishBritish', 'gs-test-en-gb'],
+    ['zh-HK', 'settings.cantoneseVoice', 'gs-test-zh-hk'],
+    ['zh-CN', 'settings.mandarinVoice', 'gs-test-zh-cn']
+  ].map(([group, labelKey, testId]) => `
+    <div class="gs-voice-row">
+      <div class="gs-voice-row-head">
+        <span class="gs-voice-label">${escapeHtml(t(labelKey))}</span>
+        <button id="${testId}" type="button" class="btn-secondary gs-mini">${escapeHtml(t('settings.previewVoice'))}</button>
       </div>
-      <div class="auth-field">
-        <label>${t('settings.taskMapping')}</label>
-        <div style="display:grid;grid-template-columns:1fr;gap:8px;">
-          ${taskRowsHtml}
-        </div>
-        <div class="gs-hint" style="margin-top:6px">${t('settings.taskHint')}</div>
-      </div>`;
+      <select data-voice-group="${group}" aria-label="${escapeHtml(t(labelKey))}"><option value="">${escapeHtml(t('settings.loading'))}</option></select>
+    </div>`).join('');
 
-    host.querySelector('#gs-ai-provider-add')?.addEventListener('click', () => {
-      const rawId = window.prompt(t('settings.providerIdPrompt'), 'custom');
-      const nextId = String(rawId || '').trim().replace(/[^a-zA-Z0-9_-]/g, '');
-      if (!nextId) return;
-      if (aiState.providers.some((row) => row.id === nextId)) {
-        window.alert(t('settings.providerExists'));
-        return;
-      }
-      aiState.providers.push({
-        id: nextId,
-        label: nextId,
-        enabled: true,
-        baseUrl: '',
-        apiUrl: '',
-        modelsUrl: '',
-        apiKey: '',
-        allowedModels: [],
-        discoveredModels: [],
-        lastDiscoveryAt: '',
-        discoveryStatus: '',
-        discoveryError: ''
-      });
-      renderAiSettingsSection();
-    });
-
-    aiState.providers.forEach((row) => {
-      const id = row.id;
-      host.querySelector(`[data-ai-provider-label="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
-        row.label = e.target.value || '';
-      });
-      host.querySelector(`[data-ai-provider-base="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
-        row.baseUrl = e.target.value || '';
-      });
-      host.querySelector(`[data-ai-provider-api="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
-        row.apiUrl = e.target.value || '';
-      });
-      host.querySelector(`[data-ai-provider-models="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
-        row.modelsUrl = e.target.value || '';
-      });
-      host.querySelector(`[data-ai-provider-key="${CSS.escape(id)}"]`)?.addEventListener('input', (e) => {
-        row.apiKey = e.target.value || '';
-      });
-      host.querySelector(`[data-ai-provider-enabled="${CSS.escape(id)}"]`)?.addEventListener('change', (e) => {
-        row.enabled = !!e.target.checked;
-        renderAiSettingsSection();
-      });
-      host.querySelector(`[data-ai-provider-remove="${CSS.escape(id)}"]`)?.addEventListener('click', () => {
-        aiState.providers = aiState.providers.filter((item) => item.id !== id);
-        Object.keys(aiState.taskModels).forEach((taskKey) => {
-          if (String(aiState.taskModels[taskKey] || '').startsWith(`${id}:`)) aiState.taskModels[taskKey] = '';
-        });
-        renderAiSettingsSection();
-      });
-      host.querySelectorAll(`[data-ai-provider-allowed="${CSS.escape(id)}"]`).forEach((input) => {
-        input.addEventListener('change', () => {
-          const values = Array.from(host.querySelectorAll(`[data-ai-provider-allowed="${CSS.escape(id)}"]:checked`)).map((el) => el.value);
-          row.allowedModels = dedupeStrings(values);
-          renderAiSettingsSection();
-        });
-      });
-      host.querySelector(`[data-ai-provider-manual-add="${CSS.escape(id)}"]`)?.addEventListener('click', () => {
-        const input = host.querySelector(`[data-ai-provider-manual-input="${CSS.escape(id)}"]`);
-        const normalized = normalizeModelValue(id, input?.value || '');
-        if (!normalized) return;
-        row.allowedModels = dedupeStrings([...(row.allowedModels || []), normalized]);
-        if (input) input.value = '';
-        renderAiSettingsSection();
-      });
-      host.querySelector(`[data-ai-provider-manual-input="${CSS.escape(id)}"]`)?.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter') return;
-        e.preventDefault();
-        host.querySelector(`[data-ai-provider-manual-add="${CSS.escape(id)}"]`)?.click();
-      });
-      host.querySelector(`[data-ai-provider-discover="${CSS.escape(id)}"]`)?.addEventListener('click', async () => {
-        row.discoveryStatus = 'loading';
-        row.discoveryError = '';
-        renderAiSettingsSection();
-        try {
-          const result = await discoverProviderModels(id, {
-            settings: buildDraftAiSettings(),
-            secrets: buildDraftAiSecrets(),
-            refresh: true
-          });
-          row.discoveredModels = Array.isArray(result.models) ? result.models.slice() : [];
-          row.lastDiscoveryAt = result.updatedAt ? new Date(result.updatedAt).toISOString() : '';
-          row.discoveryStatus = result.ok ? 'success' : 'error';
-          row.discoveryError = result.error || '';
-        } catch (error) {
-          row.discoveryStatus = 'error';
-          row.discoveryError = error?.message || t('settings.fetchFailed');
-        }
-        renderAiSettingsSection();
-      });
-    });
-
-    host.querySelectorAll('[data-ai-task-select]').forEach((select) => {
-      select.addEventListener('change', () => {
-        const key = select.getAttribute('data-ai-task-select') || '';
-        if (!key) return;
-        aiState.taskModels[key] = select.value || '';
-      });
-    });
-  };
+  const panel = (id, titleKey, hintKey, body) => `
+    <section class="gs-panel" role="tabpanel" id="gs-panel-${id}" aria-labelledby="gs-tab-${id}" data-gs-panel="${id}" ${gsActiveTab === id ? '' : 'hidden'}>
+      <header class="gs-panel-head">
+        <h5>${escapeHtml(t(titleKey))}</h5>
+        <p>${escapeHtml(t(hintKey))}</p>
+      </header>
+      ${body}
+    </section>`;
 
   const html = `
-    <div class="auth-modal" style="min-width:320px;">
-      <div class="auth-field">
-        <label for="gs-interface-locale">${escapeHtml(t('settings.languageLabel'))}</label>
-        <select id="gs-interface-locale">
-          ${Object.keys(SUPPORTED_LOCALES).map((value) => `<option value="${escapeHtml(value)}" ${settings.interfaceLocale === value ? 'selected' : ''}>${escapeHtml(t(value === 'zh-HK' ? 'settings.localeHk' : 'settings.localeCn'))}</option>`).join('')}
-        </select>
-        <div class="gs-hint" style="margin-top:6px">${escapeHtml(t('settings.languageHint'))}</div>
-      </div>
-      <div class="auth-field">
-        <label>${escapeHtml(t('settings.theme'))}</label>
-        <div class="gs-theme-row" id="gs-theme-row" role="group" aria-label="${escapeHtml(t('settings.theme'))}">
-          ${THEMES.map((theme) => `
-            <button type="button" class="gs-theme-btn${theme.id === draftTheme ? ' active' : ''}" data-theme-id="${theme.id}"
-              aria-pressed="${theme.id === draftTheme ? 'true' : 'false'}">
-              <span class="gs-theme-dot" style="background:${theme.swatch}" aria-hidden="true"></span>
-              <span class="gs-theme-name">${escapeHtml(t(theme.labelKey))}</span>
-            </button>`).join('')}
+    <div class="gs-settings">
+      <div class="gs-shell">
+        <div class="gs-nav-wrap">
+          <nav class="gs-nav" role="tablist" aria-orientation="vertical" aria-label="${escapeHtml(t('settings.globalTitle'))}">
+            ${navHtml}
+          </nav>
         </div>
-        <div class="gs-hint" style="margin-top:6px">${escapeHtml(t('settings.themeHint'))}</div>
-      </div>
-      <div id="gs-ai-settings"></div>
-      <div class="auth-field">
-        <label>${t('settings.ttsSource')}</label>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <label class="gs-toggle"><input id="gs-tts-use-remote" class="gs-visually-hidden" type="radio" name="gs-tts-use" checked><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.remote')}</span></label>
-          <label class="gs-toggle"><input id="gs-tts-use-local" class="gs-visually-hidden" type="radio" name="gs-tts-use"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.local')}</span></label>
-          <label class="gs-toggle"><input id="gs-tts-use-custom" class="gs-visually-hidden" type="radio" name="gs-tts-use"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.custom')}</span></label>
-          <span class="gs-hint">${t('settings.ttsSourceHint')}</span>
-        </div>
-      </div>
-      <div class="auth-field" id="gs-tts-custom-wrap" style="display:none">
-        <label>${t('settings.customTtsUrl')}</label>
-        <input id="gs-tts-url-custom" type="text" placeholder="https://your-tts.example.com" value="${escapeHtml(settings.ttsUrlCustom||'')}">
-      </div>
-      <div class="auth-field">
-        <label>${t('settings.ttsKey')}</label>
-        <input id="gs-tts-key" type="password" placeholder="..." value="${escapeHtml(secrets.ttsKey||'')}">
-      </div>
-      <div class="auth-field">
-        <label>${t('settings.englishVoicePreference')}</label>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <label class="gs-toggle"><input id="gs-read-en-gb" class="gs-visually-hidden" name="gs-read-en" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.britishEnglish')}</span></label>
-          <label class="gs-toggle"><input id="gs-read-en-us" class="gs-visually-hidden" name="gs-read-en" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.americanEnglish')}</span></label>
-          <span class="gs-hint">${t('settings.defaultBritish')}</span>
-        </div>
-      </div>
-      <div class="auth-field">
-        <label>${t('settings.chineseVoicePreference')}</label>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <label class="gs-toggle"><input id="gs-read-zh-cn" class="gs-visually-hidden" name="gs-read-zh" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.mandarin')}</span></label>
-          <label class="gs-toggle"><input id="gs-read-zh-hk" class="gs-visually-hidden" name="gs-read-zh" type="radio"><span class="gs-switch" aria-hidden="true"></span><span class="gs-label">${t('settings.cantonese')}</span></label>
-        </div>
-      </div>
-      <div class="auth-field">
-        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap">
-          <label style="margin:0">${t('settings.ttsVoices')}</label>
-          <button id="gs-tts-reload" type="button" class="btn" style="margin-left:auto">${t('settings.reloadList')}</button>
-        </div>
-        <div id="gs-voice-box" style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px">
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:var(--ink-500)">${t('settings.englishAmerican')}</div>
-              <button id="gs-test-en-us" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
+        <div class="gs-panels">
+          ${panel('general', 'settings.tabGeneral', 'settings.panelGeneralHint', `
+            <div class="gs-card">
+              <div class="gs-card-body">
+                <div class="gs-field">
+                  <label for="gs-interface-locale">${escapeHtml(t('settings.languageLabel'))}</label>
+                  <select id="gs-interface-locale">
+                    ${Object.keys(SUPPORTED_LOCALES).map((value) => `<option value="${escapeHtml(value)}" ${settings.interfaceLocale === value ? 'selected' : ''}>${escapeHtml(t(value === 'zh-HK' ? 'settings.localeHk' : 'settings.localeCn'))}</option>`).join('')}
+                  </select>
+                  <p class="gs-hint">${escapeHtml(t('settings.languageHint'))}</p>
+                </div>
+              </div>
             </div>
-            <select id="gs-voice-en-us" style="width:100%"><option value="">${t('settings.loading')}</option></select>
-          </div>
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:var(--ink-500)">${t('settings.englishBritish')}</div>
-              <button id="gs-test-en-gb" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
+            <div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.theme'))}</span>
+                <span class="gs-hint">${escapeHtml(t('settings.themeHint'))}</span>
+              </div>
+              <div class="gs-card-body">
+                <div class="gs-theme-row" id="gs-theme-row" role="group" aria-label="${escapeHtml(t('settings.theme'))}">${themeButtons}</div>
+              </div>
             </div>
-            <select id="gs-voice-en-gb" style="width:100%"><option value="">${t('settings.loading')}</option></select>
-          </div>
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:var(--ink-500)">${t('settings.cantoneseVoice')}</div>
-              <button id="gs-test-zh-hk" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
+            <div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.themeArt'))}</span>
+                <span class="gs-hint">${escapeHtml(t('settings.themeArtHint'))}</span>
+              </div>
+              <div class="gs-card-body">
+                <div class="gs-art-row">
+                  <button type="button" id="gs-art-pick" class="btn">${escapeHtml(t('settings.themeArtPick'))}</button>
+                  <button type="button" id="gs-art-clear" class="btn-secondary" hidden>${escapeHtml(t('settings.themeArtClear'))}</button>
+                  <span id="gs-art-status" class="gs-hint"></span>
+                </div>
+                <input type="file" id="gs-art-file" accept="image/*" class="gs-visually-hidden" />
+                <div class="gs-art-controls">
+                  <label class="gs-toggle">
+                    <span class="gs-label">${escapeHtml(t('settings.themeArtEnabled'))}</span>
+                    <input id="gs-art-enabled" class="gs-visually-hidden" type="checkbox">
+                    <span class="gs-switch" aria-hidden="true"></span>
+                  </label>
+                  <label class="gs-art-slider">
+                    <span>${escapeHtml(t('settings.themeArtStrength'))}</span>
+                    <input id="gs-art-strength" type="range" min="0" max="50" step="1">
+                    <span id="gs-art-strength-value" class="gs-art-value"></span>
+                  </label>
+                  <label class="gs-art-slider">
+                    <span>${escapeHtml(t('settings.themeArtBlur'))}</span>
+                    <input id="gs-art-blur" type="range" min="0" max="8" step="1">
+                    <span id="gs-art-blur-value" class="gs-art-value"></span>
+                  </label>
+                </div>
+              </div>
             </div>
-            <select id="gs-voice-zh-hk" style="width:100%"><option value="">${t('settings.loading')}</option></select>
-          </div>
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <div style="font-size:12px;color:var(--ink-500)">${t('settings.mandarinVoice')}</div>
-              <button id="gs-test-zh-cn" type="button" class="btn-secondary" style="padding:4px 8px">${t('settings.previewVoice')}</button>
+            <div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.brandIcon'))}</span>
+                <span class="gs-hint">${escapeHtml(t('settings.brandIconHint'))}</span>
+              </div>
+              <div class="gs-card-body">
+                <div class="gs-art-row">
+                  <button type="button" id="gs-icon-pick" class="btn">${escapeHtml(t('settings.brandIconPick'))}</button>
+                  <button type="button" id="gs-icon-clear" class="btn-secondary" hidden>${escapeHtml(t('settings.brandIconRestore'))}</button>
+                  <span id="gs-icon-status" class="gs-hint"></span>
+                </div>
+                <input type="file" id="gs-icon-file" accept="image/*" class="gs-visually-hidden" />
+              </div>
+            </div>`)}
+          ${panel('voice', 'settings.tabVoice', 'settings.panelVoiceHint', `
+            <div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.ttsSource'))}</span>
+                <span class="gs-hint">${escapeHtml(t('settings.ttsSourceHint'))}</span>
+              </div>
+              <div class="gs-card-body">
+                <div class="gs-choice-row" role="radiogroup" aria-label="${escapeHtml(t('settings.ttsSource'))}">
+                  <label class="gs-choice"><input id="gs-tts-use-remote" class="gs-visually-hidden" type="radio" name="gs-tts-use" ${settings.ttsUse !== 'local' && settings.ttsUse !== 'custom' ? 'checked' : ''}><span class="gs-choice-label">${escapeHtml(t('settings.remote'))}</span></label>
+                  <label class="gs-choice"><input id="gs-tts-use-local" class="gs-visually-hidden" type="radio" name="gs-tts-use" ${settings.ttsUse === 'local' ? 'checked' : ''}><span class="gs-choice-label">${escapeHtml(t('settings.local'))}</span></label>
+                  <label class="gs-choice"><input id="gs-tts-use-custom" class="gs-visually-hidden" type="radio" name="gs-tts-use" ${settings.ttsUse === 'custom' ? 'checked' : ''}><span class="gs-choice-label">${escapeHtml(t('settings.custom'))}</span></label>
+                </div>
+                <div class="gs-field" id="gs-tts-custom-wrap" ${settings.ttsUse === 'custom' ? '' : 'hidden'}>
+                  <label for="gs-tts-url-custom">${escapeHtml(t('settings.customTtsUrl'))}</label>
+                  <input id="gs-tts-url-custom" type="text" placeholder="https://your-tts.example.com" value="${escapeHtml(settings.ttsUrlCustom)}" autocomplete="off" spellcheck="false">
+                </div>
+              </div>
             </div>
-            <select id="gs-voice-zh-cn" style="width:100%"><option value="">${t('settings.loading')}</option></select>
-          </div>
+            <div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.ttsKey'))}</span>
+              </div>
+              <div class="gs-card-body">
+                <div class="gs-field">
+                  <input id="gs-tts-key" type="password" placeholder="..." value="${escapeHtml(secrets.ttsKey)}" autocomplete="off" spellcheck="false" aria-label="${escapeHtml(t('settings.ttsKey'))}">
+                  <p class="gs-hint">${escapeHtml(t('settings.ttsKeyHint'))}</p>
+                </div>
+              </div>
+            </div>
+            <div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.readingPrefs'))}</span>
+                <span class="gs-hint">${escapeHtml(t('settings.defaultBritish'))}</span>
+              </div>
+              <div class="gs-card-body">
+                <div class="gs-inline-field">
+                  <span class="gs-field-label">${escapeHtml(t('settings.englishVoicePreference'))}</span>
+                  <div class="gs-choice-row" role="radiogroup" aria-label="${escapeHtml(t('settings.englishVoicePreference'))}">
+                    <label class="gs-choice"><input id="gs-read-en-gb" class="gs-visually-hidden" name="gs-read-en" type="radio" ${settings.readEn !== 'en-US' ? 'checked' : ''}><span class="gs-choice-label">${escapeHtml(t('settings.britishEnglish'))}</span></label>
+                    <label class="gs-choice"><input id="gs-read-en-us" class="gs-visually-hidden" name="gs-read-en" type="radio" ${settings.readEn === 'en-US' ? 'checked' : ''}><span class="gs-choice-label">${escapeHtml(t('settings.americanEnglish'))}</span></label>
+                  </div>
+                </div>
+                <div class="gs-inline-field">
+                  <span class="gs-field-label">${escapeHtml(t('settings.chineseVoicePreference'))}</span>
+                  <div class="gs-choice-row" role="radiogroup" aria-label="${escapeHtml(t('settings.chineseVoicePreference'))}">
+                    <label class="gs-choice"><input id="gs-read-zh-cn" class="gs-visually-hidden" name="gs-read-zh" type="radio" ${settings.readZh !== 'zh-HK' ? 'checked' : ''}><span class="gs-choice-label">${escapeHtml(t('settings.mandarin'))}</span></label>
+                    <label class="gs-choice"><input id="gs-read-zh-hk" class="gs-visually-hidden" name="gs-read-zh" type="radio" ${settings.readZh === 'zh-HK' ? 'checked' : ''}><span class="gs-choice-label">${escapeHtml(t('settings.cantonese'))}</span></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.ttsVoices'))}</span>
+                <button id="gs-tts-reload" type="button" class="btn-secondary gs-mini">${escapeHtml(t('settings.reloadList'))}</button>
+              </div>
+              <div class="gs-card-body">
+                <div class="gs-voice-grid">${voiceRows}</div>
+                <p id="gs-voice-hint" class="gs-hint">${escapeHtml(t('settings.voiceLoadHint'))}</p>
+              </div>
+            </div>`)}
+          ${panel('ai', 'settings.tabAi', 'settings.panelAiHint', '<div id="gs-ai-settings"></div>')}
+          ${panel('tools', 'settings.tabTools', 'settings.panelToolsHint', `
+            <div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.phoneticsTitle'))}</span>
+                <a href="phonetics.html" target="_blank" rel="noopener">${escapeHtml(t('phonetics.independent'))}</a>
+              </div>
+              <div class="gs-card-body">
+                <label class="gs-toggle">
+                  <span class="gs-label">${escapeHtml(t('phonetics.enable'))}</span>
+                  <input id="gs-phonetics-enabled" class="gs-visually-hidden" type="checkbox" ${settings.phoneticsEnabled ? 'checked' : ''}>
+                  <span class="gs-switch" aria-hidden="true"></span>
+                </label>
+                <p class="gs-hint">${escapeHtml(t('phonetics.settingHint'))}</p>
+              </div>
+            </div>
+            <div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.assistant'))}</span>
+                <span class="gs-hint">${escapeHtml(t('settings.assistantHint'))}</span>
+              </div>
+              <div class="gs-card-body">
+                <label class="gs-toggle" title="${escapeHtml(t('settings.assistantEntryTitle'))}">
+                  <span class="gs-label">${escapeHtml(t('settings.enableAssistant'))}</span>
+                  <input id="gs-assistant-enabled" class="gs-visually-hidden" type="checkbox" ${settings.assistantEnabled ? 'checked' : ''}>
+                  <span class="gs-switch" aria-hidden="true"></span>
+                </label>
+                <label class="gs-toggle" title="${escapeHtml(t('settings.streamTitle'))}">
+                  <span class="gs-label">${escapeHtml(t('settings.streaming'))}</span>
+                  <input id="gs-assistant-stream" class="gs-visually-hidden" type="checkbox" ${settings.assistantStream === false ? '' : 'checked'}>
+                  <span class="gs-switch" aria-hidden="true"></span>
+                </label>
+              </div>
+            </div>
+            ${isAdmin ? `<div class="gs-card">
+              <div class="gs-card-head">
+                <span class="gs-card-title">${escapeHtml(t('settings.adminUsersTitle'))}</span>
+                <span class="gs-hint">${escapeHtml(t('settings.adminUsersHint'))}</span>
+              </div>
+              <div class="gs-card-body">
+                <button type="button" class="btn-secondary" id="gs-admin-users">${escapeHtml(t('settings.adminUsersEntry'))}</button>
+              </div>
+            </div>` : ''}`)}
         </div>
-        <div id="gs-voice-hint" class="gs-hint">${t('settings.voiceLoadHint')}</div>
       </div>
-      <div class="auth-field">
-        <label class="gs-toggle">
-          <input id="gs-phonetics-enabled" type="checkbox" ${persistedSettings.phonetics?.enabled === true ? 'checked' : ''}>
-          <span>${t('phonetics.enable')}</span>
-        </label>
-        <p class="gs-hint">${t('phonetics.settingHint')}</p>
-        <a href="phonetics.html" target="_blank" rel="noopener">${t('phonetics.independent')}</a>
-      </div>
-      <div class="auth-field">
-        <label>${t('settings.assistant')}</label>
-        <div class="gs-asst-row">
-          <label class="gs-toggle" title="${t('settings.assistantEntryTitle')}">
-            <input id="gs-assistant-enabled" class="gs-visually-hidden" type="checkbox" ${settings.assistantEnabled ? 'checked' : ''}>
-            <span class="gs-switch" aria-hidden="true"></span>
-            <span class="gs-label">${t('settings.enableAssistant')}</span>
-          </label>
-          <label class="gs-toggle" title="${t('settings.streamTitle')}">
-            <input id="gs-assistant-stream" class="gs-visually-hidden" type="checkbox" ${settings.assistantStream === false ? '' : 'checked'}>
-            <span class="gs-switch" aria-hidden="true"></span>
-            <span class="gs-label">${t('settings.streaming')}</span>
-          </label>
-          <span class="gs-hint">${t('settings.assistantHint')}</span>
-        </div>
-      </div>
-      <div class="auth-actions">
-        <button id="gs-cancel" class="btn-secondary">${t('settings.cancel')}</button>
-        <button id="gs-save" class="btn-primary">${t('settings.save')}</button>
-      </div>
-      <div class="auth-msg" id="gs-msg">${t('settings.localOnlyHint')}</div>
     </div>`;
   dom.modalBody.innerHTML = html;
-  renderAiSettingsSection();
-  const $ = (id)=> dom.modalBody.querySelector(id);
-  $('#gs-cancel').onclick = ()=>{ applyTheme(getSavedTheme()); ui.closeModal(); };
+  if (dom.modalActions) {
+    dom.modalActions.hidden = false;
+    dom.modalActions.innerHTML = `<div class="gs-footer">
+      <span class="gs-saved" id="gs-saved" role="status" aria-live="polite"></span>
+      <button type="button" class="btn-primary" id="gs-save">${escapeHtml(t('settings.done'))}</button>
+    </div>`;
+  }
 
-  // 主題選擇：點了先即時預覽，按「儲存」才寫入設定；取消或關閉會還原
-  (function wireThemePicker(){
-    const row = dom.modalBody.querySelector('#gs-theme-row');
-    if (!row) return;
-    const markActive = (id) => {
-      row.querySelectorAll('.gs-theme-btn').forEach((btn) => {
-        const on = btn.getAttribute('data-theme-id') === id;
-        btn.classList.toggle('active', on);
-        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      });
-    };
-    row.addEventListener('click', (event) => {
-      const btn = event.target.closest('.gs-theme-btn');
-      if (!btn) return;
-      draftTheme = applyTheme(btn.getAttribute('data-theme-id'));
-      markActive(draftTheme);
-    });
-    markActive(draftTheme);
-  })();
-  // 初始化預設單選狀態
-  try {
-    const use = settings?.ttsUse || 'remote';
-    dom.modalBody.querySelector('#gs-tts-use-remote').checked = use !== 'local' && use !== 'custom';
-    dom.modalBody.querySelector('#gs-tts-use-local').checked = use === 'local';
-    dom.modalBody.querySelector('#gs-tts-use-custom').checked = use === 'custom';
-    const en = settings?.readEn || 'en-GB';
-    dom.modalBody.querySelector('#gs-read-en-gb').checked = (en === 'en-GB');
-    dom.modalBody.querySelector('#gs-read-en-us').checked = (en === 'en-US');
-    const zh = settings?.readZh || 'zh-CN';
-    dom.modalBody.querySelector('#gs-read-zh-cn').checked = (zh === 'zh-CN');
-    dom.modalBody.querySelector('#gs-read-zh-hk').checked = (zh === 'zh-HK');
-  } catch(_) {}
+  const $ = (sel) => dom.modalBody.querySelector(sel);
+  const $$ = (sel) => Array.from(dom.modalBody.querySelectorAll(sel));
+  const savedEl = () => dom.modalActions ? dom.modalActions.querySelector('#gs-saved') : null;
 
-  // 若使用自定義，顯示輸入框
-  (function wireCustomToggle(){
-    const wrap = dom.modalBody.querySelector('#gs-tts-custom-wrap');
-    const onChange = ()=>{ const c = dom.modalBody.querySelector('#gs-tts-use-custom')?.checked; if (wrap) wrap.style.display = c ? '' : 'none'; };
-    ['#gs-tts-use-remote','#gs-tts-use-local','#gs-tts-use-custom'].forEach(id=>{ const el=dom.modalBody.querySelector(id); if(el) el.addEventListener('change', onChange); });
-    onChange();
-  })();
-
-  // 若自定義輸入框為空，從 ai-config.js 補上預設（若提供）
-  (async ()=>{
+  const markSaved = () => {
+    if (disposed) return;
+    const el = savedEl();
+    if (!el) return;
+    el.classList.remove('failed');
+    el.textContent = `${t('settings.autoSaved')} · ${new Date().toLocaleTimeString('zh-CN', { hour12: false })}`;
+  };
+  const markFailed = () => {
+    const el = savedEl();
+    if (!el) return;
+    el.classList.add('failed');
+    el.textContent = t('settings.autoSaveFailed');
+  };
+  // 所有設定都走這裡：成功就更新底部狀態，失敗保留在使用者眼前而不是靜靜吞掉。
+  const persist = (patch, secretPatch, options = {}) => {
     try {
-      const cfg = await import('../../ai-config.js');
-      const custom = '';
-      const inCustom = dom.modalBody.querySelector('#gs-tts-url-custom');
-      if (inCustom && !inCustom.value) inCustom.value = custom;
-    } catch(_) {}
-  })();
-
-  $('#gs-save').onclick = async ()=>{
-    try {
-      const ttsUse = dom.modalBody.querySelector('#gs-tts-use-custom')?.checked ? 'custom' : (dom.modalBody.querySelector('#gs-tts-use-local')?.checked ? 'local' : 'remote');
-      const ttsUrlCustom = (dom.modalBody.querySelector('#gs-tts-url-custom')?.value || '').trim();
-      const ttsKey = $('#gs-tts-key').value.trim();
-      const interfaceLocale = dom.modalBody.querySelector('#gs-interface-locale')?.value || 'zh-CN';
-      const asstEnabled = dom.modalBody.querySelector('#gs-assistant-enabled')?.checked ? true : false;
-      const asstStream = dom.modalBody.querySelector('#gs-assistant-stream')?.checked !== false;
-      const sv = {
-        'en-US': (dom.modalBody.querySelector('#gs-voice-en-us')?.value || '').trim(),
-        'en-GB': (dom.modalBody.querySelector('#gs-voice-en-gb')?.value || '').trim(),
-        'zh-HK': (dom.modalBody.querySelector('#gs-voice-zh-hk')?.value || '').trim(),
-        'zh-CN': (dom.modalBody.querySelector('#gs-voice-zh-cn')?.value || '').trim()
-      };
-      Object.keys(sv).forEach(k => { if (!sv[k]) delete sv[k]; });
-      const readEn = dom.modalBody.querySelector('#gs-read-en-us')?.checked ? 'en-US' : 'en-GB';
-      const readZh = dom.modalBody.querySelector('#gs-read-zh-hk')?.checked ? 'zh-HK' : 'zh-CN';
-      const aiSettings = buildDraftAiSettings();
-      const aiSecrets = buildDraftAiSecrets();
-      saveGlobalSettings({
-        ...aiSettings,
-        theme: draftTheme,
-        language: { interfaceLocale },
-        phonetics: { enabled: dom.modalBody.querySelector('#gs-phonetics-enabled')?.checked === true },
-        tts: { use: ttsUse, baseUrlCustom: ttsUrlCustom, selectedVoices: sv },
-        reading: { englishVariant: readEn, chineseVariant: readZh },
-        assistant: { enabled: asstEnabled, stream: asstStream }
-      });
-      saveGlobalSecrets({
-        ...aiSecrets,
-        ttsApiKey: ttsKey
-      });
-      setLocale(interfaceLocale, { persist: false });
-      document.dispatchEvent(new CustomEvent('bdc:settings-change'));
-      $('#gs-msg').textContent = t('settings.savedLocal');
-      setTimeout(()=> ui.closeModal(), 500);
-    } catch (e) {
-      $('#gs-msg').textContent = t('settings.saveFailed') + (e?.message || '');
+      if (patch) saveGlobalSettings(patch);
+      if (secretPatch) saveGlobalSecrets(secretPatch);
+      if (options.silent !== true) markSaved();
+      return true;
+    } catch (_) {
+      markFailed();
+      return false;
     }
   };
+  const debounce = (fn, wait = 500) => {
+    let timer = 0;
+    const run = () => { clearTimeout(timer); timer = 0; fn(); };
+    const wrapped = () => { clearTimeout(timer); timer = setTimeout(run, wait); };
+    wrapped.flush = () => { if (!timer) return; run(); };
+    wrapped.cancel = () => { clearTimeout(timer); timer = 0; };
+    return wrapped;
+  };
 
-  // 初始化聲音清單
-  (async function initVoices(){
-    const $ = (sel) => dom.modalBody.querySelector(sel);
-    const btn = $('#gs-tts-reload');
-    const selects = ['#gs-voice-en-us','#gs-voice-en-gb','#gs-voice-zh-hk','#gs-voice-zh-cn'].map(s=>$(s));
-    const testBtns = {
-      'en-US': $('#gs-test-en-us'),
-      'en-GB': $('#gs-test-en-gb'),
-      'zh-HK': $('#gs-test-zh-hk'),
-      'zh-CN': $('#gs-test-zh-cn')
-    };
-    const setLoading = (on) => { selects.forEach(sel => { if (!sel) return; sel.innerHTML = `<option value="">${on ? t('settings.loading') : t('settings.noAvailable')}</option>`; sel.disabled = on; }); };
-    const ensureOptions = (sel, arr, savedVal) => {
-        if (!sel) return;
-        sel.innerHTML = '';
-        if (!arr || !arr.length) { sel.innerHTML = `<option value="">${t('settings.noAvailable')}</option>`; sel.disabled = false; return; }
-        arr.forEach(v => { const o=document.createElement('option'); o.value=v.id; o.textContent=v.__label||v.id; sel.appendChild(o); });
-        // 若有保存值且存在於清單，選中；否則預設第一項
-        if (savedVal && Array.from(sel.options).some(o => o.value === savedVal)) sel.value = savedVal;
-        if (!sel.value && sel.options.length) sel.selectedIndex = 0;
-    };
-    const fillAll = (groups, saved) => {
-        const mk = (arr) => (arr||[]).map(v => ({ ...v, __label: v.__label || v.id }));
-        ensureOptions($('#gs-voice-en-us'), mk(groups['en-US']), saved['en-US']);
-        ensureOptions($('#gs-voice-en-gb'), mk(groups['en-GB']), saved['en-GB']);
-        ensureOptions($('#gs-voice-zh-hk'), mk(groups['zh-HK']), saved['zh-HK']);
-        ensureOptions($('#gs-voice-zh-cn'), mk(groups['zh-CN']), saved['zh-CN']);
-    };
-    const loadAndPopulate = async (refresh=false) => {
-      setLoading(true);
-      try {
-        const { fetchVoicesList, groupVoices, formatVoiceLabel, pickDefaultVoiceId } = await import('../../modules/voices.js');
-        // 允許使用者不先儲存也能以當前面板的選項載入清單
-        const preferUse = dom.modalBody.querySelector('#gs-tts-use-custom')?.checked ? 'custom' : (dom.modalBody.querySelector('#gs-tts-use-local')?.checked ? 'local' : 'remote');
-        const overrideBaseUrls = preferUse === 'custom' ? { custom: (dom.modalBody.querySelector('#gs-tts-url-custom')?.value || '').trim() } : undefined;
-        const list = await fetchVoicesList({ refresh, overrideUse: preferUse, overrideBaseUrls });
-        list.forEach(v => { v.__label = formatVoiceLabel(v); });
-        const groups = groupVoices(list);
-        let saved = {};
-        try { const raw = localStorage.getItem('pen_global_settings'); if (raw) { const js = JSON.parse(raw); saved = (js?.tts && js.tts.selectedVoices) || {}; } } catch(_) {}
-        // fill defaults if empty
-        const ensure = (k) => { if (!saved[k] && groups[k] && groups[k].length) saved[k] = pickDefaultVoiceId(groups[k]); };
-        ['en-US','en-GB','zh-HK','zh-CN'].forEach(ensure);
-        fillAll(groups, saved);
-        // 啟用試聽按鈕
-        Object.keys(testBtns).forEach(k => { if (testBtns[k]) testBtns[k].disabled = false; });
-        const hint = $('#gs-voice-hint'); if (hint) hint.textContent = t('settings.voicesLoaded', { count: list.length });
-      } catch (e) {
-        selects.forEach(sel => { if (!sel) return; sel.innerHTML = `<option value="">${t('settings.loadFailed')}</option>`; sel.disabled = false; });
-        const hint = $('#gs-voice-hint'); if (hint) hint.textContent = t('settings.loadFailedMessage', { message: e?.message || '' });
-      } finally {
-        selects.forEach(sel => { if (!sel) return; sel.disabled = false; });
+  const setTab = (id) => {
+    gsActiveTab = id;
+    $$('[data-gs-tab]').forEach((btn) => {
+      const on = btn.dataset.gsTab === id;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      btn.tabIndex = on ? 0 : -1;
+    });
+    $$('[data-gs-panel]').forEach((panelEl) => { panelEl.hidden = panelEl.dataset.gsPanel !== id; });
+    dom.modalBody.scrollTop = 0;
+  };
+  $$('[data-gs-tab]').forEach((btn) => btn.addEventListener('click', () => setTab(btn.dataset.gsTab)));
+  const nav = $('.gs-nav');
+  if (nav) {
+    nav.addEventListener('keydown', (event) => {
+      if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const ids = TABS.map((tab) => tab.id);
+      const index = ids.indexOf(gsActiveTab);
+      const next = event.key === 'Home' ? ids[0]
+        : event.key === 'End' ? ids[ids.length - 1]
+          : ids[(index + (event.key === 'ArrowDown' ? 1 : -1) + ids.length) % ids.length];
+      setTab(next);
+      $(`[data-gs-tab="${next}"]`)?.focus();
+    });
+  }
+
+  // 介面語言：立即儲存並套用；面板文案是建立時以 t() 定稿，換語言就重建（保留分類）。
+  $('#gs-interface-locale')?.addEventListener('change', (event) => {
+    const value = event.target.value || 'zh-CN';
+    if (!persist({ language: { interfaceLocale: value } })) return;
+    try { setLocale(value, { persist: false }); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('bdc:settings-change')); } catch (_) {}
+    destroyAIProviderSettings();
+    showGlobalSettingsModal();
+  });
+
+  // 背景插畫：圖片本體只存本機 IndexedDB，切換配色會自動跟著換；顯示參數即時儲存
+  let refreshArtStatus = () => {};
+  (function wireThemeArt() {
+    const pick = $('#gs-art-pick');
+    const fileInput = $('#gs-art-file');
+    const clearBtn = $('#gs-art-clear');
+    const statusEl = $('#gs-art-status');
+    const enabledInput = $('#gs-art-enabled');
+    const strengthInput = $('#gs-art-strength');
+    const blurInput = $('#gs-art-blur');
+    const strengthValue = $('#gs-art-strength-value');
+    const blurValue = $('#gs-art-blur-value');
+    if (!pick || !fileInput || !statusEl) return;
+
+    const currentThemeId = () => document.documentElement.dataset.theme || getSavedTheme();
+    const artSettings = getArtSettings();
+    if (enabledInput) enabledInput.checked = artSettings.enabled;
+    const strengthPercent = Math.round(artSettings.strength * 100);
+    if (strengthInput) strengthInput.value = String(strengthPercent);
+    if (strengthValue) strengthValue.textContent = `${strengthPercent}%`;
+    if (blurInput) blurInput.value = String(Math.round(artSettings.blur));
+    if (blurValue) blurValue.textContent = `${Math.round(artSettings.blur)}px`;
+
+    refreshArtStatus = async () => {
+      const themeId = currentThemeId();
+      const meta = await getThemeArtMeta(themeId);
+      const builtin = getThemeDefaultArt(themeId);
+      if (meta) {
+        const size = meta.width && meta.height ? `${meta.width}×${meta.height}` : '';
+        statusEl.textContent = [meta.name, size].filter(Boolean).join(' · ');
+        statusEl.dataset.hasArt = 'true';
+      } else if (builtin) {
+        statusEl.textContent = t('settings.themeArtBuiltIn');
+        statusEl.dataset.hasArt = 'true';
+      } else {
+        statusEl.textContent = t('settings.themeArtNone');
+        delete statusEl.dataset.hasArt;
       }
+      // 只有「自己選的圖」才需要移除；移除後回到主題內建圖
+      if (clearBtn) clearBtn.hidden = !meta;
+      if (enabledInput) enabledInput.disabled = !(meta || builtin);
     };
-    if (btn) btn.addEventListener('click', () => loadAndPopulate(true));
-    loadAndPopulate(false);
 
-    // 綁定試聽事件
-    const playSamples = async (group) => {
-      const hint = $('#gs-voice-hint');
+    pick.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      const chosen = fileInput.files && fileInput.files[0];
+      if (!chosen) return;
+      pick.disabled = true;
       try {
-        const { stopCurrentAudio, speakText, buildTTSUrl } = await import('../../modules/audio.js');
-        stopCurrentAudio();
-        const sel = {
-          'en-US': $('#gs-voice-en-us'),
-          'en-GB': $('#gs-voice-en-gb'),
-          'zh-HK': $('#gs-voice-zh-hk'),
-          'zh-CN': $('#gs-voice-zh-cn')
-        }[group];
-        // 優先用當前下拉的值；若沒有，退到本機保存或 ai-config 預設
-        let id = (sel && sel.value) ? sel.value : '';
-        if (!id) {
-          try { const raw = localStorage.getItem('pen_global_settings'); if (raw) { const js = JSON.parse(raw); id = (js?.tts?.selectedVoices||{})[group] || ''; } } catch(_) {}
+        await setThemeArtFromFile(currentThemeId(), chosen);
+        await applyThemeArt(currentThemeId());
+      } catch (error) {
+        const code = error && error.message;
+        const key = code === 'too-large' ? 'settings.themeArtTooLarge'
+          : code === 'unsupported-type' ? 'settings.themeArtBadType'
+            : 'settings.themeArtFailed';
+        ui.displayMessage(t(key), 'error', 4200);
+      } finally {
+        pick.disabled = false;
+        fileInput.value = '';
+        refreshArtStatus();
+      }
+    });
+    clearBtn?.addEventListener('click', async () => {
+      await removeThemeArt(currentThemeId());
+      refreshArtStatus();
+    });
+    enabledInput?.addEventListener('change', () => {
+      saveArtSettings({ enabled: enabledInput.checked });
+      applyArtSettings();
+    });
+    strengthInput?.addEventListener('input', () => {
+      const percent = Number(strengthInput.value);
+      if (strengthValue) strengthValue.textContent = `${percent}%`;
+      saveArtSettings({ strength: percent / 100 });
+      applyArtSettings();
+    });
+    blurInput?.addEventListener('input', () => {
+      const px = Number(blurInput.value);
+      if (blurValue) blurValue.textContent = `${px}px`;
+      saveArtSettings({ blur: px });
+      applyArtSettings();
+    });
+    refreshArtStatus();
+  })();
+
+  // 品牌圖標：可為每套配色換上自己的小圖；沒設定就沿用主題內建的線性圖標
+  let refreshIconStatus = () => {};
+  (function wireThemeIcon() {
+    const pick = $('#gs-icon-pick');
+    const fileInput = $('#gs-icon-file');
+    const clearBtn = $('#gs-icon-clear');
+    const statusEl = $('#gs-icon-status');
+    if (!pick || !fileInput || !statusEl) return;
+
+    const currentThemeId = () => document.documentElement.dataset.theme || getSavedTheme();
+
+    refreshIconStatus = async () => {
+      const meta = await getThemeIconMeta(currentThemeId());
+      if (meta) {
+        const size = meta.width && meta.height ? `${meta.width}×${meta.height}` : '';
+        statusEl.textContent = [meta.name, size].filter(Boolean).join(' · ');
+        statusEl.dataset.hasArt = 'true';
+      } else {
+        statusEl.textContent = t('settings.brandIconNone');
+        delete statusEl.dataset.hasArt;
+      }
+      if (clearBtn) clearBtn.hidden = !meta;
+    };
+
+    pick.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      const chosen = fileInput.files && fileInput.files[0];
+      if (!chosen) return;
+      pick.disabled = true;
+      try {
+        await setThemeIconFromFile(currentThemeId(), chosen);
+        await applyThemeArt(currentThemeId());
+      } catch (error) {
+        const code = error && error.message;
+        const key = code === 'too-large' ? 'settings.themeArtTooLarge'
+          : code === 'unsupported-type' ? 'settings.themeArtBadType'
+            : 'settings.themeArtFailed';
+        ui.displayMessage(t(key), 'error', 4200);
+      } finally {
+        pick.disabled = false;
+        fileInput.value = '';
+        refreshIconStatus();
+      }
+    });
+    clearBtn?.addEventListener('click', async () => {
+      await removeThemeIcon(currentThemeId());
+      refreshIconStatus();
+    });
+    refreshIconStatus();
+  })();
+
+  // 主題：點一下就套用並寫入，不再有「預覽後按儲存」。
+  const themeRow = $('#gs-theme-row');
+  themeRow?.addEventListener('click', (event) => {
+    const btn = event.target.closest('.gs-theme-btn');
+    if (!btn) return;
+    const applied = applyTheme(btn.getAttribute('data-theme-id'));
+    themeRow.querySelectorAll('.gs-theme-btn').forEach((item) => {
+      const on = item.getAttribute('data-theme-id') === applied;
+      item.classList.toggle('active', on);
+      item.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    persist({ theme: applied });
+    refreshArtStatus();
+    refreshIconStatus();
+  });
+
+  // 朗讀來源／自訂 URL
+  const customWrap = $('#gs-tts-custom-wrap');
+  const customInput = $('#gs-tts-url-custom');
+  const currentTtsUse = () => $('#gs-tts-use-custom')?.checked ? 'custom' : ($('#gs-tts-use-local')?.checked ? 'local' : 'remote');
+  const syncCustomWrap = () => { if (customWrap) customWrap.hidden = currentTtsUse() !== 'custom'; };
+  const saveCustomUrl = debounce(() => {
+    persist({ tts: { baseUrlCustom: String(customInput?.value || '').trim() } });
+    loadVoices(false);
+  }, 700);
+  ['#gs-tts-use-remote', '#gs-tts-use-local', '#gs-tts-use-custom'].forEach((sel) => {
+    $(sel)?.addEventListener('change', () => {
+      const use = currentTtsUse();
+      syncCustomWrap();
+      persist({ tts: { use } });
+      loadVoices(false);
+    });
+  });
+  customInput?.addEventListener('input', saveCustomUrl);
+  customInput?.addEventListener('change', () => saveCustomUrl.flush());
+
+  // TTS 金鑰（只存本機）
+  const keyInput = $('#gs-tts-key');
+  const saveTtsKey = debounce(() => persist(null, { ttsApiKey: String(keyInput?.value || '').trim() }), 600);
+  keyInput?.addEventListener('input', saveTtsKey);
+  keyInput?.addEventListener('change', () => saveTtsKey.flush());
+
+  // 讀音偏好
+  ['#gs-read-en-gb', '#gs-read-en-us'].forEach((sel) => {
+    $(sel)?.addEventListener('change', () => {
+      const variant = $('#gs-read-en-us')?.checked ? 'en-US' : 'en-GB';
+      if (persist({ reading: { englishVariant: variant } })) {
+        try { document.dispatchEvent(new CustomEvent('bdc:settings-change')); } catch (_) {}
+      }
+    });
+  });
+  ['#gs-read-zh-cn', '#gs-read-zh-hk'].forEach((sel) => {
+    $(sel)?.addEventListener('change', () => {
+      const variant = $('#gs-read-zh-hk')?.checked ? 'zh-HK' : 'zh-CN';
+      if (persist({ reading: { chineseVariant: variant } })) {
+        try { document.dispatchEvent(new CustomEvent('bdc:settings-change')); } catch (_) {}
+      }
+    });
+  });
+
+  // 拼讀與助手
+  $('#gs-phonetics-enabled')?.addEventListener('change', (event) => {
+    if (persist({ phonetics: { enabled: event.target.checked === true } })) {
+      try { document.dispatchEvent(new CustomEvent('bdc:settings-change')); } catch (_) {}
+    }
+  });
+  $('#gs-assistant-enabled')?.addEventListener('change', (event) => {
+    persist({ assistant: { enabled: event.target.checked === true } });
+  });
+  $('#gs-assistant-stream')?.addEventListener('change', (event) => {
+    persist({ assistant: { stream: event.target.checked === true } });
+  });
+  $('#gs-admin-users')?.addEventListener('click', () => {
+    openAdminUsersPanel();
+  });
+
+  // 聲音清單
+  const VOICE_GROUPS = ['en-US', 'en-GB', 'zh-HK', 'zh-CN'];
+  const voiceSelects = () => VOICE_GROUPS.map((group) => $(`[data-voice-group="${group}"]`));
+  const voiceHint = () => $('#gs-voice-hint');
+  const savedVoices = () => {
+    try { return { ...(loadGlobalSettings()?.tts?.selectedVoices || {}) }; } catch (_) { return {}; }
+  };
+  let voiceRequest = 0;
+  const setVoiceLoading = (on) => {
+    voiceSelects().forEach((sel) => {
+      if (!sel) return;
+      if (on) sel.innerHTML = `<option value="">${escapeHtml(t('settings.loading'))}</option>`;
+      sel.disabled = on;
+    });
+  };
+  const fillVoices = (groups, stored) => {
+    const saved = { ...stored };
+    const pick = async () => (await import('../../modules/voices.js')).pickDefaultVoiceId;
+    return pick().then((pickDefaultVoiceId) => {
+      if (disposed) return null;
+      VOICE_GROUPS.forEach((group) => {
+        if (!saved[group] && groups[group] && groups[group].length) saved[group] = pickDefaultVoiceId(groups[group]);
+      });
+      voiceSelects().forEach((sel, index) => {
+        const group = VOICE_GROUPS[index];
+        if (!sel) return;
+        const list = groups[group] || [];
+        if (!list.length) {
+          sel.innerHTML = `<option value="">${escapeHtml(t('settings.noAvailable'))}</option>`;
+          sel.disabled = false;
+          return;
         }
-        if (!id) {
-          try { const cfg = await import('../../ai-config.js');
-            if (group === 'zh-HK') id = cfg?.TTS_CONFIG?.voices?.cantonese || '';
-            else if (group === 'zh-CN') id = cfg?.TTS_CONFIG?.voices?.chinese || '';
-            else id = cfg?.TTS_CONFIG?.voices?.english || '';
-          } catch(_) {}
-        }
-        if (!id) { if (hint) hint.textContent = t('settings.noVoice'); return; }
-        let text;
-        if (group === 'en-US') text = 'This is a test voice.';
-        else if (group === 'en-GB') text = 'This is a British English test voice.';
-        // i18n-allow: 刻意用「該語音自己的語言」唸測試句（測粵語 voice 就用粵語句），不跟介面語言走
-        // i18n-allow: 用該語音自己的語言唸測試句
-        else if (group === 'zh-HK') text = '呢個係測試語音。';
-        // i18n-allow: 同上，測試句跟著語音語言
-        else text = '這是一段測試語音。';
-        const ok = await speakText(text, id, 0);
-        if (!ok) {
-          const url = buildTTSUrl(text, id, 0);
-          try { console.debug('[TTS test]', group, id, url.replace(/(api_key=)[^&]+/, '$1***')); } catch(_) {}
-          if (hint) hint.textContent = t('settings.playbackFailed');
-        }
-      } catch(e) {
-        console.error('試聽失敗', e);
-        // 後備：若該 id 不被後端支援，嘗試使用 ai-config 的預設粵/普語音
+        sel.innerHTML = list.map((voice) => `<option value="${escapeHtml(voice.id)}">${escapeHtml(voice.__label || voice.id)}</option>`).join('');
+        if (saved[group] && list.some((voice) => voice.id === saved[group])) sel.value = saved[group];
+        if (!sel.value && sel.options.length) sel.selectedIndex = 0;
+        sel.disabled = false;
+      });
+      return saved;
+    });
+  };
+  const loadVoices = async (refresh = false) => {
+    const seq = ++voiceRequest;
+    setVoiceLoading(true);
+    try {
+      const { fetchVoicesList, groupVoices, formatVoiceLabel } = await import('../../modules/voices.js');
+      const preferUse = currentTtsUse();
+      const overrideBaseUrls = preferUse === 'custom'
+        ? { custom: String(customInput?.value || '').trim() }
+        : undefined;
+      const list = await fetchVoicesList({ refresh, overrideUse: preferUse, overrideBaseUrls });
+      if (disposed || seq !== voiceRequest) return;
+      list.forEach((voice) => { voice.__label = formatVoiceLabel(voice); });
+      const groups = groupVoices(list);
+      const before = savedVoices();
+      const missing = VOICE_GROUPS.some((group) => !before[group]);
+      const filled = await fillVoices(groups, before);
+      if (!filled || disposed || seq !== voiceRequest) return;
+      // 首次載入選到的預設語音也直接寫入，避免「畫面上選了但其實沒存」。
+      if (missing) persist({ tts: { selectedVoices: filled } }, null, { silent: true });
+      const hint = voiceHint();
+      if (hint) hint.textContent = t('settings.voicesLoaded', { count: list.length });
+    } catch (error) {
+      if (disposed || seq !== voiceRequest) return;
+      voiceSelects().forEach((sel) => {
+        if (!sel) return;
+        sel.innerHTML = `<option value="">${escapeHtml(t('settings.loadFailed'))}</option>`;
+        sel.disabled = false;
+      });
+      const hint = voiceHint();
+      if (hint) hint.textContent = t('settings.loadFailedMessage', { message: (error && error.message) || '' });
+    }
+  };
+  $('#gs-tts-reload')?.addEventListener('click', () => loadVoices(true));
+  voiceSelects().forEach((sel) => {
+    sel?.addEventListener('change', () => {
+      const group = sel.getAttribute('data-voice-group');
+      const current = savedVoices();
+      current[group] = sel.value;
+      persist({ tts: { selectedVoices: current } });
+    });
+  });
+
+  // 試聽
+  const playSamples = async (group) => {
+    const hint = voiceHint();
+    const sel = $(`[data-voice-group="${group}"]`);
+    try {
+      const { stopCurrentAudio, speakText, buildTTSUrl } = await import('../../modules/audio.js');
+      stopCurrentAudio();
+      let id = (sel && sel.value) ? sel.value : '';
+      if (!id) id = savedVoices()[group] || '';
+      if (!id) {
         try {
           const cfg = await import('../../ai-config.js');
-          const { speakText } = await import('../../modules/audio.js');
-          let fb = '';
-          if (group === 'zh-HK') fb = cfg?.TTS_CONFIG?.voices?.cantonese || '';
-          if (group === 'zh-CN') fb = cfg?.TTS_CONFIG?.voices?.chinese || '';
-          if (group === 'en-US') fb = cfg?.TTS_CONFIG?.voices?.english || '';
-          if (group === 'en-GB') {
-            // 若未提供英音預設，回退到 english 也可接受
-            fb = cfg?.TTS_CONFIG?.voices?.english || '';
-          }
-          if (fb) {
-            // i18n-allow: 測試句刻意用該語音自己的語言，不跟介面語言
-            let text = (group === 'zh-HK') ? '呢個係測試語音。' : (group === 'zh-CN' ? '這是一段測試語音。' : 'This is a test voice.');
-            await speakText(text, fb, 0);
-            if (hint) hint.textContent = t('settings.fallbackVoice');
-          }
+          if (group === 'zh-HK') id = cfg?.TTS_CONFIG?.voices?.cantonese || '';
+          else if (group === 'zh-CN') id = cfg?.TTS_CONFIG?.voices?.chinese || '';
+          else id = cfg?.TTS_CONFIG?.voices?.english || '';
         } catch(_) {}
       }
-    };
-    if (testBtns['en-US']) testBtns['en-US'].addEventListener('click', () => playSamples('en-US'));
-    if (testBtns['en-GB']) testBtns['en-GB'].addEventListener('click', () => playSamples('en-GB'));
-    if (testBtns['zh-HK']) testBtns['zh-HK'].addEventListener('click', () => playSamples('zh-HK'));
-    if (testBtns['zh-CN']) testBtns['zh-CN'].addEventListener('click', () => playSamples('zh-CN'));
-  })();
+      if (!id) { if (hint) hint.textContent = t('settings.noVoice'); return; }
+      let text;
+      if (group === 'en-US') text = 'This is a test voice.';
+      else if (group === 'en-GB') text = 'This is a British English test voice.';
+      // i18n-allow: 刻意用「該語音自己的語言」唸測試句（測粵語 voice 就用粵語句），不跟介面語言走
+      else if (group === 'zh-HK') text = '呢個係測試語音。';
+      // i18n-allow: 同上，測試句跟著語音語言
+      else text = '這是一段測試語音。';
+      const ok = await speakText(text, id, 0);
+      if (!ok) {
+        const url = buildTTSUrl(text, id, 0);
+        try { console.debug('[TTS test]', group, id, url.replace(/(api_key=)[^&]+/, '$1***')); } catch(_) {}
+        if (hint) hint.textContent = t('settings.playbackFailed');
+      }
+    } catch(error) {
+      console.error('試聽失敗', error);
+      // 後備：若該 id 不被後端支援，嘗試使用 ai-config 的預設粵/普語音
+      try {
+        const cfg = await import('../../ai-config.js');
+        const { speakText } = await import('../../modules/audio.js');
+        let fallback = '';
+        if (group === 'zh-HK') fallback = cfg?.TTS_CONFIG?.voices?.cantonese || '';
+        if (group === 'zh-CN') fallback = cfg?.TTS_CONFIG?.voices?.chinese || '';
+        if (group === 'en-US') fallback = cfg?.TTS_CONFIG?.voices?.english || '';
+        if (group === 'en-GB') {
+          // 若未提供英音預設，回退到 english 也可接受
+          fallback = cfg?.TTS_CONFIG?.voices?.english || '';
+        }
+        if (fallback) {
+          // i18n-allow: 測試句刻意用該語音自己的語言，不跟介面語言
+          const text = (group === 'zh-HK') ? '呢個係測試語音。' : (group === 'zh-CN' ? '這是一段測試語音。' : 'This is a test voice.');
+          await speakText(text, fallback, 0);
+          if (hint) hint.textContent = t('settings.fallbackVoice');
+        }
+      } catch(_) {}
+    }
+  };
+  [['en-US', '#gs-test-en-us'], ['en-GB', '#gs-test-en-gb'], ['zh-HK', '#gs-test-zh-hk'], ['zh-CN', '#gs-test-zh-cn']]
+    .forEach(([group, sel]) => $(sel)?.addEventListener('click', () => playSamples(group)));
+  loadVoices(false);
+
+  // AI 供應商面板
+  destroyAIProviderSettings();
+  aiProviderController = mountAIProviderSettings($('#gs-ai-settings'), {
+    onRequestLogin: () => {
+      destroyAIProviderSettings();
+      try { showLoginModal(); } catch (_) {}
+    }
+  });
+
+  // 關閉：把還在 debounce 的輸入（TTS 金鑰、自訂 URL）沖掉，避免最後一刻的修改遺失。
+  const flushPending = () => {
+    try { saveTtsKey.flush(); } catch (_) {}
+    try { saveCustomUrl.flush(); } catch (_) {}
+  };
+  const onClosed = () => {
+    disposed = true;
+    flushPending();
+    document.removeEventListener('bdc:modal-closed', onClosed);
+  };
+  document.addEventListener('bdc:modal-closed', onClosed);
+  // 底部按鈕在 #modal-actions（不在 modalBody）裡，要用 footer 查詢。
+  dom.modalActions?.querySelector('#gs-save')?.addEventListener('click', () => {
+    flushPending();
+    destroyAIProviderSettings();
+    try { ui.closeModal(); } catch (_) {}
+  });
+  gsCleanup = () => {
+    document.removeEventListener('bdc:modal-closed', onClosed);
+    disposed = true;
+    try { saveTtsKey.cancel(); } catch (_) {}
+    try { saveCustomUrl.cancel(); } catch (_) {}
+  };
 }
 
 function setGearLoginState(isLoggedIn, email) {
@@ -1144,19 +1278,6 @@ async function clearLocalCaches() {
 
 function escapeHtml(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function getAiTaskFieldList() {
-  return [
-    { key: 'wordAnalysis', label: t('settings.taskWord') },
-    { key: 'sentenceChecking', label: t('settings.taskSentence') },
-    { key: 'qaChecking', label: t('settings.taskQa') },
-    { key: 'articleAnalysis', label: t('settings.taskArticle') },
-    { key: 'articleCleanup', label: t('settings.taskCleanup') },
-    { key: 'exampleGeneration', label: t('settings.taskExamples') },
-    { key: 'imageOCR', label: t('settings.taskOcr') },
-    { key: 'assistant', label: t('settings.taskAssistant') }
-  ];
 }
 
 // -----------------
@@ -1301,13 +1422,13 @@ async function showAssistantSessions(){
       const meta = await createAssistantConversation({ articleKey, title, messages });
       index = listAssistantConversationMetas();
       left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed var(--line);cursor:pointer;"><div style="font-weight:600;color:var(--ink-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?t('sync.globalPrefix'):'')+meta.title)}</div><div style="font-size:12px;color:var(--ink-500);">${formatDateTime(meta.updatedAt || Date.now())}</div></div>`;
-    } catch(e) { alert(t('assistant.importFailed', { message: e?.message || '' })); }
+    } catch(e) { ui.displayMessage(t('assistant.importFailed', { message: e?.message || '' }), 'error'); }
   });
   // 重命名
   leftToolbar.querySelector('#as-rename').addEventListener('click', () => {
     const active = left.querySelector('.as-item.active');
     const id = active ? active.getAttribute('data-id') : (currentId || '');
-    if (!id) { alert(t('assistant.selectSession')); return; }
+    if (!id) { ui.displayMessage(t('assistant.selectSession'), 'warning'); return; }
     const meta = index.find(x => x.id === id) || null; if (!meta) return;
     const newTitle = prompt(t('assistant.renamePrompt'), meta.title || t('assistant.session'));
     if (!newTitle || !newTitle.trim()) return;
@@ -1326,8 +1447,15 @@ async function showAssistantSessions(){
   leftToolbar.querySelector('#as-delete').addEventListener('click', async () => {
     const active = left.querySelector('.as-item.active');
     const id = active ? active.getAttribute('data-id') : (currentId || '');
-    if (!id) { alert(t('assistant.selectSession')); return; }
-    if (!confirm(t('assistant.confirmDelete'))) return;
+    if (!id) { ui.displayMessage(t('assistant.selectSession'), 'warning'); return; }
+    const okDeleteConv = await ui.confirmAction({
+      title: t('assistant.delete'),
+      message: t('assistant.confirmDelete'),
+      confirmLabel: t('assistant.delete'),
+      cancelLabel: t('common.cancel'),
+      danger: true
+    });
+    if (!okDeleteConv) return;
     try {
       const removed = await deleteAssistantConversation(id);
       if (!removed) throw new Error(t('assistant.sessionMissing'));
@@ -1336,7 +1464,7 @@ async function showAssistantSessions(){
       if (node) node.remove();
       if (!left.querySelector('.as-item')) left.innerHTML = `<div style="padding:12px;color:var(--ink-500);">${t('assistant.noSessions')}</div>`;
       if (currentId === id) { currentId = ''; rightBody.innerHTML = `<div style="padding:8px;color:var(--ink-500);">${t('assistant.noSelection')}</div>`; }
-    } catch (e) { alert(t('assistant.deleteFailed', { message: e?.message || '' })); }
+    } catch (e) { ui.displayMessage(t('assistant.deleteFailed', { message: e?.message || '' }), 'error'); }
   });
   // 匯出
   rightToolbar.querySelector('#as-export').addEventListener('click', async () => {
@@ -1445,10 +1573,13 @@ async function doAutoSync(reason) {
     queuedWhileInFlight = true;
     return;
   }
+  let guard = null;
   try {
     syncInFlight = true;
     updateStatus(t('sync.autoSyncing'));
-    const info = await syncNow(buildLocalSnapshot, applyMergedSnapshot);
+    guard = createSyncGuard();
+    const info = await syncNow(guard.build, guard.apply);
+    if (guard.stale()) return;
     lastSyncAt = Date.now();
     try { localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
     if (info && typeof info.version === 'number') {
@@ -1463,8 +1594,15 @@ async function doAutoSync(reason) {
     }
     try { await backup.createBackup(t('sync.backupNoteAuto')); } catch(_) {}
   } catch (e) {
-    console.warn('[sync] auto sync failed:', e);
-    updateStatus(t('sync.autoSyncFailed'));
+    if (e && e.code === 'stale_session') {
+      updateStatus(t('sync.loggedOutState'));
+    } else if (e && e.code === 'unauthorized') {
+      if (!(guard && guard.stale())) await auth.invalidateSession();
+      updateStatus(t('sync.loggedOutState'));
+    } else {
+      console.warn('[sync] auto sync failed:', e);
+      updateStatus(t('sync.autoSyncFailed'));
+    }
   } finally {
     syncInFlight = false;
     if (queuedWhileInFlight) {

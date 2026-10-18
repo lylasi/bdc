@@ -1,18 +1,33 @@
 // 問答集創建和格式解析
 import { saveQASet } from './qa-storage.js';
-import { displayMessage } from '../../modules/ui.js';
+import { displayMessage, confirmAction } from '../../modules/ui.js';
 import { t } from '../../modules/i18n.js';
 
-// Q1:A1格式解析
+// Q1:A1格式解析（只回傳配對；需要知道有沒有內容被丟棄時請用 analyzeQAPairs）
 export function parseQAPairs(text) {
-  if (!text || typeof text !== 'string') return [];
+  return analyzeQAPairs(text).pairs;
+}
+
+/**
+ * 解析問答對，並回報「有內容但沒有被採用」的部分。
+ *
+ * 兩種格式都可能丟掉內容，兩種都要回報：
+ *  1. 編號格式（Q1:/A1:）—— 只有 Q 沒有 A（或 A 是空的）的題目先前直接被跳過。
+ *  2. 每兩行一組的格式 —— 最後只剩一行時不會進入 pairs。
+ * 先前這裡是靜默跳過，使用者按「保存」只看到「保存成功」，輸入的內容卻已經消失。
+ * 改為把被丟棄的內容一併回報，由介面顯示警告。
+ *
+ * @returns {{ pairs: Array, warnings: Array<{key: string, params?: Object}> }}
+ */
+export function analyzeQAPairs(text) {
+  if (!text || typeof text !== 'string') return { pairs: [], warnings: [] };
 
   // 標準化換行
   const normalized = text.replace(/\r\n?/g, '\n');
 
   // 先嘗試舊格式：Q1: ... A1: ...
   const legacy = parseLegacyFormat(normalized);
-  if (legacy.length > 0) return legacy;
+  if (legacy.pairs.length > 0) return legacy;
 
   // 新格式：每兩行為一組（第一行=問題，第二行=答案），可夾雜空行
   const lines = normalized
@@ -21,26 +36,83 @@ export function parseQAPairs(text) {
     .filter(l => l.length > 0);
 
   const pairs = [];
+  const warnings = [];
   for (let i = 0; i + 1 < lines.length; i += 2) {
     const q = stripLeadingLabel(lines[i]);
     const a = stripLeadingLabel(lines[i + 1]);
     if (q && a) pairs.push({ qid: pairs.length + 1, question: q, answer: a });
   }
-  return pairs;
+
+  if (lines.length % 2 === 1) {
+    const orphan = stripLeadingLabel(lines[lines.length - 1]);
+    const isAnswerLike = /^(a|ans|answer)\s*\d*\s*:/i.test(lines[lines.length - 1]);
+    warnings.push({
+      key: isAnswerLike ? 'qa.orphanAnswerWarning' : 'qa.orphanQuestionWarning',
+      params: { line: clipForWarning(orphan) }
+    });
+  }
+
+  // 兩行格式也沒解析出東西時，保留編號格式找到的問題（例如整份只有 Q 沒有 A）
+  if (pairs.length === 0 && legacy.warnings.length) {
+    return { pairs, warnings: legacy.warnings };
+  }
+
+  return { pairs, warnings };
 }
 
+/** 警告訊息只帶一小段原文，避免整篇內容塞進提示 */
+function clipForWarning(text, max = 60) {
+  const value = String(text || '').trim().replace(/\s+/g, ' ');
+  return value.length > max ? value.slice(0, max) + '…' : value;
+}
+
+/**
+ * 編號格式解析。
+ *
+ * 這裡不再「解析出一組就當作整份都合法」：正式的 Q/A 配對之外，
+ * 尾端沒有被任何配對消耗的內容（例如最後一題只有 Q 沒有 A）也要回報，
+ * 否則使用者貼上的內容會靜默消失。
+ *
+ * @returns {{ pairs: Array, warnings: Array<{key: string, params?: Object}> }}
+ */
 function parseLegacyFormat(text) {
   const cleanText = text.trim().replace(/\n\s*\n/g, '\n');
   const regex = /Q(\d+):\s*(.*?)\s*A\1:\s*(.*?)(?=Q\d+:|$)/gis;
   const pairs = [];
+  const warnings = [];
   let m;
+  let consumedUntil = 0;
   while ((m = regex.exec(cleanText)) !== null) {
+    consumedUntil = regex.lastIndex;
     const qid = parseInt(m[1], 10);
-    const question = stripLeadingLabel(m[2].trim());
-    const answer = stripLeadingLabel(m[3].trim());
-    if (question && answer) pairs.push({ qid, question, answer });
+    const rawQuestion = m[2].trim();
+    const rawAnswer = m[3].trim();
+    const question = stripLeadingLabel(rawQuestion);
+    const answer = stripLeadingLabel(rawAnswer);
+    if (question && answer) {
+      pairs.push({ qid, question, answer });
+    } else if (question) {
+      // 有 Q 但沒有 A（或 A 只有空白）：先前直接丟掉，這裡要讓使用者知道
+      warnings.push({ key: 'qa.numberedMissingAnswerWarning', params: { line: clipForWarning(question) } });
+    } else {
+      warnings.push({ key: 'qa.numberedEmptyQuestionWarning', params: { line: clipForWarning(rawAnswer) } });
+    }
   }
-  return pairs.sort((a, b) => a.qid - b.qid).map((p, i) => ({ ...p, qid: i + 1 }));
+
+  // 尾端殘留：最後一題只寫了 Q1: 而沒有任何 A1:
+  const leftover = cleanText.slice(consumedUntil).trim();
+  if (leftover) {
+    const isAnswerLike = /^(a|ans|answer)\s*\d*\s*:/i.test(leftover);
+    warnings.push({
+      key: isAnswerLike ? 'qa.orphanAnswerWarning' : 'qa.orphanQuestionWarning',
+      params: { line: clipForWarning(stripLeadingLabel(leftover)) }
+    });
+  }
+
+  return {
+    pairs: pairs.sort((a, b) => a.qid - b.qid).map((p, i) => ({ ...p, qid: i + 1 })),
+    warnings
+  };
 }
 
 function stripLeadingLabel(s) {
@@ -89,9 +161,15 @@ export function validateFormat(pairs) {
 }
 
 // 生成預覽HTML
-export function generatePreviewHTML(pairs) {
+export function generatePreviewHTML(pairs, warnings = []) {
+  const warningHtml = (Array.isArray(warnings) && warnings.length)
+    ? `<div class="validation-warnings"><ul>${
+        warnings.map(w => `<li class="warning">${escapeHtml(t(w.key, w.params || {}))}</li>`).join('')
+      }</ul></div>`
+    : '';
+
   if (!pairs || pairs.length === 0) {
-    return `<p class="preview-empty">${t('qa.previewEmpty')}</p>`;
+    return `${warningHtml}<p class="preview-empty">${t('qa.previewEmpty')}</p>`;
   }
 
   const validation = validateFormat(pairs);
@@ -112,6 +190,9 @@ export function generatePreviewHTML(pairs) {
     html += `<p class="success">${t('qa.parsedPairs', { count: pairs.length })}</p>`;
     html += '</div>';
   }
+
+  // 有內容沒被採用的警告（例如落單的最後一行）
+  html += warningHtml;
 
   // 取消浮動提示，保持畫面緊湊（提示文案移除）
 
@@ -152,15 +233,15 @@ export function generatePreviewHTML(pairs) {
 // 處理文本輸入變化
 export function handleTextInputChange(textArea, previewContainer) {
   const text = textArea.value;
-  const pairs = parseQAPairs(text);
-  const previewHTML = generatePreviewHTML(pairs);
+  const { pairs, warnings } = analyzeQAPairs(text);
+  const previewHTML = generatePreviewHTML(pairs, warnings);
 
   if (previewContainer) {
     previewContainer.innerHTML = previewHTML;
     ensurePreviewInteractions(textArea, previewContainer);
   }
 
-  return { pairs, isValid: validateFormat(pairs).isValid };
+  return { pairs, warnings, isValid: validateFormat(pairs).isValid };
 }
 
 // 保存新問答集
@@ -407,8 +488,15 @@ function addExampleButton() {
     clearAllBtn.type = 'button';
     clearAllBtn.className = 'btn small secondary';
     clearAllBtn.textContent = t('qa.clearAll');
-    clearAllBtn.onclick = () => {
-      if (confirm(t('qa.confirmClearPairs'))) {
+    clearAllBtn.onclick = async () => {
+      const confirmed = await confirmAction({
+        title: t('qa.clearAll'),
+        message: t('qa.confirmClearPairs'),
+        confirmLabel: t('qa.clearAll'),
+        cancelLabel: t('common.cancel'),
+        danger: true
+      });
+      if (confirmed) {
         pairsInput.value = '';
         handleTextInputChange(pairsInput, document.getElementById('qa-preview'));
       }
@@ -477,7 +565,14 @@ function ensurePreviewInteractions(textArea, previewContainer) {
     if (delBtn) {
       const qid = parseInt(delBtn.dataset.qid || delBtn.closest('.qa-pair-preview')?.dataset.qid, 10);
       if (!qid) return;
-      if (!confirm(t('qa.confirmDeleteQuestion', { number: qid }))) return;
+      const confirmed = await confirmAction({
+        title: t('qa.delete'),
+        message: t('qa.confirmDeleteQuestion', { number: qid }),
+        confirmLabel: t('qa.delete'),
+        cancelLabel: t('common.cancel'),
+        danger: true
+      });
+      if (!confirmed) return;
       const pairs = parseQAPairs(textArea.value);
       const filtered = normalizeQids(pairs.filter(p => p.qid !== qid));
       textArea.value = pairsToText(filtered);
