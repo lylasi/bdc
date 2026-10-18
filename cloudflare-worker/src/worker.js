@@ -18,9 +18,11 @@
 //   GET  /articles/usage                          article count / byte usage
 //   GET|PUT|DELETE /articles/:id                  read / CAS update / soft delete
 //   POST /articles/:id/restore                    undo a soft delete (CAS)
+//   POST /login                                   username + password → session token (no auth)
 //   POST /pair                                    device pairing code → session token (no auth)
 //   POST /reset-token                             recovery-code reset (no auth)
 //   POST /change-token                            change own passcode
+//   POST /change-password                         change own password (logged in)
 //   GET|PUT|DELETE /ai-credentials[/:id]          personal encrypted keys
 //   GET  /ai-catalog                              published catalog (logged in)
 //   GET  /ai-catalog/providers/:id/credential     shared key (logged in, current version)
@@ -34,7 +36,8 @@
 //   DELETE /admin/users/:id/pairing-codes         admin revokes unused login codes
 //
 // Secrets (set with `wrangler secret put`): AI_CREDENTIAL_KEY_V1,
-// AI_CATALOG_DIGEST_KEY. Plain vars: AI_CREDENTIAL_KEY_VERSION, ALLOWED_ORIGINS.
+// AI_CATALOG_DIGEST_KEY, PASSWORD_PEPPER. Plain vars:
+// AI_CREDENTIAL_KEY_VERSION, ALLOWED_ORIGINS.
 
 import {
   json,
@@ -47,11 +50,21 @@ import {
 import { handleCredentialsRoute } from './ai-credentials.js';
 import { handleCatalogRoute } from './ai-catalog.js';
 import { handleAdminUsersRoute } from './admin-users.js';
-import { handlePairRequest } from './device-pairing.js';
+import { handlePairRequest, SESSION_TTL_MS } from './device-pairing.js';
 import { sanitizeSnapshotPayload } from './snapshot-sanitize.js';
 import { handleArticlesRoute, isLegacyArticleWriteBlocked } from './articles.js';
 import { snapshotCarriesArticles } from '../../shared/article-protocol.mjs';
-import { sha256Hex } from './token.js';
+import { randomToken, sha256Hex } from './token.js';
+import {
+  ADMIN_PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  hashPassword,
+  isPasswordPepperConfigured,
+  normalizeUsername,
+  validatePassword,
+  verifyPassword
+} from './password.js';
 
 const MIN_AI_PASSCODE_LENGTH = 32;
 const SNAPSHOT_MAX_BYTES = 2 * 1024 * 1024;
@@ -67,41 +80,171 @@ async function authenticate(request, env) {
   if (!token) return null;
   const hash = await sha256Hex(token);
   const row = await env.DB
-    .prepare('SELECT user_id, label, role FROM users WHERE token_hash = ?')
+    .prepare('SELECT user_id, label, role, username, password_hash, is_active FROM users WHERE token_hash = ?')
     .bind(hash)
     .first();
   if (row) {
+    if (Number(row.is_active) === 0) return null;
     return {
-      ...row,
+      user_id: row.user_id,
+      label: row.label,
       role: row.role === 'admin' ? 'admin' : 'user',
+      username: row.username || '',
+      hasPassword: Boolean(row.password_hash),
       tokenLength: token.length,
       viaSession: false
     };
   }
 
-  // Paired-device tokens live in user_sessions and expire independently of the
-  // account passcode. Resetting the passcode deletes them.
+  // Session tokens live in user_sessions and expire independently of the
+  // account passcode. auth_version ties them to the current password/passcode
+  // generation, so a reset invalidates every older device immediately.
   const session = await env.DB
-    .prepare('SELECT u.user_id, u.label, u.role FROM user_sessions s JOIN users u ON u.user_id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ?')
+    .prepare('SELECT u.user_id, u.label, u.role, u.username, u.password_hash, u.is_active FROM user_sessions s JOIN users u ON u.user_id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ? AND s.auth_version = u.auth_version')
     .bind(hash, new Date().toISOString())
     .first();
   if (!session) return null;
+  if (Number(session.is_active) === 0) return null;
   return {
-    ...session,
+    user_id: session.user_id,
+    label: session.label,
     role: session.role === 'admin' ? 'admin' : 'user',
+    username: session.username || '',
+    hasPassword: Boolean(session.password_hash),
     tokenLength: token.length,
     viaSession: true
   };
 }
 
+async function runStatements(env, statements) {
+  if (typeof env.DB.batch === 'function') return env.DB.batch(statements);
+  const results = [];
+  for (const statement of statements) results.push(await statement.run());
+  return results;
+}
+
 async function setPasscodeAndRevoke(env, userId, newHash) {
   const statements = [
-    env.DB.prepare('UPDATE users SET token_hash = ? WHERE user_id = ?').bind(newHash, userId),
+    env.DB.prepare('UPDATE users SET token_hash = ?, auth_version = auth_version + 1 WHERE user_id = ?').bind(newHash, userId),
     env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(userId),
     env.DB.prepare('DELETE FROM pairing_codes WHERE user_id = ? AND used_at IS NULL').bind(userId)
   ];
-  if (typeof env.DB.batch === 'function') return env.DB.batch(statements);
-  for (const statement of statements) await statement.run();
+  return runStatements(env, statements);
+}
+
+function tooManyRequests(env, request, retryAfter) {
+  return json({ error: 'rate_limited', code: 'rate_limited' }, 429, env, request, {
+    'Retry-After': String(retryAfter)
+  });
+}
+
+/**
+ * POST /login — username + password. Unauthenticated, rate-limited per client
+ * and per client+username. Unknown users and wrong passwords share one error.
+ */
+async function handleLogin(request, env) {
+  let body;
+  try { body = await readJson(request, 8 * 1024); } catch (error) {
+    return errorJson(error.code || 'bad_json', error.status || 400, env, request);
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return errorJson('invalid_credentials', 401, env, request);
+  }
+
+  const username = normalizeUsername(body.username);
+  const password = String(body.password == null ? '' : body.password);
+  if (!username || !password) return errorJson('invalid_credentials', 401, env, request);
+  if (password.length > PASSWORD_MAX_LENGTH) return errorJson('invalid_credentials', 401, env, request);
+
+  const client = getClientKey(request, null);
+  const globalLimit = rateLimit(`login-all:${client}`, 30, 10 * 60 * 1000);
+  if (!globalLimit.ok) return tooManyRequests(env, request, globalLimit.retryAfter);
+  const userLimit = rateLimit(`login-user:${client}:${username}`, 10, 10 * 60 * 1000);
+  if (!userLimit.ok) return tooManyRequests(env, request, userLimit.retryAfter);
+
+  if (!isPasswordPepperConfigured(env)) {
+    return errorJson('password_not_configured', 503, env, request);
+  }
+
+  const row = await env.DB
+    .prepare('SELECT user_id, label, role, username, password_hash, auth_version, is_active FROM users WHERE username_normalized = ?')
+    .bind(username)
+    .first();
+  const passwordOk = row && row.password_hash
+    ? await verifyPassword(password, row.password_hash, env.PASSWORD_PEPPER)
+    : false;
+  if (!row || !passwordOk) return errorJson('invalid_credentials', 401, env, request);
+  if (Number(row.is_active) === 0) return errorJson('account_disabled', 403, env, request);
+
+  const token = randomToken(32);
+  const tokenHash = await sha256Hex(token);
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const expiresAt = new Date(now.getTime() + SESSION_TTL_MS).toISOString();
+  const deviceLabel = String(body.deviceLabel || '').trim().slice(0, 80) || null;
+  const authVersion = Number(row.auth_version) || 1;
+
+  await env.DB
+    .prepare('INSERT INTO user_sessions (token_hash, user_id, created_at, expires_at, device_label, auth_version) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(tokenHash, row.user_id, nowIso, expiresAt, deviceLabel, authVersion)
+    .run();
+
+  return json({
+    token,
+    user_id: row.user_id,
+    label: row.label || '',
+    role: row.role === 'admin' ? 'admin' : 'user',
+    username: row.username || username,
+    hasPassword: true,
+    expires_at: expiresAt
+  }, 200, env, request);
+}
+
+/**
+ * POST /change-password — requires the current password. Increments
+ * auth_version, keeps the current session, and revokes every other session.
+ */
+async function handleChangePassword(request, env, user) {
+  if (!isPasswordPepperConfigured(env)) {
+    return errorJson('password_not_configured', 503, env, request);
+  }
+  let body;
+  try { body = await readJson(request, 8 * 1024); } catch (error) {
+    return errorJson(error.code || 'bad_json', error.status || 400, env, request);
+  }
+  const currentPassword = String(body && body.currentPassword != null ? body.currentPassword : '');
+  const newPassword = String(body && body.newPassword != null ? body.newPassword : '');
+  if (!currentPassword || !newPassword) return errorJson('missing_fields', 400, env, request);
+
+  const passwordError = validatePassword(newPassword, user.role);
+  if (passwordError) return errorJson(passwordError, 400, env, request);
+
+  const row = await env.DB
+    .prepare('SELECT password_hash, auth_version, role FROM users WHERE user_id = ?')
+    .bind(user.user_id)
+    .first();
+  if (!row || !row.password_hash) return errorJson('password_not_set', 409, env, request);
+  if (!(await verifyPassword(currentPassword, row.password_hash, env.PASSWORD_PEPPER))) {
+    return errorJson('invalid_current_password', 403, env, request);
+  }
+
+  const newHash = await hashPassword(newPassword, env.PASSWORD_PEPPER);
+  const changedAt = new Date().toISOString();
+  const nextVersion = (Number(row.auth_version) || 1) + 1;
+  const currentHash = await sha256Hex(getBearerToken(request));
+
+  await runStatements(env, [
+    env.DB.prepare('UPDATE users SET password_hash = ?, password_updated_at = ?, auth_version = ? WHERE user_id = ?')
+      .bind(newHash, changedAt, nextVersion, user.user_id),
+    env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ? AND token_hash <> ?')
+      .bind(user.user_id, currentHash),
+    env.DB.prepare('UPDATE user_sessions SET auth_version = ? WHERE token_hash = ? AND user_id = ?')
+      .bind(nextVersion, currentHash, user.user_id),
+    env.DB.prepare('DELETE FROM pairing_codes WHERE user_id = ? AND used_at IS NULL')
+      .bind(user.user_id)
+  ]);
+
+  return json({ ok: true, authVersion: nextVersion }, 200, env, request);
 }
 
 function requireStrongPasscode(user, request, env) {
@@ -284,10 +427,17 @@ export default {
       return json({
         pairingLogin: true,
         loginLinks: true,
-        // Password login is deliberately not implemented yet. The frontend
-        // uses this flag so it does not advertise a method the Worker lacks.
-        passwordLogin: false
+        // Password login needs a server-side pepper. Hiding it until the
+        // secret exists avoids advertising a method that always fails.
+        passwordLogin: isPasswordPepperConfigured(env),
+        passwordMinLength: PASSWORD_MIN_LENGTH,
+        adminPasswordMinLength: ADMIN_PASSWORD_MIN_LENGTH
       }, 200, env, request);
+    }
+
+    if (path === '/login') {
+      if (request.method !== 'POST') return errorJson('method_not_allowed', 405, env, request);
+      return handleLogin(request, env);
     }
 
     if (path === '/pair') {
@@ -311,11 +461,21 @@ export default {
 
     try {
       if (path === '/me' && request.method === 'GET') {
-        return json({ user_id: user.user_id, label: user.label || '', role: user.role }, 200, env, request);
+        return json({
+          user_id: user.user_id,
+          label: user.label || '',
+          role: user.role,
+          username: user.username || '',
+          hasPassword: Boolean(user.hasPassword)
+        }, 200, env, request);
       }
 
       if (path === '/change-token' && request.method === 'POST') {
         return handleChangeToken(request, env, user);
+      }
+
+      if (path === '/change-password' && request.method === 'POST') {
+        return handleChangePassword(request, env, user);
       }
 
       if (path === '/version' || path === '/snapshot') {

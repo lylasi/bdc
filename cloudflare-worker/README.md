@@ -6,7 +6,8 @@
 - 個人 AI 金鑰：`user_ai_credentials`，AES-256-GCM 加密，逐供應商版本控制。
 - 全站預設：`ai_default_catalog_releases`，每次「發布」建立不可變版本，共用 Key 另存加密信封。
 - 帳戶權限：`users.role`（`user` / `admin`），由服務端每次請求檢查。
-- 用戶管理：管理員可在前端新增用戶、修改備註／電郵、重設非管理員通行碼；角色調整與刪除仍由部署者維護。
+- 用戶管理：管理員可在前端新增用戶、修改備註／電郵、設定使用者名稱與初始密碼、重設非管理員通行碼；角色調整與刪除仍由部署者維護。
+- 使用者名稱＋密碼：管理員為帳戶設定 `username` 與初始密碼後，使用者可在主站以「使用者名稱＋密碼」登入；密碼以 PBKDF2-SHA256（50,000 次）加伺服器端 pepper 雜湊，`auth_version` 會讓改密碼／重設通行碼即時撤銷舊 session。
 - 裝置配對：管理員可為非管理員用戶產生 10 分鐘一次性配對碼，新裝置用它換取 180 天 session token；重設通行碼會撤銷所有已配對 session。
 
 ## 一次性部署（既有服務升級）
@@ -29,12 +30,16 @@ npx wrangler d1 export bdc-sync --remote --output backup-$(date +%Y%m%d).sql
 npx wrangler d1 execute bdc-sync --remote --file ./migrations/001_ai_provider_sync.sql
 npx wrangler d1 execute bdc-sync --remote --file ./migrations/002_admin_user_management.sql
 npx wrangler d1 execute bdc-sync --remote --file ./migrations/003_device_pairing.sql
+npx wrangler d1 execute bdc-sync --remote --file ./migrations/004_article_storage.sql
+npx wrangler d1 execute bdc-sync --remote --file ./migrations/005_username_password.sql
 
 # 3) 核對秘密；已有值必須保留，只有缺少時才執行相應的 put
 npx wrangler secret list
 # 首次設定：各用 openssl rand -base64 32 產生不同值，保存到密碼管理器再輸入
 npx wrangler secret put AI_CREDENTIAL_KEY_V1
 npx wrangler secret put AI_CATALOG_DIGEST_KEY
+# 使用者名稱＋密碼登入用；至少 32 字元，設定後 /auth-capabilities 才會回報 passwordLogin: true
+npx wrangler secret put PASSWORD_PEPPER
 
 # 4) 指定首名管理員（先確認 user_id）
 npx wrangler d1 execute bdc-sync --remote \
@@ -90,8 +95,8 @@ node add-user.mjs --admin <user_id> [label]  # 新帳戶直接設為 admin（既
 ## 遷移順序（正式切換）
 
 1. 備份 D1（`npx wrangler d1 export bdc-sync --remote --output backup-<date>.sql`）。
-2. 套用 migration（`001`～`004`；`004_article_storage.sql` 只新增文章表，不改既有資料）。
-3. 設定 `AI_CREDENTIAL_KEY_V1`、`AI_CATALOG_DIGEST_KEY`、`AI_CREDENTIAL_KEY_VERSION`，指定首名管理員。
+2. 套用 migration（`001`～`005`；`005_username_password.sql` 只新增使用者名稱／密碼與 `auth_version` 欄位，既有帳戶與 session 預設為版本 1，不影響原本登入）。
+3. 設定 `AI_CREDENTIAL_KEY_V1`、`AI_CATALOG_DIGEST_KEY`、`PASSWORD_PEPPER`、`AI_CREDENTIAL_KEY_VERSION`，指定首名管理員。
 4. 部署新 Worker。
 5. 在私密發布副本移除靜態 AI 預設並通過掃描，再部署新版前端（`ai-config.js` 不再提供 API_URL／API_KEY／供應商／任務模型）。
 6. 管理員登入新版 BDC → 設定 →「管理預設供應商」，建立並測試預設列表，發布版本 1。若需避免首次列表空窗，可先在允許的測試 origin 使用新版管理介面發布，再切換正式前端。
@@ -99,12 +104,16 @@ node add-user.mjs --admin <user_id> [label]  # 新帳戶直接設為 admin（既
 
 ## API
 
-所有請求需 `Authorization: Bearer <通行碼或 session token>`（`/pair`、`/reset-token` 除外）。所有 AI 相關回應帶 `Cache-Control: no-store`。
+所有請求需 `Authorization: Bearer <通行碼或 session token>`（`/auth-capabilities`、`/login`、`/pair`、`/reset-token` 除外）。所有 AI 相關回應帶 `Cache-Control: no-store`。
 
 | 方法 | 路徑 | 說明 |
 | --- | --- | --- |
+| GET | `/auth-capabilities` | 未登入；`{ pairingLogin, loginLinks, passwordLogin, passwordMinLength, adminPasswordMinLength }` |
+| POST | `/login` | 未登入；`{ username, password, deviceLabel? }` → session token；錯帳密回 401 `invalid_credentials` |
 | POST | `/pair` | 未登入；`{ userId, code, deviceLabel? }` → 一次性 session token |
-| GET | `/me` | `{ user_id, label, role }` |
+| POST | `/reset-token` | 未登入；`{ user_id, recovery_code, new_token }` |
+| POST | `/change-password` | 已登入；`{ currentPassword, newPassword }`；成功後其他 session 立即失效 |
+| GET | `/me` | `{ user_id, label, role, username, hasPassword }` |
 | GET | `/version` | 快照版本 |
 | GET | `/snapshot` | 快照或 `null`；帳戶已遷移到逐篇文章儲存後不再回傳舊 `articles` 群組 |
 | POST | `/snapshot` | body `{ expected_version, payload }`；衝突回 409；舊格式文章群組回 409 `articles_legacy_write_blocked` |
@@ -128,14 +137,14 @@ node add-user.mjs --admin <user_id> [label]  # 新帳戶直接設為 admin（既
 | GET | `/admin/ai-catalog/history` | 管理員；最近 10 版設定（不含歷史 Key） |
 | POST | `/admin/ai-catalog/publish` | 管理員；`{ baseVersion, mutationId, config, keyOps }` 原子發布 |
 | GET | `/admin/users` | 管理員；用戶列表，不含任何雜湊 |
-| POST | `/admin/users` | 管理員；`{ userId, label?, email? }`，回傳一次性通行碼／恢復碼 |
-| PUT | `/admin/users/:id` | 管理員；`{ label?, email? }` |
+| POST | `/admin/users` | 管理員；`{ userId, label?, email?, username?, password? }`，回傳一次性通行碼／恢復碼 |
+| PUT | `/admin/users/:id` | 管理員；`{ label?, email?, username?, newPassword? }`；設定密碼會撤銷該帳戶所有 session |
 | POST | `/admin/users/:id/reset-passcode` | 管理員；僅限非管理員帳戶，回傳一次性通行碼／恢復碼 |
 | POST | `/admin/users/:id/pairing-code` | 管理員；僅限非管理員帳戶，回傳 10 分鐘一次性配對碼 |
 
 ### 錯誤碼
 
-`unauthorized`(401)、`article_not_found`(404)、`article_revision_conflict`(409)、`article_already_deleted`(409)、`article_id_exists`(409)、`article_quota_exceeded`(409)、`article_count_exceeded`(409)、`articles_legacy_write_blocked`(409)、`article_too_large`(413)、`expected_revision_required`(400)、`passcode_upgrade_required`(403)、`origin_not_allowed`(403)、`admin_required`(403)、`admin_account_protected`(403)、`pairing_invalid`(403)、`credential_not_found`(404)、`credential_missing`(404)、`user_not_found`(404)、`version_conflict`(409)、`catalog_version_conflict`(409)、`mutation_conflict`(409)、`user_exists`(409)、`email_exists`(409)、`invalid_*`(400)、`payload_too_large`(413)、`rate_limited`(429)、`credential_unavailable`(503)。前端一律用 `t()` 翻譯穩定錯誤碼，不直接顯示英文。
+`unauthorized`(401)、`invalid_credentials`(401)、`account_disabled`(403)、`invalid_current_password`(403)、`password_not_set`(409)、`password_not_configured`(503)、`article_not_found`(404)、`article_revision_conflict`(409)、`article_already_deleted`(409)、`article_id_exists`(409)、`article_quota_exceeded`(409)、`article_count_exceeded`(409)、`articles_legacy_write_blocked`(409)、`article_too_large`(413)、`expected_revision_required`(400)、`passcode_upgrade_required`(403)、`origin_not_allowed`(403)、`admin_required`(403)、`admin_account_protected`(403)、`pairing_invalid`(403)、`credential_not_found`(404)、`credential_missing`(404)、`user_not_found`(404)、`version_conflict`(409)、`catalog_version_conflict`(409)、`mutation_conflict`(409)、`user_exists`(409)、`email_exists`(409)、`username_exists`(409)、`invalid_*`(400)、`weak_password`(400)、`payload_too_large`(413)、`rate_limited`(429)、`credential_unavailable`(503)。前端一律用 `t()` 翻譯穩定錯誤碼，不直接顯示英文。
 
 ### 金鑰加密
 

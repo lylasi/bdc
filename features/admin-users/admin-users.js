@@ -21,9 +21,12 @@ import { renderQrSvg } from '../../modules/qr.js';
 import { SYNC } from '../../ai-config.js';
 
 const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_LABEL_LENGTH = 120;
 const LIST_LIMIT = 1000;
+const PASSWORD_MIN_LENGTH = 10;
+const ADMIN_PASSWORD_MIN_LENGTH = 12;
 const DEFAULT_PAIR_TTL_SECONDS = 604800;
 const PAIR_TTL_OPTIONS = [
     { seconds: 600, labelKey: 'settings.adminUsersPairTtl10m' },
@@ -47,7 +50,7 @@ function emptyView() {
         notice: '',
         mode: 'list', // list | create | edit
         editingId: '',
-        form: { userId: '', label: '', email: '' },
+        form: { userId: '', label: '', email: '', username: '', password: '' },
         formError: '',
         resetConfirm: '',
         credentials: null,
@@ -178,6 +181,8 @@ function renderUser(user) {
             <span class="admin-users-id">${id}</span>
             ${isSelf ? `<span class="gs-ai-badge">${escapeHtml(t('settings.adminUsersYou'))}</span>` : ''}
             <span class="gs-ai-badge">${escapeHtml(t(isAdmin ? 'settings.adminUsersRoleAdmin' : 'settings.adminUsersRoleUser'))}</span>
+            ${user.username ? `<span class="admin-users-username">@${escapeHtml(user.username)}</span>` : ''}
+            <span class="gs-ai-badge">${escapeHtml(t(user.hasPassword ? 'settings.adminUsersHasPassword' : 'settings.adminUsersNoPassword'))}</span>
             <span class="admin-users-label">${escapeHtml(user.label || t('settings.adminUsersNoLabel'))}</span>
             ${user.email ? `<span class="admin-users-email">${escapeHtml(user.email)}</span>` : ''}
             ${created ? `<span class="admin-users-time">${escapeHtml(t('settings.adminUsersCreatedAt', { time: created }))}</span>` : ''}
@@ -205,9 +210,17 @@ function renderCreateForm() {
             <label class="ai-admin-wide">${escapeHtml(t('settings.adminUsersEmail'))}
                 <input type="email" data-form-email maxlength="254" value="${escapeHtml(view.form.email)}" autocomplete="off" spellcheck="false">
             </label>
+            <label>${escapeHtml(t('settings.adminUsersUsername'))}
+                <input type="text" data-form-username maxlength="32" value="${escapeHtml(view.form.username)}" autocomplete="off" autocapitalize="none" spellcheck="false">
+            </label>
+            <label>${escapeHtml(t('settings.adminUsersPassword'))}
+                <input type="password" data-form-password maxlength="200" value="${escapeHtml(view.form.password)}" autocomplete="new-password">
+            </label>
         </div>
         <p class="gs-hint">${escapeHtml(t('settings.adminUsersUserIdHint'))}</p>
         <p class="gs-hint">${escapeHtml(t('settings.adminUsersEmailHint'))}</p>
+        <p class="gs-hint">${escapeHtml(t('settings.adminUsersUsernameHint'))}</p>
+        <p class="gs-hint">${escapeHtml(t('settings.adminUsersPasswordHint', { count: PASSWORD_MIN_LENGTH }))}</p>
         ${view.formError ? `<p class="gs-ai-error" role="alert">${escapeHtml(view.formError)}</p>` : ''}
         <div class="ai-admin-actions">
             <button type="button" class="btn-primary" data-form-submit ${view.busy ? 'disabled' : ''}>${escapeHtml(view.busy ? t('settings.adminUsersBusy') : t('settings.adminUsersCreateSubmit'))}</button>
@@ -231,8 +244,16 @@ function renderEditForm() {
             <label class="ai-admin-wide">${escapeHtml(t('settings.adminUsersEmail'))}
                 <input type="email" data-form-email maxlength="254" value="${escapeHtml(view.form.email)}" autocomplete="off" spellcheck="false">
             </label>
+            <label>${escapeHtml(t('settings.adminUsersUsername'))}
+                <input type="text" data-form-username maxlength="32" value="${escapeHtml(view.form.username)}" autocomplete="off" autocapitalize="none" spellcheck="false">
+            </label>
+            <label>${escapeHtml(t('settings.adminUsersNewPassword'))}
+                <input type="password" data-form-password maxlength="200" value="${escapeHtml(view.form.password)}" autocomplete="new-password" placeholder="${escapeHtml(t('settings.adminUsersNewPasswordHint'))}">
+            </label>
         </div>
         <p class="gs-hint">${escapeHtml(t('settings.adminUsersUserIdHint'))}</p>
+        <p class="gs-hint">${escapeHtml(t('settings.adminUsersUsernameHint'))}</p>
+        <p class="gs-hint">${escapeHtml(t('settings.adminUsersNewPasswordHint'))}</p>
         ${view.formError ? `<p class="gs-ai-error" role="alert">${escapeHtml(view.formError)}</p>` : ''}
         <div class="ai-admin-actions">
             <button type="button" class="btn-primary" data-form-submit ${view.busy ? 'disabled' : ''}>${escapeHtml(view.busy ? t('settings.adminUsersBusy') : t('settings.adminUsersSave'))}</button>
@@ -246,6 +267,10 @@ function renderCredentials() {
     return `<section class="admin-users-credentials" role="alert">
         <h4>${escapeHtml(t('settings.adminUsersCredentialsTitle', { user: credentials.userId }))}</h4>
         <p class="admin-users-warning">${escapeHtml(t('settings.adminUsersCredentialsWarning'))}</p>
+        ${credentials.username ? `<div class="admin-users-credential-row">
+            <span>${escapeHtml(t('settings.adminUsersUsername'))}</span>
+            <code>@${escapeHtml(credentials.username)}</code>
+        </div>` : ''}
         <div class="admin-users-credential-row">
             <span>${escapeHtml(t('settings.adminUsersPasscode'))}</span>
             <code>${escapeHtml(credentials.passcode)}</code>
@@ -357,7 +382,7 @@ function bind() {
     el.querySelector('[data-admin-users-create]')?.addEventListener('click', () => {
         view.mode = 'create';
         view.editingId = '';
-        view.form = { userId: '', label: '', email: '' };
+        view.form = { userId: '', label: '', email: '', username: '', password: '' };
         view.formError = '';
         view.notice = '';
         view.resetConfirm = '';
@@ -369,7 +394,7 @@ function bind() {
     el.querySelector('[data-form-cancel]')?.addEventListener('click', () => {
         view.mode = 'list';
         view.editingId = '';
-        view.form = { userId: '', label: '', email: '' };
+        view.form = { userId: '', label: '', email: '', username: '', password: '' };
         view.formError = '';
         render();
     });
@@ -381,6 +406,12 @@ function bind() {
     });
     el.querySelector('[data-form-email]')?.addEventListener('input', (event) => {
         view.form.email = event.target.value;
+    });
+    el.querySelector('[data-form-username]')?.addEventListener('input', (event) => {
+        view.form.username = event.target.value;
+    });
+    el.querySelector('[data-form-password]')?.addEventListener('input', (event) => {
+        view.form.password = event.target.value;
     });
     el.querySelector('[data-form-submit]')?.addEventListener('click', () => {
         if (view.mode === 'edit') submitEdit();
@@ -454,7 +485,9 @@ function startEdit(userId) {
     view.form = {
         userId: user.userId,
         label: user.label || '',
-        email: user.email || ''
+        email: user.email || '',
+        username: user.username || '',
+        password: ''
     };
     view.formError = '';
     view.notice = '';
@@ -506,7 +539,9 @@ async function submitCreate() {
     const userId = String(el.querySelector('[data-form-user-id]')?.value || '').trim();
     const label = String(el.querySelector('[data-form-label]')?.value || '').trim();
     const email = String(el.querySelector('[data-form-email]')?.value || '').trim();
-    view.form = { userId, label, email };
+    const username = String(el.querySelector('[data-form-username]')?.value || '').trim().toLowerCase();
+    const password = String(el.querySelector('[data-form-password]')?.value || '');
+    view.form = { userId, label, email, username, password };
 
     if (!USER_ID_RE.test(userId)) {
         view.formError = t('settings.adminUsersInvalidUserId');
@@ -523,6 +558,26 @@ async function submitCreate() {
         render();
         return;
     }
+    if (username && !USERNAME_RE.test(username)) {
+        view.formError = t('settings.adminUsersInvalidUsername');
+        render();
+        return;
+    }
+    if (username && !password) {
+        view.formError = t('settings.adminUsersPasswordRequired');
+        render();
+        return;
+    }
+    if (!username && password) {
+        view.formError = t('settings.adminUsersUsernameRequired');
+        render();
+        return;
+    }
+    if (username && password.length < PASSWORD_MIN_LENGTH) {
+        view.formError = t('settings.adminUsersPasswordTooShort', { count: PASSWORD_MIN_LENGTH });
+        render();
+        return;
+    }
 
     view.busy = true;
     view.formError = '';
@@ -531,7 +586,7 @@ async function submitCreate() {
     try {
         const res = await apiRequest('/admin/users', {
             method: 'POST',
-            body: JSON.stringify({ userId, label, email })
+            body: JSON.stringify({ userId, label, email, username, password })
         }, { timeoutMs: 15000 });
         if (!isAuthSessionCurrent(captured)) return;
         view.busy = false;
@@ -547,9 +602,14 @@ async function submitCreate() {
             return;
         }
         const createdId = String((data.user && data.user.userId) || userId);
-        view.credentials = { userId: createdId, passcode: data.passcode, recoveryCode: data.recoveryCode };
+        view.credentials = {
+            userId: createdId,
+            passcode: data.passcode,
+            recoveryCode: data.recoveryCode,
+            username: String((data.user && data.user.username) || username || '')
+        };
         view.mode = 'list';
-        view.form = { userId: '', label: '', email: '' };
+        view.form = { userId: '', label: '', email: '', username: '', password: '' };
         view.notice = t('settings.adminUsersCreated', { user: createdId });
         await loadUsers();
     } catch (_) {
@@ -573,8 +633,9 @@ async function submitEdit() {
     if (!el) return;
     const label = String(el.querySelector('[data-form-label]')?.value || '').trim();
     const email = String(el.querySelector('[data-form-email]')?.value || '').trim();
-    view.form.label = label;
-    view.form.email = email;
+    const username = String(el.querySelector('[data-form-username]')?.value || '').trim().toLowerCase();
+    const newPassword = String(el.querySelector('[data-form-password]')?.value || '');
+    view.form = { userId, label, email, username, password: newPassword };
 
     if (label.length > MAX_LABEL_LENGTH) {
         view.formError = t('settings.adminUsersInvalidLabel');
@@ -586,6 +647,22 @@ async function submitEdit() {
         render();
         return;
     }
+    if (username && !USERNAME_RE.test(username)) {
+        view.formError = t('settings.adminUsersInvalidUsername');
+        render();
+        return;
+    }
+    if (!username && (user.hasPassword || newPassword)) {
+        view.formError = t('settings.adminUsersUsernameRequired');
+        render();
+        return;
+    }
+    const minPassword = user.role === 'admin' ? ADMIN_PASSWORD_MIN_LENGTH : PASSWORD_MIN_LENGTH;
+    if (newPassword && newPassword.length < minPassword) {
+        view.formError = t('settings.adminUsersPasswordTooShort', { count: minPassword });
+        render();
+        return;
+    }
 
     view.busy = true;
     view.formError = '';
@@ -594,7 +671,7 @@ async function submitEdit() {
     try {
         const res = await apiRequest(`/admin/users/${encodeURIComponent(userId)}`, {
             method: 'PUT',
-            body: JSON.stringify({ label, email })
+            body: JSON.stringify({ label, email, username, newPassword })
         }, { timeoutMs: 15000 });
         if (!isAuthSessionCurrent(captured)) return;
         view.busy = false;
@@ -605,7 +682,7 @@ async function submitEdit() {
         }
         view.mode = 'list';
         view.editingId = '';
-        view.form = { userId: '', label: '', email: '' };
+        view.form = { userId: '', label: '', email: '', username: '', password: '' };
         view.notice = t('settings.adminUsersUpdated', { user: userId });
         await loadUsers();
     } catch (_) {
@@ -760,7 +837,14 @@ async function describeError(res, fallbackKey) {
         invalid_label: 'errors.adminUsersInvalidLabel',
         invalid_email: 'errors.adminUsersInvalidEmail',
         invalid_ttl: 'errors.adminUsersPairInvalidTtl',
-        admin_account_protected: 'errors.adminUsersAdminProtected'
+        admin_account_protected: 'errors.adminUsersAdminProtected',
+        username_exists: 'errors.adminUsersUsernameExists',
+        invalid_username: 'errors.adminUsersInvalidUsername',
+        weak_password: 'errors.adminUsersWeakPassword',
+        invalid_password: 'errors.adminUsersWeakPassword',
+        password_required: 'errors.adminUsersPasswordRequired',
+        username_required: 'errors.adminUsersUsernameRequired',
+        password_not_configured: 'errors.passwordNotConfigured'
     };
     if (keys[code]) return t(keys[code]);
     if (res.status === 403) return t('errors.aiAdminRequired');

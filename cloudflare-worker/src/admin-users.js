@@ -15,6 +15,13 @@ import {
   PAIRING_CODE_TTL_SECONDS,
   randomPairingCode
 } from './device-pairing.js';
+import {
+  hashPassword,
+  isPasswordPepperConfigured,
+  normalizeUsername,
+  validatePassword,
+  validateUsername
+} from './password.js';
 
 const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,6 +45,8 @@ function toUserJson(row) {
     label: row.label || '',
     role: row.role === 'admin' ? 'admin' : 'user',
     email: row.email || '',
+    username: row.username || '',
+    hasPassword: Boolean(row.password_hash),
     createdAt: row.created_at || null
   };
 }
@@ -67,7 +76,7 @@ function isUniqueError(error) {
 
 function findUserById(env, userId) {
   return env.DB
-    .prepare('SELECT user_id, label, role, email, created_at FROM users WHERE user_id = ?')
+    .prepare('SELECT user_id, label, role, email, created_at, username, username_normalized, password_hash, password_updated_at, auth_version, is_active FROM users WHERE user_id = ?')
     .bind(userId)
     .first();
 }
@@ -82,7 +91,7 @@ async function listUsersHandler(ctx) {
   if (!limit.ok) return rateLimited(env, request, limit.retryAfter);
 
   const result = await env.DB
-    .prepare('SELECT user_id, label, role, email, created_at FROM users ORDER BY (created_at IS NULL) ASC, created_at DESC, user_id ASC LIMIT ?')
+    .prepare('SELECT user_id, label, role, email, created_at, username, password_hash FROM users ORDER BY (created_at IS NULL) ASC, created_at DESC, user_id ASC LIMIT ?')
     .bind(USER_LIST_LIMIT)
     .all();
   const users = (result && result.results ? result.results : []).map(toUserJson);
@@ -111,6 +120,21 @@ async function createUserHandler(ctx) {
   const email = normalizeEmail(body.email);
   if (!isValidEmail(email)) return errorJson('invalid_email', 400, env, request);
 
+  const usernameInput = String(body.username == null ? '' : body.username).trim();
+  const passwordInput = String(body.password == null ? '' : body.password);
+  let username = '';
+  if (usernameInput) {
+    const usernameError = validateUsername(usernameInput);
+    if (usernameError) return errorJson(usernameError, 400, env, request);
+    username = normalizeUsername(usernameInput);
+    if (!passwordInput) return errorJson('password_required', 400, env, request);
+    const passwordError = validatePassword(passwordInput, 'user');
+    if (passwordError) return errorJson(passwordError, 400, env, request);
+    if (!isPasswordPepperConfigured(env)) return errorJson('password_not_configured', 503, env, request);
+  } else if (passwordInput) {
+    return errorJson('username_required', 400, env, request);
+  }
+
   if (await findUserById(env, userId)) return errorJson('user_exists', 409, env, request);
   if (email) {
     const emailOwner = await env.DB
@@ -119,19 +143,30 @@ async function createUserHandler(ctx) {
       .first();
     if (emailOwner) return errorJson('email_exists', 409, env, request);
   }
+  if (username) {
+    const usernameOwner = await env.DB
+      .prepare('SELECT user_id FROM users WHERE username_normalized = ?')
+      .bind(username)
+      .first();
+    if (usernameOwner) return errorJson('username_exists', 409, env, request);
+  }
 
   const passcode = randomToken(32);
   const recoveryCode = randomToken(24);
   const passcodeHash = await sha256Hex(passcode);
   const recoveryHash = await sha256Hex(recoveryCode);
   const createdAt = new Date().toISOString();
+  const passwordHash = username ? await hashPassword(passwordInput, env.PASSWORD_PEPPER) : null;
+  const passwordUpdatedAt = passwordHash ? createdAt : null;
 
   const insert = env.DB
-    .prepare('INSERT INTO users (token_hash, user_id, label, recovery_hash, role, email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .bind(passcodeHash, userId, label, recoveryHash, 'user', email || null, createdAt);
+    .prepare('INSERT INTO users (token_hash, user_id, label, recovery_hash, role, email, created_at, username, username_normalized, password_hash, password_updated_at, auth_version, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)')
+    .bind(passcodeHash, userId, label, recoveryHash, 'user', email || null, createdAt, username || null, username || null, passwordHash, passwordUpdatedAt);
   const audit = auditStatement(env, user.user_id, 'user_create', userId, {
     role: 'user',
-    hasEmail: Boolean(email)
+    hasEmail: Boolean(email),
+    username: username || null,
+    hasPassword: Boolean(passwordHash)
   }, createdAt);
 
   try {
@@ -139,13 +174,34 @@ async function createUserHandler(ctx) {
   } catch (error) {
     if (isUniqueError(error)) {
       if (await findUserById(env, userId)) return errorJson('user_exists', 409, env, request);
-      return errorJson('email_exists', 409, env, request);
+      if (email) {
+        const emailOwner = await env.DB
+          .prepare('SELECT user_id FROM users WHERE email = ?')
+          .bind(email)
+          .first();
+        if (emailOwner) return errorJson('email_exists', 409, env, request);
+      }
+      if (username) {
+        const usernameOwner = await env.DB
+          .prepare('SELECT user_id FROM users WHERE username_normalized = ?')
+          .bind(username)
+          .first();
+        if (usernameOwner) return errorJson('username_exists', 409, env, request);
+      }
     }
     throw error;
   }
 
   return json({
-    user: { userId, label, role: 'user', email, createdAt },
+    user: {
+      userId,
+      label,
+      role: 'user',
+      email,
+      username,
+      hasPassword: Boolean(passwordHash),
+      createdAt
+    },
     passcode,
     recoveryCode
   }, 201, env, request);
@@ -174,6 +230,26 @@ async function updateUserHandler(ctx, userId) {
   const email = body.email === undefined ? (row.email || '') : normalizeEmail(body.email);
   if (!isValidEmail(email)) return errorJson('invalid_email', 400, env, request);
 
+  const usernameInput = body.username === undefined
+    ? (row.username || '')
+    : String(body.username == null ? '' : body.username).trim();
+  let username = '';
+  if (usernameInput) {
+    const usernameError = validateUsername(usernameInput);
+    if (usernameError) return errorJson(usernameError, 400, env, request);
+    username = normalizeUsername(usernameInput);
+  }
+
+  const newPassword = String(body.newPassword == null ? '' : body.newPassword);
+  if (newPassword) {
+    const passwordError = validatePassword(newPassword, row.role);
+    if (passwordError) return errorJson(passwordError, 400, env, request);
+    if (!username) return errorJson('username_required', 400, env, request);
+    if (!isPasswordPepperConfigured(env)) return errorJson('password_not_configured', 503, env, request);
+  }
+
+  if (!username && row.password_hash) return errorJson('username_required', 400, env, request);
+
   if (email && email !== (row.email || '')) {
     const emailOwner = await env.DB
       .prepare('SELECT user_id FROM users WHERE email = ? AND user_id <> ?')
@@ -182,23 +258,55 @@ async function updateUserHandler(ctx, userId) {
     if (emailOwner) return errorJson('email_exists', 409, env, request);
   }
 
+  const currentUsername = row.username_normalized || normalizeUsername(row.username || '');
+  if (username && username !== currentUsername) {
+    const usernameOwner = await env.DB
+      .prepare('SELECT user_id FROM users WHERE username_normalized = ? AND user_id <> ?')
+      .bind(username, userId)
+      .first();
+    if (usernameOwner) return errorJson('username_exists', 409, env, request);
+  }
+
   const labelChanged = label !== (row.label || '');
   const emailChanged = email !== (row.email || '');
-  if (!labelChanged && !emailChanged) return json({ user: toUserJson(row) }, 200, env, request);
+  const usernameChanged = username !== currentUsername;
+  const passwordChanged = Boolean(newPassword);
+  if (!labelChanged && !emailChanged && !usernameChanged && !passwordChanged) {
+    return json({ user: toUserJson(row) }, 200, env, request);
+  }
 
   const changedAt = new Date().toISOString();
+  let passwordHash = row.password_hash || null;
+  let passwordUpdatedAt = row.password_updated_at || null;
+  let authVersion = Number(row.auth_version) || 1;
+  if (passwordChanged) {
+    passwordHash = await hashPassword(newPassword, env.PASSWORD_PEPPER);
+    passwordUpdatedAt = changedAt;
+    authVersion += 1;
+  }
+
   const update = env.DB
-    .prepare('UPDATE users SET label = ?, email = ? WHERE user_id = ?')
-    .bind(label, email || null, userId);
-  const audit = auditStatement(env, user.user_id, 'user_update', userId, {
+    .prepare('UPDATE users SET label = ?, email = ?, username = ?, username_normalized = ?, password_hash = ?, password_updated_at = ?, auth_version = ? WHERE user_id = ?')
+    .bind(label, email || null, username || null, username || null, passwordHash, passwordUpdatedAt, authVersion, userId);
+  const statements = [update];
+  if (passwordChanged) {
+    statements.push(env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(userId));
+    statements.push(env.DB.prepare('DELETE FROM pairing_codes WHERE user_id = ? AND used_at IS NULL').bind(userId));
+  }
+  statements.push(auditStatement(env, user.user_id, 'user_update', userId, {
     labelChanged,
-    emailChanged
-  }, changedAt);
+    emailChanged,
+    usernameChanged,
+    passwordChanged
+  }, changedAt));
 
   try {
-    await runWithAudit(env, [update, audit]);
+    await runWithAudit(env, statements);
   } catch (error) {
-    if (isUniqueError(error)) return errorJson('email_exists', 409, env, request);
+    if (isUniqueError(error)) {
+      if (email) return errorJson('email_exists', 409, env, request);
+      if (username) return errorJson('username_exists', 409, env, request);
+    }
     throw error;
   }
 
@@ -208,6 +316,8 @@ async function updateUserHandler(ctx, userId) {
       label,
       role: row.role === 'admin' ? 'admin' : 'user',
       email,
+      username,
+      hasPassword: Boolean(passwordHash),
       createdAt: row.created_at || null
     }
   }, 200, env, request);
@@ -230,7 +340,7 @@ async function resetPasscodeHandler(ctx, userId) {
   const changedAt = new Date().toISOString();
 
   const update = env.DB
-    .prepare('UPDATE users SET token_hash = ?, recovery_hash = ? WHERE user_id = ?')
+    .prepare('UPDATE users SET token_hash = ?, recovery_hash = ?, auth_version = auth_version + 1 WHERE user_id = ?')
     .bind(passcodeHash, recoveryHash, userId);
   const revokeSessions = env.DB
     .prepare('DELETE FROM user_sessions WHERE user_id = ?')

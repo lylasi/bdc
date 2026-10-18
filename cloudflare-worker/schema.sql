@@ -7,17 +7,26 @@
 -- recovery_hash: SHA-256(recovery code) for self-service reset
 -- role: 'user' | 'admin' (first admin is set by the deployer, see README)
 CREATE TABLE IF NOT EXISTS users (
-  token_hash    TEXT PRIMARY KEY,
-  user_id       TEXT NOT NULL UNIQUE,
-  label         TEXT,
-  recovery_hash TEXT,
-  role          TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-  email         TEXT,               -- optional; future OAuth mapping, unique when set
-  created_at    TEXT                -- ISO timestamp when created from the admin UI
+  token_hash          TEXT PRIMARY KEY,
+  user_id             TEXT NOT NULL UNIQUE,
+  label               TEXT,
+  recovery_hash       TEXT,
+  role                TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  email               TEXT,               -- optional; future OAuth mapping, unique when set
+  created_at          TEXT,               -- ISO timestamp when created from the admin UI
+  username            TEXT,
+  username_normalized TEXT,
+  password_hash       TEXT,               -- pbkdf2-sha256$<iterations>$<salt>$<hash>
+  password_updated_at TEXT,
+  auth_version        INTEGER NOT NULL DEFAULT 1,
+  is_active           INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1))
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique
   ON users(email) WHERE email IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_normalized
+  ON users(username_normalized) WHERE username_normalized IS NOT NULL;
 
 -- Admin user-management audit trail. Never contains passcodes or plaintext PII.
 CREATE TABLE IF NOT EXISTS admin_audit_log (
@@ -40,6 +49,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
   created_at   TEXT NOT NULL,
   expires_at   TEXT NOT NULL,
   device_label TEXT,
+  auth_version INTEGER NOT NULL DEFAULT 1,
   FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 

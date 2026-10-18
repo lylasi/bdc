@@ -26,8 +26,8 @@ function check(name, ok, detail) {
     page.on('pageerror', (error) => pageErrors.push(String(error)));
 
     const users = [
-        { userId: 'admin', label: 'Admin', role: 'admin', email: 'admin@example.com', createdAt: '2026-10-18T00:00:00.000Z' },
-        { userId: 'alice', label: 'Alice', role: 'user', email: '', createdAt: null }
+        { userId: 'admin', label: 'Admin', role: 'admin', email: 'admin@example.com', createdAt: '2026-10-18T00:00:00.000Z', username: '', hasPassword: false },
+        { userId: 'alice', label: 'Alice', role: 'user', email: '', createdAt: null, username: '', hasPassword: false }
     ];
     let sequence = 0;
     let lastPairingTtl = null;
@@ -54,7 +54,28 @@ function check(name, ok, detail) {
             if (authorization === `Bearer ${'z'.repeat(43)}`) {
                 return json({ user_id: 'alice', label: 'Alice', role: 'user' });
             }
+            if (authorization === `Bearer ${'y'.repeat(43)}`) {
+                return json({ user_id: 'carol', label: 'Carol 2', role: 'user', username: 'carol', hasPassword: true });
+            }
             return json({ user_id: 'admin', label: 'Admin', role: 'admin' });
+        }
+        if (path === '/login' && method === 'POST') {
+            const body = JSON.parse(request.postData() || '{}');
+            if (String(body.username || '').toLowerCase() === 'carol' && body.password === 'carol-password') {
+                return json({
+                    token: 'y'.repeat(43),
+                    user_id: 'carol',
+                    label: 'Carol 2',
+                    role: 'user',
+                    username: 'carol',
+                    hasPassword: true,
+                    expires_at: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
+                });
+            }
+            return json({ error: 'invalid_credentials', code: 'invalid_credentials' }, 401);
+        }
+        if (path === '/change-password' && method === 'POST') {
+            return json({ ok: true, authVersion: 2 });
         }
         if (path === '/version' && method === 'GET') return json({ version: 0 });
         if (path === '/snapshot' && method === 'GET') return json(null);
@@ -62,7 +83,7 @@ function check(name, ok, detail) {
         if (path === '/ai-catalog' && method === 'GET') return json({ version: 0, config: { schemaVersion: 1, providers: [], tasks: {} }, credentials: {} });
         if (path === '/ai-credentials' && method === 'GET') return json({ items: [] });
         if (path === '/auth-capabilities' && method === 'GET') {
-            return json({ pairingLogin: true, loginLinks: true, passwordLogin: false });
+            return json({ pairingLogin: true, loginLinks: true, passwordLogin: true, passwordMinLength: 10, adminPasswordMinLength: 12 });
         }
         if (path === '/admin/users' && method === 'GET') {
             return json({ users: users.map((user) => ({ ...user })), currentUserId: 'admin' });
@@ -77,7 +98,9 @@ function check(name, ok, detail) {
                 label: body.label || '',
                 role: 'user',
                 email: String(body.email || '').toLowerCase(),
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                username: String(body.username || '').toLowerCase(),
+                hasPassword: Boolean(body.password)
             };
             users.push(created);
             sequence += 1;
@@ -142,6 +165,8 @@ function check(name, ok, detail) {
             const body = JSON.parse(request.postData() || '{}');
             if (body.label !== undefined) found.label = String(body.label);
             if (body.email !== undefined) found.email = String(body.email).toLowerCase();
+            if (body.username !== undefined) found.username = String(body.username).toLowerCase();
+            if (body.newPassword) found.hasPassword = true;
             return json({ user: { ...found } });
         }
         return json({});
@@ -181,11 +206,15 @@ function check(name, ok, detail) {
         await page.fill('[data-form-user-id]', 'carol');
         await page.fill('[data-form-label]', 'Carol');
         await page.fill('[data-form-email]', 'carol@example.com');
+        await page.fill('[data-form-username]', 'carol');
+        await page.fill('[data-form-password]', 'carol-password');
         await page.click('[data-form-submit]');
         await page.waitForTimeout(500);
         check('建立後顯示一次性憑證', await page.isVisible('.admin-users-credentials'));
         check('憑證卡片包含通行碼', /p1{20,}/.test(await page.locator('.admin-users-credentials').innerText()));
+        check('憑證卡片包含用戶名', /@carol|用户名|用戶名/.test(await page.locator('.admin-users-credentials').innerText()));
         check('建立後列表出現 carol', (await page.locator('.admin-users-row').count()) === 3);
+        check('列表顯示用戶名與已設密碼', /@carol/.test(await page.locator('.admin-users-row').filter({ hasText: 'carol@example.com' }).innerText()) && /已设密码|已設密碼/.test(await page.locator('.admin-users-row').filter({ hasText: 'carol@example.com' }).innerText()));
 
         await page.click('[data-credentials-done]');
         await page.waitForTimeout(200);
@@ -244,12 +273,48 @@ function check(name, ok, detail) {
         check('zh-HK 重設按鈕文案正確', (await page.innerText('[data-user-reset="carol"]')) === '重設通行碼');
         check('zh-HK 登入碼按鈕文案正確', (await page.innerText('[data-user-pair="carol"]')) === '產生登入碼');
 
+        // 用戶名密碼登入：管理員已為 carol 設定憑證。
+        await page.evaluate(() => localStorage.clear());
+        await page.reload({ waitUntil: 'load' });
+        await page.waitForTimeout(700);
+        await page.click('#login-btn');
+        await page.waitForTimeout(400);
+        check('登入彈窗預設顯示用戶名密碼分頁', (await page.isVisible('#auth-username')) && (await page.isVisible('#auth-password')));
+        await page.fill('#auth-username', 'carol');
+        await page.fill('#auth-password', 'carol-password');
+        await page.click('#auth-password-submit');
+        await page.waitForTimeout(700);
+        const passwordStored = await page.evaluate(() => ({
+            token: localStorage.getItem('sync_token'),
+            userId: localStorage.getItem('sync_user_id'),
+            role: localStorage.getItem('sync_role')
+        }));
+        check('用戶名密碼登入後儲存 session token', passwordStored.token === 'y'.repeat(43), passwordStored);
+        check('用戶名密碼登入後儲存用戶身分', passwordStored.userId === 'carol' && passwordStored.role === 'user', passwordStored);
+
+        // 修改密碼：已登入且支援密碼時，設定選單應提供入口。
+        await page.click('#app-gear-btn');
+        await page.waitForTimeout(200);
+        check('選單顯示修改密碼入口', await page.isVisible('#gm-change-password'));
+        await page.click('#gm-change-password');
+        await page.waitForTimeout(300);
+        check('修改密碼表單要求目前密碼', await page.isVisible('#cp-current'));
+        await page.fill('#cp-current', 'carol-password');
+        await page.fill('#cp-new', 'carol-password-2');
+        await page.fill('#cp-new2', 'carol-password-2');
+        await page.click('#cp-submit');
+        await page.waitForTimeout(400);
+        check('修改密碼成功提示', /密码已更新|密碼已更新/.test(await page.innerText('#cp-msg')));
+
         // 新裝置配對登入：清除登入狀態後從登入彈窗走一次配對流程。
         await page.evaluate(() => localStorage.clear());
         await page.reload({ waitUntil: 'load' });
         await page.waitForTimeout(700);
         await page.click('#login-btn');
         await page.waitForTimeout(300);
+        check('登入彈窗提供登入碼分頁', await page.isVisible('#auth-tab-passcode'));
+        await page.click('#auth-tab-passcode');
+        await page.waitForTimeout(200);
         check('登入彈窗提供登入碼入口', await page.isVisible('#auth-pair'));
         check('登入彈窗提示本機會記住登入', /记住登录状态|記住登入狀態/.test(await page.innerText('#auth-msg')));
         await page.click('#auth-pair');

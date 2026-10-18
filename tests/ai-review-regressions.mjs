@@ -93,7 +93,7 @@ async function newPage(path = '/review') {
         if (p === '/ai-config.js') {
             return route.fulfill({ contentType: 'text/javascript', body: await readFile(`${root}/ai-config.example.js`, 'utf8') });
         }
-        if (!/^\/(modules|locales|features)\/[a-zA-Z0-9_./-]+\.js$/.test(p) && p !== '/tests/ai-provider-e2e.html') {
+        if (!/^\/(modules|locales|features|shared)\/[a-zA-Z0-9_./-]+\.(?:js|mjs)$/.test(p) && p !== '/tests/ai-provider-e2e.html') {
             return route.abort();
         }
         if (p.includes('..')) return route.abort();

@@ -44,7 +44,7 @@
 │   ├── qa/               # 問答集管理、訓練、AI 校對、PDF
 │   ├── sync/             # Cloudflare 登入/同步、AI 供應商設定與懸浮控制
 │   ├── ai-admin/         # 管理員預設 AI 供應商編輯與發布
-│   ├── admin-users/      # 管理員用戶管理（新增、編輯、重設非管理員通行碼）
+│   ├── admin-users/      # 管理員用戶管理（新增、編輯、設定使用者名稱／密碼、重設通行碼）
 │   └── assistant/        # 文章閱讀 AI 助手
 ├── qa-sets/, wordlists/, articles/   # 內建教材/問答資料
 ├── docs/, @docs/         # PRD、API/平台規格、同步/儲存架構
@@ -102,7 +102,8 @@
   - `SYNC.endpoint`：同步後端端點（Cloudflare Worker，或 `selfhost/` 自建的 SQLite／PostgreSQL 伺服器）。
   - `AI_LIMITS`、`QA_CHECK`、`OCR_CONFIG`、`ARTICLE_IMPORT` 的非秘密參數（逾時、併發、抓取服務）。
 - 全站預設 AI 供應商：管理員在 BDC「設定 → 管理預設供應商」建立、測試、發布；存於 D1，只有已登入使用者可取得，共享 Key 只留頁面記憶體（最長 60 分鐘）。
-- 管理員用戶管理：BDC「設定 → 工具 → 管理用戶」可新增用戶、修改備註／可選電郵、重設非管理員通行碼，並為非管理員產生一次性裝置配對碼；角色調整、刪除與管理員通行碼重設仍由部署者維護。需先套用 `cloudflare-worker/migrations/002_admin_user_management.sql` 與 `003_device_pairing.sql`。
+- 管理員用戶管理：BDC「設定 → 工具 → 管理用戶」可新增用戶、修改備註／可選電郵、設定使用者名稱與初始密碼、重設非管理員通行碼，並為非管理員產生一次性裝置配對碼；角色調整、刪除與管理員通行碼重設仍由部署者維護。需先套用 `cloudflare-worker/migrations/002_admin_user_management.sql`、`003_device_pairing.sql` 與 `005_username_password.sql`。
+- 使用者名稱＋密碼登入：管理員為帳戶設定使用者名稱與密碼後，使用者可在主站登入彈窗直接登入；一般使用者密碼至少 10 字元、管理員至少 12 字元。密碼以 PBKDF2-SHA256 加伺服器端 pepper 雜湊，修改密碼或重設通行碼會撤銷其他裝置的 session。此功能需要 Worker secret `PASSWORD_PEPPER`，未設定時前端自動隱藏密碼分頁。
 - 裝置配對登入：新裝置可在登入彈窗用「用戶代號 + 配對碼」換取 180 天 session token；配對碼 10 分鐘內有效且只能使用一次，重設通行碼會撤銷所有已配對裝置。原本的 43 字元通行碼仍然有效，不需要在每台新裝置手動輸入。
 - 個人 AI 供應商：所有使用者都可在「設定 → 我的供應商」新增、編輯、測試、刪除；未登入時保存到此裝置，登入後可明確匯入並選擇是否同步 Key。
 - 支援協議：OpenAI Chat Completions 相容、Anthropic Messages、Gemini 原生（文字／圖片／JSON／串流）。未實作的協議會明確提示，不會猜測。

@@ -15,6 +15,7 @@ import {
     decryptSecret,
     normalizeBinding
 } from '../cloudflare-worker/src/credential-crypto.js';
+import { hashPassword, verifyPassword } from '../cloudflare-worker/src/password.js';
 
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 const ADMIN_TOKEN = 'a'.repeat(43);
@@ -34,7 +35,7 @@ class FakeD1 {
         this.pairingCodes = new Map();
     }
 
-    addUser({ token, userId, label = '', role = 'user', recovery = '', email = null, createdAt = null }) {
+    addUser({ token, userId, label = '', role = 'user', recovery = '', email = null, createdAt = null, username = '', passwordHash = null, authVersion = 1, isActive = 1 }) {
         this.users.set(sha256(token), {
             token_hash: sha256(token),
             user_id: userId,
@@ -42,17 +43,24 @@ class FakeD1 {
             role,
             recovery_hash: recovery ? sha256(recovery) : null,
             email,
-            created_at: createdAt
+            created_at: createdAt,
+            username: username || null,
+            username_normalized: username ? username.toLowerCase() : null,
+            password_hash: passwordHash,
+            password_updated_at: passwordHash ? new Date().toISOString() : null,
+            auth_version: authVersion,
+            is_active: isActive
         });
     }
 
-    addSession({ token, userId, createdAt = new Date().toISOString(), expiresAt = new Date(Date.now() + 86400000).toISOString(), deviceLabel = null }) {
+    addSession({ token, userId, createdAt = new Date().toISOString(), expiresAt = new Date(Date.now() + 86400000).toISOString(), deviceLabel = null, authVersion = 1 }) {
         this.sessions.set(sha256(token), {
             token_hash: sha256(token),
             user_id: userId,
             created_at: createdAt,
             expires_at: expiresAt,
-            device_label: deviceLabel
+            device_label: deviceLabel,
+            auth_version: authVersion
         });
     }
 
@@ -106,7 +114,41 @@ class FakeD1 {
 
     async execute(sql, args, mode) {
         if (sql === 'SELECT user_id, label, role FROM users WHERE token_hash = ?') {
-            return this.users.get(args[0]) || null;
+            const user = this.users.get(args[0]);
+            return user ? { user_id: user.user_id, label: user.label, role: user.role } : null;
+        }
+        if (sql === 'SELECT user_id, label, role, username, password_hash, is_active FROM users WHERE token_hash = ?') {
+            const user = this.users.get(args[0]);
+            return user ? {
+                user_id: user.user_id,
+                label: user.label,
+                role: user.role,
+                username: user.username,
+                password_hash: user.password_hash,
+                is_active: user.is_active
+            } : null;
+        }
+        if (sql === 'SELECT user_id, label, role, username, password_hash, auth_version, is_active FROM users WHERE username_normalized = ?') {
+            for (const user of this.users.values()) {
+                if (user.username_normalized !== args[0]) continue;
+                return {
+                    user_id: user.user_id,
+                    label: user.label,
+                    role: user.role,
+                    username: user.username,
+                    password_hash: user.password_hash,
+                    auth_version: user.auth_version,
+                    is_active: user.is_active
+                };
+            }
+            return null;
+        }
+        if (sql === 'SELECT password_hash, auth_version, role FROM users WHERE user_id = ?') {
+            for (const user of this.users.values()) {
+                if (user.user_id !== args[0]) continue;
+                return { password_hash: user.password_hash, auth_version: user.auth_version, role: user.role };
+            }
+            return null;
         }
         if (sql === 'SELECT recovery_hash FROM users WHERE user_id = ?') {
             for (const user of this.users.values()) if (user.user_id === args[0]) return { recovery_hash: user.recovery_hash };
@@ -119,6 +161,23 @@ class FakeD1 {
                 if (user.user_id === session.user_id) {
                     return { user_id: user.user_id, label: user.label, role: user.role };
                 }
+            }
+            return null;
+        }
+        if (sql === 'SELECT u.user_id, u.label, u.role, u.username, u.password_hash, u.is_active FROM user_sessions s JOIN users u ON u.user_id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ? AND s.auth_version = u.auth_version') {
+            const session = this.sessions.get(args[0]);
+            if (!session || !(session.expires_at > args[1])) return null;
+            for (const user of this.users.values()) {
+                if (user.user_id !== session.user_id) continue;
+                if ((Number(session.auth_version) || 1) !== (Number(user.auth_version) || 1)) return null;
+                return {
+                    user_id: user.user_id,
+                    label: user.label,
+                    role: user.role,
+                    username: user.username,
+                    password_hash: user.password_hash,
+                    is_active: user.is_active
+                };
             }
             return null;
         }
@@ -162,7 +221,21 @@ class FakeD1 {
                 user_id: userId,
                 created_at: createdAt,
                 expires_at: expiresAt,
-                device_label: deviceLabel
+                device_label: deviceLabel,
+                auth_version: 1
+            });
+            return { meta: { changes: 1 } };
+        }
+        if (sql === 'INSERT INTO user_sessions (token_hash, user_id, created_at, expires_at, device_label, auth_version) VALUES (?, ?, ?, ?, ?, ?)') {
+            const [tokenHash, userId, createdAt, expiresAt, deviceLabel, authVersion] = args;
+            if (this.sessions.has(tokenHash)) throw new Error('UNIQUE constraint failed: user_sessions.token_hash');
+            this.sessions.set(tokenHash, {
+                token_hash: tokenHash,
+                user_id: userId,
+                created_at: createdAt,
+                expires_at: expiresAt,
+                device_label: deviceLabel,
+                auth_version: authVersion
             });
             return { meta: { changes: 1 } };
         }
@@ -175,6 +248,21 @@ class FakeD1 {
             }
             return { meta: { changes } };
         }
+        if (sql === 'DELETE FROM user_sessions WHERE user_id = ? AND token_hash <> ?') {
+            let changes = 0;
+            for (const [key, session] of [...this.sessions.entries()]) {
+                if (session.user_id !== args[0] || key === args[1]) continue;
+                this.sessions.delete(key);
+                changes += 1;
+            }
+            return { meta: { changes } };
+        }
+        if (sql === 'UPDATE user_sessions SET auth_version = ? WHERE token_hash = ? AND user_id = ?') {
+            const session = this.sessions.get(args[1]);
+            if (!session || session.user_id !== args[2]) return { meta: { changes: 0 } };
+            session.auth_version = args[0];
+            return { meta: { changes: 1 } };
+        }
         if (sql === 'UPDATE users SET token_hash = ? WHERE user_id = ?') {
             for (const user of this.users.values()) {
                 if (user.user_id === args[1]) {
@@ -186,7 +274,55 @@ class FakeD1 {
             }
             return { meta: { changes: 0 } };
         }
-        if (sql === 'SELECT user_id, label, role, email, created_at FROM users ORDER BY (created_at IS NULL) ASC, created_at DESC, user_id ASC LIMIT ?') {
+        if (sql === 'UPDATE users SET token_hash = ?, auth_version = auth_version + 1 WHERE user_id = ?') {
+            for (const [key, user] of [...this.users.entries()]) {
+                if (user.user_id !== args[1]) continue;
+                this.users.delete(key);
+                user.token_hash = args[0];
+                user.auth_version = (Number(user.auth_version) || 1) + 1;
+                this.users.set(user.token_hash, user);
+                return { meta: { changes: 1 } };
+            }
+            return { meta: { changes: 0 } };
+        }
+        if (sql === 'UPDATE users SET password_hash = ?, password_updated_at = ?, auth_version = ? WHERE user_id = ?') {
+            for (const user of this.users.values()) {
+                if (user.user_id !== args[3]) continue;
+                user.password_hash = args[0];
+                user.password_updated_at = args[1];
+                user.auth_version = args[2];
+                return { meta: { changes: 1 } };
+            }
+            return { meta: { changes: 0 } };
+        }
+        if (sql === 'UPDATE users SET label = ?, email = ?, username = ?, username_normalized = ?, password_hash = ?, password_updated_at = ?, auth_version = ? WHERE user_id = ?') {
+            const [label, email, username, usernameNormalized, passwordHash, passwordUpdatedAt, authVersion, userId] = args;
+            for (const user of this.users.values()) {
+                if (user.user_id !== userId) continue;
+                if (usernameNormalized) {
+                    for (const other of this.users.values()) {
+                        if (other !== user && other.username_normalized === usernameNormalized) {
+                            throw new Error('UNIQUE constraint failed: users.username_normalized');
+                        }
+                    }
+                }
+                if (email) {
+                    for (const other of this.users.values()) {
+                        if (other !== user && other.email === email) throw new Error('UNIQUE constraint failed: users.email');
+                    }
+                }
+                user.label = label;
+                user.email = email;
+                user.username = username;
+                user.username_normalized = usernameNormalized;
+                user.password_hash = passwordHash;
+                user.password_updated_at = passwordUpdatedAt;
+                user.auth_version = authVersion;
+                return { meta: { changes: 1 } };
+            }
+            return { meta: { changes: 0 } };
+        }
+        if (sql === 'SELECT user_id, label, role, email, created_at, username, password_hash FROM users ORDER BY (created_at IS NULL) ASC, created_at DESC, user_id ASC LIMIT ?') {
             const results = [...this.users.values()]
                 .sort((a, b) => {
                     const aNull = a.created_at == null ? 1 : 0;
@@ -204,17 +340,26 @@ class FakeD1 {
                     label: user.label,
                     role: user.role,
                     email: user.email,
-                    created_at: user.created_at
+                    created_at: user.created_at,
+                    username: user.username ?? null,
+                    password_hash: user.password_hash ?? null
                 }));
             return { results };
         }
-        if (sql === 'SELECT user_id, label, role FROM users WHERE user_id = ?') {
+        if (sql === 'SELECT user_id, label, role, auth_version, is_active FROM users WHERE user_id = ?') {
             for (const user of this.users.values()) {
-                if (user.user_id === args[0]) return { user_id: user.user_id, label: user.label, role: user.role };
+                if (user.user_id !== args[0]) continue;
+                return {
+                    user_id: user.user_id,
+                    label: user.label,
+                    role: user.role,
+                    auth_version: user.auth_version ?? 1,
+                    is_active: user.is_active ?? 1
+                };
             }
             return null;
         }
-        if (sql === 'SELECT user_id, label, role, email, created_at FROM users WHERE user_id = ?') {
+        if (sql === 'SELECT user_id, label, role, email, created_at, username, username_normalized, password_hash, password_updated_at, auth_version, is_active FROM users WHERE user_id = ?') {
             for (const user of this.users.values()) {
                 if (user.user_id !== args[0]) continue;
                 return {
@@ -222,7 +367,13 @@ class FakeD1 {
                     label: user.label,
                     role: user.role,
                     email: user.email,
-                    created_at: user.created_at
+                    created_at: user.created_at,
+                    username: user.username ?? null,
+                    username_normalized: user.username_normalized ?? null,
+                    password_hash: user.password_hash ?? null,
+                    password_updated_at: user.password_updated_at ?? null,
+                    auth_version: user.auth_version ?? 1,
+                    is_active: user.is_active ?? 1
                 };
             }
             return null;
@@ -241,11 +392,26 @@ class FakeD1 {
             }
             return null;
         }
-        if (sql === 'INSERT INTO users (token_hash, user_id, label, recovery_hash, role, email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)') {
-            const [tokenHash, userId, label, recoveryHash, role, email, createdAt] = args;
+        if (sql === 'SELECT user_id FROM users WHERE username_normalized = ?') {
+            for (const user of this.users.values()) {
+                if (user.username_normalized && user.username_normalized === args[0]) return { user_id: user.user_id };
+            }
+            return null;
+        }
+        if (sql === 'SELECT user_id FROM users WHERE username_normalized = ? AND user_id <> ?') {
+            for (const user of this.users.values()) {
+                if (user.username_normalized === args[0] && user.user_id !== args[1]) return { user_id: user.user_id };
+            }
+            return null;
+        }
+        if (sql === 'INSERT INTO users (token_hash, user_id, label, recovery_hash, role, email, created_at, username, username_normalized, password_hash, password_updated_at, auth_version, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)') {
+            const [tokenHash, userId, label, recoveryHash, role, email, createdAt, username, usernameNormalized, passwordHash, passwordUpdatedAt] = args;
             for (const user of this.users.values()) {
                 if (user.user_id === userId) throw new Error('UNIQUE constraint failed: users.user_id');
                 if (email && user.email === email) throw new Error('UNIQUE constraint failed: users.email');
+                if (usernameNormalized && user.username_normalized === usernameNormalized) {
+                    throw new Error('UNIQUE constraint failed: users.username_normalized');
+                }
             }
             if (this.users.has(tokenHash)) throw new Error('UNIQUE constraint failed: users.token_hash');
             this.users.set(tokenHash, {
@@ -255,7 +421,13 @@ class FakeD1 {
                 role,
                 recovery_hash: recoveryHash,
                 email,
-                created_at: createdAt
+                created_at: createdAt,
+                username: username ?? null,
+                username_normalized: usernameNormalized ?? null,
+                password_hash: passwordHash ?? null,
+                password_updated_at: passwordUpdatedAt ?? null,
+                auth_version: 1,
+                is_active: 1
             });
             return { meta: { changes: 1 } };
         }
@@ -274,7 +446,7 @@ class FakeD1 {
             }
             return { meta: { changes: 0 } };
         }
-        if (sql === 'UPDATE users SET token_hash = ?, recovery_hash = ? WHERE user_id = ?') {
+        if (sql === 'UPDATE users SET token_hash = ?, recovery_hash = ?, auth_version = auth_version + 1 WHERE user_id = ?') {
             const [tokenHash, recoveryHash, userId] = args;
             for (const [key, user] of [...this.users.entries()]) {
                 if (user.user_id !== userId) continue;
@@ -282,6 +454,7 @@ class FakeD1 {
                 this.users.delete(key);
                 user.token_hash = tokenHash;
                 user.recovery_hash = recoveryHash;
+                user.auth_version = (Number(user.auth_version) || 1) + 1;
                 this.users.set(tokenHash, user);
                 return { meta: { changes: 1 } };
             }
@@ -434,11 +607,12 @@ class FakeD1 {
     }
 }
 
-function makeEnv(db, { withKeys = true } = {}) {
+function makeEnv(db, { withKeys = true, withPasswordPepper = true } = {}) {
     return {
         DB: db,
         ALLOWED_ORIGINS: 'https://app.example',
         AI_CREDENTIAL_KEY_VERSION: '1',
+        ...(withPasswordPepper ? { PASSWORD_PEPPER: 'test-password-pepper-0123456789abcdef' } : {}),
         ...(withKeys ? {
             AI_CREDENTIAL_KEY_V1: MASTER,
             AI_CATALOG_DIGEST_KEY: 'digest-secret-for-tests-0123456789'
@@ -446,10 +620,11 @@ function makeEnv(db, { withKeys = true } = {}) {
     };
 }
 
-function req(path, { method = 'GET', token = '', body, origin = 'https://app.example' } = {}) {
+function req(path, { method = 'GET', token = '', body, origin = 'https://app.example', clientIp = '' } = {}) {
     const headers = {};
     if (token) headers.Authorization = `Bearer ${token}`;
     if (origin) headers.Origin = origin;
+    if (clientIp) headers['CF-Connecting-IP'] = clientIp;
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     return new Request(`https://sync.example${path}`, {
         method,
@@ -850,7 +1025,7 @@ test('login code TTL options, default and revocation', async () => {
     assert.equal(afterRevoke.status, 403);
 });
 
-test('auth capabilities expose login-code support', async () => {
+test('auth capabilities expose login-code and password support', async () => {
     const db = new FakeD1();
     const env = makeEnv(db);
     const res = await worker.fetch(req('/auth-capabilities'), env);
@@ -858,8 +1033,256 @@ test('auth capabilities expose login-code support', async () => {
     assert.deepEqual(await res.json(), {
         pairingLogin: true,
         loginLinks: true,
-        passwordLogin: false
+        passwordLogin: true,
+        passwordMinLength: 10,
+        adminPasswordMinLength: 12
     });
+
+    const noPepper = await worker.fetch(req('/auth-capabilities'), makeEnv(db, { withPasswordPepper: false }));
+    assert.equal(noPepper.status, 200);
+    assert.deepEqual(await noPepper.json(), {
+        pairingLogin: true,
+        loginLinks: true,
+        passwordLogin: false,
+        passwordMinLength: 10,
+        adminPasswordMinLength: 12
+    });
+});
+
+test('password login issues a session and rejects bad credentials', async () => {
+    const db = new FakeD1();
+    const env = makeEnv(db);
+    const passwordHash = await hashPassword('correct horse battery', env.PASSWORD_PEPPER);
+    db.addUser({ token: ALICE_TOKEN, userId: 'alice', label: 'Alice', username: 'Alice.W', passwordHash });
+    db.addUser({
+        token: 'd'.repeat(43),
+        userId: 'disabled',
+        username: 'disabled-user',
+        passwordHash: await hashPassword('another good password', env.PASSWORD_PEPPER),
+        isActive: 0
+    });
+
+    const ok = await worker.fetch(req('/login', {
+        method: 'POST',
+        clientIp: '203.0.113.10',
+        body: { username: '  ALICE.W ', password: 'correct horse battery', deviceLabel: 'Test device' }
+    }), env);
+    assert.equal(ok.status, 200);
+    const session = await ok.json();
+    assert.equal(session.user_id, 'alice');
+    assert.equal(session.username, 'Alice.W');
+    assert.equal(session.role, 'user');
+    assert.equal(session.hasPassword, true);
+    assert.equal(session.token.length, 43);
+    assert.ok(db.sessions.has(sha256(session.token)));
+    assert.equal(db.sessions.get(sha256(session.token)).device_label, 'Test device');
+
+    const me = await worker.fetch(req('/me', { token: session.token }), env);
+    assert.equal(me.status, 200);
+    const meBody = await me.json();
+    assert.equal(meBody.user_id, 'alice');
+    assert.equal(meBody.username, 'Alice.W');
+    assert.equal(meBody.hasPassword, true);
+
+    const wrong = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.10', body: { username: 'alice.w', password: 'wrong password!' }
+    }), env);
+    assert.equal(wrong.status, 401);
+    assert.equal((await wrong.json()).code, 'invalid_credentials');
+
+    const unknown = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.10', body: { username: 'nobody', password: 'correct horse battery' }
+    }), env);
+    assert.equal(unknown.status, 401);
+    assert.equal((await unknown.json()).code, 'invalid_credentials');
+
+    const missing = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.10', body: { username: 'alice.w' }
+    }), env);
+    assert.equal(missing.status, 401);
+    assert.equal((await missing.json()).code, 'invalid_credentials');
+
+    const disabled = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.10', body: { username: 'disabled-user', password: 'another good password' }
+    }), env);
+    assert.equal(disabled.status, 403);
+    assert.equal((await disabled.json()).code, 'account_disabled');
+
+    const noPepper = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.11', body: { username: 'alice.w', password: 'correct horse battery' }
+    }), makeEnv(db, { withPasswordPepper: false }));
+    assert.equal(noPepper.status, 503);
+    assert.equal((await noPepper.json()).code, 'password_not_configured');
+});
+
+test('password login is rate limited per client and username', async () => {
+    const db = new FakeD1();
+    const env = makeEnv(db);
+    const body = { username: 'rate-limited', password: 'wrong password!!' };
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+        const res = await worker.fetch(req('/login', { method: 'POST', clientIp: '198.51.100.7', body }), env);
+        assert.equal(res.status, 401);
+    }
+    const blocked = await worker.fetch(req('/login', { method: 'POST', clientIp: '198.51.100.7', body }), env);
+    assert.equal(blocked.status, 429);
+    assert.equal((await blocked.json()).code, 'rate_limited');
+    assert.ok(Number(blocked.headers.get('Retry-After')) > 0);
+
+    const otherClient = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '198.51.100.8', body
+    }), env);
+    assert.equal(otherClient.status, 401);
+});
+
+test('change password rotates auth_version and revokes other sessions', async () => {
+    const db = new FakeD1();
+    const env = makeEnv(db);
+    const originalHash = await hashPassword('old password 123', env.PASSWORD_PEPPER);
+    const otherToken = 'other-device-token'.padEnd(43, 'x');
+    const currentToken = 'current-device-token'.padEnd(43, 'y');
+    db.addUser({ token: ALICE_TOKEN, userId: 'alice', username: 'alice', passwordHash: originalHash, authVersion: 1 });
+    db.addSession({ token: otherToken, userId: 'alice', authVersion: 1 });
+    db.addSession({ token: currentToken, userId: 'alice', authVersion: 1 });
+    db.addPairingCode({ code: 'UNUSEDCODE', userId: 'alice' });
+
+    const weak = await worker.fetch(req('/change-password', {
+        method: 'POST', token: currentToken, body: { currentPassword: 'old password 123', newPassword: 'short' }
+    }), env);
+    assert.equal(weak.status, 400);
+    assert.equal((await weak.json()).code, 'weak_password');
+
+    const wrongCurrent = await worker.fetch(req('/change-password', {
+        method: 'POST', token: currentToken, body: { currentPassword: 'not the password', newPassword: 'new password 456' }
+    }), env);
+    assert.equal(wrongCurrent.status, 403);
+    assert.equal((await wrongCurrent.json()).code, 'invalid_current_password');
+
+    const changed = await worker.fetch(req('/change-password', {
+        method: 'POST', token: currentToken, body: { currentPassword: 'old password 123', newPassword: 'new password 456' }
+    }), env);
+    assert.equal(changed.status, 200);
+    assert.deepEqual(await changed.json(), { ok: true, authVersion: 2 });
+
+    const stored = [...db.users.values()].find((user) => user.user_id === 'alice');
+    assert.equal(stored.auth_version, 2);
+    assert.notEqual(stored.password_hash, originalHash);
+    assert.equal(await verifyPassword('new password 456', stored.password_hash, env.PASSWORD_PEPPER), true);
+    assert.equal(db.pairingCodes.size, 0);
+
+    const currentMe = await worker.fetch(req('/me', { token: currentToken }), env);
+    assert.equal(currentMe.status, 200);
+    const otherMe = await worker.fetch(req('/me', { token: otherToken }), env);
+    assert.equal(otherMe.status, 401);
+
+    const oldLogin = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.20', body: { username: 'alice', password: 'old password 123' }
+    }), env);
+    assert.equal(oldLogin.status, 401);
+    const newLogin = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.20', body: { username: 'alice', password: 'new password 456' }
+    }), env);
+    assert.equal(newLogin.status, 200);
+    assert.equal(db.sessions.get(sha256((await newLogin.json()).token)).auth_version, 2);
+});
+
+test('admin can assign credentials and password reset revokes sessions', async () => {
+    const db = new FakeD1();
+    const env = makeEnv(db);
+    db.addUser({ token: ADMIN_TOKEN, userId: 'admin', role: 'admin' });
+
+    const created = await worker.fetch(req('/admin/users', {
+        method: 'POST',
+        token: ADMIN_TOKEN,
+        body: { userId: 'carol', label: 'Carol', username: 'Carol', password: 'carol-password' }
+    }), env);
+    assert.equal(created.status, 201);
+    const createdBody = await created.json();
+    assert.equal(createdBody.user.username, 'carol');
+    assert.equal(createdBody.user.hasPassword, true);
+    const stored = [...db.users.values()].find((user) => user.user_id === 'carol');
+    assert.equal(stored.username_normalized, 'carol');
+    assert.equal(await verifyPassword('carol-password', stored.password_hash, env.PASSWORD_PEPPER), true);
+
+    const list = await worker.fetch(req('/admin/users', { token: ADMIN_TOKEN }), env);
+    const listed = (await list.json()).users.find((user) => user.userId === 'carol');
+    assert.equal(listed.username, 'carol');
+    assert.equal(listed.hasPassword, true);
+
+    const login = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.30', body: { username: 'CAROL', password: 'carol-password' }
+    }), env);
+    assert.equal(login.status, 200);
+    const sessionToken = (await login.json()).token;
+
+    const duplicateUsername = await worker.fetch(req('/admin/users', {
+        method: 'POST', token: ADMIN_TOKEN, body: { userId: 'dave', username: 'carol', password: 'dave-password' }
+    }), env);
+    assert.equal(duplicateUsername.status, 409);
+    assert.equal((await duplicateUsername.json()).code, 'username_exists');
+
+    const invalidUsername = await worker.fetch(req('/admin/users', {
+        method: 'POST', token: ADMIN_TOKEN, body: { userId: 'erin', username: '-bad-', password: 'erin-password' }
+    }), env);
+    assert.equal(invalidUsername.status, 400);
+    assert.equal((await invalidUsername.json()).code, 'invalid_username');
+
+    const weakPassword = await worker.fetch(req('/admin/users', {
+        method: 'POST', token: ADMIN_TOKEN, body: { userId: 'frank', username: 'frank', password: 'short' }
+    }), env);
+    assert.equal(weakPassword.status, 400);
+    assert.equal((await weakPassword.json()).code, 'weak_password');
+
+    const passwordWithoutUsername = await worker.fetch(req('/admin/users', {
+        method: 'POST', token: ADMIN_TOKEN, body: { userId: 'grace', password: 'grace-password' }
+    }), env);
+    assert.equal(passwordWithoutUsername.status, 400);
+    assert.equal((await passwordWithoutUsername.json()).code, 'username_required');
+
+    const edited = await worker.fetch(req('/admin/users/carol', {
+        method: 'PUT',
+        token: ADMIN_TOKEN,
+        body: { username: 'carol2', newPassword: 'carol-password-2' }
+    }), env);
+    assert.equal(edited.status, 200);
+    const editedBody = await edited.json();
+    assert.equal(editedBody.user.username, 'carol2');
+    assert.equal(editedBody.user.hasPassword, true);
+
+    const revoked = await worker.fetch(req('/me', { token: sessionToken }), env);
+    assert.equal(revoked.status, 401);
+
+    const oldLogin = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.30', body: { username: 'carol', password: 'carol-password' }
+    }), env);
+    assert.equal(oldLogin.status, 401);
+    const newLogin = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.30', body: { username: 'carol2', password: 'carol-password-2' }
+    }), env);
+    assert.equal(newLogin.status, 200);
+
+    const clearUsername = await worker.fetch(req('/admin/users/carol', {
+        method: 'PUT', token: ADMIN_TOKEN, body: { username: '' }
+    }), env);
+    assert.equal(clearUsername.status, 400);
+    assert.equal((await clearUsername.json()).code, 'username_required');
+
+    const adminShortPassword = await worker.fetch(req('/admin/users/admin', {
+        method: 'PUT', token: ADMIN_TOKEN, body: { username: 'admin', newPassword: '12345678901' }
+    }), env);
+    assert.equal(adminShortPassword.status, 400);
+    assert.equal((await adminShortPassword.json()).code, 'weak_password');
+
+    const adminCredentials = await worker.fetch(req('/admin/users/admin', {
+        method: 'PUT', token: ADMIN_TOKEN, body: { username: 'admin', newPassword: '123456789012' }
+    }), env);
+    assert.equal(adminCredentials.status, 200);
+    assert.equal((await adminCredentials.json()).user.hasPassword, true);
+
+    const adminLogin = await worker.fetch(req('/login', {
+        method: 'POST', clientIp: '203.0.113.30', body: { username: 'admin', password: '123456789012' }
+    }), env);
+    assert.equal(adminLogin.status, 200);
+    assert.equal((await adminLogin.json()).role, 'admin');
 });
 
 test('passcode change and recovery reset revoke paired sessions', async () => {

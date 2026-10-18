@@ -90,10 +90,12 @@ export async function handlePairRequest(ctx) {
   }
 
   const user = await env.DB
-    .prepare('SELECT user_id, label, role FROM users WHERE user_id = ?')
+    .prepare('SELECT user_id, label, role, auth_version, is_active FROM users WHERE user_id = ?')
     .bind(row.user_id)
     .first();
-  if (!user || user.role === 'admin') return errorJson('pairing_invalid', 403, env, request);
+  if (!user || user.role === 'admin' || user.is_active === 0) {
+    return errorJson('pairing_invalid', 403, env, request);
+  }
 
   // Conditional update makes the code single-use even if two devices race.
   const consumed = await env.DB
@@ -110,8 +112,8 @@ export async function handlePairRequest(ctx) {
   const deviceLabel = String(body.deviceLabel || '').trim().slice(0, 80) || null;
 
   await env.DB
-    .prepare('INSERT INTO user_sessions (token_hash, user_id, created_at, expires_at, device_label) VALUES (?, ?, ?, ?, ?)')
-    .bind(tokenHash, user.user_id, nowIso, expiresAt, deviceLabel)
+    .prepare('INSERT INTO user_sessions (token_hash, user_id, created_at, expires_at, device_label, auth_version) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(tokenHash, user.user_id, nowIso, expiresAt, deviceLabel, user.auth_version ?? 1)
     .run();
 
   return json({

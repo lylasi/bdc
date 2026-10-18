@@ -13,6 +13,7 @@ import {
   getStoredSyncUserId,
   getAuthSnapshot,
   getAuthCapabilities,
+  getCachedAuthCapabilities,
   normalizeLoginCode,
   LOGIN_CODE_RE
 } from '../../modules/sync-cloudflare.js';
@@ -79,6 +80,9 @@ function destroyAIProviderSettings() {
 export function initSync() {
   try {
     console.log('[sync] initSync()');
+    // Warm the capability cache so the login modal and gear menu can decide
+    // synchronously whether username/password login is available.
+    getAuthCapabilities().catch(() => {});
     pendingMergePaused = isPendingMergeForCurrentUser();
     if (pendingMergePaused) {
       try { ui.displayMessage(t('sync.mergePendingStatus'), 'warning', 8000); } catch (_) {}
@@ -377,32 +381,108 @@ function updateAuthButtons(user) {
 function showLoginModal() {
   try { ui.openModal(); } catch(_) {}
   try { dom.modalTitle.textContent = t('sync.login'); } catch(_) {}
+  const initialCaps = getCachedAuthCapabilities();
+  const passwordReady = initialCaps ? initialCaps.passwordLogin === true : false;
   const html = `
     <div class="auth-modal" style="min-width:300px;">
-      <div class="auth-field">
-        <label for="auth-token">${t('sync.passcode')}</label>
-        <div class="auth-pass-row" style="display:flex;gap:8px;align-items:center;">
-          <input id="auth-token" type="password" placeholder="${t('sync.passcodePlaceholder')}" style="flex:1;" autocomplete="current-password">
-          <button id="auth-token-toggle" class="btn-secondary" type="button" style="white-space:nowrap;">${t('sync.show')}</button>
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab" id="auth-tab-password" type="button" role="tab" data-auth-tab="password" aria-selected="${passwordReady ? 'true' : 'false'}">${t('sync.loginTabPassword')}</button>
+        <button class="auth-tab" id="auth-tab-passcode" type="button" role="tab" data-auth-tab="passcode" aria-selected="${passwordReady ? 'false' : 'true'}">${t('sync.loginTabPasscode')}</button>
+      </div>
+      <div class="auth-panel" data-auth-panel="password" ${passwordReady ? '' : 'hidden'}>
+        <div class="auth-field">
+          <label for="auth-username">${t('sync.username')}</label>
+          <input id="auth-username" type="text" placeholder="${t('sync.usernamePlaceholder')}" autocomplete="username" autocapitalize="none" spellcheck="false">
         </div>
+        <div class="auth-field">
+          <label for="auth-password">${t('sync.password')}</label>
+          <div class="auth-pass-row">
+            <input id="auth-password" type="password" placeholder="${t('sync.passwordPlaceholder')}" autocomplete="current-password">
+            <button id="auth-password-toggle" class="btn-secondary" type="button">${t('sync.show')}</button>
+          </div>
+        </div>
+        <div class="auth-actions">
+          <button id="auth-password-submit" class="btn-primary" type="button">${t('sync.login')}</button>
+        </div>
+        <div id="auth-password-msg" class="auth-msg">${t('sync.passwordLoginHint')}</div>
+        <p class="gs-hint">${t('sync.forgotPasswordHint')}</p>
       </div>
-      <div class="auth-actions">
-        <button id="auth-pair" class="btn-secondary" type="button">${t('sync.pairingLogin')}</button>
-        <button id="auth-forgot" class="btn-secondary" type="button">${t('sync.forgot')}</button>
-        <button id="auth-submit" class="btn-primary" type="button">${t('sync.login')}</button>
+      <div class="auth-panel" data-auth-panel="passcode" ${passwordReady ? 'hidden' : ''}>
+        <div class="auth-field">
+          <label for="auth-token">${t('sync.passcode')}</label>
+          <div class="auth-pass-row">
+            <input id="auth-token" type="password" placeholder="${t('sync.passcodePlaceholder')}" autocomplete="current-password">
+            <button id="auth-token-toggle" class="btn-secondary" type="button">${t('sync.show')}</button>
+          </div>
+        </div>
+        <div class="auth-actions">
+          <button id="auth-pair" class="btn-secondary" type="button">${t('sync.pairingLogin')}</button>
+          <button id="auth-forgot" class="btn-secondary" type="button">${t('sync.forgotPasscode')}</button>
+          <button id="auth-submit" class="btn-primary" type="button">${t('sync.login')}</button>
+        </div>
+        <div id="auth-msg" class="auth-msg">${t('sync.loginHint')}<br>${t('sync.loginRememberHint')}</div>
       </div>
-      <div id="auth-msg" class="auth-msg">${t('sync.loginHint')}<br>${t('sync.loginRememberHint')}</div>
     </div>`;
   dom.modalBody.innerHTML = html;
+
+  const usernameEl = dom.modalBody.querySelector('#auth-username');
+  const passwordEl = dom.modalBody.querySelector('#auth-password');
+  const passwordToggle = dom.modalBody.querySelector('#auth-password-toggle');
+  const passwordBtn = dom.modalBody.querySelector('#auth-password-submit');
+  const passwordMsg = dom.modalBody.querySelector('#auth-password-msg');
   const tokenEl = dom.modalBody.querySelector('#auth-token');
   const submitBtn = dom.modalBody.querySelector('#auth-submit');
   const msg = dom.modalBody.querySelector('#auth-msg');
   const toggle = dom.modalBody.querySelector('#auth-token-toggle');
+  let userChoseTab = false;
 
+  const setTab = (tab) => {
+    const target = dom.modalBody.querySelector(`[data-auth-tab="${tab}"]`);
+    if (!target) return;
+    for (const button of dom.modalBody.querySelectorAll('[data-auth-tab]')) {
+      button.setAttribute('aria-selected', button.dataset.authTab === tab ? 'true' : 'false');
+    }
+    for (const panelEl of dom.modalBody.querySelectorAll('[data-auth-panel]')) {
+      panelEl.hidden = panelEl.dataset.authPanel !== tab;
+    }
+    if (tab === 'password') { try { usernameEl?.focus(); } catch (_) {} }
+    else { try { tokenEl?.focus(); } catch (_) {} }
+  };
+
+  for (const button of dom.modalBody.querySelectorAll('[data-auth-tab]')) {
+    button.onclick = () => { userChoseTab = true; setTab(button.dataset.authTab); };
+  }
+  if (passwordReady) setTab('password');
+  else setTab('passcode');
+
+  if (passwordToggle) passwordToggle.onclick = () => {
+    const toText = passwordEl.type === 'password';
+    passwordEl.type = toText ? 'text' : 'password';
+    passwordToggle.textContent = toText ? t('sync.hide') : t('sync.show');
+  };
   if (toggle) toggle.onclick = () => {
     const toText = tokenEl.type === 'password';
     tokenEl.type = toText ? 'text' : 'password';
     toggle.textContent = toText ? t('sync.hide') : t('sync.show');
+  };
+
+  const doPasswordLogin = async () => {
+    const username = (usernameEl.value || '').trim();
+    const password = passwordEl.value || '';
+    if (!username) { passwordMsg.textContent = t('sync.usernameRequired'); return; }
+    if (!password) { passwordMsg.textContent = t('sync.passwordRequired'); return; }
+    if (!(await confirmAccountSwitch())) return;
+    passwordBtn.disabled = true; passwordBtn.textContent = t('sync.loggingIn');
+    passwordMsg.textContent = '';
+    try {
+      await auth.signInWithPassword(username, password);
+      passwordMsg.textContent = t('sync.loginSuccess');
+      try { ui.closeModal(); } catch(_) {}
+    } catch (e) {
+      passwordMsg.textContent = passwordLoginErrorMessage(e);
+    } finally {
+      passwordBtn.disabled = false; passwordBtn.textContent = t('sync.login');
+    }
   };
 
   const doLogin = async () => {
@@ -420,6 +500,12 @@ function showLoginModal() {
     }
   };
 
+  passwordBtn.onclick = doPasswordLogin;
+  for (const el of [usernameEl, passwordEl]) {
+    el?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doPasswordLogin(); }
+    });
+  }
   submitBtn.onclick = doLogin;
   if (tokenEl) tokenEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
@@ -429,9 +515,27 @@ function showLoginModal() {
   const pairBtn = dom.modalBody.querySelector('#auth-pair');
   if (pairBtn) pairBtn.onclick = () => showLoginCodeModal();
   getAuthCapabilities().then((caps) => {
-    const btn = dom.modalBody.querySelector('#auth-pair');
-    if (btn && !caps.pairingLogin) btn.remove();
+    const pair = dom.modalBody.querySelector('#auth-pair');
+    if (pair && !caps.pairingLogin) pair.remove();
+    const passwordTab = dom.modalBody.querySelector('#auth-tab-password');
+    const passwordPanel = dom.modalBody.querySelector('[data-auth-panel="password"]');
+    if (!caps.passwordLogin) {
+      passwordTab?.remove();
+      passwordPanel?.remove();
+      setTab('passcode');
+    } else if (!userChoseTab && !passwordReady) {
+      setTab('password');
+    }
   }).catch(() => {});
+}
+
+function passwordLoginErrorMessage(error) {
+  if (error?.code === 'invalid_credentials') return t('errors.invalidCredentials');
+  if (error?.code === 'account_disabled') return t('errors.accountDisabled');
+  if (error?.code === 'rate_limited') return t('errors.loginRateLimited');
+  if (error?.code === 'password_not_configured') return t('errors.passwordNotConfigured');
+  if (error?.code === 'stale_login') return t('errors.loginSuperseded');
+  return t('sync.error', { message: error?.message || t('sync.tryLater') });
 }
 
 function loginCodeErrorMessage(error) {
@@ -704,6 +808,86 @@ function showChangeTokenModal() {
   };
 }
 
+// 已登入下修改自己的密碼。管理員設定初始密碼後，使用者可在這裡更換。
+function showChangePasswordModal() {
+  try { ui.openModal(); } catch(_) {}
+  try { dom.modalTitle.textContent = t('sync.changePassword'); } catch(_) {}
+  const caps = getCachedAuthCapabilities() || {};
+  const role = getAuthSnapshot().role === 'admin' ? 'admin' : 'user';
+  const minLength = role === 'admin'
+    ? (Number(caps.adminPasswordMinLength) || 12)
+    : (Number(caps.passwordMinLength) || 10);
+  const html = `
+    <div class="auth-modal" style="min-width:300px;">
+      <div class="auth-field">
+        <label for="cp-current">${t('sync.currentPassword')}</label>
+        <input id="cp-current" type="password" placeholder="${t('sync.currentPasswordPlaceholder')}" autocomplete="current-password">
+      </div>
+      <div class="auth-field">
+        <label for="cp-new">${t('sync.newPassword')}</label>
+        <div class="auth-pass-row">
+          <input id="cp-new" type="password" placeholder="${t('sync.passwordMinHint', { count: minLength })}" autocomplete="new-password">
+          <button id="cp-toggle" class="btn-secondary" type="button">${t('sync.show')}</button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label for="cp-new2">${t('sync.confirmNewPassword')}</label>
+        <input id="cp-new2" type="password" placeholder="${t('sync.enterAgain')}" autocomplete="new-password">
+      </div>
+      <div class="auth-actions">
+        <button id="cp-submit" class="btn-primary" type="button">${t('sync.updatePassword')}</button>
+      </div>
+      <div id="cp-msg" class="auth-msg">${t('sync.passwordMinHint', { count: minLength })}</div>
+    </div>`;
+  dom.modalBody.innerHTML = html;
+  const currentEl = dom.modalBody.querySelector('#cp-current');
+  const newEl = dom.modalBody.querySelector('#cp-new');
+  const confirmEl = dom.modalBody.querySelector('#cp-new2');
+  const btn = dom.modalBody.querySelector('#cp-submit');
+  const msg = dom.modalBody.querySelector('#cp-msg');
+  const toggle = dom.modalBody.querySelector('#cp-toggle');
+
+  if (toggle) toggle.onclick = () => {
+    const toText = newEl.type === 'password';
+    newEl.type = toText ? 'text' : 'password';
+    confirmEl.type = toText ? 'text' : 'password';
+    toggle.textContent = toText ? t('sync.hide') : t('sync.show');
+  };
+
+  const doSubmit = async () => {
+    const current = currentEl.value || '';
+    const next = newEl.value || '';
+    const confirmation = confirmEl.value || '';
+    if (!current) { msg.textContent = t('sync.currentPasswordRequired'); return; }
+    if (next.length < minLength) { msg.textContent = t('sync.passwordTooShort', { count: minLength }); return; }
+    if (next !== confirmation) { msg.textContent = t('sync.passwordMismatch'); return; }
+    btn.disabled = true; btn.textContent = t('sync.updating');
+    msg.textContent = '';
+    try {
+      await auth.changePassword(current, next);
+      msg.textContent = t('sync.passwordUpdated');
+      setTimeout(() => { try { ui.closeModal(); } catch(_) {} }, 700);
+    } catch (e) {
+      if (e?.code === 'password_not_set') msg.textContent = t('sync.passwordNotSetHint');
+      else if (e?.code === 'invalid_current_password') msg.textContent = t('errors.invalidCurrentPassword');
+      else if (e?.code === 'weak_password' || e?.code === 'invalid_password') {
+        msg.textContent = t('sync.passwordTooShort', { count: minLength });
+      } else {
+        msg.textContent = t('sync.error', { message: e?.message || t('sync.tryLater') });
+      }
+    } finally {
+      btn.disabled = false; btn.textContent = t('sync.updatePassword');
+    }
+  };
+
+  btn.onclick = doSubmit;
+  for (const el of [currentEl, newEl, confirmEl]) {
+    el?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doSubmit(); }
+    });
+  }
+}
+
 // 忘記通行碼：用「使用者代號 + 恢復碼」重置
 function showResetTokenModal() {
   try { ui.openModal(); } catch(_) {}
@@ -783,6 +967,8 @@ function toggleGearMenu() {
     if (mVer) { ver = parseInt(mVer[1], 10) || 0; try { if (ver>0) localStorage.setItem('lastSnapshotVersion', String(ver)); } catch(_) {} }
   }
   const loggedIn = !!email;
+  const caps = getCachedAuthCapabilities();
+  const passwordLogin = Boolean(caps && caps.passwordLogin);
   // 每個 .mi-text 都帶 data-i18n：選單是「開啟當下」才建立的，
   // 若只寫死 t() 的結果，之後切換介面語言時這份已經在畫面上的選單不會更新
   // （applyTranslations 只認 data-i18n 屬性），使用者會看到舊語言的文案。
@@ -793,6 +979,7 @@ function toggleGearMenu() {
       <span class="meta">${ver ? 'v'+ver : ''}${timeText ? ' · ' + timeText.replace(/:\\d{2}$/, '') : ''}</span>
     </div>
     ${loggedIn ? '' : `<div class="menu-item" id="gm-login"><span class="mi-icon">${svgLogin()}</span><span class="mi-text" data-i18n="menu.login">${t('menu.login')}</span></div>`}
+    ${loggedIn && passwordLogin ? `<div class="menu-item" id="gm-change-password"><span class="mi-icon">${svgKey()}</span><span class="mi-text" data-i18n="menu.changePassword">${t('menu.changePassword')}</span></div>` : ''}
     ${loggedIn ? `<div class="menu-item" id="gm-change-token"><span class="mi-icon">${svgKey()}</span><span class="mi-text" data-i18n="menu.changePasscode">${t('menu.changePasscode')}</span></div>` : ''}
     ${loggedIn ? `<div class="menu-item" id="gm-logout"><span class="mi-icon">${svgLogout()}</span><span class="mi-text" data-i18n="menu.logout">${t('menu.logout')}</span><span class="meta">${escapeHtml(email)}</span></div>` : ''}
     <div class="menu-divider"></div>
@@ -804,6 +991,7 @@ function toggleGearMenu() {
   document.body.appendChild(m);
   const sync = m.querySelector('#gm-sync');
   const login = m.querySelector('#gm-login');
+  const changePassword = m.querySelector('#gm-change-password');
   const changeToken = m.querySelector('#gm-change-token');
   const logout = m.querySelector('#gm-logout');
   const settings = m.querySelector('#gm-settings');
@@ -812,6 +1000,7 @@ function toggleGearMenu() {
   const backupPanel = m.querySelector('#gm-backup-panel');
   if (sync) sync.addEventListener('click', () => { handleSync(); m.remove(); });
   if (login) login.addEventListener('click', () => { showLoginModal(); m.remove(); });
+  if (changePassword) changePassword.addEventListener('click', () => { showChangePasswordModal(); m.remove(); });
   if (changeToken) changeToken.addEventListener('click', () => { showChangeTokenModal(); m.remove(); });
   if (logout) logout.addEventListener('click', async () => { m.remove(); await handleLogout(); });
   if (settings) settings.addEventListener('click', () => { showGlobalSettingsModal(); m.remove(); });

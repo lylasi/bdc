@@ -31,6 +31,7 @@ export function normalizeLoginCode(value) {
 let sessionGeneration = 0;
 let loginAttempt = 0;
 let authCapabilitiesPromise = null;
+let authCapabilitiesCache = null;
 
 function beginLoginAttempt() {
   loginAttempt += 1;
@@ -124,23 +125,35 @@ export function getAuthSnapshot() {
 export function getAuthCapabilities({ force = false } = {}) {
   if (!force && authCapabilitiesPromise) return authCapabilitiesPromise;
   authCapabilitiesPromise = (async () => {
+    let capabilities;
     try {
       const res = await apiRequest('/auth-capabilities', { method: 'GET' }, { token: '', timeoutMs: 6000 });
       if (res.status === 401 || res.status === 404) {
-        return { pairingLogin: false, loginLinks: false, passwordLogin: false };
+        capabilities = { pairingLogin: false, loginLinks: false, passwordLogin: false };
+      } else if (!res.ok) {
+        capabilities = { pairingLogin: true, loginLinks: true, passwordLogin: false };
+      } else {
+        const data = await res.json().catch(() => ({}));
+        capabilities = {
+          pairingLogin: data.pairingLogin !== false,
+          loginLinks: data.loginLinks !== false,
+          passwordLogin: data.passwordLogin === true,
+          passwordMinLength: Number(data.passwordMinLength) || 10,
+          adminPasswordMinLength: Number(data.adminPasswordMinLength) || 12
+        };
       }
-      if (!res.ok) return { pairingLogin: true, loginLinks: true, passwordLogin: false };
-      const data = await res.json().catch(() => ({}));
-      return {
-        pairingLogin: data.pairingLogin !== false,
-        loginLinks: data.loginLinks !== false,
-        passwordLogin: data.passwordLogin === true
-      };
     } catch (_) {
-      return { pairingLogin: true, loginLinks: true, passwordLogin: false };
+      capabilities = { pairingLogin: true, loginLinks: true, passwordLogin: false };
     }
+    authCapabilitiesCache = capabilities;
+    return capabilities;
   })();
   return authCapabilitiesPromise;
+}
+
+/** Last resolved capabilities, or null before the first request finishes. */
+export function getCachedAuthCapabilities() {
+  return authCapabilitiesCache;
 }
 
 /**
@@ -426,6 +439,33 @@ export const auth = {
     return commitSession(code, data);
   },
 
+  // 使用者名稱＋密碼登入：後端驗證 PBKDF2 雜湊後發放長期 session token。
+  async signInWithPassword(username, password) {
+    const user = String(username == null ? '' : username).trim();
+    const pass = String(password == null ? '' : password);
+    if (!user) throw authError('username_required', t('errors.usernameRequired'));
+    if (!pass) throw authError('password_required', t('errors.passwordRequired'));
+    const attempt = beginLoginAttempt();
+    let res;
+    try {
+      res = await apiRequest('/login', {
+        method: 'POST',
+        body: JSON.stringify({ username: user, password: pass, deviceLabel: detectDeviceLabel() })
+      }, { token: '', timeoutMs: 15000 });
+    } catch (e) {
+      throw new Error(e?.message || t('errors.cannotReachSync'));
+    }
+    if (res.status === 401) throw authError('invalid_credentials', t('errors.invalidCredentials'), 401);
+    if (res.status === 403) throw authError('account_disabled', t('errors.accountDisabled'), 403);
+    if (res.status === 429) throw authError('rate_limited', t('errors.loginRateLimited'), 429);
+    if (res.status === 503) throw authError('password_not_configured', t('errors.passwordNotConfigured'), 503);
+    if (!res.ok) throw new Error(t('errors.loginFailed', { status: res.status }));
+    const data = await res.json().catch(() => ({}));
+    if (!data || !data.token) throw new Error(t('errors.loginFailed', { status: res.status }));
+    assertLoginAttemptCurrent(attempt);
+    return commitSession(String(data.token), data);
+  },
+
   // 登入碼登入：使用者只需輸入管理員產生的一次性登入碼；後端由碼查出帳號。
   // 不影響原本通行碼，其他已登入裝置也不會被登出。
   async signInWithLoginCode(loginCode) {
@@ -491,6 +531,34 @@ export const auth = {
     sessionGeneration += 1;
     try { localStorage.setItem(TOKEN_KEY, next); } catch (_) {}
     rememberIdentity();
+    return true;
+  },
+
+  // 已登入下修改自己的密碼；目前 session 保持有效，其他裝置立即失效。
+  async changePassword(currentPassword, newPassword) {
+    const current = String(currentPassword == null ? '' : currentPassword);
+    const next = String(newPassword == null ? '' : newPassword);
+    if (!current) throw authError('password_required', t('errors.passwordRequired'));
+    if (!next) throw authError('password_required', t('errors.passwordRequired'));
+    let res;
+    try {
+      res = await apiRequest('/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: current, newPassword: next })
+      });
+    } catch (e) {
+      throw new Error(e?.message || t('errors.cannotReachSync'));
+    }
+    if (res.status === 401) throw authError('unauthorized', t('errors.loginExpired'), 401);
+    if (res.status === 403) throw authError('invalid_current_password', t('errors.invalidCurrentPassword'), 403);
+    if (res.status === 409) throw authError('password_not_set', t('errors.passwordNotSet'), 409);
+    if (res.status === 503) throw authError('password_not_configured', t('errors.passwordNotConfigured'), 503);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data.code === 'weak_password') throw authError('weak_password', t('errors.weakPassword'), 400);
+      if (data.code === 'invalid_password') throw authError('invalid_password', t('errors.passwordInvalid'), 400);
+      throw new Error(t('errors.changeFailed', { status: res.status }));
+    }
     return true;
   },
 
