@@ -302,6 +302,22 @@ async function applyAssistantPayload(remote, force = false) {
   });
 }
 
+/**
+ * Announce that remote AI settings were written to the local profile.
+ *
+ * Personal keys are not part of the snapshot; a device that applied provider
+ * definitions only now knows which `/ai-credentials` rows it can download. The
+ * credential sync listens for this event instead of being imported here (which
+ * would close a module cycle). It only schedules a sync, so this can never feed
+ * back into another apply.
+ */
+function notifyAISettingsApplied() {
+  try {
+    if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
+    window.dispatchEvent(new CustomEvent('bdc:ai-settings-applied'));
+  } catch (_) {}
+}
+
 function applyAISettingsPayload(remote, force = false) {
   const remoteGroup = remote?.aiSettings;
   if (!remoteGroup || typeof remoteGroup !== 'object') return;
@@ -313,7 +329,9 @@ function applyAISettingsPayload(remote, force = false) {
   } catch (error) {
     // A failed local write must not abort the rest of the snapshot restore.
     console.warn('[sync] AI settings apply failed:', error && error.code ? error.code : 'unknown');
+    return;
   }
+  notifyAISettingsApplied();
 }
 
 async function applySnapshotPayload(payload, force = false) {

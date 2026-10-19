@@ -224,9 +224,11 @@ test('snapshot sanitizer removes keys, managed definitions and URL overrides', (
             imageOCR: { provider: 'managed-real', model: 'm2', apiUrl: 'https://evil.example', apiKey: 'x' },
             bad: 'https://evil.example'
         },
-        defaultModel: 'personal-ok:m1'
+        defaultModel: 'personal-ok:m1',
+        keySyncDefault: 'local-only'
     });
     assert.deepEqual(Object.keys(sanitized.providers), ['personal-ok']);
+    assert.equal(sanitized.keySyncDefault, 'local-only');
     assert.equal(sanitized.providers['personal-ok'].apiKey, undefined);
     assert.equal(sanitized.providers['personal-ok'].discoveryError, undefined);
     assert.deepEqual(sanitized.providers['personal-ok'].allowedModels, ['m1', 'm2']);
@@ -234,6 +236,10 @@ test('snapshot sanitizer removes keys, managed definitions and URL overrides', (
     assert.equal(sanitized.models.imageOCR, 'managed-real:m2');
     assert.equal(sanitized.apiUrl, '');
     assert.equal(JSON.stringify(sanitized).includes('sk-'), false);
+    // Older snapshots have no policy field; the sanitizer must not invent one,
+    // otherwise applying them would reset a newer client's account policy.
+    assert.equal('keySyncDefault' in sanitizeAISettings({}), false);
+    assert.equal('keySyncDefault' in sanitizeAISettings({ keySyncDefault: 'bogus' }), false);
 });
 
 test('credential sync decision table matches the specification', () => {

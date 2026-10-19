@@ -7,7 +7,8 @@
 
 import {
     loadAIProfile,
-    importGuestProviders
+    importGuestProviders,
+    setAIKeySyncDefault
 } from '../../modules/ai-profile-storage.js';
 import {
     savePersonalProvider,
@@ -39,6 +40,7 @@ import {
     describeDetectionError
 } from '../../modules/ai-protocols/index.js';
 import { getAuthSnapshot, AUTH_EVENT } from '../../modules/sync-cloudflare.js';
+import { touch as syncTouch } from '../../modules/sync-signals.js';
 import { t, formatDateTime } from '../../modules/i18n.js';
 import { renderModelPicker, bindModelPicker } from '../../modules/ai-model-picker.js';
 import { captureDetailState, restoreDetailState } from '../../modules/detail-state.js';
@@ -120,6 +122,36 @@ function syncModeLabel(mode) {
     return t('settings.aiProviderThisDevice');
 }
 
+/**
+ * One label per provider, in priority order: a transient state (upload,
+ * remove, binding change, conflict) wins over the settled sync mode, and a
+ * provider whose key this device never stored is never labelled "仅保存在此设备"
+ * — there is nothing on this device to save.
+ */
+function providerKeyStatusLabel(status, provider, syncState) {
+    if (status.pending === 'put') return t('settings.aiKeyUploading');
+    if (status.mode === 'cloud-removal-pending' || status.pending === 'delete') return t('settings.aiKeyRemovePending');
+    if (status.lastError === 'binding_mismatch') return t('settings.aiKeyEndpointChanged');
+    if (status.conflict) return t('settings.aiKeyConflict');
+    const mode = status.mode === 'none' ? '' : String(status.mode || '');
+    if (!mode) {
+        return provider && provider.authMode === 'none'
+            ? t('settings.aiNoKeyBadge')
+            : t('settings.aiKeyNoLocalKey');
+    }
+    if (mode === 'cloud') {
+        if (status.hasKey) return t('settings.aiKeySynced');
+        // Definitions arrived before the key: a restore is under way.
+        return syncState && syncState.status === 'syncing'
+            ? t('sync.aiKeyRestoring')
+            : t('settings.aiKeyAwaitingDownload');
+    }
+    if (mode === 'local-only') {
+        return status.hasKey ? t('settings.aiKeyLocalOnly') : t('settings.aiKeyNoLocalKey');
+    }
+    return syncModeLabel(mode);
+}
+
 function formatTime(value) {
     if (!value) return '';
     try { return formatDateTime(value, { hour12: false }); } catch (_) { return ''; }
@@ -183,12 +215,45 @@ export function mountAIProviderSettings(host, options = {}) {
     let noticeType = 'info';
     let testConfirm = false;
     let destroyed = false;
+    // 「本機金鑰可上傳到帳號」橫幅：「稍後」只在本會話隱藏，
+    // 「不再提醒」按帳號持久化，換帳號會重新出現。
+    let uploadPromptSkipped = false;
+    let uploadBusy = false;
     // 「按功能指定模型」是折疊區塊；記住使用者的展開選擇，避免每次選模型後折回去。
     let taskDetailsOpen = false;
 
     const setNotice = (message, type = 'info') => {
         notice = message;
         noticeType = type;
+    };
+
+    /** Account-level default for a new provider's key ('cloud' | 'local-only'). */
+    const keySyncPolicy = () => (loadAIProfile().keySyncDefault === 'local-only' ? 'local-only' : 'cloud');
+
+    const uploadPromptDismissKey = () => {
+        const userId = String(getAuthSnapshot().userId || '');
+        return userId ? `bdc_ai_key_upload_prompt_dismissed_v1:${userId}` : '';
+    };
+
+    const uploadPromptDismissed = () => {
+        const key = uploadPromptDismissKey();
+        if (!key) return true;
+        try { return localStorage.getItem(key) === '1'; } catch (_) { return false; }
+    };
+
+    /** Local-only keys that can still be uploaded (a changed endpoint needs the key re-entered). */
+    const localOnlyKeyIds = () => {
+        const profile = loadAIProfile();
+        const ids = [];
+        for (const [id, credential] of Object.entries(profile.credentials)) {
+            if (!credential || !credential.apiKey) continue;
+            if (credential.syncMode !== 'local-only') continue;
+            if (credential.bindingVerified === false) continue;
+            const provider = profile.providers[id];
+            if (!provider || provider.authMode === 'none') continue;
+            ids.push(id);
+        }
+        return ids;
     };
 
     const existingKeyFor = (providerId) => {
@@ -265,21 +330,42 @@ export function mountAIProviderSettings(host, options = {}) {
             </section>`;
     }
 
+    /**
+     * Aggregate `/ai-credentials` status. The old "已同步" only meant "the list
+     * request succeeded", which hid per-provider problems and never-downloaded
+     * keys, so the summary now reports what is still outstanding.
+     */
     function renderSyncStatus() {
-        const sync = getCredentialSyncState();
         if (!getAuthSnapshot().loggedIn) return '';
-        let text = t('sync.aiKeySyncIdle');
-        if (sync.status === 'syncing') text = t('sync.aiKeySyncing');
-        else if (sync.status === 'synced') text = t('settings.aiKeySynced');
-        else if (sync.status === 'offline') text = t('settings.aiKeySyncFailed');
-        else if (sync.status === 'unauthorized') text = t('errors.aiLoginRequired');
-        else if (sync.status === 'weak-passcode') text = t('errors.aiPasscodeUpgrade');
-        else if (sync.status === 'error') text = t('settings.aiKeySyncFailed');
-        else if (sync.status === 'conflict') text = t('settings.aiKeyConflict');
+        const sync = getCredentialSyncState();
+        const profile = loadAIProfile();
         const conflicts = sync.conflicts || [];
         const pending = sync.pending || [];
+        const todo = new Set([...conflicts, ...pending]);
+        const keyedProviderIds = Object.entries(profile.providers)
+            .filter(([, provider]) => provider && provider.authMode !== 'none')
+            .map(([id]) => id);
+        const allKeyed = keyedProviderIds.length > 0
+            && keyedProviderIds.every((id) => getProviderKeyStatus(id).hasKey);
+        // Keys that deliberately stay on this device are not "synced to the
+        // account"; call them out instead of claiming everything is synced.
+        const localOnlyKeyed = keyedProviderIds.filter((id) => {
+            const status = getProviderKeyStatus(id);
+            return status.mode === 'local-only' && status.hasKey;
+        });
+
+        let text = '';
+        if (sync.status === 'unauthorized') text = t('errors.aiLoginRequired');
+        else if (sync.status === 'weak-passcode') text = t('errors.aiPasscodeUpgrade');
+        else if (sync.status === 'offline' || sync.status === 'error') text = t('settings.aiKeySyncFailed');
+        else if (sync.status === 'syncing') text = t('sync.aiKeySyncing');
+        else if (todo.size) text = t('sync.aiKeyPendingProviders', { count: todo.size });
+        else if (sync.status === 'conflict') text = t('settings.aiKeyConflict');
+        else if (allKeyed && localOnlyKeyed.length) text = t('sync.aiKeyLocalOnlyProviders', { count: localOnlyKeyed.length });
+        else if (allKeyed) text = t('sync.aiKeyAllSynced');
+        else text = t('sync.aiKeySyncIdle');
+
         const conflictBanners = conflicts.map((providerId) => {
-            const profile = loadAIProfile();
             const label = profile.providers[providerId]?.label || providerId;
             return `<div class="gs-ai-conflict">
                 <div>${escapeHtml(t('settings.aiKeyConflictProvider', { name: label }))}</div>
@@ -294,6 +380,38 @@ export function mountAIProviderSettings(host, options = {}) {
             <span class="gs-ai-muted">${escapeHtml(text)}${sync.lastSyncAt ? ` · ${escapeHtml(formatTime(new Date(sync.lastSyncAt).toISOString()))}` : ''}${pending.length ? ` · ${escapeHtml(t('settings.aiPendingCount', { count: pending.length }))}` : ''}</span>
             <button type="button" class="btn-secondary gs-ai-small" data-ai-sync-now>${escapeHtml(t('settings.aiSyncNow'))}</button>
         </div>${conflictBanners}`;
+    }
+
+    /** Account-level key policy (part of the AI definition group, so it follows the account). */
+    function renderKeySyncPolicy() {
+        if (!getAuthSnapshot().loggedIn) return '';
+        const policy = keySyncPolicy();
+        return `<label class="gs-ai-field gs-ai-key-policy">
+            <span>${escapeHtml(t('settings.aiKeySyncPolicy'))}</span>
+            <select data-ai-key-sync-policy class="gs-ai-small-input" aria-label="${escapeHtml(t('settings.aiKeySyncPolicy'))}">
+                <option value="cloud" ${policy === 'cloud' ? 'selected' : ''}>${escapeHtml(t('settings.aiKeySyncFollowAccount'))}</option>
+                <option value="local-only" ${policy === 'local-only' ? 'selected' : ''}>${escapeHtml(t('settings.aiKeyLocalOnly'))}</option>
+            </select>
+            <span class="gs-hint">${escapeHtml(t('settings.aiKeySyncPolicyHint'))}</span>
+        </label>`;
+    }
+
+    /** One-time (per account) offer to upload keys that only exist on this device. */
+    function renderUploadPrompt() {
+        if (!getAuthSnapshot().loggedIn || uploadPromptSkipped || uploadPromptDismissed()) return '';
+        const ids = localOnlyKeyIds();
+        if (!ids.length) return '';
+        return `<div class="gs-ai-upload-prompt">
+            <div class="gs-ai-upload-prompt-main">
+                <strong>${escapeHtml(t('settings.aiKeyUploadPromptTitle', { count: ids.length }))}</strong>
+                <div class="gs-ai-muted">${escapeHtml(t('settings.aiKeyUploadPromptBody'))}</div>
+            </div>
+            <div class="gs-ai-actions">
+                <button type="button" class="btn-secondary gs-ai-small" data-ai-upload-now ${uploadBusy ? 'disabled' : ''}>${escapeHtml(t('settings.aiKeyUploadNow'))}</button>
+                <button type="button" class="btn-secondary gs-ai-small" data-ai-upload-later>${escapeHtml(t('settings.aiKeyUploadLater'))}</button>
+                <button type="button" class="btn-secondary gs-ai-small" data-ai-upload-dismiss>${escapeHtml(t('settings.aiKeyUploadDismiss'))}</button>
+            </div>
+        </div>`;
     }
 
     function renderDeleteRow(id, status) {
@@ -339,6 +457,7 @@ export function mountAIProviderSettings(host, options = {}) {
     function renderPersonalList() {
         const profile = loadAIProfile();
         const loggedIn = getAuthSnapshot().loggedIn;
+        const syncState = getCredentialSyncState();
         const ids = Object.keys(profile.providers);
         if (!ids.length) {
             return `<div class="gs-ai-empty">${escapeHtml(t('settings.aiEmptyProviders'))}</div>`;
@@ -348,13 +467,10 @@ export function mountAIProviderSettings(host, options = {}) {
             const status = getProviderKeyStatus(id);
             const models = (provider.allowedModels || []).length ? provider.allowedModels : (provider.discoveredModels || []).map((item) => item.id);
             const selectedDefault = profile.defaultModel && String(profile.defaultModel).startsWith(`${id}:`);
-            const syncMode = status.mode === 'none' ? 'local-only' : status.mode;
-            // A cloud row without a local key means the download has not
-            // happened yet (new device, or the last attempt failed): do not
-            // label it as "synced".
-            const statusLabel = (syncMode === 'cloud' && !status.hasKey)
-                ? t('settings.aiKeyAwaitingDownload')
-                : syncModeLabel(syncMode);
+            // No credential row yet: show the account policy as the mode the
+            // next save would use instead of pretending it is local-only.
+            const syncMode = status.mode === 'none' ? keySyncPolicy() : status.mode;
+            const statusLabel = providerKeyStatusLabel(status, provider, syncState);
             return `<div class="gs-ai-provider-row">
                 <div class="gs-ai-provider-row-main">
                     <div class="gs-ai-provider-line">
@@ -365,7 +481,7 @@ export function mountAIProviderSettings(host, options = {}) {
                     </div>
                     <div class="gs-ai-muted">${escapeHtml(provider.baseUrl || provider.apiUrl || '')}</div>
                     <div class="gs-ai-muted">${escapeHtml(models.length ? t('settings.aiModelsCount', { count: models.length }) : t('settings.noModels'))} · ${escapeHtml(statusLabel)}</div>
-                    ${status.lastError ? `<div class="gs-ai-error">${escapeHtml(t('settings.aiStatusError', { code: status.lastError }))}</div>` : ''}
+                    ${status.lastError && status.lastError !== 'binding_mismatch' ? `<div class="gs-ai-error">${escapeHtml(t('settings.aiStatusError', { code: status.lastError }))}</div>` : ''}
                     ${status.bindingVerified === false ? `<div class="gs-ai-warning">${escapeHtml(t('settings.aiKeyEndpointChanged'))}</div>` : ''}
                 </div>
                 <div class="gs-ai-provider-row-actions">
@@ -375,7 +491,7 @@ export function mountAIProviderSettings(host, options = {}) {
                 </div>
                 ${loggedIn && provider.authMode !== 'none' ? `<div class="gs-ai-provider-sync">
                     <span class="gs-ai-sync-label">${escapeHtml(t('settings.aiKeySyncLabel'))}</span>
-                    <select data-ai-syncmode="${escapeHtml(id)}" class="gs-ai-small-input" aria-label="${escapeHtml(t('settings.aiKeySyncLabel'))}">
+                    <select data-ai-syncmode="${escapeHtml(id)}" class="gs-ai-small-input" aria-label="${escapeHtml(t('settings.aiKeySyncLabel'))}" ${status.mode === 'none' ? 'disabled' : ''}>
                         <option value="cloud" ${syncMode === 'cloud' ? 'selected' : ''}>${escapeHtml(t('settings.aiKeySyncCloud'))}</option>
                         <option value="local-only" ${syncMode === 'local-only' ? 'selected' : ''}>${escapeHtml(t('settings.aiKeyLocalOnly'))}</option>
                         <option value="remove-cloud" ${syncMode === 'cloud-removal-pending' ? 'selected' : ''}>${escapeHtml(t('settings.aiKeyRemoveCloud'))}</option>
@@ -569,6 +685,8 @@ export function mountAIProviderSettings(host, options = {}) {
                 <button type="button" class="btn-secondary gs-ai-small" data-ai-add>${escapeHtml(t('settings.aiAddProvider'))}</button>
             </div>
             <p class="gs-hint">${escapeHtml(t('settings.aiOwnProviderHint'))}</p>
+            ${renderKeySyncPolicy()}
+            ${renderUploadPrompt()}
             ${getAuthSnapshot().loggedIn && deviceProvidersAvailableForImport().length && !importOpen ? `<div class="gs-ai-actions"><button type="button" class="btn-secondary gs-ai-small" data-ai-import-open>${escapeHtml(t('settings.aiImportDevice'))}</button></div>` : ''}
             ${renderImportPanel()}
             ${renderSyncStatus()}
@@ -619,7 +737,8 @@ export function mountAIProviderSettings(host, options = {}) {
             connecting: false,
             showKey: false,
             keyAction: '',
-            syncMode: 'local-only',
+            // 登入時跟隨帳號政策；未登入一律 local-only（saveForm 也會強制）。
+            syncMode: getAuthSnapshot().loggedIn ? keySyncPolicy() : 'local-only',
             setDefault: !getPersonalDefaultModel(),
             advancedOpen: false,
             error: '',
@@ -661,7 +780,12 @@ export function mountAIProviderSettings(host, options = {}) {
             connecting: false,
             showKey: false,
             keyAction: '',
-            syncMode: status.mode === 'cloud' ? 'cloud' : 'local-only',
+            // A definition restored from the account but with no local key is
+            // not "local-only": the next key the user enters follows the
+            // account policy unless they explicitly choose otherwise.
+            syncMode: status.mode === 'cloud'
+                ? 'cloud'
+                : (status.mode === 'none' ? keySyncPolicy() : 'local-only'),
             setDefault: false,
             advancedOpen: false,
             error: '',
@@ -842,6 +966,40 @@ export function mountAIProviderSettings(host, options = {}) {
         render();
     }
 
+    /**
+     * Upload every key that currently only lives on this device.
+     *
+     * Nothing here runs automatically: the user has to press the button. Each
+     * provider is switched on its own so one failure (a changed endpoint, a
+     * missing key) does not stop the rest; the leftover providers keep their
+     * local key and are reported.
+     */
+    async function uploadLocalOnlyKeys() {
+        const ids = localOnlyKeyIds();
+        if (!ids.length) { render(); return; }
+        uploadBusy = true;
+        render();
+        for (const id of ids) {
+            try { setProviderKeySyncMode(id, 'cloud'); } catch (_) {}
+        }
+        try {
+            await syncCredentials({ reason: 'upload-prompt' });
+        } catch (_) {}
+        let remaining = 0;
+        for (const id of ids) {
+            const status = getProviderKeyStatus(id);
+            if (!(status.mode === 'cloud' && status.hasKey && !status.pending)) remaining += 1;
+        }
+        uploadBusy = false;
+        if (!remaining) {
+            uploadPromptSkipped = true;
+            setNotice(t('settings.aiKeyUploadDone', { count: ids.length }), 'success');
+        } else {
+            setNotice(t('settings.aiKeyUploadPartial', { count: remaining }), 'error');
+        }
+        render();
+    }
+
     function wire() {
         const $ = (selector) => host.querySelector(selector);
         const all = (selector) => Array.from(host.querySelectorAll(selector));
@@ -918,6 +1076,28 @@ export function mountAIProviderSettings(host, options = {}) {
             const id = select.getAttribute('data-ai-syncmode');
             applySyncMode(id, select.value);
         }));
+        $('[data-ai-key-sync-policy]')?.addEventListener('change', (event) => {
+            const value = event.target.value === 'local-only' ? 'local-only' : 'cloud';
+            try {
+                setAIKeySyncDefault(value, undefined);
+                try { syncTouch('aiSettings'); } catch (_) {}
+                setNotice(t('settings.aiProviderSaved'), 'success');
+            } catch (error) {
+                setNotice(t('settings.saveFailed'), 'error');
+            }
+            render();
+        });
+        $('[data-ai-upload-now]')?.addEventListener('click', () => { uploadLocalOnlyKeys().catch(() => render()); });
+        $('[data-ai-upload-later]')?.addEventListener('click', () => {
+            uploadPromptSkipped = true;
+            render();
+        });
+        $('[data-ai-upload-dismiss]')?.addEventListener('click', () => {
+            const key = uploadPromptDismissKey();
+            if (key) { try { localStorage.setItem(key, '1'); } catch (_) {} }
+            uploadPromptSkipped = true;
+            render();
+        });
         all('[data-ai-conflict-cloud]').forEach((button) => button.addEventListener('click', async () => {
             try { await resolveCredentialConflict(button.getAttribute('data-ai-conflict-cloud'), 'cloud'); }
             catch (error) { setNotice(t('settings.aiKeySyncFailed'), 'error'); }
@@ -1027,6 +1207,9 @@ export function mountAIProviderSettings(host, options = {}) {
         const detail = event && event.detail ? event.detail : {};
         if (detail.event === 'SIGNED_OUT' || detail.event === 'ACCOUNT_CHANGED' || detail.event === 'SESSION_INVALID') {
             try { form?.controller?.abort(); } catch (_) {}
+            // 「稍後」只屬於當次登入；換帳號要重新詢問（各帳號另有自己的持久化忽略標記）。
+            uploadPromptSkipped = false;
+            uploadBusy = false;
             if (detail.event !== 'SESSION_INVALID') {
                 form = null;
                 importOpen = false;

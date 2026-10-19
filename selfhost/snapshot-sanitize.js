@@ -116,13 +116,20 @@ export function sanitizeSnapshotAISettings(ai) {
     }
     const models = sanitizeSnapshotTaskMappings(source.models);
     const tasks = sanitizeSnapshotTaskMappings(source.tasks);
-    return {
+    const settings = {
         apiUrl: '',
         providers,
         models,
         tasks: { ...models, ...tasks },
         defaultModel: typeof source.defaultModel === 'string' ? source.defaultModel.trim().slice(0, 240) : ''
     };
+    // Account-level default for new provider keys. Leave it absent when the
+    // client did not send a valid value so older snapshots do not reset a
+    // newer client's policy.
+    if (source.keySyncDefault === 'cloud' || source.keySyncDefault === 'local-only') {
+        settings.keySyncDefault = source.keySyncDefault;
+    }
+    return settings;
 }
 
 /** Sanitise the AI group of a full snapshot payload, leaving other groups intact. */

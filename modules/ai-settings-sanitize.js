@@ -106,11 +106,18 @@ export function sanitizeAISettings(ai) {
     }
     const models = sanitizeTaskMappings(source.models);
     const tasks = sanitizeTaskMappings(source.tasks);
-    return {
+    const settings = {
         apiUrl: '',
         providers,
         models,
         tasks: { ...models, ...tasks },
         defaultModel: typeof source.defaultModel === 'string' ? source.defaultModel.trim().slice(0, 240) : ''
     };
+    // Keep the policy absent when the caller did not supply a valid value.
+    // Snapshots written by older clients have no such field, and applying one
+    // must not reset a newer client's account policy to the default.
+    if (source.keySyncDefault === 'cloud' || source.keySyncDefault === 'local-only') {
+        settings.keySyncDefault = source.keySyncDefault;
+    }
+    return settings;
 }

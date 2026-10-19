@@ -5700,6 +5700,21 @@ body.has-floating-reader #message-container {
 }
 .gs-ai-import-list { display: grid; gap: 4px; max-height: 180px; overflow: auto; }
 
+/* 帳號級「金鑰同步方式」：放在「我的供應商」最上方，一個下拉選單加一行說明。 */
+.gs-ai-key-policy { margin-top: 8px; }
+.gs-ai-key-policy > select { max-width: 240px; }
+/* 「本機金鑰可上傳到帳號」提示：可關閉的橫幅，不要搶走供應商列表的焦點。 */
+.gs-ai-upload-prompt {
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px solid var(--accent);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    display: grid;
+    gap: 6px;
+}
+.gs-ai-upload-prompt-main { display: grid; gap: 4px; font-size: var(--fs-sm); }
+
 /* Shared model picker: personal providers and the managed catalog. */
 .ai-model-picker { min-width: 0; display: grid; gap: 10px; margin-block: 12px; }
 .ai-model-picker-header, .ai-model-picker-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

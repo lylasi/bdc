@@ -16,7 +16,7 @@
 //
 // Everything runs against a mock Worker; no real service, key or D1 is touched.
 
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 
 // ---------------------------------------------------------------------------
@@ -79,6 +79,7 @@ const authMod = await import('../modules/sync-cloudflare.js');
 const profile = await import('../modules/ai-profile-storage.js');
 const sync = await import('../modules/ai-credential-sync.js');
 const catalog = await import('../modules/ai-catalog.js');
+const sanitizeMod = await import('../modules/ai-settings-sanitize.js');
 
 // ---------------------------------------------------------------------------
 // Mock Worker
@@ -969,4 +970,121 @@ test('F6: a failed profile write keeps the old task choices', async () => {
     const legacy = JSON.parse(localStorage.getItem('pen_global_settings'));
     assert.deepEqual(legacy.ai.models, { assistant: 'mine:m1' }, 'old task choices were deleted without a confirmed save');
     assert.equal(JSON.parse(localStorage.getItem('pen_global_secrets')).aiProviders.mine.apiKey, 'legacy-key');
+});
+
+// ---------------------------------------------------------------------------
+// P1 — account-level key policy and split timestamps (docs/plan/2026101904351*)
+// ---------------------------------------------------------------------------
+test('P1: the account key policy defaults to cloud and travels in the snapshot', async () => {
+    await resetAll();
+    await signIn('A');
+    assert.equal(profile.loadAIProfile().keySyncDefault, 'cloud', 'the default policy is not "cloud"');
+
+    profile.setAIKeySyncDefault('local-only');
+    assert.equal(profile.loadAIProfile().keySyncDefault, 'local-only');
+    assert.equal(profile.getAIViewFromProfile().keySyncDefault, 'local-only');
+    assert.equal(
+        sanitizeMod.sanitizeAISettings(profile.getAIViewFromProfile()).keySyncDefault,
+        'local-only',
+        'the sanitiser drops the account key policy'
+    );
+    // An older snapshot has no policy field: keep this device's value instead
+    // of silently resetting the account to the default.
+    profile.applyRemoteAISettings({ providers: {}, models: {} }, new Date().toISOString());
+    assert.equal(profile.loadAIProfile().keySyncDefault, 'local-only');
+    // It belongs to the AI definition group: a newer snapshot with an explicit
+    // policy replaces it.
+    profile.applyRemoteAISettings({ providers: {}, models: {}, keySyncDefault: 'cloud' }, new Date().toISOString());
+    assert.equal(profile.loadAIProfile().keySyncDefault, 'cloud');
+    sync.stopCredentialSync();
+});
+
+test('P2: downloading a key does not move the AI definition timestamp', async () => {
+    await resetAll();
+    await signIn('A');
+    const stamp = '2026-10-18T01:02:03.000Z';
+    profile.applyRemoteAISettings({ providers: { 'personal-ts': PROVIDER_DEF }, models: {} }, stamp);
+    assert.equal(profile.getAIProfileUpdatedAt(), stamp);
+    fake.remote.set('personal-ts', { version: 1, deleted: false, binding: BINDING, lastMutationId: 'remote-ts' });
+    fake.keys.set('personal-ts', { apiKey: 'remote-ts-key', version: 1 });
+
+    await sync.syncCredentials({ reason: 'credential-only' });
+    sync.stopCredentialSync();
+
+    const credential = profile.loadAIProfile().credentials['personal-ts'];
+    assert.equal(credential.apiKey, 'remote-ts-key', 'the key was not downloaded');
+    assert.equal(credential.version, 1);
+    assert.equal(
+        profile.getAIProfileUpdatedAt(),
+        stamp,
+        'a credential-only write pushed the AI definition timestamp forward'
+    );
+});
+
+test('P2: switching the key sync mode does not move the AI definition timestamp', async () => {
+    await resetAll();
+    await signIn('A');
+    await saveCloudProvider('personal-mode', { apiKey: 'key-mode' });
+    await sync.syncCredentials({ reason: 'seed' });
+    sync.stopCredentialSync();
+    const before = profile.getAIProfileUpdatedAt();
+    assert.ok(before, 'expected a definition timestamp');
+
+    sync.setProviderKeySyncMode('personal-mode', 'local-only');
+    sync.stopCredentialSync();
+
+    assert.equal(profile.loadAIProfile().credentials['personal-mode'].syncMode, 'local-only');
+    assert.equal(profile.getAIProfileUpdatedAt(), before, 'switching the sync mode moved the AI definition timestamp');
+});
+
+// ---------------------------------------------------------------------------
+// P0 — the cold-start race: credential sync ran before the snapshot landed
+//
+// This test installs the real module listeners, so it runs last: after
+// `initAICredentialSync()` every sign-in schedules its own sync.
+// ---------------------------------------------------------------------------
+test('P0: applying remote AI settings triggers the credential download that was missed', async () => {
+    await resetAll();
+    // Not logged in yet, so init schedules nothing.
+    sync.initAICredentialSync();
+    await signIn('A');
+    // Drop the sign-in's own scheduled sync: this test drives the first one.
+    sync.stopCredentialSync();
+
+    fake.remote.set('personal-cold', { version: 1, deleted: false, binding: BINDING, lastMutationId: 'remote-cold' });
+    fake.keys.set('personal-cold', { apiKey: 'remote-cold-key', version: 1 });
+
+    // Cold device: the credential sync runs before the snapshot created the
+    // provider definition, so it has no download target and reports success.
+    await sync.syncCredentials({ reason: 'cold-start' });
+    assert.equal(requestsFor('personal-cold').length, 0, 'a key was downloaded without a provider definition');
+    assert.equal(profile.loadAIProfile().credentials['personal-cold'], undefined);
+    assert.equal(sync.getCredentialSyncState().status, 'synced');
+
+    // The snapshot now applies the definitions and announces it.
+    profile.applyRemoteAISettings({
+        providers: { 'personal-cold': PROVIDER_DEF },
+        models: {}
+    }, new Date().toISOString());
+    window.dispatchEvent(new CustomEvent('bdc:ai-settings-applied'));
+
+    await waitUntil(() => {
+        const credential = profile.loadAIProfile().credentials['personal-cold'];
+        return !!credential && credential.apiKey === 'remote-cold-key';
+    });
+    sync.stopCredentialSync();
+
+    const credential = profile.loadAIProfile().credentials['personal-cold'];
+    assert.equal(credential.syncMode, 'cloud');
+    assert.equal(credential.pending, null);
+    assert.equal(requestsFor('personal-cold').length, 1, 'the announced settings did not start exactly one download');
+});
+
+// The managed-catalog tests above install the catalog module's auth listener,
+// which starts a 5-minute foreground refresh interval on every sign-in. The
+// account-scoped tests below sign in again, so the interval is destroyed once
+// here; otherwise this process could not exit after the last test.
+after(() => {
+    sync.stopCredentialSync();
+    catalog.destroyAICatalog();
 });

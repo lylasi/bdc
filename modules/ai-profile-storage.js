@@ -17,6 +17,9 @@ export const AI_PROFILE_PREFIX = 'bdc_ai_profile_v1';
 export const AI_PROFILE_SCHEMA_VERSION = 1;
 export const GUEST_PROFILE_KEY = `${AI_PROFILE_PREFIX}:device:guest`;
 export const AI_SYNC_MODES = ['cloud', 'local-only', 'cloud-removal-pending'];
+// Account-level default for a *new* personal provider: follow the account
+// (encrypted upload + automatic download elsewhere) or stay on this device.
+export const AI_KEY_SYNC_DEFAULTS = ['cloud', 'local-only'];
 export const AI_PROFILE_MIGRATION_KEY = 'bdc_ai_profile_migrated_v1';
 export const AI_PROFILE_QUARANTINE_KEY = 'bdc_ai_profile_quarantine_v1';
 
@@ -271,8 +274,14 @@ export function emptyProfile(scope) {
         providers: {},
         taskModels: {},
         defaultModel: '',
+        keySyncDefault: 'cloud',
         credentials: {}
     };
+}
+
+export function normalizeKeySyncDefault(value) {
+    const mode = String(value || '');
+    return AI_KEY_SYNC_DEFAULTS.includes(mode) ? mode : 'cloud';
 }
 
 export function normalizeProfile(input, scope) {
@@ -301,6 +310,7 @@ export function normalizeProfile(input, scope) {
         providers,
         taskModels: normalizeTaskModelMap(value.taskModels || value.models || value.tasks),
         defaultModel: typeof value.defaultModel === 'string' ? value.defaultModel.trim() : '',
+        keySyncDefault: normalizeKeySyncDefault(value.keySyncDefault),
         credentials
     };
 }
@@ -341,14 +351,22 @@ export function saveAIProfile(profile, scope) {
 /**
  * Read-modify-write in one synchronous block. The mutator may return a new
  * profile or mutate the draft in place. Throws if persistence fails.
+ *
+ * `touchUpdatedAt: false` keeps the existing `updatedAt`. The snapshot carries
+ * the AI group with whole-group LWW against that value, so a write that only
+ * touches this device's credential rows (downloading a key, confirming a
+ * version, pausing on an error) must not claim the *definitions* are newer than
+ * another device's — otherwise a device that merely downloaded a key could
+ * overwrite newer provider definitions.
  */
-export function updateAIProfile(mutator, scope) {
+export function updateAIProfile(mutator, scope, options = {}) {
+    const touchUpdatedAt = !options || options.touchUpdatedAt !== false;
     const current = loadAIProfile(scope);
     const draft = clone(current);
     const result = typeof mutator === 'function' ? mutator(draft) : draft;
     const next = result && typeof result === 'object' ? result : draft;
     next.revision = (Number(current.revision) || 1) + 1;
-    next.updatedAt = nowIso();
+    next.updatedAt = touchUpdatedAt ? nowIso() : (current.updatedAt || '');
     return saveAIProfile(next, scope);
 }
 
@@ -390,6 +408,7 @@ export function getAIViewFromProfile(scope) {
         models: { ...profile.taskModels },
         tasks: { ...profile.taskModels },
         defaultModel: profile.defaultModel,
+        keySyncDefault: normalizeKeySyncDefault(profile.keySyncDefault),
         updatedAt: profile.updatedAt || ''
     };
 }
@@ -498,9 +517,27 @@ export function applyRemoteAISettings(ai, updatedAt, scope) {
     profile.providers = providers;
     profile.taskModels = normalizeTaskModelMap(remote.models || remote.tasks);
     profile.defaultModel = typeof remote.defaultModel === 'string' ? remote.defaultModel.trim() : '';
+    // Older snapshots have no policy field: keep this device's current value
+    // instead of silently resetting it to the default.
+    if (remote.keySyncDefault === 'cloud' || remote.keySyncDefault === 'local-only') {
+        profile.keySyncDefault = remote.keySyncDefault;
+    }
     profile.updatedAt = typeof updatedAt === 'string' && updatedAt ? updatedAt : nowIso();
     profile.revision = (Number(profile.revision) || 1) + 1;
     return saveAIProfile(profile, activeScope);
+}
+
+/**
+ * Account-level "new keys follow the account" policy. It is part of the AI
+ * definition group (it syncs through the snapshot); the caller is responsible
+ * for `syncTouch('aiSettings')`.
+ */
+export function setAIKeySyncDefault(mode, scope) {
+    const value = normalizeKeySyncDefault(mode);
+    return updateAIProfile((profile) => {
+        profile.keySyncDefault = value;
+        return profile;
+    }, scope);
 }
 
 /**

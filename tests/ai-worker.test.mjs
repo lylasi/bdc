@@ -1612,6 +1612,7 @@ test('server-side snapshot sanitisation drops keys and managed definitions', asy
                     assistant: 'personal-ok:m1',
                     imageOCR: { provider: 'managed-real', model: 'm2', apiUrl: 'https://evil.example', apiKey: 'x' }
                 },
+                keySyncDefault: 'local-only',
                 apiApiKey: 'top-level-leak'
             },
             apiKey: 'snapshot-level-leak'
@@ -1636,6 +1637,7 @@ test('server-side snapshot sanitisation drops keys and managed definitions', asy
     assert.equal(settings.providers['personal-ok'].discoveryError, undefined);
     assert.equal(settings.models.assistant, 'personal-ok:m1');
     assert.equal(settings.models.imageOCR, 'managed-real:m2');
+    assert.equal(settings.keySyncDefault, 'local-only');
     assert.equal(JSON.stringify(body).includes('leak'), false);
 });
 

@@ -344,7 +344,7 @@ function commitCredentialChanges(baseProfile, working, ids, scope) {
                 skipped += 1;
             }
             return draft;
-        }, scope);
+        }, scope, { touchUpdatedAt: false });
     } catch (error) {
         return { error: error && error.code ? error.code : 'profile_save_failed', applied, skipped, adjusted };
     }
@@ -955,7 +955,7 @@ export function setProviderKeySyncMode(providerId, mode, { scope } = {}) {
             throw err;
         }
         return profile;
-    }, activeScope);
+    }, activeScope, { touchUpdatedAt: false });
     scheduleCredentialSync(500);
     return saved;
 }
@@ -1185,6 +1185,18 @@ function onStorage(event) {
     notify();
 }
 
+/**
+ * The snapshot applied remote AI settings, so provider definitions this device
+ * did not know about may exist now. Without this, a cold device whose
+ * credential sync ran *before* the snapshot found no download target and would
+ * never fetch the keys. This is a read of the local profile + a scheduled sync,
+ * never a definition write, so it cannot re-trigger itself.
+ */
+function onAISettingsApplied() {
+    if (!getAuthSnapshot().loggedIn) return;
+    scheduleCredentialSync(300);
+}
+
 export function initAICredentialSync() {
     if (initialized) return;
     initialized = true;
@@ -1193,6 +1205,7 @@ export function initAICredentialSync() {
     try { window.addEventListener('focus', onVisible); } catch (_) {}
     try { document.addEventListener('visibilitychange', onVisible); } catch (_) {}
     try { window.addEventListener('storage', onStorage); } catch (_) {}
+    try { window.addEventListener('bdc:ai-settings-applied', onAISettingsApplied); } catch (_) {}
     markSyncMeta();
     lastKnownScope = getActiveAIScope();
     if (getAuthSnapshot().loggedIn) scheduleCredentialSync(1000);
