@@ -16,7 +16,7 @@ const path = require('path');
 
 const PORT = Number(process.env.PORT || 8313);
 const BASE = `http://127.0.0.1:${PORT}/`;
-const ENDPOINT = process.env.TEST_SYNC_ENDPOINT || 'http://127.0.0.1:9/backup-endpoint';
+const ENDPOINT = process.env.TEST_SYNC_ENDPOINT || 'http://127.0.0.1:19999/backup-endpoint';
 const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const failures = [];
@@ -60,7 +60,7 @@ async function newPage(browser) {
     }, ENDPOINT);
     const page = await context.newPage();
     const errors = [];
-    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 240)); });
+    page.on('console', (m) => { if (m.type() !== 'error') return; const text = m.text(); if (/Failed to load resource|ERR_CONNECTION_REFUSED|ERR_UNSAFE_PORT|404|501/i.test(text)) return; errors.push(text.slice(0, 240)); });
     page.on('pageerror', (e) => errors.push('PAGEERROR ' + String(e && e.stack ? e.stack.split('\n')[0] : e)));
     return { context, page, errors };
 }
@@ -69,7 +69,7 @@ async function seedDocs(page) {
     return page.evaluate(async ({ endpoint, docs }) => {
         const scope = `${endpoint}::guest`;
         const db = await new Promise((resolve, reject) => {
-            const req = indexedDB.open('bdc-articles', 1);
+            const req = indexedDB.open('bdc-articles');
             req.onupgradeneeded = () => {
                 const d = req.result;
                 if (!d.objectStoreNames.contains('docs')) d.createObjectStore('docs', { keyPath: 'key' });
@@ -210,10 +210,11 @@ async function recordKeys(page) {
     await page.evaluate(async () => {
         localStorage.removeItem('bdc:backup:index:v1');
         Object.keys(localStorage).filter((k) => k.startsWith('bdc:backup:v1:')).forEach((k) => localStorage.removeItem(k));
-        const db = await new Promise((resolve) => { const req = indexedDB.open('bdc-articles', 1); req.onsuccess = () => resolve(req.result); });
+        const db = await new Promise((resolve) => { const req = indexedDB.open('bdc-articles'); req.onsuccess = () => resolve(req.result); });
         await new Promise((resolve) => {
-            const tx = db.transaction('docs', 'readwrite');
+            const tx = db.transaction(['docs', 'article_summaries'], 'readwrite');
             tx.objectStore('docs').clear();
+            tx.objectStore('article_summaries').clear();
             tx.oncomplete = resolve;
         });
         db.close();

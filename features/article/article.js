@@ -17,6 +17,10 @@ import { t, formatDateTime, createCollator, getLocaleTag } from '../../modules/i
 import { inlineMarkdownToHtml } from '../../modules/markdown.js';
 import * as articleStore from '../../modules/article-store.js';
 import * as articleSync from '../../modules/article-sync.js';
+import * as readingStore from '../../modules/reading-store.js';
+import * as readingActions from '../../modules/reading-actions.js';
+import { initReadingPanel, openReadingPanelForItem } from './reading-panel.js';
+import { initPhrasePicker, openPhrasePicker } from './phrase-picker.js';
 
 // =================================
 // Article Analysis Feature
@@ -411,8 +415,10 @@ export function initArticle() {
     updateHistoryIndicators();
     try { updateArticleSourceBarFromDataset(); } catch (_) {}
 
-    // 選字快速加入生詞本（文章詳解區）
+    // 選字快速加入生詞本／選短語（文章詳解區）
     try { initArticleSelectionToWordbook(); } catch (_) {}
+    try { initPhrasePicker(); } catch (_) {}
+    try { initReadingPanel(); } catch (_) {}
 }
 
 // =============================
@@ -1441,6 +1447,55 @@ function _sentenceKey(sentence, context) {
     return `${sentence}||${context || ''}`;
 }
 
+/** 由點擊的單詞元素推算原文位置；句子重複時不亂猜，交由 locate 判定。 */
+function sentenceTextOf(element) {
+    return ((element && (element.getAttribute('data-sentence') || element.textContent)) || '').trim();
+}
+
+/** 以 DOM 中相同句子的出現順序，推算它在原文中的起始 offset。 */
+function sourceStartForSentence(sentenceEl) {
+    if (!sentenceEl) return -1;
+    const articleId = articleContext.recordId || '';
+    const body = articleId ? (articleStore.getRecord(articleId)?.article || '') : '';
+    const text = sentenceTextOf(sentenceEl);
+    if (!body || !text) return -1;
+    const same = Array.from(dom.articleAnalysisContainer.querySelectorAll('.interactive-sentence'))
+        .filter((element) => sentenceTextOf(element) === text);
+    const index = same.indexOf(sentenceEl);
+    if (index < 0) return -1;
+    const positions = [];
+    let cursor = body.indexOf(text);
+    while (cursor >= 0 && positions.length < 100) {
+        positions.push(cursor);
+        cursor = body.indexOf(text, cursor + Math.max(1, text.length));
+    }
+    return positions[index] ?? -1;
+}
+
+function sentenceOffsetOfElement(sentenceEl, node, offset = 0) {
+    if (!sentenceEl || !node) return -1;
+    try {
+        const range = document.createRange();
+        range.selectNodeContents(sentenceEl);
+        range.setEnd(node, offset);
+        return range.toString().length;
+    } catch (_) {
+        return -1;
+    }
+}
+
+function anchorForWordElement(clickedElement, sentenceEl, quote) {
+    const articleId = articleContext.recordId || '';
+    const sentenceText = sentenceTextOf(sentenceEl);
+    if (!articleId || !sentenceText || !clickedElement) {
+        return readingActions.resolveAnchor(articleId, quote, sentenceText);
+    }
+    const sentenceStart = sourceStartForSentence(sentenceEl);
+    const offset = sentenceOffsetOfElement(sentenceEl, clickedElement.firstChild || clickedElement, 0);
+    const hint = sentenceStart >= 0 && offset >= 0 ? sentenceStart + offset : -1;
+    return readingActions.resolveAnchor(articleId, quote, sentenceText, hint);
+}
+
 function analyzeSentenceDedupe(sentence, context = '', opts = {}) {
     const key = _sentenceKey(sentence, context);
     const existed = _inflightSentenceMap.get(key);
@@ -1468,6 +1523,23 @@ function sentenceCardLoadingHtml(paraIdx, sentIdx) {
 }
 
 // Merge helper: deduplicate detailed_analysis by key (word|sentence)
+/**
+ * 同一份原文重新分析時，保留使用者已保存的句子／短語解析。
+ * 原文真的變更時不回填，避免把舊位置的解析當成新原文結果。
+ */
+export function mergePreservedReadingAnalysis(previousResult, nextResult, sameBody) {
+    if (!sameBody || !previousResult) return nextResult;
+    return {
+        ...nextResult,
+        sentence_analysis: Array.isArray(previousResult.sentence_analysis)
+            ? previousResult.sentence_analysis
+            : (nextResult.sentence_analysis || []),
+        phrase_analysis: Array.isArray(previousResult.phrase_analysis)
+            ? previousResult.phrase_analysis
+            : (nextResult.phrase_analysis || [])
+    };
+}
+
 function mergeDetailedAnalyses(existing, incoming) {
     const out = [];
     const seen = new Set();
@@ -1487,12 +1559,40 @@ function mergeDetailedAnalyses(existing, incoming) {
 function _safeString(x) { return (x || '').toString(); }
 
 /**
- * 詞／句／片語詳解都寫回「請求開始時」所屬的文章，而不是回應回來時的目前文章。
- * 目標文章已被刪除時直接丟棄，不會復活已刪除的記錄。
+ * 非同步詳解寫回前重新確認：原帳戶、原文章、原正文版本仍一致，才可更新
+ * legacy `result`（detailed_analysis／sentence_analysis／phrase_analysis）。
+ * readingItem 仍可依請求時凍結的版本保存，但舊分析不得併入目前正文。
  */
-function persistSentenceAnalysis(sentence, context, data, targetArticleId) {
+function analysisWriteTargetCurrent(articleId, articleCtx, contentVersion, actionContext) {
+    if (!articleId) return false;
+    if (articleCtx && typeof articleStore.isArticleContextActive === 'function'
+        && !articleStore.isArticleContextActive(articleCtx)) return false;
+    if (actionContext && !readingActions.actionContextActive(actionContext)) return false;
+    const record = articleStore.getRecord(articleId);
+    if (!record || !record.result) return false;
+    if (contentVersion !== undefined && contentVersion !== null
+        && String(contentVersion) !== readingActions.articleVersion(articleId)) return false;
+    return true;
+}
+
+function reportAnalysisSaveFailure(result) {
+    if (!result || result.ok) return;
+    // 帳戶／版本在等待期間切換是預期競態，不顯示「儲存失敗」打擾使用者。
+    if (result.staleScope || result.staleVersion) return;
+    ui.displayMessage(t('article.saveAnalysisFailed'), 'error');
+}
+
+/**
+ * 詞／句／片語詳解都寫回「請求開始時」所屬的文章，而不是回應回來時的目前文章。
+ * 目標文章已被刪除、帳戶切換或正文版本已變更時直接丟棄，不會污染新正文，
+ * 也不會復活已刪除的記錄。
+ */
+function persistSentenceAnalysis(sentence, context, data, targetArticleId, articleCtx = null, options = {}) {
     const articleId = targetArticleId || articleContext.recordId;
     if (!articleId) return;
+    const contentVersion = options.contentVersion === undefined ? null : options.contentVersion;
+    const actionCtx = options.actionContext || null;
+    if (!analysisWriteTargetCurrent(articleId, articleCtx, contentVersion, actionCtx)) return;
     const record = articleStore.getRecord(articleId);
     if (!record || !record.result) return;
     const arr = Array.isArray(record.result.sentence_analysis) ? record.result.sentence_analysis : [];
@@ -1501,14 +1601,19 @@ function persistSentenceAnalysis(sentence, context, data, targetArticleId) {
     const normalized = { ...data, sentence, context, updatedAt: new Date().toISOString() };
     const idx = next.findIndex(x => keyOf(x.sentence, x.context || x._context) === keyOf(sentence, context));
     if (idx >= 0) next[idx] = normalized; else next.push(normalized);
-    articleStore.saveAnalysis(articleId, { ...record.result, sentence_analysis: next })
-        .then((result) => { if (!result.ok) console.warn('[article] 句子解析未能寫入本機:', result.error); })
+    // 使用請求開始時的帳戶上下文：晚期回應不得寫進切換後的新帳戶。
+    const saveOptions = { ...(articleCtx ? { ctx: articleCtx } : {}), expectContentVersion: contentVersion };
+    articleStore.saveAnalysis(articleId, { ...record.result, sentence_analysis: next }, saveOptions)
+        .then((result) => { if (!result.ok) console.warn('[article] 句子解析未能寫入本機:', result.error); reportAnalysisSaveFailure(result); })
         .catch(() => {});
 }
 
-function persistPhraseAnalysis(selection, sentence, context, data, targetArticleId) {
+function persistPhraseAnalysis(selection, sentence, context, data, targetArticleId, articleCtx = null, options = {}) {
     const articleId = targetArticleId || articleContext.recordId;
     if (!articleId) return;
+    const contentVersion = options.contentVersion === undefined ? null : options.contentVersion;
+    const actionCtx = options.actionContext || null;
+    if (!analysisWriteTargetCurrent(articleId, articleCtx, contentVersion, actionCtx)) return;
     const record = articleStore.getRecord(articleId);
     if (!record || !record.result) return;
     const arr = Array.isArray(record.result.phrase_analysis) ? record.result.phrase_analysis : [];
@@ -1517,19 +1622,44 @@ function persistPhraseAnalysis(selection, sentence, context, data, targetArticle
     const normalized = { ...(data || {}), selection: data?.selection || selection, sentence, context, updatedAt: new Date().toISOString() };
     const idx = next.findIndex(x => keyOf(x.selection, x.sentence, x.context || x._context) === keyOf(normalized.selection, sentence, context));
     if (idx >= 0) next[idx] = normalized; else next.push(normalized);
-    // 保留策略：每句（sentence+context）最多 3 條片語解析（依 updatedAt 取最新）
-    let merged = next;
-    try {
-        const scKey = (s, c) => `${_safeString(s).trim()}||${_safeString(c).trim()}`.toLowerCase();
-        const targetKey = scKey(sentence, context);
-        const group = next.filter(x => scKey(x.sentence, x.context || x._context) === targetKey);
-        const others = next.filter(x => scKey(x.sentence, x.context || x._context) !== targetKey);
-        group.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
-        merged = [...others, ...group.slice(0, 3)];
-    } catch (_) { /* 保留完整內容 */ }
-    articleStore.saveAnalysis(articleId, { ...record.result, phrase_analysis: merged })
-        .then((result) => { if (!result.ok) console.warn('[article] 片語解析未能寫入本機:', result.error); })
+    // 不再裁剪：永久層保留每個短語；顯示層可依需要只展示最近幾筆。
+    const saveOptions = { ...(articleCtx ? { ctx: articleCtx } : {}), expectContentVersion: contentVersion };
+    articleStore.saveAnalysis(articleId, { ...record.result, phrase_analysis: next }, saveOptions)
+        .then((result) => { if (!result.ok) console.warn('[article] 片語解析未能寫入本機:', result.error); reportAnalysisSaveFailure(result); })
         .catch(() => {});
+}
+
+/**
+ * 片語／選取短語：先讀本文永久記錄，再走既有 API 快取，最後才請求 AI。
+ * 實際顯示成功時才記錄查閱；切走文章後的背景結果只保存解釋。
+ */
+async function analyzePhraseWithSaved(phrase, sentence, context, articleId, markViewed = true, options = {}) {
+    // 片語查到哪個版本、哪個位置，必須由呼叫前凍結；回應回來後不重算。
+    const version = options.contentVersion === undefined || options.contentVersion === null
+        ? readingActions.articleVersion(articleId)
+        : String(options.contentVersion);
+    const anchor = options.anchor || readingActions.resolveAnchor(articleId, phrase, sentence);
+    const actionContext = options.actionContext || readingActions.captureActionContext();
+    const saved = readingActions.findSavedItem(articleId, 'phrase', phrase, sentence, { anchor, contentVersion: version })
+        || readingActions.findSavedItem(articleId, 'word', phrase, sentence, { anchor, contentVersion: version });
+    if (saved && saved.explanation && saved.explanation.result) {
+        if (markViewed && readingActions.actionContextActive(actionContext)) readingStore.markLearningItemViewed(saved.id).catch(() => {});
+        return saved.explanation.result;
+    }
+    const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
+    readingActions.recordExplanation({
+        articleId,
+        kind: /\s/.test(String(phrase || '').trim()) ? 'phrase' : 'word',
+        quote: phrase,
+        sentence,
+        context,
+        data: res,
+        markViewed: markViewed && readingActions.actionContextActive(actionContext),
+        anchor,
+        contentVersion: version,
+        actionContext
+    }).catch(() => {});
+    return res;
 }
 
 // Markdown helpers: detect and group table blocks so they are treated as a single paragraph.
@@ -2050,18 +2180,26 @@ async function analyzeArticle() {
 
         if (!isRunActive(run)) return;
 
-        const finalResult = {
+        const previousRecord = articleStore.getRecord(articleId);
+        const baseResult = {
             // Join translated paragraphs with visible newlines; keep it single-line JS string
             chinese_translation: paragraphAnalyses.map(p => (p && p.chinese_translation) || '').join('\n\n'),
             word_alignment: paragraphAnalyses.flatMap(p => (p && p.word_alignment) || []),
             // 保留頂層獨有項目：按需取得的單字詳解只存在這裡，不做事後有損精簡。
             detailed_analysis: mergeDetailedAnalyses(
                 paragraphAnalyses.flatMap(p => (p && p.detailed_analysis) || []),
-                articleStore.getRecord(articleId)?.result?.detailed_analysis || []
+                previousRecord?.result?.detailed_analysis || []
             ),
             paragraph_analysis: paragraphAnalyses,
+            sentence_analysis: [],
+            phrase_analysis: [],
             updatedAt: new Date().toISOString()
         };
+        const finalResult = mergePreservedReadingAnalysis(
+            previousRecord?.result,
+            baseResult,
+            !!previousRecord && previousRecord.article === articleText
+        );
 
         dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(finalResult.detailed_analysis || []);
         const saved = await articleStore.saveArticle({
@@ -2247,6 +2385,11 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
     });
     bindAnalyzeButtonToLastWord(dom.articleAnalysisContainer);
     dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(detailed_analysis || []);
+    try {
+        document.dispatchEvent(new CustomEvent('bdc:article-loaded', {
+            detail: { articleId: articleContext.recordId || '' }
+        }));
+    } catch (_) {}
 }
 
 function clearArticleInput(options = {}) {
@@ -2341,17 +2484,20 @@ function relativeTime(value) {
 function recordTitle(record) {
     const title = String(record?.title || '').trim();
     if (title) return title;
+    if (record?.summaryOnly !== false && record?.excerpt) return String(record.excerpt).slice(0, 80);
     const { title: parsed, paragraphs } = parseTitleAndParagraphs(record?.article || '');
     return (parsed || paragraphs.find((p) => p && p.trim()) || t('article.untitled')).trim().slice(0, 80);
 }
 
 function recordSummary(record) {
+    if (record?.summaryOnly !== false && record?.excerpt) return String(record.excerpt).slice(0, 120);
     const { paragraphs } = parseTitleAndParagraphs(record?.article || '');
     const text = paragraphs.find((p) => p && p.trim()) || record?.article || '';
     return String(text).replace(/\s+/g, ' ').slice(0, 120);
 }
 
 function recordFailedParagraphs(record) {
+    if (record?.result == null) return Number(record?.failedParagraphs) || 0;
     const paragraphs = Array.isArray(record?.result?.paragraph_analysis) ? record.result.paragraph_analysis : [];
     // API 在翻譯失敗時會回最小兜底（空譯文），這種段落也要算未完成，
     // 但純圖片段落（skipped）與中文原文段落不算失敗。
@@ -2363,7 +2509,7 @@ function recordFailedParagraphs(record) {
 }
 
 function recordStatusText(record) {
-    if (!record?.result) return t('article.notAnalyzed');
+    if (!record?.result) return record?.hasAnalysis ? t('article.analyzed') : t('article.notAnalyzed');
     const failed = recordFailedParagraphs(record);
     if (failed > 0) return t('article.historyPartial', { count: failed });
     return t('article.analyzed');
@@ -2375,7 +2521,7 @@ function buildHistoryEntries() {
     let list = records.filter((record) => {
         if (historyUi.source !== 'all' && (record.sourceType || 'paste') !== historyUi.source) return false;
         if (!query) return true;
-        const haystack = `${record.title || ''}\n${record.article || ''}`.toLowerCase();
+        const haystack = `${record.title || ''}\n${record.excerpt || ''}`.toLowerCase();
         return haystack.includes(query);
     });
     if (historyUi.sort === HISTORY_SORT.title) {
@@ -2504,7 +2650,7 @@ function toggleRowMenu(row, trigger) {
 }
 
 async function openReadingRecord(recordId) {
-    const record = articleStore.getRecord(recordId);
+    const record = await articleStore.ensureArticleLoaded(recordId);
     if (!record) {
         ui.displayMessage(t('article.analysisRecordMissing'), 'warning');
         return;
@@ -2565,7 +2711,7 @@ async function renameReadingRecord(recordId) {
 }
 
 async function deleteReadingRecord(recordId) {
-    const record = articleStore.getRecord(recordId);
+    const record = await articleStore.ensureArticleLoaded(recordId);
     if (!record) return;
     const isCurrent = isCurrentArticle(recordId);
     if (isCurrent && recordHasUnsavedInput(record)) {
@@ -2856,7 +3002,8 @@ function openArticleHistory() {
         if (!okClear) return;
         const records = articleStore.getRecords().slice();
         for (const record of records) {
-            historyUndoStack.push({ snapshot: { ...record }, at: Date.now() });
+            const full = await articleStore.ensureArticleLoaded(record.articleId);
+            historyUndoStack.push({ snapshot: { ...(full || record) }, at: Date.now() });
         }
         while (historyUndoStack.length > HISTORY_UNDO_LIMIT) historyUndoStack.shift();
         for (const record of records) await articleStore.deleteArticle(record.articleId);
@@ -2936,13 +3083,13 @@ function toggleHistoryFromStatus() {
  * 依據 state.currentArticleId 嘗試載入對應文章與分析結果。
  * 若找不到對應記錄，則不改變當前畫面。
  */
-export function showCurrentArticleIfAvailable() {
+export async function showCurrentArticleIfAvailable() {
     const articleId = state.currentArticleId || null;
     if (!articleId) {
         ui.displayMessage(t('article.noArticleRecord'), 'info', 3500);
         return false;
     }
-    const record = articleStore.getRecord(articleId);
+    const record = await articleStore.ensureArticleLoaded(articleId);
     if (!record || !record.article) {
         ui.displayMessage(t('article.analysisRecordMissing'), 'warning', 5000);
         return false;
@@ -3540,13 +3687,27 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
         if (!card) return;
         const phrase = chunkBtn.getAttribute('data-phrase') || '';
         if (!phrase) return;
+        // 卡片建立時的歸屬已失效：不得把舊卡片的詳解寫成目前版本。
+        const chunkTarget = sentenceCardTarget(card);
+        if (sentenceCardTargetStale(chunkTarget)) {
+            ui.displayMessage(t('article.staleSentenceCard'), 'warning');
+            return;
+        }
         const sentence = card.dataset.sentence || '';
         const context = card.dataset.context || '';
         const paraIdx = parseInt(card.dataset.paraIdx, 10) || 0;
         const sentIdx = parseInt(card.dataset.sentIdx, 10) || 0;
+        // 請求前凍結：卡片自己的文章、帳戶、版本與 occurrence（重複句不重算位置）。
+        const chunkArticleId = chunkTarget.articleId;
+        const chunkContentVersion = chunkTarget.contentVersion;
+        const chunkActionCtx = chunkTarget.actionContext || readingActions.captureActionContext();
+        const chunkArticleCtx = chunkTarget.articleContext || articleStore.captureArticleContext();
         chunkBtn.disabled = true; chunkBtn.textContent = t('article.detailsLoading');
         try {
-            const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
+            // 精確句子錨點用來定位句內短語，不重算成目前正文的第一處。
+            const chunkAnchor = sentencePhraseAnchor(chunkTarget, phrase)
+                || readingActions.resolveAnchor(chunkArticleId, phrase, sentence);
+            const res = await analyzePhraseWithSaved(phrase, sentence, context, chunkArticleId, isCurrentArticle(chunkArticleId), { anchor: chunkAnchor, contentVersion: chunkContentVersion, actionContext: chunkActionCtx });
             const box = document.createElement('div');
             box.className = 'phrase-explain-box';
             const esc = escapeHtml;
@@ -3558,11 +3719,12 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
                                </div>
                                <button class="phrase-close">${t('article.close')}</button>
                              </div>`;
+            if (!card.isConnected || sentenceCardTargetStale(chunkTarget)) return;
             const chunkItem = chunkBtn.closest('.chunk-item');
             if (chunkItem) chunkItem.after(box);
             else card.appendChild(box);
             // 持久化片語解析
-            try { persistPhraseAnalysis(phrase, sentence, context, res, card.dataset.articleId || ''); } catch (_) {}
+            try { persistPhraseAnalysis(phrase, sentence, context, res, chunkArticleId, chunkArticleCtx, { contentVersion: chunkContentVersion, actionContext: chunkActionCtx }); } catch (_) {}
             applySentenceDim(paraIdx, sentIdx, true);
             const closeBtn = box.querySelector('.phrase-close');
             if (closeBtn) closeBtn.addEventListener('click', () => {
@@ -3601,13 +3763,26 @@ try {
         if (!card) return;
         const phrase = chunkBtn.getAttribute('data-phrase') || '';
         if (!phrase) return;
+        // 卡片建立時的歸屬已失效：不得把舊卡片的詳解寫成目前版本。
+        const chunkTarget = sentenceCardTarget(card);
+        if (sentenceCardTargetStale(chunkTarget)) {
+            ui.displayMessage(t('article.staleSentenceCard'), 'warning');
+            return;
+        }
         const sentence = card.dataset.sentence || '';
         const context = card.dataset.context || '';
         const paraIdx = parseInt(card.dataset.paraIdx, 10) || 0;
         const sentIdx = parseInt(card.dataset.sentIdx, 10) || 0;
+        // Modal 內的片語詳解同樣以卡片建立時的句境為準，不讀最新選區。
+        const chunkArticleId = chunkTarget.articleId;
+        const chunkContentVersion = chunkTarget.contentVersion;
+        const chunkActionCtx = chunkTarget.actionContext || readingActions.captureActionContext();
+        const chunkArticleCtx = chunkTarget.articleContext || articleStore.captureArticleContext();
         chunkBtn.disabled = true; chunkBtn.textContent = t('article.detailsLoading');
         try {
-            const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
+            const chunkAnchor = sentencePhraseAnchor(chunkTarget, phrase)
+                || readingActions.resolveAnchor(chunkArticleId, phrase, sentence);
+            const res = await analyzePhraseWithSaved(phrase, sentence, context, chunkArticleId, isCurrentArticle(chunkArticleId), { anchor: chunkAnchor, contentVersion: chunkContentVersion, actionContext: chunkActionCtx });
             const box = document.createElement('div');
             box.className = 'phrase-explain-box';
             const esc = escapeHtml;
@@ -3620,9 +3795,10 @@ try {
                                </div>
                                <button class="phrase-close">${t('article.close')}</button>
                              </div>`;
+            if (!card.isConnected || sentenceCardTargetStale(chunkTarget)) return;
             const chunkItem = chunkBtn.closest('.chunk-item');
             if (chunkItem) chunkItem.after(box); else card.appendChild(box);
-            try { persistPhraseAnalysis(phrase, sentence, context, res, card.dataset.articleId || ''); } catch (_) {}
+            try { persistPhraseAnalysis(phrase, sentence, context, res, chunkArticleId, chunkArticleCtx, { contentVersion: chunkContentVersion, actionContext: chunkActionCtx }); } catch (_) {}
             applySentenceDim(paraIdx, sentIdx, true);
             const closeBtn = box.querySelector('.phrase-close');
             if (closeBtn) closeBtn.addEventListener('click', () => {
@@ -3644,6 +3820,7 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
     e.stopPropagation();
     const rawTarget = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
     const btnPhrase = rawTarget?.closest && rawTarget.closest('.btn-analyze-phrase');
+    const btnPick = rawTarget?.closest && rawTarget.closest('.btn-pick-phrase');
     const btnCustom = rawTarget?.closest && rawTarget.closest('.btn-analyze-phrase-custom');
     const btnPlay = rawTarget?.closest && rawTarget.closest('.btn-play-word');
     if (btnPlay) {
@@ -3652,32 +3829,99 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
         return;
     }
     const btnAdd = rawTarget?.closest && rawTarget.closest('.btn-add-to-book');
-    if (btnAdd) {
+    const btnMark = rawTarget?.closest && rawTarget.closest('.btn-toggle-mark');
+    const btnNote = rawTarget?.closest && rawTarget.closest('.btn-note-item');
+    if (btnAdd || btnMark || btnNote) {
         e.stopPropagation();
-        const w = btnAdd.getAttribute('data-word') || '';
-        const sentence = btnAdd.getAttribute('data-sentence') || '';
-        const context = btnAdd.getAttribute('data-context') || '';
-        const prev = btnAdd.textContent;
-        btnAdd.disabled = true;
-        btnAdd.textContent = t('qa.adding');
-        btnAdd.setAttribute('aria-busy', 'true');
+        const button = btnAdd || btnMark || btnNote;
+        const readTarget = () => {
+            const articleId = button.getAttribute('data-article-id') || articleContext.recordId || '';
+            const quote = (button.getAttribute('data-quote') || button.getAttribute('data-word') || '').trim();
+            const sentence = button.getAttribute('data-sentence') || '';
+            const context = button.getAttribute('data-context') || '';
+            const sentenceStart = parseInt(button.getAttribute('data-sentence-start'), 10);
+            const startOffset = parseInt(button.getAttribute('data-start-offset'), 10);
+            const anchorStart = parseInt(button.getAttribute('data-anchor-start'), 10);
+            const anchorEnd = parseInt(button.getAttribute('data-anchor-end'), 10);
+            const hint = Number.isFinite(sentenceStart) && sentenceStart >= 0 && Number.isFinite(startOffset) && startOffset >= 0
+                ? sentenceStart + startOffset
+                : -1;
+            // 按鈕記著自己那一個 occurrence 的精確 offset；不重算、不退回全文文字搜尋。
+            const exactAnchor = readingActions.anchorFromOffsets(articleId, quote, anchorStart, anchorEnd);
+            return {
+                articleId,
+                kind: button.getAttribute('data-kind') === 'phrase' || /\s/.test(quote) ? 'phrase' : 'word',
+                quote,
+                sentence,
+                context,
+                contentVersion: button.getAttribute('data-content-version') || '',
+                anchor: exactAnchor || readingActions.resolveAnchor(articleId, quote, sentence, hint)
+            };
+        };
+        const prev = button.textContent;
+        button.disabled = true;
+        button.textContent = t('qa.adding');
+        button.setAttribute('aria-busy', 'true');
         try {
-            const mod = await import('../../modules/vocab.js');
-            const meaning = btnAdd.getAttribute('data-meaning') || '';
-            const phonetic = btnAdd.getAttribute('data-phonetic') || '';
-            const pos = btnAdd.getAttribute('data-pos') || '';
-            const res = await mod.addWordToCurrentArticleBook(w, { source: 'article', sentence, context, meaning, phonetic, pos });
-            btnAdd.textContent = res && res.reason === 'duplicate' ? t('qa.exists') : t('qa.added');
+            const target = readTarget();
+            if (!target.articleId || !target.quote) throw new Error('missing_target');
+            // 帳戶／文章切換後，舊彈窗按鈕不得寫入新 scope。
+            const actionContext = wordTooltipContext?.actionContext || readingActions.captureActionContext();
+            if (!readingActions.actionContextActive(actionContext)) throw new Error('stale_scope');
+            const ensured = await readingActions.ensureItem({ ...target, actionContext });
+            if (!ensured.ok) throw new Error(ensured.error);
+            const item = readingStore.getLearningItem(ensured.entity.id) || ensured.entity;
+            if (btnMark) {
+                const result = await readingActions.setMarked(item.id, item.marked !== true, actionContext);
+                if (!result.ok) throw new Error(result.error);
+                const marked = result.entity?.marked === true;
+                button.textContent = marked ? t('article.unmarkThis') : t('article.markThis');
+                button.setAttribute('aria-pressed', marked ? 'true' : 'false');
+                ui.displayMessage(marked ? t('article.markAdded') : t('article.markRemoved'), 'success');
+            } else if (btnNote) {
+                const opened = await openReadingPanelForItem(target.articleId, item.id);
+                if (!opened.ok) throw new Error(opened.error || 'panel_failed');
+            } else {
+                const result = await readingActions.addItemToVocabulary(item, {
+                    context: target.context,
+                    sentence: target.sentence,
+                    meaning: button.getAttribute('data-meaning') || '',
+                    phonetic: button.getAttribute('data-phonetic') || '',
+                    pos: button.getAttribute('data-pos') || ''
+                });
+                if (!result || result.ok === false) throw new Error(result?.error || 'failed');
+                button.textContent = result.reason === 'duplicate' ? t('qa.exists') : t('qa.added');
+                const markButton = dom.analysisTooltip.querySelector('.btn-toggle-mark');
+                if (markButton) {
+                    markButton.textContent = t('article.unmarkThis');
+                    markButton.setAttribute('aria-pressed', 'true');
+                }
+            }
         } catch (err) {
-            console.warn('加入生詞本失敗:', err);
-            btnAdd.textContent = t('qa.failed');
+            console.warn('閱讀記錄動作失敗:', err);
+            button.textContent = t('qa.failed');
         } finally {
-            setTimeout(() => {
-                btnAdd.removeAttribute('aria-busy');
-                btnAdd.disabled = false;
-                btnAdd.textContent = prev || t('article.addToWordbook');
-            }, 1000);
+            button.removeAttribute('aria-busy');
+            button.disabled = false;
+            if (btnAdd) {
+                setTimeout(() => { button.textContent = prev || t('article.addToWordbook'); }, 1000);
+            } else if (btnNote) {
+                button.textContent = prev || t('article.writeNote');
+            }
         }
+        return;
+    }
+    if (btnPick) {
+        const sentence = btnPick.getAttribute('data-sentence') || '';
+        const startWord = btnPick.getAttribute('data-default') || '';
+        openPhrasePicker({
+            articleId: btnPick.getAttribute('data-article-id') || articleContext.recordId || '',
+            sentence,
+            context: btnPick.getAttribute('data-context') || '',
+            startWord,
+            sentenceStart: parseInt(btnPick.getAttribute('data-sentence-start'), 10),
+            startOffset: parseInt(btnPick.getAttribute('data-start-offset'), 10)
+        });
         return;
     }
     if (!btnPhrase && !btnCustom) return;
@@ -3708,6 +3952,10 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
     }
 });
 
+let wordTooltipSession = 0;
+// 目前顯示中的單詞彈窗所屬上下文（帳戶＋內文版本），供按鈕動作沿用。
+let wordTooltipContext = null;
+
 function showArticleWordAnalysis(clickedElement, analysisArray) {
     // 點擊當下的文章就是這次請求的歸屬；回應回來時不再讀取「目前文章」。
     const targetArticleId = articleContext.recordId || '';
@@ -3727,8 +3975,47 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         && item.word.toLowerCase() === (wordText || '').toLowerCase()
         && normText(item.sentence) === normText(sentence)) || null;
 
-    const showTooltip = (data, sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText) => {
+    // 本次查詞的固定上下文：session 只認最新一次查詞；articleId、內文版本、
+    // 錨點與帳戶都在點擊當下凍結，延遲回應不得改寫新選詞／新版本／新帳戶。
+    const session = ++wordTooltipSession;
+    const actionContext = readingActions.captureActionContext();
+    const articleContextSnapshot = articleStore.captureArticleContext();
+    const contentVersion = readingActions.articleVersion(targetArticleId);
+    const wordAnchor = anchorForWordElement(clickedElement, sentenceEl, wordText);
+    const stillShowing = () => session === wordTooltipSession
+        && readingActions.actionContextActive(actionContext)
+        && isCurrentArticle(targetArticleId)
+        // 正文在同一次查詞期間被改寫：舊回應不得重新顯示在新版本上。
+        && readingActions.articleVersion(targetArticleId) === contentVersion
+        // 使用者已點擊別處收起彈窗：舊請求不得把彈窗重新打開。
+        && dom.analysisTooltip.style.display !== 'none';
+    wordTooltipContext = { actionContext, contentVersion };
+
+    const actionButtonsHtml = (sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText, analysis = null) => {
         const escAttr = escapeAttr;
+        const sentenceStart = sourceStartForSentence(sentenceEl);
+        const startOffset = sentenceOffsetOfElement(sentenceEl, clickedElement.firstChild || clickedElement, 0);
+        const quote = String(defaultPhrase || '').trim();
+        const kind = /\s/.test(quote) ? 'phrase' : 'word';
+        // 同一段文字可能出現多次：一律用這個按鈕自己的精確錨點＋版本查狀態，
+        // 不可用全文文字搜尋退回到另一處的條目。
+        const savedItem = readingActions.findSavedItem(targetArticleId, kind, quote, sentenceForBtn || '', { anchor: wordAnchor, contentVersion });
+        const marked = savedItem?.marked === true;
+        const anchorAttrs = `data-article-id="${escAttr(targetArticleId)}" data-quote="${escAttr(quote)}" data-word="${escAttr(quote)}" data-kind="${kind}" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-sentence-start="${escAttr(String(sentenceStart))}" data-start-offset="${escAttr(String(startOffset))}" data-anchor-start="${escAttr(String(wordAnchor?.start ?? -1))}" data-anchor-end="${escAttr(String(wordAnchor?.end ?? -1))}" data-content-version="${escAttr(contentVersion || '')}"`;
+        return `
+                    <button class="btn-ghost btn-mini btn-add-to-book"
+                        ${anchorAttrs}
+                        data-meaning="${escAttr(analysis?.meaning || '')}"
+                        data-phonetic="${escAttr(analysis?.phonetic || '')}"
+                        data-pos="${escAttr(analysis?.pos || '')}"
+                    >${t('article.addToWordbook')}</button>
+                    <button class="btn-ghost btn-mini btn-toggle-mark" ${anchorAttrs} aria-pressed="${marked ? 'true' : 'false'}">${marked ? t('article.unmarkThis') : t('article.markThis')}</button>
+                    <button class="btn-ghost btn-mini btn-note-item" ${anchorAttrs}>${t('article.writeNote')}</button>
+                    <button class="btn-ghost btn-mini btn-pick-phrase" data-article-id="${escAttr(targetArticleId)}" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}" data-sentence-start="${escAttr(String(sentenceStart))}" data-start-offset="${escAttr(String(startOffset))}">${t('article.pickPhrase')}</button>
+                    <button class="btn-ghost btn-mini btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzePhrase')}</button>
+                    <button class="btn-ghost btn-mini btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzeOtherPhrase')}</button>`;
+    };
+    const showTooltip = (data, sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText) => {
         if (data && data.analysis) {
             const analysis = data.analysis;
             const phonetic = analysis.phonetic ? ` /${escapeHtml(analysis.phonetic.replace(/^\/|\/$/g, ''))}/` : '';
@@ -3740,21 +4027,13 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
                     <p><strong>${t('article.meaningLabel')}</strong> ${escapeHtml(analysis.meaning)}</p>
                 </div>
                 <div class="tooltip-actions">
-                    <button class="btn-ghost btn-mini btn-play-word" data-word="${escAttr(data.word || defaultPhrase)}">${t('article.pronunciation')}</button>
-                    <button class="btn-ghost btn-mini btn-add-to-book"
-                        data-word="${escAttr(defaultPhrase||data.word||'')}"
-                        data-sentence="${escAttr(sentenceForBtn||'')}"
-                        data-context="${escAttr(contextForBtn||'')}"
-                        data-meaning="${escAttr(analysis.meaning || '')}"
-                        data-phonetic="${escAttr(analysis.phonetic || '')}"
-                        data-pos="${escAttr(analysis.pos || '')}"
-                    >${t('article.addToWordbook')}</button>
-                    <button class="btn-ghost btn-mini btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzePhrase')}</button>
-                    <button class="btn-ghost btn-mini btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzeOtherPhrase')}</button>
+                    <button class="btn-ghost btn-mini btn-play-word" data-word="${escapeAttr(data.word || defaultPhrase)}">${t('article.pronunciation')}</button>
+                    ${actionButtonsHtml(sentenceForBtn, contextForBtn, defaultPhrase, analysis)}
                 </div>
                 <div class="tooltip-phrase-result"></div>`;
         } else {
-            dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.noAnalysisData')}</p></div>`;
+            dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.noAnalysisData')}</p></div>
+                <div class="tooltip-actions">${actionButtonsHtml(sentenceForBtn, contextForBtn, defaultPhrase)}</div>`;
         }
         dom.analysisTooltip.style.display = 'block';
         ui.repositionTooltip(clickedElement);
@@ -3762,12 +4041,26 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
 
     if (wordAnalysisData && wordAnalysisData.analysis) {
         showTooltip(wordAnalysisData, sentence, paraEnglish, wordText);
+        try {
+            readingActions.recordExplanation({
+                articleId: targetArticleId,
+                kind: 'word',
+                quote: wordText,
+                sentence,
+                context: paraEnglish,
+                data: wordAnalysisData,
+                markViewed: true,
+                anchor: wordAnchor,
+                contentVersion,
+                actionContext
+            }).catch(() => {});
+        } catch (_) {}
         return;
     }
 
     // 懶載詳解：僅當點擊英文字時觸發
     if (!englishContainer) {
-        showTooltip(null);
+        showTooltip(null, sentence, paraEnglish, wordText);
         return;
     }
 
@@ -3779,11 +4072,27 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         // 合併到 analysisArray 並更新 dataset（去重）
         const merged = mergeDetailedAnalyses(analysisArray, [data]);
         dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(merged);
-        showTooltip(data);
+        showTooltip(data, sentence, paraEnglish, wordText);
+        // 命中快取並實際顯示，算一次查閱；同時補存到這篇文章的永久記錄。
+        try {
+            readingActions.recordExplanation({
+                articleId: targetArticleId,
+                kind: 'word',
+                quote: wordText,
+                sentence,
+                context: paraEnglish,
+                data,
+                markViewed: true,
+                anchor: wordAnchor,
+                contentVersion,
+                actionContext
+            }).catch(() => {});
+        } catch (_) {}
         return;
     }
 
-    dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.loading')}</p></div>`;
+    dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.loading')}</p></div>
+        <div class="tooltip-actions">${actionButtonsHtml(sentence, paraEnglish, wordText)}</div>`;
     dom.analysisTooltip.style.display = 'block';
     ui.repositionTooltip(clickedElement);
 
@@ -3800,26 +4109,49 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
             }
         };
         showArticleWordAnalysis._lazyCache.set(lazyKey, normalized);
-        // 持久化新增的詞詳解到「點擊時」所屬的文章；文章已刪除就不復活。
+        // 解釋永遠存到「點擊時」的文章版本與錨點（舊回應寫舊版本，不得記成新版本）。
         try {
-            const record = targetArticleId ? articleStore.getRecord(targetArticleId) : null;
-            if (record && record.result) {
-                const updated = {
-                    ...record.result,
-                    // 頂層 detailed_analysis 是這些按需詳解唯一的家，不可省略或精簡
-                    detailed_analysis: mergeDetailedAnalyses(record.result.detailed_analysis || [], [normalized])
-                };
-                articleStore.saveAnalysis(targetArticleId, updated).catch(() => {});
+            readingActions.recordExplanation({
+                articleId: targetArticleId,
+                kind: 'word',
+                quote: wordText,
+                sentence,
+                context: paraEnglish,
+                data: normalized,
+                markViewed: stillShowing(),
+                anchor: wordAnchor,
+                contentVersion,
+                actionContext
+            }).catch(() => {});
+        } catch (_) {}
+        // 持久化新增的詞詳解到「點擊時」所屬的文章與帳戶；文章已刪除、
+        // 帳戶切換或正文版本已變更時丟棄，不得把舊分析併入目前正文。
+        try {
+            if (analysisWriteTargetCurrent(targetArticleId, articleContextSnapshot, contentVersion, actionContext)) {
+                const record = articleStore.getRecord(targetArticleId);
+                if (record && record.result) {
+                    const updated = {
+                        ...record.result,
+                        // 頂層 detailed_analysis 是這些按需詳解唯一的家，不可省略或精簡
+                        detailed_analysis: mergeDetailedAnalyses(record.result.detailed_analysis || [], [normalized])
+                    };
+                    articleStore.saveAnalysis(targetArticleId, updated, { ctx: articleContextSnapshot, expectContentVersion: contentVersion })
+                        .then((result) => reportAnalysisSaveFailure(result))
+                        .catch(() => {});
+                }
             }
         } catch (_) { /* 持久化失敗不影響顯示 */ }
-        if (!isCurrentArticle(targetArticleId)) return;
+        // 已換選詞／換文章／換帳戶：舊回應不得覆寫目前畫面。
+        if (!stillShowing()) return;
         const merged = mergeDetailedAnalyses(analysisArray, [normalized]);
         dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(merged);
         showTooltip(normalized, sentence, paraEnglish, wordText);
     }).catch(err => {
         console.warn('懶載詳解失敗:', err);
+        // 只有這一個選詞仍是目前顯示的才可以把錯誤寫進畫面。
+        if (!stillShowing()) return;
         dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.wordAnalysisFailed')}</p></div>
-            <div class="tooltip-actions"><button class="btn-ghost btn-mini btn-retry-word">${t('article.retry')}</button></div>`;
+            <div class="tooltip-actions"><button class="btn-ghost btn-mini btn-retry-word">${t('article.retry')}</button>${actionButtonsHtml(sentence, paraEnglish, wordText)}</div>`;
         const retryBtn = dom.analysisTooltip.querySelector('.btn-retry-word');
         if (retryBtn) retryBtn.addEventListener('click', (ev) => {
             ev.stopPropagation();
@@ -3953,7 +4285,7 @@ async function retrySingleParagraph(idx, options = {}) {
                     paragraph_analysis: paragraphAnalysis,
                     detailed_analysis: mergeDetailedAnalyses(record.result.detailed_analysis || [], result?.detailed_analysis || [])
                 };
-                articleStore.saveAnalysis(targetArticleId, updated).catch(() => {});
+                articleStore.saveAnalysis(targetArticleId, updated).then((result) => { if (!result.ok) ui.displayMessage(t('article.saveAnalysisFailed'), 'error'); }).catch(() => {});
             }
         } catch (_) { /* 持久化失敗只影響跨端一致性 */ }
         // remove from failed list if present
@@ -4449,77 +4781,279 @@ function initArticleSelectionToWordbook() {
     const area = dom.articleAnalysisContainer;
     if (!area) return;
 
-    let btn = null;
-    function ensureBtn() {
-        if (btn) return btn;
-        btn = document.createElement('button');
-        btn.className = 'btn-ghost btn-mini';
-        btn.textContent = t('article.addToWordbook');
-        btn.style.cssText = [
-            'position:absolute',
-            'z-index:9999',
-            'display:none'
-        ].join(';');
-        document.body.appendChild(btn);
-        btn.addEventListener('click', async () => {
-            const sel = window.getSelection();
-            const text = (sel && sel.toString && sel.toString().trim()) || '';
-            if (!text) { return hideBtn(); }
+    let bar = null;
+    let snapshot = null;
+    let hideTimer = null;
 
-            // 推斷上下文：優先 sentence，再回退 paragraph 英文
-            let sentence = '';
-            let context = '';
+    function ensureBar() {
+        if (bar && bar.isConnected) return bar;
+        bar = document.createElement('div');
+        bar.className = 'article-selection-bar';
+        bar.setAttribute('role', 'toolbar');
+        bar.innerHTML = `
+          <button type="button" class="btn-ghost btn-mini" data-act="add">${t('article.addToWordbook')}</button>
+          <button type="button" class="btn-ghost btn-mini" data-act="mark">${t('article.markThis')}</button>
+          <button type="button" class="btn-ghost btn-mini" data-act="note">${t('article.writeNote')}</button>
+          <button type="button" class="btn-ghost btn-mini" data-act="phrase">${t('article.pickPhrase')}</button>
+          <button type="button" class="btn-ghost btn-mini" data-act="close" aria-label="${t('article.close')}">×</button>`;
+        document.body.appendChild(bar);
+        bar.addEventListener('mousedown', (event) => event.preventDefault());
+        bar.addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-act]');
+            if (!button) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const act = button.getAttribute('data-act');
+            if (act === 'close') { hideBar(); return; }
+            const captured = snapshot;
+            if (!captured || !captured.text) { hideBar(); return; }
+            // 選區建立時的帳戶／文章上下文已凍結；切換後不得寫進新帳戶。
+            if (!readingActions.actionContextActive(captured.actionContext)) {
+                hideBar();
+                ui.displayMessage(t('article.saveFailedRetry'), 'error');
+                return;
+            }
+            if (act === 'phrase') {
+                hideBar();
+                openPhrasePicker({
+                    articleId: captured.articleId || articleContext.recordId || '',
+                    sentence: captured.sentence,
+                    context: captured.context,
+                    initialQuote: captured.text,
+                    sentenceStart: captured.sentenceStart,
+                    startOffset: captured.startOffset
+                });
+                return;
+            }
+            const prev = button.textContent;
+            button.disabled = true;
+            button.textContent = t('qa.adding');
             try {
-                const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
-                const node = range ? (range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement) : null;
-                const sentenceEl = node && node.closest ? node.closest('.interactive-sentence') : null;
-                const pair = node && node.closest ? node.closest('.paragraph-pair') : null;
-                sentence = (sentenceEl && (sentenceEl.getAttribute('data-sentence') || sentenceEl.textContent)) || '';
-                context = (pair && (pair.getAttribute('data-english'))) || (pair && pair.querySelector('.paragraph-english') && pair.querySelector('.paragraph-english').textContent) || sentence || '';
-                if (!context) context = (dom.articleInput && dom.articleInput.value) || '';
-            } catch (_) {}
-
-            const prev = btn.textContent;
-            btn.disabled = true; btn.textContent = t('qa.adding'); btn.setAttribute('aria-busy','true');
-            try {
-                const mod = await import('../../modules/vocab.js');
-                await mod.addWordToCurrentArticleBook(text, { source: 'article', sentence, context });
-            } catch (_) {}
-            hideBtn();
-            btn.removeAttribute('aria-busy'); btn.disabled = false; btn.textContent = prev || t('article.addToWordbook');
-            try { sel && sel.removeAllRanges && sel.removeAllRanges(); } catch (_) {}
+                const target = {
+                    articleId: captured.articleId || articleContext.recordId || '',
+                    kind: /\s/.test(captured.text) ? 'phrase' : 'word',
+                    quote: captured.text,
+                    sentence: captured.sentence,
+                    context: captured.context,
+                    anchor: captured.anchor,
+                    contentVersion: captured.contentVersion
+                };
+                const actionContext = captured.actionContext || readingActions.captureActionContext();
+                const itemResult = await readingActions.ensureItem({ ...target, actionContext });
+                if (!itemResult.ok) throw new Error(itemResult.error);
+                const item = readingStore.getLearningItem(itemResult.entity.id) || itemResult.entity;
+                if (act === 'mark') {
+                    const markResult = await readingActions.setMarked(item.id, item.marked !== true, actionContext);
+                    if (!markResult.ok) throw new Error(markResult.error);
+                    button.textContent = markResult.entity?.marked === true ? t('article.unmarkThis') : t('article.markThis');
+                    button.setAttribute('aria-pressed', markResult.entity?.marked === true ? 'true' : 'false');
+                    snapshot = { ...captured, item };
+                } else if (act === 'note') {
+                    hideBar();
+                    await openReadingPanelForItem(target.articleId, item.id);
+                } else {
+                    const result = await readingActions.addItemToVocabulary(item, { context: captured.context });
+                    if (!result || result.ok === false) throw new Error(result?.error || 'failed');
+                    button.textContent = result.reason === 'duplicate' ? t('qa.exists') : t('qa.added');
+                }
+            } catch (err) {
+                button.textContent = t('qa.failed');
+            } finally {
+                if (act === 'add') {
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = prev || t('article.addToWordbook');
+                        hideBar();
+                    }, 900);
+                } else {
+                    button.disabled = false;
+                }
+            }
         });
-        return btn;
+        return bar;
     }
 
-    function hideBtn() { if (btn) btn.style.display = 'none'; }
+    function hideBar() {
+        if (bar) bar.classList.remove('is-visible');
+        snapshot = null;
+    }
 
-    function showBtnNearSelection() {
-        const sel = window.getSelection();
-        const text = (sel && sel.toString && sel.toString().trim()) || '';
-        if (!text) { return hideBtn(); }
-        if (!sel || sel.rangeCount === 0) { return hideBtn(); }
+    function captureSelection() {
+        const sel = window.getSelection && window.getSelection();
+        if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+        const text = String(sel.toString() || '').trim();
+        if (!text) return null;
         const range = sel.getRangeAt(0);
-        // 僅處理在分析容器內的選區
         const container = range.commonAncestorContainer;
-        const host = (container.nodeType === 1 ? container : container.parentElement);
-        if (!area.contains(host)) { return hideBtn(); }
+        const host = container.nodeType === 1 ? container : container.parentElement;
+        if (!host || !area.contains(host)) return null;
         const rect = range.getBoundingClientRect();
-        if (!rect || (rect.width === 0 && rect.height === 0)) { return hideBtn(); }
-        const b = ensureBtn();
-        b.style.left = `${rect.left + window.scrollX}px`;
-        b.style.top = `${rect.bottom + window.scrollY + 6}px`;
-        b.style.display = 'inline-block';
+        if (!rect || (rect.width === 0 && rect.height === 0)) return null;
+        const node = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+        const endNode = range.endContainer.nodeType === 1 ? range.endContainer : range.endContainer.parentElement;
+        const sentenceEl = node && node.closest ? node.closest('.interactive-sentence') : null;
+        const endSentenceEl = endNode && endNode.closest ? endNode.closest('.interactive-sentence') : null;
+        // 只接受英文原文的同一個句子；翻譯區、跨句或跨段落一律不誤收。
+        if (!sentenceEl || !endSentenceEl || sentenceEl !== endSentenceEl) return null;
+        if (!/[A-Za-z]/.test(text)) return null;
+        const pair = node && node.closest ? node.closest('.paragraph-pair') : null;
+        const sentence = (sentenceEl.getAttribute('data-sentence') || sentenceEl.textContent || '').trim();
+        const context = (pair && pair.getAttribute('data-english')) || sentence || '';
+        const articleId = articleContext.recordId || '';
+        const sentenceStart = sourceStartForSentence(sentenceEl);
+        const startOffset = sentenceOffsetOfElement(sentenceEl, range.startContainer, range.startOffset);
+        const hint = sentenceStart >= 0 && startOffset >= 0 ? sentenceStart + startOffset : -1;
+        return {
+            text,
+            sentence,
+            context,
+            articleId,
+            startOffset,
+            sentenceStart,
+            anchor: readingActions.resolveAnchor(articleId, text, sentence, hint),
+            // 選區建立當下的帳戶與內文版本；按鈕、儲存、查狀態都用這一份。
+            contentVersion: readingActions.articleVersion(articleId),
+            actionContext: readingActions.captureActionContext(),
+            rect
+        };
     }
 
-    area.addEventListener('mouseup', () => setTimeout(showBtnNearSelection, 0));
-    area.addEventListener('touchend', () => setTimeout(showBtnNearSelection, 0), { passive: true });
-    document.addEventListener('mousedown', (e) => {
-        if (!btn) return;
-        if (e.target === btn) return;
-        hideBtn();
+    function selectionKind(captured) {
+        return /\s/.test(String(captured?.text || '').trim()) ? 'phrase' : 'word';
+    }
+
+    /** 每次顯示都按「這一精確選區」重設按鈕狀態，不沿用上一個選區的文案。 */
+    function syncBarState(captured) {
+        const markButton = bar.querySelector('[data-act="mark"]');
+        const addButton = bar.querySelector('[data-act="add"]');
+        const noteButton = bar.querySelector('[data-act="note"]');
+        const phraseButton = bar.querySelector('[data-act="phrase"]');
+        if (addButton) addButton.textContent = t('article.addToWordbook');
+        if (noteButton) noteButton.textContent = t('article.writeNote');
+        if (phraseButton) phraseButton.textContent = t('article.pickPhrase');
+        if (!markButton) return;
+        const item = readingActions.findSavedItem(captured.articleId, selectionKind(captured), captured.text, captured.sentence, {
+            anchor: captured.anchor,
+            contentVersion: captured.contentVersion
+        });
+        const marked = item?.marked === true;
+        markButton.textContent = marked ? t('article.unmarkThis') : t('article.markThis');
+        markButton.setAttribute('aria-pressed', marked ? 'true' : 'false');
+    }
+
+    function showBar() {
+        const captured = captureSelection();
+        if (!captured) { hideBar(); return; }
+        if (!readingActions.actionContextActive(captured.actionContext)) { hideBar(); return; }
+        snapshot = captured;
+        const element = ensureBar();
+        syncBarState(captured);
+        const left = Math.max(8, Math.min(window.innerWidth - 260, captured.rect.left));
+        const top = Math.max(8, Math.min(window.innerHeight - 60, captured.rect.bottom + 8));
+        element.style.left = `${left}px`;
+        element.style.top = `${top}px`;
+        element.classList.add('is-visible');
+    }
+
+    function scheduleShow() {
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(showBar, 80);
+    }
+
+    // selectionchange 先捕捉範圍；按鈕使用快照，不重讀已失焦的 Selection。
+    document.addEventListener('selectionchange', scheduleShow);
+    area.addEventListener('mouseup', scheduleShow);
+    area.addEventListener('touchend', scheduleShow, { passive: true });
+    document.addEventListener('mousedown', (event) => {
+        if (!bar) return;
+        if (bar.contains(event.target)) return;
+        hideBar();
     });
-    window.addEventListener('scroll', hideBtn, { passive: true });
+    window.addEventListener('scroll', () => { if (bar) hideBar(); }, { passive: true });
+    window.addEventListener('resize', () => { if (bar) hideBar(); });
+}
+
+/**
+ * 每張句卡建立時凍結自己的歸屬：文章、正文版本、精確 occurrence、帳戶與句境。
+ * 之後 refresh／詳解／選取／加入詞書都只沿用這一份；正文改版後不得改抓目前版本。
+ */
+const sentenceCardTargets = new WeakMap();
+
+/** 把這張句卡自己的文章、正文版本與精確 occurrence 記在卡片上；已有凍結值不覆寫。 */
+function stampSentenceCardTarget(card, articleId, contentVersion, anchor, extra = {}) {
+    const frozen = sentenceCardTargets.get(card);
+    if (frozen) return frozen;
+    const start = Number(anchor?.start);
+    const end = Number(anchor?.end);
+    const hasAnchor = Number.isFinite(start) && start >= 0;
+    const target = {
+        articleId: articleId || '',
+        contentVersion: contentVersion === undefined || contentVersion === null ? '' : String(contentVersion),
+        anchor: hasAnchor
+            ? {
+                start,
+                end: Number.isFinite(end) ? end : start + String(extra.sentence || anchor?.quote || '').length,
+                quote: String(extra.sentence || anchor?.quote || '')
+            }
+            : null,
+        sentence: String(extra.sentence || ''),
+        context: String(extra.context || ''),
+        paraIdx: Number.isFinite(Number(extra.paraIdx)) ? Number(extra.paraIdx) : 0,
+        sentIdx: Number.isFinite(Number(extra.sentIdx)) ? Number(extra.sentIdx) : 0,
+        articleContext: extra.articleContext || null,
+        actionContext: extra.actionContext || null
+    };
+    card.dataset.articleId = target.articleId;
+    card.dataset.contentVersion = target.contentVersion;
+    card.dataset.anchorStart = String(hasAnchor ? start : -1);
+    card.dataset.anchorEnd = String(hasAnchor && Number.isFinite(end) ? end : -1);
+    sentenceCardTargets.set(card, target);
+    return target;
+}
+
+/** 讀回句卡的凍結歸屬；若卡片是舊路徑建立、沒有 WeakMap 記錄，至少用 dataset 重建。 */
+function sentenceCardTarget(card) {
+    const frozen = sentenceCardTargets.get(card);
+    if (frozen) return frozen;
+    return stampSentenceCardTarget(
+        card,
+        card.dataset.articleId || '',
+        card.dataset.contentVersion || '',
+        { start: parseInt(card.dataset.anchorStart, 10), end: parseInt(card.dataset.anchorEnd, 10) },
+        {
+            sentence: card.dataset.sentence || '',
+            context: card.dataset.context || '',
+            paraIdx: parseInt(card.dataset.paraIdx, 10) || 0,
+            sentIdx: parseInt(card.dataset.sentIdx, 10) || 0
+        }
+    );
+}
+
+/** 卡片建立時的正文版本／帳戶／精確位置已失效 → 不得再發請求或寫成目前版本。 */
+function sentenceCardTargetStale(target) {
+    if (!target || !target.articleId) return true;
+    if (!readingActions.actionContextActive(target.actionContext)) return true;
+    if (readingActions.articleVersion(target.articleId) !== target.contentVersion) return true;
+    if (target.anchor) {
+        return !readingActions.anchorFromOffsets(
+            target.articleId,
+            target.anchor.quote || target.sentence,
+            target.anchor.start,
+            target.anchor.end
+        );
+    }
+    return false;
+}
+
+/** 在凍結的整句錨點內定位句內短語；正文已改寫時回傳 null。 */
+function sentencePhraseAnchor(target, phrase) {
+    if (!target || !target.anchor) return null;
+    const sentence = String(target.sentence || '');
+    const text = String(phrase || '');
+    const offset = sentence.indexOf(text);
+    if (offset < 0) return null;
+    const start = Number(target.anchor.start) + offset;
+    return readingActions.anchorFromOffsets(target.articleId, text, start, start + text.length);
 }
 
 async function toggleSentenceCard(sentenceEl) {
@@ -4530,6 +5064,16 @@ async function toggleSentenceCard(sentenceEl) {
     const sentence = sentenceEl.getAttribute('data-sentence') || sentenceEl.textContent;
     const pairContainer = sentenceEl.closest('.paragraph-pair');
     const context = pairContainer ? pairContainer.getAttribute('data-english') || '' : '';
+    // 句子詳解也是非同步：請求開始時就凍結帳戶、版本與這一整句的精確錨點。
+    const actionContext = readingActions.captureActionContext();
+    const articleContextSnapshot = articleStore.captureArticleContext();
+    const contentVersion = readingActions.articleVersion(targetArticleId);
+    const sentenceAnchor = readingActions.resolveAnchor(targetArticleId, sentence, sentence, sourceStartForSentence(sentenceEl));
+    // 回應回來後，只有同一帳戶、同一文章、同一正文版本且原卡片仍在畫面上才可重繪。
+    const canUpdateView = (card) => Boolean(card && card.isConnected)
+        && readingActions.actionContextActive(actionContext)
+        && isCurrentArticle(targetArticleId)
+        && readingActions.articleVersion(targetArticleId) === contentVersion;
 
     // Modal 模式：直接在彈窗中顯示詳解
     if (USE_SENTENCE_MODAL) {
@@ -4546,6 +5090,11 @@ async function toggleSentenceCard(sentenceEl) {
         const card = document.createElement('div');
         card.className = 'sentence-card is-modal';
         card.dataset.modal = '1';
+        stampSentenceCardTarget(card, targetArticleId, contentVersion, sentenceAnchor, {
+            sentence, context, paraIdx, sentIdx,
+            articleContext: articleContextSnapshot,
+            actionContext
+        });
         card.innerHTML = sentenceCardLoadingHtml(paraIdx, sentIdx);
         dom.modalBody.appendChild(card);
 
@@ -4557,18 +5106,29 @@ async function toggleSentenceCard(sentenceEl) {
         try { dom.modalCloseBtn.addEventListener('click', cleanup, { once: true }); } catch(_) {}
         try { dom.appModal.addEventListener('click', (e)=>{ if (e.target === dom.appModal) cleanup(); }, { once: true }); } catch(_) {}
 
+        // 先讀這篇文章已保存的句子解析：重開、離線或換裝置都不必再請求 AI。
+        const savedItem = readingActions.findSavedItem(targetArticleId, 'sentence', sentence, sentence, { anchor: sentenceAnchor, contentVersion });
+        if (savedItem && savedItem.explanation && savedItem.explanation.result) {
+            renderSentenceCard(card, savedItem.explanation.result, sentence, context, paraIdx, sentIdx, targetArticleId);
+            if (canUpdateView(card)) {
+                readingStore.markLearningItemViewed(savedItem.id).catch(() => {});
+            }
+            return;
+        }
         try {
             const data = await analyzeSentenceDedupe(sentence, context, { timeoutMs: 22000, conciseKeypoints: true, includeStructure: true });
-            // 已切換到其他文章：結果只寫回原文章，不再更新目前畫面
-            if (!isCurrentArticle(targetArticleId)) {
-                persistSentenceAnalysis(sentence, context, data, targetArticleId);
+            // 已切換到其他文章或正文已改版：結果只寫回原文章，不再更新目前畫面
+            if (!canUpdateView(card)) {
+                persistSentenceAnalysis(sentence, context, data, targetArticleId, articleContextSnapshot, { contentVersion, actionContext });
+                readingActions.recordExplanation({ articleId: targetArticleId, kind: 'sentence', quote: sentence, sentence, context, data, markViewed: false, anchor: sentenceAnchor, contentVersion, actionContext }).catch(() => {});
                 return;
             }
-            renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx);
+            renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx, targetArticleId);
             // 持久化句子解析（寫回請求開始時所屬的文章）
-            persistSentenceAnalysis(sentence, context, data, targetArticleId);
+            persistSentenceAnalysis(sentence, context, data, targetArticleId, articleContextSnapshot, { contentVersion, actionContext });
+            readingActions.recordExplanation({ articleId: targetArticleId, kind: 'sentence', quote: sentence, sentence, context, data, markViewed: true, anchor: sentenceAnchor, contentVersion, actionContext }).catch(() => {});
         } catch (e) {
-            if (!isCurrentArticle(targetArticleId)) return;
+            if (!canUpdateView(card)) return;
             card.classList.add('is-error');
             card.textContent = t('article.analysisRetry');
         }
@@ -4587,18 +5147,31 @@ async function toggleSentenceCard(sentenceEl) {
     }
     card = document.createElement('div');
     card.className = 'sentence-card is-inline';
+    stampSentenceCardTarget(card, targetArticleId, contentVersion, sentenceAnchor, {
+        sentence, context, paraIdx, sentIdx,
+        articleContext: articleContextSnapshot,
+        actionContext
+    });
     card.innerHTML = sentenceCardLoadingHtml(paraIdx, sentIdx);
     sentenceEl.after(card);
 
+    const savedInlineItem = readingActions.findSavedItem(targetArticleId, 'sentence', sentence, sentence, { anchor: sentenceAnchor, contentVersion });
+    if (savedInlineItem && savedInlineItem.explanation && savedInlineItem.explanation.result) {
+        renderSentenceCard(card, savedInlineItem.explanation.result, sentence, context, paraIdx, sentIdx, targetArticleId);
+        if (canUpdateView(card)) readingStore.markLearningItemViewed(savedInlineItem.id).catch(() => {});
+        return;
+    }
     try {
         const data = await analyzeSentenceDedupe(sentence, context, { timeoutMs: 22000, conciseKeypoints: true, includeStructure: true });
-        if (!isCurrentArticle(targetArticleId)) {
-            persistSentenceAnalysis(sentence, context, data, targetArticleId);
+        if (!canUpdateView(card)) {
+            persistSentenceAnalysis(sentence, context, data, targetArticleId, articleContextSnapshot, { contentVersion, actionContext });
+            readingActions.recordExplanation({ articleId: targetArticleId, kind: 'sentence', quote: sentence, sentence, context, data, markViewed: false, anchor: sentenceAnchor, contentVersion, actionContext }).catch(() => {});
             return;
         }
-        renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx);
+        renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx, targetArticleId);
         // 持久化句子解析（寫回請求開始時所屬的文章）
-        persistSentenceAnalysis(sentence, context, data, targetArticleId);
+        persistSentenceAnalysis(sentence, context, data, targetArticleId, articleContextSnapshot, { contentVersion, actionContext });
+        readingActions.recordExplanation({ articleId: targetArticleId, kind: 'sentence', quote: sentence, sentence, context, data, markViewed: true, anchor: sentenceAnchor, contentVersion, actionContext }).catch(() => {});
         // 首次渲染即整句高亮
         applySentenceHighlight(paraIdx, sentIdx, true);
         // 片語級標記已移除，僅保留整句高亮
@@ -4615,14 +5188,24 @@ async function toggleSentenceCard(sentenceEl) {
             card.innerHTML = `${t('article.wordAnalysisFailed')}<button class="retry-sentence-btn">${t('article.retry')}</button>`;
         const btn = card.querySelector('.retry-sentence-btn');
         if (btn) btn.addEventListener('click', async () => {
+            const retryTarget = sentenceCardTarget(card);
+            if (sentenceCardTargetStale(retryTarget)) {
+                ui.displayMessage(t('article.staleSentenceCard'), 'warning');
+                return;
+            }
             btn.disabled = true; btn.textContent = t('article.retrying');
-            try { const data = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true, includeStructure: true }); renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx); applySentenceHighlight(paraIdx, sentIdx, true); }
+            try {
+                const data = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true, includeStructure: true });
+                if (!card.isConnected || sentenceCardTargetStale(retryTarget)) return;
+                renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx, retryTarget.articleId);
+                applySentenceHighlight(paraIdx, sentIdx, true);
+            }
             catch { btn.disabled = false; btn.textContent = t('article.retry'); }
         });
     }
 }
 
-function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
+function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx, targetArticleId = articleContext.recordId || '') {
     const esc = escapeHtml;
     const translation = esc(data.translation || '');
     const chunks = Array.isArray(data.chunks) ? data.chunks : [];
@@ -4644,7 +5227,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     card.dataset.sentence = sentence;
     card.dataset.context = context;
     // 請求所屬文章固定在卡片上，之後的片語詳解一律寫回這一篇
-    card.dataset.articleId = articleContext.recordId || '';
+    card.dataset.articleId = targetArticleId || '';
 
     card.innerHTML = `
         <div class="sentence-card-head">
@@ -4667,6 +5250,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         ${filteredPoints.length? `<ul class="sentence-points">`
             + filteredPoints.slice(0,6).map(p=>`<li>${esc(p)}</li>`).join('') + `</ul>` : ''}
         <div class="sent-footer">
+            <button class="btn-ghost btn-mini sent-pick-phrase">${t('article.pickPhrase')}</button>
             <button class="btn-ghost btn-mini analyze-selection">${t('article.analyzeSelection')}</button>
             <small>${t('article.selectPhraseHint')}</small>
         </div>
@@ -4680,6 +5264,24 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
     }
     const head = card.querySelector('.sentence-card-head');
     const selBtn = card.querySelector('.analyze-selection');
+    const pickBtn = card.querySelector('.sent-pick-phrase');
+    if (pickBtn) pickBtn.addEventListener('click', () => {
+        const pickTarget = sentenceCardTarget(card);
+        if (sentenceCardTargetStale(pickTarget)) {
+            ui.displayMessage(t('article.staleSentenceCard'), 'warning');
+            return;
+        }
+        const sourceSentence = dom.articleAnalysisContainer.querySelector(`.interactive-sentence[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
+        openPhrasePicker({
+            articleId: pickTarget.articleId,
+            sentence,
+            context,
+            // 舊卡用自己凍結的 occurrence，不用目前 DOM 重算的位置。
+            sentenceStart: pickTarget.anchor && pickTarget.anchor.start >= 0
+                ? pickTarget.anchor.start
+                : sourceStartForSentence(sourceSentence)
+        });
+    });
     if (collapse) collapse.addEventListener('click', (ev)=> {
         // 避免事件冒泡到標題列或 overlay 造成重複觸發
         ev.stopPropagation();
@@ -4734,18 +5336,53 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         }
     } catch (_) {}
     if (refresh) refresh.addEventListener('click', async ()=>{
+        // 卡片建立時已凍結歸屬；正文改版後舊卡不得再發請求或改寫成目前版本。
+        const refreshTarget = sentenceCardTarget(card);
+        if (sentenceCardTargetStale(refreshTarget)) {
+            ui.displayMessage(t('article.staleSentenceCard'), 'warning');
+            return;
+        }
         refresh.disabled = true; refresh.textContent = t('article.refreshing');
-        try { const fresh = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true }); renderSentenceCard(card, fresh, sentence, context, paraIdx, sentIdx); persistSentenceAnalysis(sentence, context, fresh, sentenceEl.getAttribute('data-article-id') || ''); }
+        // 請求前凍結：文章、帳戶、版本與「這張卡自己的」occurrence。
+        // 重複句子不可在 await 後用最新正文重算，否則會寫到另一處或 -1。
+        const refreshArticleId = refreshTarget.articleId;
+        const refreshArticleCtx = refreshTarget.articleContext || articleStore.captureArticleContext();
+        const refreshActionCtx = refreshTarget.actionContext || readingActions.captureActionContext();
+        const refreshVersion = refreshTarget.contentVersion;
+        const refreshAnchor = refreshTarget.anchor
+            || readingActions.resolveAnchor(refreshArticleId, sentence, sentence);
+        try {
+            const fresh = await api.analyzeSentence(sentence, context, { timeoutMs: 22000, noCache: true, conciseKeypoints: true });
+            // 只更新仍連在畫面上、帳戶／文章／版本都還有效的原卡片。
+            const stillValid = card.isConnected
+                && !sentenceCardTargetStale(refreshTarget)
+                && isCurrentArticle(refreshArticleId);
+            if (stillValid) renderSentenceCard(card, fresh, sentence, context, paraIdx, sentIdx, refreshArticleId);
+            persistSentenceAnalysis(sentence, context, fresh, refreshArticleId, refreshArticleCtx, { contentVersion: refreshVersion, actionContext: refreshActionCtx });
+            readingActions.recordExplanation({ articleId: refreshArticleId, kind: 'sentence', quote: sentence, sentence, context, data: fresh, markViewed: stillValid, anchor: refreshAnchor, contentVersion: refreshVersion, actionContext: refreshActionCtx }).catch(() => {});
+        }
         finally { refresh.disabled = false; refresh.textContent = t('article.refresh'); }
     });
     if (selBtn) selBtn.addEventListener('click', async ()=>{
-        const sentenceEl = card.previousElementSibling;
         const selection = window.getSelection();
         const text = (selection && selection.toString && selection.toString().trim()) || '';
         if (!text) { ui.displayMessage(t('article.selectPhraseFirst'), 'warning'); return; }
+        // 舊卡的正文版本已失效：不得把選中的內容歸到目前版本／帳戶。
+        const phraseTarget = sentenceCardTarget(card);
+        if (sentenceCardTargetStale(phraseTarget)) {
+            ui.displayMessage(t('article.staleSentenceCard'), 'warning');
+            return;
+        }
         selBtn.disabled = true; selBtn.textContent = t('article.analyzingSelection');
         try {
-            const res = await api.analyzeSelection(text, sentence, context, { timeoutMs: 15000 });
+            const targetArticle = phraseTarget.articleId;
+            const phraseArticleCtx = phraseTarget.articleContext || articleStore.captureArticleContext();
+            const phraseActionCtx = phraseTarget.actionContext || readingActions.captureActionContext();
+            const phraseVersion = phraseTarget.contentVersion;
+            const phraseAnchor = sentencePhraseAnchor(phraseTarget, text)
+                || readingActions.resolveAnchor(targetArticle, text, sentence);
+            const res = await analyzePhraseWithSaved(text, sentence, context, targetArticle, true, { anchor: phraseAnchor, contentVersion: phraseVersion, actionContext: phraseActionCtx });
+            if (!card.isConnected || sentenceCardTargetStale(phraseTarget)) return;
             const box = document.createElement('div');
             box.className = 'phrase-result';
             box.innerHTML = `<div class="phrase-result-title">${t('article.phraseLabel')}${esc(res.selection||text)}</div>
@@ -4753,8 +5390,8 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
                              ${res.analysis?.usage? `<div class="phrase-result-usage">${t('article.usageLabel')}${esc(res.analysis.usage)}</div>`:''}
                              ${Array.isArray(res.analysis?.examples) && res.analysis.examples.length? '<div class="phrase-result-examples">' + res.analysis.examples.slice(0,2).map(ex=>`<div>• ${esc(ex.en)} — ${esc(ex.zh)}</div>`).join('') + '</div>' : ''}`;
             card.appendChild(box);
-            // 持久化片語解析
-            try { persistPhraseAnalysis(text, sentence, context, res); } catch (_) {}
+            // 持久化片語解析（版本／帳戶沿用請求前凍結值）
+            try { persistPhraseAnalysis(text, sentence, context, res, targetArticle, phraseArticleCtx, { contentVersion: phraseVersion, actionContext: phraseActionCtx }); } catch (_) {}
         } catch (e) {
             ui.displayMessage(t('article.analysisRetry'), 'warning');
         } finally {
@@ -4772,11 +5409,30 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx) {
         const selection = window.getSelection();
         const text = (selection && selection.toString && selection.toString().trim()) || '';
         if (!text) { ui.displayMessage(t('article.selectWordOrPhrase'), 'warning'); return; }
+        // 舊卡的正文版本已失效：不得把選中的內容記到目前版本／帳戶。
+        const bookTarget = sentenceCardTarget(card);
+        if (sentenceCardTargetStale(bookTarget)) {
+            ui.displayMessage(t('article.staleSentenceCard'), 'warning');
+            return;
+        }
         const prev = addBtn.textContent;
         addBtn.disabled = true; addBtn.textContent = t('qa.adding'); addBtn.setAttribute('aria-busy','true');
         try {
             const mod = await import('../../modules/vocab.js');
-            const res = await mod.addWordToCurrentArticleBook(text, { source: 'article', sentence, context });
+            if (!card.isConnected || sentenceCardTargetStale(bookTarget)) {
+                ui.displayMessage(t('article.staleSentenceCard'), 'warning');
+                return;
+            }
+            const phraseAnchor = sentencePhraseAnchor(bookTarget, text) || undefined;
+            const res = await mod.addWordToCurrentArticleBook(text, {
+                source: 'article',
+                sentence,
+                context,
+                articleId: bookTarget.articleId,
+                contentVersion: bookTarget.contentVersion,
+                anchor: phraseAnchor,
+                kind: /\s/.test(text) ? 'phrase' : 'word'
+            });
             addBtn.textContent = (res && res.reason === 'duplicate') ? t('qa.exists') : t('qa.added');
         } catch (err) {
             console.warn('加入生詞本失敗:', err);

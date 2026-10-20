@@ -1,0 +1,125 @@
+[
+  {
+    "name": "zh-CN-1440 two repeated words visible",
+    "pass": true
+  },
+  {
+    "name": "zh-CN-1440 lookup alone does not underline",
+    "pass": true
+  },
+  {
+    "name": "zh-CN-1440 manual mark is exact second occurrence",
+    "pass": true,
+    "detail": [
+      false,
+      true
+    ]
+  },
+  {
+    "name": "zh-CN-1440 reopened second popup displays Cancel mark",
+    "pass": true,
+    "detail": "取消标记"
+  },
+  {
+    "name": "zh-CN-1440 write-note focuses exact note field",
+    "pass": true,
+    "detail": {
+      "tag": "TEXTAREA",
+      "id": "li_cv1_4676db94_50"
+    }
+  },
+  {
+    "name": "zh-CN-1440 unmark preserves typed note",
+    "pass": true
+  },
+  {
+    "name": "zh-CN-1440 old understanding controls removed",
+    "pass": true
+  },
+  {
+    "name": "zh-CN-1440 page has no horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "zh-HK-390 two repeated words visible",
+    "pass": true
+  },
+  {
+    "name": "zh-HK-390 lookup alone does not underline",
+    "pass": true
+  },
+  {
+    "name": "zh-HK-390 manual mark is exact second occurrence",
+    "pass": true,
+    "detail": [
+      false,
+      true
+    ]
+  },
+  {
+    "name": "zh-HK-390 reopened second popup displays Cancel mark",
+    "pass": true,
+    "detail": "取消標記"
+  },
+  {
+    "name": "zh-HK-390 write-note focuses exact note field",
+    "pass": true,
+    "detail": {
+      "tag": "TEXTAREA",
+      "id": "li_cv1_4676db94_50"
+    }
+  },
+  {
+    "name": "zh-HK-390 unmark preserves typed note",
+    "pass": true
+  },
+  {
+    "name": "zh-HK-390 old understanding controls removed",
+    "pass": true
+  },
+  {
+    "name": "zh-HK-390 page has no horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "zh-CN-320 two repeated words visible",
+    "pass": true
+  },
+  {
+    "name": "zh-CN-320 lookup alone does not underline",
+    "pass": true
+  },
+  {
+    "name": "zh-CN-320 manual mark is exact second occurrence",
+    "pass": true,
+    "detail": [
+      false,
+      true
+    ]
+  },
+  {
+    "name": "zh-CN-320 reopened second popup displays Cancel mark",
+    "pass": true,
+    "detail": "取消标记"
+  },
+  {
+    "name": "zh-CN-320 write-note focuses exact note field",
+    "pass": true,
+    "detail": {
+      "tag": "TEXTAREA",
+      "id": "li_cv1_4676db94_50"
+    }
+  },
+  {
+    "name": "zh-CN-320 unmark preserves typed note",
+    "pass": true
+  },
+  {
+    "name": "zh-CN-320 old understanding controls removed",
+    "pass": true
+  },
+  {
+    "name": "zh-CN-320 page has no horizontal overflow",
+    "pass": true
+  }
+]

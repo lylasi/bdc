@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Markdown export aborts with stale_scope instead of mixing account B vocabulary",
+    "ok": true
+  },
+  {
+    "name": "full JSON backup aborts with stale_scope after account switch",
+    "ok": true
+  },
+  {
+    "name": "full backup exports articles even when reading/article generations differ",
+    "ok": true
+  },
+  {
+    "name": "full backup fails instead of returning empty articles when scope changes during article export",
+    "ok": true
+  },
+  {
+    "name": "same quote across occurrences/versions is not deduplicated away",
+    "ok": true
+  }
+]

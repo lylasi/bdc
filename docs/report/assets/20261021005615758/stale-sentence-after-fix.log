@@ -1,0 +1,6 @@
+DBGCONSOLE warning [sync] syncNowBtn not found
+  ok   stale card refresh retains its original version or is blocked
+  ok   stale card refresh cannot contaminate current analysis
+  ok   流程沒有 page error
+
+文章版本歸屬回歸測試全部通過

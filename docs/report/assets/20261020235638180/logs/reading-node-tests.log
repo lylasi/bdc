@@ -1,0 +1,19 @@
+✔ 共用三方合併：不同欄位可合併、同欄位保留衝突 (0.689708ms)
+✔ 引用定位：唯一匹配才回傳精確位置，歧義保留待確認 (0.115042ms)
+✔ mutation 驗證拒絕未知型別與超大 patch (0.239083ms)
+✔ Worker D1 與 selfhost HTTP 的逐項同步行為一致 (136.035333ms)
+✔ 同一 mutation 同 payload 並發：第二個回執仍有完整 revision/record (15.956958ms)
+✔ 同一 mutation 不同 payload 並發：只有一個成功且只寫一筆 (2.700708ms)
+✔ 同一 mutation 不同 entityId 並發：不得新增第二個實體或 change (1.958583ms)
+✔ 重試只改傳輸時間不回報 mutation mismatch，且保留完整回執 (1.553625ms)
+✔ 業務指紋忽略鍵順序與傳輸時間，但不忽略 payload / entity (0.134334ms)
+✔ AI 來源與詞書來源欄位不被裁切 (0.379167ms)
+✔ marked 是明確布林值：true 與 false 都不被裁切 (0.053083ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 186.607791

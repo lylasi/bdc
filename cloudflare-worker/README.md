@@ -51,6 +51,32 @@ npx wrangler deploy
 
 全新資料庫可直接執行 `schema.sql`，再設定秘密與管理員。
 
+### `PASSWORD_PEPPER`（使用者名稱＋密碼）
+
+`PASSWORD_PEPPER` 是伺服器端秘密，至少 32 字元；未設定時 `/auth-capabilities` 回報 `passwordLogin: false`，前端隱藏密碼登入。
+
+**會用到 pepper 的情況：**
+
+- 使用者以「使用者名稱＋密碼」登入（`POST /login`）。
+- 管理員建立使用者或設定／重設密碼（`POST /admin/users`、`PUT /admin/users/:id`）。
+- 使用者自行修改密碼（`POST /change-password`）。
+- `/auth-capabilities` 只檢查是否已配置，不使用內容。
+
+**不會用到 pepper 的情況：**
+
+- 通行碼登入、一次性登入碼。
+- 學習資料同步、AI 功能。
+- `npx wrangler deploy`：secret 會保留，不需要每次重新設定。
+
+**保管與復原：**
+
+- 正式值只存在 Worker secret；另存在密碼管理器或 2FA 應用程式的安全筆記。
+- `wrangler d1 export` 不包含 pepper。只還原 D1 無法恢復密碼登入，必須同時保有 pepper。
+- 重建 Worker、搬遷帳號或災難復原時，用同一個值重新 `wrangler secret put PASSWORD_PEPPER`。
+- 不要無故覆蓋成不同值；這會讓所有既有密碼立即失效。
+- 遺失 pepper：通行碼與登入碼仍可用，管理員需逐一重設使用者密碼。
+- 洩露 pepper：立即更換並重設所有密碼；目前沒有平滑輪換機制。
+
 ### 通行碼規則
 
 憑證與預設 Key 接口**拒絕少於 32 字元**的舊通行碼（回 `403 passcode_upgrade_required`）。建立或重設使用者請用新的產生器：

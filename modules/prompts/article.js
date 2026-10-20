@@ -141,3 +141,39 @@ Phrase: \${selection}
 Sentence: \${sentence}`
     }
 };
+
+/**
+ * Prompt ID: article.readingSummary
+ * 對應功能：文章閱讀檔案 → 分析本文難點／整理閱讀筆記
+ * 呼叫位置：modules/reading-actions.js → generateReadingDocument()
+ * AI taskType：article
+ * 輸出格式：Markdown（不是 JSON）
+ * 語言策略：跟隨介面語言
+ */
+export const readingSummaryPrompt = {
+    id: 'article.readingSummary',
+    version: '1.1.0',
+    languagePolicy: 'follow-interface',
+    template: `You are an English-reading study assistant. The user selected the records below from one article's reading file.
+
+Task mode: \${mode}
+Article title: \${title}
+Article source: \${source}
+Original content version: \${contentVersion}
+
+Selected records (these are the only facts you may rely on; preserve names, quotes and user notes):
+"""
+\${records}
+"""
+
+Rules:
+- Return Markdown only, without a code fence.
+- Use headings and short lists. Keep every quoted original sentence exactly as written.
+- Do not invent vocabulary meanings, grammar rules, or events that are not supported by the records.
+- Each record states "marked: yes/no". A mark only means the user chose to pay attention to that item; it never means the user understood or did not understand it. Do not infer comprehension, difficulty or learning progress from a mark.
+- Treat personal notes as the user's own words. Do not rewrite them as facts about the article or about the user's understanding.
+- If mode is "difficulties", organize by the marked items and personal notes, and suggest 3-6 checking questions without assuming the user does not understand them.
+- If mode is "notes", organize into: overview, vocabulary/phrases, key sentences, personal notes, open questions, and selected AI material.
+- Clearly separate "saved AI material" from the user's own notes.
+`
+};

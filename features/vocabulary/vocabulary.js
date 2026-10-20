@@ -482,7 +482,11 @@ async function runCompleteMissing(book, missingList) {
     });
     await Promise.all(workers);
 
-    try { storage.saveVocabularyBooks(); } catch(_) {}
+    const saved = await storage.saveVocabularyBooks();
+    if (!saved.ok) {
+        if (progress) progress.innerHTML = `<p style="color:red;">${t('vocabulary.permanentSaveFailed', { message: saved.error || '' })}</p>`;
+        return;
+    }
     if (progress) progress.innerHTML = `<p style="color:green;">${t('vocabulary.completeResult', { updated, skipped })}</p>`;
     setTimeout(() => { ui.closeModal(); renderWordList(); }, 600);
 }
@@ -790,7 +794,11 @@ async function importVocabularySources(sources, options = {}) {
     }
 
     if (successCount > 0) {
-        storage.saveVocabularyBooks();
+        const saved = await storage.saveVocabularyBooks();
+        if (!saved.ok) {
+            onStatus(t('vocabulary.permanentSaveFailed', { message: saved.error || '' }), { type: 'error' });
+            return { successCount: 0, summary, error: saved.error };
+        }
         renderVocabBookList();
         updateActiveBookView();
     }
@@ -940,7 +948,11 @@ async function saveBookWithAICompletion(bookId = null) {
         state.setActiveBookId(book.id);
     }
 
-    storage.saveVocabularyBooks();
+    const saved = await storage.saveVocabularyBooks();
+    if (!saved.ok) {
+        ui.displayMessage(t('vocabulary.permanentSaveFailed', { message: saved.error || '' }), 'error', 7000);
+        return;
+    }
     renderVocabBookList();
     updateActiveBookView();
     ui.closeModal();
@@ -1000,7 +1012,11 @@ async function deleteActiveVocabBook() {
     if (state.currentWordbookId === removedId) {
         state.setCurrentWordbookId(null);
     }
-    storage.saveVocabularyBooks();
+    const saved = await storage.saveVocabularyBooks();
+    if (!saved.ok) {
+        ui.displayMessage(t('vocabulary.permanentSaveFailed', { message: saved.error || '' }), 'error', 6000);
+        return;
+    }
     storage.saveAppState();
     renderVocabBookList();
     updateActiveBookView();
@@ -1177,7 +1193,7 @@ function updateMergePreview() {
     confirmBtn.disabled = !(selectedItems.length >= 2 && newBookName);
 }
 
-function mergeSelectedBooks() {
+async function mergeSelectedBooks() {
     const selectedItems = document.querySelectorAll('.import-preset-item-wrapper.selected');
     const newBookName = document.getElementById('modal-merge-book-name').value.trim();
     const removeSources = document.getElementById('merge-remove-sources')?.checked;
@@ -1224,7 +1240,11 @@ function mergeSelectedBooks() {
     state.setVocabularyBooks(nextBooks);
     state.setActiveBookId(newBook.id);
 
-    storage.saveVocabularyBooks();
+    const saved = await storage.saveVocabularyBooks();
+    if (!saved.ok) {
+        ui.displayMessage(t('vocabulary.permanentSaveFailed', { message: saved.error || '' }), 'error', 6000);
+        return;
+    }
     storage.saveAppState();
     renderVocabBookList();
     updateActiveBookView();

@@ -1,0 +1,29 @@
+[
+  {
+    "name": "late word response cannot replace newer selected word",
+    "pass": true,
+    "detail": "forward (adv.)"
+  },
+  {
+    "name": "late response retains original version or is ignored",
+    "pass": true,
+    "detail": [
+      {
+        "version": "cv1_7019bacf_64",
+        "start": 19
+      }
+    ]
+  },
+  {
+    "name": "old-version response does not contaminate current article analysis",
+    "pass": true,
+    "detail": [
+      "forward"
+    ]
+  },
+  {
+    "name": "late response cannot write into switched account with same article ID",
+    "pass": true,
+    "detail": []
+  }
+]

@@ -1,0 +1,3 @@
+PASS native selection marks second occurrence 
+PASS new unmarked selection resets button state "标记"
+PASS marked selection displays cancel "取消标记"

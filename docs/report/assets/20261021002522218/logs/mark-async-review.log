@@ -1,0 +1,3 @@
+PASS late word response cannot replace newer selected word "forward (adv.)"
+PASS late response retains original version or is ignored [{"version":"cv1_7019bacf_64","start":19}]
+PASS late response cannot write into switched account with same article ID []

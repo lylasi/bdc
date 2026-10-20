@@ -21,13 +21,19 @@ import {
     normalizeSourceType,
     parseAnalysis
 } from '../shared/article-protocol.mjs';
+import { contentVersionOf } from '../shared/reading-protocol.mjs';
+import {
+    openPermanentDb,
+    applyPermanentOperations,
+    summarizeArticleDoc,
+    STORE
+} from './permanent-db.js';
 
-const DB_NAME = 'bdc-articles';
-const DB_VERSION = 1;
-const STORE_DOCS = 'docs';
-const STORE_OUTBOX = 'outbox';
-const STORE_STATE = 'state';
-const STORE_DRAFTS = 'drafts';
+const STORE_DOCS = STORE.DOCS;
+const STORE_ARTICLE_SUMMARIES = STORE.ARTICLE_SUMMARIES;
+const STORE_OUTBOX = STORE.OUTBOX;
+const STORE_STATE = STORE.STATE;
+const STORE_DRAFTS = STORE.DRAFTS;
 const FALLBACK_PREFIX = 'bdc:articles:fallback:v1:';
 const MIGRATION_MARKER_PREFIX = 'bdc:articles:migrated:v1:';
 const TOKEN_KEY = 'sync_token';
@@ -36,6 +42,9 @@ const USER_ID_KEY = 'sync_user_id';
 let dbPromise = null;
 let fallbackMode = false;
 let currentScope = '';
+// 每次真正切換 scope 就遞增；非同步工作完成後必須同時核對 scope 與世代，
+// 才能避免 A→B→A 時舊任務誤以為仍在原本帳戶。
+let scopeGeneration = 0;
 let meta = {
     cursor: 0,
     migrated: false,
@@ -47,6 +56,35 @@ let meta = {
     persistenceError: ''
 };
 let opSeq = 0;
+// 每次本機寫入提交就遞增；同一 scope 的 reload 若在讀取期間有新寫入，
+// 必須重新讀一次，不能用較早的摘要覆蓋剛保存的內容。
+let dataEpoch = 0;
+// 目前 scope 已載入全文的文章；正常啟動只有清單摘要，開文章才補這一篇。
+const loadedDocs = new Map();
+const loadingDocs = new Map();
+// 已載入過的全文依 scope 快取。切帳戶再切回來時可還原已讀文章，
+// 但不預先讀取其他文章；只有 contentVersion 仍一致才使用。
+const docCache = new Map();
+const DOC_CACHE_LIMIT = 60;
+
+function cacheDoc(doc) {
+    if (!doc || !doc.scope || !doc.id) return;
+    const key = docKey(doc.scope, doc.id);
+    docCache.delete(key);
+    docCache.set(key, doc);
+    while (docCache.size > DOC_CACHE_LIMIT) {
+        const oldest = docCache.keys().next().value;
+        docCache.delete(oldest);
+    }
+}
+
+function cachedDoc(scope, summary) {
+    if (!summary || !summary.articleId) return null;
+    const doc = docCache.get(docKey(scope, summary.articleId));
+    if (!doc || doc.deletedAt) return null;
+    if (contentVersionOf(doc.body || '') !== summary.contentVersion) return null;
+    return doc;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 範圍（endpoint + user）
@@ -68,8 +106,30 @@ export function getArticleScope() {
     return currentScope || `${endpoint() || 'local'}::${storedUser() || 'guest'}`;
 }
 
+export function getScopeGeneration() {
+    return scopeGeneration;
+}
+
+/** 非同步入口同步捕捉 scope 與世代；所有 await 後只能使用這份上下文。 */
+export function captureArticleContext(extra = {}) {
+    return { scope: getArticleScope(), generation: scopeGeneration, ...extra };
+}
+
+export function isArticleContextActive(ctx) {
+    if (!ctx || !ctx.scope) return false;
+    return ctx.scope === getArticleScope() && ctx.generation === scopeGeneration;
+}
+
+function staleResult(extra = {}) {
+    return { ok: false, error: 'stale_scope', staleScope: true, ...extra };
+}
+
 export function isGuestScope() {
     return !storedUser();
+}
+
+export function getGuestScope() {
+    return `${endpoint() || 'local'}::guest`;
 }
 
 function scopeIsLoggedIn() {
@@ -85,63 +145,50 @@ function migrationMarkerKey(scope) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function openDb() {
-    if (typeof indexedDB === 'undefined') return Promise.resolve(null);
     if (dbPromise) return dbPromise;
-    dbPromise = new Promise((resolve) => {
-        let request;
-        try {
-            request = indexedDB.open(DB_NAME, DB_VERSION);
-        } catch (_) {
-            resolve(null);
-            return;
-        }
-        request.onupgradeneeded = () => {
-            const db = request.result;
-            if (!db.objectStoreNames.contains(STORE_DOCS)) {
-                const docs = db.createObjectStore(STORE_DOCS, { keyPath: 'key' });
-                docs.createIndex('scope', 'scope', { unique: false });
-            }
-            if (!db.objectStoreNames.contains(STORE_OUTBOX)) {
-                const outbox = db.createObjectStore(STORE_OUTBOX, { keyPath: 'key' });
-                outbox.createIndex('scope', 'scope', { unique: false });
-            }
-            if (!db.objectStoreNames.contains(STORE_STATE)) {
-                db.createObjectStore(STORE_STATE, { keyPath: 'scope' });
-            }
-            if (!db.objectStoreNames.contains(STORE_DRAFTS)) {
-                db.createObjectStore(STORE_DRAFTS, { keyPath: 'scope' });
-            }
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => resolve(null);
-        request.onblocked = () => resolve(null);
-    });
+    dbPromise = openPermanentDb();
     return dbPromise;
 }
 
 /**
- * 在指定 object store 上執行一次交易。
- * `run(store)` 可以回傳 null（寫入）或一個 Promise（讀取），交易完成後才解析，
- * 因此「寫入成功」代表資料真的落到 IndexedDB，而不是只排進佇列。
+ * 在指定 object store（可多個）上執行一次交易。
+ * `run(storeOrStores)` 可以回傳 null（寫入）或一個 Promise（讀取／讀改寫），
+ * 交易完成後才解析；同步丟出的例外會主動 abort，不留下半套寫入。
+ * 傳入 guard 時，交易建立／發出 request 前會再核對 scope 與世代。
  */
-async function idbRequest(storeName, mode, run) {
+async function idbRequest(storeNames, mode, run, guard = null) {
     const db = await openDb();
     if (!db) return { ok: false, error: 'idb_unavailable' };
+    if (guard && !isArticleContextActive(guard)) return staleResult();
+    const names = Array.isArray(storeNames) ? storeNames : [storeNames];
     return new Promise((resolve) => {
         let tx;
         try {
-            tx = db.transaction(storeName, mode);
+            tx = db.transaction(names, mode);
         } catch (error) {
             resolve({ ok: false, error: 'idb_transaction_failed' });
             return;
         }
-        const store = tx.objectStore(storeName);
+        const stores = {};
+        for (const name of names) stores[name] = tx.objectStore(name);
+        // 交易建立後、真正發出 request 前再核對一次；切帳戶後舊工作不得
+        // 用新 scope 的 key 寫入。
+        if (guard && !isArticleContextActive(guard)) {
+            try { tx.abort(); } catch (_) {}
+            resolve(staleResult());
+            return;
+        }
         let pending;
         try {
-            pending = run(store);
+            pending = run(Array.isArray(storeNames) ? stores : stores[names[0]], tx);
         } catch (error) {
-            resolve({ ok: false, error: 'idb_request_failed' });
+            try { tx.abort(); } catch (_) {}
+            resolve({ ok: false, error: 'idb_request_failed', detail: error && (error.name + ': ' + error.message) });
             return;
+        }
+        if (pending && typeof pending.catch === 'function') {
+            // 讀改寫失敗時 abort，不能讓先前的 put 獨自提交。
+            pending.catch(() => { try { tx.abort(); } catch (_) {} });
         }
         tx.oncomplete = async () => {
             let value = pending;
@@ -150,8 +197,14 @@ async function idbRequest(storeName, mode, run) {
             }
             resolve({ ok: true, value });
         };
-        tx.onerror = () => resolve({ ok: false, error: 'idb_write_failed' });
-        tx.onabort = () => resolve({ ok: false, error: 'idb_aborted' });
+        tx.onerror = () => {
+            if (pending && typeof pending.catch === 'function') pending.catch(() => {});
+            resolve({ ok: false, error: 'idb_write_failed' });
+        };
+        tx.onabort = () => {
+            if (pending && typeof pending.catch === 'function') pending.catch(() => {});
+            resolve({ ok: false, error: 'idb_aborted' });
+        };
     });
 }
 
@@ -212,6 +265,34 @@ function emitChange() {
     } catch (_) {}
 }
 
+function toSummaryRecord(summary) {
+    if (!summary || !summary.articleId) return null;
+    return {
+        articleId: summary.articleId,
+        article: '',
+        result: null,
+        title: summary.title || '',
+        sourceType: summary.sourceType || 'paste',
+        sourceUrl: summary.sourceUrl || '',
+        revision: Number(summary.revision) || 0,
+        createdAt: summary.createdAt || '',
+        updatedAt: summary.updatedAt || '',
+        lastOpenedAt: summary.lastOpenedAt || '',
+        deletedAt: summary.deletedAt || '',
+        dirty: !!summary.dirty,
+        pending: !!summary.pending,
+        conflict: summary.conflict || null,
+        sizeBytes: Number(summary.sizeBytes) || 0,
+        excerpt: summary.excerpt || '',
+        bodyChars: Number(summary.bodyChars) || 0,
+        contentVersion: summary.contentVersion || '',
+        analysisChars: Number(summary.analysisChars) || 0,
+        hasAnalysis: summary.hasAnalysis === true,
+        failedParagraphs: Number(summary.failedParagraphs) || 0,
+        summaryOnly: true
+    };
+}
+
 function toRecord(doc) {
     if (!doc) return null;
     return {
@@ -229,7 +310,8 @@ function toRecord(doc) {
         dirty: !!doc.dirty,
         pending: !!doc.pending,
         conflict: doc.conflict || null,
-        sizeBytes: Number(doc.sizeBytes) || 0
+        sizeBytes: Number(doc.sizeBytes) || 0,
+        summaryOnly: false
     };
 }
 
@@ -273,31 +355,148 @@ function dropRecord(id) {
     state.setAnalyzedArticles(list);
 }
 
-async function persistDoc(record) {
-    const scope = getArticleScope();
-    const doc = toDoc(record, scope);
-    const result = await idbRequest(STORE_DOCS, 'readwrite', (store) => { store.put(doc); return null; });
-    if (result.ok) return { ok: true, doc };
-    // 退回 localStorage（容量有限但不可靜默丟資料）
+function fallbackDocWrite(scope, doc, outboxOp = null) {
     const bucket = fallbackRead(scope);
-    bucket.docs = bucket.docs.filter((item) => item.id !== record.articleId);
+    bucket.docs = (bucket.docs || []).filter((item) => item.id !== doc.id);
     bucket.docs.push(doc);
+    if (outboxOp) {
+        bucket.outbox = (bucket.outbox || []).filter((item) => item.articleId !== outboxOp.articleId);
+        bucket.outbox.push(outboxOp);
+    }
     bucket.state = { ...(bucket.state || {}), ...serializeMeta() };
     if (!fallbackWrite(scope, bucket)) {
         meta.persistenceError = 'storage_full';
         return { ok: false, error: 'storage_full' };
     }
     meta.persistenceError = '';
-    return { ok: true, doc, fallback: true };
+    return { ok: true, doc, ...(outboxOp ? { op: outboxOp } : {}), fallback: true };
 }
 
-async function deleteDoc(id) {
-    const scope = getArticleScope();
-    const result = await idbRequest(STORE_DOCS, 'readwrite', (store) => { store.delete(docKey(scope, id)); return null; });
-    if (result.ok) return { ok: true };
-    const bucket = fallbackRead(scope);
-    bucket.docs = bucket.docs.filter((item) => item.id !== id);
-    return fallbackWrite(scope, bucket) ? { ok: true, fallback: true } : { ok: false, error: 'storage_full' };
+async function persistDoc(record, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
+    const doc = toDoc(record, scope);
+    if (fallbackMode) {
+        const written = fallbackDocWrite(scope, doc);
+        if (written.ok) { dataEpoch += 1; cacheDoc(doc); loadedDocs.set(record.articleId, doc); }
+        return written;
+    }
+    // docs 與 article_summaries 必須在同一個交易：callback 內若 store 不在
+    // 交易 scope，會同步拋出 NotFoundError，交易 abort，不能只寫了一半。
+    const result = await idbRequest([STORE_DOCS, STORE_ARTICLE_SUMMARIES], 'readwrite', (stores) => {
+        stores[STORE_DOCS].put(doc);
+        const summary = summarizeArticleDoc(doc);
+        if (summary) stores[STORE_ARTICLE_SUMMARIES].put(summary);
+        return null;
+    }, ctx);
+    if (result.ok) {
+        dataEpoch += 1;
+        loadedDocs.set(record.articleId, doc);
+        meta.persistenceError = '';
+        return { ok: true, doc };
+    }
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        const written = fallbackDocWrite(scope, doc);
+        if (written.ok) { dataEpoch += 1; loadedDocs.set(record.articleId, doc); }
+        return written;
+    }
+    // 一般交易錯誤只回報失敗，不切換權威來源。
+    meta.persistenceError = result.error || 'idb_write_failed';
+    return { ok: false, error: meta.persistenceError };
+}
+
+async function deleteDoc(id, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
+    if (fallbackMode) {
+        const bucket = fallbackRead(scope);
+        bucket.docs = (bucket.docs || []).filter((item) => item.id !== id);
+        const ok = fallbackWrite(scope, bucket);
+        if (ok) { dataEpoch += 1; loadedDocs.delete(id); }
+        return ok ? { ok: true, fallback: true } : { ok: false, error: 'storage_full' };
+    }
+    const result = await idbRequest([STORE_DOCS, STORE_ARTICLE_SUMMARIES], 'readwrite', (stores) => {
+        stores[STORE_DOCS].delete(docKey(scope, id));
+        stores[STORE_ARTICLE_SUMMARIES].delete(docKey(scope, id));
+        return null;
+    }, ctx);
+    if (result.ok) {
+        dataEpoch += 1;
+        loadedDocs.delete(id);
+        docCache.delete(docKey(scope, id));
+        meta.persistenceError = '';
+        return { ok: true };
+    }
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        const bucket = fallbackRead(scope);
+        bucket.docs = (bucket.docs || []).filter((item) => item.id !== id);
+        const ok = fallbackWrite(scope, bucket);
+        if (ok) { dataEpoch += 1; loadedDocs.delete(id); }
+        return ok ? { ok: true, fallback: true } : { ok: false, error: 'storage_full' };
+    }
+    meta.persistenceError = result.error || 'idb_write_failed';
+    return { ok: false, error: meta.persistenceError };
+}
+
+/**
+ * 永久文件與待同步操作在同一個 IndexedDB 交易提交。
+ * 交易完成才回報成功；IndexedDB 不可用時退回單一 localStorage 桶，
+ * 仍是一次寫入（不會出現文件已存、outbox 沒寫的半套狀態）。
+ */
+async function persistDocWithOp(record, type, options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
+    const doc = toDoc(record, scope);
+    const op = options.skipOutbox ? null : await buildOutboxOp(record, type, { ...options, scope });
+    if (!isArticleContextActive(ctx)) return staleResult();
+    if (fallbackMode) {
+        const written = fallbackDocWrite(scope, doc, op ? { ...op, key: `${scope}\u0000${op.articleId}`, scope } : null);
+        if (written.ok) { dataEpoch += 1; loadedDocs.set(record.articleId, doc); }
+        return written;
+    }
+    const operations = [
+        { store: STORE_DOCS, type: 'put', value: doc },
+        { store: STORE_ARTICLE_SUMMARIES, type: 'put', value: summarizeArticleDoc(doc) }
+    ];
+    if (op) {
+        operations.push({
+            store: STORE_OUTBOX,
+            type: 'put',
+            value: { ...op, key: `${scope}\u0000${op.articleId}`, scope }
+        });
+    }
+    // 交易內再核對入口 scope：A 儲存期間切到 B（或 A→B→A）都不得再寫。
+    const result = await idbRequest(
+        Array.from(new Set(operations.map((item) => item.store))),
+        'readwrite',
+        (stores) => {
+            for (const operation of operations) {
+                if (operation.type === 'delete') stores[operation.store].delete(operation.key);
+                else stores[operation.store].put(operation.value);
+            }
+            return null;
+        },
+        ctx
+    );
+    if (result.ok) {
+        dataEpoch += 1;
+        cacheDoc(doc);
+        loadedDocs.set(record.articleId, doc);
+        meta.persistenceError = '';
+        return { ok: true, doc, op };
+    }
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        const payload = op ? { ...op, key: `${scope}\u0000${op.articleId}`, scope } : null;
+        const written = fallbackDocWrite(scope, doc, payload);
+        if (written.ok) { dataEpoch += 1; cacheDoc(doc); loadedDocs.set(record.articleId, doc); }
+        return written;
+    }
+    meta.persistenceError = result.error || 'idb_write_failed';
+    return { ok: false, error: meta.persistenceError };
 }
 
 function serializeMeta() {
@@ -312,14 +511,24 @@ function serializeMeta() {
     };
 }
 
-async function persistMeta() {
-    const scope = getArticleScope();
+async function persistMeta(ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
     const payload = { scope, ...serializeMeta() };
-    const result = await idbRequest(STORE_STATE, 'readwrite', (store) => { store.put(payload); return null; });
+    if (fallbackMode) {
+        const bucket = fallbackRead(scope);
+        bucket.state = payload;
+        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    }
+    const result = await idbRequest(STORE_STATE, 'readwrite', (store) => { store.put(payload); return null; }, ctx);
     if (result.ok) return { ok: true };
-    const bucket = fallbackRead(scope);
-    bucket.state = payload;
-    return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        const bucket = fallbackRead(scope);
+        bucket.state = payload;
+        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    }
+    return { ok: false, error: result.error };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -335,42 +544,75 @@ export function makeMutationId() {
     return `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-async function readOutbox() {
-    const scope = getArticleScope();
+async function readOutbox(scopeOrCtx = captureArticleContext()) {
+    const ctx = typeof scopeOrCtx === 'string'
+        ? { scope: scopeOrCtx, generation: scopeGeneration }
+        : scopeOrCtx;
+    const scope = ctx.scope;
+    if (fallbackMode) {
+        const bucket = fallbackRead(scope);
+        return (bucket.outbox || []).filter((op) => op && op.scope === scope);
+    }
     const result = await idbRequest(STORE_OUTBOX, 'readonly', (store) => readAll(store));
     if (result.ok) {
         return (result.value || []).filter((op) => op && op.scope === scope);
     }
-    const bucket = fallbackRead(scope);
-    return (bucket.outbox || []).filter((op) => op && op.scope === scope);
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        const bucket = fallbackRead(scope);
+        return (bucket.outbox || []).filter((op) => op && op.scope === scope);
+    }
+    return [];
 }
 
-async function writeOutboxOp(op) {
-    const scope = getArticleScope();
+async function writeOutboxOp(op, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
     const payload = { ...op, key: `${scope}\u0000${op.articleId}`, scope };
-    const result = await idbRequest(STORE_OUTBOX, 'readwrite', (store) => { store.put(payload); return null; });
+    if (fallbackMode) {
+        const bucket = fallbackRead(scope);
+        bucket.outbox = (bucket.outbox || []).filter((item) => item.articleId !== op.articleId);
+        bucket.outbox.push(payload);
+        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    }
+    const result = await idbRequest(STORE_OUTBOX, 'readwrite', (store) => { store.put(payload); return null; }, ctx);
     if (result.ok) return { ok: true };
-    const bucket = fallbackRead(scope);
-    bucket.outbox = (bucket.outbox || []).filter((item) => item.articleId !== op.articleId);
-    bucket.outbox.push(payload);
-    return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        const bucket = fallbackRead(scope);
+        bucket.outbox = (bucket.outbox || []).filter((item) => item.articleId !== op.articleId);
+        bucket.outbox.push(payload);
+        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    }
+    return { ok: false, error: result.error };
 }
 
-async function removeOutboxOp(articleId) {
-    const scope = getArticleScope();
-    const result = await idbRequest(STORE_OUTBOX, 'readwrite', (store) => { store.delete(docKey(scope, articleId)); return null; });
+async function removeOutboxOp(articleId, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
+    if (fallbackMode) {
+        const bucket = fallbackRead(scope);
+        bucket.outbox = (bucket.outbox || []).filter((item) => item.articleId !== articleId);
+        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    }
+    const result = await idbRequest(STORE_OUTBOX, 'readwrite', (store) => { store.delete(docKey(scope, articleId)); return null; }, ctx);
     if (result.ok) return { ok: true };
-    const bucket = fallbackRead(scope);
-    bucket.outbox = (bucket.outbox || []).filter((item) => item.articleId !== articleId);
-    return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        const bucket = fallbackRead(scope);
+        bucket.outbox = (bucket.outbox || []).filter((item) => item.articleId !== articleId);
+        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    }
+    return { ok: false, error: result.error };
 }
 
 /**
  * 每篇文章最多保留一個待同步操作（後寫覆蓋先寫）。建立尚未上傳時仍是 create，
  * 之後的修改只更新內容，不會變成第二次建立。
  */
-async function enqueue(record, type, options = {}) {
-    const existing = (await readOutbox()).find((op) => op.articleId === record.articleId);
+async function buildOutboxOp(record, type, options = {}) {
+    const scope = options.scope || (options.ctx && options.ctx.scope) || getArticleScope();
+    const existing = (await readOutbox(scope)).find((op) => op.articleId === record.articleId);
     let opType = type;
     if (existing && existing.type === 'create') opType = 'create';
     if (type === 'delete' || type === 'restore') opType = type;
@@ -396,7 +638,13 @@ async function enqueue(record, type, options = {}) {
     if (opType === 'delete' || opType === 'restore') {
         op.payload = null;
     }
-    return writeOutboxOp(op);
+    return op;
+}
+
+async function enqueue(record, type, options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    const op = await buildOutboxOp(record, type, { ...options, scope: ctx.scope });
+    return writeOutboxOp(op, ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -412,42 +660,163 @@ export async function initArticleStore() {
     return { scope, fallbackMode };
 }
 
-async function readDocs(scope) {
+async function readDocsDetailed(scope) {
+    if (fallbackMode) return { ok: true, docs: fallbackRead(scope).docs || [] };
     const result = await idbRequest(STORE_DOCS, 'readonly', (store) => readAll(store));
-    if (result.ok) return (result.value || []).filter((doc) => doc && doc.scope === scope);
-    const bucket = fallbackRead(scope);
-    fallbackMode = true;
-    return bucket.docs || [];
+    if (result.ok) {
+        return { ok: true, docs: (result.value || []).filter((doc) => doc && doc.scope === scope) };
+    }
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        return { ok: true, docs: fallbackRead(scope).docs || [] };
+    }
+    meta.persistenceError = result.error || 'idb_read_failed';
+    return { ok: false, error: meta.persistenceError };
+}
+
+async function readDocs(scope) {
+    const result = await readDocsDetailed(scope);
+    return result.ok ? result.docs : [];
+}
+
+async function readSummaries(scope) {
+    if (fallbackMode) return (fallbackRead(scope).docs || []).map((doc) => summarizeArticleDoc(doc)).filter(Boolean);
+    const result = await idbRequest(STORE_ARTICLE_SUMMARIES, 'readonly', (store) => readAll(store));
+    if (result.ok) return (result.value || []).filter((summary) => summary && summary.scope === scope);
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        return (fallbackRead(scope).docs || []).map((doc) => summarizeArticleDoc(doc)).filter(Boolean);
+    }
+    meta.persistenceError = result.error || 'idb_read_failed';
+    return null;
 }
 
 async function readState(scope) {
+    if (fallbackMode) return fallbackRead(scope).state || null;
     const result = await idbRequest(STORE_STATE, 'readonly', (store) => readOne(store, scope));
-    if (result.ok && result.value) return result.value;
-    const bucket = fallbackRead(scope);
-    return bucket.state || null;
+    if (result.ok) return result.value || null;
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        return fallbackRead(scope).state || null;
+    }
+    meta.persistenceError = result.error || 'idb_read_failed';
+    return null;
 }
 
 export async function reloadScope(scope = getArticleScope()) {
-    currentScope = scope;
-    const docs = await readDocs(scope);
-    const storedState = await readState(scope);
-    meta = {
-        cursor: Number(storedState?.cursor) || 0,
-        migrated: storedState?.migrated === true,
-        migratedAt: storedState?.migratedAt || '',
-        lastSyncAt: storedState?.lastSyncAt || '',
-        lastError: storedState?.lastError || '',
-        conflicts: storedState?.conflicts && typeof storedState.conflicts === 'object' ? storedState.conflicts : {},
-        gatePending: storedState?.gatePending === true,
-        persistenceError: ''
-    };
-    const records = docs
+    const next = String(scope || getArticleScope());
+    const previousScope = currentScope;
+    // 只有切換 scope 才還原已載入全文；同一 scope 的重新整理必須維持摘要，
+    // 避免正常啟動或同步後把所有文章全文 hydrate 回記憶體。
+    const restoreCachedDocs = !!previousScope && previousScope !== next;
+    if (currentScope && currentScope !== next) scopeGeneration += 1;
+    else if (!currentScope) scopeGeneration += 1;
+    const generation = scopeGeneration;
+    currentScope = next;
+    loadedDocs.clear();
+    loadingDocs.clear();
+    let records = [];
+    const cachedDocForReload = new Map();
+    // 同一 scope 重新載入時，若讀取期間有本機寫入提交（dataEpoch 改變），
+    // 必須重讀，不能用較早的摘要蓋掉剛保存的新修改。
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+        const epochAtStart = dataEpoch;
+        let summaries = await readSummaries(next);
+        if (generation !== scopeGeneration) return [];
+        if (summaries === null) {
+            // 讀取失敗不切換權威、也不清空目前畫面；保留錯誤供 UI 顯示。
+            return (state.analyzedArticles || []).filter((item) => item && item.articleId);
+        }
+        if (!summaries.length) {
+            // 升級前的資料尚未建立摘要：只在這個一次性情況讀完整文件補摘要。
+            const docs = await readDocs(next);
+            if (generation !== scopeGeneration) return [];
+            summaries = docs.map((doc) => summarizeArticleDoc(doc)).filter(Boolean);
+            if (docs.length && !fallbackMode) {
+                await applyPermanentOperations(summaries.map((summary) => ({ store: STORE_ARTICLE_SUMMARIES, type: 'put', value: summary })));
+            }
+        }
+        const storedState = await readState(next);
+        if (generation !== scopeGeneration) return [];
+        if (epochAtStart !== dataEpoch && attempt < 3) continue;
+        meta = {
+            cursor: Number(storedState?.cursor) || 0,
+            migrated: storedState?.migrated === true,
+            migratedAt: storedState?.migratedAt || '',
+            lastSyncAt: storedState?.lastSyncAt || '',
+            lastError: storedState?.lastError || '',
+            conflicts: storedState?.conflicts && typeof storedState.conflicts === 'object' ? storedState.conflicts : {},
+            gatePending: storedState?.gatePending === true,
+            persistenceError: meta.persistenceError || ''
+        };
+        records = summaries
+            .map((summary) => {
+                const record = toSummaryRecord(summary);
+                const cached = record && restoreCachedDocs ? cachedDoc(next, summary) : null;
+                if (!cached) return record;
+                cachedDocForReload.set(record.articleId, cached);
+                return { ...record, article: cached.body, result: cached.analysis, summaryOnly: false };
+            })
+            .filter(Boolean)
+            .sort((a, b) => String(b.lastOpenedAt || b.updatedAt || '').localeCompare(String(a.lastOpenedAt || a.updatedAt || '')));
+        break;
+    }
+    loadedDocs.clear();
+    for (const [articleId, doc] of cachedDocForReload) loadedDocs.set(articleId, doc);
+    state.setAnalyzedArticles(records);
+    emitChange();
+    return records;
+}
+
+/**
+ * 按需載入單篇文章全文與分析。文章清單只保留摘要，這是正常補全文入口。
+ */
+export async function ensureArticleLoaded(articleId, ctx = captureArticleContext()) {
+    if (!articleId) return null;
+    if (!isArticleContextActive(ctx)) return null;
+    const summary = findRecord(articleId);
+    if (!summary) return null;
+    if (loadedDocs.has(articleId)) return findRecord(articleId);
+    const key = `${ctx.scope}\u0000${articleId}\u0000${ctx.generation}`;
+    if (loadingDocs.has(key)) return loadingDocs.get(key);
+    const task = (async () => {
+        const result = await idbRequest(STORE_DOCS, 'readonly', (store) => readOne(store, docKey(ctx.scope, articleId)));
+        if (!isArticleContextActive(ctx)) return null;
+        const doc = result.ok ? result.value : null;
+        if (!doc || doc.scope !== ctx.scope || doc.id !== articleId) return null;
+        cacheDoc(doc);
+        loadedDocs.set(articleId, doc);
+        replaceRecord(toRecord(doc));
+        return findRecord(articleId);
+    })();
+    loadingDocs.set(key, task);
+    try {
+        return await task;
+    } finally {
+        loadingDocs.delete(key);
+    }
+}
+
+async function loadAllRecordsDetailed(ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const read = await readDocsDetailed(ctx.scope);
+    if (!isArticleContextActive(ctx)) return staleResult();
+    if (!read.ok) return { ok: false, error: read.error || 'idb_read_failed' };
+    loadedDocs.clear();
+    for (const doc of read.docs) loadedDocs.set(doc.id, doc);
+    const records = read.docs
         .map(toRecord)
         .filter(Boolean)
         .sort((a, b) => String(b.lastOpenedAt || b.updatedAt || '').localeCompare(String(a.lastOpenedAt || a.updatedAt || '')));
     state.setAnalyzedArticles(records);
     emitChange();
-    return records;
+    return { ok: true, records, scope: ctx.scope, generation: ctx.generation };
+}
+
+/** 明確需要全部文章的流程（遷移、完整匯出）才使用。 */
+export async function loadAllRecords(ctx = captureArticleContext()) {
+    const result = await loadAllRecordsDetailed(ctx);
+    return result.ok ? result.records : [];
 }
 
 /** 登入／登出／換帳戶後呼叫；換範圍不會把舊範圍的資料帶到新範圍。 */
@@ -486,12 +855,12 @@ export function getPersistenceError() {
     return meta.persistenceError;
 }
 
-export async function pendingCount() {
-    return (await readOutbox()).length;
+export async function pendingCount(ctx = captureArticleContext()) {
+    return (await readOutbox(ctx)).length;
 }
 
-export async function listPending() {
-    return readOutbox();
+export async function listPending(ctx = captureArticleContext()) {
+    return readOutbox(ctx);
 }
 
 export async function usage() {
@@ -522,10 +891,14 @@ export function newArticleId() {
  * `origin`: 'analysis' | 'rename' | 'manual'
  */
 export async function saveArticle(input, options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
     const body = String(input?.article ?? input?.body ?? '');
     if (!body.trim()) return { ok: false, error: 'empty_body' };
     const id = String(input?.articleId || input?.id || '') || newArticleId();
-    const existing = findRecord(id);
+    let existing = findRecord(id);
+    if (existing?.summaryOnly) existing = await ensureArticleLoaded(id, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     const updatedAt = nowIso();
     const record = {
         articleId: id,
@@ -549,7 +922,16 @@ export async function saveArticle(input, options = {}) {
     if (articleSizeBytes(record) > ARTICLE_LIMITS.maxArticleBytes) {
         return { ok: false, error: 'article_too_large' };
     }
-    const persisted = await persistDoc(record);
+    const persisted = await persistDocWithOp(record, existing ? 'update' : 'create', {
+        skipOutbox: options.skipOutbox,
+        clientMutationId: options.clientMutationId,
+        ctx
+    });
+    // 儲存期間切換了 scope／generation：交易若尚未開始，已中止；若已完成，
+    // 也只會寫在原本 scope。兩種情況都不得再改目前帳戶的記憶體。
+    if (!isArticleContextActive(ctx)) {
+        return { ...staleResult(), persisted: persisted.ok, record };
+    }
     if (!persisted.ok) {
         // 記憶體仍保留內容，讓使用者可以匯出；但明確回報未持久化。
         replaceRecord(record);
@@ -557,37 +939,70 @@ export async function saveArticle(input, options = {}) {
         return { ok: false, error: persisted.error, record };
     }
     replaceRecord(record);
-    if (!options.skipOutbox) {
-        await enqueue(record, existing ? 'update' : 'create', { clientMutationId: options.clientMutationId });
+    if (options.touch !== false) await touchOpened(id, { silent: true, ctx });
+    if (!isArticleContextActive(ctx)) return { ...staleResult(), record: findRecord(id) || record };
+    // 原文真的變更：保留被引用舊版本，並嘗試唯一重新定位學習條目。
+    if (existing && String(existing.article || '') !== body) {
+        try {
+            const readingStore = await import('./reading-store.js');
+            if (!isArticleContextActive(ctx)) return { ...staleResult(), record };
+            const oldVersion = contentVersionOf(existing.article || '');
+            const newVersion = contentVersionOf(body);
+            const referenced = readingStore.listLearningItems(id).some((item) => !item.deletedAt && item.contentVersion === oldVersion);
+            if (referenced) await readingStore.saveArticleVersion(id, existing.article || '', oldVersion);
+            if (!isArticleContextActive(ctx)) return { ...staleResult(), record };
+            await readingStore.reanchorArticle({ articleId: id, oldBody: existing.article || '', newBody: body, oldVersion, newVersion });
+        } catch (error) {
+            console.warn('[article-store] 原文位置更新失敗:', error && error.message ? error.message : 'unknown');
+        }
     }
-    if (options.touch !== false) await touchOpened(id, { silent: true });
+    if (!isArticleContextActive(ctx)) return { ...staleResult(), record };
     emitChange();
     return { ok: true, record: findRecord(id) };
 }
 
-/** 只更新分析結果（詞／句／片語詳解），不改變閱讀順序以外的內容。 */
+/**
+ * 只更新分析結果（詞／句／片語詳解），不改變閱讀順序以外的內容。
+ * `expectContentVersion`：非同步請求必須帶入「請求開始時」的內文版本；
+ * 內文已被改寫時拒絕合併，避免舊版詳解寫進新正文。
+ */
 export async function saveAnalysis(articleId, result, options = {}) {
-    const record = findRecord(articleId);
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    let record = findRecord(articleId);
+    if (record?.summaryOnly) record = await ensureArticleLoaded(articleId, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!record) return { ok: false, error: 'record_missing' };
+    if (options.expectContentVersion !== undefined && options.expectContentVersion !== null
+        && contentVersionOf(record.article || '') !== String(options.expectContentVersion)) {
+        return { ok: false, error: 'stale_version', staleVersion: true, record };
+    }
+    if (articleSizeBytes({ body: record.article || '', analysis: result }) > ARTICLE_LIMITS.maxArticleBytes) {
+        return { ok: false, error: 'article_too_large', record };
+    }
     const next = { ...record, result, updatedAt: nowIso(), dirty: true, pending: true };
-    const persisted = await persistDoc(next);
+    const persisted = await persistDocWithOp(next, 'update', { skipOutbox: options.skipOutbox, ctx });
+    if (!isArticleContextActive(ctx)) return { ...staleResult(), record: next };
     replaceRecord(next);
     if (!persisted.ok) return { ok: false, error: persisted.error, record: next };
-    if (!options.skipOutbox) await enqueue(next, 'update');
     emitChange();
     return { ok: true, record: findRecord(articleId) };
 }
 
-export async function renameArticle(articleId, title) {
-    const record = findRecord(articleId);
+export async function renameArticle(articleId, title, options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    let record = findRecord(articleId);
+    if (record?.summaryOnly) record = await ensureArticleLoaded(articleId, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!record) return { ok: false, error: 'record_missing' };
     const clean = String(title || '').replace(/\s+/g, ' ').trim().slice(0, 200);
     if (!clean) return { ok: false, error: 'empty_title' };
     const next = { ...record, title: clean, updatedAt: nowIso(), dirty: true, pending: true };
-    const persisted = await persistDoc(next);
+    const persisted = await persistDocWithOp(next, 'update', { ctx });
+    if (!isArticleContextActive(ctx)) return { ...staleResult(), record: next };
     replaceRecord(next);
     if (!persisted.ok) return { ok: false, error: persisted.error };
-    await enqueue(next, 'update');
     emitChange();
     return { ok: true, record: findRecord(articleId) };
 }
@@ -597,29 +1012,63 @@ export async function renameArticle(articleId, title) {
  * 由呼叫端決定保留（文章專屬生詞本以 articleId 命名，刪除後仍存在）。
  */
 export async function deleteArticle(articleId, options = {}) {
-    const record = findRecord(articleId);
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    let record = findRecord(articleId);
+    if (record?.summaryOnly) record = await ensureArticleLoaded(articleId, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!record) return { ok: false, error: 'record_missing' };
     const tombstone = { ...record, deletedAt: nowIso(), updatedAt: nowIso(), dirty: true, pending: true };
-    const persisted = await persistDoc(tombstone);
+    if (!options.skipOutbox) {
+        // 還沒上傳過的建立：直接撤掉待同步的建立即可，不需要送刪除。
+        const pending = (await readOutbox(ctx)).find((op) => op.articleId === articleId);
+        if (!isArticleContextActive(ctx)) return staleResult();
+        if (pending && pending.type === 'create' && !Number(record.revision)) {
+            const scope = ctx.scope;
+            const doc = toDoc(tombstone, scope);
+            // 這個分支同樣要維護摘要，否則列表重新整理後仍會看到已刪文章。
+            const result = await idbRequest([STORE_DOCS, STORE_ARTICLE_SUMMARIES, STORE_OUTBOX], 'readwrite', (stores) => {
+                stores[STORE_DOCS].put(doc);
+                stores[STORE_ARTICLE_SUMMARIES].put(summarizeArticleDoc(doc));
+                stores[STORE_OUTBOX].delete(docKey(scope, articleId));
+                return null;
+            }, ctx);
+            if (!isArticleContextActive(ctx)) return { ...staleResult(), record: tombstone };
+            if (!result.ok && result.error === 'idb_unavailable') {
+                fallbackMode = true;
+                const writable = fallbackDocWrite(scope, doc);
+                if (!writable.ok) return { ok: false, error: writable.error };
+                const bucket = fallbackRead(scope);
+                bucket.outbox = (bucket.outbox || []).filter((item) => item.articleId !== articleId);
+                if (!fallbackWrite(scope, bucket)) return { ok: false, error: 'storage_full' };
+            } else if (!result.ok) {
+                return { ok: false, error: result.error };
+            }
+            dataEpoch += 1;
+            replaceRecord(tombstone);
+            emitChange();
+            return { ok: true, record: tombstone };
+        }
+    }
+    const persisted = await persistDocWithOp(tombstone, options.skipOutbox ? 'update' : 'delete', { skipOutbox: options.skipOutbox, ctx });
+    if (!isArticleContextActive(ctx)) return { ...staleResult(), record: tombstone };
     // 保留 tombstone 在記憶體裡（列表與搜尋會排除），否則待同步的刪除操作
     // 會找不到記錄而被誤判為已完成，伺服器永遠收不到刪除。
     replaceRecord(tombstone);
     if (!persisted.ok) return { ok: false, error: persisted.error };
-    if (!options.skipOutbox) {
-        // 還沒上傳過的建立：直接撤掉待同步的建立即可，不需要送刪除
-        const pending = (await readOutbox()).find((op) => op.articleId === articleId);
-        if (pending && pending.type === 'create' && !Number(record.revision)) {
-            await removeOutboxOp(articleId);
-        } else {
-            await enqueue(tombstone, 'delete');
-        }
-    }
     emitChange();
     return { ok: true, record: tombstone };
 }
 
-export async function restoreArticle(snapshot) {
+export async function restoreArticle(snapshot, options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!snapshot || !snapshot.articleId) return { ok: false, error: 'invalid_snapshot' };
+    if (snapshot.summaryOnly) {
+        const full = await ensureArticleLoaded(snapshot.articleId, ctx);
+        if (!isArticleContextActive(ctx)) return staleResult();
+        if (full) snapshot = { ...snapshot, article: full.article, result: full.result };
+    }
     const record = {
         ...snapshot,
         deletedAt: '',
@@ -629,21 +1078,26 @@ export async function restoreArticle(snapshot) {
         pending: true,
         conflict: null
     };
-    const persisted = await persistDoc(record);
+    // 從未上傳過的文章（revision 0）復原後就是一次建立
+    const persisted = await persistDocWithOp(record, Number(record.revision) ? 'restore' : 'create', { ctx });
+    if (!isArticleContextActive(ctx)) return { ...staleResult(), record };
     if (!persisted.ok) return { ok: false, error: persisted.error };
     replaceRecord(record);
-    // 從未上傳過的文章（revision 0）復原後就是一次建立
-    await enqueue(record, Number(record.revision) ? 'restore' : 'create');
     emitChange();
     return { ok: true, record: findRecord(record.articleId) };
 }
 
 /** 最近閱讀：只改本機 lastOpenedAt，不動文章 revision、不觸發同步。 */
 export async function touchOpened(articleId, options = {}) {
-    const record = findRecord(articleId);
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    let record = findRecord(articleId);
+    if (record?.summaryOnly) record = await ensureArticleLoaded(articleId, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!record) return { ok: false, error: 'record_missing' };
     const next = { ...record, lastOpenedAt: nowIso() };
-    const persisted = await persistDoc(next);
+    const persisted = await persistDoc(next, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     replaceRecord(next);
     if (!persisted.ok) return { ok: false, error: persisted.error };
     if (!options.silent) emitChange();
@@ -656,8 +1110,10 @@ export async function touchOpened(articleId, options = {}) {
 
 const EMPTY_DRAFT = { text: '', sourceType: '', sourceUrl: '', title: '', recordId: '', savedAt: '' };
 
-export async function saveDraft(draft) {
-    const scope = getArticleScope();
+export async function saveDraft(draft, options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
     const payload = {
         scope,
         text: String(draft?.text || ''),
@@ -667,37 +1123,67 @@ export async function saveDraft(draft) {
         recordId: draft?.recordId || '',
         savedAt: nowIso()
     };
-    if (!payload.text.trim()) return clearDraft();
-    const result = await idbRequest(STORE_DRAFTS, 'readwrite', (store) => { store.put(payload); return null; });
+    if (!payload.text.trim()) return clearDraft({ ctx });
+    if (fallbackMode) {
+        const bucket = fallbackRead(scope);
+        bucket.draft = payload;
+        return fallbackWrite(scope, bucket) ? { ok: true, draft: payload } : { ok: false, error: 'storage_full' };
+    }
+    const result = await idbRequest(STORE_DRAFTS, 'readwrite', (store) => { store.put(payload); return null; }, ctx);
     if (result.ok) return { ok: true, draft: payload };
-    const bucket = fallbackRead(scope);
-    bucket.draft = payload;
-    return fallbackWrite(scope, bucket) ? { ok: true, draft: payload } : { ok: false, error: 'storage_full' };
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        const bucket = fallbackRead(scope);
+        bucket.draft = payload;
+        return fallbackWrite(scope, bucket) ? { ok: true, draft: payload } : { ok: false, error: 'storage_full' };
+    }
+    return { ok: false, error: result.error };
 }
 
-export async function readDraft() {
-    const scope = getArticleScope();
+export async function readDraft(options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    const scope = ctx.scope;
+    if (fallbackMode) return fallbackRead(scope).draft || null;
     const result = await idbRequest(STORE_DRAFTS, 'readonly', (store) => readOne(store, scope));
     if (result.ok) return result.value || null;
-    const bucket = fallbackRead(scope);
-    return bucket.draft || null;
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        return fallbackRead(scope).draft || null;
+    }
+    return null;
 }
 
-export async function clearDraft() {
-    const scope = getArticleScope();
-    const result = await idbRequest(STORE_DRAFTS, 'readwrite', (store) => { store.delete(scope); return null; });
+export async function clearDraft(options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
+    if (fallbackMode) {
+        const bucket = fallbackRead(scope);
+        delete bucket.draft;
+        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    }
+    const result = await idbRequest(STORE_DRAFTS, 'readwrite', (store) => { store.delete(scope); return null; }, ctx);
     if (result.ok) return { ok: true };
-    const bucket = fallbackRead(scope);
-    delete bucket.draft;
-    return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    if (result.error === 'idb_unavailable') {
+        fallbackMode = true;
+        const bucket = fallbackRead(scope);
+        delete bucket.draft;
+        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    }
+    return { ok: false, error: result.error };
 }
 
 /** 接受伺服器目前版本號但不改本機內容（用於「保留本機修改並重新套用」）。 */
-export async function setBaseRevision(articleId, revision) {
-    const record = findRecord(articleId);
+export async function setBaseRevision(articleId, revision, options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    let record = findRecord(articleId);
+    if (record?.summaryOnly) record = await ensureArticleLoaded(articleId, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!record) return { ok: false, error: 'record_missing' };
     const next = { ...record, revision: Number(revision) || 0 };
-    const persisted = await persistDoc(next);
+    const persisted = await persistDoc(next, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     replaceRecord(next);
     return persisted.ok ? { ok: true } : { ok: false, error: persisted.error };
 }
@@ -705,8 +1191,12 @@ export async function setBaseRevision(articleId, revision) {
 /**
  * 把本機內容複製成一篇新文章（衝突時「另存副本」）。回傳新文章的 ID。
  */
-export async function duplicateArticle(articleId, titleSuffix = '') {
-    const record = findRecord(articleId);
+export async function duplicateArticle(articleId, titleSuffix = '', options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    let record = findRecord(articleId);
+    if (record?.summaryOnly) record = await ensureArticleLoaded(articleId, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!record) return { ok: false, error: 'record_missing' };
     const id = newArticleId();
     const copy = {
@@ -721,10 +1211,10 @@ export async function duplicateArticle(articleId, titleSuffix = '') {
         pending: true,
         conflict: null
     };
-    const persisted = await persistDoc(copy);
+    const persisted = await persistDocWithOp(copy, 'create', { ctx });
+    if (!isArticleContextActive(ctx)) return { ...staleResult(), articleId: id };
     if (!persisted.ok) return { ok: false, error: persisted.error };
     replaceRecord(copy);
-    await enqueue(copy, 'create');
     emitChange();
     return { ok: true, articleId: id };
 }
@@ -737,39 +1227,46 @@ export function getCursor() {
     return Number(meta.cursor) || 0;
 }
 
-export async function setCursor(cursor) {
+export async function setCursor(cursor, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
     meta.cursor = Number(cursor) || 0;
-    await persistMeta();
+    return persistMeta(ctx);
 }
 
-export async function markSynced(at = nowIso()) {
+export async function markSynced(at = nowIso(), ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
     meta.lastSyncAt = at;
     meta.lastError = '';
-    await persistMeta();
+    return persistMeta(ctx);
 }
 
-export async function markSyncError(code) {
+export async function markSyncError(code, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
     meta.lastError = String(code || '');
-    await persistMeta();
+    return persistMeta(ctx);
 }
 
 export function getConflicts() {
     return Object.values(meta.conflicts || {});
 }
 
-export async function setConflict(articleId, info) {
+export async function setConflict(articleId, info, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
     meta.conflicts = { ...(meta.conflicts || {}), [articleId]: { articleId, at: nowIso(), ...info } };
-    await persistMeta();
-    emitChange();
+    const persisted = await persistMeta(ctx);
+    if (isArticleContextActive(ctx)) emitChange();
+    return persisted;
 }
 
-export async function clearConflict(articleId) {
-    if (!meta.conflicts || !meta.conflicts[articleId]) return;
+export async function clearConflict(articleId, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    if (!meta.conflicts || !meta.conflicts[articleId]) return { ok: true };
     const next = { ...meta.conflicts };
     delete next[articleId];
     meta.conflicts = next;
-    await persistMeta();
-    emitChange();
+    const persisted = await persistMeta(ctx);
+    if (isArticleContextActive(ctx)) emitChange();
+    return persisted;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -802,8 +1299,10 @@ export function planRemote(metaList) {
     return { needDocs, tombstones };
 }
 
-export async function applyRemoteDoc(doc) {
+export async function applyRemoteDoc(doc, ctx = captureArticleContext()) {
     if (!doc || !doc.id) return { ok: false, error: 'invalid_document' };
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
     const record = {
         articleId: doc.id,
         article: doc.body || '',
@@ -820,32 +1319,121 @@ export async function applyRemoteDoc(doc) {
         pending: false,
         conflict: null
     };
-    const persisted = await persistDoc(record);
+    const remoteDoc = toDoc(record, scope);
+    // 在交易內重新讀取本機文件與 outbox，才不會用「網路請求開始前」的
+    // pending 判斷覆蓋掉請求期間的新編輯。
+    const result = await idbRequest([STORE_DOCS, STORE_ARTICLE_SUMMARIES, STORE_OUTBOX], 'readwrite', (stores) => {
+        return new Promise((resolve, reject) => {
+            const docRequest = stores[STORE_DOCS].get(docKey(scope, doc.id));
+            docRequest.onerror = () => reject(docRequest.error || new Error('idb_read_failed'));
+            docRequest.onsuccess = () => {
+                const localDoc = docRequest.result || null;
+                const outboxRequest = stores[STORE_OUTBOX].get(docKey(scope, doc.id));
+                outboxRequest.onerror = () => reject(outboxRequest.error || new Error('outbox_read_failed'));
+                outboxRequest.onsuccess = () => {
+                    if (!isArticleContextActive(ctx)) {
+                        try { stores[STORE_DOCS].transaction.abort(); } catch (_) {}
+                        resolve({ applied: false, stale: true });
+                        return;
+                    }
+                    const pendingOp = outboxRequest.result || null;
+                    if ((localDoc && (localDoc.dirty || localDoc.pending)) || pendingOp) {
+                        resolve({ applied: false, skippedLocalPending: true });
+                        return;
+                    }
+                    stores[STORE_DOCS].put(remoteDoc);
+                    const summary = summarizeArticleDoc(remoteDoc);
+                    if (summary) stores[STORE_ARTICLE_SUMMARIES].put(summary);
+                    resolve({ applied: true });
+                };
+            };
+        });
+    }, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
+    if (!result.ok) {
+        if (result.error === 'idb_unavailable') return { ok: false, error: 'idb_unavailable' };
+        meta.persistenceError = result.error || 'idb_write_failed';
+        return { ok: false, error: meta.persistenceError };
+    }
+    const value = result.value || {};
+    if (value.stale) return staleResult();
+    if (value.skippedLocalPending) {
+        return { ok: true, applied: false, skippedLocalPending: true, record: findRecord(doc.id) };
+    }
+    dataEpoch += 1;
+    cacheDoc(remoteDoc);
+    loadedDocs.set(doc.id, remoteDoc);
     replaceRecord(record);
     emitChange();
-    return persisted.ok ? { ok: true, record } : { ok: false, error: persisted.error };
+    return { ok: true, applied: true, record };
 }
 
-export async function applyRemoteTombstone(articleId) {
-    const record = findRecord(articleId);
-    if (!record) return { ok: true };
-    const next = { ...record, deletedAt: nowIso(), dirty: false, pending: false };
-    await persistDoc(next);
-    replaceRecord(next);
-    await removeOutboxOp(articleId);
-    emitChange();
-    return { ok: true };
+export async function applyRemoteTombstone(articleId, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
+    const result = await idbRequest([STORE_DOCS, STORE_ARTICLE_SUMMARIES, STORE_OUTBOX], 'readwrite', (stores) => {
+        return new Promise((resolve, reject) => {
+            const docRequest = stores[STORE_DOCS].get(docKey(scope, articleId));
+            docRequest.onerror = () => reject(docRequest.error || new Error('idb_read_failed'));
+            docRequest.onsuccess = () => {
+                const localDoc = docRequest.result || null;
+                const outboxRequest = stores[STORE_OUTBOX].get(docKey(scope, articleId));
+                outboxRequest.onerror = () => reject(outboxRequest.error || new Error('outbox_read_failed'));
+                outboxRequest.onsuccess = () => {
+                    if (!isArticleContextActive(ctx)) {
+                        try { stores[STORE_DOCS].transaction.abort(); } catch (_) {}
+                        resolve({ applied: false, stale: true });
+                        return;
+                    }
+                    const pendingOp = outboxRequest.result || null;
+                    if (!localDoc) { resolve({ applied: false, missing: true }); return; }
+                    if (localDoc.dirty || localDoc.pending || pendingOp) {
+                        resolve({ applied: false, skippedLocalPending: true });
+                        return;
+                    }
+                    const tombstone = { ...localDoc, deletedAt: nowIso(), dirty: false, pending: false };
+                    stores[STORE_DOCS].put(tombstone);
+                    stores[STORE_ARTICLE_SUMMARIES].put(summarizeArticleDoc(tombstone));
+                    stores[STORE_OUTBOX].delete(docKey(scope, articleId));
+                    resolve({ applied: true, tombstone });
+                };
+            };
+        });
+    }, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
+    if (!result.ok) return { ok: false, error: result.error || 'idb_write_failed' };
+    const value = result.value || {};
+    if (value.stale) return staleResult();
+    if (value.skippedLocalPending) {
+        return { ok: true, applied: false, skippedLocalPending: true, record: findRecord(articleId) };
+    }
+    if (value.applied) {
+        dataEpoch += 1;
+        if (value.tombstone) cacheDoc(value.tombstone);
+        loadedDocs.delete(articleId);
+        const record = findRecord(articleId);
+        if (record) {
+            const next = { ...record, deletedAt: nowIso(), dirty: false, pending: false };
+            replaceRecord(next);
+        }
+        emitChange();
+    }
+    return { ok: true, applied: !!value.applied };
 }
 
 /** 伺服器要求完整重同步時，移除本機已不存在的遠端文章（保留本機未上傳者）。 */
-export async function reconcileFullList(serverIds) {
+export async function reconcileFullList(serverIds, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return [];
     const ids = new Set(serverIds);
     const removed = [];
     for (const record of (state.analyzedArticles || []).slice()) {
         if (!record || !record.articleId) continue;
         if (ids.has(record.articleId)) continue;
         if (record.dirty || record.pending) continue;
-        await deleteDoc(record.articleId);
+        if (!isArticleContextActive(ctx)) return removed;
+        const deleted = await deleteDoc(record.articleId, ctx);
+        if (!isArticleContextActive(ctx)) return removed;
+        if (!deleted.ok) continue;
         dropRecord(record.articleId);
         removed.push(record.articleId);
     }
@@ -857,104 +1445,179 @@ export async function reconcileFullList(serverIds) {
 // outbox 結果處理
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function markOpDone(articleId, { revision, serverUpdatedAt } = {}) {
-    const record = findRecord(articleId);
-    await removeOutboxOp(articleId);
-    if (!record) return;
-    const next = {
-        ...record,
-        revision: Number.isFinite(revision) ? Number(revision) : record.revision,
-        updatedAt: serverUpdatedAt || record.updatedAt,
-        dirty: false,
-        pending: false,
-        conflict: null
-    };
-    await persistDoc(next);
-    replaceRecord(next);
-    await clearConflict(articleId);
+export async function markOpDone(articleId, { revision, serverUpdatedAt, clientMutationId } = {}, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
+    // 讀 outbox 與文件都在同一交易；舊回執不能清掉上傳期間新寫的 outbox。
+    const result = await idbRequest([STORE_DOCS, STORE_ARTICLE_SUMMARIES, STORE_OUTBOX], 'readwrite', (stores) => {
+        return new Promise((resolve, reject) => {
+            const docRequest = stores[STORE_DOCS].get(docKey(scope, articleId));
+            docRequest.onerror = () => reject(docRequest.error || new Error('idb_read_failed'));
+            docRequest.onsuccess = () => {
+                const storedDoc = docRequest.result || null;
+                const outboxRequest = stores[STORE_OUTBOX].get(docKey(scope, articleId));
+                outboxRequest.onerror = () => reject(outboxRequest.error || new Error('outbox_read_failed'));
+                outboxRequest.onsuccess = () => {
+                    if (!isArticleContextActive(ctx)) {
+                        try { stores[STORE_DOCS].transaction.abort(); } catch (_) {}
+                        resolve({ stale: true });
+                        return;
+                    }
+                    const pending = outboxRequest.result || null;
+                    const matches = !clientMutationId || (pending && pending.clientMutationId === clientMutationId);
+                    if (matches && pending) stores[STORE_OUTBOX].delete(docKey(scope, articleId));
+                    if (!storedDoc) { resolve({ matches, record: null }); return; }
+                    const record = toRecord(storedDoc);
+                    const next = {
+                        ...record,
+                        revision: Number.isFinite(revision) ? Math.max(Number(record.revision) || 0, Number(revision)) : record.revision,
+                        updatedAt: serverUpdatedAt || record.updatedAt,
+                        // 舊回執（outbox 已被新修改取代或已不存在）只推進 revision，
+                        // 不得把已同步狀態重新標成 pending。
+                        dirty: matches ? false : !!record.dirty,
+                        pending: matches ? false : !!record.pending,
+                        conflict: matches ? null : record.conflict
+                    };
+                    const nextDoc = toDoc(next, scope);
+                    stores[STORE_DOCS].put(nextDoc);
+                    stores[STORE_ARTICLE_SUMMARIES].put(summarizeArticleDoc(nextDoc));
+                    resolve({ matches, record: next, doc: nextDoc });
+                };
+            };
+        });
+    }, ctx);
+    if (!isArticleContextActive(ctx)) return { ...staleResult(), stale: true };
+    if (!result.ok) return { ok: false, error: result.error || 'idb_write_failed' };
+    const value = result.value || {};
+    if (value.stale) return { ...staleResult(), stale: true };
+    if (value.doc) {
+        dataEpoch += 1;
+        cacheDoc(value.doc);
+        loadedDocs.set(articleId, value.doc);
+        replaceRecord(value.record);
+    }
+    if (value.matches) await clearConflict(articleId, ctx);
     emitChange();
+    return { ok: true, stale: !value.matches };
 }
 
 export async function markOpFailed(articleId, error, options = {}) {
-    const record = findRecord(articleId);
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    let record = findRecord(articleId);
+    if (record?.summaryOnly) record = await ensureArticleLoaded(articleId, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!record) return;
     const next = { ...record, dirty: true, pending: true };
-    await persistDoc(next);
+    const persisted = await persistDoc(next, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
+    if (!persisted.ok) return persisted;
     replaceRecord(next);
-    if (error) await markSyncError(error);
-    if (options.conflict) await setConflict(articleId, options.conflict);
+    if (error) await markSyncError(error, ctx);
+    if (options.conflict) await setConflict(articleId, options.conflict, ctx);
     emitChange();
+    return { ok: true };
 }
 
 /** 伺服器已沒有這篇（例如在別的裝置刪除後又被清空）：把待同步操作改成建立。 */
-export async function requeueAsCreate(articleId) {
-    const record = findRecord(articleId);
+export async function requeueAsCreate(articleId, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    let record = findRecord(articleId);
+    if (record?.summaryOnly) record = await ensureArticleLoaded(articleId, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!record) return { ok: false, error: 'record_missing' };
     const next = { ...record, revision: 0, deletedAt: '', dirty: true, pending: true };
-    await persistDoc(next);
+    const result = await persistDocWithOp(next, 'create', { ctx });
+    if (!isArticleContextActive(ctx)) return staleResult();
     replaceRecord(next);
-    const result = await enqueue(next, 'create');
     emitChange();
     return result.ok ? { ok: true } : { ok: false, error: result.error };
 }
 
 /** 衝突處理後重新排入上傳（保留本機內容）。 */
-export async function enqueueForRetry(articleId) {
-    const record = findRecord(articleId);
+export async function enqueueForRetry(articleId, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    let record = findRecord(articleId);
+    if (record?.summaryOnly) record = await ensureArticleLoaded(articleId, ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     if (!record) return { ok: false, error: 'record_missing' };
     const next = { ...record, dirty: true, pending: true };
-    await persistDoc(next);
-    replaceRecord(next);
     const type = record.deletedAt ? 'delete' : 'update';
-    const result = await enqueue(next, type);
+    const result = await persistDocWithOp(next, type, { ctx });
+    if (!isArticleContextActive(ctx)) return staleResult();
+    replaceRecord(next);
     emitChange();
     return result.ok ? { ok: true } : { ok: false, error: result.error };
 }
 
 /** 丟掉某篇文章的待同步操作（改用伺服器版本時）。 */
-export async function discardPending(articleId) {
-    return removeOutboxOp(articleId);
+export async function discardPending(articleId, ctx = captureArticleContext()) {
+    return removeOutboxOp(articleId, ctx);
 }
 
 export function getGatePending() {
     return meta.gatePending === true;
 }
 
-export async function setGatePending(value) {
+export async function setGatePending(value, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
     meta.gatePending = value === true;
-    await persistMeta();
+    return persistMeta(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 匯出／匯入（完整內容，可離線還原）
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function exportDocuments() {
-    return (state.analyzedArticles || [])
-        .filter((item) => item && item.articleId)
-        .map((item) => ({
-            id: item.articleId,
-            title: item.title || '',
-            body: item.article || '',
-            analysis: item.result === undefined ? null : item.result,
-            sourceType: item.sourceType || 'paste',
-            sourceUrl: item.sourceUrl || '',
-            revision: Number(item.revision) || 0,
-            createdAt: item.createdAt || '',
-            updatedAt: item.updatedAt || '',
-            lastOpenedAt: item.lastOpenedAt || '',
-            deletedAt: item.deletedAt || ''
-        }));
+function toExportDocument(item) {
+    return {
+        id: item.articleId,
+        title: item.title || '',
+        body: item.article || '',
+        analysis: item.result === undefined ? null : item.result,
+        sourceType: item.sourceType || 'paste',
+        sourceUrl: item.sourceUrl || '',
+        revision: Number(item.revision) || 0,
+        createdAt: item.createdAt || '',
+        updatedAt: item.updatedAt || '',
+        lastOpenedAt: item.lastOpenedAt || '',
+        deletedAt: item.deletedAt || ''
+    };
+}
+
+/**
+ * 明確結果版本的匯出：stale scope 或讀取失敗都回 ok=false，呼叫方不能把
+ * 「沒有文章」誤當成成功空備份。既有 `exportDocuments()` 仍回陣列。
+ */
+export async function exportDocumentsResult(ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const loaded = await loadAllRecordsDetailed(ctx);
+    if (!loaded.ok) return loaded;
+    if (!isArticleContextActive(ctx)) return staleResult();
+    return {
+        ok: true,
+        scope: loaded.scope,
+        generation: loaded.generation,
+        documents: loaded.records.filter((item) => item && item.articleId).map(toExportDocument)
+    };
+}
+
+export async function exportDocuments(ctx = captureArticleContext()) {
+    const result = await exportDocumentsResult(ctx);
+    return result.ok ? result.documents : [];
 }
 
 /**
  * 從備份還原文章。已存在且本機較新的記錄不覆蓋；`replace` 為 true 時以備份為準。
  */
 export async function importDocuments(documents, options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
     const list = Array.isArray(documents) ? documents : [];
     let imported = 0;
     let skipped = 0;
     for (const raw of list) {
+        if (!isArticleContextActive(ctx)) return staleResult();
         if (!raw) continue;
         const id = String(raw.id || raw.articleId || '');
         const body = String(raw.body ?? raw.article ?? '');
@@ -980,12 +1643,13 @@ export async function importDocuments(documents, options = {}) {
             pending: true,
             conflict: null
         };
-        const persisted = await persistDoc(record);
+        const persisted = await persistDocWithOp(record, existing ? 'update' : 'create', { ctx });
+        if (!isArticleContextActive(ctx)) return staleResult();
         if (!persisted.ok) return { ok: false, error: persisted.error, imported, skipped };
         if (!record.deletedAt) replaceRecord(record);
-        await enqueue(record, existing ? 'update' : 'create');
         imported += 1;
     }
+    if (!isArticleContextActive(ctx)) return staleResult();
     emitChange();
     return { ok: true, imported, skipped };
 }
@@ -1026,8 +1690,13 @@ export function getMigrationMarker() {
  *   3. 驗證通過才寫入遷移標記，最後才釋放舊的 localStorage 鍵
  *   任何一步失敗都保留原資料，不標記成功。
  */
-export async function migrateLegacyLocalData() {
-    if (getMigrationMarker()?.verified) return { ok: true, skipped: true };
+export async function migrateLegacyLocalData(options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const markerKey = migrationMarkerKey(ctx.scope);
+    let marker = null;
+    try { marker = JSON.parse(localStorage.getItem(markerKey) || 'null'); } catch (_) {}
+    if (marker?.verified) return { ok: true, skipped: true };
     const legacy = readLegacyArticles();
     if (!legacy.articles.length && !Object.keys(legacy.metas).length) {
         // 不要為「目前沒有舊資料」寫入成功標記：舊分頁或別台裝置稍後可能才寫入
@@ -1039,7 +1708,7 @@ export async function migrateLegacyLocalData() {
     const backupKey = 'bdc:articles:migration-backup:v1';
     const backup = {
         at: nowIso(),
-        scope: getArticleScope(),
+        scope: ctx.scope,
         analyzedArticles: legacy.articles,
         articleMetas: legacy.metas
     };
@@ -1058,6 +1727,7 @@ export async function migrateLegacyLocalData() {
     const existingIds = new Set((state.analyzedArticles || []).map((item) => item && item.articleId));
     let migrated = 0;
     for (let index = 0; index < legacy.articles.length; index += 1) {
+        if (!isArticleContextActive(ctx)) return staleResult();
         const item = legacy.articles[index];
         if (!item || typeof item.article !== 'string' || !item.article.trim()) continue;
         const metaForArticle = item.articleId ? legacy.metas[item.articleId] : null;
@@ -1079,16 +1749,17 @@ export async function migrateLegacyLocalData() {
             pending: true,
             conflict: null
         };
-        const persisted = await persistDoc(record);
+        const persisted = await persistDocWithOp(record, 'create', { legacy: true, ctx });
+        if (!isArticleContextActive(ctx)) return staleResult();
         if (!persisted.ok) return { ok: false, error: persisted.error, migrated };
         replaceRecord(record);
-        await enqueue(record, 'create', { legacy: true });
         existingIds.add(id);
         migrated += 1;
     }
 
     // 3. 回讀驗證：數量、原文、分析、來源都必須一致
-    const verifyList = await readDocs(getArticleScope());
+    const verifyList = await readDocs(ctx.scope);
+    if (!isArticleContextActive(ctx)) return staleResult();
     const byId = new Map(verifyList.map((doc) => [doc.id, doc]));
     for (const item of legacy.articles) {
         if (!item || typeof item.article !== 'string' || !item.article.trim()) continue;
@@ -1108,12 +1779,14 @@ export async function migrateLegacyLocalData() {
     }
 
     // 4. 標記成功，最後才釋放舊鍵（備份仍保留）
-    const marker = { verified: true, at: nowIso(), count: migrated, backupKey };
-    try { localStorage.setItem(migrationMarkerKey(getArticleScope()), JSON.stringify(marker)); } catch (_) {}
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const nextMarker = { verified: true, at: nowIso(), count: migrated, backupKey };
+    try { localStorage.setItem(markerKey, JSON.stringify(nextMarker)); } catch (_) {}
     meta.migrated = true;
-    meta.migratedAt = marker.at;
+    meta.migratedAt = nextMarker.at;
     if (migrated > 0) meta.gatePending = true;
-    await persistMeta();
+    await persistMeta(ctx);
+    if (!isArticleContextActive(ctx)) return staleResult();
     try {
         localStorage.removeItem('analyzedArticles');
         localStorage.removeItem('articleMetas');
@@ -1134,10 +1807,13 @@ export async function guestArticleCount() {
  * 明確的「訪客文章帶入目前帳戶」流程：只有使用者確認後才呼叫。
  * 訪客範圍的資料不會被刪除，帳戶範圍取得可同步的副本。
  */
-export async function adoptGuestArticles() {
+export async function adoptGuestArticles(options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
     const guestScope = `${endpoint() || 'local'}::guest`;
     if (guestScope === getArticleScope()) return { ok: true, imported: 0 };
     const docs = await readDocs(guestScope);
+    if (!isArticleContextActive(ctx)) return staleResult();
     const documents = docs
         .filter((doc) => doc && !doc.deletedAt && doc.body)
         .map((doc) => ({
@@ -1152,7 +1828,7 @@ export async function adoptGuestArticles() {
             lastOpenedAt: doc.lastOpenedAt
         }));
     if (!documents.length) return { ok: true, imported: 0 };
-    return importDocuments(documents, { replace: false });
+    return importDocuments(documents, { replace: false, ctx });
 }
 
 /** 文章資料是否已從舊格式遷移完成（同一範圍）。 */
@@ -1165,11 +1841,14 @@ export function isMigrated() {
  * 只補本機沒有的 ID；已存在的以本機為準，不覆蓋使用者改過的內容。
  * 匯入的記錄標記為 legacy，會走 /articles/import 保留原 ID 並開啟寫入閘門。
  */
-export async function importLegacyArticles(entries) {
+export async function importLegacyArticles(entries, options = {}) {
+    const ctx = options.ctx || captureArticleContext();
+    if (!isArticleContextActive(ctx)) return staleResult();
     const list = Array.isArray(entries) ? entries : [];
     const existing = new Set((state.analyzedArticles || []).map((item) => item && item.articleId));
     let imported = 0;
     for (const raw of list) {
+        if (!isArticleContextActive(ctx)) return staleResult();
         if (!raw) continue;
         const id = String(raw.articleId || raw.id || '');
         const body = String(raw.article ?? raw.body ?? '');
@@ -1190,18 +1869,18 @@ export async function importLegacyArticles(entries) {
             pending: true,
             conflict: null
         };
-        const persisted = await persistDoc(record);
+        const persisted = await persistDocWithOp(record, 'create', { legacy: true, ctx });
+        if (!isArticleContextActive(ctx)) return staleResult();
         if (!persisted.ok) return { ok: false, error: persisted.error, imported };
         replaceRecord(record);
-        await enqueue(record, 'create', { legacy: true });
         existing.add(id);
         imported += 1;
     }
     if (imported > 0) {
         meta.gatePending = true;
         meta.migrated = true;
-        await persistMeta();
-        emitChange();
+        await persistMeta(ctx);
+        if (isArticleContextActive(ctx)) emitChange();
     }
     return { ok: true, imported };
 }

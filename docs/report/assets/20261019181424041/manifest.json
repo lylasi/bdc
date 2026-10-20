@@ -1,0 +1,93 @@
+{
+  "createdAt": "2026-10-19T10:22:18.229Z",
+  "fixture": {
+    "articleId": "art_reading_preview",
+    "title": "Meeting Follow-up",
+    "body": "We look forward to meeting you.\n\nThe attached document summarizes the project timeline and the next steps.\n\nPlease let us know if you have any questions before Friday.",
+    "result": {
+      "chinese_translation": "我們期待與你見面。\n\n附件文件總結了項目時間表和下一步。\n\n如有任何問題，請在星期五前告訴我們。",
+      "word_alignment": [],
+      "detailed_analysis": [
+        {
+          "word": "look",
+          "sentence": "We look forward to meeting you.",
+          "analysis": {
+            "phonetic": "lʊk",
+            "pos": "v.",
+            "meaning": "看；期待",
+            "role": "動詞"
+          }
+        }
+      ],
+      "paragraph_analysis": [
+        {
+          "chinese_translation": "我們期待與你見面。",
+          "sentences": [
+            {
+              "en": "We look forward to meeting you.",
+              "zh": "我們期待與你見面。"
+            }
+          ]
+        },
+        {
+          "chinese_translation": "附件文件總結了項目時間表和下一步。",
+          "sentences": [
+            {
+              "en": "The attached document summarizes the project timeline and the next steps.",
+              "zh": "附件文件總結了項目時間表和下一步。"
+            }
+          ]
+        },
+        {
+          "chinese_translation": "如有任何問題，請在星期五前告訴我們。",
+          "sentences": [
+            {
+              "en": "Please let us know if you have any questions before Friday.",
+              "zh": "如有任何問題，請在星期五前告訴我們。"
+            }
+          ]
+        }
+      ],
+      "sentence_analysis": [],
+      "phrase_analysis": []
+    }
+  },
+  "assets": [
+    "desktop-zh-CN-marks-and-panel.png",
+    "reading-notes-zh-CN.md",
+    "full-backup-sample.json",
+    "full-backup-roundtrip.json",
+    "desktop-zh-HK-marks-and-panel.png",
+    "reading-notes-zh-HK.md",
+    "mobile-390x844-phrase-picker-zh-CN.png",
+    "mobile-390x844-phrase-saved-zh-CN.png",
+    "mobile-390x844-reading-panel-zh-CN.png",
+    "fixture.json",
+    "PREVIEW.md"
+  ],
+  "roundtrip": {
+    "restored": {
+      "ok": true,
+      "counts": {
+        "learningItems": 3,
+        "articleDocuments": 2,
+        "vocabularyBooks": 1,
+        "vocabularyEntries": 1,
+        "vocabularyLinks": 1,
+        "conversations": 1,
+        "messages": 70,
+        "articleVersions": 0
+      },
+      "verifyErrors": []
+    },
+    "messagesBefore": 70,
+    "messagesCleared": 0,
+    "messagesAfter": 70,
+    "itemsBefore": 3,
+    "itemsAfter": 3,
+    "linksBefore": 1,
+    "linksAfter": 1,
+    "documentsBefore": 2,
+    "documentsAfter": 2
+  }
+}

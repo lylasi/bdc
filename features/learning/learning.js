@@ -201,7 +201,11 @@ async function generateExamples() {
         try {
             const exampleSentences = await api.generateExamplesForWord(word);
             word.examples = exampleSentences;
-            storage.saveVocabularyBooks();
+            const saved = await storage.saveVocabularyBooks();
+            if (!saved.ok) {
+                ui.displayMessage(t('vocabulary.permanentSaveFailed', { message: saved.error || '' }), 'error', 6000);
+                return;
+            }
             displayExamples(word);
         } catch (error) {
             console.error('生成例句時出錯:', error);

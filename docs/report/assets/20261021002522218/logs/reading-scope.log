@@ -1,0 +1,14 @@
+[
+  {
+    "name": "queued write during account switch stays in original scope or aborts",
+    "ok": true
+  },
+  {
+    "name": "same occurrence from two pages has one persistent item",
+    "ok": true
+  },
+  {
+    "name": "A→B→A generation aborts stale queued write",
+    "ok": true
+  }
+]

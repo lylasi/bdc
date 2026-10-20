@@ -1,0 +1,16 @@
+[
+  {
+    "name": "native selection marks second occurrence",
+    "pass": true
+  },
+  {
+    "name": "new unmarked selection resets button state",
+    "pass": true,
+    "detail": "标记"
+  },
+  {
+    "name": "marked selection displays cancel",
+    "pass": true,
+    "detail": "取消标记"
+  }
+]

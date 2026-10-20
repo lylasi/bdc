@@ -1,0 +1,22 @@
+{
+  "case": "Refresh an open sentence card after the article body has changed",
+  "originalVersion": "cv1_7019bacf_64",
+  "actualItems": [
+    {
+      "version": "cv1_503634f7_81",
+      "start": -1
+    },
+    {
+      "version": "cv1_7019bacf_64",
+      "start": 0
+    }
+  ],
+  "actualLegacyAnalysis": [
+    "stale-card-refresh"
+  ],
+  "failedAssertions": [
+    "stale card refresh retains its original version or is blocked",
+    "stale card refresh cannot contaminate current analysis"
+  ],
+  "pageErrors": []
+}

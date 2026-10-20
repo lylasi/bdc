@@ -10,6 +10,7 @@ import {
   saveGradingHistory
 } from './storage.js';
 import * as articleStore from './article-store.js';
+import * as readingStore from './reading-store.js';
 import { loadGlobalSettings } from './settings.js';
 import { sanitizeAISettings } from './ai-settings-sanitize.js';
 import { applyRemoteAISettings, getAIProfileUpdatedAt } from './ai-profile-storage.js';
@@ -195,6 +196,17 @@ async function applyDictationPayload(remote, force = false) {
 function applyVocabularyPayload(remote, force = false) {
   const remoteV = remote?.vocabulary;
   if (!remoteV || typeof remoteV !== 'object') return;
+  // 詞書已遷移到逐項永久層後，舊快照群組不得再整組覆蓋。
+  // 例外：新裝置的永久層仍為空（例如後端尚未支援逐項 API），允許一次
+  // 唯讀匯入舊快照，避免使用者看不到既有資料；匯入後仍以永久層為準。
+  if (readingStore.isReadingMigrated()) {
+    if (Array.isArray(remoteV.books) && remoteV.books.length) {
+      readingStore.adoptLegacyVocabularySnapshot(remoteV.books).then((result) => {
+        if (result && result.books) state.setVocabularyBooks(readingStore.vocabularyBooksForUi());
+      }).catch(() => {});
+    }
+    return;
+  }
   const localUpdatedAt = getLocalUpdatedAt('vocabularyUpdatedAt', false);
   if (!shouldApplyGroup(remoteV.updatedAt, localUpdatedAt, force)) return;
 
@@ -294,6 +306,14 @@ function applyQAPayload(remote, force = false) {
 async function applyAssistantPayload(remote, force = false) {
   const remoteAsst = remote?.assistant;
   if (!remoteAsst || typeof remoteAsst !== 'object') return;
+  // 聊天已遷移到逐項永久層後，舊快照群組不得再整組覆蓋。
+  // 新裝置永久層仍為空時允許一次匯入，之後仍走逐項同步。
+  if (readingStore.isReadingMigrated()) {
+    if (Array.isArray(remoteAsst.conversations) && remoteAsst.conversations.length) {
+      readingStore.adoptLegacyAssistantSnapshot(remoteAsst).catch(() => {});
+    }
+    return;
+  }
   const localUpdatedAt = getLocalUpdatedAt(ASSISTANT_UPDATED_AT_KEY, false);
   if (!shouldApplyGroup(remoteAsst.updatedAt, localUpdatedAt, force)) return;
   await writeAssistantSnapshotPayload(remoteAsst, {
@@ -347,6 +367,15 @@ async function applySnapshotPayload(payload, force = false) {
       console.warn('[sync] 文章文件還原失敗:', error && error.code ? error.code : 'unknown');
     }
   }
+  // 完整備份的閱讀資料（學習條目、詞書、關聯、文件、消息、版本）
+  if (remote.reading && typeof remote.reading === 'object') {
+    try {
+      const result = await readingStore.restoreAll(remote.reading, { allowPartial: true });
+      if (!result.ok) console.warn('[sync] 閱讀資料還原失敗:', result.error);
+    } catch (error) {
+      console.warn('[sync] 閱讀資料還原失敗:', error && error.code ? error.code : 'unknown');
+    }
+  }
   applyQAPayload(remote, force);
   applyAISettingsPayload(remote, force);
   await applyAssistantPayload(remote, force);
@@ -386,9 +415,13 @@ export async function buildLocalSnapshot() {
   // Same here for QA group. Missing timestamp should not be considered newer than remote
   const qaUpdatedAt = getLocalUpdatedAt('qaUpdatedAt', false);
 
-  // Assistant（對話）
-  const assistantPayload = await buildAssistantSnapshotPayload();
-  const assistantUpdatedAt = getLocalUpdatedAt(ASSISTANT_UPDATED_AT_KEY, false);
+  // Assistant（對話）：遷移後由逐項永久層負責，不再讀舊快取或截取 50 條。
+  const assistantPayload = readingStore.isReadingMigrated()
+    ? { conversations: [] }
+    : await buildAssistantSnapshotPayload();
+  const assistantUpdatedAt = readingStore.isReadingMigrated()
+    ? ''
+    : getLocalUpdatedAt(ASSISTANT_UPDATED_AT_KEY, false);
   const globalSettings = loadGlobalSettings();
   const aiSettingsUpdatedAt = getAIProfileUpdatedAt();
 
@@ -408,11 +441,14 @@ export async function buildLocalSnapshot() {
         settings: dictation,
         gradingHistory
       },
-      vocabulary: {
-        updatedAt: vocabularyUpdatedAt,
-        books: state.vocabularyBooks,
-        activeBookId: state.activeBookId
-      },
+      // 詞書已完成遷移時不再放進快照；activeBookId 屬裝置偏好，留在本機。
+      ...(readingStore.isReadingMigrated() ? {} : {
+        vocabulary: {
+          updatedAt: vocabularyUpdatedAt,
+          books: state.vocabularyBooks,
+          activeBookId: state.activeBookId
+        }
+      }),
       qa: {
         updatedAt: qaUpdatedAt,
         manifest: qaManifest,
@@ -422,10 +458,12 @@ export async function buildLocalSnapshot() {
         updatedAt: aiSettingsUpdatedAt,
         settings: sanitizeAISettings(globalSettings?.ai)
       },
-      assistant: {
-        updatedAt: assistantUpdatedAt,
-        ...assistantPayload
-      }
+      ...(readingStore.isReadingMigrated() ? {} : {
+        assistant: {
+          updatedAt: assistantUpdatedAt,
+          ...assistantPayload
+        }
+      })
     }
   };
 }
@@ -464,12 +502,16 @@ export function lwwMerge(localPayload, remotePayload) {
   }
 
   // vocabulary group-level LWW
-  const lv = localPayload?.vocabulary;
-  const rv = remotePayload?.vocabulary;
-  const lvts = String(lv?.updatedAt || '');
-  const rvts = String(rv?.updatedAt || '');
-  if (lv && (!rv || lvts > rvts)) {
-    out.vocabulary = lv;
+  if (!readingStore.isReadingMigrated()) {
+    const lv = localPayload?.vocabulary;
+    const rv = remotePayload?.vocabulary;
+    const lvts = String(lv?.updatedAt || '');
+    const rvts = String(rv?.updatedAt || '');
+    if (lv && (!rv || lvts > rvts)) {
+      out.vocabulary = lv;
+    }
+  } else {
+    delete out.vocabulary;
   }
 
   // 文章群組不再參與快照合併（獨立逐篇同步）。遠端舊群組只在套用時匯入，
@@ -495,12 +537,16 @@ export function lwwMerge(localPayload, remotePayload) {
   }
 
   // assistant group-level LWW
-  const las = localPayload?.assistant;
-  const ras = remotePayload?.assistant;
-  const lasts = String(las?.updatedAt || '');
-  const rasts = String(ras?.updatedAt || '');
-  if (las && (!ras || lasts > rasts)) {
-    out.assistant = las;
+  if (!readingStore.isReadingMigrated()) {
+    const las = localPayload?.assistant;
+    const ras = remotePayload?.assistant;
+    const lasts = String(las?.updatedAt || '');
+    const rasts = String(ras?.updatedAt || '');
+    if (las && (!ras || lasts > rasts)) {
+      out.assistant = las;
+    }
+  } else {
+    delete out.assistant;
   }
 
   return out;

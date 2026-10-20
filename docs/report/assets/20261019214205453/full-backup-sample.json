@@ -1,0 +1,1736 @@
+{
+  "schemaVersion": 2,
+  "kind": "bdc-full-backup",
+  "exportedAt": "2026-10-19T13:42:09.858Z",
+  "payload": {
+    "userSettings": {
+      "dictation": {
+        "selectedBookId": null,
+        "repeatTimes": 2,
+        "wordInterval": 3,
+        "readChineseVoice": "none",
+        "loopMode": false,
+        "shuffleMode": false,
+        "listenOnlyMode": true,
+        "showWordInfo": false,
+        "floatListFields": {
+          "index": true,
+          "status": true,
+          "word": false,
+          "phonetic": false,
+          "meaning": false
+        },
+        "updatedAt": "2026-10-19T13:42:06.126Z"
+      }
+    },
+    "dictation": {
+      "updatedAt": "2026-10-19T13:42:06.126Z",
+      "settings": {
+        "selectedBookId": null,
+        "repeatTimes": 2,
+        "wordInterval": 3,
+        "readChineseVoice": "none",
+        "loopMode": false,
+        "shuffleMode": false,
+        "listenOnlyMode": true,
+        "showWordInfo": false,
+        "floatListFields": {
+          "index": true,
+          "status": true,
+          "word": false,
+          "phonetic": false,
+          "meaning": false
+        },
+        "updatedAt": "2026-10-19T13:42:06.126Z"
+      },
+      "gradingHistory": []
+    },
+    "qa": {
+      "updatedAt": "",
+      "manifest": [],
+      "sets": {}
+    },
+    "aiSettings": {
+      "updatedAt": "",
+      "settings": {
+        "apiUrl": "",
+        "providers": {},
+        "models": {},
+        "tasks": {},
+        "defaultModel": "",
+        "keySyncDefault": "cloud"
+      }
+    },
+    "articleDocuments": [
+      {
+        "id": "art_reading_preview",
+        "title": "Meeting Follow-up",
+        "body": "We look forward to meeting you.\n\nThe attached document summarizes the project timeline and the next steps.\n\nPlease let us know if you have any questions before Friday.",
+        "analysis": {
+          "chinese_translation": "我們期待與你見面。\n\n附件文件總結了項目時間表和下一步。\n\n如有任何問題，請在星期五前告訴我們。",
+          "word_alignment": [],
+          "detailed_analysis": [
+            {
+              "word": "look",
+              "sentence": "We look forward to meeting you.",
+              "analysis": {
+                "phonetic": "lʊk",
+                "pos": "v.",
+                "meaning": "看；期待",
+                "role": "動詞"
+              }
+            }
+          ],
+          "paragraph_analysis": [
+            {
+              "chinese_translation": "我們期待與你見面。",
+              "sentences": [
+                {
+                  "en": "We look forward to meeting you.",
+                  "zh": "我們期待與你見面。"
+                }
+              ]
+            },
+            {
+              "chinese_translation": "附件文件總結了項目時間表和下一步。",
+              "sentences": [
+                {
+                  "en": "The attached document summarizes the project timeline and the next steps.",
+                  "zh": "附件文件總結了項目時間表和下一步。"
+                }
+              ]
+            },
+            {
+              "chinese_translation": "如有任何問題，請在星期五前告訴我們。",
+              "sentences": [
+                {
+                  "en": "Please let us know if you have any questions before Friday.",
+                  "zh": "如有任何問題，請在星期五前告訴我們。"
+                }
+              ]
+            }
+          ],
+          "sentence_analysis": [],
+          "phrase_analysis": []
+        },
+        "sourceType": "paste",
+        "sourceUrl": "",
+        "revision": 0,
+        "createdAt": "2026-10-19T13:42:07.546Z",
+        "updatedAt": "2026-10-19T13:42:07.546Z",
+        "lastOpenedAt": "2026-10-19T13:42:07.547Z",
+        "deletedAt": ""
+      }
+    ],
+    "reading": {
+      "ok": true,
+      "schemaVersion": 1,
+      "exportedAt": "2026-10-19T13:42:09.858Z",
+      "scope": "http://127.0.0.1:19999/test-endpoint::guest",
+      "learningItems": [
+        {
+          "articleId": "art_reading_preview",
+          "contentVersion": "cv1_8087a6a0_167",
+          "kind": "phrase",
+          "anchor": {
+            "start": 3,
+            "end": 18,
+            "quote": "look forward to",
+            "prefix": "We ",
+            "suffix": " meeting you.\n\nThe attached document sum"
+          },
+          "sentence": "We look forward to meeting you.",
+          "explanation": {
+            "language": "zh-CN",
+            "result": {
+              "selection": "look forward to",
+              "analysis": {
+                "meaning": "期待；盼望",
+                "usage": "後接名詞或動名詞，表示期待某事發生。"
+              }
+            },
+            "generatedAt": "2026-10-19T13:42:07.547Z",
+            "provenance": {
+              "source": "preview"
+            }
+          },
+          "understanding": "needs_review",
+          "note": "後面接名詞或動名詞，不能接動詞原形。",
+          "id": "li_cv1_aef8b1bc_64",
+          "firstViewedAt": "2026-10-19T13:42:07.548Z",
+          "lastViewedAt": "2026-10-19T13:42:07.548Z",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.548Z",
+          "updatedAt": "2026-10-19T13:42:07.548Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_preview",
+          "contentVersion": "cv1_8087a6a0_167",
+          "kind": "word",
+          "anchor": {
+            "start": 3,
+            "end": 7,
+            "quote": "look",
+            "prefix": "We ",
+            "suffix": " forward to meeting you.\n\nThe attached d"
+          },
+          "sentence": "We look forward to meeting you.",
+          "explanation": {
+            "language": "zh-CN",
+            "result": {
+              "word": "look",
+              "analysis": {
+                "meaning": "看；期待"
+              }
+            },
+            "generatedAt": "2026-10-19T13:42:07.549Z",
+            "provenance": {}
+          },
+          "understanding": "understood",
+          "id": "li_cv1_d8e08c0d_50",
+          "firstViewedAt": "2026-10-19T13:42:07.549Z",
+          "lastViewedAt": "2026-10-19T13:42:07.549Z",
+          "note": "",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.549Z",
+          "updatedAt": "2026-10-19T13:42:07.549Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_preview",
+          "contentVersion": "cv1_8087a6a0_167",
+          "kind": "sentence",
+          "anchor": {
+            "start": 33,
+            "end": 106,
+            "quote": "The attached document summarizes the project timeline and the next steps.",
+            "prefix": "We look forward to meeting you.\n\n",
+            "suffix": "\n\nPlease let us know if you have any que"
+          },
+          "sentence": "The attached document summarizes the project timeline and the next steps.",
+          "explanation": {
+            "language": "zh-CN",
+            "result": {
+              "translation": "附件文件總結了項目時間表和下一步。",
+              "chunks": [
+                {
+                  "text": "summarizes",
+                  "role": "動詞",
+                  "note": "總結"
+                }
+              ]
+            },
+            "generatedAt": "2026-10-19T13:42:07.549Z",
+            "provenance": {}
+          },
+          "understanding": "understood",
+          "note": "summarize 的主語是 document。",
+          "id": "li_cv1_e45a7e69_126",
+          "firstViewedAt": "2026-10-19T13:42:07.549Z",
+          "lastViewedAt": "2026-10-19T13:42:07.549Z",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.549Z",
+          "updatedAt": "2026-10-19T13:42:07.549Z",
+          "deletedAt": "",
+          "revision": 0
+        }
+      ],
+      "articleDocuments": [
+        {
+          "articleId": "art_reading_preview",
+          "kind": "ai",
+          "title": "AI 片語補充",
+          "content": "look forward to + 名詞／動名詞，表示期待某事發生。\n\n例：We look forward to hearing from you.",
+          "sourceItemIds": [
+            "li_cv1_aef8b1bc_64"
+          ],
+          "sourceMessageIds": [
+            "msg_preview"
+          ],
+          "contentVersion": "cv1_8087a6a0_167",
+          "createdAt": "2026-10-19T13:42:07.550Z",
+          "updatedAt": "2026-10-19T13:42:07.550Z",
+          "deletedAt": "",
+          "id": "doc_mvfazxdquz8anr86",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_preview",
+          "kind": "note",
+          "title": "全篇心得",
+          "content": "這封郵件語氣禮貌，重點是確認見面時間與附件。",
+          "sourceItemIds": [],
+          "sourceMessageIds": [],
+          "contentVersion": "cv1_8087a6a0_167",
+          "createdAt": "2026-10-19T13:42:07.551Z",
+          "updatedAt": "2026-10-19T13:42:07.551Z",
+          "deletedAt": "",
+          "id": "doc_mvfazxdrfnyfppng",
+          "revision": 0
+        }
+      ],
+      "vocabularyBooks": [
+        {
+          "name": "本文生詞本",
+          "sourceType": "article",
+          "createdAt": "2026-10-19T13:42:07.549Z",
+          "id": "book_preview",
+          "revision": 0,
+          "updatedAt": "2026-10-19T13:42:07.550Z"
+        }
+      ],
+      "vocabularyEntries": [
+        {
+          "bookId": "book_preview",
+          "word": "look forward to",
+          "meaning": "期待；盼望",
+          "phonetic": "",
+          "examples": [],
+          "sources": [],
+          "addedAt": "2026-10-19T13:42:07.549Z",
+          "id": "entry_look",
+          "revision": 0,
+          "updatedAt": "2026-10-19T13:42:07.550Z",
+          "createdAt": "2026-10-19T13:42:07.550Z"
+        }
+      ],
+      "vocabularyLinks": [
+        {
+          "itemId": "li_cv1_aef8b1bc_64",
+          "bookId": "book_preview",
+          "entryId": "entry_look",
+          "addedAt": "2026-10-19T13:42:07.549Z",
+          "id": "link_look",
+          "revision": 0,
+          "updatedAt": "2026-10-19T13:42:07.550Z",
+          "createdAt": "2026-10-19T13:42:07.550Z"
+        }
+      ],
+      "conversations": [
+        {
+          "articleId": "art_reading_preview",
+          "legacyArticleKey": "",
+          "title": "Preview Chat",
+          "createdAt": "2026-10-19T13:42:07.551Z",
+          "updatedAt": "2026-10-19T13:42:07.576Z",
+          "deletedAt": "",
+          "id": "conv_preview",
+          "revision": 0
+        }
+      ],
+      "messages": [
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 1",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.552Z",
+          "updatedAt": "2026-10-19T13:42:07.552Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdswfu2it5s",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 2",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.553Z",
+          "updatedAt": "2026-10-19T13:42:07.553Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdt59x3t9tg",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 4",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.555Z",
+          "updatedAt": "2026-10-19T13:42:07.553Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdtqhkcx6sm",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 3",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.554Z",
+          "updatedAt": "2026-10-19T13:42:07.553Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdtvk1gn1bz",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 5",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.556Z",
+          "updatedAt": "2026-10-19T13:42:07.554Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxduj6nrsj45",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 8",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.559Z",
+          "updatedAt": "2026-10-19T13:42:07.555Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdvnbtfuzov",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 6",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.557Z",
+          "updatedAt": "2026-10-19T13:42:07.555Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdvvsyv2ss4",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 7",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.558Z",
+          "updatedAt": "2026-10-19T13:42:07.555Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdvx40bbu3v",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 10",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.561Z",
+          "updatedAt": "2026-10-19T13:42:07.556Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdwoxbu0zqt",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 9",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.560Z",
+          "updatedAt": "2026-10-19T13:42:07.556Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdwrml72uvd",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 11",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.562Z",
+          "updatedAt": "2026-10-19T13:42:07.557Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdxlq2aoxkz",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 12",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.563Z",
+          "updatedAt": "2026-10-19T13:42:07.557Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdxmjxikchj",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 13",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.564Z",
+          "updatedAt": "2026-10-19T13:42:07.557Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdxz3rom3l0",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 16",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.567Z",
+          "updatedAt": "2026-10-19T13:42:07.558Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdy44kr9zbh",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 14",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.565Z",
+          "updatedAt": "2026-10-19T13:42:07.558Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdyloefmeam",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 15",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.566Z",
+          "updatedAt": "2026-10-19T13:42:07.558Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdymgsp6en3",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 17",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.568Z",
+          "updatedAt": "2026-10-19T13:42:07.559Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdz9yv7tnmr",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 18",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.569Z",
+          "updatedAt": "2026-10-19T13:42:07.559Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxdzmyjl2m51",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 21",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.572Z",
+          "updatedAt": "2026-10-19T13:42:07.560Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe02muo7nry",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 19",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.570Z",
+          "updatedAt": "2026-10-19T13:42:07.560Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe0ki9dz2ci",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 20",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.571Z",
+          "updatedAt": "2026-10-19T13:42:07.560Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe0t8qilr6m",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 24",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.575Z",
+          "updatedAt": "2026-10-19T13:42:07.561Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe1obvsgv21",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 22",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.573Z",
+          "updatedAt": "2026-10-19T13:42:07.561Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe1t9r9aksx",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 23",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.574Z",
+          "updatedAt": "2026-10-19T13:42:07.561Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe1yhncgunh",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 25",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.576Z",
+          "updatedAt": "2026-10-19T13:42:07.562Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe2ast6kc89",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 26",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.577Z",
+          "updatedAt": "2026-10-19T13:42:07.562Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe2er7aekt6",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 28",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.579Z",
+          "updatedAt": "2026-10-19T13:42:07.563Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe30sr18gka",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 29",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.580Z",
+          "updatedAt": "2026-10-19T13:42:07.563Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe359b2k44c",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 27",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.578Z",
+          "updatedAt": "2026-10-19T13:42:07.563Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe3lr9asm95",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 31",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.582Z",
+          "updatedAt": "2026-10-19T13:42:07.564Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe406mdu0s8",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 32",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.583Z",
+          "updatedAt": "2026-10-19T13:42:07.564Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe4oln0ukge",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 30",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.581Z",
+          "updatedAt": "2026-10-19T13:42:07.564Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe4r6bf54ns",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 33",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.584Z",
+          "updatedAt": "2026-10-19T13:42:07.564Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe4v6csmmxn",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 36",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.587Z",
+          "updatedAt": "2026-10-19T13:42:07.565Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe51hppd8in",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 35",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.586Z",
+          "updatedAt": "2026-10-19T13:42:07.565Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe5go0p883e",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 34",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.585Z",
+          "updatedAt": "2026-10-19T13:42:07.565Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe5mg6ysmii",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 38",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.589Z",
+          "updatedAt": "2026-10-19T13:42:07.566Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe6h9q6y70s",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 37",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.588Z",
+          "updatedAt": "2026-10-19T13:42:07.566Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe6zbatvkc6",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 42",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.593Z",
+          "updatedAt": "2026-10-19T13:42:07.567Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe72cjkqze4",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 41",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.592Z",
+          "updatedAt": "2026-10-19T13:42:07.567Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe7q94jnkfn",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 40",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.591Z",
+          "updatedAt": "2026-10-19T13:42:07.567Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe7y2zh4lo4",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 39",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.590Z",
+          "updatedAt": "2026-10-19T13:42:07.567Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe7zueehk7r",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 44",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.595Z",
+          "updatedAt": "2026-10-19T13:42:07.568Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe8isqhjse8",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 45",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.596Z",
+          "updatedAt": "2026-10-19T13:42:07.568Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe8m77j6aer",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 43",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.594Z",
+          "updatedAt": "2026-10-19T13:42:07.568Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe8wsy5olk0",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 46",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.597Z",
+          "updatedAt": "2026-10-19T13:42:07.569Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe939m628ao",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 48",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.599Z",
+          "updatedAt": "2026-10-19T13:42:07.569Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe96oj6txph",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 47",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.598Z",
+          "updatedAt": "2026-10-19T13:42:07.569Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxe9isqyos9w",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 51",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.602Z",
+          "updatedAt": "2026-10-19T13:42:07.570Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxea1ndmva55",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 52",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.603Z",
+          "updatedAt": "2026-10-19T13:42:07.570Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxeafc328hf9",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 50",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.601Z",
+          "updatedAt": "2026-10-19T13:42:07.570Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxeajijsp4si",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 49",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.600Z",
+          "updatedAt": "2026-10-19T13:42:07.570Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxeaorlc98wm",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 54",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.605Z",
+          "updatedAt": "2026-10-19T13:42:07.571Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxebnbprxisp",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 55",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.606Z",
+          "updatedAt": "2026-10-19T13:42:07.571Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxebwl211tlf",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 53",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.604Z",
+          "updatedAt": "2026-10-19T13:42:07.571Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxebx7u7npgy",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 56",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.607Z",
+          "updatedAt": "2026-10-19T13:42:07.572Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxecj7aqum5c",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 57",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.608Z",
+          "updatedAt": "2026-10-19T13:42:07.572Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxecr0uruqpv",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 58",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.609Z",
+          "updatedAt": "2026-10-19T13:42:07.572Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxecxtcmup2l",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 62",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.613Z",
+          "updatedAt": "2026-10-19T13:42:07.573Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxedhd1wd71y",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 60",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.611Z",
+          "updatedAt": "2026-10-19T13:42:07.573Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxedjswvqq0d",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 59",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.610Z",
+          "updatedAt": "2026-10-19T13:42:07.573Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxedreiqbjup",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 61",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.612Z",
+          "updatedAt": "2026-10-19T13:42:07.573Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxedv0ry5vsg",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 65",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.616Z",
+          "updatedAt": "2026-10-19T13:42:07.574Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxeegbt2unz1",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 63",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.614Z",
+          "updatedAt": "2026-10-19T13:42:07.574Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxeerjd0mct5",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 64",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.615Z",
+          "updatedAt": "2026-10-19T13:42:07.574Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxeeyyqwo4yf",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 67",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.618Z",
+          "updatedAt": "2026-10-19T13:42:07.575Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxefktcsh8cf",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 66",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.617Z",
+          "updatedAt": "2026-10-19T13:42:07.575Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxefohd70fkz",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 68",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.619Z",
+          "updatedAt": "2026-10-19T13:42:07.575Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxefsdh1zcv7",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "assistant",
+          "content": "preview chat message 70",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.621Z",
+          "updatedAt": "2026-10-19T13:42:07.576Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxeg2yalqteq",
+          "revision": 0
+        },
+        {
+          "conversationId": "conv_preview",
+          "role": "user",
+          "content": "preview chat message 69",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-19T13:42:07.620Z",
+          "updatedAt": "2026-10-19T13:42:07.576Z",
+          "deletedAt": "",
+          "id": "msg_mvfazxegsc2rqkla",
+          "revision": 0
+        }
+      ],
+      "articleVersions": [],
+      "meta": {
+        "migratedAt": "2026-10-19T13:42:06.106Z",
+        "migrationComplete": true
+      }
+    }
+  }
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "marks",
+    "started": "2026-10-21T00:57:51.140752+08:00",
+    "exit_code": 0,
+    "log": "docs/report/assets/20261021002319652/logs/final-marks.log",
+    "tail": "sociation 1\nPASS refresh keeps explicit false despite vocabulary link \nPASS deliberate duplicate add marks again while preserving note \nPASS removing vocabulary entry preserves mark and note \nPASS legacy migration failure is reported and retried {\"failedMigration\":{\"ok\":false,\"error\":\"idb_aborted\",\"items\":2,\"documents\":0},\"retriedMigration\":{\"ok\":true,\"items\":2,\"documents\":0},\"marked\":true}\nPASS existing item link-only API preserves association {\"ok\":true,\"links\":[\"link_independent_link_only\"]}\n"
+  },
+  {
+    "name": "selection",
+    "started": "2026-10-21T00:57:51.140826+08:00",
+    "exit_code": 0,
+    "log": "docs/report/assets/20261021002319652/logs/final-selection.log",
+    "tail": "PASS native selection marks second occurrence \nPASS new unmarked selection resets button state \"标记\"\nPASS marked selection displays cancel \"取消标记\"\n"
+  },
+  {
+    "name": "ui",
+    "started": "2026-10-21T00:57:51.140875+08:00",
+    "exit_code": 0,
+    "log": "docs/report/assets/20261021002319652/logs/final-ui.log",
+    "tail": "-390 page has no horizontal overflow \nPASS zh-CN-320 two repeated words visible \nPASS zh-CN-320 lookup alone does not underline \nPASS zh-CN-320 manual mark is exact second occurrence [false,true]\nPASS zh-CN-320 reopened second popup displays Cancel mark \"取消标记\"\nPASS zh-CN-320 write-note focuses exact note field {\"tag\":\"TEXTAREA\",\"id\":\"li_cv1_4676db94_50\"}\nPASS zh-CN-320 unmark preserves typed note \nPASS zh-CN-320 old understanding controls removed \nPASS zh-CN-320 page has no horizontal overflow \n"
+  },
+  {
+    "name": "async",
+    "started": "2026-10-21T00:57:55.243942+08:00",
+    "exit_code": 0,
+    "log": "docs/report/assets/20261021002319652/logs/final-async.log",
+    "tail": "PASS late word response cannot replace newer selected word \"forward (adv.)\"\nPASS late response retains original version or is ignored [{\"version\":\"cv1_7019bacf_64\",\"start\":19}]\nPASS old-version response does not contaminate current article analysis [\"forward\"]\nPASS late response cannot write into switched account with same article ID []\n"
+  },
+  {
+    "name": "stale-sentence",
+    "started": "2026-10-21T00:57:55.716266+08:00",
+    "exit_code": 0,
+    "log": "docs/report/assets/20261021002319652/logs/final-stale-sentence.log",
+    "tail": "DBGCONSOLE warning [sync] syncNowBtn not found\n  ok   stale card refresh retains its original version or is blocked\n  ok   stale card refresh cannot contaminate current analysis\n  ok   流程沒有 page error\n\n文章版本歸屬回歸測試全部通過\n"
+  },
+  {
+    "name": "version-ownership",
+    "started": "2026-10-21T00:57:59.428455+08:00",
+    "exit_code": 0,
+    "log": "docs/report/assets/20261021002319652/logs/final-version-ownership.log",
+    "tail": "正文\n\n[舊版查詞回應不污染目前正文]\n  ok   舊版查詞不污染目前 result.detailed_analysis\n  ok   查詞解釋仍只保存成原版本\n  ok   改版後舊回應不重新顯示彈窗\n\n[refresh 等待期間改版則丟棄結果]\n  ok   改版後 refresh 不寫入 legacy sentence_analysis\n  ok   改版後 refresh 不更新原卡片\n  ok   競態不顯示多餘的儲存失敗訊息\n\n[正文已改版後點舊句卡 refresh 必須被阻止]\n  ok   改版後點 refresh 不再發送新請求\n  ok   舊卡 refresh 不在新版本建立 -1 條目\n  ok   舊卡 refresh 不污染新版 sentence_analysis\n\n[首次句子回應延遲跨版本不得重繪新正文]\n  ok   首次句子延遲回應不寫入新版 sentence_analysis\n  ok   首次句子延遲回應不重繪新版本卡片\n  ok   首次句子延遲回應只保留原版本條目\n  ok   流程沒有 page error\n\n文章版本歸屬回歸測試全部通過\n"
+  }
+]

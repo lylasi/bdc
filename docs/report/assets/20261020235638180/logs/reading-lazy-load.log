@@ -1,0 +1,14 @@
+[
+  {
+    "name": "startup list reads summaries only (no docs/items/documents/messages)",
+    "ok": true
+  },
+  {
+    "name": "opening one article hydrates only that article and no messages",
+    "ok": true
+  },
+  {
+    "name": "messages load by conversation index only when requested",
+    "ok": true
+  }
+]

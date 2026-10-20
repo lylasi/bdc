@@ -1,4 +1,5 @@
 import * as state from './state.js';
+import * as readingStore from './reading-store.js';
 import * as articleStore from './article-store.js';
 import { touch as syncTouch } from './sync-signals.js';
 import { t } from './i18n.js';
@@ -175,12 +176,46 @@ export function findArticleMetaByUrl(url) {
 // --- 單詞本存儲 ---
 
 /**
- * 將當前的單詞本數據保存到 localStorage。
+ * 將目前單詞本視圖同步到永久層；永久層成功後才更新相容用 localStorage。
+ * 回傳 Promise<{ok,error?}>，呼叫端若需要「不得顯示成功」必須 await。
  */
 export function saveVocabularyBooks(options = {}) {
     const normalizedOptions = normalizePersistOptions(options);
-    localStorage.setItem('vocabularyBooks', JSON.stringify(state.vocabularyBooks));
-    updateGroupPersistence('vocabularyUpdatedAt', 'vocabulary', normalizedOptions);
+    let snapshot = [];
+    try { snapshot = JSON.parse(JSON.stringify(state.vocabularyBooks || [])); } catch (_) { snapshot = Array.isArray(state.vocabularyBooks) ? [...state.vocabularyBooks] : []; }
+
+    const writeCompatibilityView = () => {
+        try { localStorage.setItem('vocabularyBooks', JSON.stringify(snapshot)); } catch (_) {}
+        updateGroupPersistence('vocabularyUpdatedAt', 'vocabulary', normalizedOptions);
+    };
+    if (normalizedOptions.suppressPermanent === true) {
+        writeCompatibilityView();
+        return Promise.resolve({ ok: true, suppressed: true });
+    }
+    return Promise.resolve()
+        .then(() => readingStore.syncVocabularyFromMemory(snapshot))
+        .then((result) => {
+            if (!result || !result.ok) {
+                const error = result?.error || 'save_failed';
+                try {
+                    document.dispatchEvent(new CustomEvent('bdc:reading-save-error', {
+                        detail: { scope: 'vocabulary', error }
+                    }));
+                } catch (_) {}
+                return { ok: false, error };
+            }
+            writeCompatibilityView();
+            return result;
+        })
+        .catch((error) => {
+            const code = error?.code || error?.message || 'save_failed';
+            try {
+                document.dispatchEvent(new CustomEvent('bdc:reading-save-error', {
+                    detail: { scope: 'vocabulary', error: code }
+                }));
+            } catch (_) {}
+            return { ok: false, error: code };
+        });
 }
 
 /**
@@ -189,7 +224,13 @@ export function saveVocabularyBooks(options = {}) {
  * 同時包含一個數據遷移邏輯，用於清理舊數據格式。
  */
 export function loadVocabularyBooks() {
-    let books = safeParseArray('vocabularyBooks');
+    // 遷移完成後永久層是唯一權威；即使目前是空的，也不回讀舊 localStorage，
+    // 否則已刪除的詞書或上一個帳戶的資料會復活。只有遷移失敗時才用舊視圖。
+    let books = [];
+    let migrated = false;
+    try { migrated = readingStore.isReadingMigrated(); } catch (_) {}
+    try { books = readingStore.vocabularyBooksForUi(); } catch (_) { books = []; }
+    if (!migrated) books = safeParseArray('vocabularyBooks');
 
     if (books.length > 0) {
         // 資料遷移和清理：遍歷所有單詞並標準化音標格式，同時補齊生詞本 metadata
@@ -356,6 +397,8 @@ export function removeWordFromWordbook(wordbookId, wordEntryId) {
     if (nextWords.length === words.length) return;
     const nextBook = { ...book, words: nextWords };
     saveWordbook(nextBook);
+    // 移出詞書只移除詞條與有效來源關聯；文章學習條目、標記與筆記保留。
+    try { readingStore.removeVocabularyEntry(wordEntryId).catch(() => {}); } catch (_) {}
 }
 
 /**

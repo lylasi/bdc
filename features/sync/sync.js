@@ -4,6 +4,9 @@
 import * as dom from '../../modules/dom.js';
 import * as state from '../../modules/state.js';
 import { buildLocalSnapshot, applyMergedSnapshot, restoreSnapshotLocally } from '../../modules/sync-core.js';
+import { syncReading } from '../../modules/reading-sync.js';
+import * as readingStore from '../../modules/reading-store.js';
+import * as cache from '../../modules/cache.js';
 import {
   syncNow,
   auth,
@@ -231,14 +234,17 @@ function createSyncGuard() {
 
 /** 文章儲存範圍（endpoint + user）切換後重新載入，並通知文章模組清空目前畫面。 */
 const GUEST_ADOPT_ASKED_KEY = 'bdc:articles:guest-adopt-asked';
+const GUEST_READING_ADOPT_ASKED_KEY = 'bdc:reading:guest-adopt-asked';
 
 async function refreshArticleScope({ offerGuestMerge = false } = {}) {
   const result = await articleStore.refreshScope();
+  try { await readingStore.reloadReadingScope(); } catch (_) {}
   if (result && result.changed) {
     try { document.dispatchEvent(new CustomEvent('bdc:articles-scope-changed')); } catch (_) {}
   }
   if (offerGuestMerge && !articleStore.isGuestScope()) {
     try { await offerGuestArticleMerge(); } catch (_) {}
+    try { await offerGuestReadingMerge(); } catch (_) {}
   }
   return result;
 }
@@ -272,6 +278,33 @@ async function offerGuestArticleMerge() {
   }
 }
 
+async function offerGuestReadingMerge() {
+    if (articleStore.isGuestScope()) return;
+    const userId = getStoredSyncUserId();
+    let asked = '';
+    try { asked = localStorage.getItem(GUEST_READING_ADOPT_ASKED_KEY) || ''; } catch (_) {}
+    if (asked === userId) return;
+    const counts = await readingStore.guestReadingCounts();
+    const total = counts.books + counts.entries + counts.conversations + counts.messages + counts.items + counts.documents;
+    if (!total) return;
+    try { localStorage.setItem(GUEST_READING_ADOPT_ASKED_KEY, userId); } catch (_) {}
+    const ok = await ui.confirmAction({
+        title: t('sync.guestReadingTitle'),
+        message: t('sync.guestReadingMessage', { books: counts.books, items: counts.items, messages: counts.messages }),
+        confirmLabel: t('sync.guestReadingConfirm'),
+        cancelLabel: t('sync.guestReadingSkip')
+    });
+    if (!ok) return;
+    const result = await readingStore.adoptGuestReadingData();
+    if (result && result.ok) {
+        ui.displayMessage(t('sync.guestReadingMerged', { count: result.imported || 0 }), 'success', 3000);
+        document.dispatchEvent(new CustomEvent('bdc:reading-change', { detail: {} }));
+        try { scheduleAutoSync('reading:guest-adopt'); } catch (_) {}
+    } else {
+        ui.displayMessage(t('sync.readingPending'), 'error');
+    }
+}
+
 /**
  * 文章同步是一個獨立階段：即使快照沒有任何變更也要執行，失敗也不阻斷其他群組。
  * 回傳 `{ ok, info }` 或 `{ ok:false, error }`，不拋出（除了 stale session）。
@@ -291,8 +324,34 @@ async function runArticleSyncPhase() {
   }
 }
 
+/**
+ * 逐項閱讀資料同步：文章同步之後、快照之前。後端尚未支援時只回報
+ * 「需要更新服務端」，本機功能與快照其他群組仍照常運作。
+ */
+let readingServerUpdateWarned = false;
+async function runReadingSyncPhase() {
+  try {
+    const info = await syncReading();
+    if (info && info.unsupported) {
+      if (!readingServerUpdateWarned) {
+        readingServerUpdateWarned = true;
+        try { ui.displayMessage(t('sync.readingServerUpdateRequired'), 'warning', 7000); } catch (_) {}
+      }
+      updateStatus(t('sync.readingServerUpdateRequired'));
+      return { ok: false, error: { code: 'server_update_required' }, info };
+    }
+    if (info && (info.pending || info.conflictCount)) {
+      updateStatus(t('sync.readingPending'));
+    }
+    return { ok: true, info };
+  } catch (e) {
+    if (e && (e.code === 'stale_session' || e.code === 'unauthorized')) throw e;
+    console.warn('[sync] reading sync failed:', e && (e.code || e.message));
+    return { ok: false, error: e };
+  }
+}
+
 async function handleSync() {
-  console.log('[sync] handleSync()');
   // 必須登入後才能同步
   const { data } = await auth.getSession();
   if (!data?.session) {
@@ -323,6 +382,8 @@ async function handleSync() {
     // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
     const articlePhase = await runArticleSyncPhase();
     if (guard.stale()) return;
+    const readingPhase = await runReadingSyncPhase();
+    if (guard.stale()) return;
     const info = await syncNow(guard.build, guard.apply);
     if (guard.stale()) return;
     lastSyncAt = Date.now();
@@ -335,6 +396,8 @@ async function handleSync() {
       try { ui.displayMessage(t('sync.restoredEmptyMessage'), 'warning', 5000); } catch(_) {}
     } else if (!articlePhase.ok) {
       updateStatus(t('sync.articleSyncFailed'));
+    } else if (!readingPhase.ok && readingPhase.info?.unsupported) {
+      updateStatus(t('sync.readingServerUpdateRequired'));
     } else {
       updateStatus(t('sync.syncDone'));
       try { ui.displayMessage(t('sync.syncDone'), 'success', 2000); } catch(_) {}
@@ -1749,19 +1812,9 @@ function setGearLoginState(isLoggedIn, email) {
 // 通行碼登入模式：不再需要郵件回跳處理與密碼重設 / 變更流程（已移除）
 
 async function clearLocalCaches() {
-  try {
-    // localStorage cache entries
-    const keys = Object.keys(localStorage);
-    for (const k of keys) { if (k.startsWith('bdc:cache:v1:')) localStorage.removeItem(k); }
-  } catch(_) {}
-  try {
-    // IndexedDB 'bdc-cache'
-    const dbs = await (indexedDB?.databases ? indexedDB.databases() : Promise.resolve([]));
-    const has = Array.isArray(dbs) ? dbs.some(d => d.name === 'bdc-cache') : true;
-    if (has && indexedDB && indexedDB.deleteDatabase) {
-      await new Promise(res => { const req = indexedDB.deleteDatabase('bdc-cache'); req.onsuccess = req.onerror = req.onblocked = () => res(); });
-    }
-  } catch(_) {}
+  // 只清可重建的 AI 快取；文章、學習條目、詞書、筆記、聊天與文件都不受影響。
+  const result = await cache.clearRebuildable();
+  if (!result || !result.ok) throw new Error('cache_clear_failed');
 }
 
 function escapeHtml(s){
@@ -1896,6 +1949,7 @@ async function showAssistantSessions(){
     const title = prompt(t('assistant.sessionName'), t('assistant.newSession')) || t('assistant.newSession');
     try {
       const meta = await createAssistantConversation({ articleKey, title, messages: [] });
+      if (!meta) throw new Error('create_failed');
       index = listAssistantConversationMetas();
       left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed var(--line);cursor:pointer;"><div style="font-weight:600;color:var(--ink-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?t('sync.globalPrefix'):'')+meta.title)}</div><div style="font-size:12px;color:var(--ink-500);">${formatDateTime(meta.updatedAt || Date.now())}</div></div>`;
     } catch(_) {}
@@ -1908,19 +1962,20 @@ async function showAssistantSessions(){
       const text = await f.text(); const json = JSON.parse(text||'{}');
       const articleKey = json.articleKey || 'global'; const title = json.title || t('assistant.importedSession'); const messages = Array.isArray(json.messages)? json.messages: [];
       const meta = await createAssistantConversation({ articleKey, title, messages });
+      if (!meta) throw new Error('create_failed');
       index = listAssistantConversationMetas();
       left.innerHTML += `<div class="as-item" data-id="${meta.id}" style="padding:10px 12px;border-bottom:1px dashed var(--line);cursor:pointer;"><div style="font-weight:600;color:var(--ink-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((articleKey==='global'?t('sync.globalPrefix'):'')+meta.title)}</div><div style="font-size:12px;color:var(--ink-500);">${formatDateTime(meta.updatedAt || Date.now())}</div></div>`;
     } catch(e) { ui.displayMessage(t('assistant.importFailed', { message: e?.message || '' }), 'error'); }
   });
   // 重命名
-  leftToolbar.querySelector('#as-rename').addEventListener('click', () => {
+  leftToolbar.querySelector('#as-rename').addEventListener('click', async () => {
     const active = left.querySelector('.as-item.active');
     const id = active ? active.getAttribute('data-id') : (currentId || '');
     if (!id) { ui.displayMessage(t('assistant.selectSession'), 'warning'); return; }
     const meta = index.find(x => x.id === id) || null; if (!meta) return;
     const newTitle = prompt(t('assistant.renamePrompt'), meta.title || t('assistant.session'));
     if (!newTitle || !newTitle.trim()) return;
-    const updated = renameAssistantConversation(id, newTitle.trim());
+    const updated = await renameAssistantConversation(id, newTitle.trim());
     if (!updated) return;
     index = listAssistantConversationMetas();
     const item = left.querySelector(`.as-item[data-id="${id}"]`);
@@ -2074,6 +2129,8 @@ async function doAutoSync(reason) {
     // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
     const articlePhase = await runArticleSyncPhase();
     if (guard.stale()) return;
+    const readingPhase = await runReadingSyncPhase();
+    if (guard.stale()) return;
     const info = await syncNow(guard.build, guard.apply);
     if (guard.stale()) return;
     lastSyncAt = Date.now();
@@ -2084,6 +2141,8 @@ async function doAutoSync(reason) {
     if (info && info.restoredFromRemote) {
       updateStatus(t('sync.restoredAutomatic'));
       try { ui.displayMessage(t('sync.restoredAutomatic'), 'warning', 5000); } catch(_) {}
+    } else if (readingPhase && !readingPhase.ok && readingPhase.info?.unsupported) {
+      updateStatus(t('sync.readingServerUpdateRequired'));
     } else {
       updateStatus(t('sync.syncDone'));
       // 自動同步成功不再彈出提示，避免干擾
@@ -2221,7 +2280,7 @@ function showBackupRestoreModal() {
       // 相容三種格式：原始 payload / 完整快照 {payload} / 備份包 {ts,note,payload}
       const payload = (parsed && typeof parsed === 'object' && parsed.payload && typeof parsed.payload === 'object')
         ? parsed.payload : parsed;
-      const KNOWN = ['userSettings', 'dictation', 'vocabulary', 'articles', 'qa', 'assistant'];
+      const KNOWN = ['userSettings', 'dictation', 'vocabulary', 'articles', 'qa', 'assistant', 'reading', 'articleDocuments'];
       const ok = payload && typeof payload === 'object'
         && KNOWN.some(k => payload[k] && typeof payload[k] === 'object');
       if (!ok) { msg.textContent = t('sync.invalidBackup'); return; }

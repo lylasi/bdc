@@ -1,0 +1,31 @@
+PASS · existing ai-provider-e2e page · 12/12
+PASS · F1 new device downloads the cloud key and reports it · {"status":"synced","credentialCount":1,"apiKey":"mock-personal","downloaded":true,"taskModel":"personal-test:m1"}
+PASS · F2 a provider saved during a sync survives · {"before":true,"after":true,"uploadVersion":1}
+PASS · F3 a stale managed 401 does not sign out the new account · {"loggedIn":true,"userId":"B","code":"stale_session"}
+PASS · F4 switching account locks shared keys until re-verified · {"before":"verified","status":"offline","usable":false,"expiresAt":0,"keyRetained":false,"reused":"managed_login_required"}
+PASS · [zh-CN] admin add form starts with the two main fields · 2 inputs
+PASS · [zh-CN] admin add form auto-detects the protocol and requires explicit model selection · 已识别协议：Anthropic Messages
+PASS · [zh-CN] admin add form publishes only the ticked models · {"approved":["claude-a"],"badge":"Anthropic Messages"}
+PASS · [zh-CN] picking a model keeps the open sections open · admin-managed-mvgvckn3-yct3btdx
+PASS · [zh-CN] admin LAN provider without a key can be added · 此供应商无需密钥 · lan-model
+PASS · [zh-CN] admin can override the protocol in advanced settings · 已识别协议：Anthropic Messages
+PASS · [zh-CN] F5 discovery never widens the approved model list · {"approved":["allowed-model"],"chips":[{"id":"allowed-model","pressed":true},{"id":"expensive-new-model","pressed":false}]}
+PASS · [zh-CN] F5 publish sends only the approved set and keeps capabilities · [{"id":"allowed-model","label":"allowed-model","capabilities":{"images":"yes"}}]
+PASS · [zh-CN] F5 an explicitly ticked candidate is published · allowed-model,expensive-new-model
+PASS · [zh-CN] a failing provider does not block the others · 供应商服务器暂时出错
+PASS · [zh-CN] admin UI strings are localised · zh-CN ok
+PASS · [zh-HK] admin add form starts with the two main fields · 2 inputs
+PASS · [zh-HK] admin add form auto-detects the protocol and requires explicit model selection · 已識別協議：Anthropic Messages
+PASS · [zh-HK] admin add form publishes only the ticked models · {"approved":["claude-a"],"badge":"Anthropic Messages"}
+PASS · [zh-HK] picking a model keeps the open sections open · admin-managed-mvgvclfv-qmevi7wj
+PASS · [zh-HK] admin LAN provider without a key can be added · 此供應商無需金鑰 · lan-model
+PASS · [zh-HK] admin can override the protocol in advanced settings · 已識別協議：Anthropic Messages
+PASS · [zh-HK] F5 discovery never widens the approved model list · {"approved":["allowed-model"],"chips":[{"id":"allowed-model","pressed":true},{"id":"expensive-new-model","pressed":false}]}
+PASS · [zh-HK] F5 publish sends only the approved set and keeps capabilities · [{"id":"allowed-model","label":"allowed-model","capabilities":{"images":"yes"}}]
+PASS · [zh-HK] F5 an explicitly ticked candidate is published · allowed-model,expensive-new-model
+PASS · [zh-HK] a failing provider does not block the others · 供應商伺服器暫時出錯
+PASS · [zh-HK] admin UI strings are localised · zh-HK ok
+PASS · [zh-CN] personal provider form keeps the two-field flow · {"error":"请先选择或填写模型","saved":{"providers":1,"model":"personal-mvgvcm9d-h1aodt9v:model-b","allowed":["model-b"],"discovered":["model-a","model-b"]}}
+PASS · [zh-HK] personal provider form keeps the two-field flow · {"error":"請先選擇或填寫模型","saved":{"providers":1,"model":"personal-mvgvcmld-waja0rbz:model-b","allowed":["model-b"],"discovered":["model-a","model-b"]}}
+
+summary: 29/29 passed

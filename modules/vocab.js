@@ -2,6 +2,9 @@ import * as state from './state.js';
 import * as storage from './storage.js';
 import * as ui from './ui.js';
 import * as api from './api.js';
+import * as articleStore from './article-store.js';
+import * as readingStore from './reading-store.js';
+import { contentVersionOf, normalizeAnchor } from '../shared/reading-protocol.mjs';
 import { t } from './i18n.js';
 
 // Vocabulary helpers: default book, add/dedupe, and AI completion
@@ -175,6 +178,102 @@ export function findInBookByWord(book, text) {
     return (book.words || []).find(w => normalizeWordKey(w.word) === key) || null;
 }
 
+function nowIso() {
+    return new Date().toISOString();
+}
+
+function insertEntryIntoMemory(bookId, entry) {
+    const books = Array.isArray(state.vocabularyBooks) ? state.vocabularyBooks : [];
+    const next = books.map((book) => {
+        if (!book || book.id !== bookId) return book;
+        const words = Array.isArray(book.words) ? book.words.filter((item) => item && item.id !== entry.id) : [];
+        words.push(entry);
+        return { ...book, words };
+    });
+    state.setVocabularyBooks(next);
+}
+
+function buildEntrySource(options, text) {
+    const articleId = options.articleId || state.currentArticleId || '';
+    const record = articleId ? articleStore.getRecord(articleId) : null;
+    const body = record?.article || '';
+    const anchor = options.anchor ? normalizeAnchor(options.anchor) : normalizeAnchor({ start: -1, end: -1, quote: text });
+    return {
+        sentence: options.sentence || '',
+        context: options.context || '',
+        articleId,
+        contentVersion: options.contentVersion || (body ? contentVersionOf(body) : (record?.contentVersion || '')),
+        anchor,
+        addedAt: nowIso()
+    };
+}
+
+function appendSource(entry, source) {
+    const sources = Array.isArray(entry.sources) ? [...entry.sources] : [];
+    const exists = sources.some((item) => item
+        && item.articleId === source.articleId
+        && item.sentence === source.sentence
+        && item.anchor?.start === source.anchor?.start
+        && item.anchor?.quote === source.anchor?.quote);
+    if (!exists && (source.articleId || source.sentence)) sources.push(source);
+    return { ...entry, sources };
+}
+
+async function ensureArticleItem({ text, kind, source, meaning = '', phonetic = '', itemId = '' }) {
+    if (itemId) {
+        const existing = readingStore.getLearningItem(itemId);
+        if (existing) return existing;
+    }
+    if (!source.articleId || !source.anchor.quote) return null;
+    const existing = readingStore.findLearningItem(source.articleId, kind, source.anchor, source.contentVersion);
+    if (existing) return existing;
+    return {
+        // 與 reading-store 的 occurrence 穩定 ID 一致；兩個分頁同時收藏
+        // 同一位置時會在交易內落到同一筆，不會重複建立。
+        id: readingStore.stableLearningItemId({
+            articleId: source.articleId,
+            contentVersion: source.contentVersion,
+            kind,
+            anchor: source.anchor,
+            sentence: source.sentence
+        }),
+        articleId: source.articleId,
+        contentVersion: source.contentVersion,
+        kind,
+        anchor: source.anchor,
+        sentence: source.sentence,
+        explanation: meaning ? {
+            language: '',
+            result: { meaning, phonetic },
+            generatedAt: nowIso(),
+            provenance: { source: 'vocabulary_hint' }
+        } : null,
+        firstViewedAt: null,
+        lastViewedAt: null,
+        marked: false,
+        understanding: 'unmarked',
+        note: '',
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+        deletedAt: ''
+    };
+}
+
+/** 只帶定義欄位進交易；筆記／標記狀態一律以交易內讀到的最新版本為準。 */
+function learningItemPayloadForVocabulary(item) {
+    if (!item) return null;
+    return {
+        id: item.id,
+        articleId: item.articleId,
+        contentVersion: item.contentVersion,
+        kind: item.kind,
+        anchor: item.anchor,
+        sentence: item.sentence,
+        explanation: item.explanation ?? null,
+        createdAt: item.createdAt
+    };
+}
+
 export async function addWordToDefaultBook(text, options = {}) {
     const { source = 'article', sentence = '', context = '', meaning: hintMeaning = '', phonetic: hintPhonetic = '', pos: hintPos = '' } = options;
     const raw = (text || '').trim();
@@ -197,33 +296,36 @@ export async function addWordToDefaultBook(text, options = {}) {
         meaning: cleanDisplayText(hintMeaning) || '',
         phonetic: (hintPhonetic || '').replace(/^\/|\/$/g, ''),
         examples: [],
-        addedAt: new Date().toISOString(),
+        sources: [],
+        addedAt: nowIso(),
         source,
         context: sentence || context || ''
     };
     if (hintPos && !entry.pos) entry.pos = hintPos;
 
-    // Try to complete details now; phrases may defer meaning if context not available
-    try {
-        // 若已有語境中提取的意思/音標，就不再額外請求；否則再補齊
-        const hasMeaning = entry.meaning && entry.meaning.trim();
-        const hasPhon = entry.phonetic && entry.phonetic.trim() && entry.phonetic !== 'n/a';
-        if (!hasMeaning || !hasPhon) {
-            await ensureWordDetails(entry, { sentence, context, allowDeferForPhrase: true });
-        }
-    } catch (_) {}
-
-    book.words.push(entry);
-    storage.saveVocabularyBooks();
+    // 先保存詞條，AI 補全放到背景：離線或慢網也能立即收藏。
+    const saved = await readingStore.upsertVocabularyEntry({ ...entry, bookId: book.id });
+    if (!saved.ok) {
+        ui.displayMessage(t('vocabulary.addFailed', { message: saved.error || '' }), 'error');
+        return { ok: false, reason: 'save_failed', error: saved.error };
+    }
+    insertEntryIntoMemory(book.id, { ...entry, bookId: book.id });
+    storage.saveVocabularyBooks({ suppressPermanent: true });
     ui.displayMessage(t('vocabulary.addedToBook', { word: raw, book: getDisplayBookName(book) }), 'success');
-    return { ok: true, id: entry.id };
+
+    ensureWordDetails(entry, { sentence, context, allowDeferForPhrase: true })
+        .then(async (enriched) => {
+            if (!enriched || (!enriched.meaning && !enriched.phonetic)) return;
+            const current = readingStore.getVocabularyEntry(entry.id);
+            if (!current) return;
+            await readingStore.upsertVocabularyEntry({ ...current, meaning: enriched.meaning || current.meaning, phonetic: enriched.phonetic || current.phonetic, pos: enriched.pos || current.pos });
+            insertEntryIntoMemory(book.id, { ...current, meaning: enriched.meaning || current.meaning, phonetic: enriched.phonetic || current.phonetic, pos: enriched.pos || current.pos });
+            storage.saveVocabularyBooks({ suppressPermanent: true });
+        })
+        .catch(() => {});
+    return { ok: true, id: entry.id, bookId: book.id };
 }
 
-/**
- * 將選中的詞/片語加入「當前文章」所對應的生詞本。
- * - 若 state.currentWordbookId 存在且指向文章專屬生詞本 → 加入該書
- * - 否則回退到預設生詞本（行為等同 addWordToDefaultBook）
- */
 export async function addWordToCurrentArticleBook(text, options = {}) {
     const {
         source = 'article',
@@ -231,7 +333,12 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
         context = '',
         meaning: hintMeaning = '',
         phonetic: hintPhonetic = '',
-        pos: hintPos = ''
+        pos: hintPos = '',
+        anchor = null,
+        articleId = '',
+        contentVersion = '',
+        kind = '',
+        itemId = ''
     } = options;
 
     const raw = (text || '').trim();
@@ -245,33 +352,79 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
     let book = null;
     const wbId = state.currentWordbookId;
     if (wbId) {
-        try {
-            book = storage.getWordbookById(wbId);
-        } catch (_) { /* ignore */ }
-    }
-
-    // 若不存在或資料異常，回退到預設生詞本
-    if (!book) {
-        const articleId = state.currentArticleId || null;
-        if (articleId && typeof storage.getArticleMetaById === 'function' && typeof storage.getOrCreateArticleWordbook === 'function') {
+        try { book = storage.getWordbookById(wbId); } catch (_) { /* ignore */ }
+        if (!book) {
+            // 文章由獨立文章儲存建立時，storage 可能還沒有對應的詞書 metadata；
+            // 直接以同一個穩定 ID 建立，避免落到「未命名文章」或別的預設詞書。
+            const record = articleStore.getRecord(wbId) || articleStore.getRecord(articleId);
             try {
-                const meta = storage.getArticleMetaById(articleId) || { id: articleId, title: t('errors.untitledArticle'), sourceType: 'paste' };
+                book = storage.saveWordbook({
+                    id: wbId,
+                    name: record?.title || t('article.untitled'),
+                    sourceType: 'article',
+                    articleId: wbId,
+                    words: []
+                });
+            } catch (_) { book = null; }
+        }
+    }
+    if (!book) {
+        const articleForBook = articleId || state.currentArticleId || null;
+        if (articleForBook && typeof storage.getArticleMetaById === 'function' && typeof storage.getOrCreateArticleWordbook === 'function') {
+            try {
+                const meta = storage.getArticleMetaById(articleForBook) || { id: articleForBook, title: t('errors.untitledArticle'), sourceType: 'paste' };
                 const res = storage.getOrCreateArticleWordbook(meta, { createWordbook: true });
-                if (res && res.wordbook) {
-                    book = res.wordbook;
-                }
+                if (res && res.wordbook) book = res.wordbook;
             } catch (_) { /* ignore and fall back */ }
         }
-        if (!book) {
-            book = ensureDefaultWordbook();
-        }
+        if (!book) book = ensureDefaultWordbook();
     }
+
+    const entryKind = kind || (/\s/.test(cleanDisplayText(raw)) ? 'phrase' : 'word');
+    const effectiveArticleId = articleId || state.currentArticleId || '';
+    if (effectiveArticleId && !articleStore.getRecord(effectiveArticleId)) {
+        return { ok: false, reason: 'stale_scope', error: 'stale_scope' };
+    }
+    const sourceInfo = buildEntrySource({ ...options, articleId: effectiveArticleId, contentVersion }, cleanDisplayText(raw));
+    const item = await ensureArticleItem({ text: raw, kind: entryKind, source: sourceInfo, meaning: hintMeaning, phonetic: hintPhonetic, itemId });
+    const itemPayload = learningItemPayloadForVocabulary(item);
 
     const dup = findInBookByWord(book, key);
     if (dup) {
-        const name = getDisplayBookName(book);
-        ui.displayMessage(t('vocabulary.existsInBook', { word: cleanDisplayText(raw), book: name }), 'info');
-        return { ok: true, reason: 'duplicate', id: dup.id, bookId: book.id };
+        // 同詞已有詞條：不丟新語境，追加來源並建立這篇文章的關聯。
+        const nextDup = appendSource({ ...dup, bookId: book.id }, sourceInfo);
+        const linkId = item ? `vl_${item.id}_${dup.id}` : '';
+        const result = await readingStore.addVocabularyEntryWithLink({
+            book: { ...book },
+            entry: { ...nextDup, id: dup.id, bookId: book.id },
+            item: itemPayload,
+            link: linkId ? {
+                id: linkId,
+                itemId: item.id,
+                bookId: book.id,
+                entryId: dup.id,
+                addedAt: nowIso(),
+                removedAt: '',
+                positionUnknown: sourceInfo.anchor.start < 0
+            } : null
+        });
+        if (!result.ok) {
+            ui.displayMessage(t('vocabulary.addFailed', { message: result.error || '' }), 'error');
+            return { ok: false, reason: 'save_failed', error: result.error };
+        }
+        insertEntryIntoMemory(book.id, result.entry || nextDup);
+        storage.saveVocabularyBooks({ suppressPermanent: true });
+        ui.displayMessage(t('vocabulary.existsInBook', { word: cleanDisplayText(raw), book: getDisplayBookName(book) }), 'info');
+        return {
+            ok: true,
+            reason: 'duplicate',
+            id: dup.id,
+            bookId: book.id,
+            linked: !!linkId,
+            linkId: result.linkId || linkId,
+            itemId: result.itemId || item?.id || '',
+            marked: true
+        };
     }
 
     const entry = {
@@ -280,30 +433,53 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
         meaning: cleanDisplayText(hintMeaning) || '',
         phonetic: (hintPhonetic || '').replace(/^\/|\/$/g, ''),
         examples: [],
-        addedAt: new Date().toISOString(),
+        sources: [sourceInfo],
+        addedAt: nowIso(),
         source,
         context: sentence || context || ''
     };
     if (hintPos && !entry.pos) entry.pos = hintPos;
+    if (sourceInfo.articleId) entry.sourceArticleId = sourceInfo.articleId;
 
-    // 若有可用的文章 ID，附加在 entry 上（方便未來回溯）
-    const articleId = state.currentArticleId || (book && book.articleId) || null;
-    if (articleId) {
-        entry.sourceArticleId = articleId;
+    const linkId = item ? `vl_${item.id}_${entry.id}` : '';
+    const saved = await readingStore.addVocabularyEntryWithLink({
+        book: { ...book },
+        entry: { ...entry, bookId: book.id },
+        item: itemPayload,
+        link: linkId ? {
+            id: linkId,
+            itemId: item.id,
+            bookId: book.id,
+            entryId: entry.id,
+            addedAt: nowIso(),
+            removedAt: '',
+            positionUnknown: sourceInfo.anchor.start < 0
+        } : null
+    });
+    if (!saved.ok) {
+        ui.displayMessage(t('vocabulary.addFailed', { message: saved.error || '' }), 'error');
+        return { ok: false, reason: 'save_failed', error: saved.error };
     }
+    insertEntryIntoMemory(book.id, saved.entry || { ...entry, bookId: book.id });
+    storage.saveVocabularyBooks({ suppressPermanent: true });
+    ui.displayMessage(t('vocabulary.addedToBook', { word: raw, book: getDisplayBookName(book) }), 'success');
 
-    try {
-        const hasMeaning = entry.meaning && entry.meaning.trim();
-        const hasPhon = entry.phonetic && entry.phonetic.trim() && entry.phonetic !== 'n/a';
-        if (!hasMeaning || !hasPhon) {
-            await ensureWordDetails(entry, { sentence, context, allowDeferForPhrase: true });
-        }
-    } catch (_) { /* 忽略補全失敗，保持現有資料 */ }
-
-    const saved = storage.addWordToWordbook(book.id, entry);
-    const latestBook = storage.getWordbookById(book.id) || book;
-    const bookName = getDisplayBookName(latestBook);
-
-    ui.displayMessage(t('vocabulary.addedToBook', { word: raw, book: bookName }), 'success');
-    return { ok: true, id: saved.id, bookId: latestBook.id };
+    // 先顯示成功，再背景補齊釋義／音標；補全失敗不影響收藏。
+    ensureWordDetails(entry, { sentence, context, allowDeferForPhrase: true })
+        .then(async (enriched) => {
+            if (!enriched || (!enriched.meaning && !enriched.phonetic)) return;
+            const current = readingStore.getVocabularyEntry(entry.id);
+            if (!current) return;
+            const updated = {
+                ...current,
+                meaning: enriched.meaning || current.meaning,
+                phonetic: enriched.phonetic || current.phonetic,
+                pos: enriched.pos || current.pos
+            };
+            await readingStore.upsertVocabularyEntry(updated);
+            insertEntryIntoMemory(book.id, updated);
+            storage.saveVocabularyBooks({ suppressPermanent: true });
+        })
+        .catch(() => {});
+    return { ok: true, id: entry.id, bookId: book.id, linked: !!linkId, linkId: saved.linkId || linkId, itemId: saved.itemId || item?.id || '', marked: true };
 }

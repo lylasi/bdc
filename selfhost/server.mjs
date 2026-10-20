@@ -9,6 +9,7 @@
 //   POST /snapshot
 //   GET|POST /articles, /articles/batch, /articles/import, /articles/usage
 //   GET|PUT|DELETE /articles/:id, POST /articles/:id/restore
+//   GET /reading/capabilities, /reading/changes; POST /reading/batch, /reading/mutations
 //   POST /change-token
 //   POST /reset-token
 //
@@ -28,7 +29,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sanitizeSnapshotPayload } from './snapshot-sanitize.js';
 import { handleArticlesRoute, isLegacyArticleWriteBlocked } from '../cloudflare-worker/src/articles.js';
+import { handleReadingRoute, isLegacyReadingWriteBlocked } from '../cloudflare-worker/src/reading.js';
 import { snapshotCarriesArticles } from '../shared/article-protocol.mjs';
+import { snapshotCarriesReading } from '../shared/reading-protocol.mjs';
 import { createD1Adapter, createSqliteDatabase, readResponseBody, toWebRequest } from './d1-adapter.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -338,6 +341,11 @@ async function handleSnapshot(req, res, user, path) {
       && await isLegacyArticleWriteBlocked({ DB: createD1Adapter(db) }, user.user_id)) {
       delete sanitized.articles;
     }
+    if (snapshotCarriesReading(sanitized)
+      && await isLegacyReadingWriteBlocked({ DB: createD1Adapter(db) }, user.user_id)) {
+      delete sanitized.vocabulary;
+      delete sanitized.assistant;
+    }
     return sendJson(req, res, {
       version: Number(row.version),
       updated_at: row.updated_at,
@@ -358,6 +366,15 @@ async function handleSnapshot(req, res, user, path) {
       return sendJson(req, res, {
         error: 'articles_legacy_write_blocked',
         code: 'articles_legacy_write_blocked',
+        conflict: true,
+        upgradeRequired: true
+      }, 409);
+    }
+    if (snapshotCarriesReading(sanitized)
+      && await isLegacyReadingWriteBlocked({ DB: createD1Adapter(db) }, user.user_id)) {
+      return sendJson(req, res, {
+        error: 'reading_legacy_write_blocked',
+        code: 'reading_legacy_write_blocked',
         conflict: true,
         upgradeRequired: true
       }, 409);
@@ -450,7 +467,7 @@ async function handle(req, res) {
     return handleSnapshot(req, res, user, path);
   }
 
-  if (path === '/articles' || path.startsWith('/articles/')) {
+  if (path === '/articles' || path.startsWith('/articles/') || path === '/reading' || path.startsWith('/reading/')) {
     const bodyText = req.method === 'GET' || req.method === 'HEAD' ? undefined : await readText(req, 4 * 1024 * 1024);
     const webRequest = toWebRequest({
       method: req.method,
@@ -458,12 +475,14 @@ async function handle(req, res) {
       headers: req.headers,
       bodyText
     });
-    const webResponse = await handleArticlesRoute({
+    const handler = path.startsWith('/reading') ? handleReadingRoute : handleArticlesRoute;
+    const prefix = path.startsWith('/reading') ? '/reading' : '/articles';
+    const webResponse = await handler({
       request: webRequest,
       env: { DB: createD1Adapter(db) },
       url,
       user,
-      rest: path.slice('/articles'.length)
+      rest: path.slice(prefix.length)
     });
     const payload = await readResponseBody(webResponse);
     return sendJson(req, res, payload === null ? {} : payload, webResponse.status);

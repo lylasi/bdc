@@ -1,0 +1,12 @@
+PASS same word at two positions has distinct items 
+PASS new lookup/note targets start unmarked 
+PASS stale tab add-to-book transaction succeeds 
+PASS stale tab add preserves newest note and marks selected position {"marked":true,"note":"Newest note from the other tab"}
+PASS adding repeated word does not mark first occurrence 
+PASS note update and repeat lookup preserve explicit false {"marked":false,"note":"Note updated after cancellation"}
+PASS unmark keeps vocabulary association 1
+PASS refresh keeps explicit false despite vocabulary link 
+PASS deliberate duplicate add marks again while preserving note 
+PASS removing vocabulary entry preserves mark and note 
+PASS legacy migration failure is reported and retried {"failedMigration":{"ok":false,"error":"idb_aborted","items":2,"documents":0},"retriedMigration":{"ok":true,"items":2,"documents":0},"marked":true}
+PASS existing item link-only API preserves association {"ok":true,"links":["link_independent_link_only"]}

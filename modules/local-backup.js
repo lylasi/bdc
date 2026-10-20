@@ -4,6 +4,7 @@
 
 import { buildLocalSnapshot } from './sync-core.js';
 import * as articleStore from './article-store.js';
+import * as readingStore from './reading-store.js';
 
 const PREFIX = 'bdc:backup:v1:';
 const INDEX_KEY = 'bdc:backup:index:v1';
@@ -111,9 +112,16 @@ export async function createBackup(note = '') {
     const snap = await buildLocalSnapshot();
     const payload = { ...(snap?.payload || {}) };
     try {
-      payload.articleDocuments = articleStore.exportDocuments();
+      payload.articleDocuments = await articleStore.exportDocuments();
     } catch (_) {
       payload.articleDocuments = [];
+    }
+    // 完整閱讀檔案：學習條目、詞書／關聯、文件、全部消息、原文版本。
+    // 與給 AI 的上下文裁剪完全分開，沒有 50 條上限。
+    try {
+      payload.reading = await readingStore.exportAll();
+    } catch (_) {
+      payload.reading = null;
     }
     return saveBackupPayload(payload, note);
   } catch (e) {

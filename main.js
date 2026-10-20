@@ -2,6 +2,7 @@ import * as dom from './modules/dom.js';
 import * as state from './modules/state.js';
 import { loadVocabularyBooks } from './modules/storage.js';
 import * as articleStore from './modules/article-store.js';
+import * as readingStore from './modules/reading-store.js';
 import { initModal, setupNumberSteppers, initTooltip, displayMessage, confirmAction } from './modules/ui.js';
 import { unlockAudioContext } from './modules/audio.js';
 import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView } from './features/vocabulary/vocabulary.js';
@@ -120,7 +121,7 @@ function setupNavigation() {
                     break;
                 case 'article-btn':
                     dom.articleSection.classList.add('active');
-                    try { showCurrentArticleIfAvailable(); } catch (_) {}
+                    showCurrentArticleIfAvailable().catch(() => {});
                     break;
                 case 'qa-btn':
                     showQAModule();
@@ -258,7 +259,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
 
     // 1. 加载核心数据
-    loadVocabularyBooks();
     // 文章改為逐篇存在 IndexedDB；先完成（含一次性的舊資料遷移）再讓功能模組讀取。
     const articleInit = await step('articleStore', () => articleStore.initArticleStore());
     await step('articleMigration', async () => {
@@ -273,6 +273,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (articleInit && articleInit.fallbackMode) {
         console.warn('[bdc] IndexedDB 不可用，文章改用 localStorage 後備（容量有限）');
     }
+    // 閱讀檔案（學習條目、詞書關聯、文件、聊天）與文章共用同一個永久資料庫。
+    // 先完成可重試的舊資料遷移，再載入詞書視圖，避免舊整組資料成為第二個權威來源。
+    const readingInit = await step('readingStore', () => readingStore.initReadingStore());
+    await step('readingMigration', async () => {
+        const result = await readingStore.migrateLegacyReadingData();
+        if (!result.ok && !result.skipped) {
+            displayMessage(t('article.readingMigrationFailed'), 'warning', 9000);
+            console.error('[bdc] 閱讀資料遷移失敗:', result.error);
+        }
+    });
+    if (readingInit && readingInit.fallbackMode) {
+        console.warn('[bdc] IndexedDB 不可用，閱讀資料改用 localStorage 後備（容量有限）');
+        displayMessage(t('article.readingFallbackStorageWarning'), 'warning', 8000);
+    }
+    loadVocabularyBooks();
 
     // 2. 初始化通用UI组件
     initModal();
@@ -314,6 +329,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     await step('populateLearning', () => { populateLearningBookSelector(); populateWordSelect(); });
 
     // 6. 主導覽已於 2.1 接管
+
+    document.addEventListener('bdc:reading-save-error', (event) => {
+        const error = event?.detail?.error || '';
+        try { displayMessage(t('vocabulary.permanentSaveFailed', { message: error }), 'error', 7000); } catch (_) {}
+    });
 
     document.addEventListener('bdc:request-login', () => {
         try { openLoginModal(); } catch (_) {}

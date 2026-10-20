@@ -1,0 +1,79 @@
+[
+  {
+    "name": "same word at two positions has distinct items",
+    "pass": true
+  },
+  {
+    "name": "new lookup/note targets start unmarked",
+    "pass": true
+  },
+  {
+    "name": "stale tab add-to-book transaction succeeds",
+    "pass": true
+  },
+  {
+    "name": "stale tab add preserves newest note and marks selected position",
+    "pass": true,
+    "detail": {
+      "marked": true,
+      "note": "Newest note from the other tab"
+    }
+  },
+  {
+    "name": "adding repeated word does not mark first occurrence",
+    "pass": true
+  },
+  {
+    "name": "note update and repeat lookup preserve explicit false",
+    "pass": true,
+    "detail": {
+      "marked": false,
+      "note": "Note updated after cancellation"
+    }
+  },
+  {
+    "name": "unmark keeps vocabulary association",
+    "pass": true,
+    "detail": 1
+  },
+  {
+    "name": "refresh keeps explicit false despite vocabulary link",
+    "pass": true
+  },
+  {
+    "name": "deliberate duplicate add marks again while preserving note",
+    "pass": true
+  },
+  {
+    "name": "removing vocabulary entry preserves mark and note",
+    "pass": true
+  },
+  {
+    "name": "legacy migration failure is reported and retried",
+    "pass": true,
+    "detail": {
+      "failedMigration": {
+        "ok": false,
+        "error": "idb_aborted",
+        "items": 2,
+        "documents": 0
+      },
+      "retriedMigration": {
+        "ok": true,
+        "items": 2,
+        "documents": 0
+      },
+      "marked": true
+    }
+  },
+  {
+    "name": "existing item link-only API preserves association",
+    "pass": true,
+    "detail": {
+      "ok": true,
+      "links": [
+        "link_independent_link_only"
+      ]
+    }
+  }
+]

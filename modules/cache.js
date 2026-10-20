@@ -129,6 +129,45 @@ export async function setCached(namespace, payload, value, ttlMs) {
 }
 
 // Convenience helpers for this app
+/** 只清除可重建的快取（localStorage 前綴 + bdc-cache/kv 的同一前綴），不刪資料庫。 */
+export async function clearRebuildable() {
+    let removed = 0;
+    try {
+        for (const key of Object.keys(localStorage)) {
+            if (key.startsWith(PREFIX)) {
+                localStorage.removeItem(key);
+                removed += 1;
+            }
+        }
+    } catch (_) {}
+    try {
+        const db = await openDB();
+        if (db) {
+            removed += await new Promise((resolve) => {
+                try {
+                    const tx = db.transaction('kv', 'readwrite');
+                    const store = tx.objectStore('kv');
+                    const req = store.openCursor();
+                    let count = 0;
+                    req.onsuccess = () => {
+                        const cursor = req.result;
+                        if (!cursor) return;
+                        if (String(cursor.key || '').startsWith(PREFIX)) {
+                            cursor.delete();
+                            count += 1;
+                        }
+                        cursor.continue();
+                    };
+                    req.onerror = () => resolve(count);
+                    tx.oncomplete = () => resolve(count);
+                    tx.onerror = () => resolve(count);
+                } catch (_) { resolve(0); }
+            });
+        }
+    } catch (_) {}
+    return { ok: true, removed };
+}
+
 export async function getParagraphAnalysisCached(paragraph, level, model, options = {}) {
   return getCached('paragraphAnalysis', { paragraph, level, model, ...options, schema: 'v2' });
 }

@@ -2,6 +2,10 @@
 // 注意：不修改全局樣式與 index.html；所有 UI 以動態插入，樣式侷限在 .assistant-* 作用域。
 
 import * as dom from '../../modules/dom.js';
+import * as state from '../../modules/state.js';
+import * as articleStore from '../../modules/article-store.js';
+import * as readingStore from '../../modules/reading-store.js';
+import * as readingActions from '../../modules/reading-actions.js';
 import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
 import {
   getTaskModelSelection,
@@ -39,7 +43,6 @@ export function initAiAssistant() {
   // 僅在設定啟用時工作
   const s = loadGlobalSettings();
   if (s?.assistant && s.assistant.enabled === false) return;
-  try { migrateLegacyStore(); } catch(_) {}
   mountUi();
   setupVisibilityLogic();
   exposeGlobalAPI();
@@ -219,37 +222,34 @@ function generateConversationId() {
   return `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
 }
 
-function readIndex() {
-  try {
-    const raw = localStorage.getItem(IDX_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch (_) {
-    return [];
-  }
+function conversationMeta(conv) {
+  if (!conv) return null;
+  return {
+    id: conv.id,
+    articleId: conv.articleId || '',
+    articleKey: conv.articleId || conv.legacyArticleKey || 'global',
+    title: conv.title || t('assistant.article'),
+    updatedAt: conv.updatedAt || ''
+  };
 }
 
-function writeIndex(arr) {
-  try {
-    localStorage.setItem(IDX_KEY, JSON.stringify(arr));
-    localStorage.setItem(LS_UPDATED_AT, new Date().toISOString());
-    syncTouch('assistant');
-  } catch (_) {}
+function readIndex() {
+  return readingStore.listConversations().map(conversationMeta).filter(Boolean);
+}
+
+// 保留舊呼叫點的相容函式；權威索引已在 readingStore。
+function writeIndex() {
+  try { syncTouch('assistant'); } catch (_) {}
 }
 
 async function idbGetConv(convId) {
-  try {
-    const rec = await cache.getItem('assistant:conv:' + convId);
-    return rec && rec.messages ? rec.messages : [];
-  } catch (_) {
-    return [];
-  }
+  try { return await readingStore.getMessages(convId); } catch (_) { return []; }
 }
 
 async function idbSetConv(convId, messages) {
   try {
-    await cache.setItem('assistant:conv:' + convId, { messages });
-    return true;
+    const result = await readingStore.setConversationMessages(convId, messages);
+    return !!result.ok;
   } catch (_) {
     return false;
   }
@@ -263,33 +263,33 @@ export async function getAssistantConversationMessages(convId) {
   return await idbGetConv(convId);
 }
 
-export async function createAssistantConversation({ articleKey = 'global', title = t('assistant.newSession'), id, messages = [] } = {}) {
+export async function createAssistantConversation({ articleKey = 'global', articleId = '', title = t('assistant.newSession'), id, messages = [] } = {}) {
   const convId = id || generateConversationId();
-  const meta = ensureMetaWithId(articleKey, title, convId);
-  await idbSetConv(convId, Array.isArray(messages) ? messages : []);
-  return meta;
+  const result = await readingStore.ensureConversation({
+    id: convId,
+    articleId: articleId || (/^(art_|url:|local:)/.test(String(articleKey)) ? articleKey : ''),
+    articleKey: articleId ? '' : (articleKey === 'global' ? '' : articleKey),
+    title
+  });
+  if (!result.ok) return null;
+  if (Array.isArray(messages) && messages.length) await readingStore.setConversationMessages(convId, messages);
+  return conversationMeta(result.conversation);
 }
 
-export function renameAssistantConversation(convId, title) {
+export async function renameAssistantConversation(convId, title) {
   const nextTitle = String(title || '').trim();
   if (!convId || !nextTitle) return null;
-  let updated = null;
-  const nextIdx = readIndex().map(item => {
-    if (item.id !== convId) return item;
-    updated = { ...item, title: nextTitle, updatedAt: new Date().toISOString() };
-    return updated;
-  });
-  if (!updated) return null;
-  writeIndex(nextIdx);
-  return updated;
+  const result = await readingStore.renameConversation(convId, nextTitle);
+  if (!result.ok) return null;
+  return conversationMeta(result.entity);
 }
 
 export async function deleteAssistantConversation(convId) {
   if (!convId) return false;
-  const currentIndex = readIndex();
-  const target = currentIndex.find(item => item.id === convId) || null;
+  const target = readingStore.getConversation(convId);
   if (!target) return false;
-  writeIndex(currentIndex.filter(item => item.id !== convId));
+  const result = await readingStore.deleteConversation(convId);
+  if (!result.ok) return false;
   try {
     const currentMap = getCurrentMap();
     const nextMap = {};
@@ -298,21 +298,36 @@ export async function deleteAssistantConversation(convId) {
     });
     setCurrentMap(nextMap);
   } catch (_) {}
-  try { await idbSetConv(convId, []); } catch (_) {}
   updateSessionLabel();
   return true;
 }
 
-function ensureMeta(articleKey, title) {
+async function ensureMeta(articleKey, title, articleId = '') {
   const idx = readIndex();
-  let m = idx.find(x => x.articleKey === articleKey);
-  if (!m) {
-    const defaultTitle = articleKey === 'global' ? t('assistant.globalSession') : t('assistant.article');
-    m = { id: generateConversationId(), articleKey, title: title || defaultTitle, updatedAt: new Date().toISOString() };
-    idx.unshift(m);
-    writeIndex(idx);
+  const existing = idx.find(x => x.articleKey === articleKey);
+  if (existing) return readingStore.getConversation(existing.id);
+  const result = await readingStore.ensureConversation({
+    articleId: articleId || (/^(art_|url:|local:)/.test(String(articleKey)) ? articleKey : ''),
+    articleKey: articleId ? '' : (articleKey === 'global' ? '' : articleKey),
+    title: title || (articleKey === 'global' ? t('assistant.globalSession') : t('assistant.article'))
+  });
+  return result.ok ? result.conversation : null;
+}
+
+async function ensureConversationForContext(ctx, title) {
+  const currentId = getCurrentConvId(ctx.articleKey);
+  if (currentId) {
+    const existing = readingStore.getConversation(currentId);
+    if (existing) return existing;
   }
-  return m;
+  const existingMeta = readIndex().find(x => x.articleKey === ctx.articleKey);
+  if (existingMeta) {
+    setCurrentConvId(ctx.articleKey, existingMeta.id);
+    return readingStore.getConversation(existingMeta.id);
+  }
+  const created = await ensureMeta(ctx.articleKey, title || extractArticleTitle() || t('assistant.article'), ctx.articleId);
+  if (created) setCurrentConvId(ctx.articleKey, created.id);
+  return created;
 }
 
 function extractArticleTitle() {
@@ -327,17 +342,30 @@ function isGlobalArticle(){
   try { const raw = (dom.articleInput && dom.articleInput.value) || ''; return !String(raw).trim(); } catch(_) { return true; }
 }
 
+async function currentArticleIdentity(text) {
+  try {
+    const activeId = state.currentArticleId || '';
+    let active = activeId ? articleStore.getRecord(activeId) : null;
+    if (active?.summaryOnly) active = await articleStore.ensureArticleLoaded(activeId);
+    if (active && String(active.article || '') === String(text || '')) return active.articleId;
+    // 清單只有摘要，其他文章不為了比對而全部載入；只有目前這篇需要全文。
+  } catch (_) {}
+  return '';
+}
+
 async function buildContext() {
   const raw = (dom.articleInput && dom.articleInput.value) || '';
   const text = String(raw);
   if (!text.trim()) {
-    return { articleKey: 'global', text: '' };
+    return { articleKey: 'global', articleId: '', text: '' };
   }
+  const articleId = await currentArticleIdentity(text);
+  if (articleId) return { articleKey: articleId, articleId, text };
   const articleKey = await cache.makeKey('assistant-article', text);
-  return { articleKey, text };
+  return { articleKey, articleId: '', text };
 }
 
-function restoreConversation(panel, overrideArticleKey) {
+async function restoreConversation(panel, overrideArticleKey) {
   // 優先使用「目前選中的會話」；若沒有，才回退到該文章的第一個會話
   const box = panel.querySelector('#assistant-messages');
   if (!box) return;
@@ -347,13 +375,11 @@ function restoreConversation(panel, overrideArticleKey) {
     const ctx = overrideArticleKey ? { ...ctx0, articleKey: overrideArticleKey } : ctx0;
     const idx = readIndex();
     const curId = getCurrentConvId(ctx.articleKey);
-    // 先以當前會話 ID 尋找
     let meta = curId ? idx.find(x => x.id === curId) : null;
-    // 若找不到（或尚未選過），退而找同文章的第一筆
     if (!meta) meta = idx.find(x => x.articleKey === ctx.articleKey);
     if (!meta) return;
     const messages = await idbGetConv(meta.id);
-    for (const m of messages) appendMessage(box, m.role, m.content);
+    for (const m of messages) appendMessage(box, m.role, m.content, { messageId: m.id, conversationId: meta.id, articleId: meta.articleId });
     box.scrollTop = box.scrollHeight;
   })();
 }
@@ -366,12 +392,18 @@ function addHint(panel, text) {
   box.appendChild(el);
 }
 
-function appendMessage(container, role, text) {
+function appendMessage(container, role, text, meta = {}) {
   const el = document.createElement('div');
   el.className = 'assistant-msg ' + (role === 'user' ? 'assistant-user' : 'assistant-assistant');
+  if (meta.messageId) {
+    el.dataset.messageId = meta.messageId;
+    el.dataset.conversationId = meta.conversationId || '';
+    el.dataset.articleId = meta.articleId || '';
+  }
   if (role === 'assistant') {
     try { el.innerHTML = markdownToHtml(text || ''); try { enhanceMarkdown(el); } catch(_){} }
     catch(_) { el.textContent = text || ''; }
+    if (meta.messageId) attachKeepDocumentButton(el, meta);
   } else {
     el.textContent = text || '';
   }
@@ -383,37 +415,51 @@ async function ask(panel, userText, opts = {}) {
   const st = loadGlobalSettings();
   const streamPref = st?.assistant?.stream !== false;
   const box = panel.querySelector('#assistant-messages');
-  const input = panel.querySelector('#assistant-input');
   const isRetry = opts && opts.mode === 'retry';
   const ctx0 = await buildContext();
   const articleKey = opts.articleKey || ctx0.articleKey;
+  const requestedArticleId = ctx0.articleId || (opts.articleId || '');
   const articleText = ctx0.text;
+  const title = extractArticleTitle();
+  const learningItemId = opts.learningItemId || '';
+  const messageAnchor = opts.anchor || null;
+  const messageContentVersion = opts.contentVersion || '';
 
-  // messages：系統 + 上下文 + 近幾輪 + 本輪
+  // 會話 ID 在本輪開始時固定；重試一定沿用原會話，不因目前文章改變而跳槽。
+  const pinned = opts.convId ? readingStore.getConversation(opts.convId) : null;
+  const conversation = pinned || await ensureConversationForContext({ ...ctx0, articleKey, articleId: requestedArticleId }, title);
+  const articleId = requestedArticleId || conversation?.articleId || '';
+  if (!conversation) {
+    appendMessage(box, 'assistant', t('assistant.error', { message: t('assistant.tryLater') }));
+    return;
+  }
+  const conversationId = conversation.id;
+  setCurrentConvId(articleKey, conversationId);
+
   const system = {
     role: 'system',
     content: buildPrompt('assistant.articleTutor', {}, { locale: getLocale() })
   };
   const context = articleText && articleText.trim() ? { role: 'user', content: `${t('assistant.contextPrefix')}\n\n"""\n${articleText}\n"""` } : null;
-  // 讀取最近 N 輪歷史：優先使用「當前選中會話」ID；否則回退同文章下的第一筆
-  const idx = readIndex();
-  const curId = opts.convId || getCurrentConvId(articleKey);
-  let meta = curId ? idx.find(x => x.id === curId) : null;
-  if (!meta) meta = idx.find(x => x.articleKey === articleKey) || null;
-  const prev = meta ? await idbGetConv(meta.id) : [];
+  const prev = await readingStore.getMessages(conversationId);
   const history = prev.slice(-8).map(m => ({ role: m.role, content: m.content }));
   const messages = [system, ...(context ? [context] : []), ...history, { role: 'user', content: userText }];
 
-  // 使用者訊息：一般情況要新增訊息泡泡；重試時不重複新增
   if (!isRetry) appendMessage(box, 'user', userText);
-  // 回覆泡泡：重試時重用舊的 placeholder，否則新建
   let placeholder = (isRetry && opts.reuseEl) ? opts.reuseEl : appendMessage(box, 'assistant', '');
   try { if (isRetry) { placeholder.innerHTML = ''; } } catch(_) {}
   box.scrollTop = box.scrollHeight;
 
-  // 保存 user 訊息（IDB）
   if (!isRetry) {
-    await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'user', content: userText, ts: Date.now() });
+    await readingStore.appendMessage({
+      conversationId,
+      role: 'user',
+      content: userText,
+      articleId,
+      learningItemId,
+      anchor: messageAnchor,
+      contentVersion: messageContentVersion
+    });
   }
 
   const ac = new AbortController();
@@ -426,7 +472,6 @@ async function ask(panel, userText, opts = {}) {
   let buffer = '';
   let hadError = false;
   try {
-    // 若之前錯誤留下重試按鈕，開跑前先清掉
     try { const old = placeholder.querySelector('.assistant-retry'); if (old) old.remove(); } catch(_){}
     if (streamPref) {
       await streamCompletions(messages, ac.signal, (delta) => {
@@ -436,7 +481,6 @@ async function ask(panel, userText, opts = {}) {
       });
     } else {
       buffer = await onceCompletions(messages, ac.signal);
-      // 非串流：直接以 Markdown 渲染
       try { placeholder.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(placeholder); } catch(_){} }
       catch(_) { placeholder.textContent = buffer; }
     }
@@ -447,15 +491,39 @@ async function ask(panel, userText, opts = {}) {
     }
   } finally {
     stopBtn.remove();
-    // 串流完成：把純文字轉為 Markdown（避免要第二次載入才渲染）
     if (streamPref) {
       try { placeholder.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(placeholder); } catch(_){} }
       catch(_) { /* ignore，保留純文字 */ }
     }
     if (!hadError) {
-      await appendMessageToConv(articleKey, extractArticleTitle(), { role: 'assistant', content: buffer, ts: Date.now() });
+      // 每條回答逐條永久保存；保存失敗仍保留畫面內容並提示。
+      const saved = await readingStore.appendMessage({
+        conversationId,
+        role: 'assistant',
+        content: buffer,
+        status: 'complete',
+        articleId,
+        learningItemId,
+        anchor: messageAnchor,
+        contentVersion: messageContentVersion
+      });
+      if (saved.ok) {
+        placeholder.dataset.messageId = saved.message.id;
+        placeholder.dataset.conversationId = conversationId;
+        placeholder.dataset.articleId = articleId || conversation.articleId || '';
+        attachKeepDocumentButton(placeholder, {
+          messageId: saved.message.id,
+          conversationId,
+          articleId: articleId || conversation.articleId || '',
+          learningItemId: saved.message.learningItemId || learningItemId
+        });
+      } else {
+        const warning = document.createElement('div');
+        warning.className = 'assistant-save-error';
+        warning.textContent = t('assistant.saveFailed');
+        placeholder.appendChild(warning);
+      }
     }
-    // 若發生錯誤，提供重試按鈕（重送同一問題；不寫入歷史，重試成功後再寫）
     if (hadError) {
       try {
         const retry = document.createElement('button');
@@ -463,7 +531,7 @@ async function ask(panel, userText, opts = {}) {
         retry.textContent = t('assistant.retry');
         retry.addEventListener('click', async () => {
           retry.disabled = true;
-          await ask(panel, userText, { ...opts, mode: 'retry', reuseEl: placeholder });
+          await ask(panel, userText, { ...opts, mode: 'retry', reuseEl: placeholder, articleId, convId: conversationId });
         });
         placeholder.appendChild(document.createElement('br'));
         placeholder.appendChild(retry);
@@ -471,36 +539,51 @@ async function ask(panel, userText, opts = {}) {
     }
   }
 }
+
+function attachKeepDocumentButton(el, { messageId, conversationId, articleId, learningItemId = '' }) {
+  if (!el || !messageId || el.querySelector('.assistant-keep-doc')) return;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'assistant-keep-doc';
+  button.textContent = t('assistant.keepAsDocument');
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    button.textContent = t('assistant.savingDocument');
+    try {
+      const messages = await readingStore.getMessages(conversationId);
+      const message = messages.find((item) => item.id === messageId);
+      const content = message?.content || el.innerText || '';
+      const targetArticleId = articleId || readingStore.getConversation(conversationId)?.articleId || '';
+      const result = await readingActions.saveAiAnswerAsDocument({
+        articleId: targetArticleId,
+        conversationId,
+        messageId,
+        content,
+        learningItemId: message?.learningItemId || learningItemId
+      });
+      if (!result.ok) throw new Error(result.error);
+      button.textContent = t('assistant.documentSaved');
+      button.classList.add('is-saved');
+      document.dispatchEvent(new CustomEvent('bdc:reading-change', { detail: { articleId: targetArticleId } }));
+    } catch (_) {
+      button.disabled = false;
+      button.textContent = t('assistant.documentSaveFailed');
+    }
+  });
+  el.appendChild(button);
+}
+
 async function appendMessageToConv(articleKey, title, message) {
-  // 合理性調整：
-  // - 若已透過 sessions 或歷史面板選定會話，則永遠寫入該會話；
-  // - 若尚未選定，才回退到該文章的第一個會話；
-  // - 如仍不存在會話，建立一個並指為當前。
-  let meta;
-  const idx = readIndex();
-  const curId = getCurrentConvId(articleKey);
-  if (curId) {
-    meta = idx.find(x => x.id === curId) || null;
-    if (!meta) {
-      // 映射有值但索引缺失：補建索引與空會話，避免寫入失敗
-      meta = ensureMetaWithId(articleKey, title, curId);
-      await idbSetConv(curId, []);
-    }
-  } else {
-    meta = idx.find(x => x.articleKey === articleKey) || null;
-    if (!meta) {
-      // 完全沒有：建立新會話並將其設為當前
-      const id = `c_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-      meta = ensureMetaWithId(articleKey, title, id);
-      await idbSetConv(id, []);
-      setCurrentConvId(articleKey, id);
-    }
-  }
-  const list = await idbGetConv(meta.id);
-  list.push(message);
-  await idbSetConv(meta.id, list);
-  const nextIdx = readIndex().map(x => x.id === meta.id ? { ...x, title, updatedAt: new Date().toISOString() } : x);
-  writeIndex(nextIdx);
+  const ctx = await buildContext();
+  const conversation = await ensureConversationForContext({ ...ctx, articleKey }, title);
+  if (!conversation) return null;
+  const result = await readingStore.appendMessage({
+    conversationId: conversation.id,
+    role: message?.role,
+    content: message?.content,
+    articleId: ctx.articleId
+  });
+  return result.ok ? result.message : null;
 }
 
 // 美化 markdown：為程式碼區塊加上「複製」按鈕，改善可讀性與操作手感。
@@ -681,9 +764,11 @@ async function newConversation(panel){
   const ctx = await buildContext();
   const meta = await createAssistantConversation({
     articleKey: ctx.articleKey,
+    articleId: ctx.articleId,
     title: extractArticleTitle(),
     messages: []
   });
+  if (!meta) return;
   setCurrentConvId(ctx.articleKey, meta.id);
   const box = panel.querySelector('#assistant-messages'); if (box) box.innerHTML='';
 }
@@ -742,7 +827,7 @@ async function toggleHistory(panel){
       const titleEl = item.querySelector('.ah-title');
       const newTitle = prompt(t('assistant.renamePrompt'), titleEl?.textContent || '');
       if (newTitle && newTitle.trim()) {
-        const updated = renameAssistantConversation(id, newTitle.trim());
+        const updated = await renameAssistantConversation(id, newTitle.trim());
         if (updated) {
           titleEl.textContent = updated.title;
           updateSessionLabel();
@@ -774,7 +859,7 @@ async function toggleHistory(panel){
     // open 切換
     setCurrentConvId(ctx.articleKey, id);
     const box = panel.querySelector('#assistant-messages');
-    if (box) { box.innerHTML=''; const msgs = await idbGetConv(id); msgs.forEach(m=>appendMessage(box,m.role,m.content)); box.scrollTop=box.scrollHeight; }
+    if (box) { box.innerHTML=''; const msgs = await idbGetConv(id); const meta = idx.find(x => x.id === id) || null; msgs.forEach(m=>appendMessage(box,m.role,m.content,{ messageId: m.id, conversationId: id, articleId: meta?.articleId || '' })); box.scrollTop=box.scrollHeight; }
     updateSessionLabel(); closeHistory();
   });
 }
@@ -830,11 +915,20 @@ function exposeGlobalAPI(){
           updateSessionLabel();
         }
       },
-      send: async (text, articleKey, convId) => {
+      send: async (text, articleKey, convId, context = {}) => {
         const panel = document.getElementById('assistant-panel'); if (!panel) return;
         if (articleKey && convId) { setCurrentConvId(articleKey, convId); }
         panel.classList.remove('assistant-hidden');
-        if (text && text.trim()) { await ask(panel, text.trim(), { articleKey, convId }); }
+        if (text && text.trim()) {
+          await ask(panel, text.trim(), {
+            articleKey,
+            convId,
+            learningItemId: context.learningItemId || '',
+            anchor: context.anchor || null,
+            contentVersion: context.contentVersion || '',
+            articleId: context.articleId || ''
+          });
+        }
       },
       create: async (articleKey, title) => {
         const meta = await createAssistantConversation({

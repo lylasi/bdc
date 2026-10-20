@@ -1161,6 +1161,32 @@
             <div class="analysis-result">
               <div class="ar-head">
                 <h3 data-i18n="article.result">分析结果</h3>
+                <div class="ar-tools">
+                  <button
+                    type="button"
+                    id="article-reading-records-btn"
+                    class="btn-tertiary reading-records-btn"
+                    data-i18n-title="article.readingPanelOpenTitle"
+                    data-i18n-aria-label="article.readingPanelOpenTitle"
+                    aria-expanded="false"
+                    aria-controls="article-reading-panel"
+                  >
+                    <svg class="icon" aria-hidden="true"><use href="#ic-timer"/></svg>
+                    <span data-i18n="article.readingPanelOpen">本文学习记录</span>
+                    <span id="article-reading-count" class="history-count hidden" aria-hidden="true">0</span>
+                  </button>
+                  <label class="reading-marks-toggle">
+                    <input type="checkbox" id="article-reading-marks-toggle" checked />
+                    <span data-i18n="article.readingMarksToggle">显示标记</span>
+                  </label>
+                  <button
+                    type="button"
+                    id="article-reading-export-btn"
+                    class="btn-tertiary"
+                    data-i18n="article.readingExport"
+                    data-i18n-title="article.readingExportTitle"
+                  >导出阅读笔记</button>
+                </div>
                 <div class="cn-mask-group" aria-label="翻译遮罩" data-i18n-aria-label="article.maskAria">
                   <span class="cn-mask-label" data-i18n="article.maskLabel">迷雾</span>
                   <label

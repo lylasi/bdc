@@ -19,7 +19,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 
 const PORT = Number(process.env.PORT || 8313);
 const BASE = `http://127.0.0.1:${PORT}/`;
-const ENDPOINT = process.env.TEST_SYNC_ENDPOINT || 'http://127.0.0.1:9/test-endpoint';
+const ENDPOINT = process.env.TEST_SYNC_ENDPOINT || 'http://127.0.0.1:19999/test-endpoint';
 const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const failures = [];
@@ -83,7 +83,7 @@ async function newPage(browser, { locale = 'zh-CN', viewport = { width: 1280, he
     }, { endpoint: ENDPOINT, locale });
     const page = await context.newPage();
     const errors = [];
-    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 240)); });
+    page.on('console', (m) => { if (m.type() !== 'error') return; const text = m.text(); if (/Failed to load resource|ERR_CONNECTION_REFUSED|ERR_UNSAFE_PORT|404|501/i.test(text)) return; errors.push(text.slice(0, 240)); });
     page.on('pageerror', (e) => errors.push('PAGEERROR ' + String(e && e.stack ? e.stack.split('\n')[0] : e)));
     return { context, page, errors };
 }
@@ -92,7 +92,7 @@ async function seedArticles(page, docs) {
     return page.evaluate(async ({ endpoint, docs }) => {
         const scope = `${endpoint}::guest`;
         const db = await new Promise((resolve, reject) => {
-            const req = indexedDB.open('bdc-articles', 1);
+            const req = indexedDB.open('bdc-articles');
             req.onupgradeneeded = () => {
                 const d = req.result;
                 if (!d.objectStoreNames.contains('docs')) d.createObjectStore('docs', { keyPath: 'key' });

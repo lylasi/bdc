@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "sample": "/Users/linus/CODE/bdc/docs/report/assets/20261019230030000/full-backup-sample.json",
+  "flow": "fresh isolated browser: import actual exported JSON in backup UI → restore → compare → reload → compare",
+  "counts": {
+    "learningItems": 3,
+    "articleDocuments": 2,
+    "vocabularyBooks": 1,
+    "vocabularyEntries": 1,
+    "vocabularyLinks": 1,
+    "conversations": 1,
+    "messages": 70,
+    "articleVersions": 0
+  },
+  "articleCount": 1,
+  "contentAndIdsAndReferencesMatch": true,
+  "persistsAfterReload": true,
+  "pageErrors": []
+}

@@ -8,6 +8,8 @@
 import { SYNC } from '../ai-config.js';
 import { lwwMerge } from './sync-core.js';
 import * as articleStore from './article-store.js';
+import * as readingStore from './reading-store.js';
+import * as state from './state.js';
 import { t } from './i18n.js';
 
 const TOKEN_KEY = 'sync_token';
@@ -667,6 +669,15 @@ function needsLegacyArticlePassthrough() {
 // High-level sync: pull → LWW merge → conditional push with expected_version
 export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
   const remote = await pullSnapshot();          // { version, updated_at, payload } | null
+  // 後端尚未支援逐項同步時，舊 snapshot 的詞書／聊天在關閘前仍要移交；
+  // 只補本機永久層缺少的資料，不覆蓋既有內容。
+  if (remote?.payload && readingStore.isReadingMigrated()) {
+    try {
+      const vocab = await readingStore.adoptLegacyVocabularySnapshot(remote.payload.vocabulary?.books || []);
+      if (vocab.ok && vocab.books) state.setVocabularyBooks(readingStore.vocabularyBooksForUi());
+      await readingStore.adoptLegacyAssistantSnapshot(remote.payload.assistant || {});
+    } catch (_) {}
+  }
   const local = await buildLocalSnapshot();     // { payload, updatedAt }
   const baseVersion = remote?.version ?? 0;
 

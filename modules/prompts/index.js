@@ -6,7 +6,8 @@ import {
     paragraphTranslationPrompt,
     phraseAnalysisPrompt,
     sentenceAnalysisPrompt,
-    wordTooltipPrompt
+    wordTooltipPrompt,
+    readingSummaryPrompt
 } from './article.js';
 import { answerCheckingPrompt } from './qa.js';
 import { extractTextPrompt, handwritingGradingJsonPrompt } from './ocr.js';
@@ -23,6 +24,7 @@ const promptRegistry = {
     [wordTooltipPrompt.id]: wordTooltipPrompt,
     [sentenceAnalysisPrompt.id]: sentenceAnalysisPrompt,
     [phraseAnalysisPrompt.id]: phraseAnalysisPrompt,
+    [readingSummaryPrompt.id]: readingSummaryPrompt,
     [answerCheckingPrompt.id]: answerCheckingPrompt,
     [extractTextPrompt.id]: extractTextPrompt,
     [handwritingGradingJsonPrompt.id]: handwritingGradingJsonPrompt,

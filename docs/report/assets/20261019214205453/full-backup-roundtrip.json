@@ -1,0 +1,25 @@
+{
+  "restored": {
+    "ok": true,
+    "counts": {
+      "learningItems": 3,
+      "articleDocuments": 2,
+      "vocabularyBooks": 1,
+      "vocabularyEntries": 1,
+      "vocabularyLinks": 1,
+      "conversations": 1,
+      "messages": 70,
+      "articleVersions": 0
+    },
+    "verifyErrors": []
+  },
+  "messagesBefore": 70,
+  "messagesCleared": 0,
+  "messagesAfter": 70,
+  "itemsBefore": 3,
+  "itemsAfter": 3,
+  "linksBefore": 1,
+  "linksAfter": 1,
+  "documentsBefore": 2,
+  "documentsAfter": 2
+}

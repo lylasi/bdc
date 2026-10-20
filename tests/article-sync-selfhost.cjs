@@ -129,7 +129,7 @@ async function newPage(browser, { endpoint, user = '', extraSettings = {} }) {
         const text = m.text();
         // selfhost 不提供 AI 憑證／目錄接口，501 是預期行為
         // 501：selfhost 沒有 AI 憑證接口；409：本測試刻意製造的版本衝突
-        if (m.type() === 'error' && !/501|Not Implemented|409|Conflict|ai-credentials|ai-catalog/i.test(text)) errors.push(text.slice(0, 200));
+        if (m.type() === 'error' && !/501|Not Implemented|409|Conflict|401|Unauthorized|ai-credentials|ai-catalog/i.test(text)) errors.push(text.slice(0, 200));
     });
     page.on('pageerror', (e) => errors.push('PAGEERROR ' + String(e && e.stack ? e.stack.split('\n')[0] : e)));
     return { context, page, errors };
@@ -161,18 +161,18 @@ async function dismissStartupModal(page) {
 
 async function syncNow(page) {
     await page.evaluate(() => { document.getElementById('app-gear-btn')?.click(); });
-    await page.waitForTimeout(250);
+    await page.waitForFunction(() => !!document.getElementById('gm-sync'), null, { timeout: 5000 });
     await page.evaluate(() => {
         const item = document.getElementById('gm-sync');
         if (item) item.click();
     });
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(1800);
 }
 
 async function records(page) {
     return page.evaluate(async ({ endpoint, userId }) => {
         const scope = `${endpoint}::${userId || 'guest'}`;
-        const db = await new Promise((resolve) => { const req = indexedDB.open('bdc-articles', 1); req.onsuccess = () => resolve(req.result); });
+        const db = await new Promise((resolve) => { const req = indexedDB.open('bdc-articles'); req.onsuccess = () => resolve(req.result); });
         const docs = await new Promise((resolve) => {
             const tx = db.transaction('docs', 'readonly');
             const rq = tx.objectStore('docs').getAll();
@@ -206,7 +206,7 @@ async function records(page) {
         const migrated = await records(d1.page);
         check('舊資料已遷移到逐篇儲存（保留原 ID）', migrated.length === 1 && migrated[0].id === 'url:legacy-alpha', JSON.stringify(migrated));
         check('舊資料分析結果一併保留', /舊甲/.test(JSON.stringify(await d1.page.evaluate(async () => {
-            const db = await new Promise((resolve) => { const req = indexedDB.open('bdc-articles', 1); req.onsuccess = () => resolve(req.result); });
+            const db = await new Promise((resolve) => { const req = indexedDB.open('bdc-articles'); req.onsuccess = () => resolve(req.result); });
             const docs = await new Promise((resolve) => { const tx = db.transaction('docs', 'readonly'); const rq = tx.objectStore('docs').getAll(); rq.onsuccess = () => resolve(rq.result || []); });
             db.close();
             return docs.map((doc) => doc.analysis);

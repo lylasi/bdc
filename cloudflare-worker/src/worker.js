@@ -16,6 +16,10 @@
 //   POST /articles/batch                          read several article documents
 //   POST /articles/import                         import legacy snapshot articles
 //   GET  /articles/usage                          article count / byte usage
+//   GET  /reading/capabilities                    reading item sync capability
+//   GET  /reading/changes                         per-entity cursor sync
+//   POST /reading/batch                           read several reading entities
+//   POST /reading/mutations                       idempotent entity mutations
 //   GET|PUT|DELETE /articles/:id                  read / CAS update / soft delete
 //   POST /articles/:id/restore                    undo a soft delete (CAS)
 //   POST /login                                   username + password → session token (no auth)
@@ -53,7 +57,9 @@ import { handleAdminUsersRoute } from './admin-users.js';
 import { handlePairRequest, SESSION_TTL_MS } from './device-pairing.js';
 import { sanitizeSnapshotPayload } from './snapshot-sanitize.js';
 import { handleArticlesRoute, isLegacyArticleWriteBlocked } from './articles.js';
+import { handleReadingRoute, isLegacyReadingWriteBlocked } from './reading.js';
 import { snapshotCarriesArticles } from '../../shared/article-protocol.mjs';
+import { snapshotCarriesReading } from '../../shared/reading-protocol.mjs';
 import { randomToken, sha256Hex } from './token.js';
 import {
   ADMIN_PASSWORD_MIN_LENGTH,
@@ -342,6 +348,11 @@ async function handleSnapshot(request, env, user, path) {
     if (snapshotCarriesArticles(payload) && await isLegacyArticleWriteBlocked(env, user.user_id)) {
       delete payload.articles;
     }
+    // 詞書與聊天搬到逐項儲存後，舊快照不得再把整組資料帶回新裝置。
+    if (snapshotCarriesReading(payload) && await isLegacyReadingWriteBlocked(env, user.user_id)) {
+      delete payload.vocabulary;
+      delete payload.assistant;
+    }
     return json({ version: row.version, updated_at: row.updated_at, payload }, 200, env, request);
   }
 
@@ -360,6 +371,14 @@ async function handleSnapshot(request, env, user, path) {
       return json({
         error: 'articles_legacy_write_blocked',
         code: 'articles_legacy_write_blocked',
+        conflict: true,
+        upgradeRequired: true
+      }, 409, env, request);
+    }
+    if (snapshotCarriesReading(sanitized) && await isLegacyReadingWriteBlocked(env, user.user_id)) {
+      return json({
+        error: 'reading_legacy_write_blocked',
+        code: 'reading_legacy_write_blocked',
         conflict: true,
         upgradeRequired: true
       }, 409, env, request);
@@ -489,6 +508,16 @@ export default {
           url,
           user,
           rest: path.slice('/articles'.length)
+        });
+      }
+
+      if (path === '/reading' || path.startsWith('/reading/')) {
+        return handleReadingRoute({
+          request,
+          env,
+          url,
+          user,
+          rest: path.slice('/reading'.length)
         });
       }
 

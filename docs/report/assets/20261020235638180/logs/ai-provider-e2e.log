@@ -1,0 +1,57 @@
+{
+  "results": [
+    {
+      "text": "PASS · anonymous cannot use managed providers",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · login verifies and loads the managed catalog",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · shared key is memory-only and bound to the request",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · catalog refresh drops old shared keys after a version change",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · personal cloud key uploads, conflicts and resolves locally",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · 401 invalidation keeps personal keys but clears shared access",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · explicit import copies device providers and can sync the key",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · explicit logout clears account keys, catalog and metadata",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · admin panel opens and publishes a new release",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · admin can import a legacy provider JSON export",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · legacy AI settings migrate once into the device profile",
+      "cls": "pass"
+    },
+    {
+      "text": "PASS · missing provider/key does not borrow another provider",
+      "cls": "pass"
+    },
+    {
+      "text": "done: 12/12 passed",
+      "cls": "info"
+    }
+  ],
+  "errors": []
+}
