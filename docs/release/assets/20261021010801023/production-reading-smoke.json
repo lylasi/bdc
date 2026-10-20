@@ -1,0 +1,83 @@
+{
+  "startedAt": "2026-10-20T17:06:56.647493+00:00",
+  "checks": [
+    {
+      "name": "password login remains available",
+      "passed": true
+    },
+    {
+      "name": "reading rejects unauthenticated access",
+      "passed": true
+    },
+    {
+      "name": "reading marked capability advertised",
+      "passed": true
+    },
+    {
+      "name": "new account starts with empty cursor",
+      "passed": true
+    },
+    {
+      "name": "all seven entity types written",
+      "passed": true
+    },
+    {
+      "name": "server cursor advances per entity",
+      "passed": true
+    },
+    {
+      "name": "all records can be read back",
+      "passed": true
+    },
+    {
+      "name": "mark and note roundtrip",
+      "passed": true
+    },
+    {
+      "name": "second account cannot read first account records",
+      "passed": true
+    },
+    {
+      "name": "unmark stores explicit false",
+      "passed": true
+    },
+    {
+      "name": "unmark retains note and explanation",
+      "passed": true
+    },
+    {
+      "name": "retry is idempotent with unchanged cursor",
+      "passed": true
+    },
+    {
+      "name": "stale revision conflicts without remarking",
+      "passed": true
+    },
+    {
+      "name": "unmark preserves vocabulary and linkage",
+      "passed": true
+    },
+    {
+      "name": "delete creates tombstone",
+      "passed": true
+    },
+    {
+      "name": "change feed reports ordered sequence",
+      "passed": true
+    },
+    {
+      "name": "second account change feed remains isolated",
+      "passed": true
+    },
+    {
+      "name": "migration finalization enables legacy write guard",
+      "passed": true
+    },
+    {
+      "name": "temporary accounts and all test rows removed",
+      "passed": true
+    }
+  ],
+  "cleanup": true,
+  "finishedAt": "2026-10-20T17:07:24.709721+00:00"
+}

@@ -1,0 +1,51 @@
+{
+  "deploymentId": "7bc1258b-2a27-4858-8962-dac58fde1154",
+  "createdOn": "2026-10-20T17:04:50.17187Z",
+  "versions": [
+    {
+      "version_id": "9dcbb62f-7150-4464-ae65-6976d7839db3",
+      "percentage": 100
+    }
+  ],
+  "featureCommit": "56b51720ef24bcd82ed1081cad19ad04340365ce",
+  "previousWorkerVersion": "ac7fa537-278b-49ee-8e89-a286ff4082d0",
+  "previousFrontendCommit": "8105e0dcae6decb415d32dbe4963d775a0debfe4",
+  "readingPanelFixCommit": "4e1c7c0c539af59c74c3f54c45ea33d0ce97576b",
+  "articleRefreshFixCommit": "01365d2f17487ed34472c01923ce9e8c460eeced",
+  "frontendReleaseCommit": "bb835345d4760ac60e202105d4834706eab10c7c",
+  "assetRelease": "19bbe739949c",
+  "verifiedAt": "2026-10-20T21:48:00.331439+00:00",
+  "verification": {
+    "productionBackend": {
+      "passed": 19,
+      "failed": 0,
+      "temporaryDataCleaned": true
+    },
+    "publicBrowser": {
+      "passed": 36,
+      "failed": 0,
+      "viewports": [
+        "zh-CN 1440x960",
+        "zh-HK 390x844",
+        "zh-CN 320x844"
+      ]
+    },
+    "browserModuleHashes": {
+      "checked": 237,
+      "matched": 237
+    },
+    "httpResourceHashes": {
+      "checked": 58,
+      "matched": 58
+    },
+    "lanBrowserBeforeAssetVersioning": {
+      "passed": 33,
+      "failed": 0
+    },
+    "localStaleCdnRegression": {
+      "passed": 18,
+      "failed": 0
+    }
+  },
+  "productionConfigSha256": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93"
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "cold startup and same-scope reload read summaries only",
+    "ok": true
+  },
+  {
+    "name": "in-flight article load survives a same-scope reload",
+    "ok": true
+  },
+  {
+    "name": "refreshScope keeps the opened article full and cold articles lazy",
+    "ok": true
+  },
+  {
+    "name": "second word tooltip carries current contentVersion and exact anchor",
+    "ok": true
+  },
+  {
+    "name": "second occurrence can be marked with the correct underline",
+    "ok": true
+  },
+  {
+    "name": "note can be written and saved for the second occurrence",
+    "ok": true
+  },
+  {
+    "name": "second occurrence can be unmarked without losing its note",
+    "ok": true
+  },
+  {
+    "name": "loaded document must match summary revision before reuse",
+    "ok": true
+  },
+  {
+    "name": "scope switch keeps account bodies isolated and restores own article",
+    "ok": true
+  },
+  {
+    "name": "no page errors",
+    "ok": true
+  }
+]

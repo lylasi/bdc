@@ -1,0 +1,582 @@
+[
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "features/article/article.js",
+    "url": "http://10.10.10.149:8000/features/article/article.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "b55cf21a27fc0bdc4c4b0cae62135d871961bb42308061ed39000ada8dd16870",
+    "expected": "b55cf21a27fc0bdc4c4b0cae62135d871961bb42308061ed39000ada8dd16870",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "features/article/phrase-picker.js",
+    "url": "http://10.10.10.149:8000/features/article/phrase-picker.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "3be05e0ce27bc4151de2453919d015ae32795409d0611f255695fd4123c457bc",
+    "expected": "3be05e0ce27bc4151de2453919d015ae32795409d0611f255695fd4123c457bc",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "features/article/reading-panel.js",
+    "url": "http://10.10.10.149:8000/features/article/reading-panel.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "d454741dbd49cf6dc7b9f073ea9c33f61145dda72fc56abd3d89fa6c005cfd3b",
+    "expected": "d454741dbd49cf6dc7b9f073ea9c33f61145dda72fc56abd3d89fa6c005cfd3b",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "features/assistant/assistant.js",
+    "url": "http://10.10.10.149:8000/features/assistant/assistant.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "7382b9674c67c964454265aafa1775d4ce6acadd5894b3fe52287a9c37a41bca",
+    "expected": "7382b9674c67c964454265aafa1775d4ce6acadd5894b3fe52287a9c37a41bca",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "features/learning/learning.js",
+    "url": "http://10.10.10.149:8000/features/learning/learning.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "92f2871f6b613c137df6dbe2f00b118b5b294ac35f4281c5da0e8caa4fd9dd7c",
+    "expected": "92f2871f6b613c137df6dbe2f00b118b5b294ac35f4281c5da0e8caa4fd9dd7c",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "features/sync/sync.js",
+    "url": "http://10.10.10.149:8000/features/sync/sync.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "079906defe223f230027888eac2f009fc5562236242b09184c54b6b1cd25d809",
+    "expected": "079906defe223f230027888eac2f009fc5562236242b09184c54b6b1cd25d809",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "features/vocabulary/vocabulary.js",
+    "url": "http://10.10.10.149:8000/features/vocabulary/vocabulary.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "f108f004c2368376491787a6c91c1c5a5033846c113f41150d833f2efb7e62f6",
+    "expected": "f108f004c2368376491787a6c91c1c5a5033846c113f41150d833f2efb7e62f6",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "index.html",
+    "url": "http://10.10.10.149:8000/index.html",
+    "status": 200,
+    "sha256": "de153d1c32a4d76747f7f96500e891a7ab124b3b99fd4f0f9bb12414920fd267",
+    "expected": "de153d1c32a4d76747f7f96500e891a7ab124b3b99fd4f0f9bb12414920fd267",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "locales/zh-CN.js",
+    "url": "http://10.10.10.149:8000/locales/zh-CN.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "0ea5315f0f4d9640f8257a2053cc713914747d983d7e052155fdec312f47f999",
+    "expected": "0ea5315f0f4d9640f8257a2053cc713914747d983d7e052155fdec312f47f999",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "locales/zh-HK.js",
+    "url": "http://10.10.10.149:8000/locales/zh-HK.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "addf1442c56af621bb86c1c286bf04cd64d247cfc274b116bf9e7e4479b1a454",
+    "expected": "addf1442c56af621bb86c1c286bf04cd64d247cfc274b116bf9e7e4479b1a454",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "main.js",
+    "url": "http://10.10.10.149:8000/main.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "76d6d58bfeaa10a894b44ddb9d4bdf0e85aa35bd71c312379e911a1e6995dcba",
+    "expected": "76d6d58bfeaa10a894b44ddb9d4bdf0e85aa35bd71c312379e911a1e6995dcba",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/article-store.js",
+    "url": "http://10.10.10.149:8000/modules/article-store.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "66069b709f414085a4e8931c8d39e6d849d2e5108dadc2534aaa45918ce742c9",
+    "expected": "66069b709f414085a4e8931c8d39e6d849d2e5108dadc2534aaa45918ce742c9",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/article-sync.js",
+    "url": "http://10.10.10.149:8000/modules/article-sync.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "710c6486caf2edf00894bd692004c8da491f928cdb25a4f5799aa5044e8d414a",
+    "expected": "710c6486caf2edf00894bd692004c8da491f928cdb25a4f5799aa5044e8d414a",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/cache.js",
+    "url": "http://10.10.10.149:8000/modules/cache.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "467f8a2309c4c79321d7c0de2b4097302be13f3582fb860a4f28d6d5291ca181",
+    "expected": "467f8a2309c4c79321d7c0de2b4097302be13f3582fb860a4f28d6d5291ca181",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/dom.js",
+    "url": "http://10.10.10.149:8000/modules/dom.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "8cce18ddd200fbd36928d65e103147225475baa6a25343edceefef3af2cea4bd",
+    "expected": "8cce18ddd200fbd36928d65e103147225475baa6a25343edceefef3af2cea4bd",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/local-backup.js",
+    "url": "http://10.10.10.149:8000/modules/local-backup.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "2a8d65e5567bdb8985761a28ab46cbe5f0520f927415cecdbeffe0b606515b1a",
+    "expected": "2a8d65e5567bdb8985761a28ab46cbe5f0520f927415cecdbeffe0b606515b1a",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/permanent-db.js",
+    "url": "http://10.10.10.149:8000/modules/permanent-db.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "7907786651d710f4dbb85cac527441a1c2900c3cde0dc96b05e4c0f49c098c83",
+    "expected": "7907786651d710f4dbb85cac527441a1c2900c3cde0dc96b05e4c0f49c098c83",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/prompts/article.js",
+    "url": "http://10.10.10.149:8000/modules/prompts/article.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "fae950ece881de78f94c05ed14a96ecb0091526be655dc0aee004c5ea9e2160f",
+    "expected": "fae950ece881de78f94c05ed14a96ecb0091526be655dc0aee004c5ea9e2160f",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/prompts/index.js",
+    "url": "http://10.10.10.149:8000/modules/prompts/index.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+    "expected": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/reading-actions.js",
+    "url": "http://10.10.10.149:8000/modules/reading-actions.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "d2f58c030de32615d3cc162e2fe83552328b345c4f7fd7c7104afca88552c741",
+    "expected": "d2f58c030de32615d3cc162e2fe83552328b345c4f7fd7c7104afca88552c741",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/reading-export.js",
+    "url": "http://10.10.10.149:8000/modules/reading-export.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "1ef75b028a44f505b270bca5a7a57b3ef76793f9753cc8a1a0a15be4ad1e7a36",
+    "expected": "1ef75b028a44f505b270bca5a7a57b3ef76793f9753cc8a1a0a15be4ad1e7a36",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/reading-store.js",
+    "url": "http://10.10.10.149:8000/modules/reading-store.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "d34d8a60a09f8e710400980d32a659305e7aee3e5295e6c9d3f4befdccc3c443",
+    "expected": "d34d8a60a09f8e710400980d32a659305e7aee3e5295e6c9d3f4befdccc3c443",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/reading-sync.js",
+    "url": "http://10.10.10.149:8000/modules/reading-sync.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "e9a0f3fce1c7c3a0eb5c0ed453fb2f0e4704b21ff12e767bc4004d0eeb2c64a2",
+    "expected": "e9a0f3fce1c7c3a0eb5c0ed453fb2f0e4704b21ff12e767bc4004d0eeb2c64a2",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/storage.js",
+    "url": "http://10.10.10.149:8000/modules/storage.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "b69e6a5998acdee3fa6a30fc00d46e36b0ac59b61ecc6fef8d276aec6f779cac",
+    "expected": "b69e6a5998acdee3fa6a30fc00d46e36b0ac59b61ecc6fef8d276aec6f779cac",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/sync-cloudflare.js",
+    "url": "http://10.10.10.149:8000/modules/sync-cloudflare.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "fae01979969dbb48188e716ea1e1c36bc966a2d8e503b482d5bd2c71045260a6",
+    "expected": "fae01979969dbb48188e716ea1e1c36bc966a2d8e503b482d5bd2c71045260a6",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/sync-core.js",
+    "url": "http://10.10.10.149:8000/modules/sync-core.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "ddc787073b68df5440735cb09be585fa48b0ec1ef2bdd2a522aa113215334b09",
+    "expected": "ddc787073b68df5440735cb09be585fa48b0ec1ef2bdd2a522aa113215334b09",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "modules/vocab.js",
+    "url": "http://10.10.10.149:8000/modules/vocab.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "82217563919476179863025f8991af45f775cbaf067291f8c7695e59eef74526",
+    "expected": "82217563919476179863025f8991af45f775cbaf067291f8c7695e59eef74526",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "shared/reading-protocol.mjs",
+    "url": "http://10.10.10.149:8000/shared/reading-protocol.mjs?v=19bbe739949c",
+    "status": 200,
+    "sha256": "2aecba6fadb6039802bbd348d819d0e3d47f013b5600f049aa660a661555dcaa",
+    "expected": "2aecba6fadb6039802bbd348d819d0e3d47f013b5600f049aa660a661555dcaa",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "http://10.10.10.149:8000",
+    "path": "styles.css",
+    "url": "http://10.10.10.149:8000/styles.css?v=19bbe739949c",
+    "status": 200,
+    "sha256": "79492f0d0755ce9a0d4fdb174a3b5d5c34cb03ff046be67ffafa4650504e28f2",
+    "expected": "79492f0d0755ce9a0d4fdb174a3b5d5c34cb03ff046be67ffafa4650504e28f2",
+    "matches": true,
+    "cache": ""
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "features/article/article.js",
+    "url": "https://bdc.a4a4.qzz.io/features/article/article.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "b55cf21a27fc0bdc4c4b0cae62135d871961bb42308061ed39000ada8dd16870",
+    "expected": "b55cf21a27fc0bdc4c4b0cae62135d871961bb42308061ed39000ada8dd16870",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "features/article/phrase-picker.js",
+    "url": "https://bdc.a4a4.qzz.io/features/article/phrase-picker.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "3be05e0ce27bc4151de2453919d015ae32795409d0611f255695fd4123c457bc",
+    "expected": "3be05e0ce27bc4151de2453919d015ae32795409d0611f255695fd4123c457bc",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "features/article/reading-panel.js",
+    "url": "https://bdc.a4a4.qzz.io/features/article/reading-panel.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "d454741dbd49cf6dc7b9f073ea9c33f61145dda72fc56abd3d89fa6c005cfd3b",
+    "expected": "d454741dbd49cf6dc7b9f073ea9c33f61145dda72fc56abd3d89fa6c005cfd3b",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "features/assistant/assistant.js",
+    "url": "https://bdc.a4a4.qzz.io/features/assistant/assistant.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "7382b9674c67c964454265aafa1775d4ce6acadd5894b3fe52287a9c37a41bca",
+    "expected": "7382b9674c67c964454265aafa1775d4ce6acadd5894b3fe52287a9c37a41bca",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "features/learning/learning.js",
+    "url": "https://bdc.a4a4.qzz.io/features/learning/learning.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "92f2871f6b613c137df6dbe2f00b118b5b294ac35f4281c5da0e8caa4fd9dd7c",
+    "expected": "92f2871f6b613c137df6dbe2f00b118b5b294ac35f4281c5da0e8caa4fd9dd7c",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "features/sync/sync.js",
+    "url": "https://bdc.a4a4.qzz.io/features/sync/sync.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "079906defe223f230027888eac2f009fc5562236242b09184c54b6b1cd25d809",
+    "expected": "079906defe223f230027888eac2f009fc5562236242b09184c54b6b1cd25d809",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "features/vocabulary/vocabulary.js",
+    "url": "https://bdc.a4a4.qzz.io/features/vocabulary/vocabulary.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "f108f004c2368376491787a6c91c1c5a5033846c113f41150d833f2efb7e62f6",
+    "expected": "f108f004c2368376491787a6c91c1c5a5033846c113f41150d833f2efb7e62f6",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "index.html",
+    "url": "https://bdc.a4a4.qzz.io/index.html",
+    "status": 200,
+    "sha256": "de153d1c32a4d76747f7f96500e891a7ab124b3b99fd4f0f9bb12414920fd267",
+    "expected": "de153d1c32a4d76747f7f96500e891a7ab124b3b99fd4f0f9bb12414920fd267",
+    "matches": true,
+    "cache": "DYNAMIC"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "locales/zh-CN.js",
+    "url": "https://bdc.a4a4.qzz.io/locales/zh-CN.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "0ea5315f0f4d9640f8257a2053cc713914747d983d7e052155fdec312f47f999",
+    "expected": "0ea5315f0f4d9640f8257a2053cc713914747d983d7e052155fdec312f47f999",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "locales/zh-HK.js",
+    "url": "https://bdc.a4a4.qzz.io/locales/zh-HK.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "addf1442c56af621bb86c1c286bf04cd64d247cfc274b116bf9e7e4479b1a454",
+    "expected": "addf1442c56af621bb86c1c286bf04cd64d247cfc274b116bf9e7e4479b1a454",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "main.js",
+    "url": "https://bdc.a4a4.qzz.io/main.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "76d6d58bfeaa10a894b44ddb9d4bdf0e85aa35bd71c312379e911a1e6995dcba",
+    "expected": "76d6d58bfeaa10a894b44ddb9d4bdf0e85aa35bd71c312379e911a1e6995dcba",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/article-store.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/article-store.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "66069b709f414085a4e8931c8d39e6d849d2e5108dadc2534aaa45918ce742c9",
+    "expected": "66069b709f414085a4e8931c8d39e6d849d2e5108dadc2534aaa45918ce742c9",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/article-sync.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/article-sync.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "710c6486caf2edf00894bd692004c8da491f928cdb25a4f5799aa5044e8d414a",
+    "expected": "710c6486caf2edf00894bd692004c8da491f928cdb25a4f5799aa5044e8d414a",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/cache.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/cache.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "467f8a2309c4c79321d7c0de2b4097302be13f3582fb860a4f28d6d5291ca181",
+    "expected": "467f8a2309c4c79321d7c0de2b4097302be13f3582fb860a4f28d6d5291ca181",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/dom.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/dom.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "8cce18ddd200fbd36928d65e103147225475baa6a25343edceefef3af2cea4bd",
+    "expected": "8cce18ddd200fbd36928d65e103147225475baa6a25343edceefef3af2cea4bd",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/local-backup.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/local-backup.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "2a8d65e5567bdb8985761a28ab46cbe5f0520f927415cecdbeffe0b606515b1a",
+    "expected": "2a8d65e5567bdb8985761a28ab46cbe5f0520f927415cecdbeffe0b606515b1a",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/permanent-db.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/permanent-db.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "7907786651d710f4dbb85cac527441a1c2900c3cde0dc96b05e4c0f49c098c83",
+    "expected": "7907786651d710f4dbb85cac527441a1c2900c3cde0dc96b05e4c0f49c098c83",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/prompts/article.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/prompts/article.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "fae950ece881de78f94c05ed14a96ecb0091526be655dc0aee004c5ea9e2160f",
+    "expected": "fae950ece881de78f94c05ed14a96ecb0091526be655dc0aee004c5ea9e2160f",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/prompts/index.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/prompts/index.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+    "expected": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/reading-actions.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/reading-actions.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "d2f58c030de32615d3cc162e2fe83552328b345c4f7fd7c7104afca88552c741",
+    "expected": "d2f58c030de32615d3cc162e2fe83552328b345c4f7fd7c7104afca88552c741",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/reading-export.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/reading-export.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "1ef75b028a44f505b270bca5a7a57b3ef76793f9753cc8a1a0a15be4ad1e7a36",
+    "expected": "1ef75b028a44f505b270bca5a7a57b3ef76793f9753cc8a1a0a15be4ad1e7a36",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/reading-store.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/reading-store.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "d34d8a60a09f8e710400980d32a659305e7aee3e5295e6c9d3f4befdccc3c443",
+    "expected": "d34d8a60a09f8e710400980d32a659305e7aee3e5295e6c9d3f4befdccc3c443",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/reading-sync.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/reading-sync.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "e9a0f3fce1c7c3a0eb5c0ed453fb2f0e4704b21ff12e767bc4004d0eeb2c64a2",
+    "expected": "e9a0f3fce1c7c3a0eb5c0ed453fb2f0e4704b21ff12e767bc4004d0eeb2c64a2",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/storage.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/storage.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "b69e6a5998acdee3fa6a30fc00d46e36b0ac59b61ecc6fef8d276aec6f779cac",
+    "expected": "b69e6a5998acdee3fa6a30fc00d46e36b0ac59b61ecc6fef8d276aec6f779cac",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/sync-cloudflare.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/sync-cloudflare.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "fae01979969dbb48188e716ea1e1c36bc966a2d8e503b482d5bd2c71045260a6",
+    "expected": "fae01979969dbb48188e716ea1e1c36bc966a2d8e503b482d5bd2c71045260a6",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/sync-core.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/sync-core.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "ddc787073b68df5440735cb09be585fa48b0ec1ef2bdd2a522aa113215334b09",
+    "expected": "ddc787073b68df5440735cb09be585fa48b0ec1ef2bdd2a522aa113215334b09",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "modules/vocab.js",
+    "url": "https://bdc.a4a4.qzz.io/modules/vocab.js?v=19bbe739949c",
+    "status": 200,
+    "sha256": "82217563919476179863025f8991af45f775cbaf067291f8c7695e59eef74526",
+    "expected": "82217563919476179863025f8991af45f775cbaf067291f8c7695e59eef74526",
+    "matches": true,
+    "cache": "MISS"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "shared/reading-protocol.mjs",
+    "url": "https://bdc.a4a4.qzz.io/shared/reading-protocol.mjs?v=19bbe739949c",
+    "status": 200,
+    "sha256": "2aecba6fadb6039802bbd348d819d0e3d47f013b5600f049aa660a661555dcaa",
+    "expected": "2aecba6fadb6039802bbd348d819d0e3d47f013b5600f049aa660a661555dcaa",
+    "matches": true,
+    "cache": "DYNAMIC"
+  },
+  {
+    "base": "https://bdc.a4a4.qzz.io",
+    "path": "styles.css",
+    "url": "https://bdc.a4a4.qzz.io/styles.css?v=19bbe739949c",
+    "status": 200,
+    "sha256": "79492f0d0755ce9a0d4fdb174a3b5d5c34cb03ff046be67ffafa4650504e28f2",
+    "expected": "79492f0d0755ce9a0d4fdb174a3b5d5c34cb03ff046be67ffafa4650504e28f2",
+    "matches": true,
+    "cache": "HIT"
+  }
+]

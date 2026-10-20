@@ -1,0 +1,36 @@
+PASS zh-CN-1440 same-scope refresh retains opened article {"body":"We look forward to meeting you.\n\nWe look forward to meeting you.","summaryOnly":false}
+PASS zh-CN-1440 two repeated words visible
+PASS zh-CN-1440 lookup alone does not underline
+PASS zh-CN-1440 manual mark is exact second occurrence [false,true]
+PASS zh-CN-1440 marked item owns correct body version and anchor {"items":[{"version":"cv1_7019bacf_64","anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."}}],"expectedVersion":"cv1_7019bacf_64"}
+PASS zh-CN-1440 existing exact mark survives article and reading refresh [false,true]
+PASS zh-CN-1440 reopened second popup displays Cancel mark "取消标记"
+PASS zh-CN-1440 write-note focuses exact note field {"tag":"TEXTAREA","id":"li_cv1_4676db94_50"}
+PASS zh-CN-1440 unmark preserves typed note
+PASS zh-CN-1440 old understanding controls removed
+PASS zh-CN-1440 page has no horizontal overflow
+PASS zh-CN-1440 browser-loaded modules match deployed source {"checked":79,"mismatches":[]}
+PASS zh-HK-390 same-scope refresh retains opened article {"body":"We look forward to meeting you.\n\nWe look forward to meeting you.","summaryOnly":false}
+PASS zh-HK-390 two repeated words visible
+PASS zh-HK-390 lookup alone does not underline
+PASS zh-HK-390 manual mark is exact second occurrence [false,true]
+PASS zh-HK-390 marked item owns correct body version and anchor {"items":[{"version":"cv1_7019bacf_64","anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."}}],"expectedVersion":"cv1_7019bacf_64"}
+PASS zh-HK-390 existing exact mark survives article and reading refresh [false,true]
+PASS zh-HK-390 reopened second popup displays Cancel mark "取消標記"
+PASS zh-HK-390 write-note focuses exact note field {"tag":"TEXTAREA","id":"li_cv1_4676db94_50"}
+PASS zh-HK-390 unmark preserves typed note
+PASS zh-HK-390 old understanding controls removed
+PASS zh-HK-390 page has no horizontal overflow
+PASS zh-HK-390 browser-loaded modules match deployed source {"checked":79,"mismatches":[]}
+PASS zh-CN-320 same-scope refresh retains opened article {"body":"We look forward to meeting you.\n\nWe look forward to meeting you.","summaryOnly":false}
+PASS zh-CN-320 two repeated words visible
+PASS zh-CN-320 lookup alone does not underline
+PASS zh-CN-320 manual mark is exact second occurrence [false,true]
+PASS zh-CN-320 marked item owns correct body version and anchor {"items":[{"version":"cv1_7019bacf_64","anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."}}],"expectedVersion":"cv1_7019bacf_64"}
+PASS zh-CN-320 existing exact mark survives article and reading refresh [false,true]
+PASS zh-CN-320 reopened second popup displays Cancel mark "取消标记"
+PASS zh-CN-320 write-note focuses exact note field {"tag":"TEXTAREA","id":"li_cv1_4676db94_50"}
+PASS zh-CN-320 unmark preserves typed note
+PASS zh-CN-320 old understanding controls removed
+PASS zh-CN-320 page has no horizontal overflow
+PASS zh-CN-320 browser-loaded modules match deployed source {"checked":79,"mismatches":[]}

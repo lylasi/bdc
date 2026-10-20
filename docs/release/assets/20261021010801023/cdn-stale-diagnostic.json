@@ -1,0 +1,38 @@
+[
+  {
+    "url": "https://bdc.a4a4.qzz.io/modules/article-store.js",
+    "sha256": "d3499a81bdfa65783a31f7399c4cc96ee007883f0e4d9d6b42a2d1af88197cb4",
+    "headers": {
+      "age": "1346",
+      "cache-control": "max-age=14400",
+      "cf-cache-status": "HIT",
+      "cf-ray": "a4d9c0d4889df64d-AMS",
+      "content-encoding": "zstd",
+      "last-modified": "Tue, 20 Oct 2026 17:07:35 GMT"
+    }
+  },
+  {
+    "url": "https://bdc.a4a4.qzz.io/modules/permanent-db.js",
+    "sha256": "7907786651d710f4dbb85cac527441a1c2900c3cde0dc96b05e4c0f49c098c83",
+    "headers": {
+      "age": "1346",
+      "cache-control": "max-age=14400",
+      "cf-cache-status": "HIT",
+      "cf-ray": "a4d9c0d7cc793751-AMS",
+      "content-encoding": "zstd",
+      "last-modified": "Tue, 20 Oct 2026 17:07:35 GMT"
+    }
+  },
+  {
+    "url": "https://bdc.a4a4.qzz.io/features/article/reading-panel.js",
+    "sha256": "f79e460b02658df2cf416b3a81251b0fd5f3e99822baf488893f6a89dabb97c3",
+    "headers": {
+      "age": "1346",
+      "cache-control": "max-age=14400",
+      "cf-cache-status": "HIT",
+      "cf-ray": "a4d9c0d91d0b3751-AMS",
+      "content-encoding": "zstd",
+      "last-modified": "Tue, 20 Oct 2026 17:07:35 GMT"
+    }
+  }
+]
