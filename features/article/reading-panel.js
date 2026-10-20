@@ -24,6 +24,13 @@ let lastFocus = null;
 let pendingFocusItemId = '';
 const noteDrafts = new Map();
 let legacyImportPromise = null;
+// scope 重載會清空 reading-store 的記憶體視圖；非同步補讀必須能分辨
+// 期間是否換了文章／帳戶，避免把舊結果畫回目前畫面。
+let scopeRefreshToken = 0;
+
+function invalidateScopeRefresh() {
+    scopeRefreshToken += 1;
+}
 
 function marksVisible() {
     try { return localStorage.getItem(MARKS_KEY) !== '0'; } catch (_) { return true; }
@@ -669,6 +676,42 @@ function openAiScopeDialog(mode) {
     });
 }
 
+function renderPanelFromStore() {
+    if (!isPanelOpen()) return;
+    // 正在輸入筆記時不整份重繪，避免遠端同步／scope 重載把草稿蓋掉或游標跳走。
+    const active = document.activeElement;
+    if (active && active.classList && active.classList.contains('reading-note')) {
+        panel.querySelector('#reading-panel-status').innerHTML = statusHtml();
+        wireConflictButtons();
+        return;
+    }
+    renderPanel();
+}
+
+function applyCurrentReadingState() {
+    applyMarks(currentArticleId);
+    renderPanelFromStore();
+}
+
+/**
+ * 同一 scope 重載（同步完成後的 reloadReadingScope）會先清空 itemsById；
+ * 此時只補讀目前文章，冷文章仍維持未載入，補讀完成後才重畫標記與面板。
+ */
+function refreshCurrentArticleAfterScopeReload() {
+    const articleId = currentArticleId;
+    if (!articleId) return;
+    const ctx = readingStore.captureReadingContext();
+    if (!readingStore.isReadingContextActive(ctx)) return;
+    const token = ++scopeRefreshToken;
+    readingStore.ensureArticleReadingLoaded(articleId, ctx).then((loaded) => {
+        if (token !== scopeRefreshToken) return;
+        if (!loaded || loaded.ok === false) return;
+        if (currentArticleId !== articleId) return;
+        if (!readingStore.isReadingContextActive(ctx)) return;
+        applyCurrentReadingState();
+    }).catch(() => {});
+}
+
 function renderPanel() {
     if (!panel) return;
     // 正在輸入筆記時不整份重繪，避免遠端同步把草稿蓋掉或游標跳走。
@@ -806,6 +849,7 @@ export async function openReadingPanelForItem(articleId, itemId) {
 }
 
 async function loadArticle(articleId) {
+    invalidateScopeRefresh();
     const previousArticleId = currentArticleId;
     let draftsFlushed = true;
     if (previousArticleId && previousArticleId !== articleId && noteDrafts.size) {
@@ -872,21 +916,19 @@ export function initReadingPanel() {
         loadArticle(articleId).catch(() => null);
     });
     document.addEventListener('bdc:reading-change', (event) => {
-        const articleId = event?.detail?.articleId;
+        const detail = event?.detail || {};
+        const articleId = detail.articleId;
         if (articleId && articleId !== currentArticleId) return;
-        applyMarks(currentArticleId);
-        if (isPanelOpen()) {
-            const active = document.activeElement;
-            const editingNote = active && active.classList && active.classList.contains('reading-note');
-            if (!editingNote) renderPanel();
-            else {
-                panel.querySelector('#reading-panel-status').innerHTML = statusHtml();
-                wireConflictButtons();
-            }
+        if (detail.reason === 'scope-reloaded') {
+            // 記憶體視圖剛被清空：先按需補讀目前文章，不可直接套用空資料。
+            refreshCurrentArticleAfterScopeReload();
+            return;
         }
+        applyCurrentReadingState();
     });
     document.addEventListener('bdc:articles-scope-changed', () => {
         // 切帳戶時舊草稿已不屬於目前 scope，不可阻擋介面切換。
+        invalidateScopeRefresh();
         closePanel({ force: true });
         noteDrafts.clear();
         loadArticle('');
