@@ -62,6 +62,9 @@ let dataEpoch = 0;
 // 目前 scope 已載入全文的文章；正常啟動只有清單摘要，開文章才補這一篇。
 const loadedDocs = new Map();
 const loadingDocs = new Map();
+// 真正由使用者開啟／按需載入過的文章。單次寫入或匯入也會進 loadedDocs，
+// 但同 scope 重新整理只需保留這批常駐正文，不得把所有剛寫入的冷文章留下。
+const residentArticleIds = new Set();
 // 已載入過的全文依 scope 快取。切帳戶再切回來時可還原已讀文章，
 // 但不預先讀取其他文章；只有 contentVersion 仍一致才使用。
 const docCache = new Map();
@@ -81,9 +84,21 @@ function cacheDoc(doc) {
 function cachedDoc(scope, summary) {
     if (!summary || !summary.articleId) return null;
     const doc = docCache.get(docKey(scope, summary.articleId));
-    if (!doc || doc.deletedAt) return null;
-    if (contentVersionOf(doc.body || '') !== summary.contentVersion) return null;
-    return doc;
+    return docMatchesSummary(doc, summary) ? doc : null;
+}
+
+/**
+ * 已載入全文是否仍對應目前清單摘要。
+ * revision 與 contentVersion 必須同時一致：只比正文版本會讓重新同步後
+ * revision 已推進的舊文件被當成最新內容。
+ */
+function docMatchesSummary(doc, summary) {
+    if (!doc || !summary || !doc.id || !summary.articleId) return false;
+    if (doc.id !== summary.articleId) return false;
+    if (!doc.scope || !summary.scope || doc.scope !== summary.scope) return false;
+    if (doc.deletedAt || summary.deletedAt) return false;
+    if (Number(doc.revision) !== Number(summary.revision)) return false;
+    return contentVersionOf(doc.body || '') === summary.contentVersion;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -413,7 +428,7 @@ async function deleteDoc(id, ctx = captureArticleContext()) {
         const bucket = fallbackRead(scope);
         bucket.docs = (bucket.docs || []).filter((item) => item.id !== id);
         const ok = fallbackWrite(scope, bucket);
-        if (ok) { dataEpoch += 1; loadedDocs.delete(id); }
+        if (ok) { dataEpoch += 1; loadedDocs.delete(id); residentArticleIds.delete(id); }
         return ok ? { ok: true, fallback: true } : { ok: false, error: 'storage_full' };
     }
     const result = await idbRequest([STORE_DOCS, STORE_ARTICLE_SUMMARIES], 'readwrite', (stores) => {
@@ -424,6 +439,7 @@ async function deleteDoc(id, ctx = captureArticleContext()) {
     if (result.ok) {
         dataEpoch += 1;
         loadedDocs.delete(id);
+        residentArticleIds.delete(id);
         docCache.delete(docKey(scope, id));
         meta.persistenceError = '';
         return { ok: true };
@@ -433,7 +449,7 @@ async function deleteDoc(id, ctx = captureArticleContext()) {
         const bucket = fallbackRead(scope);
         bucket.docs = (bucket.docs || []).filter((item) => item.id !== id);
         const ok = fallbackWrite(scope, bucket);
-        if (ok) { dataEpoch += 1; loadedDocs.delete(id); }
+        if (ok) { dataEpoch += 1; loadedDocs.delete(id); residentArticleIds.delete(id); }
         return ok ? { ok: true, fallback: true } : { ok: false, error: 'storage_full' };
     }
     meta.persistenceError = result.error || 'idb_write_failed';
@@ -706,17 +722,22 @@ async function readState(scope) {
 export async function reloadScope(scope = getArticleScope()) {
     const next = String(scope || getArticleScope());
     const previousScope = currentScope;
-    // 只有切換 scope 才還原已載入全文；同一 scope 的重新整理必須維持摘要，
-    // 避免正常啟動或同步後把所有文章全文 hydrate 回記憶體。
+    // 同一 scope 重新整理（例如初始化後同步、refreshScope）不得清掉目前
+    // 已按需載入的正文；只有切換 scope 才還原其他 scope 的快取，且絕不
+    // 預先載入冷文章。冷啟動仍只讀摘要。
+    const sameScope = !!previousScope && previousScope === next;
     const restoreCachedDocs = !!previousScope && previousScope !== next;
     if (currentScope && currentScope !== next) scopeGeneration += 1;
     else if (!currentScope) scopeGeneration += 1;
     const generation = scopeGeneration;
     currentScope = next;
-    loadedDocs.clear();
-    loadingDocs.clear();
+    if (!sameScope) {
+        loadedDocs.clear();
+        loadingDocs.clear();
+        residentArticleIds.clear();
+    }
     let records = [];
-    const cachedDocForReload = new Map();
+    const restoredDocs = new Map();
     // 同一 scope 重新載入時，若讀取期間有本機寫入提交（dataEpoch 改變），
     // 必須重讀，不能用較早的摘要蓋掉剛保存的新修改。
     for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -749,20 +770,36 @@ export async function reloadScope(scope = getArticleScope()) {
             gatePending: storedState?.gatePending === true,
             persistenceError: meta.persistenceError || ''
         };
+        // 先重建本次要保留的全文，最後才整體替換 loadedDocs；讀取期間若
+        // 有 in-flight 載入完成，它已寫入 loadedDocs 並更新畫面，不會被舊摘要蓋回。
+        restoredDocs.clear();
         records = summaries
             .map((summary) => {
                 const record = toSummaryRecord(summary);
-                const cached = record && restoreCachedDocs ? cachedDoc(next, summary) : null;
-                if (!cached) return record;
-                cachedDocForReload.set(record.articleId, cached);
-                return { ...record, article: cached.body, result: cached.analysis, summaryOnly: false };
+                if (!record) return null;
+                const keepBody = residentArticleIds.has(record.articleId)
+                    // 使用者剛儲存、畫面仍停留的文章即使尚未經過 ensure，也不得在重整時失去正文。
+                    || state.currentArticleId === record.articleId;
+                const candidate = sameScope
+                    ? (keepBody ? loadedDocs.get(record.articleId) : null)
+                    : (restoreCachedDocs ? cachedDoc(next, summary) : null);
+                if (!candidate || !docMatchesSummary(candidate, summary)) return record;
+                restoredDocs.set(record.articleId, candidate);
+                return { ...record, article: candidate.body, result: candidate.analysis, summaryOnly: false };
             })
             .filter(Boolean)
             .sort((a, b) => String(b.lastOpenedAt || b.updatedAt || '').localeCompare(String(a.lastOpenedAt || a.updatedAt || '')));
         break;
     }
     loadedDocs.clear();
-    for (const [articleId, doc] of cachedDocForReload) loadedDocs.set(articleId, doc);
+    residentArticleIds.clear();
+    for (const [articleId, doc] of restoredDocs) {
+        loadedDocs.set(articleId, doc);
+        residentArticleIds.add(articleId);
+        // 同一 scope 的持久化路徑不一定會補 docCache；這裡補上，切換帳戶
+        // 再切回時仍可還原同一篇已讀文章，但不會因此載入其他冷文章。
+        cacheDoc(doc);
+    }
     state.setAnalyzedArticles(records);
     emitChange();
     return records;
@@ -776,7 +813,11 @@ export async function ensureArticleLoaded(articleId, ctx = captureArticleContext
     if (!isArticleContextActive(ctx)) return null;
     const summary = findRecord(articleId);
     if (!summary) return null;
-    if (loadedDocs.has(articleId)) return findRecord(articleId);
+    if (loadedDocs.has(articleId)) {
+        // 已被開啟流程要求過全文：標記為常駐，後續同 scope 重整不得降回摘要。
+        residentArticleIds.add(articleId);
+        return findRecord(articleId);
+    }
     const key = `${ctx.scope}\u0000${articleId}\u0000${ctx.generation}`;
     if (loadingDocs.has(key)) return loadingDocs.get(key);
     const task = (async () => {
@@ -786,6 +827,7 @@ export async function ensureArticleLoaded(articleId, ctx = captureArticleContext
         if (!doc || doc.scope !== ctx.scope || doc.id !== articleId) return null;
         cacheDoc(doc);
         loadedDocs.set(articleId, doc);
+        residentArticleIds.add(articleId);
         replaceRecord(toRecord(doc));
         return findRecord(articleId);
     })();
@@ -1411,6 +1453,7 @@ export async function applyRemoteTombstone(articleId, ctx = captureArticleContex
         dataEpoch += 1;
         if (value.tombstone) cacheDoc(value.tombstone);
         loadedDocs.delete(articleId);
+        residentArticleIds.delete(articleId);
         const record = findRecord(articleId);
         if (record) {
             const next = { ...record, deletedAt: nowIso(), dirty: false, pending: false };
