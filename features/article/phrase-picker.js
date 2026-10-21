@@ -330,21 +330,22 @@ function wireActions() {
         const target = currentTarget();
         if (!target) return;
         try {
+            if (!(window.__assistant && window.__assistant.__ready)) {
+                ui.displayMessage(t('assistant.unavailable'), 'warning');
+                return;
+            }
             const item = await ensureTargetItem(target);
+            const reference = t('article.askAiReference', { quote: target.quote });
+            const context = {
+                learningItemId: item?.id || '',
+                anchor: target.anchor,
+                contentVersion: target.contentVersion,
+                articleId: target.articleId
+            };
             const closed = await closePhrasePicker();
             if (!closed.ok) return;
-            const prompt = t('article.askAiPrompt', { quote: target.quote, sentence: target.sentence });
-            if (window.__assistant && window.__assistant.__ready) {
-                window.__assistant.open('floating');
-                await window.__assistant.send(prompt, undefined, undefined, {
-                    learningItemId: item?.id || '',
-                    anchor: target.anchor,
-                    contentVersion: state?.contentVersion ?? readingActions.articleVersion(target.articleId),
-                    articleId: target.articleId
-                });
-            } else {
-                ui.displayMessage(t('assistant.unavailable'), 'warning');
-            }
+            // 只預填引用，讓使用者自己輸入問題；送出時才帶上來源。
+            window.__assistant.compose({ text: reference, context });
         } catch (_) {
             status(t('article.saveFailedRetry'), 'error');
         }

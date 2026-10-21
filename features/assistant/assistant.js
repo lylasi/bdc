@@ -24,6 +24,10 @@ const LS_KEY = 'assistantConversations'; // legacy（含所有訊息）
 const LS_UPDATED_AT = 'assistantUpdatedAt';
 const IDX_KEY = 'assistantConvIndex'; // 新索引：[{id, articleKey, title, updatedAt}]
 
+// 「問 AI」只把引用放進輸入框，等使用者自行輸入問題；真正送出時才把
+// 學習條目／錨點來源補進訊息，換會話或直接 send 時清除。
+let pendingReference = null;
+
 function getAssistantModelOverride() {
   const s = loadGlobalSettings();
   return s?.ai?.tasks?.assistant || s?.ai?.models?.assistant || '';
@@ -85,7 +89,7 @@ function mountUi() {
       if (mode === 'dock') setDockWidth(panel, getSavedDockWidth());
       updateHeaderTitle();
       updateSessionLabel();
-      restoreConversation(panel);
+      restoreConversation(panel).catch(() => {});
       const input = panel.querySelector('#assistant-input');
       if (input) input.focus();
     }
@@ -202,10 +206,20 @@ function wirePanel(panel) {
     const q = (input.value || '').trim();
     if (!q) return;
     input.value = '';
-    ask(panel, q);
+    const pending = pendingReference;
+    pendingReference = null;
+    ask(panel, q, pending
+      ? { ...pending.context, articleKey: pending.articleKey || undefined, convId: pending.convId || undefined }
+      : {});
   };
   send.addEventListener('click', doSend);
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
+  // 使用者把預填的引用刪掉後，不再把這則訊息連到原本的學習條目。
+  input.addEventListener('input', () => {
+    if (pendingReference && pendingReference.text && !input.value.includes(pendingReference.text)) {
+      pendingReference = null;
+    }
+  });
 }
 
 function updateHeaderTitle(){
@@ -370,18 +384,16 @@ async function restoreConversation(panel, overrideArticleKey) {
   const box = panel.querySelector('#assistant-messages');
   if (!box) return;
   box.innerHTML = '';
-  (async () => {
-    const ctx0 = await buildContext();
-    const ctx = overrideArticleKey ? { ...ctx0, articleKey: overrideArticleKey } : ctx0;
-    const idx = readIndex();
-    const curId = getCurrentConvId(ctx.articleKey);
-    let meta = curId ? idx.find(x => x.id === curId) : null;
-    if (!meta) meta = idx.find(x => x.articleKey === ctx.articleKey);
-    if (!meta) return;
-    const messages = await idbGetConv(meta.id);
-    for (const m of messages) appendMessage(box, m.role, m.content, { messageId: m.id, conversationId: meta.id, articleId: meta.articleId });
-    box.scrollTop = box.scrollHeight;
-  })();
+  const ctx0 = await buildContext();
+  const ctx = overrideArticleKey ? { ...ctx0, articleKey: overrideArticleKey } : ctx0;
+  const idx = readIndex();
+  const curId = getCurrentConvId(ctx.articleKey);
+  let meta = curId ? idx.find(x => x.id === curId) : null;
+  if (!meta) meta = idx.find(x => x.articleKey === ctx.articleKey);
+  if (!meta) return;
+  const messages = await idbGetConv(meta.id);
+  for (const m of messages) appendMessage(box, m.role, m.content, { messageId: m.id, conversationId: meta.id, articleId: meta.articleId });
+  box.scrollTop = box.scrollHeight;
 }
 
 function addHint(panel, text) {
@@ -769,6 +781,7 @@ async function newConversation(panel){
     messages: []
   });
   if (!meta) return;
+  pendingReference = null;
   setCurrentConvId(ctx.articleKey, meta.id);
   const box = panel.querySelector('#assistant-messages'); if (box) box.innerHTML='';
 }
@@ -857,6 +870,7 @@ async function toggleHistory(panel){
       return;
     }
     // open 切換
+    pendingReference = null;
     setCurrentConvId(ctx.articleKey, id);
     const box = panel.querySelector('#assistant-messages');
     if (box) { box.innerHTML=''; const msgs = await idbGetConv(id); const meta = idx.find(x => x.id === id) || null; msgs.forEach(m=>appendMessage(box,m.role,m.content,{ messageId: m.id, conversationId: id, articleId: meta?.articleId || '' })); box.scrollTop=box.scrollHeight; }
@@ -907,16 +921,58 @@ function exposeGlobalAPI(){
       switch: async (articleKey, convId) => {
         const panel = document.getElementById('assistant-panel'); if (!panel) return;
         // 僅切換上下文/會話，不主動開啟面板（避免「預設彈窗」）
+        pendingReference = null;
         if (articleKey && convId) { setCurrentConvId(articleKey, convId); }
         // 若面板已打開，才更新畫面；否則僅更新狀態，待下次開啟再載入
         if (!panel.classList.contains('assistant-hidden')) {
           updateHeaderTitle();
-          restoreConversation(panel, articleKey);
+          restoreConversation(panel, articleKey).catch(() => {});
           updateSessionLabel();
         }
       },
+      // 文章學習記錄／短語面板的「問 AI」：只把引用預填進輸入框並聚焦，
+      // 不代使用者送出；返回 false 代表助手不可用（面板尚未掛載）。
+      compose: ({ text, articleKey, convId, context = {} } = {}) => {
+        const panel = document.getElementById('assistant-panel');
+        if (!panel) return false;
+        const wasHidden = panel.classList.contains('assistant-hidden');
+        const mode = getSavedPanelMode();
+        panel.classList.remove('assistant-hidden');
+        setPanelMode(panel, mode);
+        if (mode === 'dock') setDockWidth(panel, getSavedDockWidth());
+        updateBackdrop();
+        updateHeaderTitle();
+        if (wasHidden) {
+          restoreConversation(panel, articleKey || undefined).catch(() => {});
+          updateSessionLabel();
+        }
+        pendingReference = {
+          articleKey: articleKey || '',
+          convId: convId || '',
+          text: String(text || '').trim(),
+          context: {
+            learningItemId: context.learningItemId || '',
+            anchor: context.anchor || null,
+            contentVersion: context.contentVersion || '',
+            articleId: context.articleId || ''
+          }
+        };
+        const input = panel.querySelector('#assistant-input');
+        if (input) {
+          const reference = String(text || '').trim();
+          const current = String(input.value || '');
+          // 已在輸入框的同一引用不重複堆疊；其他情況接在使用者已輸入的內容後面。
+          if (reference && !current.includes(reference)) {
+            input.value = current.trim() ? `${current.trimEnd()} ${reference}` : reference;
+          }
+          input.focus({ preventScroll: true });
+          try { const end = input.value.length; input.setSelectionRange(end, end); } catch (_) {}
+        }
+        return true;
+      },
       send: async (text, articleKey, convId, context = {}) => {
         const panel = document.getElementById('assistant-panel'); if (!panel) return;
+        pendingReference = null;
         if (articleKey && convId) { setCurrentConvId(articleKey, convId); }
         panel.classList.remove('assistant-hidden');
         if (text && text.trim()) {

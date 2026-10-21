@@ -492,18 +492,22 @@ function wireItemActions() {
                 return;
             }
             if (action === 'ask') {
-                const prompt = t('article.askAiPrompt', { quote: item.anchor?.quote || '', sentence: item.sentence || '' });
-                if (window.__assistant && window.__assistant.__ready) {
-                    window.__assistant.open('floating');
-                    await window.__assistant.send(prompt, undefined, undefined, {
-                        learningItemId: item.id,
-                        anchor: item.anchor,
-                        contentVersion: item.contentVersion,
-                        articleId: item.articleId
-                    });
-                } else {
+                // 只把條目引用帶入助手輸入框，讓使用者自己補問題；不代使用者直接送出。
+                if (!(window.__assistant && window.__assistant.__ready)) {
                     ui.displayMessage(t('assistant.unavailable'), 'warning');
+                    return;
                 }
+                const reference = t('article.askAiReference', { quote: item.anchor?.quote || '' });
+                const context = {
+                    learningItemId: item.id,
+                    anchor: item.anchor,
+                    contentVersion: item.contentVersion,
+                    articleId: item.articleId
+                };
+                // 助手面板在學習記錄面板之下，先保存筆記並關閉面板，避免引用被遮住。
+                const closed = await closePanel();
+                if (!closed.ok) return;
+                window.__assistant.compose({ text: reference, context });
                 return;
             }
             if (action === 'delete') {

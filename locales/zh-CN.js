@@ -928,7 +928,7 @@ export default {
         aiOrganizeNotes: '整理阅读笔记',
         aiScopeHint: '选择要交给 AI 的记录；AI 只会新增文件，不会改动你的标记或笔记。',
         askAi: '问 AI',
-        askAiPrompt: '请解释「{quote}」在下面句子中的意思和用法：\\n{sentence}',
+        askAiReference: '「{quote}」',
         markAdded: '已标记',
         markRemoved: '已取消标记',
         markThis: '标记',
