@@ -7,7 +7,8 @@ import * as articleStore from './article-store.js';
 import * as readingStore from './reading-store.js';
 import * as vocab from './vocab.js';
 import * as api from './api.js';
-import { resolveAITaskSpec } from './ai-models.js';
+import { getPreferredTaskSpec } from './ai-models.js';
+import { loadGlobalSettings } from './settings.js';
 import { buildPrompt } from './prompts/index.js';
 import { getLocale, t } from './i18n.js';
 import {
@@ -322,7 +323,9 @@ export async function generateReadingDocument({
         ...filtered.map((item, index) => formatRecordForAI(item, index, includeNotes)),
         ...docs.map((doc, index) => `[saved AI material ${index + 1}] ${doc.title}\n${doc.content}`)
     ].join('\n\n');
-    const model = resolveAITaskSpec('article');
+    // 與一般文章分析同一條解析鏈：先看「文章詳解」任務，再回退查詞模型。
+    // 使用 'article' 這種不存在的任務名會拿不到設定，誤報未配置。
+    const model = getPreferredTaskSpec(['articleAnalysis', 'wordAnalysis'], { settings: loadGlobalSettings() });
     if (!model) {
         return { ok: false, error: 'ai_not_configured' };
     }
@@ -339,7 +342,7 @@ export async function generateReadingDocument({
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
         timeoutMs: 90000,
-        taskType: 'article'
+        taskType: 'articleAnalysis'
     });
     const text = String(response?.text || response?.choices?.[0]?.message?.content || '').trim();
     if (!text) return { ok: false, error: 'empty_ai_response' };

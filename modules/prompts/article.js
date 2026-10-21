@@ -146,7 +146,7 @@ Sentence: \${sentence}`
  * Prompt ID: article.readingSummary
  * 對應功能：文章閱讀檔案 → 分析本文難點／整理閱讀筆記
  * 呼叫位置：modules/reading-actions.js → generateReadingDocument()
- * AI taskType：article
+ * AI taskType：articleAnalysis
  * 輸出格式：Markdown（不是 JSON）
  * 語言策略：跟隨介面語言
  */
