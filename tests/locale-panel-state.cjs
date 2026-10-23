@@ -264,6 +264,28 @@ function assistantProfile(baseUrl) {
     const draftHintCn = await tInPage('assistant.localeKeptDraft');
     check('切回 zh-CN 後草稿與游標仍保留', afterSecond === true && secondSwitch.value === DRAFT && secondSwitch.selectionStart === 4, JSON.stringify(secondSwitch));
     check('每次切換只提示一次（面板重建後不累積）', secondSwitch.hints.filter((text) => text.includes(draftHintCn)).length === 1, JSON.stringify(secondSwitch.hints));
+
+    // 快速連切：第一次 restore 尚未完成就切第二次，第二次 capture 讀到的是重建中的空面板；
+    // 必須沿用待 restore 的快照，不能把草稿／游標丟掉或把面板收起來。
+    await setLocale('zh-HK');
+    await setLocale('zh-CN');
+    const rapidOk = await waitFor(() => {
+        const panel = document.getElementById('assistant-panel');
+        const input = panel?.querySelector('#assistant-input');
+        return !!panel && !panel.classList.contains('assistant-hidden')
+            && input?.value === 'ABCDEFGHIJ' && input.selectionStart === 4;
+    }, 8000, 'rapid locale switch restore');
+    const rapidState = await page.evaluate(() => {
+        const panel = document.getElementById('assistant-panel');
+        const input = panel?.querySelector('#assistant-input');
+        return {
+            open: !!panel && !panel.classList.contains('assistant-hidden'),
+            value: input?.value || '',
+            selectionStart: input ? input.selectionStart : -1
+        };
+    });
+    check('快速連切兩次後草稿、游標與面板仍保留', rapidOk === true && rapidState.open === true
+        && rapidState.value === DRAFT && rapidState.selectionStart === 4, JSON.stringify(rapidState));
     const resizeDelta1 = countsAfterFirst.resize - countsBefore.resize;
     const resizeDelta2 = countsAfterSecond.resize - countsAfterFirst.resize;
     const hashDelta1 = countsAfterFirst.hashchange - countsBefore.hashchange;
@@ -358,6 +380,11 @@ function assistantProfile(baseUrl) {
     // 筆記草稿：不按失焦、也不等 debounce，直接切語言。
     const NOTE_TEXT = '面板草稿-切語言不可丢';
     await page.fill(`[data-note-id="${seeded.ids[0]}"]`, NOTE_TEXT);
+    await page.evaluate((noteId) => {
+        const area = document.querySelector(`[data-note-id="${noteId}"]`);
+        area.focus();
+        area.setSelectionRange(2, 6);
+    }, seeded.ids[0]);
     const focusedNoteId = await page.evaluate(() => document.activeElement?.getAttribute('data-note-id') || '');
     check('筆記輸入框取得焦點', focusedNoteId === seeded.ids[0], JSON.stringify(focusedNoteId));
     // page.fill 會把目標捲進視窗，捲動位置因此變了；再捲回中段後才切語言。
@@ -395,6 +422,8 @@ function assistantProfile(baseUrl) {
             savedOnly: !!savedBox?.checked,
             scrollTop: list ? list.scrollTop : -1,
             noteValue: element?.querySelector(`[data-note-id="${noteId}"]`)?.value ?? null,
+            noteSelectionStart: element?.querySelector(`[data-note-id="${noteId}"]`)?.selectionStart ?? -1,
+            noteSelectionEnd: element?.querySelector(`[data-note-id="${noteId}"]`)?.selectionEnd ?? -1,
             focusedNote: document.activeElement?.getAttribute?.('data-note-id') || ''
         };
     }, seeded.ids[0]);
@@ -404,6 +433,8 @@ function assistantProfile(baseUrl) {
     check('scrollTop 接近原位置', Math.abs(panelAfter.scrollTop - expectedScroll) <= 40, JSON.stringify({ before: expectedScroll, after: panelAfter.scrollTop }));
     check('未保存的筆記草稿仍在輸入框', panelAfter.noteValue === NOTE_TEXT, JSON.stringify(panelAfter.noteValue));
     check('焦點回到原本的筆記輸入框', panelAfter.focusedNote === seeded.ids[0], JSON.stringify(panelAfter.focusedNote));
+    check('筆記輸入框的游標／選取範圍保留', panelAfter.noteSelectionStart === 2 && panelAfter.noteSelectionEnd === 6,
+        JSON.stringify({ start: panelAfter.noteSelectionStart, end: panelAfter.noteSelectionEnd }));
     check('面板恢復後有提示', (await keptPanelToast) === true, 'article.localeKeptPanel');
 
     // savedOnly 也要保留：勾選後切語言，checkbox 仍為勾選。
@@ -444,6 +475,11 @@ function assistantProfile(baseUrl) {
     await page.waitForTimeout(250);
     const PHRASE_NOTE = '片語草稿-切語言先保存';
     await page.fill('#phrase-picker-note-input', PHRASE_NOTE);
+    await page.evaluate(() => {
+        const input = document.getElementById('phrase-picker-note-input');
+        input.focus();
+        input.setSelectionRange(2, 6);
+    });
     const phraseSelectionBefore = await page.evaluate(() => Array.from(document.querySelectorAll('.phrase-token.is-selected')).map((el) => el.getAttribute('data-index')));
     await setLocale('zh-HK');
     await waitFor(() => {
@@ -462,6 +498,8 @@ function assistantProfile(baseUrl) {
             open: !!element && !element.classList.contains('hidden'),
             selection: Array.from(element?.querySelectorAll('.phrase-token.is-selected') || []).map((el) => el.getAttribute('data-index')),
             noteValue: element?.querySelector('#phrase-picker-note-input')?.value ?? null,
+            noteSelectionStart: element?.querySelector('#phrase-picker-note-input')?.selectionStart ?? -1,
+            noteSelectionEnd: element?.querySelector('#phrase-picker-note-input')?.selectionEnd ?? -1,
             noteStored: stored.includes('片語草稿-切語言先保存'),
             firstItem: item?.note || ''
         };
@@ -470,6 +508,8 @@ function assistantProfile(baseUrl) {
     check('切語言前先保存筆記', phraseAfter.noteStored === true, JSON.stringify(phraseAfter.firstItem));
     check('短語選取範圍保留', JSON.stringify(phraseAfter.selection) === JSON.stringify(phraseSelectionBefore), JSON.stringify({ before: phraseSelectionBefore, after: phraseAfter.selection }));
     check('筆記輸入內容保留', phraseAfter.noteValue === PHRASE_NOTE, JSON.stringify(phraseAfter.noteValue));
+    check('片語筆記的游標／選取範圍保留', phraseAfter.noteSelectionStart === 2 && phraseAfter.noteSelectionEnd === 6,
+        JSON.stringify({ start: phraseAfter.noteSelectionStart, end: phraseAfter.noteSelectionEnd }));
 
     // 保存失敗：sheet 不關、顯示重試、草稿留在輸入框。
     await page.evaluate(async () => {

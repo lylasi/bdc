@@ -205,11 +205,18 @@ function capturePanelState() {
     const active = document.activeElement;
     let focusedItemId = '';
     let focusKind = '';
+    let noteSelection = null;
     if (open && active && panel?.contains(active)) {
         const card = active.closest?.('.reading-item');
         if (card) {
             focusedItemId = card.getAttribute('data-item-id') || '';
             focusKind = active.classList?.contains('reading-note') ? 'note' : 'item';
+            if (focusKind === 'note' && Number.isInteger(active.selectionStart)) {
+                noteSelection = {
+                    start: active.selectionStart,
+                    end: Number.isInteger(active.selectionEnd) ? active.selectionEnd : active.selectionStart
+                };
+            }
         }
     }
     return {
@@ -218,6 +225,7 @@ function capturePanelState() {
         scrollTop: list ? Number(list.scrollTop) || 0 : 0,
         focusedItemId,
         focusKind,
+        noteSelection,
         filter,
         savedOnly
     };
@@ -244,6 +252,15 @@ function restorePanelView(snapshot) {
         return;
     }
     try { target.focus({ preventScroll: true }); } catch (_) { /* noop */ }
+    // 筆記輸入中的游標／選取也要還原；只 focus 會把 caret 推到結尾。
+    if (snapshot.focusKind === 'note' && snapshot.noteSelection && typeof target.setSelectionRange === 'function') {
+        try {
+            target.setSelectionRange(
+                Math.max(0, Number(snapshot.noteSelection.start) || 0),
+                Math.max(0, Number(snapshot.noteSelection.end) || 0)
+            );
+        } catch (_) { /* noop */ }
+    }
 }
 
 function escapeHtml(value) {

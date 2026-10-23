@@ -497,6 +497,7 @@ function captureSheetState() {
         ? Number(active.getAttribute('data-index'))
         : null;
     const noteWrap = sheet?.querySelector('#phrase-picker-note-wrap');
+    const noteFocused = !!active && active.id === 'phrase-picker-note-input';
     return {
         wasOpen: !!sheet && !sheet.classList.contains('hidden'),
         articleId: state?.articleId || '',
@@ -507,7 +508,13 @@ function captureSheetState() {
         endIndex: state?.endIndex ?? null,
         focusedTokenIndex: Number.isInteger(tokenIndex) ? tokenIndex : null,
         noteOpen: !!noteWrap && !noteWrap.classList.contains('hidden'),
-        noteFocused: !!active && active.id === 'phrase-picker-note-input'
+        noteFocused,
+        noteSelection: noteFocused && Number.isInteger(active.selectionStart)
+            ? {
+                start: active.selectionStart,
+                end: Number.isInteger(active.selectionEnd) ? active.selectionEnd : active.selectionStart
+            }
+            : null
     };
 }
 
@@ -541,7 +548,18 @@ function restoreSheetState(snapshot, token) {
     setTimeout(() => {
         if (token !== localeToken || !sheet || !state) return;
         if (snapshot.noteOpen && snapshot.noteFocused) {
-            sheet.querySelector('#phrase-picker-note-input')?.focus({ preventScroll: true });
+            const noteInput = sheet.querySelector('#phrase-picker-note-input');
+            if (noteInput) {
+                noteInput.focus({ preventScroll: true });
+                if (snapshot.noteSelection && typeof noteInput.setSelectionRange === 'function') {
+                    try {
+                        noteInput.setSelectionRange(
+                            Math.max(0, Number(snapshot.noteSelection.start) || 0),
+                            Math.max(0, Number(snapshot.noteSelection.end) || 0)
+                        );
+                    } catch (_) { /* noop */ }
+                }
+            }
             return;
         }
         const focusIndex = snapshot.focusedTokenIndex;

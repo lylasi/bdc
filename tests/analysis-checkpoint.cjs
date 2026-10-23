@@ -43,7 +43,9 @@ async function setupScenario(browser, prefix) {
         prefix,
         paragraphCalls: 0,
         callsBy: new Map(),
-        delays: new Map()
+        delays: new Map(),
+        // 指定索引的段落一律回 500：用來驗證續作失敗段仍要落盤（F1）。
+        failIndices: new Set()
     };
     const markerRe = new RegExp(`${prefix}(\\d+)MARK`);
     await mock.installProviderRoutes(page, async ({ route, prompt }) => {
@@ -57,6 +59,7 @@ async function setupScenario(browser, prefix) {
         state.callsBy.set(index, (state.callsBy.get(index) || 0) + 1);
         const delay = state.delays.get(index) || 0;
         if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+        if (state.failIndices.has(index)) return mock.httpError(route, 500, 'mock paragraph failure');
         return mock.jsonReply(route, mock.translatedParagraphReply(prompt, `${prefix}ZH${index + 1}-`));
     });
     await page.goto(BASE + '#a', { waitUntil: 'domcontentloaded' });
@@ -119,6 +122,23 @@ async function waitRowsDone(page, count, timeout = 40000) {
     }
 }
 
+/** 等到目標段數都收斂（done／failed／skipped）：失敗段也是已完成的一種。 */
+async function waitRowsSettled(page, count, timeout = 40000) {
+    try {
+        await page.waitForFunction((target) => {
+            const rows = Array.from(document.querySelectorAll('#article-analysis-container .paragraph-pair .para-status'));
+            return rows.length >= target && rows.slice(0, target).every((row) => (
+                row.dataset.status === 'done'
+                || row.dataset.status === 'failed'
+                || row.dataset.status === 'skipped'
+            ));
+        }, count, { timeout });
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
 async function recordInfo(page, marker) {
     return page.evaluate(async (text) => {
         const store = await import('/modules/article-store.js');
@@ -130,6 +150,13 @@ async function recordInfo(page, marker) {
             run: record.result?.analysis_run || null,
             translations: (record.result?.paragraph_analysis || []).map((item) => (
                 item === null || item === undefined ? null : String(item.chinese_translation || '')
+            )),
+            // F1：失敗段要保留 failed／errorCode，而不是被舊 null 蓋回。
+            results: (record.result?.paragraph_analysis || []).map((item) => (
+                item === null || item === undefined ? null : {
+                    failed: item.failed === true,
+                    errorCode: String(item.errorCode || '')
+                }
             ))
         };
     }, marker);
@@ -420,6 +447,312 @@ async function scenarioCheckpointDisabled(browser) {
     await context.close();
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// F1：續作失敗段也要保存，最終以 partial 收尾並保留續作入口
+// ─────────────────────────────────────────────────────────────────────────────
+async function scenarioResumeFailurePersists(browser) {
+    console.log('\n[情境 F1] 續作失敗段仍要保存並以 partial 收尾');
+    const { context, page, state } = await setupScenario(browser, 'RA');
+    const body = buildBody('RA', 10);
+    for (let index = 5; index < 10; index += 1) state.delays.set(index, 5000);
+    await startAnalysis(page, body);
+
+    const doneFive = await waitRowsDone(page, 5);
+    const checkpointReady = await waitForRunningCheckpoint(page, 'RA1MARK', 5);
+    check('F1 前 5 段完成且 checkpoint 落盤', doneFive && checkpointReady, JSON.stringify(await recordInfo(page, 'RA1MARK')));
+
+    // 續作入口只在載入記錄時顯示：重新載入後再按續作（真實使用路徑）。
+    const beforeResume = await recordInfo(page, 'RA1MARK');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1600);
+    await dismissStartupModal(page);
+    await openRecordById(page, beforeResume.id);
+
+    state.delays.clear();
+    // 續作順序是 5、6、…：讓第 2 個續作段（index 6）失敗。
+    state.failIndices.add(6);
+    await page.click('#resume-analysis-btn');
+    const settled = await waitRowsSettled(page, 10);
+    check('F1 續作全部段落都收斂（含失敗段）', settled, JSON.stringify(await rowStatuses(page)));
+
+    let finalInfo = null;
+    const deadline = Date.now() + 15000;
+    while (Date.now() < deadline) {
+        finalInfo = await recordInfo(page, 'RA1MARK');
+        if (finalInfo?.run?.status === 'partial') break;
+        await page.waitForTimeout(300);
+    }
+    check('F1 最終 analysis_run=partial', finalInfo?.run?.status === 'partial', JSON.stringify(finalInfo?.run));
+    check('F1 analysis_run.failed>0', Number(finalInfo?.run?.failed) > 0, JSON.stringify(finalInfo?.run));
+    check('F1 失敗段保留 failed/errorCode', finalInfo?.results?.[6]?.failed === true && !!finalInfo.results[6].errorCode, JSON.stringify(finalInfo?.results?.[6]));
+    check('F1 失敗段沒有被舊 null 蓋掉', finalInfo?.results?.[6] !== null, JSON.stringify(finalInfo?.translations));
+    check('F1 其餘續作段仍有譯文', [5, 7, 8, 9].every((index) => !!finalInfo?.translations?.[index]), JSON.stringify(finalInfo?.translations));
+
+    // 重開：partial 仍要提供續作入口，且失敗段維持 failed。
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1600);
+    await dismissStartupModal(page);
+    if (!finalInfo?.id) {
+        check('F1 取得文章 ID', false, 'record missing');
+        await context.close();
+        return;
+    }
+    await openRecordById(page, finalInfo.id);
+    const reloaded = await recordInfo(page, 'RA1MARK');
+    const reloadedRows = await rowStatuses(page);
+    const banner = await bannerState(page);
+    const partialText = await tInPage(page, 'article.analysisPartial', { done: 9, total: 10 });
+    check('F1 重開後 analysis_run 仍是 partial 且有 failed', reloaded?.run?.status === 'partial' && reloaded?.run?.failed > 0, JSON.stringify(reloaded?.run));
+    check('F1 重開後失敗段仍有 failed/errorCode', reloaded?.results?.[6]?.failed === true && !!reloaded.results[6].errorCode, JSON.stringify(reloaded?.results?.[6]));
+    check('F1 重開後失敗段顯示 failed', reloadedRows[6]?.status === 'failed', JSON.stringify(reloadedRows[6]));
+    check('F1 重開後仍有續作入口（9/10）', banner.visible && banner.resumeVisible && banner.status.includes(partialText), JSON.stringify(banner));
+    await context.close();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F2：最終保存交易進行中取消，不得把 complete 蓋成 cancelled
+// ─────────────────────────────────────────────────────────────────────────────
+async function scenarioCancelDuringFinalSave(browser) {
+    console.log('\n[情境 F2] 最終保存期間取消不得把 complete 蓋成 cancelled');
+    const { context, page } = await setupScenario(browser, 'RB');
+    const body = buildBody('RB', 3);
+
+    // 在最終保存（analysis_run=complete）的 docs write 上掛一個同交易讀取迴圈，
+    // 讓交易在 put 後仍保持開啟；測試才能穩定地在 finalizing 期間按下取消。
+    await page.evaluate(() => {
+        const proto = IDBObjectStore.prototype;
+        const original = proto.put;
+        window.__finalPutSeen = false;
+        window.__finalHoldStop = false;
+        window.__bdcFinalPutRestore = () => { proto.put = original; };
+        proto.put = function putWithFinalHold(...args) {
+            const doc = args[0];
+            const result = original.apply(this, args);
+            if (this.name === 'docs'
+                && doc?.analysis?.analysis_run?.status === 'complete'
+                && !window.__finalPutSeen) {
+                window.__finalPutSeen = true;
+                const store = this;
+                const loop = () => {
+                    if (window.__finalHoldStop) return;
+                    const get = store.get('__bdc_final_hold__');
+                    get.onsuccess = () => loop();
+                    get.onerror = () => {};
+                };
+                loop();
+            }
+            return result;
+        };
+    });
+
+    await startAnalysis(page, body);
+    const doneAll = await waitRowsDone(page, 3);
+    let finalPutSeen = false;
+    try {
+        await page.waitForFunction(() => window.__finalPutSeen === true, null, { timeout: 15000 });
+        finalPutSeen = true;
+    } catch (_) { /* 下方 check 會回報 */ }
+    check('F2 最終保存交易已開始（3 段完成）', doneAll && finalPutSeen, JSON.stringify(await rowStatuses(page)));
+
+    // finalizing=true 且交易尚未返回：這時按清除（cancelActiveRun）。
+    await page.click('#clear-article-btn');
+    await page.waitForTimeout(300);
+    await page.evaluate(() => { window.__finalHoldStop = true; });
+    // 等交易提交，並讓任何排隊中的取消 checkpoint 有機會執行（修復前會蓋掉 complete）。
+    await page.waitForTimeout(1800);
+
+    const after = await recordInfo(page, 'RB1MARK');
+    check('F2 取消後 analysis_run 仍是 complete', after?.run?.status === 'complete', JSON.stringify(after?.run));
+    check('F2 取消後完成段沒有被清掉', Array.isArray(after?.translations)
+        && after.translations.length === 3
+        && after.translations.every((text) => !!text), JSON.stringify(after?.translations));
+    await page.evaluate(() => window.__bdcFinalPutRestore?.());
+    await context.close();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F3：續作部分完成後要有進度 checkpoint，重載不必重跑已完成段
+// ─────────────────────────────────────────────────────────────────────────────
+async function scenarioResumeCheckpointProgress(browser) {
+    console.log('\n[情境 F3] 續作進度 checkpoint（部分完成後重載）');
+    const { context, page, state } = await setupScenario(browser, 'RC');
+    const body = buildBody('RC', 10);
+    for (let index = 5; index < 10; index += 1) state.delays.set(index, 6000);
+    await startAnalysis(page, body);
+
+    const doneFive = await waitRowsDone(page, 5);
+    const checkpointReady = await waitForRunningCheckpoint(page, 'RC1MARK', 5);
+    check('F3 前 5 段完成且 checkpoint 落盤', doneFive && checkpointReady, JSON.stringify(await recordInfo(page, 'RC1MARK')));
+
+    // 續作入口只在載入記錄時顯示：重新載入後再按續作（真實使用路徑）。
+    const beforeResume = await recordInfo(page, 'RC1MARK');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1600);
+    await dismissStartupModal(page);
+    await openRecordById(page, beforeResume.id);
+
+    state.delays.clear();
+    // 只延遲最後一段：續作完成 4 段後停住，讓 debounce checkpoint 有時間落盤。
+    state.delays.set(9, 30000);
+    await page.click('#resume-analysis-btn');
+    const doneNine = await waitRowsDone(page, 9);
+    check('F3 續作先完成 4 段（共 9 段）', doneNine, JSON.stringify(await rowStatuses(page)));
+
+    const progressReady = await waitForRunningCheckpoint(page, 'RC1MARK', 9);
+    const progressInfo = await recordInfo(page, 'RC1MARK');
+    check('F3 續作進度 checkpoint 已落盤', progressReady, JSON.stringify(progressInfo?.run));
+    check('F3 checkpoint 保留 4 段新結果', [5, 6, 7, 8].every((index) => !!progressInfo?.translations?.[index]), JSON.stringify(progressInfo?.translations));
+    check('F3 checkpoint 未完成段仍是 null', progressInfo?.translations?.[9] === null, JSON.stringify(progressInfo?.translations));
+    check('F3 checkpoint completed=9', progressInfo?.run?.completed === 9, JSON.stringify(progressInfo?.run));
+
+    const callsBeforeReload = new Map(state.callsBy);
+
+    // 取消（清除）時也要 flush 已完成的續作進度：狀態變 cancelled，但 4 段新結果不能消失。
+    await page.click('#clear-article-btn');
+    let cancelledInfo = null;
+    const cancelDeadline = Date.now() + 15000;
+    while (Date.now() < cancelDeadline) {
+        cancelledInfo = await recordInfo(page, 'RC1MARK');
+        if (cancelledInfo?.run?.status === 'cancelled') break;
+        await page.waitForTimeout(300);
+    }
+    check('F3 取消時 flush 續作進度（status=cancelled）', cancelledInfo?.run?.status === 'cancelled', JSON.stringify(cancelledInfo?.run));
+    check('F3 取消後已完成的 4 段新結果仍在', [5, 6, 7, 8].every((index) => !!cancelledInfo?.translations?.[index]), JSON.stringify(cancelledInfo?.translations));
+    check('F3 取消後 completed=9', cancelledInfo?.run?.completed === 9, JSON.stringify(cancelledInfo?.run));
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1600);
+    await dismissStartupModal(page);
+    if (!progressInfo?.id) {
+        check('F3 取得文章 ID', false, 'record missing');
+        await context.close();
+        return;
+    }
+    await openRecordById(page, progressInfo.id);
+    const reloaded = await recordInfo(page, 'RC1MARK');
+    const banner = await bannerState(page);
+    const partialText = await tInPage(page, 'article.analysisPartial', { done: 9, total: 10 });
+    check('F3 重新載入後 4 段新結果仍在', [5, 6, 7, 8].every((index) => !!reloaded?.translations?.[index]), JSON.stringify(reloaded?.translations));
+    check('F3 重新載入後 completed=9', reloaded?.run?.completed === 9, JSON.stringify(reloaded?.run));
+    check('F3 重新載入可續作且顯示 9/10', banner.visible && banner.status.includes(partialText), JSON.stringify(banner));
+
+    state.delays.clear();
+    const callsBeforeSecondResume = state.paragraphCalls;
+    await page.click('#resume-analysis-btn');
+    const doneAll = await waitRowsDone(page, 10);
+    check('F3 續作只補最後一段並完成', doneAll, JSON.stringify(await rowStatuses(page)));
+    let finalInfo = null;
+    const finalDeadline = Date.now() + 15000;
+    while (Date.now() < finalDeadline) {
+        finalInfo = await recordInfo(page, 'RC1MARK');
+        if (finalInfo?.run?.status === 'complete') break;
+        await page.waitForTimeout(300);
+    }
+    check('F3 完成後 analysis_run=complete', finalInfo?.run?.status === 'complete' && finalInfo?.run?.completed === 10, JSON.stringify(finalInfo?.run));
+    const newCalls = state.paragraphCalls - callsBeforeSecondResume;
+    const redone = [0, 1, 2, 3, 4, 5, 6, 7, 8].filter((index) => (state.callsBy.get(index) || 0) !== (callsBeforeReload.get(index) || 0));
+    check('F3 只重跑最後一段', newCalls === 1 && (state.callsBy.get(9) || 0) === (callsBeforeReload.get(9) || 0) + 1, `${newCalls} / ${JSON.stringify(Array.from(state.callsBy.entries()))}`);
+    check('F3 已完成段不重做', redone.length === 0, JSON.stringify(redone));
+    await context.close();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F4：checkpoint 持久化失敗不得把結果留在記憶體記錄（切回／重載不得假裝已保存）
+// ─────────────────────────────────────────────────────────────────────────────
+async function scenarioCheckpointFailureDoesNotUpdateMemory(browser) {
+    console.log('\n[情境 F4] checkpoint 持久化失敗不得更新記憶體記錄');
+    const { context, page, state } = await setupScenario(browser, 'RD');
+    await mock.seedDocs(page, [
+        {
+            id: 'art_rd_other',
+            title: 'RD other article',
+            body: 'RD other body for switching.\n\nRD other second paragraph.',
+            analysis: null,
+            sourceType: 'paste',
+            revision: 0,
+            createdAt: '2026-10-01T00:00:00.000Z',
+            updatedAt: '2026-10-01T00:00:00.000Z',
+            lastOpenedAt: '2026-10-19T08:00:00.000Z'
+        }
+    ]);
+    // 重新載入讓 seed 的第二篇進入 article-store 記憶體，再注入持續失敗。
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1600);
+    await dismissStartupModal(page);
+    await page.evaluate(() => {
+        const proto = IDBObjectStore.prototype;
+        const original = proto.put;
+        window.__rdFail = true;
+        window.__rdFailCount = 0;
+        proto.put = function putWithCheckpointFailure(...args) {
+            const doc = args[0];
+            const run = doc?.analysis?.analysis_run;
+            const paragraphs = doc?.analysis?.paragraph_analysis;
+            const hasDone = Array.isArray(paragraphs) && paragraphs.some((item) => item && item.chinese_translation);
+            if (this.name === 'docs'
+                && window.__rdFail
+                && run
+                && (run.status === 'running' || run.status === 'cancelled')
+                && hasDone) {
+                window.__rdFailCount += 1;
+                try { this.transaction.abort(); } catch (_) { /* noop */ }
+                throw new DOMException('injected checkpoint save failure', 'AbortError');
+            }
+            return original.apply(this, args);
+        };
+    });
+
+    const body = buildBody('RD', 10);
+    for (let index = 5; index < 10; index += 1) state.delays.set(index, 6000);
+    await startAnalysis(page, body);
+    const doneFive = await waitRowsDone(page, 5);
+    check('F4 前 5 段完成', doneFive, JSON.stringify(await rowStatuses(page)));
+
+    let noteVisible = false;
+    try {
+        await page.waitForFunction(() => {
+            const note = document.getElementById('article-checkpoint-note');
+            return !!note && !note.classList.contains('hidden') && note.textContent.trim().length > 0;
+        }, null, { timeout: 20000 });
+        noteVisible = true;
+    } catch (_) { /* 下方 check 會回報 */ }
+    const failCount = await page.evaluate(() => Number(window.__rdFailCount || 0));
+    check('F4 checkpoint 持續失敗並顯示提示', noteVisible && failCount >= 1, String(failCount));
+
+    const memInfo = await recordInfo(page, 'RD1MARK');
+    check('F4 畫面完成 5 段，但記錄仍是未保存狀態', Array.isArray(memInfo?.translations)
+        && memInfo.translations.length === 10
+        && memInfo.translations.every((text) => text === null), JSON.stringify(memInfo?.translations));
+    check('F4 記憶體 analysis_run.completed 仍為 0', memInfo?.run?.completed === 0, JSON.stringify(memInfo?.run));
+    const fiveText = await tInPage(page, 'article.analysisPartial', { done: 5, total: 10 });
+    const zeroText = await tInPage(page, 'article.analysisPartial', { done: 0, total: 10 });
+    const bannerBefore = await bannerState(page);
+    check('F4 目前畫面不宣稱已保存 5 段', !bannerBefore.visible || !bannerBefore.status.includes(fiveText), JSON.stringify(bannerBefore));
+
+    // 切到別篇再切回：記憶體記錄若被失敗的 checkpoint 換掉，這裡會出現 5/10。
+    await openRecordById(page, 'art_rd_other');
+    await page.waitForTimeout(400);
+    await openRecordById(page, memInfo.id);
+    const afterBack = await recordInfo(page, 'RD1MARK');
+    const bannerBack = await bannerState(page);
+    check('F4 切回後記錄仍是 0/10（不是 5/10）', afterBack?.run?.completed === 0, JSON.stringify(afterBack?.run));
+    check('F4 切回後不得出現已保存 5/10 的續作 banner', !(bannerBack.visible && bannerBack.status.includes(fiveText)), JSON.stringify(bannerBack));
+    check('F4 切回後如實顯示 0/10（或無 banner）', !bannerBack.visible || bannerBack.status.includes(zeroText), JSON.stringify(bannerBack));
+
+    // 重載：磁碟也沒有那 5 段，不得顯示 5/10。
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1600);
+    await dismissStartupModal(page);
+    await openRecordById(page, memInfo.id);
+    const afterReload = await recordInfo(page, 'RD1MARK');
+    const bannerReload = await bannerState(page);
+    check('F4 重載後記錄仍是 0/10', afterReload?.run?.completed === 0, JSON.stringify(afterReload?.run));
+    check('F4 重載後 5 段譯文不在記錄中', Array.isArray(afterReload?.translations)
+        && afterReload.translations.every((text) => text === null), JSON.stringify(afterReload?.translations));
+    check('F4 重載後不得顯示已保存 5/10 的續作 banner', !(bannerReload.visible && bannerReload.status.includes(fiveText)), JSON.stringify(bannerReload));
+    await context.close();
+}
+
 (async () => {
     const browser = await chromium.launch({ headless: true, executablePath: mock.CHROME });
     try {
@@ -428,6 +761,10 @@ async function scenarioCheckpointDisabled(browser) {
         await scenarioVersionMismatchHidesResume(browser);
         await scenarioCheckpointFailure(browser);
         await scenarioCheckpointDisabled(browser);
+        await scenarioResumeFailurePersists(browser);
+        await scenarioCancelDuringFinalSave(browser);
+        await scenarioResumeCheckpointProgress(browser);
+        await scenarioCheckpointFailureDoesNotUpdateMemory(browser);
     } catch (error) {
         console.error(error && error.stack ? error.stack : error);
         check('腳本未拋出例外', false, String(error && error.message ? error.message : error));

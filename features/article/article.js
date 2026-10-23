@@ -125,6 +125,8 @@ function cancelAnalysisJob(job, reason = 'cancelled') {
     try { job.controller.abort(reason); } catch (_) { /* noop */ }
     releaseParagraphClaims(job);
     analysisJobs.delete(job);
+    // 續作進度 checkpoint：取消前已收到的段落仍要 best-effort 落盤（F3）。
+    cancelAnalysisJobProgress(job);
 }
 
 /** 取得某一段落的寫入權；舊的擁有者會被淘汰（單段工作直接中止）。 */
@@ -187,6 +189,7 @@ function startAnalysisJob({ kind, articleId, contentVersion = '', controller, ac
         })(),
         cancelled: false,
         claims: new Map(),
+        progressCheckpoint: null,
         startedAt: Date.now()
     };
     analysisJobs.add(job);
@@ -205,6 +208,8 @@ function cancelAnalysisJobs(reason = 'cancelled') {
         job.cancelled = true;
         try { job.controller.abort(reason); } catch (_) { /* noop */ }
         releaseParagraphClaims(job);
+        // 續作進度 checkpoint：取消／切換時把已完成的段落 best-effort 寫回去（F3）。
+        cancelAnalysisJobProgress(job);
     }
     analysisJobs.clear();
 }
@@ -2941,9 +2946,9 @@ function writeAnalysisCheckpoint(cp, status) {
     const requested = status || cp.finalStatus || ANALYSIS_RUN_STATUS.running;
     return queueAnalysisSave(cp.articleId, cp.contentVersion, async () => {
         if (cp.epoch !== checkpointEpoch) return { ok: true, skipped: true };
-        // 最終保存開始／完成後，尚未執行的 running checkpoint 不得蓋回去。
-        // 取消是例外：取消發生在新回合開始前，應保留已完成段。
-        if (requested !== ANALYSIS_RUN_STATUS.cancelled && (cp.finalizing || cp.finalSaved)) {
+        // 最終保存開始／完成後，任何排隊中的 checkpoint（含 cancelled）都不得蓋回去。
+        // 中途取消仍會寫 cancelled：cancelAnalysisCheckpoint 只在非 finalizing／finalSaved 時排入。
+        if (cp.finalizing || cp.finalSaved) {
             return { ok: true, skipped: true };
         }
         // 用最新記錄當基底，保留期間內單段刷新寫入的詳解／句子／片語分析，
@@ -3001,7 +3006,8 @@ function flushAnalysisCheckpoint(cp, options = {}) {
 /** 取消：先 flush，把 status 寫成 cancelled，保留已完成段。 */
 function cancelAnalysisCheckpoint(cp) {
     // 已完成且最終保存成功：之後按清除／切換文章不得把 complete 蓋成 cancelled。
-    if (!cp || !cp.enabled || cp.finalSaved) return Promise.resolve(null);
+    // 最終保存已開始（finalizing）也一樣：交易可能剛寫入 complete，取消不得排隊覆蓋它（F2）。
+    if (!cp || !cp.enabled || cp.finalSaved || cp.finalizing) return Promise.resolve(null);
     // 取消當下通常仍是目前文章；後續的清除／切換會先改掉 recordId，先記下來才決定是否提示。
     const wasCurrent = isCurrentArticle(cp.articleId);
     cp.finalStatus = ANALYSIS_RUN_STATUS.cancelled;
@@ -3015,12 +3021,159 @@ function cancelAnalysisCheckpoint(cp) {
     });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 續作進度 checkpoint（F3）
+//
+// 續作是稀疏的一組段落，不能沿用主分析的「整份快照」checkpoint：那會把其他
+// 工作剛寫入的段落蓋回去。這裡以最新記錄的 paragraph_analysis 為基底，只覆蓋
+// 本 job 收到且仍持有的索引；analysis_run 由合併後的完整陣列重算。
+// ─────────────────────────────────────────────────────────────────────────────
+function createResumeProgressCheckpoint({ job, articleId, contentVersion, run, total }) {
+    return {
+        enabled: analysisCheckpointEnabled(),
+        // 與主分析共用回合計數：新分析開始後，舊續作排隊中的進度不得再寫。
+        epoch: checkpointEpoch,
+        job,
+        articleId,
+        contentVersion,
+        ctx: articleStore.captureArticleContext(),
+        runMeta: run,
+        total,
+        results: new Map(),
+        timer: 0,
+        chain: Promise.resolve(),
+        finalizing: false,
+        finalSaved: false,
+        finalStatus: '',
+        lastCheckpointError: '',
+        disabledByLimit: false
+    };
+}
+
+/** 以「最新記錄＋本 job 已收到的段落」組成 checkpoint 要寫入的 result。 */
+function buildResumeCheckpointResult(cp, latest, paragraphAnalysis, details, status) {
+    const stats = analysisRunStats(paragraphAnalysis);
+    const runMeta = {
+        ...(cp.runMeta || {}),
+        schemaVersion: 1,
+        status: status || ANALYSIS_RUN_STATUS.running,
+        total: cp.total,
+        completed: stats.completed,
+        failed: stats.failed,
+        updatedAt: new Date().toISOString(),
+        lastErrorCode: cp.lastCheckpointError ? 'checkpoint_failed' : ''
+    };
+    cp.runMeta = runMeta;
+    return {
+        ...(latest.result || {}),
+        chinese_translation: paragraphAnalysis.map((item) => (item && item.chinese_translation) || '').join('\n\n'),
+        word_alignment: paragraphAnalysis.flatMap((item) => (item && item.word_alignment) || []),
+        detailed_analysis: details,
+        paragraph_analysis: paragraphAnalysis,
+        analysis_run: runMeta,
+        updatedAt: runMeta.updatedAt
+    };
+}
+
+function writeResumeCheckpoint(cp, status) {
+    if (!cp || !cp.enabled || !cp.articleId) return Promise.resolve(null);
+    const requested = status || cp.finalStatus || ANALYSIS_RUN_STATUS.running;
+    return queueAnalysisSave(cp.articleId, cp.contentVersion, async () => {
+        if (cp.epoch !== checkpointEpoch) return { ok: true, skipped: true };
+        // 最終保存排隊／完成後，較早排入的進度 checkpoint 不得蓋回去。
+        if (cp.finalizing || cp.finalSaved) return { ok: true, skipped: true };
+        // 保存前版本檢查：正文已改版就不寫；帳戶切換由捕獲的 ctx 在 store 內擋下。
+        if (readingActions.articleVersion(cp.articleId) !== cp.contentVersion) {
+            return { ok: false, error: 'stale_version' };
+        }
+        const latest = articleStore.getRecord(cp.articleId);
+        if (!latest?.result) return { ok: false, error: 'record_missing' };
+        if (contentVersionOfText(latest.article || '') !== cp.contentVersion) {
+            return { ok: false, error: 'stale_version' };
+        }
+        const paragraphAnalysis = Array.isArray(latest.result.paragraph_analysis)
+            ? [...latest.result.paragraph_analysis]
+            : [];
+        while (paragraphAnalysis.length < cp.total) paragraphAnalysis.push(null);
+        let details = latest.result.detailed_analysis || [];
+        let applied = 0;
+        for (const [idx, result] of cp.results) {
+            if (!Number.isInteger(idx) || idx < 0 || idx >= cp.total) continue;
+            // 寫入權已轉給另一個工作（例如使用者按了單段重試）：不得搶回寫入權。
+            const claim = paragraphClaims.get(paragraphClaimKey(cp.articleId, idx));
+            if (claim && claim.job && claim.job !== cp.job && !claim.job.cancelled) continue;
+            paragraphAnalysis[idx] = result;
+            details = mergeDetailedAnalyses(details, result?.detailed_analysis || []);
+            applied += 1;
+        }
+        if (!applied) return { ok: false, error: 'no_patch', applied: 0 };
+        const result = buildResumeCheckpointResult(cp, latest, paragraphAnalysis, details, requested);
+        const saved = await articleStore.saveAnalysis(cp.articleId, result, {
+            ctx: cp.ctx,
+            expectContentVersion: cp.contentVersion,
+            silent: true
+        });
+        // 保存後版本檢查：儲存期間改版時不再宣稱這是本版進度。
+        if (saved?.ok && readingActions.articleVersion(cp.articleId) === cp.contentVersion) {
+            cp.lastCheckpointError = '';
+            if (requested === ANALYSIS_RUN_STATUS.running) clearAnalysisCheckpointFailure();
+        }
+        return saved;
+    }).then((saved) => {
+        if (!saved || saved.skipped || saved.ok) return saved;
+        if (saved.error === 'stale_version' || saved.error === 'no_patch') return saved;
+        cp.lastCheckpointError = saved.error || 'checkpoint_failed';
+        if (saved.error === 'article_too_large') cp.disabledByLimit = true;
+        if (cp.job && !cp.job.cancelled && isCurrentArticle(cp.articleId)) showAnalysisCheckpointFailure();
+        return saved;
+    }).catch((error) => {
+        cp.lastCheckpointError = error?.name || 'checkpoint_failed';
+        if (cp.job && !cp.job.cancelled && isCurrentArticle(cp.articleId)) showAnalysisCheckpointFailure();
+        return { ok: false, error: 'checkpoint_failed' };
+    });
+}
+
+/** debounce 1200ms；同一 checkpoint 一次只會有一個寫入在跑。 */
+function scheduleResumeCheckpoint(cp) {
+    if (!cp || !cp.enabled || cp.finalizing || cp.finalSaved || cp.disabledByLimit) return;
+    if (cp.finalStatus === ANALYSIS_RUN_STATUS.cancelled) return;
+    clearTimeout(cp.timer);
+    cp.timer = window.setTimeout(() => {
+        cp.timer = 0;
+        flushResumeCheckpoint(cp);
+    }, ANALYSIS_CHECKPOINT_DEBOUNCE_MS);
+}
+
+function flushResumeCheckpoint(cp, options = {}) {
+    if (!cp || !cp.enabled || cp.disabledByLimit) return Promise.resolve(null);
+    clearTimeout(cp.timer);
+    cp.timer = 0;
+    const requested = options.status || cp.finalStatus || ANALYSIS_RUN_STATUS.running;
+    cp.chain = (cp.chain || Promise.resolve())
+        .catch(() => null)
+        .then(() => writeResumeCheckpoint(cp, requested));
+    return cp.chain;
+}
+
+/** 取消／切換：把已收到的續作段落 best-effort 寫回，狀態標為 cancelled。 */
+function cancelAnalysisJobProgress(job) {
+    const cp = job?.progressCheckpoint;
+    if (!cp || !cp.enabled || cp.finalSaved || cp.finalizing) return Promise.resolve(null);
+    cp.finalStatus = ANALYSIS_RUN_STATUS.cancelled;
+    return flushResumeCheckpoint(cp, { status: ANALYSIS_RUN_STATUS.cancelled });
+}
+
 async function analyzeArticle() {
     const articleText = dom.articleInput.value.trim();
     if (!articleText) {
         ui.displayMessage(t('article.enterArticle'), 'warning');
         return;
     }
+    // 先解析並記錄規模，再開始計時：markAnalysisStart 會快照 state.article，
+    // 順序顛倒的話第一輪拿到 null、之後每輪拿到上一篇文章的字數／段數（F6）。
+    const { title, paragraphs } = parseTitleAndParagraphs(articleText);
+    const items = title ? [title, ...paragraphs] : paragraphs; // 將標題也納入分析列表
+    perfProbe.recordArticleStats({ characters: articleText.length, paragraphs: items.length });
     const perfToken = perfProbe.markAnalysisStart();
 
     // 先取消上一個工作：舊請求不得再寫入任何文章、也不得再更新畫面。
@@ -3048,11 +3201,7 @@ async function analyzeArticle() {
     dom.analyzeArticleBtn.disabled = true;
     dom.analyzeArticleBtn.textContent = t('article.analyzing');
 
-    const { title, paragraphs } = parseTitleAndParagraphs(articleText);
-    const items = title ? [title, ...paragraphs] : paragraphs; // 將標題也納入分析列表
     const paragraphAnalyses = new Array(items.length);
-    // 只記規模（長度／段數），不記原文；關閉 probe 時為 no-op。
-    perfProbe.recordArticleStats({ characters: articleText.length, paragraphs: items.length });
 
     // 文章專屬生詞本：id 與文章相同，重新分析不會裂出第二本。
     let articleMeta = null;
@@ -3229,10 +3378,12 @@ async function analyzeArticle() {
         for (let i = 0; i < CONCURRENCY; i++) runners.push(runNext());
         await Promise.all(runners);
         finishAnalysisJob(job);
+
+        // 取消後才收尾的回合不得記成 rendered；交給 finally 的 markAnalysisSettled
+        // 標成 cancelled（F5），否則取消會被算進 analyze 耗時。
+        if (!isRunActive(run)) return;
         // 所有段落都已 render：量測「點擊 → 完成 render」（不等後續 IndexedDB 保存）。
         perfProbe.markAnalysisDone(perfToken, { status: 'rendered' });
-
-        if (!isRunActive(run)) return;
 
         const latestRecord = articleStore.getRecord(articleId);
         const baseResult = {
@@ -6452,6 +6603,21 @@ async function resumeAnalysis() {
     });
 
     const results = new Map();
+    // 續作進度 checkpoint：每段成功／失敗後 debounce 1.2 秒寫回，避免部分完成後
+    // 切換／重新載入就丟失；最終保存仍是唯一一次非 silent 的 complete／partial。
+    const progressCheckpoint = analysisCheckpointEnabled()
+        ? createResumeProgressCheckpoint({
+            job,
+            articleId: record.articleId,
+            contentVersion,
+            run,
+            total: all.length
+        })
+        : null;
+    if (progressCheckpoint) {
+        progressCheckpoint.results = results;
+        job.progressCheckpoint = progressCheckpoint;
+    }
     let nextPick = 0;
     let completed = 0;
     const runNext = async () => {
@@ -6478,17 +6644,22 @@ async function resumeAnalysis() {
             });
             if (!isJobWriteTarget(job, idx)) return;
             if (paragraphStartTime[idx]) paragraphElapsedMs[idx] = Math.max(0, Date.now() - paragraphStartTime[idx]);
-            if (outcome.ok) {
-                results.set(idx, outcome.result);
-                renderParagraph(idx, text, outcome.result);
-            } else {
-                renderParagraph(idx, text, outcome.result || paragraphPipeline.failedParagraphResult(outcome.errorCode));
-            }
+            // 成功與失敗都要留在 results：最終保存若只寫成功段，失敗段會退回舊 null，
+            // analysis_run 也會被誤算成 complete（F1）。
+            const result = outcome.ok
+                ? outcome.result
+                : (outcome.result || paragraphPipeline.failedParagraphResult(outcome.errorCode));
+            results.set(idx, result);
+            renderParagraph(idx, text, result);
+            if (progressCheckpoint) scheduleResumeCheckpoint(progressCheckpoint);
         } catch (error) {
             if (error?.name === 'AbortError' || job.cancelled) return;
             if (!isJobWriteTarget(job, idx)) return;
             console.warn(`續作第 ${idx + 1} 段仍失敗`, error);
-            renderParagraph(idx, text, paragraphPipeline.failedParagraphResult(error?.code || 'provider_error'));
+            const result = paragraphPipeline.failedParagraphResult(error?.code || 'provider_error');
+            results.set(idx, result);
+            renderParagraph(idx, text, result);
+            if (progressCheckpoint) scheduleResumeCheckpoint(progressCheckpoint);
         } finally {
             completed += 1;
             if (!job.cancelled) await runNext();
@@ -6502,6 +6673,14 @@ async function resumeAnalysis() {
     if (!isJobWriteTarget(job)) {
         finishAnalysisJob(job);
         return;
+    }
+
+    if (progressCheckpoint) {
+        // 最終保存前先 flush 尚未落盤的續作進度，再鎖住 checkpoint。
+        await flushResumeCheckpoint(progressCheckpoint);
+        progressCheckpoint.finalizing = true;
+        clearTimeout(progressCheckpoint.timer);
+        progressCheckpoint.timer = 0;
     }
 
     const saved = await queueAnalysisSave(record.articleId, contentVersion, async () => {
@@ -6552,17 +6731,32 @@ async function resumeAnalysis() {
         resumeBtn.removeAttribute('aria-busy');
     }
     if (!saved.ok) {
+        if (progressCheckpoint) {
+            // 最終保存失敗：允許之後的取消／頁面隱藏再把續作進度寫回。
+            progressCheckpoint.finalizing = false;
+            progressCheckpoint.finalStatus = '';
+        }
         if (!['cancelled', 'stale_version', 'stale_job'].includes(saved.error)) {
             ui.displayMessage(t('article.analysisSaveFailedInline'), 'error', 6000);
         }
         if (isCurrentArticle(record.articleId)) updateArticleVersionState();
         return;
     }
+    if (progressCheckpoint) {
+        progressCheckpoint.finalSaved = true;
+        progressCheckpoint.lastCheckpointError = '';
+        if (saved.finalRun) progressCheckpoint.runMeta = saved.finalRun;
+    }
     if (!isCurrentArticle(record.articleId)) return;
     // 成功段不重做；失敗段保留重試入口。
     refreshFailedStateFromRecord();
     clearAnalysisCheckpointFailure();
-    hideAnalysisResumeBanner();
+    if (saved.finalRun && saved.finalRun.status === ANALYSIS_RUN_STATUS.partial) {
+        // 還有失敗段：直接保留續作入口，不必等重新載入。
+        showAnalysisResumeBanner(saved.finalRun);
+    } else {
+        hideAnalysisResumeBanner();
+    }
     renderAnalysisSaveFailure(articleStore.getRecord(record.articleId));
     updateArticleVersionState();
     await updateHistoryIndicators();
@@ -7745,8 +7939,9 @@ function bindAnalyzeButtonToLastWord(root) {
                 const match = text.match(/[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N}'’.-]*[^\s\p{L}\p{M}\p{N}]*\s*$/u);
                 if (match) {
                     if (match.index > 0) {
-                        node.nodeValue = text.slice(0, match.index);
-                        picked.unshift(document.createTextNode(text.slice(match.index)));
+                        // splitText 會把尾段留在 DOM 中；createTextNode 是游離節點，
+                        // picked[0].before(tail) 對它不會生效，尾段文字與分析鍵會一起消失（F2）。
+                        picked.unshift(node.splitText(match.index));
                     } else {
                         picked.unshift(node);
                     }

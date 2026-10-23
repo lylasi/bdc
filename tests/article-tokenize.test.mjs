@@ -55,7 +55,9 @@ const SAMPLES = [
     ['—dash— here', ['dash', 'here']],
     ['COVID‑19 notices', ['COVID‑19', 'notices']],
     ['Hello 👋 world', ['Hello', 'world']],
-    ['中文 mixed 3D', ['中文', 'mixed', '3D']]
+    ['Hello...world', ['Hello', 'world']],
+    ['中文 mixed 3D', ['中文', 'mixed', '3D']],
+    ['中文café 3D', ['中文', 'café', '3D']]
 ];
 
 /** 暫時移除 Intl.Segmenter，強制走 fallback。 */

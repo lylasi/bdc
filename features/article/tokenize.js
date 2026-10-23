@@ -44,7 +44,7 @@ const HYPHEN_GAP_RE = /^[-‐‑]+$/;
  *   - 允許非斷行連字號（U+2010／U+2011）。
  * 尾端標點（句號、小數點、網址尾點）由 `trimTokenEdge` 去掉。
  */
-const FALLBACK_WORD_RE = /(?=[\p{L}\p{M}\p{N}.'’\-‐‑]*\p{L})[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N}'’.\-‐‑]*/gu;
+const FALLBACK_WORD_RE = /(?:[\p{Script=Latin}\p{M}\p{N}]+(?:['’.\-‐‑][\p{Script=Latin}\p{M}\p{N}]+)*)|(?:[\p{Script=Han}\p{M}\p{N}]+)/gu;
 
 /** 單一字元是否可成為詞的一部分（字母／組合符號／數字）。 */
 export function isTokenizableChar(char) {

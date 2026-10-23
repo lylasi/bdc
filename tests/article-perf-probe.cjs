@@ -450,6 +450,9 @@ function scenarioReportRow(scenario, snapshot, stats) {
         analyze: {
             status: analyze.status || 'unavailable',
             totalMs: analyze.totalMs ?? null,
+            // markAnalysisStart 的快照必須是「本回合」的規模，不是 null 或上一篇文章。
+            characters: analyze.characters ?? null,
+            paragraphs: analyze.paragraphs ?? null,
             longTasks: analyze.longTasks || null
         },
         longtask: snapshot.longtask,
@@ -504,6 +507,9 @@ async function runScenario(browser, scenario) {
         check(`${scenario.id}：DOM 節點數 > 0`, Number(row.domNodes) > 0, String(row.domNodes));
         check(`${scenario.id}：.interactive-word 數 > 0`, Number(row.interactiveWords) > 0, String(row.interactiveWords));
         check(`${scenario.id}：analyze 狀態為 rendered`, row.analyze.status === 'rendered', row.analyze.status);
+        check(`${scenario.id}：analyze 快照是本回合的規模`,
+            row.analyze.characters === row.characters && row.analyze.paragraphs === row.paragraphs,
+            JSON.stringify({ analyze: { characters: row.analyze.characters, paragraphs: row.analyze.paragraphs }, article: { characters: row.characters, paragraphs: row.paragraphs } }));
         check(`${scenario.id}：點詞樣本數 >= 3`, row.wordTooltip.count >= 3, String(row.wordTooltip.count));
         check(`${scenario.id}：讀句 chunk 有量到`, row.readingChunks.calls >= 1, JSON.stringify(row.readingChunks.last));
         check(`${scenario.id}：助手 context 長度有記到`,
@@ -626,6 +632,39 @@ async function verifyProbeOff(browser) {
             pageErrors,
             paragraphRequests: stats.paragraphRequests
         };
+    } finally {
+        await context.close();
+    }
+    return result;
+}
+
+async function verifyCancelStatus(browser) {
+    const { context, page } = await makePage(browser);
+    let result = null;
+    try {
+        await page.waitForFunction(() => !!window.__bdcPerf, null, { timeout: 15000 });
+        await startAnalysis(page, [
+            'The reading room opens at eight.',
+            'Visitors sign the ledger at the door.',
+            'The café serves tea on rainy days.'
+        ].join('\n\n'));
+        // 第一段有 400ms 起始延遲；在 render 前清除，探針不得把這回合記成 rendered。
+        await page.waitForTimeout(120);
+        await page.evaluate(() => document.getElementById('clear-article-btn').click());
+        await page.waitForFunction(() => {
+            const status = window.__bdcPerf?.analysisStatus?.() || 'idle';
+            return status !== 'running' && status !== 'idle';
+        }, null, { timeout: 15000 });
+        const snapshot = await page.evaluate(() => window.__bdcPerf.snapshot());
+        const analyze = snapshot.article.analyze || {};
+        result = {
+            status: analyze.status || 'unavailable',
+            totalMs: analyze.totalMs ?? null,
+            characters: analyze.characters ?? null,
+            paragraphs: analyze.paragraphs ?? null
+        };
+        check('取消分析：analyze 狀態為 cancelled（不得記成 rendered）',
+            result.status === 'cancelled', JSON.stringify(result));
     } finally {
         await context.close();
     }
@@ -784,6 +823,10 @@ function buildMarkdown(payload) {
     lines.push(`- 已安裝的 PerformanceObserver 類型：${payload.probeOff.observerTypes.length ? payload.probeOff.observerTypes.join(', ') : '無'}`);
     lines.push(`- 分析／點詞流程仍可完成，未出現 probe 相關 console error；pageerror：${payload.probeOff.pageErrors.length ? payload.probeOff.pageErrors.join(' | ') : '無'}`);
     lines.push(`- \`localStorage['bdc:perf']='1'\`（無 query）：probe ${payload.storageFlag.enabled ? '有啟用' : '未啟用（不合格）'}`);
+    lines.push('');
+    lines.push('## 取消分析狀態');
+    lines.push('');
+    lines.push(`- 首段 render 前按清除：analyze 狀態 ${payload.cancelStatus?.status || 'unavailable'}（必須為 cancelled，不得記成 rendered）；耗時 ${formatValue(payload.cancelStatus?.totalMs)}ms。`);
     if (payload.storageFlag.longtaskSelfTest) {
         const selfTest = payload.storageFlag.longtaskSelfTest;
         lines.push(`- longtask 探針自檢：${selfTest.detected ? '通過' : '未偵測到（count 0 不可解讀為無成本）'}（${selfTest.beforeCount} → ${selfTest.afterCount}；supported=${selfTest.supported}）`);
@@ -818,6 +861,7 @@ function buildMarkdown(payload) {
     const results = [];
     let probeOff = null;
     let storageFlag = null;
+    let cancelStatus = null;
     let failed = false;
     try {
         console.log(`\n情境：${SCENARIOS.map((item) => item.id).join(', ')}；mock 延遲 ${MOCK_DELAY_MS}ms`);
@@ -836,6 +880,8 @@ function buildMarkdown(payload) {
             console.log(`  requests paragraphs=${row.requests.paragraphs} words=${row.requests.words} assistant=${row.requests.assistant}`);
         }
 
+        console.log('\n--- 取消分析狀態驗證 ---');
+        cancelStatus = await verifyCancelStatus(browser);
         console.log('\n--- 關閉 probe 驗證 ---');
         probeOff = await verifyProbeOff(browser);
         console.log('\n--- localStorage 啟用驗證 ---');
@@ -876,6 +922,7 @@ function buildMarkdown(payload) {
         scenarios: results,
         probeOff,
         storageFlag,
+        cancelStatus,
         limitations: results[0]?.limitations || []
     };
     payload.jsonPath = path.relative(ROOT, jsonPath);

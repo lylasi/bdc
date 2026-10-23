@@ -1815,8 +1815,13 @@ export async function saveAnalysis(articleId, result, options = {}) {
     const next = { ...record, result, updatedAt: nowIso(), dirty: true, pending: true };
     const persisted = await persistDocWithOp(next, 'update', { skipOutbox: options.skipOutbox, ctx });
     if (!isArticleContextActive(ctx)) return { ...staleResult(), record: next };
+    if (!persisted.ok) {
+        // checkpoint／分析保存失敗：不得把未落盤的結果放進記憶體。
+        // 否則切走再打開會顯示「已保存」的進度，但磁碟上其實沒有（F4）。
+        // 呼叫端仍可從回傳的 record 取得這次嘗試的內容用於除錯／重試。
+        return { ok: false, error: persisted.error, record: next };
+    }
     replaceRecord(next);
-    if (!persisted.ok) return { ok: false, error: persisted.error, record: next };
     // P3-T1：逐段 checkpoint 只需更新記憶體與持久層，不必每次重繪歷史列。
     if (!options.silent) emitChange();
     return { ok: true, record: findRecord(articleId) };

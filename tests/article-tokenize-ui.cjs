@@ -24,16 +24,18 @@ const { check, finish } = mock.createReporter('文章語言感知分詞（P3-T4�
 const SENTENCE_1 = 'Café owners in Zürich call the naïve plan simple.';
 const SENTENCE_2 = 'They co-operate on COVID-19 notices for the B2B desk.';
 const SENTENCE_3 = 'Read the `sample code` and [the guide](https://example.com/guide) before 3D printing.';
-const BODY = [SENTENCE_1, SENTENCE_2, SENTENCE_3].join('\n\n');
+const SENTENCE_4 = 'The release year was 2020.';
+const BODY = [SENTENCE_1, SENTENCE_2, SENTENCE_3, SENTENCE_4].join('\n\n');
 
 const ANALYSIS = {
-    chinese_translation: '苏黎世的咖啡馆老板说这个天真的计划很简单。他们在 B2B 服务台协作处理 COVID-19 通知。打印 3D 之前先读示例代码和指南。',
+    chinese_translation: '苏黎世的咖啡馆老板说这个天真的计划很简单。他们在 B2B 服务台协作处理 COVID-19 通知。打印 3D 之前先读示例代码和指南。发布年份是 2020 年。',
     word_alignment: [],
     detailed_analysis: [],
     paragraph_analysis: [
         { chinese_translation: '苏黎世的咖啡馆老板说这个天真的计划很简单。', word_alignment: [], detailed_analysis: [] },
         { chinese_translation: '他们在 B2B 服务台协作处理 COVID-19 通知。', word_alignment: [], detailed_analysis: [] },
-        { chinese_translation: '打印 3D 之前先读示例代码和指南。', word_alignment: [], detailed_analysis: [] }
+        { chinese_translation: '打印 3D 之前先读示例代码和指南。', word_alignment: [], detailed_analysis: [] },
+        { chinese_translation: '发布年份是 2020 年。', word_alignment: [], detailed_analysis: [] }
     ],
     sentence_analysis: [],
     phrase_analysis: []
@@ -235,6 +237,26 @@ async function assertFullWord(page, word, expectedRequest) {
     check('Café 在句中的 offset 正確', cafeOffset && cafeOffset.offset === 0, JSON.stringify(cafeOffset));
     check('naïve 在句中的 offset 正確', naiveOffset && naiveOffset.offset === SENTENCE_1.indexOf('naïve'), JSON.stringify(naiveOffset));
     check('句末解析鍵仍綁在最後一個詞', await page.locator('.paragraph-pair[data-paragraph-index="0"] .sentence-tail .interactive-word[data-word="simple"]').count() === 1);
+
+    console.log('\n[句尾數字：尾段節點不得變成游離節點]');
+    const numericTail = await page.evaluate(() => {
+        const pair = document.querySelector('.paragraph-pair[data-paragraph-index="3"]');
+        const sentence = pair?.querySelector('.paragraph-english .interactive-sentence');
+        const tail = pair?.querySelector('.paragraph-english .sentence-tail');
+        return {
+            sentenceText: sentence?.textContent || '',
+            dataSentence: sentence?.getAttribute('data-sentence') || '',
+            tailText: tail?.textContent || '',
+            buttons: pair?.querySelectorAll('.sent-analyze-btn').length || 0,
+            buttonInTail: !!tail?.querySelector('.sent-analyze-btn'),
+            numericWord: !!pair?.querySelector('.interactive-word[data-word="2020"]')
+        };
+    });
+    check('句尾數字段落保留完整原文', numericTail.sentenceText === SENTENCE_4 && numericTail.dataSentence === SENTENCE_4,
+        JSON.stringify(numericTail));
+    check('句尾數字後的解析鍵仍在句子內', numericTail.buttons === 1 && numericTail.buttonInTail, JSON.stringify(numericTail));
+    check('尾段包含數字後標點', numericTail.tailText.includes('2020.'), JSON.stringify(numericTail));
+    check('純數字不生成查詞 token', numericTail.numericWord === false, JSON.stringify(numericTail));
 
     console.log('\n[單一詞查詢]');
     const cafeInfo = await assertFullWord(page, 'Café', 'Café');

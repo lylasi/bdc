@@ -70,7 +70,10 @@ export function initAiAssistant() {
   // 連續快速切換以遞增 token 防止舊的非同步 restore 覆蓋新語言。
   document.addEventListener('bdc:locale-change', () => {
     const token = ++localeToken;
-    const snapshot = captureAssistantUiState();
+    // 上一次 locale restore 尚未完成時，重建後的 DOM 還是空的；直接 capture 會把
+    // 草稿／游標／open 狀態讀成空值。與待 restore 的快照合併，快速連切才不會遺失。
+    const snapshot = mergeAssistantUiSnapshots(captureAssistantUiState(), pendingAssistantLocaleSnapshot);
+    pendingAssistantLocaleSnapshot = snapshot;
     const draftSource = document.getElementById('assistant-panel')?.querySelector('#assistant-input') || null;
     // 串流中：先中止，讓 P1-T5 的 cancelled 標記與半段保存照原流程跑完。
     const wasStreaming = !!activeAsk;
@@ -89,6 +92,8 @@ export function initAiAssistant() {
       waitForAsk: wasStreaming,
       // 舊面板已卸載，但 P1-T5 的 restoreDraft 仍可能把原問題寫回那個 textarea。
       refreshDraftFrom: wasStreaming ? draftSource : null
+    }).then((ok) => {
+      if (token === localeToken && ok) pendingAssistantLocaleSnapshot = null;
     }).catch(() => {});
   });
 }
@@ -98,7 +103,32 @@ const windowListeners = [];
 let visibilityTeardown = null;
 // 每次 locale 切換遞增；非同步 restore 完成後要驗證自己仍是最新的一次。
 let localeToken = 0;
+// 尚未完成的 locale restore 快照：下一次快速切換時用它補回被重建 DOM 清掉的狀態。
+let pendingAssistantLocaleSnapshot = null;
 const ASSISTANT_LOCALE_IDLE_TIMEOUT = 6000;
+
+function mergeAssistantUiSnapshots(current, pending) {
+  if (!pending) return current;
+  const currentInput = String(current?.inputValue || '');
+  const pendingInput = String(pending.inputValue || '');
+  const currentHasInput = currentInput.length > 0;
+  const usePendingInput = !currentHasInput && pendingInput.length > 0;
+  return {
+    ...pending,
+    ...current,
+    wasOpen: !!current?.wasOpen || !!pending.wasOpen,
+    mode: (current?.wasOpen || currentHasInput) ? current.mode : (pending.mode || current.mode),
+    inputValue: usePendingInput ? pendingInput : currentInput,
+    selectionStart: usePendingInput ? pending.selectionStart : current?.selectionStart ?? null,
+    selectionEnd: usePendingInput ? pending.selectionEnd : current?.selectionEnd ?? null,
+    inputFocused: !!current?.inputFocused || (!currentHasInput && !!pending.inputFocused),
+    scrollTop: (!Number(current?.scrollTop) && Number(pending.scrollTop))
+      ? Number(pending.scrollTop)
+      : Number(current?.scrollTop) || 0,
+    convId: current?.convId || pending.convId || '',
+    articleKey: current?.articleKey || pending.articleKey || ''
+  };
+}
 
 function addManagedWindowListener(type, handler, options) {
   try {

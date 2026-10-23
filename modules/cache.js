@@ -246,11 +246,21 @@ export async function pruneCache(options = {}) {
             entry = { key, expiresAt: 0, storedAt: 0, sizeBytes: 0, inIdb: false, inLocal: false };
             entries.set(key, entry);
         }
+        if (source === 'idb') {
+            // IDB 是主要來源：同一 key 若 localStorage 還留著舊副本（例如舊 TTL
+            // 已過期、但 IDB 後來寫成無期限），不可用舊副本的 expiresAt 把新副本
+            // 一起判成過期。IDB 有記錄時完全以 IDB 為準。
+            entry.expiresAt = Number(row.expiresAt) || 0;
+            entry.storedAt = Number(row.storedAt) || 0;
+            entry.sizeBytes = recordSizeBytes(row);
+            entry.inIdb = true;
+            return;
+        }
+        entry.inLocal = true;
+        if (entry.inIdb) return;
         entry.expiresAt = Math.max(entry.expiresAt, Number(row.expiresAt) || 0);
         entry.storedAt = Math.max(entry.storedAt, Number(row.storedAt) || 0);
         entry.sizeBytes = Math.max(entry.sizeBytes, recordSizeBytes(row));
-        if (source === 'idb') entry.inIdb = true;
-        if (source === 'local') entry.inLocal = true;
     };
     (idbRows || []).forEach((row) => addRow(row, 'idb'));
     localRows.forEach((row) => addRow(row, 'local'));
@@ -279,16 +289,28 @@ export async function pruneCache(options = {}) {
         removedKeys.push(oldest.key);
     }
 
+    let deletionOk = true;
+    let pendingRemoval = 0;
     if (removedKeys.length) {
-        try { await idbDeleteMany(removedKeys); } catch (_) { /* noop */ }
+        if (idbRows !== null) {
+            try {
+                deletionOk = await idbDeleteMany(removedKeys);
+            } catch (_) {
+                deletionOk = false;
+            }
+            if (!deletionOk) pendingRemoval = removedKeys.length;
+        }
+        // 即使 IDB 刪除失敗，localStorage 的可重建副本仍可清掉；下次 prune 會
+        // 因 lastPrune 未更新而重試 IDB。
         for (const key of removedKeys) {
             try { localStorage.removeItem(key); } catch (_) { /* noop */ }
         }
     }
     return {
-        ok: idbRows !== null,
+        ok: idbRows !== null && deletionOk,
         fallback: idbRows === null,
-        removed: removedKeys.length,
+        removed: deletionOk ? removedKeys.length : 0,
+        pendingRemoval,
         kept: kept.length
     };
 }
@@ -306,7 +328,11 @@ export async function pruneCacheIfDue(options = {}) {
         return { ok: true, skipped: true, removed: 0, kept: 0 };
     }
     const result = await pruneCache(options);
-    try { localStorage.setItem(LAST_PRUNE_KEY, String(nowMs)); } catch (_) { /* noop */ }
+    // 只有真的掃描成功（或本來就沒有 IDB、只清 localStorage）才記錄時間；
+    // IDB 刪除失敗時保留舊時間，下一次啟動會重試，而不是等到 24 小時後。
+    if (result.ok || result.fallback) {
+        try { localStorage.setItem(LAST_PRUNE_KEY, String(nowMs)); } catch (_) { /* noop */ }
+    }
     return { ...result, skipped: false };
 }
 

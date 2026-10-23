@@ -104,6 +104,22 @@ test('prune 只清前綴：文章與閱讀等永久資料不動，過期項目�
     assert.equal(localStorage.getItem('bdc-reading'), JSON.stringify([{ id: 'keep' }]));
 });
 
+test('同一 key 的舊 local 過期副本不得把 IDB 新副本一起判成過期', async () => {
+    await reset();
+    const key = PREFIX + 'mixed-layers';
+    await cache.setItem(key, { fresh: true });
+    // 模擬舊版只寫 localStorage 的過期副本；IDB 才是目前有效資料。
+    localStorage.setItem(key, JSON.stringify({
+        v: 1,
+        storedAt: 1,
+        expiresAt: Date.now() - 60_000,
+        value: { stale: true }
+    }));
+    const result = await cache.pruneCache({ maxAgeMs: 0, maxEntries: 100 });
+    assert.equal(result.removed, 0);
+    assert.ok(await idbGetRaw(key), 'IDB 的無期限新副本必須保留');
+});
+
 test('maxEntries：超限時移除最舊項目，且回傳實際移除數', async () => {
     await reset();
     for (let index = 0; index < 5; index += 1) {
@@ -153,6 +169,52 @@ test('pruneCacheIfDue：24 小時內跳過，超過後執行並更新 lastPrune'
     });
     assert.equal(third.skipped, false);
     assert.equal(localStorage.getItem('bdc:cache:lastPrune'), String(1_000_000 + cache.CACHE_PRUNE_INTERVAL_MS + 1));
+});
+
+test('IDB 刪除失敗：prune 不得謊報 removed，也不得更新 lastPrune', async () => {
+    await reset();
+    localStorage.removeItem('bdc:cache:lastPrune');
+    const restores = globalThis.indexedDB;
+    const stuckKey = PREFIX + 'stuck';
+    // 最小 IDB 替身：scan 走 getAll（沒有 openCursor），readwrite 交易必定 abort。
+    const failingDb = {
+        objectStoreNames: { contains: () => true },
+        createObjectStore: () => {},
+        transaction: () => {
+            const tx = { oncomplete: null, onerror: null, onabort: null, error: new Error('aborted') };
+            const store = {
+                getAll: () => {
+                    const request = { result: [{ key: stuckKey, expiresAt: 0, storedAt: 1, value: {} }], onsuccess: null, onerror: null };
+                    queueMicrotask(() => request.onsuccess?.());
+                    return request;
+                },
+                delete: () => { queueMicrotask(() => tx.onabort?.()); }
+            };
+            tx.objectStore = () => store;
+            return tx;
+        },
+        close: () => {}
+    };
+    globalThis.indexedDB = {
+        open: () => {
+            const request = { result: failingDb, onsuccess: null, onerror: null, onupgradeneeded: null };
+            queueMicrotask(() => request.onsuccess?.());
+            return request;
+        }
+    };
+    try {
+        // 以 query 建立獨立模組實例，避免共用上一個成功開啟的 DB 連線。
+        const failingCache = await import('../modules/cache.js?failing-delete=1');
+        const result = await failingCache.pruneCache({ maxEntries: 0, maxBytes: 1024, maxAgeMs: 0 });
+        assert.equal(result.ok, false);
+        assert.equal(result.removed, 0);
+        assert.ok(result.pendingRemoval >= 1);
+        const due = await failingCache.pruneCacheIfDue({ nowMs: 2_000_000 });
+        assert.equal(due.ok, false);
+        assert.equal(localStorage.getItem('bdc:cache:lastPrune'), null, '刪除失敗不得寫入 lastPrune');
+    } finally {
+        globalThis.indexedDB = restores;
+    }
 });
 
 test('clearRebuildable 只清快取前綴，永久資料保留', async () => {
