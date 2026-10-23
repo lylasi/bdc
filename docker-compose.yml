@@ -1,0 +1,19 @@
+services:
+  bdc:
+    build:
+      context: .
+    image: bdc:local
+    container_name: bdc
+    restart: unless-stopped
+    ports:
+      - '${BDC_PORT:-8001}:80'
+    volumes:
+      - '${BDC_ROOT:-.}:/src/bdc:ro'
+    environment:
+      TZ: Asia/Shanghai
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1/']
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

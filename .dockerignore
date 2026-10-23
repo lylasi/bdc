@@ -1,0 +1,19 @@
+# 預設拒絕整個工作區；只有以下三個部署檔案可進入建置內容。
+.git
+.github
+.claude
+docs
+tests
+scripts
+selfhost
+cloudflare-worker
+article-import-service
+node_modules
+ai-config.js
+*.md
+**
+!Dockerfile
+!deploy/
+!deploy/nginx.conf
+!deploy/entrypoint.sh
+!deploy/sync-static.sh
