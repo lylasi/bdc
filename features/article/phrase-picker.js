@@ -19,6 +19,10 @@ const TOKEN_RE = /[A-Za-z][A-Za-z'’-]*/g;
 let sheet = null;
 let state = null;
 let lastFocus = null;
+// locale 切換的還原流程是 async（先 flush 再重建）：遞增 token 擋掉舊的還原。
+let localeToken = 0;
+// Escape 關閉只需要一個 document listener；sheet 重建不得重複绑。
+let escapeHandlerBound = false;
 
 function tokensOf(sentence) {
     const text = String(sentence || '');
@@ -69,13 +73,16 @@ function ensureSheet() {
     document.body.appendChild(sheet);
     sheet.querySelector('.phrase-picker-close').addEventListener('click', closePhrasePicker);
     sheet.querySelector('[data-close="1"]').addEventListener('click', closePhrasePicker);
-    document.addEventListener('keydown', (event) => {
-        if (!state || sheet.classList.contains('hidden')) return;
-        if (event.key === 'Escape') {
-            event.preventDefault();
-            closePhrasePicker();
-        }
-    });
+    if (!escapeHandlerBound) {
+        escapeHandlerBound = true;
+        document.addEventListener('keydown', (event) => {
+            if (!state || !sheet || sheet.classList.contains('hidden')) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closePhrasePicker();
+            }
+        });
+    }
     wireActions();
     return sheet;
 }
@@ -460,9 +467,89 @@ export async function closePhrasePicker() {
 
 export function initPhrasePicker() {
     ensureSheet();
-    document.addEventListener('bdc:locale-change', () => {
-        if (sheet) sheet.remove();
-        sheet = null;
+    document.addEventListener('bdc:locale-change', async () => {
+        const token = ++localeToken;
+        // 沒有開啟中的短語面板：只重建 DOM，讓上方文案跟著換語言。
+        if (!state) {
+            if (sheet) { sheet.remove(); sheet = null; }
+            ensureSheet();
+            return;
+        }
+        const snapshot = captureSheetState();
+        // 先保存正在輸入的筆記；失敗時保留舊 sheet 與草稿，不 remove，讓使用者重試。
+        const flushed = await flushPhrasePickerNote();
+        if (token !== localeToken) return;
+        if (!flushed || flushed.ok === false) {
+            status(t('article.saveFailedRetry'), 'error');
+            return;
+        }
+        if (sheet) { sheet.remove(); sheet = null; }
         ensureSheet();
+        if (!snapshot.wasOpen) return;
+        restoreSheetState(snapshot, token);
     });
+}
+
+/** 切語言前記住選取範圍、焦點詞與筆記區塊狀態（草稿内容由 flush 負責落地）。 */
+function captureSheetState() {
+    const active = document.activeElement;
+    const tokenIndex = active && active.classList?.contains('phrase-token')
+        ? Number(active.getAttribute('data-index'))
+        : null;
+    const noteWrap = sheet?.querySelector('#phrase-picker-note-wrap');
+    return {
+        wasOpen: !!sheet && !sheet.classList.contains('hidden'),
+        articleId: state?.articleId || '',
+        sentence: state?.sentence || '',
+        context: state?.context || '',
+        sentenceStart: Number(state?.sentenceStart),
+        startIndex: state?.startIndex ?? null,
+        endIndex: state?.endIndex ?? null,
+        focusedTokenIndex: Number.isInteger(tokenIndex) ? tokenIndex : null,
+        noteOpen: !!noteWrap && !noteWrap.classList.contains('hidden'),
+        noteFocused: !!active && active.id === 'phrase-picker-note-input'
+    };
+}
+
+/**
+ * 用同一份文章與句子重開面板，再把選取範圍、筆記區塊與焦點放回去。
+ * token 索引由同一句推導，重開後仍對得上。
+ */
+function restoreSheetState(snapshot, token) {
+    const reopened = openPhrasePicker({
+        articleId: snapshot.articleId,
+        sentence: snapshot.sentence,
+        context: snapshot.context,
+        sentenceStart: snapshot.sentenceStart
+    });
+    if (!reopened || !state || !sheet) return;
+    if (snapshot.startIndex != null) {
+        state.startIndex = snapshot.startIndex;
+        state.endIndex = snapshot.endIndex;
+        markTokens();
+        updatePreview();
+        const hint = sheet.querySelector('#phrase-picker-hint');
+        if (hint) {
+            hint.textContent = state.endIndex != null
+                ? t('article.phrasePickerSelected')
+                : t('article.phrasePickerPickEnd');
+        }
+    }
+    // 已保存成功：重開筆記區塊會讀回同一份内容，不會空白。
+    if (snapshot.noteOpen) sheet.querySelector('#phrase-picker-note')?.click();
+    // openPhrasePicker 會在 30ms 後把焦點移到起詞；等它跑完再還原真正的焦點。
+    setTimeout(() => {
+        if (token !== localeToken || !sheet || !state) return;
+        if (snapshot.noteOpen && snapshot.noteFocused) {
+            sheet.querySelector('#phrase-picker-note-input')?.focus({ preventScroll: true });
+            return;
+        }
+        const focusIndex = snapshot.focusedTokenIndex;
+        const target = focusIndex != null
+            ? sheet.querySelector(`.phrase-token[data-index="${focusIndex}"]`)
+            : (sheet.querySelector('.phrase-token.is-start') || sheet.querySelector('.phrase-token'));
+        if (target) {
+            try { target.focus({ preventScroll: true }); } catch (_) { /* noop */ }
+        }
+    }, 60);
 }

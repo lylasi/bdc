@@ -356,29 +356,44 @@ function applyAISettingsPayload(remote, force = false) {
 
 async function applySnapshotPayload(payload, force = false) {
   const remote = payload || {};
+  // 必要群組的失敗必須往上回報：備份還原若把文章匯入失敗吞掉，畫面上會
+  // 顯示「還原成功」，實際上文章完全沒有回來。其他群組照常套用。
+  const errors = [];
   await applyDictationPayload(remote, force);
   applyVocabularyPayload(remote, force);
   await applyArticlesPayload(remote);
   // 備份／匯出帶的完整文章文件（新格式）：離線還原時一併寫回逐篇儲存。
   if (Array.isArray(remote.articleDocuments) && remote.articleDocuments.length) {
     try {
-      await articleStore.importDocuments(remote.articleDocuments, { replace: force === true });
+      const result = await articleStore.importDocuments(remote.articleDocuments, { replace: force === true });
+      if (!result || result.ok !== true) {
+        errors.push({ group: 'articleDocuments', error: (result && result.error) || 'article_import_failed' });
+        console.warn('[sync] 文章文件還原失敗:', (result && result.error) || 'unknown');
+      }
     } catch (error) {
-      console.warn('[sync] 文章文件還原失敗:', error && error.code ? error.code : 'unknown');
+      const code = (error && (error.code || error.message)) || 'article_import_failed';
+      errors.push({ group: 'articleDocuments', error: code });
+      console.warn('[sync] 文章文件還原失敗:', code);
     }
   }
   // 完整備份的閱讀資料（學習條目、詞書、關聯、文件、消息、版本）
   if (remote.reading && typeof remote.reading === 'object') {
     try {
       const result = await readingStore.restoreAll(remote.reading, { allowPartial: true });
-      if (!result.ok) console.warn('[sync] 閱讀資料還原失敗:', result.error);
+      if (!result || result.ok !== true) {
+        errors.push({ group: 'reading', error: (result && result.error) || 'reading_restore_failed' });
+        console.warn('[sync] 閱讀資料還原失敗:', (result && result.error) || 'unknown');
+      }
     } catch (error) {
-      console.warn('[sync] 閱讀資料還原失敗:', error && error.code ? error.code : 'unknown');
+      const code = (error && (error.code || error.message)) || 'reading_restore_failed';
+      errors.push({ group: 'reading', error: code });
+      console.warn('[sync] 閱讀資料還原失敗:', code);
     }
   }
   applyQAPayload(remote, force);
   applyAISettingsPayload(remote, force);
   await applyAssistantPayload(remote, force);
+  return errors.length ? { ok: false, errors } : { ok: true, errors: [] };
 }
 
 // Build a local snapshot payload
@@ -469,13 +484,26 @@ export async function buildLocalSnapshot() {
 }
 
 // Apply merged snapshot (group-level LWW)
+// 不拋出：合併式同步不是使用者主動還原，失敗只回傳結果供除錯；呼叫端
+// 仍可從回傳值看到必要群組的錯誤。
 export async function applyMergedSnapshot(snapshot) {
-  await applySnapshotPayload(snapshot?.payload || {}, false);
+  return applySnapshotPayload(snapshot?.payload || {}, false);
 }
 
 // Restore snapshot locally without LWW checks
+// 使用者主動還原必須明確失敗：UI 才不會在文章完全沒寫回時顯示成功。
 export async function restoreSnapshotLocally(payload) {
-  await applySnapshotPayload(payload || {}, true);
+  const result = await applySnapshotPayload(payload || {}, true);
+  if (result && result.ok === false) {
+    const detail = (result.errors || [])
+      .map((item) => `${item.group}:${item.error}`)
+      .join(', ');
+    const error = new Error(`snapshot_restore_failed${detail ? `: ${detail}` : ''}`);
+    error.code = 'snapshot_restore_failed';
+    error.errors = result.errors || [];
+    throw error;
+  }
+  return result;
 }
 
 // Trivial LWW for group-level merge

@@ -1,0 +1,608 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-22T16:58:58.043Z",
+  "command": "PORT=8313 PLAYWRIGHT_MODULE=<playwright> node tests/article-perf-probe.cjs",
+  "environment": {
+    "browserVersion": "155.0.8059.85",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+    "viewport": {
+      "width": 1280,
+      "height": 900,
+      "devicePixelRatio": 1
+    },
+    "hardwareConcurrency": 14,
+    "deviceMemory": 32,
+    "mockDelayMs": 0,
+    "aiLimits": {
+      "default": {
+        "maxConcurrency": 2,
+        "minIntervalMs": 150
+      },
+      "articleParagraphTranslation": {
+        "maxConcurrency": 4,
+        "minIntervalMs": 500
+      },
+      "articleSentenceTranslation": {
+        "maxConcurrency": 3,
+        "minIntervalMs": 250
+      },
+      "articleWordTranslation": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 300
+      },
+      "articlePhraseTranslation": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 350
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "1k-100",
+      "targetCharacters": 1000,
+      "paragraphsTargeted": 100,
+      "characters": 2376,
+      "paragraphs": 100,
+      "domNodes": 3297,
+      "interactiveWords": 413,
+      "analyze": {
+        "status": "rendered",
+        "totalMs": 30325.9,
+        "longTasks": {
+          "count": 0,
+          "countOver200": 0,
+          "totalMs": 0
+        }
+      },
+      "longtask": {
+        "supported": true,
+        "unavailable": null,
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "countOver200": 0,
+        "totalOver200Ms": 0,
+        "entries": []
+      },
+      "wordTooltip": {
+        "count": 15,
+        "p50": 4.6,
+        "p95": 5.49,
+        "min": 2.4,
+        "max": 5.7
+      },
+      "readingChunks": {
+        "calls": 1,
+        "count": 1,
+        "p50": 1.3,
+        "p95": 1.3,
+        "min": 1.3,
+        "max": 1.3,
+        "last": {
+          "ms": 1.3,
+          "chunks": 107,
+          "characters": 2098
+        },
+        "samples": [
+          {
+            "ms": 1.3,
+            "chunks": 107,
+            "characters": 2098
+          }
+        ]
+      },
+      "assistant": {
+        "turns": [
+          {
+            "at": "2026-10-22T16:51:58.744Z",
+            "contextCharacters": 2403,
+            "messageCharacters": 3628,
+            "messageCount": 3,
+            "requestCount": 1,
+            "unavailable": []
+          }
+        ]
+      },
+      "requests": {
+        "paragraphs": 100,
+        "words": 15,
+        "assistant": 1
+      },
+      "sample": {
+        "characters": 2376,
+        "paragraphs": 100,
+        "hasLongParagraph": true,
+        "longestParagraphCharacters": 180,
+        "hasTable": true,
+        "hasCode": true,
+        "hasLink": true,
+        "hasAccent": true
+      },
+      "waitedMs": 30340,
+      "clickedWordCount": 15,
+      "assistantAskOk": true,
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "viewport": {
+          "width": 1280,
+          "height": 900,
+          "devicePixelRatio": 1
+        },
+        "locale": "zh-CN",
+        "hardwareConcurrency": 14,
+        "deviceMemory": 32
+      },
+      "limitations": [
+        "只量測前端成本（DOM、分詞包字、tooltip 顯示、context 組裝），不代表供應商網路或模型延遲。",
+        "測試使用 route mock 固定回應；mock 延遲與真實供應商差異很大，數字不可用來推論線上等待時間。",
+        "long task 由瀏覽器 Long Tasks API 提供，Safari／Firefox 支援不一致；不支援時標示 unavailable，不當成 0。",
+        "單一機器、單一瀏覽器、單一視窗大小的結果；不可宣稱代表所有裝置或所有長文。",
+        "點詞延遲量的是「點擊到 tooltip 外殼可見」（含下一個動畫框），不是 AI 回應時間。",
+        "analyze 量測含既有 400ms 段落間隔與併發上限（產品現行行為），不是純渲染時間。"
+      ]
+    },
+    {
+      "id": "10k-200",
+      "targetCharacters": 10000,
+      "paragraphsTargeted": 200,
+      "characters": 9999,
+      "paragraphs": 200,
+      "domNodes": 6586,
+      "interactiveWords": 1740,
+      "analyze": {
+        "status": "rendered",
+        "totalMs": 60313,
+        "longTasks": {
+          "count": 0,
+          "countOver200": 0,
+          "totalMs": 0
+        }
+      },
+      "longtask": {
+        "supported": true,
+        "unavailable": null,
+        "count": 1,
+        "totalMs": 96,
+        "maxMs": 96,
+        "countOver200": 0,
+        "totalOver200Ms": 0,
+        "entries": [
+          {
+            "startTime": 1149.4,
+            "duration": 96
+          }
+        ]
+      },
+      "wordTooltip": {
+        "count": 15,
+        "p50": 6.2,
+        "p95": 7.89,
+        "min": 2.9,
+        "max": 10.2
+      },
+      "readingChunks": {
+        "calls": 1,
+        "count": 1,
+        "p50": 2.3,
+        "p95": 2.3,
+        "min": 2.3,
+        "max": 2.3,
+        "last": {
+          "ms": 2.3,
+          "chunks": 230,
+          "characters": 9498
+        },
+        "samples": [
+          {
+            "ms": 2.3,
+            "chunks": 230,
+            "characters": 9498
+          }
+        ]
+      },
+      "assistant": {
+        "turns": [
+          {
+            "at": "2026-10-22T16:53:05.048Z",
+            "contextCharacters": 10026,
+            "messageCharacters": 11251,
+            "messageCount": 3,
+            "requestCount": 1,
+            "unavailable": []
+          }
+        ]
+      },
+      "requests": {
+        "paragraphs": 200,
+        "words": 15,
+        "assistant": 1
+      },
+      "sample": {
+        "characters": 9999,
+        "paragraphs": 200,
+        "hasLongParagraph": true,
+        "longestParagraphCharacters": 1515,
+        "hasTable": true,
+        "hasCode": true,
+        "hasLink": true,
+        "hasAccent": true
+      },
+      "waitedMs": 60768,
+      "clickedWordCount": 15,
+      "assistantAskOk": true,
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "viewport": {
+          "width": 1280,
+          "height": 900,
+          "devicePixelRatio": 1
+        },
+        "locale": "zh-CN",
+        "hardwareConcurrency": 14,
+        "deviceMemory": 32
+      },
+      "limitations": [
+        "只量測前端成本（DOM、分詞包字、tooltip 顯示、context 組裝），不代表供應商網路或模型延遲。",
+        "測試使用 route mock 固定回應；mock 延遲與真實供應商差異很大，數字不可用來推論線上等待時間。",
+        "long task 由瀏覽器 Long Tasks API 提供，Safari／Firefox 支援不一致；不支援時標示 unavailable，不當成 0。",
+        "單一機器、單一瀏覽器、單一視窗大小的結果；不可宣稱代表所有裝置或所有長文。",
+        "點詞延遲量的是「點擊到 tooltip 外殼可見」（含下一個動畫框），不是 AI 回應時間。",
+        "analyze 量測含既有 400ms 段落間隔與併發上限（產品現行行為），不是純渲染時間。"
+      ]
+    },
+    {
+      "id": "50k-100",
+      "targetCharacters": 50000,
+      "paragraphsTargeted": 100,
+      "characters": 49807,
+      "paragraphs": 100,
+      "domNodes": 16230,
+      "interactiveWords": 8487,
+      "analyze": {
+        "status": "rendered",
+        "totalMs": 30034.9,
+        "longTasks": {
+          "count": 0,
+          "countOver200": 0,
+          "totalMs": 0
+        }
+      },
+      "longtask": {
+        "supported": true,
+        "unavailable": null,
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "countOver200": 0,
+        "totalOver200Ms": 0,
+        "entries": []
+      },
+      "wordTooltip": {
+        "count": 15,
+        "p50": 3.4,
+        "p95": 4.45,
+        "min": 2.7,
+        "max": 6.2
+      },
+      "readingChunks": {
+        "calls": 1,
+        "count": 1,
+        "p50": 1.4,
+        "p95": 1.4,
+        "min": 1.4,
+        "max": 1.4,
+        "last": {
+          "ms": 1.4,
+          "chunks": 801,
+          "characters": 48835
+        },
+        "samples": [
+          {
+            "ms": 1.4,
+            "chunks": 801,
+            "characters": 48835
+          }
+        ]
+      },
+      "assistant": {
+        "turns": [
+          {
+            "at": "2026-10-22T16:53:40.975Z",
+            "contextCharacters": 49834,
+            "messageCharacters": 51059,
+            "messageCount": 3,
+            "requestCount": 1,
+            "unavailable": []
+          }
+        ]
+      },
+      "requests": {
+        "paragraphs": 100,
+        "words": 15,
+        "assistant": 1
+      },
+      "sample": {
+        "characters": 49807,
+        "paragraphs": 100,
+        "hasLongParagraph": true,
+        "longestParagraphCharacters": 6040,
+        "hasTable": true,
+        "hasCode": true,
+        "hasLink": true,
+        "hasAccent": true
+      },
+      "waitedMs": 30382,
+      "clickedWordCount": 15,
+      "assistantAskOk": true,
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "viewport": {
+          "width": 1280,
+          "height": 900,
+          "devicePixelRatio": 1
+        },
+        "locale": "zh-CN",
+        "hardwareConcurrency": 14,
+        "deviceMemory": 32
+      },
+      "limitations": [
+        "只量測前端成本（DOM、分詞包字、tooltip 顯示、context 組裝），不代表供應商網路或模型延遲。",
+        "測試使用 route mock 固定回應；mock 延遲與真實供應商差異很大，數字不可用來推論線上等待時間。",
+        "long task 由瀏覽器 Long Tasks API 提供，Safari／Firefox 支援不一致；不支援時標示 unavailable，不當成 0。",
+        "單一機器、單一瀏覽器、單一視窗大小的結果；不可宣稱代表所有裝置或所有長文。",
+        "點詞延遲量的是「點擊到 tooltip 外殼可見」（含下一個動畫框），不是 AI 回應時間。",
+        "analyze 量測含既有 400ms 段落間隔與併發上限（產品現行行為），不是純渲染時間。"
+      ]
+    },
+    {
+      "id": "10k-500",
+      "targetCharacters": 10000,
+      "paragraphsTargeted": 500,
+      "characters": 12107,
+      "paragraphs": 500,
+      "domNodes": 12342,
+      "interactiveWords": 2096,
+      "analyze": {
+        "status": "rendered",
+        "totalMs": 147648.1,
+        "longTasks": {
+          "count": 0,
+          "countOver200": 0,
+          "totalMs": 0
+        }
+      },
+      "longtask": {
+        "supported": true,
+        "unavailable": null,
+        "count": 1,
+        "totalMs": 450,
+        "maxMs": 450,
+        "countOver200": 1,
+        "totalOver200Ms": 450,
+        "entries": [
+          {
+            "startTime": 1137.1,
+            "duration": 450
+          }
+        ]
+      },
+      "wordTooltip": {
+        "count": 15,
+        "p50": 3.2,
+        "p95": 6.46,
+        "min": 2.3,
+        "max": 8.7
+      },
+      "readingChunks": {
+        "calls": 1,
+        "count": 1,
+        "p50": 2,
+        "p95": 2,
+        "min": 2,
+        "max": 2,
+        "last": {
+          "ms": 2,
+          "chunks": 530,
+          "characters": 11006
+        },
+        "samples": [
+          {
+            "ms": 2,
+            "chunks": 530,
+            "characters": 11006
+          }
+        ]
+      },
+      "assistant": {
+        "turns": [
+          {
+            "at": "2026-10-22T16:56:14.649Z",
+            "contextCharacters": 12134,
+            "messageCharacters": 13359,
+            "messageCount": 3,
+            "requestCount": 1,
+            "unavailable": []
+          }
+        ]
+      },
+      "requests": {
+        "paragraphs": 500,
+        "words": 15,
+        "assistant": 1
+      },
+      "sample": {
+        "characters": 12107,
+        "paragraphs": 500,
+        "hasLongParagraph": true,
+        "longestParagraphCharacters": 1515,
+        "hasTable": true,
+        "hasCode": true,
+        "hasLink": true,
+        "hasAccent": true
+      },
+      "waitedMs": 147831,
+      "clickedWordCount": 15,
+      "assistantAskOk": true,
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "viewport": {
+          "width": 1280,
+          "height": 900,
+          "devicePixelRatio": 1
+        },
+        "locale": "zh-CN",
+        "hardwareConcurrency": 14,
+        "deviceMemory": 32
+      },
+      "limitations": [
+        "只量測前端成本（DOM、分詞包字、tooltip 顯示、context 組裝），不代表供應商網路或模型延遲。",
+        "測試使用 route mock 固定回應；mock 延遲與真實供應商差異很大，數字不可用來推論線上等待時間。",
+        "long task 由瀏覽器 Long Tasks API 提供，Safari／Firefox 支援不一致；不支援時標示 unavailable，不當成 0。",
+        "單一機器、單一瀏覽器、單一視窗大小的結果；不可宣稱代表所有裝置或所有長文。",
+        "點詞延遲量的是「點擊到 tooltip 外殼可見」（含下一個動畫框），不是 AI 回應時間。",
+        "analyze 量測含既有 400ms 段落間隔與併發上限（產品現行行為），不是純渲染時間。"
+      ]
+    },
+    {
+      "id": "50k-500",
+      "targetCharacters": 50000,
+      "paragraphsTargeted": 500,
+      "characters": 49316,
+      "paragraphs": 500,
+      "domNodes": 23040,
+      "interactiveWords": 8440,
+      "analyze": {
+        "status": "rendered",
+        "totalMs": 150808.8,
+        "longTasks": {
+          "count": 0,
+          "countOver200": 0,
+          "totalMs": 0
+        }
+      },
+      "longtask": {
+        "supported": true,
+        "unavailable": null,
+        "count": 1,
+        "totalMs": 466,
+        "maxMs": 466,
+        "countOver200": 1,
+        "totalOver200Ms": 466,
+        "entries": [
+          {
+            "startTime": 1151,
+            "duration": 466
+          }
+        ]
+      },
+      "wordTooltip": {
+        "count": 15,
+        "p50": 4,
+        "p95": 6.49,
+        "min": 3.6,
+        "max": 10.9
+      },
+      "readingChunks": {
+        "calls": 1,
+        "count": 1,
+        "p50": 2.1,
+        "p95": 2.1,
+        "min": 2.1,
+        "max": 2.1,
+        "last": {
+          "ms": 2.1,
+          "chunks": 1152,
+          "characters": 47593
+        },
+        "samples": [
+          {
+            "ms": 2.1,
+            "chunks": 1152,
+            "characters": 47593
+          }
+        ]
+      },
+      "assistant": {
+        "turns": [
+          {
+            "at": "2026-10-22T16:58:52.074Z",
+            "contextCharacters": 49343,
+            "messageCharacters": 50568,
+            "messageCount": 3,
+            "requestCount": 1,
+            "unavailable": []
+          }
+        ]
+      },
+      "requests": {
+        "paragraphs": 500,
+        "words": 15,
+        "assistant": 1
+      },
+      "sample": {
+        "characters": 49316,
+        "paragraphs": 500,
+        "hasLongParagraph": true,
+        "longestParagraphCharacters": 6040,
+        "hasTable": true,
+        "hasCode": true,
+        "hasLink": true,
+        "hasAccent": true
+      },
+      "waitedMs": 151323,
+      "clickedWordCount": 15,
+      "assistantAskOk": true,
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "viewport": {
+          "width": 1280,
+          "height": 900,
+          "devicePixelRatio": 1
+        },
+        "locale": "zh-CN",
+        "hardwareConcurrency": 14,
+        "deviceMemory": 32
+      },
+      "limitations": [
+        "只量測前端成本（DOM、分詞包字、tooltip 顯示、context 組裝），不代表供應商網路或模型延遲。",
+        "測試使用 route mock 固定回應；mock 延遲與真實供應商差異很大，數字不可用來推論線上等待時間。",
+        "long task 由瀏覽器 Long Tasks API 提供，Safari／Firefox 支援不一致；不支援時標示 unavailable，不當成 0。",
+        "單一機器、單一瀏覽器、單一視窗大小的結果；不可宣稱代表所有裝置或所有長文。",
+        "點詞延遲量的是「點擊到 tooltip 外殼可見」（含下一個動畫框），不是 AI 回應時間。",
+        "analyze 量測含既有 400ms 段落間隔與併發上限（產品現行行為），不是純渲染時間。"
+      ]
+    }
+  ],
+  "probeOff": {
+    "hasProbe": false,
+    "marks": 0,
+    "measures": 0,
+    "observerTypes": [],
+    "consoleErrorCount": 1,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "pageErrors": [],
+    "paragraphRequests": 3
+  },
+  "storageFlag": {
+    "hasProbe": true,
+    "enabled": true,
+    "longtaskSelfTest": {
+      "beforeCount": 0,
+      "afterCount": 1,
+      "supported": true,
+      "detected": true
+    }
+  },
+  "limitations": [
+    "只量測前端成本（DOM、分詞包字、tooltip 顯示、context 組裝），不代表供應商網路或模型延遲。",
+    "測試使用 route mock 固定回應；mock 延遲與真實供應商差異很大，數字不可用來推論線上等待時間。",
+    "long task 由瀏覽器 Long Tasks API 提供，Safari／Firefox 支援不一致；不支援時標示 unavailable，不當成 0。",
+    "單一機器、單一瀏覽器、單一視窗大小的結果；不可宣稱代表所有裝置或所有長文。",
+    "點詞延遲量的是「點擊到 tooltip 外殼可見」（含下一個動畫框），不是 AI 回應時間。",
+    "analyze 量測含既有 400ms 段落間隔與併發上限（產品現行行為），不是純渲染時間。"
+  ],
+  "jsonPath": "docs/report/20261023005858042_文章長文效能量測.json",
+  "reportPath": "docs/report/20261023005858042_文章長文效能量測.md"
+}

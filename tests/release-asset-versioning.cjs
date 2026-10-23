@@ -125,6 +125,16 @@ async function marks(page) {
     );
 }
 
+// P2-T2：「寫筆記」收進 details.tooltip-more（預設收起），直接操作前必須先展開。
+async function openTooltipMore(page) {
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more', { timeout: 5000 });
+    await page.evaluate(() => {
+        const details = document.querySelector('#word-analysis-tooltip details.tooltip-more');
+        if (details && !details.open) details.open = true;
+    });
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more[open] .btn-note-item', { state: 'visible', timeout: 5000 });
+}
+
 (async () => {
     const { html, map, moduleScript, style } = readReleaseMap();
     const release = releaseOf(map);
@@ -302,6 +312,7 @@ async function marks(page) {
         }, null, { timeout: 5000 });
         check('manual mark underlines only the second occurrence', JSON.stringify(await marks(page)) === JSON.stringify([false, true]), await marks(page));
 
+        await openTooltipMore(page);
         await page.locator('#word-analysis-tooltip .btn-note-item').click();
         await page.waitForSelector('#article-reading-panel:not(.hidden) textarea.reading-note', { timeout: 5000 });
         await page.waitForFunction(() => document.activeElement?.matches('textarea.reading-note'), null, { timeout: 5000 });

@@ -26,6 +26,11 @@ function nowIso() {
     return new Date().toISOString();
 }
 
+// D1 單一查詢的 bound parameter 上限為 100：owner_user_id 固定佔 1 個，
+// entity_type 再佔 1 個，其餘留給 entity_id 的 IN (...) 清單。
+// selfhost（SQLite／PostgreSQL）的上限遠高於此值，同一份 SQL 可直接跑。
+const MAX_QUERY_IDS = 90;
+
 function changed(result) {
     if (!result) return 0;
     const meta = result.meta || {};
@@ -57,6 +62,13 @@ export async function isLegacyReadingWriteBlocked(env, userId) {
     return Number(row?.legacy_write_blocked || 0) === 1;
 }
 
+/** 閘門開啟會改變 GET /snapshot 的有效內容，因此在同一交易推進版本。 */
+function bumpSnapshotVersionStatement(env, userId, updatedAt) {
+    return env.DB
+        .prepare('UPDATE snapshots SET version = version + 1, updated_at = ? WHERE user_id = ?')
+        .bind(updatedAt, userId);
+}
+
 function rowToEntity(row) {
     if (!row) return null;
     let data = {};
@@ -84,20 +96,85 @@ async function readMutation(env, userId, mutationId) {
 }
 
 async function readBatch(env, userId, keys) {
+    const rows = await readRowsForKeys(env, userId, keys);
+    const byKey = new Map(rows.map((row) => [`${row.entity_type}:${row.entity_id}`, row]));
     const out = [];
     for (const key of keys) {
-        const entityType = String(key?.entityType || '');
-        const entityId = String(key?.entityId || '');
-        if (!READING_ENTITY_TYPES.includes(entityType) || !entityId) continue;
-        const row = await readRow(env, userId, entityType, entityId);
+        const row = byKey.get(`${key.entityType}:${key.entityId}`);
         if (!row) continue;
         out.push({
-            entityType,
-            entityId,
+            entityType: key.entityType,
+            entityId: key.entityId,
             ...rowToEntity(row)
         });
     }
     return out;
+}
+
+/**
+ * 集合讀取實體：先按 entity_type 分組，再分批 IN (...)。
+ * 原本 /batch 每個 key 一次 readRow，200 個 key 就是 200 次串行往返。
+ */
+async function readRowsForKeys(env, userId, keys) {
+    const grouped = new Map();
+    for (const key of keys) {
+        const entityType = String(key?.entityType || '');
+        const entityId = String(key?.entityId || '');
+        if (!READING_ENTITY_TYPES.includes(entityType) || !entityId) continue;
+        if (!grouped.has(entityType)) grouped.set(entityType, new Set());
+        grouped.get(entityType).add(entityId);
+    }
+    const rows = [];
+    for (const [entityType, idSet] of grouped) {
+        const ids = Array.from(idSet);
+        for (let index = 0; index < ids.length; index += MAX_QUERY_IDS) {
+            const chunk = ids.slice(index, index + MAX_QUERY_IDS);
+            const placeholders = chunk.map(() => '?').join(', ');
+            const result = await env.DB
+                .prepare(`SELECT * FROM reading_entities WHERE owner_user_id = ? AND entity_type = ? AND entity_id IN (${placeholders})`)
+                .bind(userId, entityType, ...chunk)
+                .all();
+            const list = result?.results;
+            if (Array.isArray(list)) rows.push(...list);
+        }
+    }
+    return rows;
+}
+
+/** 集合讀取 mutation 回執（冪等查詢），供整批 mutations 預先載入。 */
+async function readMutationsByIds(env, userId, mutationIds) {
+    const unique = Array.from(new Set(mutationIds.filter(Boolean)));
+    const found = new Map();
+    for (let index = 0; index < unique.length; index += MAX_QUERY_IDS) {
+        const chunk = unique.slice(index, index + MAX_QUERY_IDS);
+        const placeholders = chunk.map(() => '?').join(', ');
+        const result = await env.DB
+            .prepare(`SELECT * FROM reading_mutations WHERE owner_user_id = ? AND mutation_id IN (${placeholders})`)
+            .bind(userId, ...chunk)
+            .all();
+        for (const row of result?.results || []) found.set(row.mutation_id, row);
+    }
+    return found;
+}
+
+/** 一次請求內可重用的讀取快照；每個 key 只使用一次，避免吃到過期狀態。 */
+async function createMutationCache(env, userId, mutations) {
+    const entities = new Map();
+    for (const mutation of mutations) {
+        entities.set(`${mutation.entityType}:${mutation.entityId}`, null);
+    }
+    const mutationRows = new Map();
+    for (const mutation of mutations) mutationRows.set(mutation.mutationId, null);
+    const [entityRows, priorRows] = await Promise.all([
+        readRowsForKeys(env, userId, mutations.map((mutation) => ({
+            entityType: mutation.entityType,
+            entityId: mutation.entityId
+        }))),
+        readMutationsByIds(env, userId, mutations.map((mutation) => mutation.mutationId))
+    ]);
+    for (const row of entityRows) entities.set(`${row.entity_type}:${row.entity_id}`, row);
+    for (const [mutationId, row] of priorRows) mutationRows.set(mutationId, row);
+    return { entities, mutations: mutationRows };
 }
 
 function parseKeys(raw) {
@@ -162,9 +239,23 @@ function priorMatchesMutation(prior, mutation, fingerprint) {
         && String(prior.entity_id || '') === mutation.entityId;
 }
 
-async function applyMutation(env, userId, mutation) {
-    const existing = await readRow(env, userId, mutation.entityType, mutation.entityId);
-    const prior = await readMutation(env, userId, mutation.mutationId);
+async function applyMutation(env, userId, mutation, cache = null) {
+    const entityCacheKey = `${mutation.entityType}:${mutation.entityId}`;
+    let existing;
+    let prior;
+    if (cache && cache.entities.has(entityCacheKey)) {
+        // 同一請求後續對同一實體的 mutation 必須看到前一次寫入，因此快照只能用一次。
+        existing = cache.entities.get(entityCacheKey) || null;
+        cache.entities.delete(entityCacheKey);
+    } else {
+        existing = await readRow(env, userId, mutation.entityType, mutation.entityId);
+    }
+    if (cache && cache.mutations.has(mutation.mutationId)) {
+        prior = cache.mutations.get(mutation.mutationId) || null;
+        cache.mutations.delete(mutation.mutationId);
+    } else {
+        prior = await readMutation(env, userId, mutation.mutationId);
+    }
     const fingerprint = readingMutationFingerprint(mutation);
     if (prior) return priorResponse(env, userId, prior, mutation, fingerprint);
 
@@ -327,25 +418,41 @@ async function handleMutations({ request, env, user }) {
         return errorJson(READING_ERRORS.invalidMutation, 400, env, request, { limit: READING_LIMITS.maxMutationsPerRequest });
     }
     const results = [];
-    for (const raw of rawList) {
-        const parsed = validateReadingMutation(raw);
-        if (!parsed.ok) {
+    const validated = rawList.map((raw) => ({ raw, parsed: validateReadingMutation(raw) }));
+    const validMutations = validated
+        .filter((item) => item.parsed.ok)
+        .map((item) => item.parsed.mutation);
+    // 先一次載入所有實體與 mutation 回執，寫入仍逐筆保留 claim／版本檢查。
+    // 100 筆 mutation 原本約需 500 次串行讀取，現在只剩固定次數的集合查詢
+    // 加上每筆交易後的單一驗證讀取。
+    const cache = validMutations.length ? await createMutationCache(env, userId, validMutations) : null;
+    for (const item of validated) {
+        if (!item.parsed.ok) {
             results.push({
-                mutationId: String(raw?.mutationId || ''),
+                mutationId: String(item.raw?.mutationId || ''),
                 status: 'invalid',
-                code: parsed.error
+                code: item.parsed.error
             });
             continue;
         }
-        results.push(await applyMutation(env, userId, parsed.mutation));
+        results.push(await applyMutation(env, userId, item.parsed.mutation, cache));
     }
     const final = body?.final === true;
     const allApplied = results.every((item) => item.status === 'ok');
     if (final && allApplied) {
-        await env.DB
-            .prepare('UPDATE reading_state SET legacy_write_blocked = 1, migrated_at = COALESCE(migrated_at, ?), updated_at = ? WHERE owner_user_id = ?')
-            .bind(nowIso(), nowIso(), userId)
-            .run();
+        const updatedAt = nowIso();
+        const statements = [
+            env.DB
+                .prepare('UPDATE reading_state SET legacy_write_blocked = 1, migrated_at = COALESCE(migrated_at, ?), updated_at = ? WHERE owner_user_id = ?')
+                .bind(updatedAt, updatedAt, userId)
+        ];
+        // 閱讀閘門開啟後 GET /snapshot 不再回傳舊詞書／聊天群組；版本必須
+        // 原子前進，否則其他裝置用舊版本條件讀取會收到 notModified 並沿用
+        // 舊群組（已刪除的詞條可能在 legacy adoption 時復活）。
+        if (!state.legacyWriteBlocked) {
+            statements.push(bumpSnapshotVersionStatement(env, userId, updatedAt));
+        }
+        await env.DB.batch(statements);
     }
     const nextState = await ensureState(env, userId);
     return json({

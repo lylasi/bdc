@@ -10,6 +10,7 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const fs = require('fs');
 const path = require('path');
+const { exportReadingNote } = require('./helpers/reading-export.cjs');
 
 const PORT = Number(process.env.PORT || 8313);
 const BASE = `http://127.0.0.1:${PORT}/`;
@@ -163,6 +164,16 @@ async function openArticle(page, articleId = ARTICLE.id) {
     await page.waitForTimeout(900);
 }
 
+// P2-T2：次要操作收進 details.tooltip-more（預設收起），直接操作前必須先展開。
+async function openTooltipMore(page, actionSelector = '.btn-note-item') {
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more', { timeout: 5000 });
+    await page.evaluate(() => {
+        const details = document.querySelector('#word-analysis-tooltip details.tooltip-more');
+        if (details && !details.open) details.open = true;
+    });
+    await page.waitForSelector(`#word-analysis-tooltip details.tooltip-more[open] ${actionSelector}`, { state: 'visible', timeout: 5000 });
+}
+
 async function runDesktop(browser) {
     console.log('\n[桌面 1440：標記、面板、筆記與匯出]');
     const { context, page, errors } = await newPage(browser, { locale: 'zh-CN', viewport: { width: 1440, height: 960 } });
@@ -253,10 +264,9 @@ async function runDesktop(browser) {
     await page.waitForTimeout(200);
     check('重新開啟標記後恢復', await page.locator('.reading-mark-active').count() > 0);
 
-    // Markdown 匯出（實際按鈕、實際下載）
-    const downloadPromise = page.waitForEvent('download', { timeout: 15000 });
-    await page.click('#reading-export-md');
-    const download = await downloadPromise;
+    // Markdown 匯出（實際按鈕、實際範圍對話框、實際下載）
+    // 下方斷言要求 AI 資料與來源訊息，因此勾選「包含對話」。
+    const download = await exportReadingNote(page, { chat: true });
     const samplePath = path.join('/tmp', `bdc-reading-sample-${Date.now()}.md`);
     await download.saveAs(samplePath);
     const markdown = fs.readFileSync(samplePath, 'utf8');
@@ -330,6 +340,7 @@ async function runMobile(browser) {
     await openArticle(page, 'art_mobile_preview');
     await page.locator('.interactive-word[data-word="look"]').first().click();
     await page.waitForTimeout(250);
+    await openTooltipMore(page, '.btn-pick-phrase');
     await page.locator('#word-analysis-tooltip .btn-pick-phrase').click();
     await page.waitForTimeout(350);
     check('手機短語面板開啟', await page.locator('#phrase-picker:not(.hidden)').count() === 1);
@@ -448,6 +459,7 @@ async function runDuplicatePosition(browser) {
     const secondWord = page.locator('.paragraph-pair[data-paragraph-index="1"] .interactive-word[data-word="test"]').nth(1);
     await secondWord.click();
     await page.waitForTimeout(350);
+    await openTooltipMore(page, '.btn-pick-phrase');
     check('未查過的單詞仍顯示選短語與收藏', await page.locator('#word-analysis-tooltip .btn-pick-phrase').count() === 1
         && await page.locator('#word-analysis-tooltip .btn-add-to-book').count() === 1);
     await page.locator('#word-analysis-tooltip .btn-pick-phrase').click();

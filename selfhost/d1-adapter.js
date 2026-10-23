@@ -58,6 +58,8 @@ export function createD1Adapter(db) {
         return statement;
     }
     return {
+        // 共用路由靠這個欄位判斷是否需要 PostgreSQL 專屬的交易內列鎖。
+        driver: db.driver || '',
         prepare: (sql) => bindStatement(sql),
         batch: async (statements) => {
             const results = await db.batch(statements.map((statement) => ({

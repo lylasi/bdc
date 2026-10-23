@@ -192,9 +192,37 @@ function authError(code, message, status) {
   return err;
 }
 
+// 一整輪同步（文章 → 閱讀 → 快照）的總預算；0 代表不限。
+// 單一請求仍有自己的 timeout，這裡只是避免「每次都差一點」的慢速無限延長。
+const DEFAULT_SYNC_ROUND_MS = 5 * 60 * 1000;
+let syncRoundDeadline = 0;
+
+function defaultRoundBudget() {
+  const configured = Number(SYNC && SYNC.syncRoundMs);
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_SYNC_ROUND_MS;
+}
+
+/** 開始一輪同步的整輪期限；回傳 absolute deadline（毫秒）。 */
+export function beginSyncRound(budgetMs = 0) {
+  const budget = Number(budgetMs) > 0 ? Number(budgetMs) : defaultRoundBudget();
+  syncRoundDeadline = budget > 0 ? Date.now() + budget : 0;
+  return syncRoundDeadline;
+}
+
+export function endSyncRound() {
+  syncRoundDeadline = 0;
+}
+
+function syncRoundRemaining() {
+  if (!syncRoundDeadline) return Infinity;
+  return syncRoundDeadline - Date.now();
+}
+
 /**
- * Authenticated request with a 10s default timeout and generation capture.
- * Callers that write state must compare the returned generation afterwards.
+ * Authenticated request. The timeout covers the whole exchange, including the
+ * response body: the body is buffered while the abort timer is still armed, so
+ * a stalled download cannot hang a sync round after headers arrive.
+ * `config.roundScoped` also clamps the request to the current sync-round budget.
  */
 export async function apiRequest(path, options = {}, config = {}) {
   const endpoint = getEndpoint();
@@ -207,7 +235,13 @@ export async function apiRequest(path, options = {}, config = {}) {
   if (useToken) headers['Authorization'] = 'Bearer ' + useToken;
   if (options.body) headers['Content-Type'] = 'application/json';
 
-  const timeoutMs = typeof config.timeoutMs === 'number' ? config.timeoutMs : 10000;
+  const configuredTimeout = typeof config.timeoutMs === 'number' ? config.timeoutMs : 10000;
+  let timeoutMs = configuredTimeout;
+  if (config.roundScoped === true) {
+    const remaining = syncRoundRemaining();
+    if (remaining <= 0) throw authError('sync_round_timeout', 'sync round timeout');
+    timeoutMs = Math.min(configuredTimeout, remaining);
+  }
   const controller = new AbortController();
   const timer = timeoutMs > 0 ? setTimeout(() => {
     try { controller.abort(new DOMException('Timeout', 'TimeoutError')); } catch (_) { controller.abort(); }
@@ -219,12 +253,25 @@ export async function apiRequest(path, options = {}, config = {}) {
     else external.addEventListener('abort', onAbort, { once: true });
   }
   try {
-    const response = await fetch(endpoint + path, {
+    const fetched = await fetch(endpoint + path, {
       ...options,
       headers,
       signal: controller.signal,
       cache: 'no-store'
     });
+    // 讀完 body 才離開 timer 的保護範圍；呼叫端仍然拿到標準 Response。
+    const buffer = await fetched.arrayBuffer();
+    let response = fetched;
+    try {
+      response = new Response(buffer.byteLength ? buffer : null, {
+        status: fetched.status,
+        statusText: fetched.statusText,
+        headers: fetched.headers
+      });
+    } catch (_) {
+      // 極端狀態碼無法重建 Response 時退回原始回應；body 已消耗，
+      // 呼叫端只需 status 的路徑不受影響。
+    }
     response.__bdcGeneration = generation;
     response.__bdcSession = captureAuthSession();
     return response;
@@ -356,6 +403,7 @@ function commitSession(token, data) {
   }
   const user = { id: userId, email: data.label || userId, role };
   rememberIdentity();
+  resetSnapshotCache();
   emitAuth(previousUser && previousUser !== userId ? 'ACCOUNT_CHANGED' : 'SIGNED_IN', user);
   return { user_id: userId, label: data.label || '', role };
 }
@@ -403,6 +451,7 @@ export const auth = {
       localStorage.removeItem(ROLE_KEY);
     } catch (_) {}
     rememberIdentity();
+    resetSnapshotCache();
     emitAuth('SIGNED_OUT', null);
     return { error: null };
   },
@@ -419,6 +468,7 @@ export const auth = {
       localStorage.removeItem(ROLE_KEY);
     } catch (_) {}
     rememberIdentity();
+    resetSnapshotCache();
     emitAuth('SESSION_INVALID', null);
     return { error: null };
   },
@@ -589,8 +639,84 @@ export const auth = {
 };
 
 // --- snapshot pull / push ---
-export async function pullSnapshot() {
-  const res = await apiRequest('/snapshot', { method: 'GET' }, { timeoutMs: 15000 });
+//
+// 同一帳戶在記憶體保留最近一次成功讀取的快照本體與 JSON 字串：
+//   * 下一輪可用 ?version= 條件讀取，後端未變更時只回 { notModified: true }，
+//     省下整包 payload 的下載、解析與 stringify。
+//   * 舊後端不認識這個參數時會照常回完整 payload，客戶端自然 fallback。
+//   * 同一輪裡閱讀遷移與主同步各讀一次時，第二次可直接重用同一版本。
+const SNAPSHOT_CACHE_MAX_CHARS = 8 * 1024 * 1024;
+// 只快取 JSON 字串：呼叫端（lwwMerge／套用流程）可能改寫 payload 的巢狀群組，
+// 共用同一個物件會污染下一次條件讀取的結果。命中時重新 parse 一份新物件。
+// 快取鍵包含捕捉當下的 session generation：A→B 或 A→B→A 之後，舊帳戶的
+// 延遲回應與舊快取都不可以再被目前帳戶使用。
+let snapshotCache = { key: '', generation: -1, version: -1, updatedAt: null, payloadJson: '' };
+
+function snapshotCacheKey(session = getAuthSnapshot()) {
+  return `${session.endpoint}::${session.userId}::${session.generation}`;
+}
+
+export function resetSnapshotCache() {
+  snapshotCache = { key: '', generation: -1, version: -1, updatedAt: null, payloadJson: '' };
+}
+
+function stringifySnapshotPayload(payload) {
+  try { return JSON.stringify(payload); } catch (_) { return null; }
+}
+
+function snapshotSessionError() {
+  return authError('stale_session', 'session changed', 409);
+}
+
+function rememberSnapshot(session, version, updatedAt, payloadJson) {
+  // 回應完成時帳戶可能已經切換；過期回應不得依完成時的帳戶重新標記快取。
+  if (!isAuthSessionCurrent(session)) return;
+  const json = typeof payloadJson === 'string' ? payloadJson : null;
+  if (!json || json.length > SNAPSHOT_CACHE_MAX_CHARS) {
+    resetSnapshotCache();
+    return;
+  }
+  snapshotCache = {
+    key: snapshotCacheKey(session),
+    generation: session.generation,
+    version: Number(version) || 0,
+    updatedAt: updatedAt ?? null,
+    payloadJson: json
+  };
+}
+
+function cachedSnapshot(session, version) {
+  if (!session || !isAuthSessionCurrent(session)) return null;
+  if (snapshotCache.key !== snapshotCacheKey(session)) return null;
+  if (snapshotCache.generation !== session.generation) return null;
+  if (!snapshotCache.payloadJson) return null;
+  if (Number.isInteger(version) && Number(snapshotCache.version) !== version) return null;
+  return snapshotCache;
+}
+
+/**
+ * 讀取快照。`knownVersion` 或目前快取的版本會作為條件讀取依據；
+ * 後端回 `notModified` 且本機快取仍對應同一版本時，不重新解析 payload。
+ * 整個流程只認入口捕捉的 session；任何等待後都先驗證，過期即中止。
+ */
+export function pullSnapshot(options = {}) {
+  return pullSnapshotForSession(captureAuthSession(), options);
+}
+
+async function pullSnapshotForSession(session, options = {}) {
+  if (!isAuthSessionCurrent(session)) throw snapshotSessionError();
+  const cached = cachedSnapshot(session);
+  const requestedVersion = options.forceFull === true
+    ? null
+    : (Number.isInteger(options.knownVersion)
+      ? options.knownVersion
+      : (cached ? Number(cached.version) : null));
+  const conditional = Number.isInteger(requestedVersion) && requestedVersion >= 0 && !!cached
+    && Number(cached.version) === requestedVersion;
+  const path = conditional ? `/snapshot?version=${encodeURIComponent(String(requestedVersion))}` : '/snapshot';
+  const res = await apiRequest(path, { method: 'GET' }, { timeoutMs: 15000, roundScoped: true });
+  // 請求入口的帳戶才是這份回應的主人；完成時的帳戶可能已經不同。
+  if (!isAuthSessionCurrent(session)) throw snapshotSessionError();
   if (res.status === 401) {
     const err = new Error(t('errors.unauthorized'));
     err.code = 'unauthorized';
@@ -598,28 +724,67 @@ export async function pullSnapshot() {
   }
   if (!res.ok) throw new Error(t('errors.cloudReadFailed', { status: res.status }));
   const data = await res.json().catch(() => null);
-  if (!data || data.version === undefined || data.version === null) return null;
+  if (!isAuthSessionCurrent(session)) throw snapshotSessionError();
+  if (!data || data.version === undefined || data.version === null) {
+    resetSnapshotCache();
+    return null;
+  }
+  if (data.notModified === true) {
+    const stillCached = cachedSnapshot(session, Number(data.version));
+    if (stillCached) {
+      let payload = null;
+      try { payload = JSON.parse(stillCached.payloadJson); } catch (_) { payload = null; }
+      if (!isAuthSessionCurrent(session)) throw snapshotSessionError();
+      if (payload) {
+        return {
+          version: Number(data.version),
+          updated_at: data.updated_at ?? stillCached.updatedAt,
+          payload,
+          payloadJson: stillCached.payloadJson,
+          notModified: true
+        };
+      }
+    }
+    // 後端說未變更但本機沒有可用快取（例如已重新載入頁面）：完整讀一次。
+    if (options.fallbackTried !== true) {
+      return pullSnapshotForSession(session, { forceFull: true, fallbackTried: true });
+    }
+    // 完整讀取仍只回 notModified：不可以用空 payload 覆蓋本機資料。
+    throw new Error(t('errors.cloudReadFailed', { status: res.status }));
+  }
   let payload = data.payload;
   if (typeof payload === 'string') {
     try { payload = JSON.parse(payload); } catch (_) { payload = {}; }
   }
-  return { version: data.version, updated_at: data.updated_at, payload: payload || {} };
+  const normalized = payload || {};
+  const payloadJson = stringifySnapshotPayload(normalized);
+  rememberSnapshot(session, data.version, data.updated_at ?? null, payloadJson);
+  return {
+    version: data.version,
+    updated_at: data.updated_at,
+    payload: normalized,
+    payloadJson,
+    notModified: false
+  };
 }
 
-export async function pushSnapshot(expectedVersion, payload) {
+export async function pushSnapshot(expectedVersion, payload, payloadJson = null) {
+  const body = typeof payloadJson === 'string'
+    ? `{"expected_version":${JSON.stringify(expectedVersion ?? 0)},"payload":${payloadJson}}`
+    : JSON.stringify({ expected_version: expectedVersion ?? 0, payload });
   const res = await apiRequest('/snapshot', {
     method: 'POST',
-    body: JSON.stringify({ expected_version: expectedVersion ?? 0, payload })
-  }, { timeoutMs: 20000 });
+    body
+  }, { timeoutMs: 20000, roundScoped: true });
   if (res.status === 409) {
     // 409 有多種意思：一般是版本衝突，但「帳戶已改用逐篇文章儲存」要讓呼叫端
     // 顯示不同的處理方式，不能一律當成重試衝突。
-    const body = await res.json().catch(() => null);
-    const code = body && body.code ? String(body.code) : '';
-    if (code === 'articles_legacy_write_blocked' || (body && body.upgradeRequired)) {
+    const errorBody = await res.json().catch(() => null);
+    const code = errorBody && errorBody.code ? String(errorBody.code) : '';
+    if (code === 'articles_legacy_write_blocked' || (errorBody && errorBody.upgradeRequired)) {
       return { conflict: true, code: code || 'client_upgrade_required', upgradeRequired: true };
     }
-    return { conflict: true, code, version: body && Number.isInteger(body.version) ? body.version : undefined };
+    return { conflict: true, code, version: errorBody && Number.isInteger(errorBody.version) ? errorBody.version : undefined };
   }
   if (res.status === 401) {
     const err = new Error(t('errors.unauthorized'));
@@ -628,6 +793,9 @@ export async function pushSnapshot(expectedVersion, payload) {
   }
   if (!res.ok) throw new Error(t('errors.cloudWriteFailed', { status: res.status }));
   const data = await res.json().catch(() => ({}));
+  // 推送後伺服器版本已前進且內容可能被 sanitize 過；清掉快取，下一次讀取
+  // 重新取得伺服器真正的 payload，不用猜測哪些群組被移除。
+  resetSnapshotCache();
   return { conflict: false, version: data.version, updatedAt: data.updated_at };
 }
 
@@ -668,7 +836,7 @@ function needsLegacyArticlePassthrough() {
 
 // High-level sync: pull → LWW merge → conditional push with expected_version
 export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
-  const remote = await pullSnapshot();          // { version, updated_at, payload } | null
+  const remote = await pullSnapshot();          // { version, updated_at, payload, payloadJson } | null
   // 後端尚未支援逐項同步時，舊 snapshot 的詞書／聊天在關閘前仍要移交；
   // 只補本機永久層缺少的資料，不覆蓋既有內容。
   if (remote?.payload && readingStore.isReadingMigrated()) {
@@ -679,6 +847,7 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
     } catch (_) {}
   }
   const local = await buildLocalSnapshot();     // { payload, updatedAt }
+  const localJson = stringifySnapshotPayload(local.payload);
   const baseVersion = remote?.version ?? 0;
 
   if (remote && isLikelyAccidentalWipe(local.payload, remote.payload)) {
@@ -692,14 +861,21 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
   if (needsLegacyArticlePassthrough() && remote?.payload?.articles) {
     merged.articles = remote.payload.articles;
   }
-  const needPush = JSON.stringify(merged) !== JSON.stringify(remote?.payload || {});
+  // 整包 payload 的 stringify 只做必要次數：merged 算一次，遠端字串由
+  // pullSnapshot 回傳（條件讀取時直接來自快取），本機字串也已重用。
+  const mergedJson = stringifySnapshotPayload(merged);
+  const remoteJson = typeof remote?.payloadJson === 'string'
+    ? remote.payloadJson
+    : stringifySnapshotPayload(remote?.payload || {});
+  const needPush = mergedJson !== remoteJson;
 
   if (needPush) {
-    const res = await pushSnapshot(baseVersion, merged);
+    const res = await pushSnapshot(baseVersion, merged, mergedJson);
     if (res.conflict) {
-      const latest = await pullSnapshot();
+      // 版本衝突後快取已清掉；這裡必須拿到最新完整 payload 才能重新合併。
+      const latest = await pullSnapshot({ forceFull: true });
       const merged2 = lwwMerge(local.payload, latest?.payload || {});
-      const res2 = await pushSnapshot(latest?.version ?? 0, merged2);
+      const res2 = await pushSnapshot(latest?.version ?? 0, merged2, stringifySnapshotPayload(merged2));
       if (res2.conflict) throw new Error(t('errors.syncConflict'));
       await applyMergedSnapshot({ payload: merged2 });
       return { version: res2.version ?? latest?.version ?? 0, updatedAt: res2.updatedAt ?? latest?.updated_at ?? null };
@@ -707,10 +883,14 @@ export async function syncNow(buildLocalSnapshot, applyMergedSnapshot) {
     await applyMergedSnapshot({ payload: merged });
     return { version: res.version ?? baseVersion + 1, updatedAt: res.updatedAt ?? null };
   } else {
-    if (JSON.stringify(local.payload) !== JSON.stringify(merged)) {
+    if (localJson !== mergedJson) {
       await applyMergedSnapshot({ payload: merged });
     }
-    return { version: remote?.version ?? 0, updatedAt: remote?.updated_at ?? null };
+    return {
+      version: remote?.version ?? 0,
+      updatedAt: remote?.updated_at ?? null,
+      notModified: !!remote?.notModified
+    };
   }
 }
 

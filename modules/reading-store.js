@@ -18,7 +18,8 @@ import {
     readStoreOne,
     readStoreByIndex,
     countStore,
-    openPermanentDb
+    openPermanentDb,
+    requestPromise
 } from './permanent-db.js';
 import {
     READING_LIMITS,
@@ -44,6 +45,8 @@ let scopeGeneration = 0;
 // 同一頁的讀取／修改／寫入必須序列化；否則兩個同引用 upsert 會各自讀到
 // 「不存在」而建立兩筆，兩個不同欄位 patch 也可能互相覆蓋。
 let writeChain = Promise.resolve();
+// 本 scope 的資料變更世代：備份等功能用它跳過沒有變更的重建。
+let dataEpoch = 0;
 
 function serializeWrite(work) {
     const run = writeChain.then(work, work);
@@ -177,6 +180,44 @@ function readBucket(recordScope = scope()) {
         if (parsed && typeof parsed === 'object') return { ...emptyBucket(), ...parsed };
     } catch (_) {}
     return emptyBucket();
+}
+
+/**
+ * 嚴格版本的後備桶讀取：必須分辨「合法空桶」與讀取／解析失敗。
+ *
+ * `readBucket()` 是給一般讀取用的：它把例外／損壞當成空桶，讓沒有備份的
+ * 裝置可以正常啟動。完整備份匯出（`exportAll()`）不能這樣做，否則讀不到
+ * 桶時會回報 `ok:true` 的空快照，備份流程就存下一份殘缺備份、裁剪舊備份並
+ * 更新簽章，讓原本可用的備份永久消失。
+ */
+function readBucketStrict(recordScope = scope()) {
+    let raw;
+    try {
+        raw = localStorage.getItem(fallbackKey(recordScope));
+    } catch (_) {
+        return { ok: false, error: 'storage_read_failed' };
+    }
+    if (raw == null || raw === '') return { ok: true, bucket: emptyBucket() };
+    let parsed;
+    try {
+        parsed = JSON.parse(raw);
+    } catch (_) {
+        return { ok: false, error: 'storage_corrupt' };
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return { ok: false, error: 'storage_corrupt' };
+    }
+    const bucket = { ...emptyBucket(), ...parsed };
+    // 桶裡的清單一旦存在卻不是陣列，代表寫入端或儲存已損壞；當成空清單會
+    // 讓匯出結果看起來「成功但沒有資料」，因此一律回報損壞。
+    for (const name of ['items', 'documents', 'books', 'entries', 'links', 'conversations', 'messages', 'outbox', 'versions']) {
+        const value = parsed[name];
+        if (value != null && !Array.isArray(value)) return { ok: false, error: 'storage_corrupt' };
+    }
+    if (parsed.state != null && (typeof parsed.state !== 'object' || Array.isArray(parsed.state))) {
+        return { ok: false, error: 'storage_corrupt' };
+    }
+    return { ok: true, bucket };
 }
 
 function writeBucket(bucket, recordScope = scope()) {
@@ -438,6 +479,20 @@ function rememberEntity(entityType, entity, ctx = null) {
     if (ctx && !isReadingContextActive(ctx)) return;
     const map = mapForType(entityType);
     if (map && entity) map.set(entity.id, entity);
+    dataEpoch += 1;
+}
+
+/** 同步路徑的記憶體更新：message 沒有 mapForType，另有 messagesById 快取。 */
+function rememberAppliedEntity(entityType, record, ctx) {
+    rememberEntity(entityType, record, ctx);
+    if (entityType === 'message' && isReadingContextActive(ctx)) {
+        messagesByConversation.delete(`${ctx.scope}\u0000${record.conversationId}`);
+        messagesById.set(record.id, record);
+    }
+}
+
+export function getDataEpoch() {
+    return dataEpoch;
 }
 
 function forgetEntity(entityType, entityId) {
@@ -595,7 +650,10 @@ function writeEntityFallback(entityType, entity, outbox, op, extraOperations, ct
         }
     }
     if (!writeBucket(bucket, ctx.scope)) return { ok: false, error: 'storage_full' };
-    rememberEntity(entityType, stored, ctx);
+    // 後備寫入與 IDB 寫入一樣要讓消息快取失效：還原到空會話時，寫入前的
+    // `getMessages()` 可能已快取空陣列，只更新實體 map 會讓後續核對仍讀到
+    // 舊快取，成功的還原被誤判成 `message_mismatch`。
+    rememberAppliedEntity(entityType, stored, ctx);
     return { ok: true, entity: stored, outbox, fallback: true };
 }
 
@@ -638,7 +696,7 @@ async function writeEntitiesAtomically(entries, ctx = captureReadingContext()) {
                 if (item.outbox) bucket.outbox.push(item.outbox);
             }
             if (!writeBucket(bucket, ctx.scope)) return { ok: false, error: 'storage_full' };
-            for (const item of remembered) rememberEntity(item.entityType, item.entity, ctx);
+            for (const item of remembered) rememberAppliedEntity(item.entityType, item.entity, ctx);
             return { ok: true, fallback: true };
         }
         return { ok: false, error: result.error };
@@ -1602,6 +1660,33 @@ export async function getMessages(conversationId, ctx = captureReadingContext())
     return list;
 }
 
+/**
+ * 還原核對專用的消息讀取：回傳含刪除標記（tombstone）的實際儲存記錄。
+ *
+ * `getMessages()` 是介面查詢，會過濾 `deletedAt`；但 `exportAll()` 保留刪除
+ * 標記。核對含已刪除會話／消息的合法備份時若用 `getMessages()`，全部寫入
+ * 成功仍會產生 `conversation_messages`／`message_mismatch`，被
+ * `partial_restore_failed` 判失敗。
+ *
+ * 讀取是 `await`：回來時帳戶可能已切換（A→B）。此時 A 的記錄不能當成 B 的
+ * 核對結果，回傳 `null` 讓呼叫端立刻以 `stale_scope` 中止。
+ */
+async function readStoredMessages(conversationId, ctx = captureReadingContext()) {
+    if (!conversationId) return [];
+    if (!isReadingContextActive(ctx)) return null;
+    let records = [];
+    if (fallbackMode) {
+        records = bucketArray('messages', ctx.scope);
+    } else {
+        const result = await readStoreByIndex(STORE.MESSAGES, 'scope_conversation', [ctx.scope, conversationId]);
+        records = result.ok ? result.records : [];
+    }
+    // 與 `getMessages()` 一致：await 後一定要再確認上下文仍有效，否則切換
+    // 帳戶後仍會把舊 scope 的記錄當成核對通過。
+    if (!isReadingContextActive(ctx)) return null;
+    return records.filter((msg) => msg && msg.conversationId === conversationId);
+}
+
 export function appendMessage(input) {
     return runCaptured(async (ctx) => {
     if (!input || !input.conversationId) return { ok: false, error: 'conversation_required' };
@@ -1815,43 +1900,406 @@ export async function persistRemoteEntity(entityType, remote, ctx = captureReadi
     return { ok: true, record };
 }
 
-async function writeMergedPendingEntity(entityType, merged, { expectedRevision, base, remote, ctx = captureReadingContext() }) {
-    const storeName = storeForType(entityType);
-    if (!storeName) return { ok: false, error: 'invalid_entity_type' };
-    if (!isReadingContextActive(ctx)) return staleResult();
+function buildRemoteRecord(entityType, remote, recordScope, local = null) {
+    const record = {
+        ...remote,
+        scope: recordScope,
+        key: recordKeyFor(entityType, remote, recordScope),
+        pending: false,
+        dirty: false,
+        conflict: null
+    };
+    if (entityType === 'learningItem' && typeof record.marked !== 'boolean') {
+        // 舊後端或舊備份沒有 marked：不可把本機明確的 true／false 洗掉；
+        // 本機也沒有時才留缺欄位，交給文章載入時的冪等遷移補齊。
+        const fallback = local || itemsById.get(remote.id);
+        if (fallback && typeof fallback.marked === 'boolean') record.marked = fallback.marked;
+    }
+    return record;
+}
+
+/**
+ * 決定一筆遠端變更要寫入什麼。純函式，IndexedDB 與 localStorage 後備共用
+ * 同一套版本／三方合併規則，避免兩條路徑行為分叉。
+ */
+function planRemoteChange(entityType, { local = null, outbox = null, remote = null, tombstone = false, recordScope = scope() } = {}) {
+    const timestamp = nowIso();
+    if (tombstone) {
+        if (!local) return { action: 'skip', applied: false };
+        if (!outbox) {
+            return {
+                action: 'persist',
+                applied: true,
+                record: {
+                    ...local,
+                    deletedAt: timestamp,
+                    pending: false,
+                    dirty: false,
+                    conflict: null,
+                    scope: recordScope,
+                    key: recordKeyFor(entityType, local, recordScope)
+                }
+            };
+        }
+        // 有本機待同步操作時走一般合併，保留「雲端刪除 vs 本機編輯」衝突。
+        return planRemoteChange(entityType, {
+            local,
+            outbox,
+            remote: { ...local, deletedAt: timestamp, revision: (Number(local.revision) || 0) + 1 },
+            recordScope
+        });
+    }
+    if (!remote || !remote.id) return { action: 'skip', applied: false };
+    if (!local) {
+        return { action: 'persist', applied: true, record: buildRemoteRecord(entityType, remote, recordScope) };
+    }
+    if (!outbox) {
+        const localRevision = Number(local.revision) || 0;
+        const remoteRevision = Number(remote.revision) || 0;
+        if (remoteRevision > localRevision || (remote.deletedAt && !local.deletedAt)) {
+            return {
+                action: 'persist',
+                applied: true,
+                record: buildRemoteRecord(entityType, remote, recordScope, local)
+            };
+        }
+        return { action: 'skip', applied: false };
+    }
+    const baseRevision = Number(outbox.base?.revision) || Number(outbox.expectedRevision) || 0;
+    const remoteRevision = Number(remote.revision) || 0;
+    // 已經以同一版本為 base 合併過（包含墓碑）就不再重套；否則第二次拉取
+    // 同一墓碑會把第一次產生的刪改衝突清掉。
+    if (remoteRevision <= baseRevision) return { action: 'stale', applied: false };
+    const merged = mergeReadingEntity(entityType, { base: outbox.base, local, remote });
     const entity = {
-        ...merged,
-        scope: ctx.scope,
-        revision: Number(remote?.revision) || Number(merged.revision) || 0,
+        ...merged.record,
+        scope: recordScope,
+        revision: remoteRevision || Number(merged.record.revision) || 0,
         pending: true,
         dirty: true,
-        key: recordKeyFor(entityType, merged, ctx.scope)
+        key: recordKeyFor(entityType, merged.record, recordScope)
     };
-    const outbox = {
-        key: outboxKey(entityType, entity.id, ctx.scope),
-        scope: ctx.scope,
+    const nextOutbox = {
+        key: outboxKey(entityType, entity.id, recordScope),
+        scope: recordScope,
         mutationId: generateReadingId('m'),
         entityType,
         entityId: entity.id,
         op: entity.deletedAt ? 'delete' : 'upsert',
-        expectedRevision: Number(expectedRevision) || 0,
+        expectedRevision: remoteRevision,
         patch: entity.deletedAt ? null : normalizeReadingPatch(entityType, wireReadingEntity(entity)),
-        base: base ? wireReadingEntity(base) : null,
-        createdAt: nowIso(),
+        base: wireReadingEntity(remote),
+        createdAt: timestamp,
         attempts: 0,
         lastError: ''
     };
-    const result = await applyPermanentOperations([
-        { store: storeName, type: 'put', value: entity },
-        { store: STORE.READING_OUTBOX, type: 'put', value: outbox }
-    ]);
-    if (!result.ok) return result;
-    rememberEntity(entityType, entity, ctx);
-    if (entityType === 'message' && isReadingContextActive(ctx)) {
-        messagesByConversation.delete(`${ctx.scope}\u0000${entity.conversationId}`);
-        messagesById.set(entity.id, entity);
+    return {
+        action: 'merge',
+        applied: true,
+        record: entity,
+        outbox: nextOutbox,
+        conflicts: merged.conflicts.length
+            ? {
+                fields: merged.conflicts.map((item) => item.field),
+                local: wireReadingEntity(merged.record),
+                remote: wireReadingEntity(remote)
+            }
+            : null
+    };
+}
+
+/** 補讀不在記憶體的實體（readonly 預取）。不回寫任何全域記憶體；合併用的
+ * 本機值仍會在寫入交易內重新讀取，呼叫端不得使用這裡的結果做決策。 */
+async function loadMissingEntities(missing, ctx) {
+    const keysByStore = new Map();
+    let needMessages = false;
+    for (const item of missing) {
+        if (item.entityType === 'message') { needMessages = true; continue; }
+        const storeName = storeForType(item.entityType);
+        if (!storeName) return { ok: false, error: 'invalid_entity_type' };
+        if (!keysByStore.has(storeName)) keysByStore.set(storeName, []);
+        keysByStore.get(storeName).push({
+            key: recordKeyFor(item.entityType, { id: item.entityId }, ctx.scope)
+        });
     }
-    return { ok: true, entity, outbox };
+    if (needMessages) {
+        // 消息的 key 需要 conversationId，而墓碑只有 entityId；先確認整個
+        // message store 可讀，真正的值仍由稍後的 readwrite 交易讀取。
+        const result = await readStoreAll(STORE.MESSAGES, ctx.scope);
+        if (!result.ok) return { ok: false, error: result.error };
+    }
+    if (!keysByStore.size) return { ok: true };
+    const names = Array.from(keysByStore.keys());
+    const result = await runPermanentTransaction(names, 'readonly', (stores) => {
+        const requests = [];
+        for (const [storeName, entries] of keysByStore) {
+            for (const entry of entries) {
+                requests.push(requestPromise(stores[storeName].get(entry.key)));
+            }
+        }
+        return Promise.all(requests);
+    });
+    if (!result.ok) return { ok: false, error: result.error };
+    return { ok: true };
+}
+
+/**
+ * 批次套用遠端記錄（下載主路徑）。
+ * 一批變更只開一次 IndexedDB 交易，後備模式只讀寫一次整個 bucket；
+ * 逐項套用會讓首次同步變成 N 次交易與 O(N × bucket) 的 localStorage I/O。
+ *
+ * entries: [{ entityType, entityId, remote }] 或 [{ entityType, entityId, tombstone: true }]
+ */
+export async function applyRemoteEntities(entries, ctx = captureReadingContext()) {
+    const list = [];
+    for (const entry of Array.isArray(entries) ? entries : []) {
+        if (!entry || !entry.entityType) continue;
+        const remote = entry.remote || null;
+        const entityId = String(entry.entityId || (remote && remote.id) || '');
+        if (!entityId) continue;
+        list.push({ entityType: entry.entityType, entityId, remote, tombstone: entry.tombstone === true, local: null });
+    }
+    if (!list.length) return { ok: true, results: [], applied: 0, conflicts: 0 };
+    if (!isReadingContextActive(ctx)) return { ...staleResult(), results: [] };
+    if (!fallbackMode) {
+        // 先補讀缺失實體（readonly，不佔用單頁寫入序列）。這一步只為 message
+        // 記憶體快取與相容既有行為；下面的 readwrite 交易會重新讀取最新值，
+        // 因此在補讀期間完成的本機修改不會被舊值覆寫。
+        const missing = list.filter((item) => !getEntitySync(item.entityType, item.entityId));
+        if (missing.length) {
+            const loaded = await loadMissingEntities(missing, ctx);
+            if (!loaded.ok && loaded.error !== 'idb_unavailable') {
+                return { ok: false, error: loaded.error, results: [] };
+            }
+            if (!isReadingContextActive(ctx)) return { ...staleResult(), results: [] };
+            if (loaded.error === 'idb_unavailable') useFallback();
+        }
+    }
+    // 最新 entity／outbox 的讀取、合併與寫入必須在同一個 readwrite 交易內，
+    // 並與本頁其他寫入共用序列：否則等待缺失記錄期間的本機修改會被舊值覆寫。
+    return serializeWrite(async () => {
+        if (!isReadingContextActive(ctx)) return { ...staleResult(), results: [] };
+        if (fallbackMode) return applyRemoteEntitiesFallback(list, ctx);
+        return applyRemoteEntitiesInTransaction(list, ctx);
+    });
+}
+
+function safeRequest(request) {
+    const promise = requestPromise(request);
+    // 交易 abort 時個別 request 會 reject；先掛 catch，避免同步失敗
+    // 讓已建立但還沒進入 Promise.all 的 request 變成 unhandled rejection。
+    promise.catch(() => {});
+    return promise;
+}
+
+function readStoreByScope(store, recordScope) {
+    if (store.indexNames.contains('scope')) {
+        return safeRequest(store.index('scope').getAll(recordScope));
+    }
+    return safeRequest(store.getAll()).then((records) => (
+        Array.isArray(records) ? records.filter((record) => !record.scope || record.scope === recordScope) : []
+    ));
+}
+
+/** 在單一 readwrite 交易內讀取最新本機實體／outbox、合併後寫入。 */
+async function applyRemoteEntitiesInTransaction(list, ctx) {
+    // 衝突 metadata 必須和 entity／outbox 在同一個 readwrite 交易提交，
+    // 所以交易一開始就把 reading_state 納入。
+    const storeNames = new Set([STORE.READING_OUTBOX, STORE.READING_STATE]);
+    for (const item of list) {
+        const storeName = storeForType(item.entityType);
+        if (!storeName) return { ok: false, error: 'invalid_entity_type', results: [] };
+        storeNames.add(storeName);
+    }
+    let hasMessages = false;
+    for (const item of list) if (item.entityType === 'message') hasMessages = true;
+    if (hasMessages) storeNames.add(STORE.MESSAGES);
+
+    const result = await runPermanentTransaction(Array.from(storeNames), 'readwrite', (stores) => {
+        const outboxPromise = readStoreByScope(stores[STORE.READING_OUTBOX], ctx.scope);
+        const statePromise = safeRequest(stores[STORE.READING_STATE].get(ctx.scope));
+        const messagesPromise = hasMessages
+            ? readStoreByScope(stores[STORE.MESSAGES], ctx.scope)
+            : Promise.resolve([]);
+        const localPromises = list.map((item) => {
+            if (item.entityType === 'message') {
+                return messagesPromise.then((records) => (
+                    (records || []).find((record) => record && record.id === item.entityId) || null
+                ));
+            }
+            return safeRequest(stores[storeForType(item.entityType)].get(entityKey(item.entityId, ctx.scope)));
+        });
+        return Promise.all([outboxPromise, statePromise, ...localPromises]).then(([outboxAll, storedState, ...locals]) => {
+            const outboxByKey = new Map((outboxAll || []).map((op) => [
+                outboxKey(op.entityType, op.entityId, ctx.scope), op
+            ]));
+            const operations = [];
+            const remembered = [];
+            const results = [];
+            const conflictUpdates = [];
+            let applied = 0;
+            let conflicts = 0;
+            list.forEach((item, index) => {
+                const local = locals[index] || null;
+                const outbox = outboxByKey.get(outboxKey(item.entityType, item.entityId, ctx.scope)) || null;
+                const plan = planRemoteChange(item.entityType, {
+                    local,
+                    outbox,
+                    remote: item.remote,
+                    tombstone: item.tombstone,
+                    recordScope: ctx.scope
+                });
+                if (plan.record) {
+                    operations.push({ store: storeForType(item.entityType), type: 'put', value: plan.record });
+                    if (plan.outbox) operations.push({ store: STORE.READING_OUTBOX, type: 'put', value: plan.outbox });
+                    remembered.push({ entityType: item.entityType, record: plan.record });
+                    applied += 1;
+                    // 同一批若有重複 key，後續項目要看到前面剛算出的結果。
+                    locals[index] = plan.record;
+                    if (plan.outbox) outboxByKey.set(plan.outbox.key, plan.outbox);
+                }
+                if (plan.conflicts) {
+                    conflicts += 1;
+                    conflictUpdates.push({ entityType: item.entityType, entityId: item.entityId, info: plan.conflicts });
+                }
+                results.push({
+                    entityType: item.entityType,
+                    entityId: item.entityId,
+                    action: plan.action,
+                    applied: !!plan.applied,
+                    conflict: !!plan.conflicts,
+                    fields: plan.conflicts ? plan.conflicts.fields : []
+                });
+            });
+            const value = { results, applied, conflicts, remembered, conflictUpdates, committedConflicts: null };
+            if (conflictUpdates.length) {
+                // 以交易內讀到的最新 state 為基準合併衝突，不能只用交易外的
+                // 記憶體；寫入和 entity／outbox 一起提交，失敗則全部回滾。
+                const nextConflicts = mergeConflictUpdates(storedState?.conflicts, conflictUpdates);
+                value.committedConflicts = nextConflicts;
+                operations.push({
+                    store: STORE.READING_STATE,
+                    type: 'put',
+                    value: buildStatePayload(ctx.scope, nextConflicts)
+                });
+            }
+            if (!operations.length) return value;
+            const writes = [];
+            for (const op of operations) {
+                writes.push(safeRequest(
+                    op.type === 'delete' ? stores[op.store].delete(op.key) : stores[op.store].put(op.value)
+                ));
+            }
+            return Promise.all(writes).then(() => value);
+        });
+    });
+
+    if (!result.ok) {
+        if (result.error === 'idb_unavailable') {
+            useFallback();
+            return applyRemoteEntitiesFallback(list, ctx);
+        }
+        return { ok: false, error: result.error || 'idb_write_failed', results: [] };
+    }
+    const value = result.value || { results: [], applied: 0, conflicts: 0, remembered: [], conflictUpdates: [] };
+    if (value.remembered.length && isReadingContextActive(ctx)) {
+        for (const item of value.remembered) rememberAppliedEntity(item.entityType, item.record, ctx);
+    }
+    if (value.committedConflicts && isReadingContextActive(ctx)) {
+        // 交易提交成功後才更新記憶體，失敗路徑不會留下半套衝突標記。
+        meta.conflicts = value.committedConflicts;
+    }
+    if (isReadingContextActive(ctx) && (value.remembered.length || value.conflictUpdates.length)) {
+        emitChange({ reason: 'remote-applied', ctx });
+    }
+    return { ok: true, results: value.results, applied: value.applied, conflicts: value.conflicts };
+}
+
+async function applyRemoteEntitiesFallback(list, ctx) {
+    const bucket = readBucket(ctx.scope);
+    let outboxList = Array.isArray(bucket.outbox) ? bucket.outbox.slice() : [];
+    const results = [];
+    const remembered = [];
+    const conflictUpdates = [];
+    let applied = 0;
+    let conflicts = 0;
+    let changed = false;
+    let committedConflicts = null;
+    for (const item of list) {
+        const listName = listForBucket(item.entityType);
+        if (!listName) return { ok: false, error: 'invalid_entity_type', results };
+        const records = Array.isArray(bucket[listName]) ? bucket[listName] : [];
+        const local = records.find((record) => record && record.id === item.entityId) || null;
+        const outboxIndex = outboxList.findIndex((op) => op && op.entityType === item.entityType && op.entityId === item.entityId);
+        const outbox = outboxIndex >= 0 ? outboxList[outboxIndex] : null;
+        const plan = planRemoteChange(item.entityType, {
+            local,
+            outbox,
+            remote: item.remote,
+            tombstone: item.tombstone,
+            recordScope: ctx.scope
+        });
+        if (plan.record) {
+            bucket[listName] = upsertInList(records, plan.record);
+            if (plan.outbox) {
+                if (outboxIndex >= 0) outboxList[outboxIndex] = plan.outbox;
+                else outboxList.push(plan.outbox);
+            }
+            remembered.push({ entityType: item.entityType, record: plan.record });
+            applied += 1;
+            changed = true;
+        }
+        if (plan.conflicts) {
+            conflicts += 1;
+            conflictUpdates.push({ entityType: item.entityType, entityId: item.entityId, info: plan.conflicts });
+        }
+        results.push({
+            entityType: item.entityType,
+            entityId: item.entityId,
+            action: plan.action,
+            applied: !!plan.applied,
+            conflict: !!plan.conflicts,
+            fields: plan.conflicts ? plan.conflicts.fields : []
+        });
+    }
+    if (conflictUpdates.length) {
+        committedConflicts = mergeConflictUpdates(bucket.state?.conflicts, conflictUpdates);
+        bucket.state = buildStatePayload(ctx.scope, committedConflicts, bucket.state);
+        changed = true;
+    }
+    if (changed) {
+        // 實體、outbox 與 state 一次寫入同一個 bucket；任何失敗都不更新記憶體。
+        bucket.outbox = outboxList;
+        if (!writeBucket(bucket, ctx.scope)) return { ok: false, error: 'storage_full', results };
+    }
+    for (const item of remembered) rememberAppliedEntity(item.entityType, item.record, ctx);
+    if (committedConflicts) meta.conflicts = committedConflicts;
+    if (changed || conflictUpdates.length) emitChange({ reason: 'remote-applied', ctx });
+    return { ok: true, results, applied, conflicts };
+}
+
+function mergeConflictUpdates(base, updates) {
+    const next = { ...(base && typeof base === 'object' ? base : {}) };
+    for (const item of updates) {
+        next[`${item.entityType}:${item.entityId}`] = {
+            entityType: item.entityType,
+            entityId: item.entityId,
+            at: nowIso(),
+            ...item.info
+        };
+    }
+    return next;
+}
+
+/** 完整 state payload；衝突由呼叫端給定，其餘欄位沿用目前記憶體視圖。 */
+function buildStatePayload(recordScope, conflicts, base = meta) {
+    return {
+        ...(base && typeof base === 'object' ? base : {}),
+        ...meta,
+        scope: recordScope,
+        conflicts: conflicts || {},
+        legacyItemArticles: (base && base.legacyItemArticles) || meta.legacyItemArticles || {}
+    };
 }
 
 /**
@@ -1860,62 +2308,25 @@ async function writeMergedPendingEntity(entityType, merged, { expectedRevision, 
  * 並把遠端值存入 conflicts 供 UI 選擇，不會靜默丟棄。
  */
 export async function applyRemoteEntity(entityType, remote, ctx = captureReadingContext()) {
-    if (!isReadingContextActive(ctx)) return staleResult();
-    const local = getEntitySync(entityType, remote.id) || await getEntity(entityType, remote.id, ctx);
-    const outbox = await readOutboxRecord(entityType, remote.id, ctx);
-    if (!isReadingContextActive(ctx)) return staleResult();
-    if (!local) {
-        const result = await persistRemoteEntity(entityType, remote, ctx);
-        return { ok: true, applied: true, conflict: false, ...result };
-    }
-    if (!outbox) {
-        const localRevision = Number(local.revision) || 0;
-        const remoteRevision = Number(remote.revision) || 0;
-        if (remoteRevision > localRevision || (remote.deletedAt && !local.deletedAt)) {
-            const result = await persistRemoteEntity(entityType, remote, ctx);
-            return { ok: true, applied: true, conflict: false, ...result };
-        }
-        return { ok: true, applied: false, conflict: false };
-    }
-    const baseRevision = Number(outbox.base?.revision) || Number(outbox.expectedRevision) || 0;
-    const remoteRevision = Number(remote.revision) || 0;
-    // 已經以同一版本為 base 合併過（包含墓碑）就不再重套；否則第二次拉取
-    // 同一墓碑會把第一次產生的刪改衝突清掉。
-    if (remoteRevision <= baseRevision) {
-        return { ok: true, applied: false, stale: true, conflict: false };
-    }
-    const merged = mergeReadingEntity(entityType, { base: outbox.base, local, remote });
-    const conflictEntity = merged.conflicts.length ? { ...remote } : null;
-    const write = await writeMergedPendingEntity(entityType, merged.record, {
-        expectedRevision: remoteRevision,
-        base: remote,
-        remote,
-        ctx
-    });
-    if (!write.ok) return write;
-    if (merged.conflicts.length) {
-        await setReadingConflict(entityType, remote.id, {
-            fields: merged.conflicts.map((item) => item.field),
-            local: wireReadingEntity(merged.record),
-            remote: wireReadingEntity(conflictEntity)
-        }, ctx);
-    }
-    return { ok: true, applied: true, conflict: merged.conflicts.length > 0, fields: merged.conflicts.map((item) => item.field) };
+    if (!remote || !remote.id) return { ok: false, error: 'invalid_entity' };
+    const batch = await applyRemoteEntities([{ entityType, remote }], ctx);
+    if (!batch.ok) return batch;
+    const result = batch.results[0] || { applied: false, conflict: false };
+    return {
+        ok: true,
+        applied: !!result.applied,
+        conflict: !!result.conflict,
+        stale: result.action === 'stale',
+        fields: result.fields || []
+    };
 }
 
 /** 遠端墓碑：沒有本機待同步時直接套用；有 pending 時走一般合併（保留衝突）。 */
 export async function applyRemoteTombstone(entityType, entityId, ctx = captureReadingContext()) {
-    if (!isReadingContextActive(ctx)) return staleResult();
-    const local = getEntitySync(entityType, entityId) || await getEntity(entityType, entityId, ctx);
-    if (!isReadingContextActive(ctx)) return staleResult();
-    if (!local) return { ok: true, applied: false };
-    const outbox = await readOutboxRecord(entityType, entityId, ctx);
-    if (!isReadingContextActive(ctx)) return staleResult();
-    if (!outbox) {
-        const tombstone = { ...local, deletedAt: nowIso(), pending: false, dirty: false };
-        return persistRemoteEntity(entityType, tombstone, ctx);
-    }
-    return applyRemoteEntity(entityType, { ...local, deletedAt: nowIso(), revision: (Number(local.revision) || 0) + 1 }, ctx);
+    const batch = await applyRemoteEntities([{ entityType, entityId, tombstone: true }], ctx);
+    if (!batch.ok) return { ok: false, error: batch.error || 'idb_write_failed' };
+    const result = batch.results[0] || { applied: false };
+    return { ok: true, applied: !!result.applied };
 }
 
 export async function markOutboxAcknowledged(entityType, entityId, { mutationId, revision, serverRecord = null } = {}, ctx = captureReadingContext()) {
@@ -2051,7 +2462,7 @@ export function getReadingCursor() {
 
 async function persistMeta(ctx = captureReadingContext()) {
     if (!isReadingContextActive(ctx)) return staleResult();
-    const payload = { scope: ctx.scope, ...meta, conflicts: meta.conflicts || {}, legacyItemArticles: meta.legacyItemArticles || {} };
+    const payload = buildStatePayload(ctx.scope, meta.conflicts);
     if (fallbackMode) {
         const bucket = readBucket(ctx.scope);
         bucket.state = payload;
@@ -2275,10 +2686,15 @@ function articleStoreFallbackOutbox(scope) {
     }
 }
 
-export async function exportAll(ctx = captureReadingContext()) {
+export async function exportAll(ctx = captureReadingContext(), options = {}) {
     if (!isReadingContextActive(ctx)) return staleResult();
     if (fallbackMode) {
-        const bucket = readBucket(ctx.scope);
+        const read = readBucketStrict(ctx.scope);
+        if (!read.ok) {
+            meta.persistenceError = read.error;
+            return { ok: false, error: read.error };
+        }
+        const bucket = read.bucket;
         return {
             ok: true,
             schemaVersion: 1,
@@ -2304,13 +2720,16 @@ export async function exportAll(ctx = captureReadingContext()) {
     if (!isReadingContextActive(ctx)) return staleResult();
     const data = snapshot.stores;
     // 備份是明確允許讀取全部內容的流程；把資料留在記憶體可讓後續 restore
-    // 核對使用同一份 ID，但不影響正常啟動的 lazy load。
-    replaceMap(itemsById, data[STORE.READING_ITEMS], ctx.scope);
-    replaceMap(documentsById, data[STORE.ARTICLE_DOCUMENTS], ctx.scope);
-    replaceMap(booksById, data[STORE.VOCAB_BOOKS], ctx.scope);
-    replaceMap(entriesById, data[STORE.VOCAB_ENTRIES], ctx.scope);
-    replaceMap(linksById, data[STORE.VOCAB_LINKS], ctx.scope);
-    replaceMap(conversationsById, data[STORE.CONVERSATIONS], ctx.scope);
+    // 核對使用同一份 ID，但不影響正常啟動的 lazy load。備份在同步鎖外執行時
+    // 傳入 hydrate:false，避免用較早的讀取結果覆寫同步剛寫入的記憶體。
+    if (options.hydrate !== false) {
+        replaceMap(itemsById, data[STORE.READING_ITEMS], ctx.scope);
+        replaceMap(documentsById, data[STORE.ARTICLE_DOCUMENTS], ctx.scope);
+        replaceMap(booksById, data[STORE.VOCAB_BOOKS], ctx.scope);
+        replaceMap(entriesById, data[STORE.VOCAB_ENTRIES], ctx.scope);
+        replaceMap(linksById, data[STORE.VOCAB_LINKS], ctx.scope);
+        replaceMap(conversationsById, data[STORE.CONVERSATIONS], ctx.scope);
+    }
     return {
         ok: true,
         schemaVersion: 1,
@@ -2366,17 +2785,26 @@ export function restoreAll(payload, options = {}) {
         : (item?.understanding === 'needs_review'
             || item?.understanding === 'understood'
             || backupActiveLinkItemIds.has(item?.id)));
+    const failures = [];
+    // `allowPartial` 只表示「單一項目失敗仍要繼續還原其餘項目」，不代表可以
+    // 回報成功：寫入失敗或核對不符都必須讓呼叫端（備份還原、訪客資料併入）
+    // 看到 `ok:false`，否則 UI 會顯示還原成功、實際上資料缺了一半。
+    const recordFailure = (entity, id, result) => {
+        failures.push({ entity, id: String(id || ''), error: (result && result.error) || 'write_failed' });
+    };
     for (const item of pickArray(payload, 'vocabularyBooks')) {
         if (!item || !item.id) continue;
         const existing = booksById.get(item.id) || null;
         const result = await writeEntity('vocabularyBook', { ...item, deletedAt: item.deletedAt || '' }, { existing, ctx });
         if (result.ok) counts.vocabularyBooks += 1;
+        else recordFailure('vocabularyBook', item.id, result);
     }
     for (const item of pickArray(payload, 'vocabularyEntries')) {
         if (!item || !item.id) continue;
         const existing = entriesById.get(item.id) || null;
         const result = await writeEntity('vocabularyEntry', { ...item, deletedAt: item.deletedAt || '' }, { existing, ctx });
         if (result.ok) counts.vocabularyEntries += 1;
+        else recordFailure('vocabularyEntry', item.id, result);
     }
     for (const item of pickArray(payload, 'learningItems')) {
         if (!item || !item.id) continue;
@@ -2387,24 +2815,28 @@ export function restoreAll(payload, options = {}) {
             deletedAt: item.deletedAt || ''
         }, { existing, ctx });
         if (result.ok) counts.learningItems += 1;
+        else recordFailure('learningItem', item.id, result);
     }
     for (const item of pickArray(payload, 'vocabularyLinks')) {
         if (!item || !item.id) continue;
         const existing = linksById.get(item.id) || null;
         const result = await writeEntity('vocabularyLink', { ...item, deletedAt: item.deletedAt || '' }, { existing, ctx });
         if (result.ok) counts.vocabularyLinks += 1;
+        else recordFailure('vocabularyLink', item.id, result);
     }
     for (const item of pickArray(payload, 'articleDocuments')) {
         if (!item || !item.id) continue;
         const existing = documentsById.get(item.id) || null;
         const result = await writeEntity('articleDocument', { ...item, deletedAt: item.deletedAt || '' }, { existing, ctx });
         if (result.ok) counts.articleDocuments += 1;
+        else recordFailure('articleDocument', item.id, result);
     }
     for (const item of pickArray(payload, 'conversations')) {
         if (!item || !item.id) continue;
         const existing = conversationsById.get(item.id) || null;
         const result = await writeEntity('conversation', { ...item, deletedAt: item.deletedAt || '' }, { existing, ctx });
         if (result.ok) counts.conversations += 1;
+        else recordFailure('conversation', item.id, result);
     }
     const messages = pickArray(payload, 'messages');
     const byConversation = new Map();
@@ -2417,12 +2849,19 @@ export function restoreAll(payload, options = {}) {
         const existing = (await getMessages(item.conversationId, ctx)).find((msg) => msg.id === item.id) || null;
         const result = await writeEntity('message', { ...item, deletedAt: item.deletedAt || '' }, { existing, ctx });
         if (result.ok) counts.messages += 1;
+        else recordFailure('message', item.id, result);
     }
     for (const item of pickArray(payload, 'articleVersions')) {
         if (!item || !item.articleId || !item.version) continue;
         const result = await saveArticleVersion(item.articleId, item.body, item.version);
         if (result.ok) counts.articleVersions += 1;
+        // 版本以 articleId+version 為鍵，id 只放可讀的組合值。
+        else recordFailure('articleVersion', `${item.articleId}:${item.version}`, result);
     }
+    // 寫入階段有多個 await（writeEntity／saveArticleVersion／getMessages）；
+    // 期間若切換帳戶，後續核對與回報都只會是舊 scope 的結果。這裡先中止，
+    // 不讓 `{ok:true}` 或 `partial_restore_failed` 蓋掉 `stale_scope`。
+    if (!isReadingContextActive(ctx)) return staleResult();
     // 核對：備份中每則消息都應存在，且關聯的會話／條目不憑空消失。
     let verifyErrors = [];
     const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -2463,7 +2902,11 @@ export function restoreAll(payload, options = {}) {
         }
     }
     for (const [convId, expected] of byConversation.entries()) {
-        const actual = (await getMessages(convId, ctx));
+        const actual = await readStoredMessages(convId, ctx);
+        // 核對讀取期間切換帳戶：A 的記錄不能當成 B 的核對結果，也不能因為
+        // `actual` 被視為空而只留下 `conversation_messages`（allowPartial 時
+        // 還會變成 partial 失敗）。直接回 stale，介面才不會誤報還原成功。
+        if (actual === null) return staleResult();
         if (actual.length < expected) verifyErrors.push(`conversation_messages:${convId}`);
         const byId = new Map(actual.map((message) => [message.id, message]));
         for (const raw of messages.filter((message) => message && message.conversationId === convId)) {
@@ -2473,8 +2916,15 @@ export function restoreAll(payload, options = {}) {
             }
         }
     }
+    // 核對期間也可能切換帳戶（最後一次 await 之後），回成功前要再確認。
+    if (!isReadingContextActive(ctx)) return staleResult();
     if (verifyErrors.length && !options.allowPartial) {
         return { ok: false, error: 'verify_failed', details: verifyErrors, counts };
+    }
+    // 部分還原仍要回報失敗：呼叫端（備份還原／訪客資料併入）必須知道有項目
+    // 沒寫進去或核對不符，不能只看到「已繼續處理其餘項目」就當成成功。
+    if (failures.length || verifyErrors.length) {
+        return { ok: false, error: 'partial_restore_failed', failures, verifyErrors, counts };
     }
     return { ok: true, counts, verifyErrors };
     });
@@ -2505,11 +2955,23 @@ export async function adoptGuestReadingData() {
     const current = scope();
     const guestScope = articleStore.getGuestScope();
     if (current === guestScope) return { ok: true, skipped: true };
-    await initReadingStore(guestScope);
-    const payload = await exportAll();
-    await initReadingStore(current);
-    const total = payload.learningItems.length + payload.vocabularyBooks.length
-        + payload.vocabularyEntries.length + payload.conversations.length + payload.messages.length;
+    let payload = null;
+    // 不論訪客匯出成功或失敗，都必須切回目前 scope；否則失敗後整個 store
+    // 會停在訪客資料上，後續寫入全部進到錯誤的 scope。
+    try {
+        await initReadingStore(guestScope);
+        payload = await exportAll();
+    } finally {
+        await initReadingStore(current);
+    }
+    // 匯出失敗（例如後備桶損壞）沒有陣列可讀：直接回傳錯誤，不要讀
+    // `payload.learningItems.length` 拋 TypeError。
+    if (!payload || payload.ok !== true) {
+        return { ok: false, error: (payload && payload.error) || 'export_failed' };
+    }
+    const total = pickArray(payload, 'learningItems').length + pickArray(payload, 'vocabularyBooks').length
+        + pickArray(payload, 'vocabularyEntries').length + pickArray(payload, 'conversations').length
+        + pickArray(payload, 'messages').length;
     if (!total) return { ok: true, skipped: true };
     const result = await restoreAll(payload, { allowPartial: true });
     return { ...result, imported: total };

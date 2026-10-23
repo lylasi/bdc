@@ -399,3 +399,71 @@ test('舊快照判定：空群組不算舊文章寫入', () => {
     assert.equal(snapshotCarriesArticles({ articles: { articleMetas: [{ id: 'a' }] } }), true);
     assert.equal(snapshotCarriesArticles({ vocabulary: {} }), false);
 });
+
+function seedLegacySnapshot(raw, payload, version = 1) {
+    raw.prepare('INSERT OR REPLACE INTO snapshots (user_id, version, updated_at, payload) VALUES (?, ?, ?, ?)')
+        .run('alice', version, '2026-01-01T00:00:00.000Z', JSON.stringify(payload));
+}
+
+async function runSnapshotGateScenario(api) {
+    const before = await api.call('/snapshot');
+    assert.equal(before.status, 200);
+    assert.equal(before.body.version, 1);
+    assert.ok(before.body.payload.articles, '測試前應有舊文章群組');
+
+    const final = await api.call('/articles/import', { method: 'POST', body: { articles: [], final: true } });
+    assert.equal(final.status, 200);
+    assert.equal(final.body.legacyWriteBlocked, true);
+
+    // 舊版本條件讀取必須拿到新版本與已移除的文章群組，不能回 notModified。
+    const conditional = await api.call('/snapshot?version=1');
+    assert.equal(conditional.status, 200);
+    assert.equal(conditional.body.notModified, undefined);
+    assert.equal(conditional.body.version, 2);
+    assert.equal(conditional.body.payload.articles, undefined, '關閘後仍回傳舊文章群組');
+    assert.ok(conditional.body.payload.vocabulary, '其他群組應保留');
+
+    // 不帶 version 的舊客戶端也必須看到同一份有效內容。
+    const legacyClient = await api.call('/snapshot');
+    assert.equal(legacyClient.body.version, 2);
+    assert.equal(legacyClient.body.payload.articles, undefined);
+    assert.ok(legacyClient.body.payload.vocabulary);
+
+    // 舊客戶端仍試圖寫回文章群組時必須被閘門擋下。
+    const blocked = await api.call('/snapshot', {
+        method: 'POST',
+        body: { expected_version: 2, payload: { articles: { analyzedArticles: [{ article: 'old' }] } } }
+    });
+    assert.equal(blocked.status, 409);
+    assert.equal(blocked.body.code, 'articles_legacy_write_blocked');
+}
+
+test('Worker D1：文章關閘原子推進快照版本，舊版本條件讀取不再命中', async () => {
+    const { db, raw, dir } = freshSqlite(join(ROOT, 'cloudflare-worker/schema.sql'));
+    try {
+        seedLegacySnapshot(raw, {
+            articles: { analyzedArticles: [{ article: 'Old', result: {} }], articleMetas: [] },
+            vocabulary: { updatedAt: '2026-01-01T00:00:00.000Z', books: [{ id: 'b1', words: [] }] }
+        });
+        await runSnapshotGateScenario(workerApi(db));
+    } finally {
+        raw.close();
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('selfhost SQLite：文章關閘快照版本契約與 Worker 一致', async () => {
+    const { raw, file, dir } = freshSqlite(join(ROOT, 'selfhost/schema.sql'));
+    seedLegacySnapshot(raw, {
+        articles: { analyzedArticles: [{ article: 'Old', result: {} }], articleMetas: [] },
+        vocabulary: { updatedAt: '2026-01-01T00:00:00.000Z', books: [{ id: 'b1', words: [] }] }
+    });
+    raw.close();
+    const server = await startSelfhost(file);
+    try {
+        await runSnapshotGateScenario(httpApi(server.base));
+    } finally {
+        await server.stop();
+        rmSync(dir, { recursive: true, force: true });
+    }
+});

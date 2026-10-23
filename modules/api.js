@@ -338,6 +338,10 @@ if (typeof window !== 'undefined') {
 
 function localizeAIError(error) {
     if (!error) return error;
+    // fetch 失敗（離線、CORS、DNS）不會帶 code：補上分類，讓重試與失敗原因可判讀。
+    if (!error.code && (error instanceof TypeError || /failed to fetch|networkerror/i.test(String(error.message || '')))) {
+        error.code = 'network_or_cors';
+    }
     const map = {
         ai_key_missing: 'errors.aiKeyMissing',
         ai_key_binding_mismatch: 'errors.aiKeyBindingMismatch',
@@ -825,10 +829,23 @@ export async function analyzeParagraph(paragraph, opts = {}) {
         const raw = pickMessageContent(fb);
         const parsed = normalizeParagraphResponse(safeJsonParse(raw), plainAnswerOrEmpty(raw));
         if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw lastErr || new Error('Paragraph fallback failed');
+        // 合法 schema 但沒有譯文：仍算失敗，呼叫端不得閃成功或寫入成功快取。
+        if (!String(parsed.chinese_translation || '').trim()) {
+            return { ...parsed, failed: true, errorCode: 'empty_translation' };
+        }
         return parsed;
     } catch (_) {
         if (lastErr) console.warn('段落翻譯失敗，返回最小兜底。', lastErr);
-        return { chinese_translation: '', word_alignment: [], detailed_analysis: [] };
+        // additive：讓呼叫端能分辨「空結果」與「真的失敗」，不再把空譯文當成功。
+        return {
+            chinese_translation: '',
+            word_alignment: [],
+            detailed_analysis: [],
+            failed: true,
+            errorCode: signal && signal.aborted
+                ? 'request_aborted'
+                : (lastErr?.code || (lastErr ? 'provider_error' : 'empty_response'))
+        };
     }
 }
 
@@ -873,6 +890,10 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
             if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
             const parsed = normalizeWordInSentenceResponse(rawParsed, '', word, sentence);
             if (!validate.validateWordInSentence(parsed)) throw new Error('Schema validation failed');
+            if (!String(parsed?.analysis?.meaning || '').trim()) {
+                // 空 meaning 不是成功：不寫入快取，交給呼叫端顯示重試。
+                return { ...parsed, failed: true, errorCode: 'empty_response' };
+            }
             try { await cache.setWordAnalysisCached(word, sentence, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
@@ -897,7 +918,11 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
         return parsed;
     } catch (_) {
         if (lastErr) throw lastErr;
-        return normalizeWordInSentenceResponse(null, '', word, sentence);
+        return {
+            ...normalizeWordInSentenceResponse(null, '', word, sentence),
+            failed: true,
+            errorCode: 'empty_response'
+        };
     }
 }
 

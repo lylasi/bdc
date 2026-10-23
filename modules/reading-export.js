@@ -265,6 +265,8 @@ export async function buildReadingNoteMarkdown({
                     lines.push(`**${message.role === 'user' ? t('article.readingChatUser') : t('article.readingChatAssistant')}** (${formatTime(message.createdAt)})`);
                     lines.push('');
                     lines.push(message.content || '');
+                    // 停止過的半段回答要如實標示，不能匯出成完整答案。
+                    if (message.status === 'cancelled') lines.push(`_${t('assistant.streamCancelled')}_`);
                     lines.push('');
                 }
             }
@@ -283,6 +285,45 @@ export async function buildReadingNoteMarkdown({
             conflictCount: conflicts.length,
             pending: pendingCount > 0 || !!lastError
         }
+    };
+}
+
+/**
+ * 只描述匯出範圍，不產生 Markdown、不寫檔。
+ * 與 buildReadingNoteMarkdown 共用同一個交易快照，所以摘要裡的數量與
+ * 真正匯出的內容一致；期間切帳戶／文章版本時回 stale_scope。
+ */
+export async function describeReadingScope(articleId) {
+    if (!articleId) return { ok: false, error: 'article_required' };
+    const ctx = readingStore.captureReadingContext();
+    if (!readingStore.isReadingContextActive(ctx)) return { ok: false, error: 'stale_scope' };
+    const snapshot = await readingStore.exportArticleReading(articleId, ctx);
+    if (!snapshot.ok) return { ok: false, error: snapshot.error || 'snapshot_failed' };
+    if (!readingStore.isReadingContextActive(ctx)) return { ok: false, error: 'stale_scope' };
+    const articleDoc = snapshot.articleDoc;
+    if (!articleDoc) return { ok: false, error: 'article_not_found' };
+
+    const items = snapshot.learningItems.filter((item) => !item.deletedAt);
+    const docs = snapshot.articleDocuments.filter((doc) => !doc.deletedAt);
+    const conversations = snapshot.conversations.filter((conv) => !conv.deletedAt);
+    const noteItems = items.filter((item) => String(item.note || '').trim());
+    const noteDocs = docs.filter((doc) => doc.kind === 'note');
+    const readingState = snapshot.readingState || {};
+    const articleState = snapshot.articleState || {};
+    const pendingCount = Number(snapshot.articleOutboxCount) + Number(snapshot.readingOutboxCount);
+    const conflicts = Object.values(readingState.conflicts || {}).concat(Object.values(articleState.conflicts || {}));
+
+    return {
+        ok: true,
+        title: articleDoc.title || '',
+        contentVersion: contentVersionOf(articleDoc.body || ''),
+        itemCount: items.length,
+        noteCount: noteItems.length + noteDocs.length,
+        documentCount: docs.length,
+        conversationCount: conversations.length,
+        messageCount: snapshot.messages.length,
+        pending: pendingCount > 0 || !!(readingState.lastError || articleState.lastError),
+        conflictCount: conflicts.length
     };
 }
 

@@ -257,6 +257,16 @@ async function overlayAndUnmark(browser, articleId) {
     return ids;
 }
 
+// P2-T2：「寫筆記」收進 details.tooltip-more（預設收起），直接操作前必須先展開。
+async function openTooltipMore(page) {
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more', { timeout: 5000 });
+    await page.evaluate(() => {
+        const details = document.querySelector('#word-analysis-tooltip details.tooltip-more');
+        if (details && !details.open) details.open = true;
+    });
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more[open] .btn-note-item', { state: 'visible', timeout: 5000 });
+}
+
 async function modify(browser, fn, arg) {
     return pageEval(browser, fn, arg);
 }
@@ -548,6 +558,7 @@ async function pageEval(browser, fn, arg) {
             return item ? { id: item.id, marked: item.marked, start: item.anchor.start, note: item.note } : null;
         });
         check('彈窗標記套用到第二個 Bank 的精確位置', bankItem?.marked === true && bankItem.start === ARTICLE.body.lastIndexOf('Bank'), JSON.stringify(bankItem));
+        await openTooltipMore(page);
         await page.locator('#word-analysis-tooltip .btn-note-item').click();
         await page.waitForTimeout(500);
         const focused = await page.evaluate(() => ({

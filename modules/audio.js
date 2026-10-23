@@ -6,6 +6,14 @@ import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 // 音频播放管理 (Web Audio & TTS)
 // =================================
 
+// 目前佔用音訊播放的模組（文章朗讀、單詞發音、聽寫…）。
+// 只有 owner 真正更換時才會發出中斷事件；停止本身不發事件，避免呼叫端誤判。
+let activeAudioOwner = '';
+
+export function getActiveAudioOwner() {
+    return activeAudioOwner;
+}
+
 /**
  * 解鎖音頻上下文，以解決在iOS等移動設備上的自動播放限制。
  * 首次用戶交互時應調用此函數。
@@ -41,7 +49,9 @@ export function unlockAudioContext() {
  * 停止當前所有正在播放的音頻源。
  * 這包括 Web Audio API 的 source、全局的 HTML Audio 元素，以及本機語音合成。
  */
-export function stopCurrentAudio() {
+export function stopCurrentAudio(options = {}) {
+    // 停止即代表沒有 owner；不由這裡主動派送中斷事件，避免「自己停止」被當成被別人打斷。
+    activeAudioOwner = '';
     // 停止 Web Audio API 音頻源
     if (state.audioSource) {
         state.audioSource.onended = null; // 停止時取消回調
@@ -50,11 +60,18 @@ export function stopCurrentAudio() {
     }
     
     // 停止 HTML Audio 元素
-    if (state.globalAudioElement && !state.globalAudioElement.paused) {
-        state.globalAudioElement.onended = null;
-        state.globalAudioElement.onerror = null;
-        state.globalAudioElement.pause();
-        state.globalAudioElement.currentTime = 0;
+    if (state.globalAudioElement) {
+        const el = state.globalAudioElement;
+        el.onended = null;
+        el.onerror = null;
+        el.onloadstart = null;
+        el.onplaying = null;
+        el.oncanplay = null;
+        el.onwaiting = null;
+        if (!el.paused) {
+            el.pause();
+            el.currentTime = 0;
+        }
     }
 
     // 停止本機語音合成（序號遞增讓舊回調自動失效）
@@ -82,6 +99,27 @@ export function isRemoteTtsConfigured() {
     return true;
 }
 
+/**
+ * 回報目前 TTS 目標，供 UI 說明下載能力與服務來源。
+ * 只回傳 http(s) host，不含路徑、查詢字串或 api_key。
+ * @returns {{configured: boolean, host: string}}
+ */
+export function describeTtsTarget() {
+    const url = getEffectiveBaseUrl(loadGlobalSettings());
+    const configured = isRemoteTtsConfigured();
+    let host = '';
+    if (url && typeof url === 'string') {
+        try {
+            const parsed = new URL(url, window.location.href);
+            host = parsed.host || parsed.hostname || '';
+        } catch (_) {
+            // 非絕對網址（例如只填主機名）時退回原字串，仍不帶查詢參數。
+            host = String(url).split(/[/?#]/)[0] || '';
+        }
+    }
+    return { configured, host };
+}
+
 /** 依語系提示挑選系統語音 */
 function pickLocalVoice(langOrVoice) {
     const synth = window.speechSynthesis;
@@ -99,12 +137,26 @@ function pickLocalVoice(langOrVoice) {
 }
 
 /** 以系統語音朗讀（離線可用；音質依裝置而定） */
-function speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd) {
+function speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd, options = {}) {
     const synth = window.speechSynthesis;
     const UtteranceCtor = window.SpeechSynthesisUtterance;
     const plainText = text == null ? '' : String(text);
-    if (!synth || !UtteranceCtor || !plainText) {
-        if (!state.isDictationPaused && onEnd) onEnd();
+    const hasStatusConsumer = typeof options.onStatus === 'function' || typeof options.onError === 'function';
+    // 有 status／error 回呼的呼叫端（文章朗讀）要能明確停止；
+    // 舊呼叫端（聽寫）沒有這些回呼，保留原本「失敗也走 onEnd」的相容行為。
+    const notifyFailure = (error) => {
+        if (typeof options.onStatus === 'function') {
+            try { options.onStatus({ state: 'error', error }); } catch (_) { /* noop */ }
+        }
+        if (typeof options.onError === 'function') {
+            try { options.onError(error); } catch (_) { /* noop */ }
+        }
+        if (!hasStatusConsumer && !state.isDictationPaused && onEnd) onEnd();
+    };
+
+    if (!plainText) return false;
+    if (!synth || !UtteranceCtor) {
+        notifyFailure(new Error('local_speech_unavailable'));
         return false;
     }
 
@@ -124,21 +176,30 @@ function speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd) {
         }
         const numericSpeed = Number(speed) || 0;
         utterance.rate = Math.min(2, Math.max(0.5, 1 + numericSpeed / 100));
-        utterance.onstart = () => { if (seq === localSpeechSeq && onStart) onStart(); };
+        utterance.onstart = () => {
+            if (seq !== localSpeechSeq) return;
+            if (typeof options.onStatus === 'function') {
+                try { options.onStatus({ state: 'playing' }); } catch (_) { /* noop */ }
+            }
+            if (onStart) onStart();
+        };
         utterance.onend = () => {
             if (seq !== localSpeechSeq) return;
+            if (typeof options.onStatus === 'function') {
+                try { options.onStatus({ state: 'ended' }); } catch (_) { /* noop */ }
+            }
             if (!state.isDictationPaused && onEnd) onEnd();
         };
         utterance.onerror = (event) => {
             if (seq !== localSpeechSeq) return;
             console.warn('本機語音播放失敗:', event?.error || event);
-            if (!state.isDictationPaused && onEnd) onEnd();
+            notifyFailure(event?.error || event || new Error('local_speech_error'));
         };
         synth.speak(utterance);
         return true;
     } catch (error) {
         console.error('本機語音播放出錯:', error);
-        if (!state.isDictationPaused && onEnd) onEnd();
+        notifyFailure(error);
         return false;
     }
 }
@@ -158,6 +219,8 @@ export function buildTTSUrl(text, langOrVoice = 'english', speed = 0) {
 
 /**
  * 下載指定文本的 TTS 音頻。
+ * 回傳 { ok, url } 或 { ok: false, error }；呼叫端只可使用 ok 決定提示，
+ * 不得把含 api_key 的 url 寫進 console／toast／DOM 文字。
  */
 export async function downloadTextAsAudio(text, langOrVoice = 'english', speed = 0, filename = 'audio.mp3', options = {}) {
     // 支援 p(音高) / s(風格) / d(下載)
@@ -177,15 +240,32 @@ export async function downloadTextAsAudio(text, langOrVoice = 'english', speed =
     // 因此改為直接以 <a href> 觸發下載，交給瀏覽器處理跨源檔案。
     // 若服務端回覆 Content-Disposition: attachment，將直接下載；
     // 部分瀏覽器會忽略跨源的 a.download 檔名，但仍能下載成功。
-    const a = document.createElement('a');
-    a.href = url;
-    a.rel = 'noopener';
-    a.target = '_blank'; // 確保在新分頁處理跨源下載，避免破壞當前單頁應用
-    try { a.download = filename; } catch (_) { /* 某些瀏覽器會忽略跨源檔名 */ }
-    document.body.appendChild(a);
-    a.click();
-    // 立即清理 DOM（不需要 URL.revokeObjectURL，因為未建立 blob: URL）
-    setTimeout(() => a.remove(), 0);
+    try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.rel = 'noopener';
+        a.target = '_blank'; // 確保在新分頁處理跨源下載，避免破壞當前單頁應用
+        try { a.download = filename; } catch (_) { /* 某些瀏覽器會忽略跨源檔名 */ }
+        document.body.appendChild(a);
+        a.click();
+        // 立即清理 DOM（不需要 URL.revokeObjectURL，因為未建立 blob: URL）
+        setTimeout(() => a.remove(), 0);
+    } catch (error) {
+        // 只回報可辨識錯誤；不要把 url（含 api_key）放進訊息。
+        return { ok: false, error: (error && error.message) ? String(error.message) : 'download_failed' };
+    }
+    // 只代表「已把連結交給瀏覽器」，是否完成由瀏覽器與 TTS 服務決定。
+    return { ok: true, url };
+}
+
+function dispatchAudioInterrupted(owner, by) {
+    try {
+        if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
+            document.dispatchEvent(new CustomEvent('bdc:audio-interrupted', {
+                detail: { owner, by }
+            }));
+        }
+    } catch (_) { /* 沒有 DOM 的環境（單元測試）不影響播放 */ }
 }
 
 /**
@@ -193,15 +273,40 @@ export async function downloadTextAsAudio(text, langOrVoice = 'english', speed =
  * @param {string} text - 要朗讀的文本。
  * @param {string} langOrVoice - 語言代碼或 TTS_CONFIG 中的 voice key。
  * @param {number} speed - 語速調整值。
- * @param {function} onStart - 播放開始時的回調函數。
+ * @param {function} onStart - 真正開始播放時的回調函數（loading 不觸發）。
  * @param {function} onEnd - 播放結束時的回調函數。
+ * @param {{owner?: string, onStatus?: function, onError?: function}} options
+ *        owner 預設 'default'；更換 owner 時舊 owner 會收到 bdc:audio-interrupted。
  */
-export async function speakText(text, langOrVoice = 'english', speed = 0, onStart, onEnd) {
-    stopCurrentAudio();
+export async function speakText(text, langOrVoice = 'english', speed = 0, onStart, onEnd, options = {}) {
+    const opts = (options && typeof options === 'object') ? options : {};
+    const owner = opts.owner || 'default';
+    const previousOwner = activeAudioOwner;
+    stopCurrentAudio({ reason: 'replaced-by-speak' });
+    activeAudioOwner = owner;
+    if (previousOwner && previousOwner !== owner) {
+        dispatchAudioInterrupted(previousOwner, owner);
+    }
+
+    let errorReported = false;
+    const notifyStatus = (status) => {
+        if (status && status.state === 'error') errorReported = true;
+        if (typeof opts.onStatus === 'function') {
+            try { opts.onStatus(status); } catch (_) { /* 呼叫端錯誤不影響音訊 */ }
+        }
+    };
+    const reportError = (error) => {
+        if (errorReported) return;
+        notifyStatus({ state: 'error', error });
+        if (typeof opts.onError === 'function') {
+            try { opts.onError(error); } catch (_) { /* noop */ }
+        }
+    };
+    const localOptions = { ...opts, onStatus: notifyStatus };
 
     // 未設定遠端 TTS（或設定仍為範例網址）時，直接使用系統語音，確保聽寫有聲音
     if (!isRemoteTtsConfigured()) {
-        return speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd);
+        return speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd, localOptions);
     }
 
     const s = loadGlobalSettings();
@@ -210,45 +315,66 @@ export async function speakText(text, langOrVoice = 'english', speed = 0, onStar
     const apiKey = (sec?.ttsApiKey && String(sec.ttsApiKey).trim()) || TTS_CONFIG.apiKey;
     const voice = resolveVoiceId(langOrVoice, s) || TTS_CONFIG.voices.english;
     const url = `${baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(apiKey)}`;
-    let fellBackToLocal = false;
+    let fallbackResult = null;
+    let started = false;
 
+    const markStarted = () => {
+        if (started) return;
+        started = true;
+        notifyStatus({ state: 'playing' });
+        if (onStart) onStart();
+    };
+    const clearHandlers = () => {
+        const el = state.globalAudioElement;
+        if (!el) return;
+        el.onended = null;
+        el.onerror = null;
+        el.onloadstart = null;
+        el.onplaying = null;
+        el.oncanplay = null;
+        el.onwaiting = null;
+    };
     const fallbackToLocal = () => {
-        if (fellBackToLocal) return true;
-        fellBackToLocal = true;
-        return speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd);
+        if (fallbackResult !== null) return fallbackResult;
+        clearHandlers();
+        fallbackResult = speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd, localOptions);
+        return fallbackResult;
     };
 
     try {
-        state.globalAudioElement.src = url;
-        state.globalAudioElement.load();
-        
-        state.globalAudioElement.onloadstart = () => {
-            if (onStart) onStart();
-        };
-        
-        state.globalAudioElement.onended = () => {
-            state.globalAudioElement.onended = null;
-            state.globalAudioElement.onerror = null;
+        const el = state.globalAudioElement;
+        // 先綁事件再設定 src，避免 loadstart 在 handler 掛上之前就觸發。
+        el.onloadstart = () => notifyStatus({ state: 'loading' });
+        el.onplaying = () => markStarted();
+        el.oncanplay = () => markStarted();
+        el.onwaiting = () => notifyStatus({ state: 'loading' });
+        el.onended = () => {
+            clearHandlers();
+            notifyStatus({ state: 'ended' });
             if (!state.isDictationPaused && onEnd) onEnd();
         };
-        
-        state.globalAudioElement.onerror = (error) => {
-            state.globalAudioElement.onended = null;
-            state.globalAudioElement.onerror = null;
+        el.onerror = (error) => {
+            clearHandlers();
             console.warn('遠端 TTS 播放失敗，改用系統語音:', error?.message || error);
-            fallbackToLocal();
+            const ok = fallbackToLocal();
+            if (!ok) reportError(error || new Error('remote_tts_failed'));
         };
-        
-        await state.globalAudioElement.play();
+        el.src = url;
+        el.load();
+        await el.play();
+        // 少數瀏覽器 play() resolve 後才補 onplaying；這裡保証 onStart 一定會來。
+        markStarted();
         return true;
     } catch (error) {
-        if (error.name === 'AbortError') {
+        if (error?.name === 'AbortError') {
             // 暫停 / 停止 / 切換單詞時主動中斷播放，屬預期行為，不可觸發 onEnd（避免流程多走一格）
             console.log('Audio playback was aborted, which is expected on pause/stop.');
             return false;
         }
         console.warn('遠端 TTS 無法播放，改用系統語音:', error?.name || error);
-        return fallbackToLocal();
+        const ok = fallbackToLocal();
+        if (!ok) reportError(error || new Error('remote_tts_failed'));
+        return ok;
     }
 }
 

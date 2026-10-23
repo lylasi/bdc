@@ -206,42 +206,78 @@ export function setupNumberSteppers() {
  */
 export function repositionTooltip(targetElement) {
     requestAnimationFrame(() => {
+        const tooltip = dom.analysisTooltip;
+        if (!tooltip) return;
+        // 手機底部面板由 CSS 固定定位；這裡不再寫 top/left，否則 inline 樣式會蓋掉 bottom 定位。
+        if (tooltip.classList.contains('tooltip-sheet')) {
+            tooltip.style.visibility = 'visible';
+            return;
+        }
         const rect = targetElement.getBoundingClientRect();
-        const tooltipHeight = dom.analysisTooltip.offsetHeight;
-        const tooltipWidth = dom.analysisTooltip.offsetWidth;
-        const spaceAbove = rect.top;
+        const tooltipHeight = tooltip.offsetHeight;
+        const tooltipWidth = tooltip.offsetWidth;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
 
-        let top, left;
-
-        // 優先顯示在上方
-        if (spaceAbove > tooltipHeight + 10) {
-            top = rect.top + window.scrollY - tooltipHeight - 5;
-        } else { // 上方空間不足，顯示在下方
-            top = rect.bottom + window.scrollY + 5;
+        // 先算「視窗座標」，再換算成 offsetParent 的定位座標。
+        // 不能直接加 window.scrollY：平滑捲動進行中，rect 與 scrollY 可能不同步，
+        // 會把詳解定位到離觸發詞很遠的地方（長詳解更容易看得出來）。
+        let visualTop;
+        if (rect.top > tooltipHeight + 10) {
+            visualTop = rect.top - tooltipHeight - 5;
+        } else {
+            visualTop = rect.bottom + 5;
         }
+        // 長詳解在橫屏／放大文字時可能比可視範圍還高：讓面板留在視窗內，內容再由
+        // .tooltip 的 max-height／overflow 捲動。
+        visualTop = Math.min(visualTop, viewportHeight - tooltipHeight - 10);
+        visualTop = Math.max(10, visualTop);
 
-        // 確保不超出屏幕左右邊界
-        left = rect.left;
-        if (left + tooltipWidth > window.innerWidth - 10) {
-            left = rect.right - tooltipWidth;
+        let visualLeft = rect.left;
+        if (visualLeft + tooltipWidth > viewportWidth - 10) {
+            visualLeft = rect.right - tooltipWidth;
         }
-        if (left < 10) {
-            left = 10;
-        }
+        if (visualLeft < 10) visualLeft = 10;
 
-        dom.analysisTooltip.style.top = `${top}px`;
-        dom.analysisTooltip.style.left = `${left}px`;
-        dom.analysisTooltip.style.visibility = 'visible';
+        const offsetParent = tooltip.offsetParent;
+        if (offsetParent && offsetParent !== document.body && offsetParent !== document.documentElement) {
+            const parentRect = offsetParent.getBoundingClientRect();
+            tooltip.style.top = `${visualTop - parentRect.top - (offsetParent.clientTop || 0) + (offsetParent.scrollTop || 0)}px`;
+            tooltip.style.left = `${visualLeft - parentRect.left - (offsetParent.clientLeft || 0) + (offsetParent.scrollLeft || 0)}px`;
+        } else {
+            const scrollY = window.scrollY || window.pageYOffset || 0;
+            const scrollX = window.scrollX || window.pageXOffset || 0;
+            tooltip.style.top = `${visualTop + scrollY}px`;
+            tooltip.style.left = `${visualLeft + scrollX}px`;
+        }
+        tooltip.style.visibility = 'visible';
     });
+}
+
+/**
+ * 收起單詞詳解。Escape、關閉鈕與外部點擊共用；
+ * 會通知 article 模組清掉查詞 session 與焦點狀態。
+ * @param {string} source - 關閉來源（escape／close-button／outside-click…）。
+ */
+export function hideTooltip(source = 'external') {
+    const tooltip = dom.analysisTooltip;
+    if (!tooltip) return;
+    const wasVisible = tooltip.style.display !== 'none' && tooltip.style.display !== '';
+    tooltip.style.display = 'none';
+    tooltip.style.visibility = '';
+    tooltip.classList.remove('tooltip-sheet');
+    if (wasVisible) {
+        try {
+            document.dispatchEvent(new CustomEvent('bdc:tooltip-hidden', { detail: { source } }));
+        } catch (_) { /* noop */ }
+    }
 }
 
 /**
  * 初始化全局點擊事件，用於隱藏提示框。
  */
 export function initTooltip() {
-    document.addEventListener('click', () => {
-        dom.analysisTooltip.style.display = 'none';
-    });
+    document.addEventListener('click', () => hideTooltip('outside-click'));
 }
 
 /**

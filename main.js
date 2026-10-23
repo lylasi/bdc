@@ -3,6 +3,7 @@ import * as state from './modules/state.js';
 import { loadVocabularyBooks } from './modules/storage.js';
 import * as articleStore from './modules/article-store.js';
 import * as readingStore from './modules/reading-store.js';
+import * as cache from './modules/cache.js';
 import { initModal, setupNumberSteppers, initTooltip, displayMessage, confirmAction } from './modules/ui.js';
 import { unlockAudioContext } from './modules/audio.js';
 import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView } from './features/vocabulary/vocabulary.js';
@@ -54,6 +55,33 @@ const BUTTON_ID_TO_PRIMARY_ALIAS = {
 };
 
 let leaveQuizPromptOpen = false;
+
+/**
+ * 可重建快取的容量治理（P3-T2）：初始化後在閒置時最多每 24 小時掃一次。
+ * 只清理 `bdc:cache:v1:` 前綴，文章與閱讀資料不在這個資料庫前綴內。
+ */
+function scheduleCachePrune() {
+    const run = async () => {
+        try {
+            const result = await cache.pruneCacheIfDue();
+            if (!result || result.skipped || !result.removed) return;
+            try {
+                displayMessage(t('article.cachePruned', { count: result.removed }), 'info', 4000);
+            } catch (_) { /* 提示失敗不影響清理 */ }
+        } catch (error) {
+            console.warn('[bdc] 快取清理失敗:', error && error.message ? error.message : error);
+        }
+    };
+    try {
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(() => { run(); }, { timeout: 5000 });
+        } else {
+            window.setTimeout(() => { run(); }, 2000);
+        }
+    } catch (_) {
+        window.setTimeout(() => { run(); }, 2000);
+    }
+}
 
 function setupNavigation() {
     dom.navBtns.forEach(btn => {
@@ -361,6 +389,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 8. 處理透過 URL 傳入的單詞本導入需求
     await step('vocabularyQueryParams', () => handleVocabularyQueryParams());
+
+    // 10. 可重建快取容量治理：延後到閒置時執行，避免拖慢啟動。
+    await step('cachePrune', () => { scheduleCachePrune(); });
 
     // 9. 讓使用者知道有模組沒起來，而不是面對一個沒有反應的畫面
     if (failedSteps.length) {

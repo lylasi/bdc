@@ -828,7 +828,9 @@ export default {
         noExamples: '尚未有例句，按「產生 AI 例句」按鈕建立例句。',
         sentencePractice: '造句練習',
         sentencePlaceholder: '請使用此生字造句',
-        check: '檢查'
+        check: '檢查',
+        exampleGloss: '句中意思：{meaning}',
+        exampleNoGloss: '這句沒有這個詞語的對應解釋'
     },
     article: {
         newsImportBtn: '導入',
@@ -853,12 +855,22 @@ export default {
         ,englishOnly: '僅顯示英文'
         ,followScroll: '跟隨朗讀滾動'
         ,finishReading: '結束朗讀'
+        ,replayChunk: '重播本句'
+        ,moreActions: '更多操作'
+        ,wordMode: '逐詞檢視'
+        ,wordModeHint: '用方向鍵選詞，Enter 查看詳解，Esc 返回句子'
+        ,playbackPausedByPronunciation: '已暫停朗讀；繼續會重播本句'
+        ,audioFailed: '音訊播放失敗，請重試'
         ,enterUrl: '請輸入網址'
         ,missingUrl: '缺少文章網址'
         ,fetchFailed: '擷取失敗：{message}'
         ,articleImportFailed: '匯入失敗：{message}'
         ,enterArticleToRead: '請先輸入要朗讀的文章！'
         ,downloadAudioFailed: '下載音訊失敗，可能是文字過長或網絡問題。請嘗試切換為句子／段落模式下載。'
+        ,downloadNeedsRemote: '下載需要先設定遠端 TTS 服務'
+        ,downloadScope: '下載範圍：{scope}'
+        ,downloadLongText: '文字過長，請改用段落或句子下載'
+        ,downloadLinkOpened: '已開啟下載連結；是否完成由瀏覽器及服務決定'
         ,analysisRecordMissing: '這篇文章的分析記錄已刪除，無法自動還原原文。請重新匯入或貼上文章內容後再分析。'
         ,doneStatus: '完成', failedStatus: '解析失敗', refresh: '重新擷取', refreshing: '重新擷取中...', staleSentenceCard: '正文已更新，請重新開啟該句後再操作。', sentenceAnalysis: '句子解析', sentenceNoTranslation: '（本句暫無中文譯文）', processing: '處理中…', cleaning: 'AI 清洗中…', cleaningProgress: 'AI 清洗中…（{done}/{total}）', fetching: '擷取中…', cleanupTruncated: '內容較長，AI 清洗已達模型輸出上限，結果可能少了尾段；建議分段導入。', extractTruncated: '內容較長，AI 擷取已達模型輸出上限，結果可能少了尾段；建議分段導入。', sourcesFallbackHint: '新聞來源端點沒有回應，目前顯示的是 ai-config.js 裡設定的後備來源清單，可能與服務端實際支援的來源不一致。', collapse: '收合', close: '關閉', closeWindow: '關閉視窗', details: '詳解', detailsLoading: '詳解載入中...', loading: '載入中...', loadingDetails: '正在載入詳解...', analyzeSelection: '解析選中內容', selectPhraseHint: '選取句中片語後按一下', collapseArea: '按此區收合', collapseAreaAria: '按右側空白區可收合', selectPhraseFirst: '請先在該句中選取片語', analyzingSelection: '解析中...', phraseLabel: '片語：', usageLabel: '用法：', roleLabel: '作用：', meaningLabel: '意思：', pronunciation: '發音', analyzePhrase: '解析片語', analyzeOtherPhrase: '自訂片語...', phrasePrompt: '輸入要解析的片語', analysisRetry: '解析失敗，請稍後再試', analysisRetryShort: '解析失敗，請稍後重試', noAnalysisData: '找不到分析資料。', retry: '重試', retrying: '重試中...', addToWordbook: '加入生字簿', addSelectedToWordbook: '加入生字簿（選中）', selectWordOrPhrase: '請先在該句中選取字詞或片語', wordAnalysisFailed: '解析失敗。'
         ,historyRecords: '閱讀記錄'
@@ -901,6 +913,32 @@ export default {
         ,historyClearDone: '已清空閱讀記錄'
         ,historyStorage: '共 {count} 篇 · 約 {size}'
         ,historyPartial: '{count} 段未完成'
+        ,paragraphStatusPending: '待分析'
+        ,paragraphStatusSkipped: '已略過（圖片或中文原文）'
+        ,paragraphStatusCancelled: '已取消'
+        ,paragraphFailureReason: '失敗原因：{message}'
+        ,emptyTranslation: '模型沒有回傳譯文'
+        ,retryFailedCount: '重試 {count} 段失敗'
+        ,retrySummary: '已重試 {done} 段，仍失敗 {failed} 段'
+        ,retryNeedsReanalyze: '原文已修改，請先重新分析再重試'
+        ,analysisSaveFailedInline: '分析已顯示，但未能儲存；請重試'
+        ,analysisSavePendingTitle: '分析結果尚未存入本機'
+        ,analysisSavePendingHint: '譯文只保留在目前畫面；請先重試儲存，或匯出備份後才離開。'
+        ,retrySaveAnalysis: '重試儲存'
+        ,analysisSaveRecovered: '分析結果已儲存'
+        ,analysisStaleTitle: '原文已修改，畫面仍是舊版分析'
+        ,analysisStaleHint: '朗讀與助手會使用目前輸入；重新分析後才會更新譯文'
+        ,analysisCheckpointFailed: '進度未能儲存；完成前請保持頁面開啟'
+        ,analysisCancelledKept: '已取消；已完成的段落會保留'
+        ,analysisPartial: '已儲存 {done}/{total} 段'
+        ,checkpointResumeHint: '繼續時會略過已完成段落'
+        ,resumeAnalysis: '繼續未完成分析'
+        ,analysisRunningStatus: '分析中（未完成）'
+        ,analysisPartialStatus: '已儲存 {done}/{total}'
+        ,cachePruned: '已清理 {count} 項過期快取'
+        ,localeKeptPanel: '已切換語言，面板狀態已保留'
+        ,reanalyze: '重新分析'
+        ,importReplacedAnalysis: '已載入新文章，請重新分析'
         ,historyPendingSync: '本機修改尚未同步到雲端'
         ,historyPendingSyncShort: '未同步'
         ,historyConflict: '版本衝突'
@@ -976,6 +1014,12 @@ export default {
         readingExportSource: '來源',
         readingExportTime: '匯出時間',
         readingExportVersion: '原文版本',
+        exportScopeTitle: '匯出範圍',
+        exportScopeSummary: '{items} 條記錄 · {notes} 份筆記 · {messages} 則對話',
+        exportNoteOnly: '本篇閱讀筆記（不含全文與對話）',
+        exportIncludeFullText: '包含文章全文',
+        exportIncludeChat: '包含 AI 對話',
+        exportFullBackup: '完整 JSON 備份（目前帳戶／端點；檔案較大）',
         readingFilterAi: 'AI 資料',
         readingFilterAll: '全部',
         readingFilterMarked: '標記',
@@ -1211,6 +1255,15 @@ export default {
         saveFailed: '這條回答未能儲存到本機；請重試。',
         savingDocument: '儲存中…',
         unavailable: 'AI 助手暫時不可用，請重新整理頁面後再試。',
+        streamCancelled: '已停止，回答不完整',
+        retryOriginal: '重試原本問題',
+        contextScope: '上下文：{title} · {version}',
+        contextUnanalyzed: '尚未分析的新內容',
+        busy: '上一個回答仍在進行中',
+        newAnswer: '有新回答',
+        inputHint: 'Enter 送出，Shift+Enter 換行',
+        localeKeptDraft: '已切換語言，草稿與對話已保留',
+        sessionBusy: '回答進行中，請先停止或等待完成後再切換會話',
     },
     sync: {
         guestReadingTitle: '把訪客學習記錄帶進這個帳戶？',
@@ -1225,6 +1278,8 @@ export default {
         guestArticlesMerged: '已帶進 {count} 篇文章',
         articleSyncPending: '文章同步未完成，稍後會自動重試',
         articleSyncFailed: '文章同步失敗',
+        restoredArticleSyncFailed: '已從雲端還原，但文章同步失敗；請稍後再試',
+        restoredArticleSyncPending: '已從雲端還原，但仍有文章未同步完成；稍後會自動重試',
         backupNoteManual: '手動同步後備份',
         backupNoteAuto: '自動同步後備份',
         backupNoteImport: '手動·檔案匯入',

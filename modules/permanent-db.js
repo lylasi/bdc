@@ -10,7 +10,10 @@
 import { contentVersionOf } from '../shared/reading-protocol.mjs';
 
 export const PERMANENT_DB_NAME = 'bdc-articles';
-export const PERMANENT_DB_VERSION = 3;
+// v4：新增 per-article 重建代際 ledger（`article_generations`）。
+// 代際必須能跨「文件被完整 pull 移除 → 同 ID 還原」存活，因此不能只存在
+// 文件本身；ledger 只前進、不隨文件刪除。
+export const PERMANENT_DB_VERSION = 4;
 
 export const STORE = {
     DOCS: 'docs',
@@ -27,7 +30,8 @@ export const STORE = {
     MESSAGES: 'messages',
     READING_OUTBOX: 'reading_outbox',
     READING_STATE: 'reading_state',
-    ARTICLE_VERSIONS: 'article_versions'
+    ARTICLE_VERSIONS: 'article_versions',
+    ARTICLE_GENERATIONS: 'article_generations'
 };
 
 let dbPromise = null;
@@ -61,6 +65,8 @@ export function summarizeArticleDoc(doc) {
         sourceType: doc.sourceType || 'paste',
         sourceUrl: doc.sourceUrl || '',
         revision: Number(doc.revision) || 0,
+        // 重建代際：摘要也要帶，重新載入後才會沿用同一個代際基準（舊資料視為 0）。
+        generation: Number(doc.generation) || 0,
         createdAt: doc.createdAt || '',
         updatedAt: doc.updatedAt || '',
         lastOpenedAt: doc.lastOpenedAt || '',
@@ -145,6 +151,9 @@ export function openPermanentDb() {
                 ['scope', 'scope'],
                 ['scope_article', ['scope', 'articleId']]
             ]);
+            // 重建代際 ledger（v4）：文件被移除後仍要保留每篇文章的代際屏障，
+            // 同 ID 還原與沒有 generation 的舊備份都採用這裡較高的代際。
+            createKeyedStore(db, STORE.ARTICLE_GENERATIONS, [['scope', 'scope']]);
         };
         request.onsuccess = () => {
             const db = request.result;

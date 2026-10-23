@@ -18,7 +18,9 @@ import {
   getAuthCapabilities,
   getCachedAuthCapabilities,
   normalizeLoginCode,
-  LOGIN_CODE_RE
+  LOGIN_CODE_RE,
+  beginSyncRound,
+  endSyncRound
 } from '../../modules/sync-cloudflare.js';
 import * as ui from '../../modules/ui.js';
 import {
@@ -56,6 +58,7 @@ import * as backup from '../../modules/local-backup.js';
 import * as articleStore from '../../modules/article-store.js';
 import { syncArticles } from '../../modules/article-sync.js';
 import { markdownToHtml } from '../../modules/markdown.js';
+import { resolveSyncCompletion } from './sync-status.js';
 import { getLocale, setLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { SUPPORTED_LOCALES } from '../../modules/i18n-config.js';
 
@@ -307,20 +310,35 @@ async function offerGuestReadingMerge() {
 
 /**
  * 文章同步是一個獨立階段：即使快照沒有任何變更也要執行，失敗也不阻斷其他群組。
- * 回傳 `{ ok, info }` 或 `{ ok:false, error }`，不拋出（除了 stale session）。
+ * 回傳 `{ ok, info, pending, failed, conflicts }` 或 `{ ok:false, error, ... }`，
+ * 不拋出（除了 stale session）。`pending` 代表這一輪仍有單篇失敗／衝突，
+ * 完成狀態不得顯示 `syncDone`。
  */
 async function runArticleSyncPhase() {
   try {
     const info = await syncArticles();
-    if (info && info.pushed && (info.pushed.failed || info.pushed.conflicts)) {
+    // syncArticles() 以 `{ ok:false, error }` 回報失敗（不拋出）：這一階段必須
+    // 把失敗往上傳，否則呼叫端會把「文章其實沒同步」顯示成同步完成。
+    if (info && info.ok === false) {
+      updateStatus(t('sync.articleSyncFailed'));
+      const failed = Number(info?.pushed?.failed) || 0;
+      const conflicts = Number(info?.pushed?.conflicts) || 0;
+      return { ok: false, error: (info && info.error) || 'article_sync_failed', info, pending: false, failed, conflicts };
+    }
+    // 單篇失敗／衝突時 syncArticles() 仍是 ok:true（整體流程完成），但這一輪
+    // 並沒有全部推上去；明確回報 pending，讓完成狀態不要顯示 syncDone。
+    const failed = Number(info?.pushed?.failed) || 0;
+    const conflicts = Number(info?.pushed?.conflicts) || 0;
+    const pending = failed > 0 || conflicts > 0;
+    if (pending) {
       updateStatus(t('sync.articleSyncPending'));
     }
-    return { ok: true, info };
+    return { ok: true, info, pending, failed, conflicts };
   } catch (e) {
     if (e && e.code === 'stale_session') throw e;
     if (e && e.code === 'unauthorized') throw e;
     console.warn('[sync] article sync failed:', e && (e.code || e.message));
-    return { ok: false, error: e };
+    return { ok: false, error: e, pending: false, failed: 0, conflicts: 0 };
   }
 }
 
@@ -377,6 +395,7 @@ async function handleSync() {
   let guard = null;
   try {
     setBusy(true);
+    beginSyncRound();
     updateStatus(t('sync.syncing'));
     guard = createSyncGuard();
     // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
@@ -391,18 +410,19 @@ async function handleSync() {
     if (info && typeof info.version === 'number') {
       try { localStorage.setItem('lastSnapshotVersion', String(info.version)); } catch(_) {}
     }
-    if (info && info.restoredFromRemote) {
-      updateStatus(t('sync.restoredEmpty'));
-      try { ui.displayMessage(t('sync.restoredEmptyMessage'), 'warning', 5000); } catch(_) {}
-    } else if (!articlePhase.ok) {
-      updateStatus(t('sync.articleSyncFailed'));
-    } else if (!readingPhase.ok && readingPhase.info?.unsupported) {
-      updateStatus(t('sync.readingServerUpdateRequired'));
-    } else {
-      updateStatus(t('sync.syncDone'));
-      try { ui.displayMessage(t('sync.syncDone'), 'success', 2000); } catch(_) {}
+    const completion = resolveSyncCompletion({
+      manual: true,
+      restoredFromRemote: !!(info && info.restoredFromRemote),
+      articleOk: articlePhase.ok === true,
+      articlePending: articlePhase.pending === true,
+      readingUnsupported: !!(readingPhase && !readingPhase.ok && readingPhase.info?.unsupported)
+    });
+    updateStatus(t(completion.statusKey));
+    if (completion.toastKey) {
+      try { ui.displayMessage(t(completion.toastKey), completion.toastLevel, completion.toastMs); } catch(_) {}
     }
-    try { await backup.createBackup(t('sync.backupNoteManual')); } catch(_) {}
+    // 手動同步的備份也移到鎖外，避免匯出全部資料時卡住「同步中」狀態。
+    scheduleBackupAfterSync(t('sync.backupNoteManual'));
   } catch (e) {
     if (e && e.code === 'stale_session') return;
     if (e && e.code === 'unauthorized') {
@@ -415,6 +435,7 @@ async function handleSync() {
     updateStatus(t('sync.syncFailed'));
     ui.displayMessage(`${t('sync.syncFailed')}：${e?.message || t('sync.unknownError')}`, 'error');
   } finally {
+    endSyncRound();
     setBusy(false);
   }
 }
@@ -2124,6 +2145,7 @@ async function doAutoSync(reason) {
   let guard = null;
   try {
     syncInFlight = true;
+    beginSyncRound();
     updateStatus(t('sync.autoSyncing'));
     guard = createSyncGuard();
     // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
@@ -2138,16 +2160,20 @@ async function doAutoSync(reason) {
     if (info && typeof info.version === 'number') {
       try { localStorage.setItem('lastSnapshotVersion', String(info.version)); } catch(_) {}
     }
-    if (info && info.restoredFromRemote) {
-      updateStatus(t('sync.restoredAutomatic'));
-      try { ui.displayMessage(t('sync.restoredAutomatic'), 'warning', 5000); } catch(_) {}
-    } else if (readingPhase && !readingPhase.ok && readingPhase.info?.unsupported) {
-      updateStatus(t('sync.readingServerUpdateRequired'));
-    } else {
-      updateStatus(t('sync.syncDone'));
-      // 自動同步成功不再彈出提示，避免干擾
+    const completion = resolveSyncCompletion({
+      manual: false,
+      restoredFromRemote: !!(info && info.restoredFromRemote),
+      articleOk: articlePhase.ok === true,
+      articlePending: articlePhase.pending === true,
+      readingUnsupported: !!(readingPhase && !readingPhase.ok && readingPhase.info?.unsupported)
+    });
+    updateStatus(t(completion.statusKey));
+    if (completion.toastKey) {
+      try { ui.displayMessage(t(completion.toastKey), completion.toastLevel, completion.toastMs); } catch(_) {}
     }
-    try { await backup.createBackup(t('sync.backupNoteAuto')); } catch(_) {}
+    // 自動同步成功不再彈出提示，避免干擾（失敗的提示由上面的判斷決定）。
+    // 備份不佔用同步鎖：排到本輪結束、鎖釋放後才執行，且由資料版本去重。
+    scheduleBackupAfterSync(t('sync.backupNoteAuto'));
   } catch (e) {
     if (e && e.code === 'stale_session') {
       updateStatus(t('sync.loggedOutState'));
@@ -2159,12 +2185,25 @@ async function doAutoSync(reason) {
       updateStatus(t('sync.autoSyncFailed'));
     }
   } finally {
+    endSyncRound();
     syncInFlight = false;
     if (queuedWhileInFlight) {
       queuedWhileInFlight = false;
       scheduleAutoSync('data:queued');
     }
   }
+}
+
+/**
+ * 同步完成後才建立自動備份：不阻塞 syncInFlight 的釋放，也不影響下一輪觸發。
+ * createBackup 本身會用資料版本簽章去重，沒變更時直接跳過。
+ */
+function scheduleBackupAfterSync(note) {
+  setTimeout(() => {
+    try {
+      backup.createBackup(note).catch(() => {});
+    } catch (_) {}
+  }, 0);
 }
 
 // SVG icons
@@ -2261,7 +2300,7 @@ function showBackupRestoreModal() {
   $('#bk-close').onclick = () => ui.closeModal();
   $('#bk-create').onclick = async () => {
     const msg = $('#bk-msg');
-    try { await backup.createBackup('manual'); msg.textContent = t('sync.backupCreated'); setTimeout(()=> showBackupRestoreModal(), 300); } catch (e) { msg.textContent = t('sync.backupCreateFailed', { message: e?.message || '' }); }
+    try { const result = await backup.createBackup('manual'); if (result && result.error) throw result.error; msg.textContent = t('sync.backupCreated'); setTimeout(()=> showBackupRestoreModal(), 300); } catch (e) { msg.textContent = t('sync.backupCreateFailed', { message: e?.message || '' }); }
   };
   // 從檔案匯入備份：先存入本機備份列表（標記手動，不會被自動裁剪），再由使用者點「還原」套用
   const bkImport = $('#bk-import');

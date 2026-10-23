@@ -13,14 +13,35 @@ import { ARTICLE_IMPORT } from '../../ai-config.js';
 import { getAllQASets, loadQASet } from '../qa/qa-storage.js';
 import * as cache from '../../modules/cache.js';
 import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
-import { t, formatDateTime, createCollator, getLocaleTag } from '../../modules/i18n.js';
+import { t, formatDateTime, createCollator, getLocaleTag, getLocale } from '../../modules/i18n.js';
 import { inlineMarkdownToHtml } from '../../modules/markdown.js';
 import * as articleStore from '../../modules/article-store.js';
 import * as articleSync from '../../modules/article-sync.js';
 import * as readingStore from '../../modules/reading-store.js';
 import * as readingActions from '../../modules/reading-actions.js';
+import {
+    PARAGRAPH_STATUS,
+    ANALYSIS_RUN_STATUS,
+    classifyParagraphResult,
+    paragraphStatusLabelKey,
+    paragraphErrorLabelKey,
+    failedIndicesFromResult,
+    resumeIndicesFromResult,
+    isPredominantlyChinese,
+    isMarkdownImageLine,
+    isPureMarkdownImageParagraph,
+    normalizeAnalysisRun,
+    isIncompleteAnalysisRun,
+    analysisRunStats,
+    createAnalysisRun
+} from './analysis-state.js';
+import * as paragraphPipeline from './paragraph-pipeline.js';
+import { contentVersionOf } from '../../shared/reading-protocol.mjs';
 import { initReadingPanel, openReadingPanelForItem } from './reading-panel.js';
 import { initPhrasePicker, openPhrasePicker } from './phrase-picker.js';
+import { segmentWords, shouldSkipNode } from './tokenize.js';
+// P3-T5：長文效能量測（?perf=1）；關閉時所有呼叫都是 no-op。
+import * as perfProbe from './perf-probe.js';
 
 // =================================
 // Article Analysis Feature
@@ -41,11 +62,167 @@ import { initPhrasePicker, openPhrasePicker } from './phrase-picker.js';
 // ─────────────────────────────────────────────────────────────────────────────
 const articleContext = {
     recordId: null,
-    origin: 'idle'   // 'loaded' | 'analyzed' | 'imported' | 'idle'
+    origin: 'idle',       // 'loaded' | 'analyzed' | 'imported' | 'idle'
+    // 記憶體狀態，不持久化：畫面目前顯示的分析版本 vs 輸入框的最新內容。
+    viewVersion: '',
+    viewText: '',
+    analyzedVersion: ''
 };
+
+function contentVersionOfText(text) {
+    try { return contentVersionOf(String(text || '')); } catch (_) { return ''; }
+}
+
+/** 設定「畫面上這份分析」的版本；analyzed=false 代表畫面已不再是分析結果。 */
+function setArticleViewVersion(text, { analyzed = true } = {}) {
+    articleContext.viewText = String(text || '');
+    articleContext.viewVersion = contentVersionOfText(text);
+    if (analyzed) articleContext.analyzedVersion = articleContext.viewVersion;
+    if (!analyzed) articleContext.analyzedVersion = '';
+}
+
+/** 畫面上的分析是否已落後於輸入框（原文被改過）。 */
+function isArticleViewStale() {
+    // analyzedVersion 只在「畫面真的是某次分析的結果」時才有值；
+    // 匯入新文章／清空後 analyzedVersion 為空，就不該再顯示舊版提示。
+    const analyzed = articleContext.analyzedVersion || '';
+    if (!analyzed) return false;
+    const inputVersion = contentVersionOfText(String(dom.articleInput?.value || '').trim());
+    return inputVersion !== analyzed;
+}
 
 let runSeq = 0;
 let activeRun = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 分析工作清單（P1-T4）
+//
+// 主分析與重試都登記在這裡，取消時一起中止；回應回來後先用 isJobWriteTarget
+// 確認「原文章、原版本、原帳戶」仍一致，才可更新畫面或寫入記錄。
+// ─────────────────────────────────────────────────────────────────────────────
+const analysisJobs = new Set();
+// 每個段落同一時間只能有一個「寫入擁有者」。後開始的工作會接手同一段的寫入權，
+// 被淘汰的舊工作即使晚到也拿不到所有權，因此不得更新 DOM 或落盤（P1-2）。
+const paragraphClaims = new Map(); // `${articleId}\n${index}` -> claim
+let jobSeq = 0;
+let claimSeq = 0;
+
+function paragraphClaimKey(articleId, index) {
+    return `${articleId || ''}\n${Number(index)}`;
+}
+
+function releaseParagraphClaims(job) {
+    if (!job || !job.claims) return;
+    job.claims.forEach((claim, key) => {
+        if (paragraphClaims.get(key) === claim) paragraphClaims.delete(key);
+    });
+    job.claims.clear();
+}
+
+function cancelAnalysisJob(job, reason = 'cancelled') {
+    if (!job || job.cancelled) return;
+    job.cancelled = true;
+    try { job.controller.abort(reason); } catch (_) { /* noop */ }
+    releaseParagraphClaims(job);
+    analysisJobs.delete(job);
+}
+
+/** 取得某一段落的寫入權；舊的擁有者會被淘汰（單段工作直接中止）。 */
+function claimParagraphForJob(job, index) {
+    if (!job || !Number.isInteger(index)) return null;
+    const key = paragraphClaimKey(job.articleId, index);
+    const previous = paragraphClaims.get(key);
+    if (previous && previous.job !== job) {
+        // 單段工作只有這一段：直接中止。批次工作只失去這一段的寫入權，
+        // 其他段落要繼續跑；它的晚到回應會因所有權檢查而被丟棄。
+        const previousJob = previous.job;
+        if (previousJob && previousJob.kind === 'retry-single') {
+            cancelAnalysisJob(previousJob, 'superseded');
+        } else {
+            previousJob?.claims?.delete(key);
+            paragraphClaims.delete(key);
+        }
+    }
+    const claim = { key, job, index, id: ++claimSeq };
+    paragraphClaims.set(key, claim);
+    if (!job.claims) job.claims = new Map();
+    job.claims.set(key, claim);
+    return claim;
+}
+
+function ownsParagraph(job, index) {
+    if (!job || job.cancelled || !job.claims || !Number.isInteger(index)) return false;
+    const key = paragraphClaimKey(job.articleId, index);
+    const claim = paragraphClaims.get(key);
+    return !!claim && claim.job === job && job.claims.get(key) === claim;
+}
+
+/** 目前畫面上的這個段落是否仍有工作在跑（忙碌中不得再解鎖按鈕）。 */
+function isParagraphBusy(index) {
+    if (!Number.isInteger(index)) return false;
+    const claim = paragraphClaims.get(paragraphClaimKey(articleContext.recordId, index));
+    if (!claim || !claim.job || claim.job.cancelled) return false;
+    return analysisJobs.has(claim.job);
+}
+
+/** 批次重試進行中：所有逐段入口都必須保持停用。 */
+function isBatchRetryActive() {
+    for (const job of analysisJobs) {
+        if (!job.cancelled && (job.kind === 'retry-batch' || job.kind === 'resume-batch') && isCurrentArticle(job.articleId)) return true;
+    }
+    return false;
+}
+
+function startAnalysisJob({ kind, articleId, contentVersion = '', controller, actionContext = null, index = null }) {
+    jobSeq += 1;
+    const job = {
+        id: jobSeq,
+        kind,
+        articleId: articleId || '',
+        contentVersion: contentVersion || '',
+        index: Number.isInteger(index) ? index : null,
+        controller: controller || new AbortController(),
+        actionContext: actionContext || (() => {
+            try { return readingActions.captureActionContext(); } catch (_) { return null; }
+        })(),
+        cancelled: false,
+        claims: new Map(),
+        startedAt: Date.now()
+    };
+    analysisJobs.add(job);
+    return job;
+}
+
+function finishAnalysisJob(job) {
+    if (!job) return;
+    releaseParagraphClaims(job);
+    analysisJobs.delete(job);
+}
+
+/** 中止所有分析工作；晚回應不得再更新新畫面或寫入新文章。 */
+function cancelAnalysisJobs(reason = 'cancelled') {
+    for (const job of Array.from(analysisJobs)) {
+        job.cancelled = true;
+        try { job.controller.abort(reason); } catch (_) { /* noop */ }
+        releaseParagraphClaims(job);
+    }
+    analysisJobs.clear();
+}
+
+function isJobWriteTarget(job, index = null) {
+    if (!job || job.cancelled) return false;
+    if (!isCurrentArticle(job.articleId)) return false;
+    if (job.actionContext && !readingActions.actionContextActive(job.actionContext)) return false;
+    if (job.contentVersion) {
+        const record = articleStore.getRecord(job.articleId);
+        if (!record) return false;
+        if (readingActions.articleVersion(job.articleId) !== job.contentVersion) return false;
+    }
+    // 同段落請求世代：只有目前持有該段寫入權的工作才能寫。
+    const targetIndex = Number.isInteger(index) ? index : job.index;
+    if (Number.isInteger(targetIndex) && !ownsParagraph(job, targetIndex)) return false;
+    return true;
+}
 
 function beginImportContext() {
     articleContext.recordId = null;
@@ -54,6 +231,16 @@ function beginImportContext() {
 
 /** 所有匯入入口都經過這裡：先換編輯上下文，再決定是否命中既有來源。 */
 function applyImportedArticle(text, meta = {}) {
+    // 匯入等於換一篇：先保存目前草稿、停掉朗讀與分析，再清掉舊分析畫面。
+    try { saveCurrentDraft({ force: true }); } catch (_) { /* noop */ }
+    cancelAnalysisJobs('import');
+    if (activeRun?.checkpoint) cancelAnalysisCheckpoint(activeRun.checkpoint);
+    hideAnalysisResumeBanner();
+    clearAnalysisCheckpointFailure();
+    try { audio.stopCurrentAudio(); } catch (_) { /* noop */ }
+    try {
+        if (!dom.stopReadArticleBtn?.disabled) stopReadArticle();
+    } catch (_) { /* noop */ }
     beginImportContext();
     if (dom.articleInput) dom.articleInput.value = text;
     clearCurrentArticleSourceMeta();
@@ -63,6 +250,24 @@ function applyImportedArticle(text, meta = {}) {
         sourceUrl: meta.sourceUrl || '',
         title: meta.title || ''
     });
+    // 舊分析不屬於這篇：直接換成「請重新分析」，不留下看起來可用的舊譯文。
+    if (dom.articleAnalysisContainer) {
+        // 保留一句說明「為什麼畫面變空」與下一步，不留下看似可用的舊譯文。
+        dom.articleAnalysisContainer.innerHTML = `
+            <div class="analysis-placeholder">
+                <p class="import-replaced-notice">${escapeHtml(t('article.importReplacedAnalysis'))}</p>
+                <p class="form-hint">${escapeHtml(t('article.analysisStaleHint'))}</p>
+            </div>`;
+        dom.articleAnalysisContainer.dataset.analysis = '[]';
+    }
+    lastFailedIndices = [];
+    try { showArticleWordAnalysis._lazyCache?.clear?.(); } catch (_) { /* noop */ }
+    dismissWordTooltip({ restoreFocus: false, source: 'article-switch' });
+    if (articleSentenceCard) resetSentenceCardState({ restoreFocus: false });
+    else clearWordMode({ restoreFocus: false });
+    setArticleViewVersion('', { analyzed: false });
+    updateRetryFailedButton();
+    updateArticleVersionState();
     try { notifyAssistantArticleChanged(); } catch (_) {}
     if (typeof updateHistoryIndicators === 'function') updateHistoryIndicators();
 }
@@ -84,6 +289,7 @@ function setLoadedArticleContext(recordId, meta = {}) {
 function resetArticleContext() {
     articleContext.recordId = null;
     articleContext.origin = 'idle';
+    setArticleViewVersion('', { analyzed: false });
     try {
         if (typeof state.setCurrentArticleId === 'function') state.setCurrentArticleId(null);
         if (typeof state.setCurrentWordbookId === 'function') state.setCurrentWordbookId(null);
@@ -134,6 +340,7 @@ function resetAnalyzeButton() {
 }
 
 function cancelActiveRun(reason) {
+    cancelAnalysisJobs(reason || 'article-switched');
     const run = activeRun;
     activeRun = null;
     if (!run) {
@@ -142,6 +349,9 @@ function cancelActiveRun(reason) {
     }
     run.cancelled = true;
     try { run.controller?.abort(reason || 'article-switched'); } catch (_) {}
+    // 取消／切換文章：先 flush checkpoint，再把 analysis_run 標成 cancelled，
+    // 保留已完成段；重新載入後才能續作。實際寫入是非同步 best effort。
+    if (run.checkpoint) cancelAnalysisCheckpoint(run.checkpoint);
     // 舊工作不會再走到自己的 finally，這裡負責把共用 UI 還原
     resetAnalyzeButton();
     const inline = dom.articleAnalysisContainer?.querySelector('.inline-progress');
@@ -271,16 +481,53 @@ export function initArticle() {
         updateArticleSourceBarFromDataset();
         refreshHistoryModal();
         updateHistoryIndicators();
+        // 頁內查詞結果綁定介面語言與模型：換語言就失效，避免顯示上一種語言的詳解。
+        try { wordLookupCache().clear(); } catch (_) { /* noop */ }
+        updateRetryFailedButton();
         // 朗讀列只在第一次朗讀時建立，切換語言時要手動刷新它的文字
         applyFloatingReaderTexts();
         updateFloatingToggle();
+        // 朗讀鈕的 title／aria-label 會隨播放狀態改變，locale 套用靜態文案後要再校正一次。
+        updateReadButtonUI(dom.stopReadArticleBtn.disabled
+            ? 'stopped'
+            : (state.isReadingChunkPaused ? 'paused' : 'playing'));
+        // 下載能力取決於遠端 TTS 設定，locale 套用 data-i18n-* 後也要重套。
+        updateDownloadAvailability();
+        updateArticleVersionState();
+        // 段落狀態、失敗原因、重試鈕與批次摘要是執行時才產生的節點，要重套文案。
+        refreshParagraphDynamicTexts();
+        refreshAnalysisCheckpointTexts();
         const mode = dom.readingModeSelect?.value;
         if (dom.prevChunkBtn && dom.nextChunkBtn) {
             dom.prevChunkBtn.textContent = t(mode === 'paragraph' ? 'article.previousParagraph' : 'article.previousSentence');
             dom.nextChunkBtn.textContent = t(mode === 'paragraph' ? 'article.nextParagraph' : 'article.nextSentence');
         }
+        // 句子／解析鍵的 aria-label 是渲染時動態組的，換語言要重套。
+        refreshSentenceAccessibility();
+        if (wordModeState?.hint) wordModeState.hint.textContent = t('article.wordModeHint');
+        if (articleSentenceCard) {
+            const modeBtn = dom.modalBody?.querySelector('.sent-word-mode');
+            if (modeBtn) modeBtn.textContent = t('article.wordMode');
+        }
+        // 可見中的單詞詳解用最後一次內容（wordTooltipLastPayload）重畫；
+        // 觸發詞已被移除就關閉並清狀態。
+        if (wordTooltipLastPayload && isWordTooltipVisible()) {
+            if (!wordTooltipTrigger?.isConnected) {
+                dismissWordTooltip({ restoreFocus: false, source: 'locale-trigger-removed' });
+            } else {
+                const active = document.activeElement;
+                const hadFocus = dom.analysisTooltip.contains(active);
+                rerenderVisibleWordTooltip();
+                // 重畫會換掉節點：焦點原本在裡面、或已經掉到 body／失效節點時，
+                // 把焦點放回新的標題，不讓鍵盤使用者失去位置。
+                if (hadFocus || !active || active === document.body || !active.isConnected) {
+                    focusWordTooltipTitle();
+                }
+            }
+        }
     });
     dom.analyzeArticleBtn.addEventListener('click', analyzeArticle);
+    if (dom.resumeAnalysisBtn) dom.resumeAnalysisBtn.addEventListener('click', resumeAnalysis);
     dom.clearArticleBtn.addEventListener('click', () => clearArticleInput());
     if (dom.articleHistoryBtn) dom.articleHistoryBtn.addEventListener('click', openArticleHistory);
     if (dom.articleHistoryStatus) {
@@ -294,18 +541,121 @@ export function initArticle() {
         event.preventDefault();
         undoLastDelete();
     });
-    // 輸入框內容變動 → 狀態列（尚未存入 / 草稿）即時更新
+    // 輸入框內容變動 → 狀態列（尚未存入 / 草稿）即時更新；版本提示用 250ms debounce，
+    // 避免每個按鍵都掃描整份分析與按鈕。
+    let versionStateTimer = 0;
     dom.articleInput.addEventListener('input', () => {
         updateHistoryIndicators();
+        clearTimeout(versionStateTimer);
+        versionStateTimer = window.setTimeout(() => {
+            try { updateArticleVersionState(); } catch (_) { /* noop */ }
+        }, 250);
     });
+    if (dom.reanalyzeArticleBtn) {
+        dom.reanalyzeArticleBtn.addEventListener('click', () => analyzeArticle());
+    }
+    if (dom.articleVersionNotice) {
+        document.addEventListener('bdc:article-loaded', () => {
+            try { updateArticleVersionState(); } catch (_) { /* noop */ }
+        });
+    }
     // 帳戶切換：範圍內的資料由 article-store 重新載入，畫面不得沿用上一個帳戶的文章
     document.addEventListener('bdc:articles-scope-changed', () => {
+        // 換帳戶：上一個範圍的未保存標記不得沿用到新範圍。
+        unsavedParagraphs.clear();
+        analysisSaveFailures.clear();
+        clearBatchSummary();
         clearArticleInput({ keepDraft: false });
         updateHistoryIndicators();
     });
     window.addEventListener('bdc:articles-change', () => { updateHistoryIndicators(); });
+    // 留下目前 checkpoint（best effort；不宣稱能保證關頁前最後一刻一定寫入）。
+    const flushActiveAnalysisCheckpoint = () => {
+        const cp = activeRun?.checkpoint;
+        if (!cp || cp.finalSaved) return;
+        flushAnalysisCheckpoint(cp, { status: cp.finalStatus || ANALYSIS_RUN_STATUS.running });
+    };
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') flushActiveAnalysisCheckpoint();
+    });
+    // 離頁前盡量收掉在途工作（best effort；不宣稱能保證中斷保存）。
+    window.addEventListener('pagehide', () => {
+        flushActiveAnalysisCheckpoint();
+        cancelAnalysisJobs('pagehide');
+    });
+    // 外部點擊由 ui.initTooltip 收詳解；article 同步清 session 與焦點狀態（不把焦點搶回來）。
+    document.addEventListener('bdc:tooltip-hidden', () => { resetWordTooltipState(); });
+    // Escape：先收單詞詳解（焦點回原詞），再收句卡（焦點回句子）。
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || event.defaultPrevented) return;
+        if (isWordTooltipVisible()) {
+            // 片語選取器／閱讀面板在上層時，Escape 先交給它們處理。
+            if (hasBlockingArticleOverlay()) return;
+            event.preventDefault();
+            dismissWordTooltip({ restoreFocus: true, source: 'escape' });
+            return;
+        }
+        if (!articleSentenceCard) return;
+        if (hasBlockingArticleOverlay()) return;
+        const active = document.activeElement;
+        const inModal = !!(active && active.closest && active.closest('#app-modal'));
+        const onSentence = active === articleSentenceCard.sentenceEl;
+        if (!inModal && !onSentence) return;
+        event.preventDefault();
+        const openedByKeyboard = articleSentenceCard.openedByKeyboard;
+        if (!dom.appModal || dom.appModal.classList.contains('hidden')) {
+            resetSentenceCardState({ restoreFocus: openedByKeyboard });
+            return;
+        }
+        try { ui.closeModal(); } catch (_) { resetSentenceCardState({ restoreFocus: openedByKeyboard }); }
+    });
+    document.addEventListener('bdc:modal-closed', () => {
+        if (!articleSentenceCard) return;
+        // 句卡內的按鈕被移除後焦點會落回 body；這種情況也要把焦點還給句子。
+        const restoreFocus = articleSentenceCard.openedByKeyboard || document.activeElement === document.body;
+        resetSentenceCardState({ restoreFocus });
+    });
+    // 重繪／重新分析後：舊句卡與逐詞狀態不得殘留，句子 aria-label 要重套。
+    document.addEventListener('bdc:article-loaded', () => {
+        if (isWordTooltipVisible()) dismissWordTooltip({ restoreFocus: false, source: 'article-rendered' });
+        if (articleSentenceCard) resetSentenceCardState({ restoreFocus: false });
+        clearWordMode({ restoreFocus: false });
+        refreshSentenceAccessibility();
+    });
+    window.addEventListener('resize', () => {
+        if (!isWordTooltipVisible() || !wordTooltipTrigger?.isConnected) return;
+        syncWordTooltipSheetMode();
+        ui.repositionTooltip(wordTooltipTrigger);
+    });
+    // 文章載入後的平滑捲動或使用者捲動時，詳解要跟著觸發詞走，
+    // 不能在捲動開始前算一次座標就固定住。
+    let wordTooltipScrollFrame = 0;
+    window.addEventListener('scroll', () => {
+        if (!isWordTooltipVisible() || !wordTooltipTrigger?.isConnected) return;
+        if (wordTooltipScrollFrame) return;
+        wordTooltipScrollFrame = requestAnimationFrame(() => {
+            wordTooltipScrollFrame = 0;
+            if (!isWordTooltipVisible() || !wordTooltipTrigger?.isConnected) return;
+            ui.repositionTooltip(wordTooltipTrigger);
+        });
+    }, { passive: true, capture: true });
     dom.readArticleBtn.addEventListener('click', handleReadButtonClick);
     dom.stopReadArticleBtn.addEventListener('click', stopReadArticle);
+    updateReadButtonUI('stopped');
+    updateDownloadAvailability();
+    // 設定面板改了 TTS 服務後，下載鈕的能力說明要立即反映。
+    document.addEventListener('bdc:settings-change', updateDownloadAvailability);
+    // 其他模組（單詞發音、聽寫）搶走音訊時，文章朗讀只進入暫停，不自動恢復、也不假裝續播。
+    document.addEventListener('bdc:audio-interrupted', (event) => {
+        const detail = event?.detail || {};
+        if (detail.owner !== 'article-reading') return;
+        if (!state.readingChunks || !state.readingChunks.length) return;
+        _playToken++;
+        state.setIsReadingChunkPaused(true);
+        _interruptedByOtherAudio = true;
+        updateReadButtonUI('paused');
+        updateFloatingToggle();
+    });
     dom.downloadAudioBtn.addEventListener('click', downloadAudio);
     
     dom.speedBtnGroup.addEventListener('click', (e) => {
@@ -356,6 +706,7 @@ export function initArticle() {
     // dom.articleAnalysisContainer.addEventListener('mouseover', handleWordHighlight);
     // dom.articleAnalysisContainer.addEventListener('mouseout', handleWordHighlight);
     dom.articleAnalysisContainer.addEventListener('click', handleArticleWordAnalysisClick);
+    dom.articleAnalysisContainer.addEventListener('keydown', handleArticleAnalysisKeydown);
     dom.articleAnalysisContainer.addEventListener('click', (e) => {
         const rawTarget = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
         const btn = rawTarget?.closest && rawTarget.closest('.retry-paragraph-btn');
@@ -1430,9 +1781,8 @@ function downscaleImage(dataUrl, { maxW = 1600, maxH = 1600, quality = 0.9 } = {
 }
 
 
-// In-flight controller and a simple per-session paragraph cache
+// In-flight controller；段落快取只留 modules/api.js 的持久快取（含 locale／模型／版本身份）。
 let currentAnalysisAbort = null;
-const paragraphCache = new Map();
 let lastFailedIndices = [];
 // Track per-paragraph timing (ms)
 const paragraphStartTime = Object.create(null);
@@ -1801,12 +2151,8 @@ function normalizeListMarkersForDisplay(text) {
  * 舊版送翻譯前會把 `**粗體**` 一起剝掉，導致譯文整段沒有加粗；
  * 提示詞本來就要求「保留 Markdown 標記」，這裡把標記留著才有東西可保留。
  */
-function prepareParagraphForTranslation(text) {
-    return String(text || '')
-        .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-        .trim();
-}
+// 翻譯前的文字清理只留一份實作（paragraph-pipeline.js），顯示與請求共用。
+const prepareParagraphForTranslation = paragraphPipeline.prepareParagraphForTranslation;
 
 // Detect if a multi-line text itself begins with a Markdown table (header + align row)
 function isMarkdownTableStart(text) {
@@ -1856,36 +2202,66 @@ function sentenceInlineHtml(text) {
 }
 
 // Return HTML that wraps words in a string with <span class="interactive-word" ...>
-function wrapWordsInTextHTML(text) {
-    const wordRe = /[A-Za-z][A-Za-z'’-]*/g;
-    if (!text || !wordRe.test(text)) return escapeHtml(text || '');
-    wordRe.lastIndex = 0;
+// 只包 token，不改文字內容；offset 直接取自 segmentWords，錨點仍對回原文。
+// 文章查詞以拉丁字詞為主：純 CJK 原文沿用舊行為，不把每個漢字都變成查詞入口。
+const LOOKUP_WORD_RE = /\p{Script=Latin}/u;
+const isLookupWord = (word) => LOOKUP_WORD_RE.test(word);
+
+function wrapWordsInTextHTML(text, { locale = 'en' } = {}) {
+    const source = String(text == null ? '' : text);
+    if (!source) return '';
+    const tokens = segmentWords(source, { locale }).filter(({ word }) => isLookupWord(word));
+    if (!tokens.length) return escapeHtml(source);
     let out = '';
     let idx = 0;
-    let m;
-    while ((m = wordRe.exec(text))) {
-        const before = text.slice(idx, m.index);
-        if (before) out += escapeHtml(before);
-        const w = m[0];
-        const escW = escapeHtml(w);
+    tokens.forEach(({ word, start, end }) => {
+        if (start > idx) out += escapeHtml(source.slice(idx, start));
+        const escW = escapeHtml(word);
         out += `<span class=\"interactive-word\" data-word=\"${escW}\">${escW}</span>`;
-        idx = m.index + w.length;
-    }
-    const tail = text.slice(idx);
-    if (tail) out += escapeHtml(tail);
+        idx = end;
+    });
+    if (idx < source.length) out += escapeHtml(source.slice(idx));
     return out;
 }
 
 // 句末解析鍵的圖示（線性 sprite 風格的圓形 i）與說明文字
 const SENT_ANALYZE_ICON_PATH = 'M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z';
 
+/** 句首片段：供 aria-label 與解析鍵名稱使用（不翻譯原文）。 */
+function sentenceSnippet(text, max = 40) {
+    const flat = String(text || '').replace(/\s+/g, ' ').trim();
+    return flat.length > max ? `${flat.slice(0, max)}…` : flat;
+}
+
+/** 句子可操作名稱：句首片段＋「句子解析」，兩語共用同一套組合。 */
+function sentenceAriaLabel(text) {
+    const snippet = sentenceSnippet(text);
+    const label = t('article.sentenceAnalysis');
+    return snippet ? `${snippet} · ${label}` : label;
+}
+
+/** locale 切換後重套句子與解析鍵的動態 aria-label。 */
+function refreshSentenceAccessibility() {
+    const container = dom.articleAnalysisContainer;
+    if (!container) return;
+    container.querySelectorAll('.interactive-sentence').forEach((el) => {
+        const sentence = el.getAttribute('data-sentence') || el.textContent || '';
+        el.setAttribute('aria-label', sentenceAriaLabel(sentence));
+    });
+    container.querySelectorAll('.sent-analyze-btn').forEach((btn) => {
+        const sentenceEl = btn.closest('.sentence-wrap')?.querySelector('.interactive-sentence');
+        const sentence = sentenceEl?.getAttribute('data-sentence') || '';
+        btn.setAttribute('aria-label', sentenceAriaLabel(sentence));
+    });
+}
+
 /**
  * 句末解析鍵：內嵌在句子結尾（inline），不再絕對定位漂在段落右緣。
  * 只留 aria-label，不用 title，避免原生 tooltip 與站內浮動提示重複。
  */
-function sentenceAnalyzeButtonHtml(paraIdx, sentIdx) {
-    const label = escapeAttr(t('article.sentenceAnalysis'));
-    return `<button class="sent-analyze-btn icon-only" data-para-index="${paraIdx}" data-sent-index="${sentIdx}" aria-label="${label}">`
+function sentenceAnalyzeButtonHtml(paraIdx, sentIdx, sentence = '') {
+    const label = escapeAttr(sentenceAriaLabel(sentence));
+    return `<button class="sent-analyze-btn icon-only" data-para-index="${paraIdx}" data-sent-index="${sentIdx}" aria-expanded="false" aria-label="${label}">`
         + `<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="${SENT_ANALYZE_ICON_PATH}"/></svg>`
         + `</button>`;
 }
@@ -1893,8 +2269,8 @@ function sentenceAnalyzeButtonHtml(paraIdx, sentIdx) {
 /** 把英文句與其解析鍵包成 sentence-wrap，句子本體隨段落自然斷行 */
 function sentenceWrapHtml(paraIdx, sentIdx, sentence, innerHtml) {
     return `<span class="sentence-wrap">`
-        + `<span class="interactive-sentence" data-para-index="${paraIdx}" data-sent-index="${sentIdx}" data-sentence="${escapeAttr(sentence)}" data-article-id="${escapeAttr(articleContext.recordId || '')}">${innerHtml}</span>`
-        + sentenceAnalyzeButtonHtml(paraIdx, sentIdx)
+        + `<span class="interactive-sentence" tabindex="0" role="button" aria-expanded="false" aria-label="${escapeAttr(sentenceAriaLabel(sentence))}" data-para-index="${paraIdx}" data-sent-index="${sentIdx}" data-sentence="${escapeAttr(sentence)}" data-article-id="${escapeAttr(articleContext.recordId || '')}">${innerHtml}</span>`
+        + sentenceAnalyzeButtonHtml(paraIdx, sentIdx, sentence)
         + `</span>`;
 }
 
@@ -1944,28 +2320,8 @@ function renderMarkdownTablePairHTML(engText, zhText, paraIdx) {
     return { eng: htmlE, zh: htmlZ, lastSentIndex: sIdx - 1 };
 }
 
-// Detect if a line is a standalone Markdown image: ![alt](url)
-function isMarkdownImageLine(line) {
-    if (!line) return false;
-    const s = String(line).trim();
-    return /^!\[[^\]]*\]\([^\)]+\)\s*$/i.test(s);
-}
-
-// Detect if the whole paragraph is composed only of Markdown image lines (or blank lines)
-function isPureMarkdownImageParagraph(text) {
-    const lines = String(text || '').split(/\n/).map(l => l.trim());
-    const nonEmpty = lines.filter(l => l.length > 0);
-    if (!nonEmpty.length) return false;
-    return nonEmpty.every(isMarkdownImageLine);
-}
-
-// Strip image lines from paragraph when sending to AI (keep text only)
-function stripMarkdownImagesFromText(text) {
-    const lines = String(text || '').split(/\n/);
-    const kept = lines.filter(l => !isMarkdownImageLine(l));
-    // collapse 3+ blank lines to 2
-    return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-}
+// Markdown 圖片判定與中文原文判定集中在 analysis-state.js，避免顯示、朗讀與快取各有一套。
+const stripMarkdownImagesFromText = paragraphPipeline.stripMarkdownImagesFromText;
 
 // If a paragraph consists solely of image lines (and blank lines), render them as <img> blocks
 function renderMarkdownImagesPairHTML(engText, zhText) {
@@ -2003,12 +2359,669 @@ function renderMarkdownImagesPairHTML(engText, zhText) {
     return { eng: toHTML(engImgs), zh: toHTML(zhImgs) };
 }
 
+/**
+ * 把一個段落交給 pipeline：清理文字、決定是否跳過、準備按句翻譯的句子。
+ * 主分析與兩種重試都走這裡，避免「中文／圖片／空結果」在三個地方各寫一次。
+ */
+function runParagraphRequest(text, options = {}) {
+    const baseText = prepareParagraphForTranslation(stripMarkdownImagesFromText(text)) || text;
+    const sentences = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : [];
+    return paragraphPipeline.requestParagraphAnalysis({
+        text,
+        aiText: baseText,
+        sentences,
+        isSourceChinese: isPredominantlyChinese(baseText),
+        isImageParagraph: isPureMarkdownImageParagraph(text),
+        ...options
+    });
+}
+
+/** 目前正文的段落清單（含標題），順序與分析結果一致。 */
+function currentParagraphTexts(articleText) {
+    const { title, paragraphs } = parseTitleAndParagraphs(articleText || '');
+    return title ? [title, ...paragraphs] : paragraphs;
+}
+
+/** 逐段重試鈕的可用狀態只由「版本」與「該段是否仍有工作」決定。 */
+function updateParagraphButtonState(btn) {
+    if (!btn) return;
+    const index = Number(btn.dataset.index);
+    const hasIndex = Number.isInteger(index);
+    const stale = isArticleViewStale();
+    const busy = hasIndex && (isParagraphBusy(index) || isBatchRetryActive());
+    btn.disabled = stale || busy;
+    if (stale) {
+        btn.setAttribute('aria-disabled', 'true');
+        btn.setAttribute('title', t('article.retryNeedsReanalyze'));
+    } else {
+        btn.removeAttribute('aria-disabled');
+        btn.removeAttribute('title');
+    }
+    if (busy) btn.setAttribute('aria-busy', 'true');
+    else btn.removeAttribute('aria-busy');
+}
+
+/** 批次重試按鈕的隱藏、段數與 aria-label 只由這一個函式決定。 */
+function updateRetryFailedButton() {
+    const btn = dom.retryFailedParagraphsBtn;
+    const count = Array.isArray(lastFailedIndices) ? lastFailedIndices.length : 0;
+    const stale = isArticleViewStale();
+    const batchBusy = isBatchRetryActive();
+    if (btn) {
+        btn.classList.toggle('hidden', count === 0);
+        btn.disabled = count === 0 || stale || batchBusy;
+        const label = stale
+            ? t('article.retryNeedsReanalyze')
+            : (count > 0 ? t('article.retryFailedCount', { count }) : t('article.retryFailed'));
+        btn.setAttribute('aria-label', label);
+        if (stale) btn.setAttribute('title', t('article.retryNeedsReanalyze'));
+        else btn.removeAttribute('title');
+        if (batchBusy) btn.setAttribute('aria-busy', 'true');
+        else btn.removeAttribute('aria-busy');
+    }
+    const badge = dom.retryFailedCount || document.getElementById('retry-failed-count');
+    if (badge) {
+        badge.textContent = String(count);
+        badge.classList.toggle('hidden', count === 0);
+    }
+}
+
+/**
+ * 原文版本提示（P1-T6）：畫面保留舊譯文，但明示已落後，並停用重試。
+ * 只更新 banner 與按鈕狀態，不重建分析 DOM，避免輸入時整頁閃動。
+ */
+function updateArticleVersionState() {
+    const stale = isArticleViewStale();
+    const notice = dom.articleVersionNotice;
+    if (notice) notice.classList.toggle('hidden', !stale);
+    if (dom.articleAnalysisContainer) {
+        dom.articleAnalysisContainer.classList.toggle('is-stale-analysis', stale);
+    }
+    dom.articleAnalysisContainer?.querySelectorAll('.retry-paragraph-btn').forEach(updateParagraphButtonState);
+    updateRetryFailedButton();
+    return stale;
+}
+
+/**
+ * 真正的 IndexedDB 交易失敗時，`article-store.saveAnalysis` 仍會更新記憶體結果。
+ * 這些段落若直接從記憶體重算，就會出現「畫面失敗、摘要 0 段、重試入口消失」（P1-1）。
+ * 因此以「實際保存結果」為準：保存失敗的段落登記在這裡，讓失敗數、重試入口與
+ * 歷史列都使用同一個來源；重新載入後磁碟仍是舊狀態，兩邊才會一致。
+ */
+const unsavedParagraphs = new Map(); // `${articleId}\n${contentVersion}` -> Map<index, result>
+
+function unsavedParagraphKey(articleId, contentVersion) {
+    return `${articleId || ''}\n${contentVersion || ''}`;
+}
+
+function markParagraphsUnsaved(articleId, contentVersion, entries) {
+    if (!articleId) return;
+    const key = unsavedParagraphKey(articleId, contentVersion);
+    let bucket = unsavedParagraphs.get(key);
+    if (!bucket) {
+        bucket = new Map();
+        unsavedParagraphs.set(key, bucket);
+    }
+    entries.forEach(([index, result]) => bucket.set(Number(index), result || null));
+}
+
+/** 一次成功保存會寫入整份記錄；此時可清掉全部，或只清指定段落。 */
+function clearParagraphsUnsaved(articleId, contentVersion, indexes = null) {
+    const key = unsavedParagraphKey(articleId, contentVersion);
+    const bucket = unsavedParagraphs.get(key);
+    if (!bucket) return;
+    if (!indexes) {
+        unsavedParagraphs.delete(key);
+        return;
+    }
+    indexes.forEach((index) => bucket.delete(Number(index)));
+    if (!bucket.size) unsavedParagraphs.delete(key);
+}
+
+function unsavedParagraphIndices(articleId, contentVersion) {
+    const bucket = unsavedParagraphs.get(unsavedParagraphKey(articleId, contentVersion));
+    return bucket ? Array.from(bucket.keys()).sort((a, b) => a - b) : [];
+}
+
+function unsavedParagraphResult(articleId, contentVersion, index) {
+    return unsavedParagraphs.get(unsavedParagraphKey(articleId, contentVersion))?.get(Number(index)) || null;
+}
+
+/** 記錄層面的失敗段：記錄中失敗的段落 ＋ 尚未成功保存的段落（去重）。 */
+function failedIndicesForRecord(record) {
+    if (!record?.result) return [];
+    const { title, paragraphs } = parseTitleAndParagraphs(record.article || '');
+    const list = title ? [title, ...paragraphs] : paragraphs;
+    const base = failedIndicesFromResult(record.result, list);
+    const unsaved = unsavedParagraphIndices(record.articleId, readingActions.articleVersion(record.articleId));
+    return Array.from(new Set([...base, ...unsaved])).sort((a, b) => a - b);
+}
+
+/** 畫面目前這篇是否有「分析已顯示但尚未保存」的明確失敗狀態。 */
+function currentAnalysisSaveFailure() {
+    const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
+    return analysisSaveFailureFor(record);
+}
+
+/** 從目前記錄重新推導失敗段（畫面與按鈕共用同一份來源）。 */
+function refreshFailedStateFromRecord() {
+    const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
+    lastFailedIndices = failedIndicesForRecord(record);
+    updateRetryFailedButton();
+    return lastFailedIndices;
+}
+
+/**
+ * 同一篇文章＋同一內容版本的分析保存佇列（F1）。
+ *
+ * 單段／批次重試各自只持有自己那幾段的 patch，但 `articleStore.saveAnalysis`
+ * 一次寫入整份 `paragraph_analysis`。若兩個工作都先用舊快照組好整份結果再排隊，
+ * 後寫者會把先寫者的段落蓋回去（lost update）。這裡以 articleId + contentVersion
+ * 為 scope 序列化保存；每個任務真正提交前才讀最新記錄並合併仍持有的 patch。
+ * key 含版本，因此不同文章／不同版本不會互相阻塞。
+ */
+const analysisSaveQueues = new Map();
+
+function analysisSaveScopeKey(articleId, contentVersion) {
+    return `${articleId || ''}\n${contentVersion || ''}`;
+}
+
+function queueAnalysisSave(articleId, contentVersion, task) {
+    const key = analysisSaveScopeKey(articleId, contentVersion);
+    const previous = analysisSaveQueues.get(key) || Promise.resolve();
+    // 前一個任務失敗也要讓下一個任務繼續，否則單段失敗會卡住整篇文章的保存。
+    const run = previous.catch(() => null).then(task);
+    const tail = run.then(() => null, () => null);
+    analysisSaveQueues.set(key, tail);
+    tail.then(() => {
+        if (analysisSaveQueues.get(key) === tail) analysisSaveQueues.delete(key);
+    });
+    return run;
+}
+
+/**
+ * 整篇分析最後一次保存失敗的明確狀態（F3）。
+ * 交易失敗時結果仍在記憶體與畫面上，但磁碟沒有；必須保留「未保存」提示與
+ * 重試保存入口，不能讓歷史指示器把它覆蓋成「已存入」。
+ */
+const analysisSaveFailures = new Map(); // articleId -> failure payload
+
+function rememberAnalysisSaveFailure(articleId, payload) {
+    if (!articleId) return;
+    analysisSaveFailures.set(articleId, { ...payload, articleId });
+}
+
+function clearAnalysisSaveFailure(articleId) {
+    if (!articleId) return;
+    analysisSaveFailures.delete(articleId);
+}
+
+/**
+ * 把單段的新結果同步回「完整分析未保存」快照。
+ * 快照保留的是整篇最後保存失敗當下的 finalResult；若之後單段刷新或批次重試成功，
+ * 快照仍是舊值，按「重試保存」就會把剛寫入的新結果蓋回舊譯文（F6）。
+ * 只更新同文章、同版本、同 index 的段落；任何異常都不得中斷已成功的保存流程。
+ */
+function syncAnalysisSaveFailureParagraph(articleId, contentVersion, index, result) {
+    try {
+        if (!articleId || !result) return;
+        const failure = analysisSaveFailures.get(articleId);
+        if (!failure) return;
+        // 版本不同代表快照屬於舊原文：寧可保留舊快照，也不得跨版本污染。
+        if (failure.contentVersion !== contentVersion) return;
+        const paragraphs = failure.result?.paragraph_analysis;
+        if (!Array.isArray(paragraphs)) return;
+        const idx = Number(index);
+        if (!Number.isInteger(idx) || idx < 0 || idx >= paragraphs.length) return;
+        const nextParagraphs = [...paragraphs];
+        nextParagraphs[idx] = result;
+        analysisSaveFailures.set(articleId, {
+            ...failure,
+            result: {
+                ...failure.result,
+                paragraph_analysis: nextParagraphs,
+                detailed_analysis: mergeDetailedAnalyses(
+                    failure.result?.detailed_analysis || [],
+                    result?.detailed_analysis || []
+                )
+            }
+        });
+    } catch (error) {
+        // 同步失敗只影響重試保存的新鮮度，保存本身已經成功，不得回報失敗。
+        console.warn('sync analysis save snapshot failed', error);
+    }
+}
+
+function analysisSaveFailureFor(record) {
+    if (!record?.articleId) return null;
+    const failure = analysisSaveFailures.get(record.articleId);
+    if (!failure) return null;
+    const version = contentVersionOfText(record.article || '');
+    if (failure.contentVersion && version && failure.contentVersion !== version) return null;
+    return failure;
+}
+
+/** 保存失敗提示列：保留目前分析畫面，只額外提供「重試保存」入口。 */
+function renderAnalysisSaveFailure(record) {
+    const container = dom.articleAnalysisContainer;
+    if (!container) return;
+    container.querySelector('.analysis-save-failure')?.remove();
+    const failure = analysisSaveFailureFor(record);
+    if (!failure) return;
+    const el = document.createElement('div');
+    el.className = 'analysis-save-failure';
+    el.setAttribute('role', 'status');
+    el.innerHTML = `
+        <div class="analysis-save-failure__body">
+            <strong class="analysis-save-failure__title">${escapeHtml(t('article.analysisSavePendingTitle'))}</strong>
+            <span class="analysis-save-failure__hint">${escapeHtml(t('article.analysisSavePendingHint'))}</span>
+        </div>
+        <button type="button" class="btn-ghost btn-mini analysis-save-retry">${escapeHtml(t('article.retrySaveAnalysis'))}</button>`;
+    el.querySelector('.analysis-save-retry')?.addEventListener('click', retryPendingAnalysisSave);
+    container.prepend(el);
+}
+
+function refreshAnalysisSaveFailureTexts() {
+    const el = dom.articleAnalysisContainer?.querySelector('.analysis-save-failure');
+    if (!el) return;
+    const title = el.querySelector('.analysis-save-failure__title');
+    const hint = el.querySelector('.analysis-save-failure__hint');
+    const btn = el.querySelector('.analysis-save-retry');
+    if (title) title.textContent = t('article.analysisSavePendingTitle');
+    if (hint) hint.textContent = t('article.analysisSavePendingHint');
+    if (btn) btn.textContent = t('article.retrySaveAnalysis');
+}
+
+let pendingSaveRetryActive = false;
+
+/** 只重試保存，不重新呼叫 AI；失敗時保留提示列與可再按的入口。 */
+async function retryPendingAnalysisSave() {
+    if (pendingSaveRetryActive) return;
+    const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
+    const failure = analysisSaveFailureFor(record);
+    if (!failure) return;
+    pendingSaveRetryActive = true;
+    const btn = dom.articleAnalysisContainer?.querySelector('.analysis-save-retry');
+    if (btn) {
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+    }
+    try {
+        const saved = await queueAnalysisSave(failure.articleId, failure.contentVersion, async () => {
+            // 佇列等待期間可能已切換文章或改版：不得把舊結果寫進新版本。
+            if (!isCurrentArticle(failure.articleId)) return { ok: false, error: 'stale_job' };
+            if (contentVersionOfText(articleStore.getRecord(failure.articleId)?.article || '') !== failure.contentVersion) {
+                return { ok: false, error: 'stale_version' };
+            }
+            return articleStore.saveArticle({
+                articleId: failure.articleId,
+                article: failure.article,
+                result: failure.result,
+                title: failure.title,
+                sourceType: failure.sourceType,
+                sourceUrl: failure.sourceUrl
+            });
+        });
+        if (!saved.ok) {
+            if (isCurrentArticle(failure.articleId)) {
+                ui.displayMessage(t('article.analysisSaveFailedInline'), 'error', 6000);
+            }
+            return;
+        }
+        clearAnalysisSaveFailure(failure.articleId);
+        clearParagraphsUnsaved(failure.articleId, failure.contentVersion);
+        if (isCurrentArticle(failure.articleId)) {
+            renderAnalysisSaveFailure(articleStore.getRecord(failure.articleId));
+            updateHistoryIndicators();
+            ui.displayMessage(t('article.analysisSaveRecovered'), 'success', 2400);
+        }
+    } finally {
+        pendingSaveRetryActive = false;
+        if (isCurrentArticle(failure.articleId)) {
+            refreshAnalysisSaveFailureTexts();
+            const current = dom.articleAnalysisContainer?.querySelector('.analysis-save-retry');
+            if (current) {
+                current.disabled = false;
+                current.removeAttribute('aria-busy');
+            }
+        }
+    }
+}
+
+/**
+ * 把單段結果合併回最新記錄並保存。
+ * `canCommit` 在真正提交前再次核對工作所有權；排隊等待期間若工作已被取消／
+ * 換段，這裡就不會再寫入任何內容。
+ * 回傳 `{ ok, error, applied }`；呼叫端必須在 ok 之後才把狀態改成 done／閃成功。
+ */
+async function persistParagraphResult({ articleId, index, result, contentVersion, canCommit }) {
+    if (!articleId) return { ok: false, error: 'record_missing' };
+    return queueAnalysisSave(articleId, contentVersion, async () => {
+        if (typeof canCommit === 'function' && !canCommit()) return { ok: false, error: 'stale_job' };
+        const record = articleStore.getRecord(articleId);
+        if (!record) return { ok: false, error: 'record_missing' };
+        if (contentVersion && readingActions.articleVersion(articleId) !== contentVersion) {
+            return { ok: false, error: 'stale_version' };
+        }
+        const ctx = articleStore.captureArticleContext();
+        const paragraphAnalysis = Array.isArray(record.result?.paragraph_analysis)
+            ? [...record.result.paragraph_analysis]
+            : [];
+        paragraphAnalysis[index] = result;
+        const updated = {
+            ...(record.result || {}),
+            paragraph_analysis: paragraphAnalysis,
+            detailed_analysis: mergeDetailedAnalyses(
+                record.result?.detailed_analysis || [],
+                result?.detailed_analysis || []
+            )
+        };
+        const saved = await articleStore.saveAnalysis(articleId, updated, {
+            ctx,
+            expectContentVersion: contentVersion || undefined
+        });
+        // 單段結果已落盤：同步完整分析快照，避免「重試保存」用舊快照蓋回去（F6）。
+        if (saved.ok) syncAnalysisSaveFailureParagraph(articleId, contentVersion, index, result);
+        return { ok: !!saved.ok, error: saved.error || '', applied: [index] };
+    });
+}
+
+/** 批次重試的結果摘要（留在畫面上，不只用 3 秒 toast）。 */
+let lastBatchSummary = null;
+
+function renderBatchSummaryText() {
+    if (!lastBatchSummary) return;
+    const el = dom.articleAnalysisContainer?.querySelector('.analysis-batch-summary');
+    if (!el) return;
+    el.textContent = t('article.retrySummary', lastBatchSummary);
+}
+
+function showBatchSummary({ done, failed }) {
+    const container = dom.articleAnalysisContainer;
+    if (!container) return;
+    lastBatchSummary = { done, failed };
+    let el = container.querySelector('.analysis-batch-summary');
+    if (!el) {
+        el = document.createElement('div');
+        el.className = 'analysis-batch-summary';
+        container.prepend(el);
+    }
+    renderBatchSummaryText();
+}
+
+function clearBatchSummary() {
+    lastBatchSummary = null;
+    dom.articleAnalysisContainer?.querySelector('.analysis-batch-summary')?.remove();
+}
+
+/**
+ * 語言切換時重新套用動態文案（P2-5）：狀態文字、失敗原因、重試按鈕與批次摘要
+ * 都是執行時才產生的節點，`data-i18n` 不會處理，必須保留狀態後重新 t()。
+ */
+function refreshParagraphDynamicTexts() {
+    const container = dom.articleAnalysisContainer;
+    if (!container) return;
+    container.querySelectorAll('.para-status').forEach((statusDiv) => {
+        const status = statusDiv.dataset.status || '';
+        if (!status) return;
+        const textSpan = statusDiv.querySelector('.status-text');
+        if (textSpan) textSpan.textContent = t(paragraphStatusLabelKey(status));
+        const reasonSpan = statusDiv.querySelector('.para-reason');
+        if (reasonSpan && status === PARAGRAPH_STATUS.failed) {
+            reasonSpan.textContent = t('article.paragraphFailureReason', {
+                message: t(paragraphErrorLabelKey(statusDiv.dataset.errorCode || ''))
+            });
+        }
+        const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
+        if (retryBtn && retryBtn.style.display !== 'none') {
+            retryBtn.textContent = status === PARAGRAPH_STATUS.done
+                ? t('article.refresh')
+                : t('article.retryParagraph');
+        }
+    });
+    container.querySelectorAll('.analysis-failed-inline').forEach((el) => {
+        el.textContent = t('article.analysisFailedInline');
+    });
+    container.querySelectorAll('.source-language-note').forEach((el) => {
+        el.textContent = t('article.sourceAlreadyChinese');
+    });
+    refreshAnalysisSaveFailureTexts();
+    renderBatchSummaryText();
+}
+
+/** 重試前確認輸入框版本與記錄一致；不一致時要求先重新分析。 */
+function retryTargetsCurrentVersion(record) {
+    const input = String(dom.articleInput?.value || '').trim();
+    const body = String(record?.article || '').trim();
+    return !!body && input === body;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 逐段 checkpoint 與未完成分析續作（P3-T1）
+//
+// `result.analysis_run` 是 additive 欄位：沒有它或格式不符時，畫面與歷史列完全
+// 回到 Phase 1 的「失敗段＋批次重試」行為。checkpoint 只更新記憶體與持久層
+// （saveAnalysis 的 silent），不觸發歷史列重繪；最終保存才發變更事件。
+//
+// 未完成段在 checkpoint 中保留為 null（維持 total 長度），顯示與統計必須把 null
+// 視為「尚未完成」，不得算成失敗。`settings.reading.analysisCheckpoint === false`
+// 時整段流程停用，只在最後保存一次。
+// ─────────────────────────────────────────────────────────────────────────────
+const ANALYSIS_CHECKPOINT_DEBOUNCE_MS = 1200;
+let checkpointEpoch = 0;
+
+function analysisCheckpointEnabled() {
+    try {
+        const settings = loadGlobalSettings();
+        return !(settings && settings.reading && settings.reading.analysisCheckpoint === false);
+    } catch (_) {
+        return true;
+    }
+}
+
+function analysisCheckpointNoteElement() {
+    return dom.articleCheckpointNote || document.getElementById('article-checkpoint-note');
+}
+
+/** checkpoint 寫入失敗：只提示，不中斷分析，也不把狀態改成失敗。 */
+function showAnalysisCheckpointFailure() {
+    const el = analysisCheckpointNoteElement();
+    if (!el) return;
+    el.hidden = false;
+    el.classList.remove('hidden');
+    el.dataset.tone = 'error';
+    el.textContent = t('article.analysisCheckpointFailed');
+}
+
+function clearAnalysisCheckpointFailure() {
+    const el = analysisCheckpointNoteElement();
+    if (!el) return;
+    el.classList.add('hidden');
+    el.hidden = true;
+    el.dataset.tone = '';
+    el.textContent = '';
+}
+
+function hideAnalysisResumeBanner() {
+    if (dom.articleAnalysisResume) dom.articleAnalysisResume.classList.add('hidden');
+}
+
+function showAnalysisResumeBanner(run) {
+    if (!dom.articleAnalysisResume || !run) return;
+    if (dom.articleAnalysisResumeStatus) {
+        dom.articleAnalysisResumeStatus.textContent = t('article.analysisPartial', {
+            // 「已保存」只算處理成功（含跳過）的段落；failed 段落仍需續作。
+            done: Math.max(0, run.completed - run.failed),
+            total: run.total
+        });
+    }
+    dom.articleAnalysisResume.classList.remove('hidden');
+}
+
+/** 語言切換時，執行期產生的 checkpoint 提示與續作狀態要重新 t()。 */
+function refreshAnalysisCheckpointTexts() {
+    const note = analysisCheckpointNoteElement();
+    if (note && !note.classList.contains('hidden')) {
+        note.textContent = t('article.analysisCheckpointFailed');
+    }
+    if (dom.articleAnalysisResume && !dom.articleAnalysisResume.classList.contains('hidden')) {
+        const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
+        const run = normalizeAnalysisRun(record?.result?.analysis_run);
+        if (run && dom.articleAnalysisResumeStatus) {
+            dom.articleAnalysisResumeStatus.textContent = t('article.analysisPartial', {
+                done: Math.max(0, run.completed - run.failed),
+                total: run.total
+            });
+        }
+    }
+}
+
+function createAnalysisCheckpoint({ run, articleId, contentVersion, runMeta, paragraphAnalyses, previousResult }) {
+    return {
+        enabled: analysisCheckpointEnabled(),
+        epoch: checkpointEpoch,
+        run,
+        articleId,
+        contentVersion,
+        ctx: articleStore.captureArticleContext(),
+        runMeta,
+        paragraphAnalyses,
+        previousResult: previousResult || null,
+        timer: 0,
+        chain: Promise.resolve(),
+        finalizing: false,
+        finalSaved: false,
+        finalStatus: '',
+        lastCheckpointError: '',
+        disabledByLimit: false
+    };
+}
+
+/** 以目前完整段落結果＋analysis_run 組成 checkpoint 要寫入的 result。 */
+function buildCheckpointResult(cp, status, baseResult) {
+    const analyses = cp.paragraphAnalyses || [];
+    const total = analyses.length;
+    const paragraphAnalysis = new Array(total).fill(null);
+    for (let i = 0; i < total; i += 1) {
+        if (analyses[i] !== undefined && analyses[i] !== null) paragraphAnalysis[i] = analyses[i];
+    }
+    const stats = analysisRunStats(paragraphAnalysis);
+    const runMeta = {
+        ...(cp.runMeta || {}),
+        schemaVersion: 1,
+        status: status || ANALYSIS_RUN_STATUS.running,
+        total,
+        completed: stats.completed,
+        failed: stats.failed,
+        updatedAt: new Date().toISOString(),
+        lastErrorCode: cp.lastCheckpointError ? 'checkpoint_failed' : ''
+    };
+    cp.runMeta = runMeta;
+    const base = baseResult || cp.previousResult || {};
+    return {
+        ...base,
+        chinese_translation: paragraphAnalysis.map((item) => (item && item.chinese_translation) || '').join('\n\n'),
+        word_alignment: paragraphAnalysis.flatMap((item) => (item && item.word_alignment) || []),
+        detailed_analysis: mergeDetailedAnalyses(
+            paragraphAnalysis.flatMap((item) => (item && item.detailed_analysis) || []),
+            base.detailed_analysis || []
+        ),
+        paragraph_analysis: paragraphAnalysis,
+        analysis_run: runMeta,
+        updatedAt: runMeta.updatedAt
+    };
+}
+
+/**
+ * 真正寫入一次 checkpoint（同一 checkpoint 的呼叫由 chain 序列化）。
+ * 排隊等待期間若已經換了新的分析回合（epoch 改變），舊回合不得再寫。
+ */
+function writeAnalysisCheckpoint(cp, status) {
+    if (!cp || !cp.enabled || !cp.articleId) return Promise.resolve(null);
+    const requested = status || cp.finalStatus || ANALYSIS_RUN_STATUS.running;
+    return queueAnalysisSave(cp.articleId, cp.contentVersion, async () => {
+        if (cp.epoch !== checkpointEpoch) return { ok: true, skipped: true };
+        // 最終保存開始／完成後，尚未執行的 running checkpoint 不得蓋回去。
+        // 取消是例外：取消發生在新回合開始前，應保留已完成段。
+        if (requested !== ANALYSIS_RUN_STATUS.cancelled && (cp.finalizing || cp.finalSaved)) {
+            return { ok: true, skipped: true };
+        }
+        // 用最新記錄當基底，保留期間內單段刷新寫入的詳解／句子／片語分析，
+        // 但段落結果一律以這次 checkpoint 的完整快照為準。
+        const latest = articleStore.getRecord(cp.articleId);
+        const base = latest && contentVersionOfText(latest.article || '') === cp.contentVersion
+            ? (latest.result || cp.previousResult)
+            : cp.previousResult;
+        const result = buildCheckpointResult(cp, requested, base);
+        return articleStore.saveAnalysis(cp.articleId, result, {
+            ctx: cp.ctx,
+            expectContentVersion: cp.contentVersion,
+            silent: true
+        });
+    }).then((saved) => {
+        if (!saved || saved.skipped) return saved;
+        if (saved.ok) {
+            cp.lastCheckpointError = '';
+            cp.runMeta = { ...cp.runMeta, lastErrorCode: '' };
+            if (requested === ANALYSIS_RUN_STATUS.running) clearAnalysisCheckpointFailure();
+            return saved;
+        }
+        cp.lastCheckpointError = saved.error || 'checkpoint_failed';
+        if (saved.error === 'article_too_large') cp.disabledByLimit = true;
+        if (cp.run && isRunActive(cp.run)) showAnalysisCheckpointFailure();
+        return saved;
+    }).catch((error) => {
+        cp.lastCheckpointError = error?.name || 'checkpoint_failed';
+        if (cp.run && isRunActive(cp.run)) showAnalysisCheckpointFailure();
+        return { ok: false, error: 'checkpoint_failed' };
+    });
+}
+
+/** debounce 1200ms；同一 checkpoint 一次只會有一個寫入在跑。 */
+function scheduleAnalysisCheckpoint(cp) {
+    if (!cp || !cp.enabled || cp.finalizing || cp.finalStatus || cp.disabledByLimit) return;
+    clearTimeout(cp.timer);
+    cp.timer = window.setTimeout(() => {
+        cp.timer = 0;
+        flushAnalysisCheckpoint(cp);
+    }, ANALYSIS_CHECKPOINT_DEBOUNCE_MS);
+}
+
+function flushAnalysisCheckpoint(cp, options = {}) {
+    if (!cp || !cp.enabled || cp.disabledByLimit) return Promise.resolve(null);
+    clearTimeout(cp.timer);
+    cp.timer = 0;
+    const requested = options.status || cp.finalStatus || ANALYSIS_RUN_STATUS.running;
+    cp.chain = (cp.chain || Promise.resolve())
+        .catch(() => null)
+        .then(() => writeAnalysisCheckpoint(cp, requested));
+    return cp.chain;
+}
+
+/** 取消：先 flush，把 status 寫成 cancelled，保留已完成段。 */
+function cancelAnalysisCheckpoint(cp) {
+    // 已完成且最終保存成功：之後按清除／切換文章不得把 complete 蓋成 cancelled。
+    if (!cp || !cp.enabled || cp.finalSaved) return Promise.resolve(null);
+    // 取消當下通常仍是目前文章；後續的清除／切換會先改掉 recordId，先記下來才決定是否提示。
+    const wasCurrent = isCurrentArticle(cp.articleId);
+    cp.finalStatus = ANALYSIS_RUN_STATUS.cancelled;
+    clearTimeout(cp.timer);
+    cp.timer = 0;
+    return flushAnalysisCheckpoint(cp, { status: ANALYSIS_RUN_STATUS.cancelled }).then((saved) => {
+        if (saved?.ok && wasCurrent) {
+            ui.displayMessage(t('article.analysisCancelledKept'), 'warning', 5000);
+        }
+        return saved;
+    });
+}
+
 async function analyzeArticle() {
     const articleText = dom.articleInput.value.trim();
     if (!articleText) {
         ui.displayMessage(t('article.enterArticle'), 'warning');
         return;
     }
+    const perfToken = perfProbe.markAnalysisStart();
 
     // 先取消上一個工作：舊請求不得再寫入任何文章、也不得再更新畫面。
     cancelActiveRun('cancelled-by-new-run');
@@ -2023,6 +3036,10 @@ async function analyzeArticle() {
     const articleId = resolved.id || articleStore.newArticleId();
     const run = createRun(articleId, controller);
     activeRun = run;
+    // 新回合：舊回合排隊中的 checkpoint 一律失效，避免蓋掉這次的 running 狀態。
+    checkpointEpoch += 1;
+    hideAnalysisResumeBanner();
+    clearAnalysisCheckpointFailure();
     articleContext.recordId = articleId;
     articleContext.origin = resolved.reused ? articleContext.origin : 'imported';
     if (typeof state.setCurrentArticleId === 'function') state.setCurrentArticleId(articleId);
@@ -2032,6 +3049,10 @@ async function analyzeArticle() {
     dom.analyzeArticleBtn.textContent = t('article.analyzing');
 
     const { title, paragraphs } = parseTitleAndParagraphs(articleText);
+    const items = title ? [title, ...paragraphs] : paragraphs; // 將標題也納入分析列表
+    const paragraphAnalyses = new Array(items.length);
+    // 只記規模（長度／段數），不記原文；關閉 probe 時為 no-op。
+    perfProbe.recordArticleStats({ characters: articleText.length, paragraphs: items.length });
 
     // 文章專屬生詞本：id 與文章相同，重新分析不會裂出第二本。
     let articleMeta = null;
@@ -2043,11 +3064,33 @@ async function analyzeArticle() {
         console.warn('初始化文章生詞本失敗（將回退到預設生詞本）:', err);
     }
     const metaForRecord = buildArticleMetaInput(articleText, title);
+    const previousRecord = articleStore.getRecord(articleId);
+    const previousResult = previousRecord?.result || null;
+    // 初始保存就帶入 running 的 analysis_run：即使第一段還沒回來，重新載入也知道
+    // 這篇分析未完成；checkpoint 關閉時完全沿用舊行為（只保存既有結果）。
+    const initialRun = analysisCheckpointEnabled()
+        ? createAnalysisRun({
+            runId: `run_${Date.now().toString(36)}_${run.runId}`,
+            contentVersion: contentVersionOfText(articleText),
+            total: items.length,
+            startedAt: new Date().toISOString()
+        })
+        : null;
+    const initialResult = initialRun
+        ? {
+            ...(previousResult || {}),
+            chinese_translation: '',
+            word_alignment: [],
+            paragraph_analysis: new Array(items.length).fill(null),
+            analysis_run: initialRun,
+            updatedAt: new Date().toISOString()
+        }
+        : previousResult;
     // 先把「正在分析的這篇」存成記錄：中斷或重新載入都找得回來，也不會覆蓋別篇。
     const initialSave = await articleStore.saveArticle({
         articleId,
         article: articleText,
-        result: articleStore.getRecord(articleId)?.result || null,
+        result: initialResult,
         title: articleMeta?.title || metaForRecord.title,
         sourceType: articleMeta?.sourceType || metaForRecord.sourceType,
         sourceUrl: articleMeta?.sourceUrl || metaForRecord.sourceUrl
@@ -2057,8 +3100,8 @@ async function analyzeArticle() {
     }
     updateHistoryIndicators();
 
-    const items = title ? [title, ...paragraphs] : paragraphs; // 將標題也納入分析列表
     if (items.length === 0) {
+        perfProbe.markAnalysisSettled(perfToken, 'invalid');
         ui.displayMessage(t('article.invalidArticle'), 'warning');
         if (isRunActive(run)) {
             dom.analyzeArticleBtn.disabled = false;
@@ -2086,6 +3129,7 @@ async function analyzeArticle() {
             <div class="para-status" data-status="pending">
                 <span class="status-icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#ic-timer"></use></svg></span>
                 <span class="status-text">${t('article.analyzing')}</span>
+                <span class="para-reason" hidden></span>
                 <span class="elapsed" title="${t('article.elapsed')}"></span>
                 <button class="retry-paragraph-btn" data-index="${i}" style="display:none;">${t('article.retryParagraph')}</button>
             </div>
@@ -2093,10 +3137,11 @@ async function analyzeArticle() {
             <div class="paragraph-chinese"><em>${t('article.analyzing')}</em></div>
         </div>`).join('');
 
+    let mainJob = null;
+    let checkpoint = null;
     try {
         const total = items.length;
         let completed = 0;
-        const paragraphAnalyses = new Array(total);
 
         // 降低段落併發，避免觸發 429；並在拉起任務時加入間隔
         const CONCURRENCY = Math.min(2, total);
@@ -2105,6 +3150,25 @@ async function analyzeArticle() {
         const timeoutMs = 45000;
         lastFailedIndices = [];
         let aggregatedDetails = [];
+        // 主分析也登記成一個 job：取消／換文章時和其他重試一起收束。
+        const job = startAnalysisJob({
+            kind: 'full',
+            articleId,
+            contentVersion: readingActions.articleVersion(articleId),
+            controller
+        });
+        mainJob = job;
+        if (initialRun) {
+            checkpoint = createAnalysisCheckpoint({
+                run,
+                articleId,
+                contentVersion: initialRun.contentVersion,
+                runMeta: initialRun,
+                paragraphAnalyses,
+                previousResult
+            });
+            run.checkpoint = checkpoint;
+        }
 
         const runNext = async () => {
             if (!isRunActive(run)) return;
@@ -2119,48 +3183,31 @@ async function analyzeArticle() {
             try {
                 // start timing for this paragraph
                 paragraphStartTime[idx] = Date.now();
-                const cached = paragraphCache.get(text);
-                let result;
-                if (cached) {
-                    result = cached;
-                } else if (isPureMarkdownImageParagraph(text)) {
-                    // 純圖片段落：不送 AI；中文留空，僅顯示一次圖片（不算失敗段）
-                    result = { chinese_translation: '', word_alignment: [], detailed_analysis: [], skipped: true };
-                } else {
-                    // 送進模型前先去掉行內標記：譯文不該帶著 ** 或 [文字](網址) 回來
-                    const textForAI = prepareParagraphForTranslation(stripMarkdownImagesFromText(text));
-                    const baseText = textForAI || text;
-                    if (isPredominantlyChinese(baseText)) {
-                        // 已經是中文的段落（問答集描述、中文題目／答案等）不需再翻譯；
-                        // 直接沿用原文，避免模型因「無英文可翻」而回傳空值造成解析失敗。
-                        result = buildChineseSourceResult(text);
-                    } else {
-                        // 純文字段落改用按句翻譯：以渲染同款分句器預切，中英句對齊由構造保證
-                        const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
-                        result = await api.analyzeParagraph(baseText, {
-                            timeoutMs,
-                            signal: controller.signal,
-                            level: 'quick',
-                            sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
-                        });
-                    }
-                }
+                const outcome = await runParagraphRequest(text, {
+                    signal: controller.signal,
+                    timeoutMs,
+                    level: 'quick'
+                });
                 // 回應回來時這條工作可能已被取消／切換：結果不寫入目前的 DOM，也不改歸屬。
-                if (!isRunActive(run)) return;
-                if (!cached) paragraphCache.set(text, result);
-                paragraphAnalyses[idx] = result;
+                if (!isRunActive(run) || !isJobWriteTarget(job)) return;
+                if (outcome.ok) {
+                    paragraphAnalyses[idx] = outcome.result;
+                } else {
+                    paragraphAnalyses[idx] = outcome.result || paragraphPipeline.failedParagraphResult(outcome.errorCode);
+                    lastFailedIndices.push(idx);
+                }
                 // Incremental DOM update
-                try { renderParagraph(idx, text, result); } catch(_) {}
-                if (Array.isArray(result?.detailed_analysis)) {
-                    aggregatedDetails = mergeDetailedAnalyses(aggregatedDetails, result.detailed_analysis);
+                try { renderParagraph(idx, text, paragraphAnalyses[idx]); } catch(_) {}
+                if (Array.isArray(paragraphAnalyses[idx]?.detailed_analysis)) {
+                    aggregatedDetails = mergeDetailedAnalyses(aggregatedDetails, paragraphAnalyses[idx].detailed_analysis);
                     dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(aggregatedDetails);
                 }
             } catch (error) {
-                if (!isRunActive(run) || controller.signal.aborted) throw error;
+                if (error?.name === 'AbortError' || !isRunActive(run) || controller.signal.aborted) return;
                 console.error(`分析第 ${idx + 1} 段時出錯:`, error);
                 // 失敗時不偽造譯文，避免「分析失敗」文案被存入歷史與同步快照；
-                // renderParagraph 對空譯文會顯示失敗狀態與「重試本段」
-                paragraphAnalyses[idx] = { chinese_translation: '', word_alignment: [], detailed_analysis: [], failed: true };
+                // renderParagraph 會顯示失敗狀態、可翻譯原因與「重試本段」
+                paragraphAnalyses[idx] = paragraphPipeline.failedParagraphResult(error?.code || 'provider_error');
                 lastFailedIndices.push(idx);
                 try { renderParagraph(idx, text, paragraphAnalyses[idx]); } catch(_) {}
             } finally {
@@ -2169,6 +3216,10 @@ async function analyzeArticle() {
                 completed += 1;
                 if (isRunActive(run)) {
                     updateAnalysisProgress(completed, total, t('article.completedParagraphs', { count: completed }));
+                    // 每段成功／失敗後排程 checkpoint；內容是「目前完整段落結果＋analysis_run」。
+                    if (paragraphAnalyses[idx] !== undefined && paragraphAnalyses[idx] !== null) {
+                        scheduleAnalysisCheckpoint(checkpoint);
+                    }
                     await runNext();
                 }
             }
@@ -2177,10 +3228,13 @@ async function analyzeArticle() {
         const runners = [];
         for (let i = 0; i < CONCURRENCY; i++) runners.push(runNext());
         await Promise.all(runners);
+        finishAnalysisJob(job);
+        // 所有段落都已 render：量測「點擊 → 完成 render」（不等後續 IndexedDB 保存）。
+        perfProbe.markAnalysisDone(perfToken, { status: 'rendered' });
 
         if (!isRunActive(run)) return;
 
-        const previousRecord = articleStore.getRecord(articleId);
+        const latestRecord = articleStore.getRecord(articleId);
         const baseResult = {
             // Join translated paragraphs with visible newlines; keep it single-line JS string
             chinese_translation: paragraphAnalyses.map(p => (p && p.chinese_translation) || '').join('\n\n'),
@@ -2188,52 +3242,129 @@ async function analyzeArticle() {
             // 保留頂層獨有項目：按需取得的單字詳解只存在這裡，不做事後有損精簡。
             detailed_analysis: mergeDetailedAnalyses(
                 paragraphAnalyses.flatMap(p => (p && p.detailed_analysis) || []),
-                previousRecord?.result?.detailed_analysis || []
+                latestRecord?.result?.detailed_analysis || []
             ),
             paragraph_analysis: paragraphAnalyses,
             sentence_analysis: [],
             phrase_analysis: [],
             updatedAt: new Date().toISOString()
         };
-        const finalResult = mergePreservedReadingAnalysis(
-            previousRecord?.result,
+        const mergedResult = mergePreservedReadingAnalysis(
+            latestRecord?.result,
             baseResult,
-            !!previousRecord && previousRecord.article === articleText
+            !!latestRecord && latestRecord.article === articleText
         );
+        // 全部完成：最後一次保存不 silent，status 為 complete／partial。
+        const finalStats = analysisRunStats(paragraphAnalyses);
+        const finalStatus = finalStats.failed > 0
+            ? ANALYSIS_RUN_STATUS.partial
+            : ANALYSIS_RUN_STATUS.complete;
+        const finalRun = checkpoint
+            ? {
+                ...checkpoint.runMeta,
+                status: finalStatus,
+                total,
+                completed: finalStats.completed,
+                failed: finalStats.failed,
+                updatedAt: new Date().toISOString(),
+                lastErrorCode: ''
+            }
+            : null;
+        if (checkpoint) {
+            // 標記收尾：排隊中的 running checkpoint 不得蓋掉最終保存。
+            checkpoint.finalizing = true;
+            checkpoint.finalStatus = finalStatus;
+            clearTimeout(checkpoint.timer);
+            checkpoint.timer = 0;
+        }
+        const finalResult = finalRun
+            ? { ...mergedResult, analysis_run: finalRun }
+            : mergedResult;
 
         dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(finalResult.detailed_analysis || []);
-        const saved = await articleStore.saveArticle({
-            articleId,
-            article: articleText,
-            result: finalResult,
-            title: articleMeta?.title || metaForRecord.title,
-            sourceType: articleMeta?.sourceType || metaForRecord.sourceType,
-            sourceUrl: articleMeta?.sourceUrl || metaForRecord.sourceUrl
+        setArticleViewVersion(articleText);
+        updateArticleVersionState();
+        const saveVersion = contentVersionOfText(articleText);
+        // 整篇結果也走同一條保存佇列：等待中的段落重試不得用舊快照蓋掉這份完整結果。
+        const saved = await queueAnalysisSave(articleId, saveVersion, async () => {
+            if (!isRunActive(run)) return { ok: false, error: 'cancelled' };
+            return articleStore.saveArticle({
+                articleId,
+                article: articleText,
+                result: finalResult,
+                title: articleMeta?.title || metaForRecord.title,
+                sourceType: articleMeta?.sourceType || metaForRecord.sourceType,
+                sourceUrl: articleMeta?.sourceUrl || metaForRecord.sourceUrl
+            });
         });
+        // 保存 await 期間可能已切到別篇：只有仍是目前文章／版本才能改畫面、摘要與歷史列。
+        const stillCurrent = isRunActive(run)
+            && isCurrentArticle(articleId)
+            && contentVersionOfText(articleStore.getRecord(articleId)?.article || '') === saveVersion;
         if (!saved.ok) {
-            // 分析成功但寫入失敗要分開呈現：結果仍在畫面上，提供重試與匯出。
-            ui.displayMessage(t('article.historySaveFailed'), 'error', 8000);
-            if (dom.articleHistoryStatus) {
-                dom.articleHistoryStatus.hidden = false;
-                dom.articleHistoryStatus.classList.remove('hidden');
-                dom.articleHistoryStatus.dataset.state = 'failed';
-                dom.articleHistoryStatus.textContent = t('article.historyStatusSaveFailed');
+            if (checkpoint) {
+                // 最終保存失敗：允許之後的 pagehide／可見性 flush 再試一次 running 狀態。
+                checkpoint.finalizing = false;
+                checkpoint.finalStatus = '';
             }
+            if (saved.error !== 'cancelled' && saved.error !== 'stale_job') {
+                // 結果已顯示但沒有落盤：保留明確的未保存狀態與「重試保存」入口（F3）。
+                rememberAnalysisSaveFailure(articleId, {
+                    contentVersion: saveVersion,
+                    article: articleText,
+                    result: finalResult,
+                    title: articleMeta?.title || metaForRecord.title,
+                    sourceType: articleMeta?.sourceType || metaForRecord.sourceType,
+                    sourceUrl: articleMeta?.sourceUrl || metaForRecord.sourceUrl,
+                    error: saved.error || 'save_failed'
+                });
+            }
+            if (stillCurrent) {
+                renderAnalysisSaveFailure(articleStore.getRecord(articleId));
+                // 分析成功但寫入失敗要分開呈現：結果仍在畫面上，提供重試與匯出。
+                ui.displayMessage(t('article.historySaveFailed'), 'error', 8000);
+                if (dom.articleHistoryStatus) {
+                    dom.articleHistoryStatus.hidden = false;
+                    dom.articleHistoryStatus.classList.remove('hidden');
+                    dom.articleHistoryStatus.dataset.state = 'failed';
+                    dom.articleHistoryStatus.textContent = t('article.historyStatusSaveFailed');
+                }
+                if (dom.retryFailedParagraphsBtn) updateRetryFailedButton();
+                await updateHistoryIndicators();
+            }
+            return;
         }
-        if (dom.retryFailedParagraphsBtn) {
-            dom.retryFailedParagraphsBtn.classList.toggle('hidden', lastFailedIndices.length === 0);
+        // 這次保存寫入整份結果：清掉「本篇＋這個版本」的舊未保存標記（F4）。
+        clearAnalysisSaveFailure(articleId);
+        clearParagraphsUnsaved(articleId, saveVersion);
+        if (checkpoint) {
+            checkpoint.finalSaved = true;
+            checkpoint.lastCheckpointError = '';
+            checkpoint.runMeta = finalRun;
         }
+        if (!stillCurrent) return;
+        clearAnalysisCheckpointFailure();
+        renderAnalysisSaveFailure(articleStore.getRecord(articleId));
+        if (dom.retryFailedParagraphsBtn) updateRetryFailedButton();
         await updateHistoryIndicators();
 
     } catch (error) {
-        if (!isRunActive(run)) return;
+        if (!isRunActive(run)) {
+            perfProbe.markAnalysisSettled(perfToken, 'cancelled');
+            return;
+        }
         if (controller.signal.aborted) {
+            perfProbe.markAnalysisSettled(perfToken, 'cancelled');
             dom.articleAnalysisContainer.innerHTML = `<p>${t('article.cancelled')}</p>`;
         } else {
+            perfProbe.markAnalysisSettled(perfToken, 'failed');
             console.error('分析文章時出錯:', error);
             dom.articleAnalysisContainer.innerHTML = `<p class="analysis-error">${t('article.analysisFailed')}</p>`;
         }
     } finally {
+        // 取消／換文章等提前返回：已開始但沒有完成 render 的回合收尾（無則 no-op）。
+        perfProbe.markAnalysisSettled(perfToken, controller.signal.aborted ? 'cancelled' : 'settled');
+        finishAnalysisJob(mainJob);
         if (isRunActive(run)) {
             dom.analyzeArticleBtn.disabled = false;
             dom.analyzeArticleBtn.textContent = t('article.analyze');
@@ -2277,6 +3408,31 @@ function updateAnalysisProgress(completed, total, message) {
     }
 }
 
+/** 歷史／整篇渲染時，每個段落都要有可判讀的狀態列（失敗可逐段重試）。 */
+function paragraphStatusRowHtml(index, englishPara, item) {
+    const classification = classifyParagraphResult(item, {
+        sourceText: englishPara,
+        isImageParagraph: isPureMarkdownImageParagraph(englishPara)
+    });
+    const status = classification.status;
+    const icon = PARAGRAPH_STATUS_ICONS[status] || PARAGRAPH_STATUS_ICONS.pending;
+    const reason = status === PARAGRAPH_STATUS.failed
+        ? `<span class="para-reason">${escapeHtml(t('article.paragraphFailureReason', {
+            message: t(paragraphErrorLabelKey(classification.errorCode))
+        }))}</span>`
+        : '<span class="para-reason" hidden></span>';
+    const showRetry = status === PARAGRAPH_STATUS.failed || status === PARAGRAPH_STATUS.done;
+    const retryLabel = status === PARAGRAPH_STATUS.failed ? t('article.retryParagraph') : t('article.refresh');
+    const errorCodeAttr = classification.errorCode ? ` data-error-code="${escapeAttr(classification.errorCode)}"` : '';
+    return `
+        <div class="para-status" data-status="${escapeAttr(status)}"${errorCodeAttr}>
+            <span class="status-icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="${icon}"></use></svg></span>
+            <span class="status-text">${escapeHtml(t(paragraphStatusLabelKey(status)))}</span>
+            ${reason}
+            <button class="retry-paragraph-btn" data-index="${index}" style="display:${showRetry ? 'inline-block' : 'none'};">${escapeHtml(retryLabel)}</button>
+        </div>`;
+}
+
 function displayArticleAnalysis(originalArticle, analysisResult) {
     const { chinese_translation, word_alignment, detailed_analysis, paragraph_analysis } = analysisResult;
 
@@ -2304,6 +3460,10 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
         // 原文已是中文（例如問答集描述）時不重複顯示翻譯，改顯示提示。
         const sourceIsChinese = isPredominantlyChinese(prepareParagraphForTranslation(englishPara));
         const sourceLangAttr = sourceIsChinese ? ' data-source-language="zh"' : '';
+        const paragraphItem = paragraph_analysis?.[i] || null;
+        // checkpoint 尚未完成的段落是 null：顯示「待分析」，不得當成失敗。
+        const itemPending = !sourceIsChinese && paragraphItem === null;
+        const pendingHtml = `<em class="analysis-pending-inline">${escapeHtml(t('article.paragraphStatusPending'))}</em>`;
         const chinesePara = sourceIsChinese ? '' : stripSpanTags(chineseParagraphs[i] || '');
 
         const processedChinese = chinesePara;
@@ -2314,12 +3474,13 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             const engTableHtml = pair.eng;
             const zhTableHtml = sourceIsChinese
                 ? `<span class="source-language-note">${escapeHtml(t('article.sourceAlreadyChinese'))}</span>`
-                : pair.zh;
+                : (itemPending ? pendingHtml : pair.zh);
             const isTitle = !!title && i === 0;
             htmlContent += `
                 <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr}${sourceLangAttr} data-english=\"${escapeAttr(englishPara)}\">
                     <div class=\"paragraph-english\" data-markdown-table=\"1\">${engTableHtml}</div>
                     <div class=\"paragraph-chinese\" data-markdown-table=\"1\">${zhTableHtml}</div>
+                    ${paragraphStatusRowHtml(i, englishPara, paragraph_analysis?.[i])}
                 </div>`;
             continue;
         }
@@ -2333,6 +3494,7 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
                     <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr}${sourceLangAttr} data-english=\"${escapeAttr(englishPara)}\">
                         <div class=\"paragraph-english\" data-markdown-images=\"1\">${pairImgs.eng}</div>
                         <div class=\"paragraph-chinese\" data-markdown-images=\"1\"></div>
+                        ${paragraphStatusRowHtml(i, englishPara, paragraph_analysis?.[i])}
                     </div>`;
                 continue;
             }
@@ -2368,15 +3530,25 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
             ? `<span class="source-language-note">${escapeHtml(t('article.sourceAlreadyChinese'))}</span>`
             : zhSentences.map((z, sIdx) => `<span class=\"interactive-sentence-zh\" data-para-index=\"${i}\" data-sent-index=\"${sIdx}\">${inlineMarkdownToHtml(normalizeListMarkersForDisplay(z))}</span>`).join(' ');
 
+        // 沒有譯文又沒有被標成 skipped：中文側顯示失敗提示，不要留空白假裝完成。
+        const zhDisplayHtml = itemPending
+            ? pendingHtml
+            : ((!sourceIsChinese && !zhHtml)
+                ? `<em class="analysis-failed-inline">${escapeHtml(t('article.analysisFailedInline'))}</em>`
+                : zhHtml);
         const isTitle = !!title && i === 0;
         htmlContent += `
             <div class=\"paragraph-pair${isTitle ? ' is-title' : ''}${headingClass}\" data-paragraph-index=\"${i}\"${headingAttr}${sourceLangAttr} data-english=\"${escapeAttr(englishPara)}\">
                 <div class=\"paragraph-english\">${englishHtml}</div>
-                <div class=\"paragraph-chinese\">${zhHtml}</div>
+                <div class=\"paragraph-chinese\">${zhDisplayHtml}</div>
+                ${paragraphStatusRowHtml(i, englishPara, paragraph_analysis?.[i])}
             </div>`;
     }
     
     dom.articleAnalysisContainer.innerHTML = htmlContent;
+    // 畫面上這份分析對應的正文版本（記憶體狀態，供版本提示與朗讀判斷）。
+    setArticleViewVersion(originalArticle);
+    updateArticleVersionState();
     // 包裝英文單詞為可點 token（一次性）
     dom.articleAnalysisContainer.querySelectorAll('.paragraph-english').forEach(el => {
         // 表格不做 token 包裝以免破壞結構
@@ -2398,10 +3570,14 @@ function clearArticleInput(options = {}) {
     dom.articleInput.value = '';
     dom.articleAnalysisContainer.innerHTML = `<p>${t('article.initialHint')}</p>`;
     dom.articleAnalysisContainer.dataset.analysis = '[]';
+    hideAnalysisResumeBanner();
+    clearAnalysisCheckpointFailure();
     clearCurrentArticleSourceMeta();
     resetArticleContext();
+    lastFailedIndices = [];
+    updateRetryFailedButton();
+    updateArticleVersionState();
     try { notifyAssistantArticleChanged(); } catch (_) {}
-    if (dom.retryFailedParagraphsBtn) dom.retryFailedParagraphsBtn.classList.add('hidden');
     updateHistoryIndicators();
 }
 
@@ -2498,18 +3674,24 @@ function recordSummary(record) {
 
 function recordFailedParagraphs(record) {
     if (record?.result == null) return Number(record?.failedParagraphs) || 0;
-    const paragraphs = Array.isArray(record?.result?.paragraph_analysis) ? record.result.paragraph_analysis : [];
-    // API 在翻譯失敗時會回最小兜底（空譯文），這種段落也要算未完成，
-    // 但純圖片段落（skipped）與中文原文段落不算失敗。
-    return paragraphs.filter((item) => {
-        if (!item || item.skipped) return false;
-        if (item.failed === true) return true;
-        return !String(item.chinese_translation || '').trim();
-    }).length;
+    // 與畫面共用同一套判定：中文原文與純圖片段不算失敗，空譯文與未保存段算失敗。
+    return failedIndicesForRecord(record).length;
 }
 
 function recordStatusText(record) {
+    if (analysisSaveFailureFor(record)) return t('article.historyStatusSaveFailed');
     if (!record?.result) return record?.hasAnalysis ? t('article.analyzed') : t('article.notAnalyzed');
+    // analysis_run 格式不符或不存在時，完全回到 Phase 1 的失敗段狀態。
+    const run = normalizeAnalysisRun(record.result.analysis_run);
+    if (run) {
+        if (run.status === ANALYSIS_RUN_STATUS.running) return t('article.analysisRunningStatus');
+        if (isIncompleteAnalysisRun(run)) {
+            return t('article.analysisPartialStatus', {
+                done: Math.max(0, run.completed - run.failed),
+                total: run.total
+            });
+        }
+    }
     const failed = recordFailedParagraphs(record);
     if (failed > 0) return t('article.historyPartial', { count: failed });
     return t('article.analyzed');
@@ -2656,7 +3838,9 @@ async function openReadingRecord(recordId) {
         return;
     }
     saveCurrentDraft();
+    // 切換記錄前先收起所有分析／重試工作：晚回應不得寫進剛打開的這篇。
     cancelActiveRun('load-record');
+    cancelAnalysisJobs('load-record');
     applyRecordToView(record);
     await articleStore.touchOpened(recordId);
     try { ui.closeModal(); } catch (_) {}
@@ -2669,6 +3853,12 @@ async function openReadingRecord(recordId) {
 }
 
 function applyRecordToView(record) {
+    cancelAnalysisJobs('load-record');
+    // 切換文章：上一頁的頁內查詞快取與 tooltip 會談不得套到新正文。
+    try { showArticleWordAnalysis._lazyCache?.clear?.(); } catch (_) { /* noop */ }
+    dismissWordTooltip({ restoreFocus: false, source: 'article-switch' });
+    if (articleSentenceCard) resetSentenceCardState({ restoreFocus: false });
+    else clearWordMode({ restoreFocus: false });
     dom.articleInput.value = record.article || '';
     setLoadedArticleContext(record.articleId, {
         sourceType: record.sourceType || 'paste',
@@ -2677,14 +3867,39 @@ function applyRecordToView(record) {
     });
     if (record.result) {
         displayArticleAnalysis(record.article || '', record.result);
+        // 保存失敗的段落：以「未保存」狀態覆蓋記憶體中看似成功的結果，
+        // 否則切回這篇時畫面會變成可用的譯文（P1-1）。
+        const contentVersion = readingActions.articleVersion(record.articleId);
+        const paragraphTexts = currentParagraphTexts(record.article || '');
+        unsavedParagraphIndices(record.articleId, contentVersion).forEach((index) => {
+            if (index < 0 || index >= paragraphTexts.length) return;
+            const unsaved = unsavedParagraphResult(record.articleId, contentVersion, index) || {};
+            renderParagraph(index, paragraphTexts[index], { ...unsaved, failed: true, errorCode: 'save_failed' });
+        });
     } else {
         dom.articleAnalysisContainer.innerHTML = `<p>${escapeHtml(t('article.historyNotAnalyzedHint'))}</p>`;
         dom.articleAnalysisContainer.dataset.analysis = '[]';
+        // 無分析記錄：畫面沒有任何「分析結果」，版本狀態必須一起重設，
+        // 否則會同時出現「尚未分析」與「畫面仍是舊版分析」（P2-4）。
+        setArticleViewVersion(record.article || '', { analyzed: false });
+        clearBatchSummary();
     }
-    if (dom.retryFailedParagraphsBtn) {
-        const failed = recordFailedParagraphs(record);
-        dom.retryFailedParagraphsBtn.classList.toggle('hidden', failed === 0);
+    clearAnalysisCheckpointFailure();
+    // 未完成分析：analysis_run 與目前正文版本一致才顯示續作 banner；
+    // 版本不一致時不提供舊版續作，沿用既有的舊版分析提示。
+    const resumeRun = record.result ? normalizeAnalysisRun(record.result.analysis_run) : null;
+    const resumeVersionMatches = !!resumeRun
+        && resumeRun.contentVersion === contentVersionOfText(record.article || '');
+    if (resumeRun && isIncompleteAnalysisRun(resumeRun) && resumeVersionMatches) {
+        showAnalysisResumeBanner(resumeRun);
+    } else {
+        hideAnalysisResumeBanner();
     }
+    // 整篇分析保存失敗的結果只存在記憶體：切回該篇時仍要看見未保存提示與保存入口。
+    renderAnalysisSaveFailure(record);
+    // 失敗段與批次按鈕一律由記錄推導（歷史上本來就沒有 lastFailedIndices）。
+    refreshFailedStateFromRecord();
+    updateArticleVersionState();
     try { notifyAssistantArticleChanged(); } catch (_) {}
 }
 
@@ -2821,10 +4036,30 @@ function updateHistoryUsage(container) {
 function refreshHistoryModal() {
     const container = document.querySelector('.ar-history');
     if (!container) return;
+    // 重建清單不得把使用者的閱讀位置與搜尋焦點洗掉（locale 切換會走這條路）。
+    const previousList = container.querySelector('.ar-history-list');
+    const scrollTop = previousList ? Number(previousList.scrollTop) || 0 : 0;
+    const active = document.activeElement;
+    const searchFocused = !!active && active.id === 'ar-history-search';
+    const selectionStart = searchFocused ? active.selectionStart : null;
+    const selectionEnd = searchFocused ? active.selectionEnd : null;
     renderHistoryList(container);
     updateHistoryUsage(container);
     renderDraftRow(container);
     renderConflictRow(container);
+    const list = container.querySelector('.ar-history-list');
+    if (list && scrollTop > 0) {
+        try { list.scrollTop = scrollTop; } catch (_) { /* 退回頂部 */ }
+    }
+    if (searchFocused) {
+        const search = container.querySelector('#ar-history-search');
+        if (search) {
+            try { search.focus({ preventScroll: true }); } catch (_) { /* noop */ }
+            if (selectionStart != null) {
+                try { search.setSelectionRange(selectionStart, selectionEnd ?? selectionStart); } catch (_) { /* noop */ }
+            }
+        }
+    }
 }
 
 function renderDraftRow(container) {
@@ -3037,7 +4272,14 @@ async function updateHistoryIndicators() {
     const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
     const pendingSync = record && (record.dirty || record.pending);
     const edited = !!record && recordHasUnsavedInput(record);
-    if (record && articleContext.origin === 'imported') {
+    // 保存失敗是比「已載入記錄」更強的狀態：一般歷史指示器不得把它覆蓋成已保存（F3）。
+    if (record && analysisSaveFailureFor(record)) {
+        statusEl.hidden = false;
+        statusEl.classList.remove('hidden');
+        statusEl.textContent = t('article.historyStatusSaveFailed');
+        statusEl.dataset.state = 'failed';
+        statusEl.disabled = false;
+    } else if (record && articleContext.origin === 'imported') {
         // 匯入的新內容還沒成為記錄：不能沿用上一篇的「已存入」
         statusEl.hidden = false;
         statusEl.classList.remove('hidden');
@@ -3108,15 +4350,21 @@ function handleReadButtonClick() {
 // Build reading chunks from the rendered analysis DOM when available,
 // falling back to raw text splitting when analysis is not present.
 function buildReadingChunks(mode) {
+    const perfStart = perfProbe.beginReadingChunks();
     const chunks = [];
     const area = dom.articleAnalysisContainer;
-    const hasRendered = !!area.querySelector('.paragraph-pair');
+    // 原文已被修改：朗讀跟「最新輸入」，不從舊分析的 DOM 唸出舊版本。
+    const hasRendered = !isArticleViewStale() && !!area.querySelector('.paragraph-pair');
 
     if (hasRendered) {
         const paraEls = Array.from(area.querySelectorAll('.paragraph-pair .paragraph-english'));
         // 原文已是中文的段落不交給英文 TTS 朗讀
         const isChineseSourcePara = (el) => el.parentElement?.dataset?.sourceLanguage === 'zh';
         // full 模式改為逐句朗讀（視覺效果更好，支援逐句高亮/淡化）
+        const finishChunks = () => {
+            perfProbe.markReadingChunks(perfStart, chunks);
+            return chunks;
+        };
         if (mode === 'paragraph') {
             paraEls.forEach(el => {
                 if (isChineseSourcePara(el)) return;
@@ -3124,7 +4372,7 @@ function buildReadingChunks(mode) {
                     || el.textContent.trim();
                 if (text) chunks.push({ type: 'paragraph', text, el });
             });
-            return chunks;
+            return finishChunks();
         }
         // sentence / full mode：逐句
         paraEls.forEach(el => {
@@ -3143,7 +4391,7 @@ function buildReadingChunks(mode) {
                 if (t) chunks.push({ type: 'sentence', text: t, el });
             }
         });
-        return chunks;
+        return finishChunks();
     }
 
     // Fallback when no analysis rendered yet
@@ -3160,10 +4408,13 @@ function buildReadingChunks(mode) {
     } else {
         parts.forEach(s => chunks.push({ type: 'sentence', text: s, el: null }));
     }
+    perfProbe.markReadingChunks(perfStart, chunks);
     return chunks;
 }
 
 let _playToken = 0; // 用於避免競態：切段期間舊的 onEnd 不再推進
+// 文章朗讀被其他音訊（通常是單詞發音）打斷：恢復時只能重播本句，不能假裝續播。
+let _interruptedByOtherAudio = false;
 // 浮動播放控制（避免捲動後看不到控制）
 let _floatingReader = null;
 let _englishOnly = false;   // 僅顯示英文
@@ -3289,7 +4540,9 @@ function updateFloatingToggle() {
     const icon = (id) => `<svg class="icon icon-sm" aria-hidden="true"><use href="#ic-${id}"/></svg>`;
     if (btn) {
         btn.innerHTML = icon(isPaused ? 'play' : 'pause');
-        btn.title = isPaused ? t('article.resume') : t('article.pause');
+        btn.title = isPaused
+            ? (_interruptedByOtherAudio ? t('article.replayChunk') : t('article.resume'))
+            : t('article.pause');
         btn.setAttribute('aria-label', btn.title);
     }
     // EN-only 按鈕：切換圖標與高亮
@@ -3314,7 +4567,13 @@ function readArticle() {
         return;
     }
     const mode = dom.readingModeSelect.value;
+    if (isArticleViewStale()) {
+        // 不阻塞朗讀，但要說清楚唸的是最新輸入，不是畫面上的舊分析。
+        ui.displayMessage(t('article.analysisStaleHint'), 'info', 5000);
+        clearReadingHighlights();
+    }
     state.setIsReadingChunkPaused(false);
+    _interruptedByOtherAudio = false;
     const chunks = buildReadingChunks(mode === 'full' ? 'sentence' : mode);
     state.setReadingChunks(chunks);
     if (state.readingChunks.length > 0) {
@@ -3329,6 +4588,7 @@ function readArticle() {
 
 function stopReadArticle() {
     audio.stopCurrentAudio();
+    _interruptedByOtherAudio = false;
     state.setIsReadingChunkPaused(false);
     dom.stopReadArticleBtn.disabled = true;
     updateReadButtonUI('stopped');
@@ -3353,6 +4613,11 @@ function playCurrentChunk() {
     const repeatTimesVal = parseInt(dom.chunkRepeatTimes.value, 10) || 1;
     
     const token = ++_playToken;
+    const onStatus = (status) => {
+        // 已經切段／停止的舊音訊，不得再改目前 UI。
+        if (token !== _playToken) return;
+        updatePlaybackStatus(status);
+    };
     const onEnd = () => {
         if (token !== _playToken) return; // 已切換，不再推進
         state.setSentenceRepeatCount(state.sentenceRepeatCount + 1);
@@ -3371,10 +4636,11 @@ function playCurrentChunk() {
     };
     // 使用全局英語朗讀首選
     audio.speakText(chunk?.text || String(chunk || ''), 'english', state.currentSpeed, () => {
+        if (token !== _playToken) return;
         dom.stopReadArticleBtn.disabled = false;
         updateReadButtonUI('playing');
         updateChunkNav();
-    }, onEnd);
+    }, onEnd, { owner: 'article-reading', onStatus });
 }
 
 function playNextChunk() {
@@ -3385,6 +4651,7 @@ function playNextChunk() {
     if (state.currentChunkIndex < state.readingChunks.length - 1) {
         audio.stopCurrentAudio();
         _playToken++; // 取消前一段的 onEnd 推進
+        _interruptedByOtherAudio = false;
         state.setCurrentChunkIndex(state.currentChunkIndex + 1);
         state.setSentenceRepeatCount(0);
         state.setIsReadingChunkPaused(false);
@@ -3405,6 +4672,7 @@ function playPrevChunk() {
     if (state.currentChunkIndex > 0) {
         audio.stopCurrentAudio();
         _playToken++;
+        _interruptedByOtherAudio = false;
         state.setCurrentChunkIndex(state.currentChunkIndex - 1);
         state.setSentenceRepeatCount(0);
         state.setIsReadingChunkPaused(false);
@@ -3425,6 +4693,11 @@ function togglePauseResume() {
     audio.stopCurrentAudio();
     state.setIsReadingChunkPaused(!wasPaused);
     if (wasPaused) {
+        if (_interruptedByOtherAudio) {
+            // 只提示一次；恢復是從本句開頭重播，不是從被單詞發音打斷的時間點續播。
+            _interruptedByOtherAudio = false;
+            ui.displayMessage(t('article.playbackPausedByPronunciation'), 'info', 4000);
+        }
         playCurrentChunk();
         updateReadButtonUI('playing');
     } else {
@@ -3435,6 +4708,35 @@ function togglePauseResume() {
     updateFloatingToggle();
 }
 
+/**
+ * 音訊層回報的播放狀態（P2-T1）。
+ * loading 只更新 UI，不假裝已開始；error 要停止朗讀並讓按鈕可再按。
+ */
+function updatePlaybackStatus(status = {}) {
+    const audioState = status?.state;
+    if (!audioState) return;
+    if (audioState === 'loading') {
+        if (!state.readingChunks || !state.readingChunks.length) return;
+        dom.stopReadArticleBtn.disabled = false;
+        updateReadButtonUI('playing');
+        dom.readArticleBtn.title = t('article.loading');
+        dom.readArticleBtn.setAttribute('aria-label', t('article.loading'));
+        return;
+    }
+    if (audioState === 'playing') {
+        if (!state.readingChunks || !state.readingChunks.length) return;
+        dom.stopReadArticleBtn.disabled = false;
+        updateReadButtonUI('playing');
+        updateChunkNav();
+        return;
+    }
+    if (audioState === 'error') {
+        console.warn('文章朗讀音訊失敗:', status?.error || '');
+        ui.displayMessage(t('article.audioFailed'), 'error', 5000);
+        stopReadArticle();
+    }
+}
+
 function updateReadButtonUI(status) {
     const icon = dom.readArticleBtn.querySelector('svg');
     const icons = {
@@ -3442,9 +4744,33 @@ function updateReadButtonUI(status) {
         pause: '<path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>'
     };
     icon.innerHTML = status === 'playing' ? icons.pause : icons.play;
-    dom.readArticleBtn.title = status === 'playing' ? t('article.pause') : (status === 'paused' ? t('article.resume') : t('article.read'));
+    const label = status === 'playing'
+        ? t('article.pause')
+        : (status === 'paused'
+            ? (_interruptedByOtherAudio ? t('article.replayChunk') : t('article.resume'))
+            : t('article.read'));
+    dom.readArticleBtn.title = label;
+    // 動態狀態不能用 data-i18n-aria-label，否則 locale 套用時會被靜態值蓋回。
+    dom.readArticleBtn.setAttribute('aria-label', label);
     // 同步更新浮動控制的暫停/播放按鈕
     updateFloatingToggle();
+}
+
+/**
+ * 播放與下載的能力不同：朗讀有系統語音後備，下載必須有可連線的遠端 TTS。
+ * 按鈕不隱藏，只用 title／aria-label 說明目前能不能下載，避免使用者以為按鈕壞了。
+ */
+function updateDownloadAvailability() {
+    const button = dom.downloadAudioBtn;
+    if (!button) return;
+    const target = typeof audio.describeTtsTarget === 'function'
+        ? audio.describeTtsTarget()
+        : { configured: audio.isRemoteTtsConfigured(), host: '' };
+    const label = target.configured ? t('article.downloadAudio') : t('article.downloadNeedsRemote');
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    if (target.configured) button.removeAttribute('data-download-unavailable');
+    else button.setAttribute('data-download-unavailable', '1');
 }
 
 function updateChunkNav() {
@@ -3492,9 +4818,33 @@ function highlightCurrentChunk(chunk) {
     }
 }
 
+// 全文下載是一次 GET 請求；太長的字串容易讓 TTS 服務逾時或回空檔。
+// 超過此門檻時先阻擋，建議改用段落／句子（依實測可調）。
+const DOWNLOAD_FULL_TEXT_LIMIT = 1800;
+
+/** 以實際送給 TTS 的文字長度估算；與 buildTTSUrl 的 t 參數一致。 */
+function estimateDownloadCharCount(text) {
+    try {
+        const url = new URL(audio.buildTTSUrl(text, 'english', state.currentSpeed), window.location.href);
+        const value = url.searchParams.get('t');
+        if (value != null) return value.length;
+    } catch (_) { /* 設定缺失時退回原始字串長度 */ }
+    return String(text || '').length;
+}
+
 async function downloadAudio() {
     const raw = dom.articleInput.value.trim();
     if (!raw) { ui.displayMessage(t('article.enterArticle'), 'warning'); return; }
+
+    // 下載沒有系統語音後備：先說清楚能力，不開空白分頁。
+    const target = typeof audio.describeTtsTarget === 'function'
+        ? audio.describeTtsTarget()
+        : { configured: audio.isRemoteTtsConfigured(), host: '' };
+    if (!target.configured) {
+        ui.displayMessage(t('article.downloadNeedsRemote'), 'warning');
+        return;
+    }
+
     // 構造下載文本：
     const mode = dom.readingModeSelect.value;
     const chunks = (function() {
@@ -3513,16 +4863,43 @@ async function downloadAudio() {
         const { title, paragraphs } = parseTitleAndParagraphs(raw);
         textToDownload = [title, ...paragraphs].filter(Boolean).join(' ');
     }
+
+    // 範圍與長度說明要在開啟連結前先講清楚。
+    const scopeLabel = mode === 'paragraph'
+        ? t('article.paragraph')
+        : (mode === 'sentence' ? t('article.sentence') : t('article.full'));
+    if (mode === 'full' && estimateDownloadCharCount(textToDownload) > DOWNLOAD_FULL_TEXT_LIMIT) {
+        ui.displayMessage(t('article.downloadLongText'), 'warning', 5000);
+        return;
+    }
+
+    const scopeLine = t('article.downloadScope', { scope: scopeLabel });
+    const message = target.host ? `${scopeLine} · ${target.host}` : scopeLine;
+    const confirmed = await ui.confirmAction({
+        title: t('article.downloadAudio'),
+        message,
+        confirmLabel: t('article.downloadAudio')
+    });
+    if (!confirmed) return;
+
     const makeSlug = (s) => (s || '').toLowerCase().replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-').replace(/-+/g,'-') || 'article';
     const { title } = parseTitleAndParagraphs(raw);
     const base = title ? makeSlug(title) : makeSlug(textToDownload.slice(0, 40));
     const fname = `${base}-${mode === 'full' ? 'full' : mode}.mp3`;
     try {
-        await audio.downloadTextAsAudio(textToDownload, 'english', state.currentSpeed, fname, { pitch: 0, style: 'general', download: true });
+        const result = await audio.downloadTextAsAudio(textToDownload, 'english', state.currentSpeed, fname, { pitch: 0, style: 'general', download: true });
+        if (result && result.ok === false) {
+            ui.displayMessage(t('article.downloadAudioFailed'), 'error');
+            return;
+        }
     } catch (err) {
-        console.error('下載音頻失敗:', err);
+        // 不記錄含 api_key 的 URL；只保留錯誤類型。
+        console.error('下載音頻失敗:', err?.name || 'error');
         ui.displayMessage(t('article.downloadAudioFailed'), 'error');
+        return;
     }
+    // 只宣稱已開啟連結；是否完成由瀏覽器與 TTS 服務決定。
+    ui.displayMessage(t('article.downloadLinkOpened'), 'info', 5000);
 }
 
 // --- Article Library ---
@@ -3642,16 +5019,19 @@ function handleWordHighlight(e) {
 // 動態補配對的實作定義在本檔案靠後（"Lazy pairing helpers" 區段）
 
 function handleArticleWordAnalysisClick(e) {
-    if (e.target.classList.contains('interactive-word')) {
+    const rawTarget = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
+    // 連結與程式碼片段保留原生行為：不攔截、不 preventDefault、不開查詞。
+    if (rawTarget?.closest && rawTarget.closest('a, code, pre, kbd, samp')) return;
+    if (rawTarget?.classList && rawTarget.classList.contains('interactive-word')) {
         e.stopPropagation();
         try {
             const analysisArray = JSON.parse(dom.articleAnalysisContainer.dataset.analysis || '[]');
             // 無論是否已有分析資料，都嘗試顯示；若無命中，showArticleWordAnalysis 會走懶載
-            showArticleWordAnalysis(e.target, Array.isArray(analysisArray) ? analysisArray : []);
+            showArticleWordAnalysis(rawTarget, Array.isArray(analysisArray) ? analysisArray : []);
         } catch (err) {
             console.error("Failed to parse analysis data:", err);
             // 解析失敗時也嘗試以空陣列啟動懶載
-            showArticleWordAnalysis(e.target, []);
+            showArticleWordAnalysis(rawTarget, []);
         }
     }
 }
@@ -3659,6 +5039,8 @@ function handleArticleWordAnalysisClick(e) {
 // Sentence analyze button to lazy-load sentence analysis
 dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
     const rawTarget = ev.target && ev.target.nodeType === 3 ? ev.target.parentElement : ev.target;
+    // 連結與程式碼片段維持原生行為：不 preventDefault、不開句卡、不開查詞。
+    if (rawTarget?.closest && rawTarget.closest('a, code, pre, kbd, samp')) return;
     // 1) 點句子本體即開合句卡（解析鍵改為內嵌後，右側熱區已移除，整句都是點擊範圍）
     const wrap = rawTarget?.closest && rawTarget.closest('.sentence-wrap');
     const isIcon = rawTarget?.closest && rawTarget.closest('.sent-analyze-btn');
@@ -3819,13 +5201,17 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
     // 在 tooltip 內的任何點擊都不向外冒泡，避免觸發外層關閉/重繪邏輯
     e.stopPropagation();
     const rawTarget = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
+    if (rawTarget?.closest && rawTarget.closest('.tooltip-close')) {
+        dismissWordTooltip({ restoreFocus: true, source: 'close-button' });
+        return;
+    }
     const btnPhrase = rawTarget?.closest && rawTarget.closest('.btn-analyze-phrase');
     const btnPick = rawTarget?.closest && rawTarget.closest('.btn-pick-phrase');
     const btnCustom = rawTarget?.closest && rawTarget.closest('.btn-analyze-phrase-custom');
     const btnPlay = rawTarget?.closest && rawTarget.closest('.btn-play-word');
     if (btnPlay) {
         const w = btnPlay.getAttribute('data-word') || '';
-        if (w) audio.speakText(w, 'english', 0);
+        if (w) audio.speakText(w, 'english', 0, null, null, { owner: 'word-pronunciation' });
         return;
     }
     const btnAdd = rawTarget?.closest && rawTarget.closest('.btn-add-to-book');
@@ -3955,8 +5341,84 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
 let wordTooltipSession = 0;
 // 目前顯示中的單詞彈窗所屬上下文（帳戶＋內文版本），供按鈕動作沿用。
 let wordTooltipContext = null;
+// 單詞彈窗的觸發詞、最後一次內容與重畫函式（locale 切換時使用）。
+let wordTooltipTrigger = null;
+let wordTooltipReturnFocus = null;
+let wordTooltipLastPayload = null;
+let wordTooltipRender = null;
+let wordTooltipKeyboardOpen = false;
 
-function showArticleWordAnalysis(clickedElement, analysisArray) {
+function isWordTooltipVisible() {
+    return !!dom.analysisTooltip && dom.analysisTooltip.style.display === 'block';
+}
+
+/** 窄屏改用固定底部 sheet；同時清掉桌機留下的 inline top/left，避免與 bottom 定位衝突。 */
+function syncWordTooltipSheetMode() {
+    const tooltip = dom.analysisTooltip;
+    if (!tooltip) return;
+    const sheet = !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
+    tooltip.classList.toggle('tooltip-sheet', sheet);
+    if (sheet) {
+        tooltip.style.top = '';
+        tooltip.style.left = '';
+    }
+}
+
+function resetWordTooltipState() {
+    wordTooltipSession += 1;
+    wordTooltipContext = null;
+    wordTooltipTrigger = null;
+    wordTooltipReturnFocus = null;
+    wordTooltipLastPayload = null;
+    wordTooltipRender = null;
+    wordTooltipKeyboardOpen = false;
+}
+
+/** 焦點回觸發詞：滑鼠開的詞原本不可聚焦，暫時給 tabindex=-1 並在失焦時移除。 */
+function focusWordTrigger(element) {
+    if (!element || !element.isConnected) return false;
+    const hadTabindex = element.hasAttribute('tabindex');
+    if (!hadTabindex) {
+        element.setAttribute('tabindex', '-1');
+        element.addEventListener('blur', () => {
+            if (element.getAttribute('tabindex') === '-1') element.removeAttribute('tabindex');
+        }, { once: true });
+    }
+    try { element.focus(); } catch (_) { return false; }
+    return document.activeElement === element;
+}
+
+function focusWordTooltipTitle() {
+    const title = dom.analysisTooltip?.querySelector('#word-tooltip-title');
+    if (!title) return;
+    try { title.focus({ preventScroll: true }); } catch (_) { try { title.focus(); } catch (_) {} }
+}
+
+/**
+ * 關閉單詞詳解。Escape／關閉鈕會把焦點還給觸發詞；外部點擊只清狀態、不搶焦點。
+ */
+function dismissWordTooltip({ restoreFocus = false, source = 'article' } = {}) {
+    const target = wordTooltipReturnFocus || wordTooltipTrigger;
+    resetWordTooltipState();
+    try { ui.hideTooltip(source); } catch (_) {
+        try { dom.analysisTooltip.style.display = 'none'; } catch (__) { /* noop */ }
+    }
+    // 收起後不留舊詞標題／內容：否則畫面上雖然看不到，輔助技術或下一次
+    // 顯示前的探測仍會讀到上一個版本的字。
+    try { dom.analysisTooltip.innerHTML = ''; } catch (_) { /* noop */ }
+    if (restoreFocus) focusWordTrigger(target);
+}
+
+/** 用最後一次內容重畫可見中的詳解（locale 切換用）；沒有內容就回 false。 */
+function rerenderVisibleWordTooltip() {
+    if (!wordTooltipLastPayload || !wordTooltipRender || !isWordTooltipVisible()) return false;
+    wordTooltipRender();
+    return true;
+}
+
+function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
+    // P3-T5：記錄「點詞 → tooltip 可見」；probe 關閉時 no-op。
+    perfProbe.beginWordTooltip();
     // 點擊當下的文章就是這次請求的歸屬；回應回來時不再讀取「目前文章」。
     const targetArticleId = articleContext.recordId || '';
     const wordText = clickedElement.dataset.word || clickedElement.textContent;
@@ -3982,14 +5444,39 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
     const articleContextSnapshot = articleStore.captureArticleContext();
     const contentVersion = readingActions.articleVersion(targetArticleId);
     const wordAnchor = anchorForWordElement(clickedElement, sentenceEl, wordText);
+    // 鍵盤開詳解：事件 detail=0，或焦點還在句子／詞節點上（逐詞模式的 Enter）。
+    const openedFromKeyboard = options.keyboard === true
+        || options.eventDetail === 0
+        || document.activeElement === clickedElement
+        || !!(document.activeElement?.closest?.('.interactive-sentence'));
+    wordTooltipTrigger = clickedElement;
+    wordTooltipReturnFocus = clickedElement;
+    wordTooltipKeyboardOpen = openedFromKeyboard;
     const stillShowing = () => session === wordTooltipSession
+        && clickedElement.isConnected
         && readingActions.actionContextActive(actionContext)
         && isCurrentArticle(targetArticleId)
         // 正文在同一次查詞期間被改寫：舊回應不得重新顯示在新版本上。
         && readingActions.articleVersion(targetArticleId) === contentVersion
         // 使用者已點擊別處收起彈窗：舊請求不得把彈窗重新打開。
         && dom.analysisTooltip.style.display !== 'none';
+    // 這一個查詞仍是目前 session，但它所屬的正文／文章／帳戶已失效：
+    // 載入殼必須一起收掉，不能留下舊詞標題假裝還在載入。
+    const staleSessionContext = () => session === wordTooltipSession
+        && !(clickedElement.isConnected
+            && readingActions.actionContextActive(actionContext)
+            && isCurrentArticle(targetArticleId)
+            && readingActions.articleVersion(targetArticleId) === contentVersion);
     wordTooltipContext = { actionContext, contentVersion };
+    let renderedOnce = false;
+
+    const tooltipTitleHtml = (data, fallbackWord) => {
+        const wordHtml = escapeHtml(data?.word || fallbackWord || '');
+        const rawPhonetic = String(data?.analysis?.phonetic || '').replace(/^\/|\/$/g, '');
+        const phonetic = rawPhonetic ? `<span class="tooltip-phonetic">/${escapeHtml(rawPhonetic)}/</span>` : '';
+        const pos = data?.analysis?.pos ? ` (${escapeHtml(data.analysis.pos)})` : '';
+        return `${wordHtml}${phonetic}${pos}`;
+    };
 
     const actionButtonsHtml = (sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText, analysis = null) => {
         const escAttr = escapeAttr;
@@ -4002,41 +5489,95 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         const savedItem = readingActions.findSavedItem(targetArticleId, kind, quote, sentenceForBtn || '', { anchor: wordAnchor, contentVersion });
         const marked = savedItem?.marked === true;
         const anchorAttrs = `data-article-id="${escAttr(targetArticleId)}" data-quote="${escAttr(quote)}" data-word="${escAttr(quote)}" data-kind="${kind}" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-sentence-start="${escAttr(String(sentenceStart))}" data-start-offset="${escAttr(String(startOffset))}" data-anchor-start="${escAttr(String(wordAnchor?.start ?? -1))}" data-anchor-end="${escAttr(String(wordAnchor?.end ?? -1))}" data-content-version="${escAttr(contentVersion || '')}"`;
+        // 預設只露出三個主要操作；筆記與短語類操作收進「更多」。
         return `
-                    <button class="btn-ghost btn-mini btn-add-to-book"
-                        ${anchorAttrs}
-                        data-meaning="${escAttr(analysis?.meaning || '')}"
-                        data-phonetic="${escAttr(analysis?.phonetic || '')}"
-                        data-pos="${escAttr(analysis?.pos || '')}"
-                    >${t('article.addToWordbook')}</button>
-                    <button class="btn-ghost btn-mini btn-toggle-mark" ${anchorAttrs} aria-pressed="${marked ? 'true' : 'false'}">${marked ? t('article.unmarkThis') : t('article.markThis')}</button>
+            <div class="tooltip-primary-actions">
+                <button class="btn-ghost btn-mini btn-play-word" data-word="${escAttr(quote || wordText)}">${t('article.pronunciation')}</button>
+                <button class="btn-ghost btn-mini btn-add-to-book"
+                    ${anchorAttrs}
+                    data-meaning="${escAttr(analysis?.meaning || '')}"
+                    data-phonetic="${escAttr(analysis?.phonetic || '')}"
+                    data-pos="${escAttr(analysis?.pos || '')}"
+                >${t('article.addToWordbook')}</button>
+                <button class="btn-ghost btn-mini btn-toggle-mark" ${anchorAttrs} aria-pressed="${marked ? 'true' : 'false'}">${marked ? t('article.unmarkThis') : t('article.markThis')}</button>
+            </div>
+            <details class="tooltip-more">
+                <summary>${t('article.moreActions')}</summary>
+                <div class="tooltip-more-body">
                     <button class="btn-ghost btn-mini btn-note-item" ${anchorAttrs}>${t('article.writeNote')}</button>
                     <button class="btn-ghost btn-mini btn-pick-phrase" data-article-id="${escAttr(targetArticleId)}" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}" data-sentence-start="${escAttr(String(sentenceStart))}" data-start-offset="${escAttr(String(startOffset))}">${t('article.pickPhrase')}</button>
                     <button class="btn-ghost btn-mini btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzePhrase')}</button>
-                    <button class="btn-ghost btn-mini btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzeOtherPhrase')}</button>`;
+                    <button class="btn-ghost btn-mini btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzeOtherPhrase')}</button>
+                </div>
+            </details>`;
     };
-    const showTooltip = (data, sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText) => {
-        if (data && data.analysis) {
-            const analysis = data.analysis;
-            const phonetic = analysis.phonetic ? ` /${escapeHtml(analysis.phonetic.replace(/^\/|\/$/g, ''))}/` : '';
-            ui.repositionTooltip(clickedElement);
-            dom.analysisTooltip.innerHTML = `
-                <div class="tooltip-title">${escapeHtml(data.word)}<span class="tooltip-phonetic">${phonetic}</span> (${escapeHtml(analysis.pos)})</div>
-                <div class="tooltip-content">
-                    <p><strong>${t('article.roleLabel')}</strong> ${escapeHtml(analysis.role)}</p>
-                    <p><strong>${t('article.meaningLabel')}</strong> ${escapeHtml(analysis.meaning)}</p>
-                </div>
-                <div class="tooltip-actions">
-                    <button class="btn-ghost btn-mini btn-play-word" data-word="${escapeAttr(data.word || defaultPhrase)}">${t('article.pronunciation')}</button>
-                    ${actionButtonsHtml(sentenceForBtn, contextForBtn, defaultPhrase, analysis)}
-                </div>
-                <div class="tooltip-phrase-result"></div>`;
-        } else {
-            dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.noAnalysisData')}</p></div>
-                <div class="tooltip-actions">${actionButtonsHtml(sentenceForBtn, contextForBtn, defaultPhrase)}</div>`;
-        }
+
+    const renderTooltipShell = (titleHtml, contentHtml, actionsHtml, { retryHtml = '' } = {}) => {
+        const hadFocusInside = dom.analysisTooltip.contains(document.activeElement);
+        syncWordTooltipSheetMode();
+        dom.analysisTooltip.innerHTML = `
+            <div class="tooltip-head">
+                <div class="tooltip-title" id="word-tooltip-title" tabindex="-1">${titleHtml}</div>
+                <button type="button" class="tooltip-close" aria-label="${escapeAttr(t('article.close'))}">×</button>
+            </div>
+            <div class="tooltip-content">${contentHtml}</div>
+            ${retryHtml}
+            <div class="tooltip-actions">${actionsHtml}</div>
+            <div class="tooltip-phrase-result"></div>`;
         dom.analysisTooltip.style.display = 'block';
         ui.repositionTooltip(clickedElement);
+        perfProbe.markWordTooltip();
+        // 鍵盤開卡：第一次與後續非同步重畫都要把焦點留在標題；滑鼠開的不搶焦點。
+        if (wordTooltipKeyboardOpen && (hadFocusInside || !renderedOnce)) {
+            focusWordTooltipTitle();
+        }
+        renderedOnce = true;
+    };
+
+    const showTooltip = (data, sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText) => {
+        const analysis = data && data.analysis ? data.analysis : null;
+        const meaning = String(analysis?.meaning || '').trim();
+        const role = String(analysis?.role || '').trim();
+        // 資訊層級：句中意思先於句中角色；角色是次要說明。
+        const contentHtml = analysis
+            ? `${meaning ? `<p class="tooltip-meaning"><strong>${t('article.meaningLabel')}</strong> ${escapeHtml(meaning)}</p>` : ''}
+               ${role ? `<p class="tooltip-role"><strong>${t('article.roleLabel')}</strong> ${escapeHtml(role)}</p>` : ''}`
+            : `<p>${t('article.noAnalysisData')}</p>`;
+        wordTooltipLastPayload = { kind: 'data', data, sentenceForBtn, contextForBtn, defaultPhrase };
+        wordTooltipRender = () => showTooltip(data, sentenceForBtn, contextForBtn, defaultPhrase);
+        renderTooltipShell(
+            tooltipTitleHtml(data, defaultPhrase),
+            contentHtml || `<p>${t('article.noAnalysisData')}</p>`,
+            actionButtonsHtml(sentenceForBtn, contextForBtn, defaultPhrase, analysis)
+        );
+    };
+
+    const showLoading = (sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText) => {
+        wordTooltipLastPayload = { kind: 'loading', sentenceForBtn, contextForBtn, defaultPhrase };
+        wordTooltipRender = () => showLoading(sentenceForBtn, contextForBtn, defaultPhrase);
+        // 載入中仍保留發音、加入詞書、標記與關閉，不能只剩一行等待文字。
+        renderTooltipShell(
+            tooltipTitleHtml(null, defaultPhrase),
+            `<p>${t('article.loading')}</p>`,
+            actionButtonsHtml(sentenceForBtn, contextForBtn, defaultPhrase, null)
+        );
+    };
+
+    const showError = (sentenceForBtn = null, contextForBtn = null, defaultPhrase = wordText) => {
+        wordTooltipLastPayload = { kind: 'error', sentenceForBtn, contextForBtn, defaultPhrase };
+        wordTooltipRender = () => showError(sentenceForBtn, contextForBtn, defaultPhrase);
+        renderTooltipShell(
+            tooltipTitleHtml(null, defaultPhrase),
+            `<p>${t('article.wordAnalysisFailed')}</p>`,
+            actionButtonsHtml(sentenceForBtn, contextForBtn, defaultPhrase, null),
+            { retryHtml: `<div class="tooltip-retry"><button class="btn-ghost btn-mini btn-retry-word">${t('article.retry')}</button></div>` }
+        );
+        const retryBtn = dom.analysisTooltip.querySelector('.btn-retry-word');
+        if (retryBtn) retryBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const keyboard = wordTooltipKeyboardOpen;
+            showArticleWordAnalysis(clickedElement, analysisArray, { keyboard });
+        });
     };
 
     if (wordAnalysisData && wordAnalysisData.analysis) {
@@ -4064,51 +5605,31 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
         return;
     }
 
-    // 去重：避免重覆請求
-    const lazyKey = `${normText(sentence)}::${(wordText || '').toLowerCase()}`;
-    if (!showArticleWordAnalysis._lazyCache) showArticleWordAnalysis._lazyCache = new Map();
-    if (showArticleWordAnalysis._lazyCache.has(lazyKey)) {
-        const data = showArticleWordAnalysis._lazyCache.get(lazyKey);
-        // 合併到 analysisArray 並更新 dataset（去重）
-        const merged = mergeDetailedAnalyses(analysisArray, [data]);
-        dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(merged);
-        showTooltip(data, sentence, paraEnglish, wordText);
-        // 命中快取並實際顯示，算一次查閱；同時補存到這篇文章的永久記錄。
-        try {
-            readingActions.recordExplanation({
-                articleId: targetArticleId,
-                kind: 'word',
-                quote: wordText,
-                sentence,
-                context: paraEnglish,
-                data,
-                markViewed: true,
-                anchor: wordAnchor,
-                contentVersion,
-                actionContext
-            }).catch(() => {});
-        } catch (_) {}
-        return;
+    // 查詞去重（P1-T7）：key 含內容版本、介面語言、模型與句子，避免跨版本／跨語言誤命中。
+    // 快取存的是 Promise：同一個詞連點只會有一個請求，失敗就刪除讓重試可重新發出。
+    const lazyKey = wordLookupKey(wordText, sentence);
+    const lookupCache = wordLookupCache();
+    if (!lookupCache.has(lazyKey)) {
+        lookupCache.set(lazyKey, api.analyzeWordInSentence(wordText, sentence, { timeoutMs: 20000 })
+            .then((data) => {
+                const normalized = normalizeWordAnalysisData(data, wordText, sentence);
+                if (!isUsableWordAnalysis(normalized)) {
+                    lookupCache.delete(lazyKey);
+                    const error = new Error('empty word analysis');
+                    error.code = normalized?.errorCode || 'empty_response';
+                    throw error;
+                }
+                return normalized;
+            })
+            .catch((error) => {
+                lookupCache.delete(lazyKey);
+                throw error;
+            }));
     }
 
-    dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.loading')}</p></div>
-        <div class="tooltip-actions">${actionButtonsHtml(sentence, paraEnglish, wordText)}</div>`;
-    dom.analysisTooltip.style.display = 'block';
-    ui.repositionTooltip(clickedElement);
+    showLoading(sentence, paraEnglish, wordText);
 
-    api.analyzeWordInSentence(wordText, sentence, { timeoutMs: 20000 }).then(data => {
-        // 標準化返回結構
-        const normalized = data && data.analysis ? data : {
-            word: wordText,
-            sentence,
-            analysis: {
-                phonetic: data?.analysis?.phonetic || '',
-                pos: data?.analysis?.pos || '',
-                meaning: data?.analysis?.meaning || (typeof data === 'string' ? data : ''),
-                role: data?.analysis?.role || ''
-            }
-        };
-        showArticleWordAnalysis._lazyCache.set(lazyKey, normalized);
+    lookupCache.get(lazyKey).then((normalized) => {
         // 解釋永遠存到「點擊時」的文章版本與錨點（舊回應寫舊版本，不得記成新版本）。
         try {
             readingActions.recordExplanation({
@@ -4142,24 +5663,64 @@ function showArticleWordAnalysis(clickedElement, analysisArray) {
             }
         } catch (_) { /* 持久化失敗不影響顯示 */ }
         // 已換選詞／換文章／換帳戶：舊回應不得覆寫目前畫面。
-        if (!stillShowing()) return;
+        if (!stillShowing()) {
+            if (staleSessionContext()) dismissWordTooltip({ restoreFocus: false, source: 'stale-word-response' });
+            return;
+        }
         const merged = mergeDetailedAnalyses(analysisArray, [normalized]);
         dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(merged);
         showTooltip(normalized, sentence, paraEnglish, wordText);
-    }).catch(err => {
+    }).catch((err) => {
         console.warn('懶載詳解失敗:', err);
         // 只有這一個選詞仍是目前顯示的才可以把錯誤寫進畫面。
-        if (!stillShowing()) return;
-        dom.analysisTooltip.innerHTML = `<div class="tooltip-content"><p>${t('article.wordAnalysisFailed')}</p></div>
-            <div class="tooltip-actions"><button class="btn-ghost btn-mini btn-retry-word">${t('article.retry')}</button>${actionButtonsHtml(sentence, paraEnglish, wordText)}</div>`;
-        const retryBtn = dom.analysisTooltip.querySelector('.btn-retry-word');
-        if (retryBtn) retryBtn.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            showArticleWordAnalysis(clickedElement, analysisArray);
-        });
-        dom.analysisTooltip.style.display = 'block';
-        ui.repositionTooltip(clickedElement);
+        if (!stillShowing()) {
+            if (staleSessionContext()) dismissWordTooltip({ restoreFocus: false, source: 'stale-word-response' });
+            return;
+        }
+        showError(sentence, paraEnglish, wordText);
     });
+}
+
+/**
+ * 頁內查詞快取的身分：內容版本＋介面語言＋模型＋句子＋詞。
+ * 任一項改變都不該命中上一份結果（例如切換 zh-CN／zh-HK 或換模型）。
+ */
+function wordLookupKey(word, sentence) {
+    let model = '';
+    try { model = getTaskModelSelection('wordAnalysis').value || ''; } catch (_) { /* noop */ }
+    let version = '';
+    try { version = readingActions.articleVersion(articleContext.recordId || ''); } catch (_) { /* noop */ }
+    return `${version}::${getLocale()}::${model}::${normSentenceForCache(sentence)}::${String(word || '').trim().toLowerCase()}`;
+}
+
+function normSentenceForCache(sentence) {
+    return String(sentence || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function wordLookupCache() {
+    if (!(showArticleWordAnalysis._lazyCache instanceof Map)) showArticleWordAnalysis._lazyCache = new Map();
+    return showArticleWordAnalysis._lazyCache;
+}
+
+/** 只有拿到非空 meaning 才算成功；空詳解不得寫入快取，也不得記成已查閱。 */
+function isUsableWordAnalysis(data) {
+    return !!String(data?.analysis?.meaning || '').trim();
+}
+
+function normalizeWordAnalysisData(data, wordText, sentence) {
+    if (data && data.analysis) return data;
+    return {
+        word: wordText,
+        sentence,
+        analysis: {
+            phonetic: data?.analysis?.phonetic || '',
+            pos: data?.analysis?.pos || '',
+            meaning: data?.analysis?.meaning || (typeof data === 'string' ? data : ''),
+            role: data?.analysis?.role || ''
+        },
+        failed: data?.failed === true,
+        errorCode: data?.errorCode || ''
+    };
 }
 
 // --- Lazy pairing helpers ---
@@ -4230,82 +5791,105 @@ function wrapChineseWithPairId(container, zh, pairId) {
 }
 
 async function retrySingleParagraph(idx, options = {}) {
-    const articleText = dom.articleInput.value.trim();
-    if (!articleText) return;
-    // 固定這次重試所屬的文章：切換文章後才回來的結果不得寫進別篇
-    const targetArticleId = articleContext.recordId || '';
-    const { title, paragraphs } = parseTitleAndParagraphs(articleText);
-    const all = title ? [title, ...paragraphs] : paragraphs;
+    // 固定這次重試所屬的文章與版本：切換文章／改版後才回來的結果不得寫進別篇。
+    const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
+    if (!record || !record.result) {
+        ui.displayMessage(t('article.analysisRecordMissing'), 'warning', 5000);
+        return;
+    }
+    const targetArticleId = record.articleId;
+    if (!retryTargetsCurrentVersion(record)) {
+        // 輸入框內容與記錄版本不同：先請使用者重新分析，避免把新原文的結果寫進舊記錄。
+        ui.displayMessage(t('article.retryNeedsReanalyze'), 'warning', 5000);
+        return;
+    }
+    const contentVersion = readingActions.articleVersion(targetArticleId);
+    const all = currentParagraphTexts(record.article || '');
     if (idx < 0 || idx >= all.length) return;
-    // 統一為最小輸出模式
-    const level = 'quick';
-    const timeoutMs = level === 'quick' ? 30000 : (level === 'standard' ? 45000 : 60000);
     const text = all[idx];
+    const level = 'quick';
     const statusDiv = document.querySelector(`.paragraph-pair[data-paragraph-index="${idx}"] .para-status`);
+    const textSpan = statusDiv?.querySelector('.status-text');
+    const reasonSpan = statusDiv?.querySelector('.para-reason');
+    const retryBtn = statusDiv?.querySelector('.retry-paragraph-btn');
+    const controller = new AbortController();
+    const job = startAnalysisJob({
+        kind: 'retry-single',
+        articleId: targetArticleId,
+        contentVersion,
+        controller,
+        index: idx
+    });
+    // 同一段落只允許一個工作持有寫入權；重複工作會淘汰舊工作。
+    claimParagraphForJob(job, idx);
     if (statusDiv) {
         setParagraphStatus(statusDiv, 'pending');
-        const textSpan = statusDiv.querySelector('.status-text');
-        const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
         if (textSpan) textSpan.textContent = t('article.analyzing');
-        if (retryBtn) retryBtn.style.display = 'none';
+        if (reasonSpan) { reasonSpan.hidden = true; reasonSpan.textContent = ''; }
+    }
+    if (retryBtn) {
+        retryBtn.disabled = true;
+        retryBtn.setAttribute('aria-busy', 'true');
     }
     try {
         paragraphStartTime[idx] = Date.now();
-        const baseText = prepareParagraphForTranslation(stripMarkdownImagesFromText(text)) || text;
-        let result;
-        if (isPredominantlyChinese(baseText)) {
-            // 中文段落不送翻譯；沿用原文並在中文欄顯示「原文已是中文」
-            result = buildChineseSourceResult(text);
-        } else {
-            const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
-            result = await api.analyzeParagraph(baseText, {
-                timeoutMs,
-                level,
-                noCache: !!options.force,
-                sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
-            });
+        const outcome = await runParagraphRequest(text, {
+            signal: controller.signal,
+            level,
+            force: options.force !== false
+        });
+        if (!isJobWriteTarget(job, idx)) return;
+        if (paragraphStartTime[idx]) paragraphElapsedMs[idx] = Math.max(0, Date.now() - paragraphStartTime[idx]);
+        if (!outcome.ok) {
+            renderParagraph(idx, text, outcome.result || paragraphPipeline.failedParagraphResult(outcome.errorCode));
+            return;
         }
-        if (!isCurrentArticle(targetArticleId)) return;
-        renderParagraph(idx, text, result);
-        // merge into aggregated dataset
+        // 先保存再更新畫面：保存失敗不得閃成功。
+        const saved = await persistParagraphResult({
+            articleId: targetArticleId,
+            index: idx,
+            result: outcome.result,
+            contentVersion,
+            canCommit: () => isJobWriteTarget(job, idx)
+        });
+        // 保存期間才回來的新工作接手了這個段落：舊結果不得再改畫面。
+        if (!isJobWriteTarget(job, idx)) return;
+        if (!saved.ok) {
+            const errorCode = saved.error === 'stale_version' ? 'stale_version' : 'save_failed';
+            // 交易真的失敗時記憶體已更新，必須保留「未保存」標記，失敗數才會一致。
+            markParagraphsUnsaved(targetArticleId, contentVersion, [[idx, outcome.result]]);
+            renderParagraph(idx, text, { ...outcome.result, failed: true, errorCode });
+            ui.displayMessage(t('article.analysisSaveFailedInline'), 'error', 6000);
+        } else {
+            // 一次成功保存寫入整份記錄，先前未保存的段落也一起落盤：畫面同步成記錄狀態。
+            const stillUnsaved = unsavedParagraphIndices(targetArticleId, contentVersion);
+            clearParagraphsUnsaved(targetArticleId, contentVersion);
+            stillUnsaved.forEach((other) => {
+                if (other === idx) return;
+                const otherText = all[other];
+                const otherItem = articleStore.getRecord(targetArticleId)?.result?.paragraph_analysis?.[other];
+                if (otherText && otherItem) renderParagraph(other, otherText, otherItem);
+            });
+            renderParagraph(idx, text, outcome.result);
+            flashParagraphSuccess(idx);
+        }
         let aggregated = [];
-        try { aggregated = JSON.parse(dom.articleAnalysisContainer.dataset.analysis || '[]'); } catch(_) {}
-        if (Array.isArray(result?.detailed_analysis)) {
-            aggregated = mergeDetailedAnalyses(aggregated, result.detailed_analysis);
+        try { aggregated = JSON.parse(dom.articleAnalysisContainer.dataset.analysis || '[]'); } catch (_) {}
+        if (Array.isArray(outcome.result?.detailed_analysis)) {
+            aggregated = mergeDetailedAnalyses(aggregated, outcome.result.detailed_analysis);
             dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(aggregated);
         }
-        // 把重試成功的段落寫回記錄（重新載入後不會退回失敗狀態）
-        try {
-            const record = targetArticleId ? articleStore.getRecord(targetArticleId) : null;
-            if (record && record.result) {
-                const paragraphAnalysis = Array.isArray(record.result.paragraph_analysis) ? [...record.result.paragraph_analysis] : [];
-                paragraphAnalysis[idx] = result;
-                const updated = {
-                    ...record.result,
-                    paragraph_analysis: paragraphAnalysis,
-                    detailed_analysis: mergeDetailedAnalyses(record.result.detailed_analysis || [], result?.detailed_analysis || [])
-                };
-                articleStore.saveAnalysis(targetArticleId, updated).then((result) => { if (!result.ok) ui.displayMessage(t('article.saveAnalysisFailed'), 'error'); }).catch(() => {});
-            }
-        } catch (_) { /* 持久化失敗只影響跨端一致性 */ }
-        // remove from failed list if present
-        lastFailedIndices = (lastFailedIndices || []).filter(i => i !== idx);
-        if (dom.retryFailedParagraphsBtn) dom.retryFailedParagraphsBtn.classList.toggle('hidden', lastFailedIndices.length === 0);
-        // compute and show elapsed
-        if (paragraphStartTime[idx]) paragraphElapsedMs[idx] = Math.max(0, Date.now() - paragraphStartTime[idx]);
-        renderParagraph(idx, text, result);
-        // flash success highlight
-        flashParagraphSuccess(idx);
-    } catch (e) {
-        console.warn(`單段重試失敗 ${idx+1}`, e);
-        // show failed state again
-        const textSpan = statusDiv && statusDiv.querySelector('.status-text');
-        const retryBtn = statusDiv && statusDiv.querySelector('.retry-paragraph-btn');
-        setParagraphStatus(statusDiv, 'failed');
-        if (textSpan) textSpan.textContent = t('article.failedStatus');
-        if (retryBtn) retryBtn.style.display = 'inline-block';
-        if (!lastFailedIndices.includes(idx)) lastFailedIndices.push(idx);
-        if (dom.retryFailedParagraphsBtn) dom.retryFailedParagraphsBtn.classList.remove('hidden');
+        refreshFailedStateFromRecord();
+    } catch (error) {
+        if (error?.name === 'AbortError' || job.cancelled) return;
+        console.warn(`單段重試失敗 ${idx + 1}`, error);
+        if (!isJobWriteTarget(job, idx)) return;
+        renderParagraph(idx, text, paragraphPipeline.failedParagraphResult(error?.code || 'provider_error'));
+        refreshFailedStateFromRecord();
+    } finally {
+        finishAnalysisJob(job);
+        // 舊工作不得在切換後改到新畫面的按鈕／版本狀態；只有仍是目前文章才刷新。
+        if (isCurrentArticle(targetArticleId)) updateArticleVersionState();
     }
 }
 
@@ -4313,7 +5897,9 @@ async function retrySingleParagraph(idx, options = {}) {
 const PARAGRAPH_STATUS_ICONS = {
     pending: '#ic-timer',
     done: '#ic-check',
-    failed: '#ic-warning'
+    failed: '#ic-warning',
+    skipped: '#ic-info',
+    cancelled: '#ic-stop'
 };
 
 /** 切換段落狀態列的圖標與狀態標記；配色由 styles.css 依 data-status 決定 */
@@ -4354,6 +5940,62 @@ function renderParagraph(index, englishPara, result) {
     const stripSpanTags = (s) => (s || '').replace(/<\/?span[^>]*>/g, '');
     let processedChinese = stripSpanTags(chinese || '');
 
+    // 段落狀態只認 analysis-state 的判定：成功／失敗／跳過／待分析都不是靠「有沒有文字」猜。
+    const paragraphClassification = (isImageParagraph = false) => classifyParagraphResult(result, {
+        sourceText: englishPara,
+        sourceIsChinese,
+        isImageParagraph
+    });
+    const applyParagraphStatusUI = (classification) => {
+        if (!statusDiv) return classification;
+        setParagraphStatus(statusDiv, classification.status);
+        // 保留錯誤碼：語言切換時要用同一份狀態重套文案（P2-5）。
+        if (classification.errorCode) statusDiv.dataset.errorCode = classification.errorCode;
+        else delete statusDiv.dataset.errorCode;
+        const textSpan = statusDiv.querySelector('.status-text');
+        const elapsedSpan = statusDiv.querySelector('.elapsed');
+        const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
+        if (elapsedSpan && paragraphElapsedMs[index] != null) {
+            const ms = paragraphElapsedMs[index];
+            elapsedSpan.textContent = `(${(ms / 1000).toFixed(1)}s)`;
+        }
+        if (textSpan) textSpan.textContent = t(paragraphStatusLabelKey(classification.status));
+        let reasonSpan = statusDiv.querySelector('.para-reason');
+        if (!reasonSpan) {
+            reasonSpan = document.createElement('span');
+            reasonSpan.className = 'para-reason';
+            reasonSpan.hidden = true;
+            textSpan?.insertAdjacentElement('afterend', reasonSpan);
+        }
+        if (classification.status === PARAGRAPH_STATUS.failed) {
+            reasonSpan.hidden = false;
+            reasonSpan.textContent = t('article.paragraphFailureReason', {
+                message: t(paragraphErrorLabelKey(classification.errorCode))
+            });
+        } else {
+            reasonSpan.hidden = true;
+            reasonSpan.textContent = '';
+        }
+        if (retryBtn) {
+            if (classification.status === PARAGRAPH_STATUS.failed) {
+                retryBtn.style.display = 'inline-block';
+                retryBtn.textContent = t('article.retryParagraph');
+                retryBtn.dataset.index = String(index);
+            } else if (classification.status === PARAGRAPH_STATUS.done) {
+                retryBtn.style.display = 'inline-block';
+                retryBtn.textContent = t('article.refresh');
+                retryBtn.dataset.index = String(index);
+            } else {
+                // skipped／cancelled／pending 不提供「重試本段」
+                retryBtn.style.display = 'none';
+                retryBtn.removeAttribute('data-index');
+            }
+            // 忙碌中的段落不得因其他段落完成而被提前解鎖（P1-2）。
+            updateParagraphButtonState(retryBtn);
+        }
+        return classification;
+    };
+
     // 若是 Markdown 表格，直接以表格方式渲染並跳過逐句標註
     if (isMarkdownTableStart(englishPara)) {
         if (englishDiv || chineseDiv) {
@@ -4373,19 +6015,7 @@ function renderParagraph(index, englishPara, result) {
             }
         }
         // 更新狀態列
-        if (statusDiv) {
-            const textSpan = statusDiv.querySelector('.status-text');
-            const elapsedSpan = statusDiv.querySelector('.elapsed');
-            const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
-            if (elapsedSpan && paragraphElapsedMs[index] != null) {
-                const ms = paragraphElapsedMs[index];
-                const secs = (ms / 1000).toFixed(1);
-                elapsedSpan.textContent = `(${secs}s)`;
-            }
-            setParagraphStatus(statusDiv, 'done');
-            if (textSpan) textSpan.textContent = t('article.doneStatus');
-            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = t('article.refresh'); }
-        }
+        applyParagraphStatusUI(paragraphClassification(false));
         return;
     }
 
@@ -4404,19 +6034,7 @@ function renderParagraph(index, englishPara, result) {
                 chineseDiv.innerHTML = '';
                 chineseDiv.dataset.markdownImages = '1';
             }
-            if (statusDiv) {
-                const textSpan = statusDiv.querySelector('.status-text');
-                const elapsedSpan = statusDiv.querySelector('.elapsed');
-                const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
-                if (elapsedSpan && paragraphElapsedMs[index] != null) {
-                    const ms = paragraphElapsedMs[index];
-                    const secs = (ms / 1000).toFixed(1);
-                    elapsedSpan.textContent = `(${secs}s)`;
-                }
-                setParagraphStatus(statusDiv, 'done');
-                if (textSpan) textSpan.textContent = t('article.doneStatus');
-                if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = t('article.refresh'); }
-            }
+            applyParagraphStatusUI(paragraphClassification(true));
             return;
         }
     }
@@ -4497,21 +6115,9 @@ function renderParagraph(index, englishPara, result) {
         flushZh();
         chineseDiv.innerHTML = sourceIsChinese
             ? `<span class="source-language-note">${escapeHtml(t('article.sourceAlreadyChinese'))}</span>`
-            : (zhBlocks.join('') || `<em>${t('article.analysisFailedInline')}</em>`);
+            : (zhBlocks.join('') || `<em class="analysis-failed-inline">${t('article.analysisFailedInline')}</em>`);
 
-        if (statusDiv) {
-            const textSpan = statusDiv.querySelector('.status-text');
-            const elapsedSpan = statusDiv.querySelector('.elapsed');
-            const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
-            if (elapsedSpan && paragraphElapsedMs[index] != null) {
-                const ms = paragraphElapsedMs[index];
-                const secs = (ms / 1000).toFixed(1);
-                elapsedSpan.textContent = `(${secs}s)`;
-            }
-            setParagraphStatus(statusDiv, 'done');
-            if (textSpan) textSpan.textContent = t('article.doneStatus');
-            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = t('article.refresh'); }
-        }
+        applyParagraphStatusUI(paragraphClassification(false));
         return;
     }
 
@@ -4546,104 +6152,420 @@ function renderParagraph(index, englishPara, result) {
     const zhAligned = alignedZhSentences(result, sentences);
     const zhSentences = zhAligned || sentenceSplitZh(processedChinese || chinese || '');
     const zhHtml = zhSentences.map((z, sIdx) => `<span class="interactive-sentence-zh" data-para-index="${index}" data-sent-index="${sIdx}">${inlineMarkdownToHtml(z)}</span>`).join(' ');
-    const failed = sourceIsChinese ? false : (processedChinese ? false : true);
+    const classification = paragraphClassification(false);
     chineseDiv.innerHTML = sourceIsChinese
         ? `<span class="source-language-note">${escapeHtml(t('article.sourceAlreadyChinese'))}</span>`
-        : (processedChinese ? zhHtml : `<em>${t('article.analysisFailedInline')}</em>`);
+        : (classification.status === PARAGRAPH_STATUS.failed
+            ? `<em class="analysis-failed-inline">${t('article.analysisFailedInline')}</em>`
+            : zhHtml);
 
-    if (statusDiv) {
-        const textSpan = statusDiv.querySelector('.status-text');
-        const elapsedSpan = statusDiv.querySelector('.elapsed');
-        const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
-        // show elapsed if available
-        if (elapsedSpan && paragraphElapsedMs[index] != null) {
-            const ms = paragraphElapsedMs[index];
-            const secs = (ms / 1000).toFixed(1);
-            elapsedSpan.textContent = `(${secs}s)`;
-        }
-        if (!failed) {
-            setParagraphStatus(statusDiv, 'done');
-            if (textSpan) textSpan.textContent = t('article.doneStatus');
-            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = t('article.refresh'); }
-        } else {
-            setParagraphStatus(statusDiv, 'failed');
-            if (textSpan) textSpan.textContent = t('article.failedStatus');
-            if (retryBtn) { retryBtn.style.display = 'inline-block'; retryBtn.textContent = t('article.retryParagraph'); }
-            if (retryBtn) retryBtn.setAttribute('data-index', String(index));
-        }
-    }
+    applyParagraphStatusUI(classification);
 }
 
 async function retryFailedParagraphs() {
-    const articleText = dom.articleInput.value.trim();
-    if (!articleText || !Array.isArray(lastFailedIndices) || lastFailedIndices.length === 0) return;
-    if (currentAnalysisAbort) {
-        try { currentAnalysisAbort.abort('cancelled-by-retry'); } catch(_) {}
+    // 以「記錄中的正文」為來源，不用輸入框的即時文字。
+    const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
+    if (!record || !record.result) {
+        ui.displayMessage(t('article.analysisRecordMissing'), 'warning', 5000);
+        return;
     }
-    currentAnalysisAbort = new AbortController();
-    const { title, paragraphs } = parseTitleAndParagraphs(articleText);
-    const all = title ? [title, ...paragraphs] : paragraphs;
-    const total = lastFailedIndices.length;
-    // 統一為最小輸出模式
+    if (!retryTargetsCurrentVersion(record)) {
+        ui.displayMessage(t('article.retryNeedsReanalyze'), 'warning', 5000);
+        return;
+    }
+    if (isBatchRetryActive()) {
+        // 批次重試已在跑：不建立第二個批次（按鈕理論上已停用，這裡是防禦）。
+        ui.displayMessage(t('article.retrying'), 'warning', 3000);
+        return;
+    }
+    const targetArticleId = record.articleId;
+    const contentVersion = readingActions.articleVersion(targetArticleId);
+    const all = currentParagraphTexts(record.article || '');
+    // 重試範圍與畫面、按鈕共用同一來源：記錄中失敗 ＋ 尚未成功保存的段落。
+    const indices = failedIndicesForRecord(record);
+    if (!indices.length) {
+        refreshFailedStateFromRecord();
+        return;
+    }
+
     const level = 'quick';
-    const timeoutMs = level === 'quick' ? 30000 : (level === 'standard' ? 45000 : 60000);
-    let done = 0;
-    const CONCURRENCY = Math.min(2, total);
+    const CONCURRENCY = Math.min(2, indices.length);
     const SPACING_MS = 400;
+    const controller = new AbortController();
+    const job = startAnalysisJob({
+        kind: 'retry-batch',
+        articleId: targetArticleId,
+        contentVersion,
+        controller
+    });
 
-    const indices = [...lastFailedIndices];
-    lastFailedIndices = [];
-    let aggregatedDetails = JSON.parse(dom.articleAnalysisContainer.dataset.analysis || '[]');
+    clearBatchSummary();
+    const batchBtn = dom.retryFailedParagraphsBtn;
+    if (batchBtn) {
+        batchBtn.disabled = true;
+        batchBtn.setAttribute('aria-busy', 'true');
+    }
+    dom.articleAnalysisContainer.querySelectorAll('.retry-paragraph-btn').forEach((btn) => {
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+    });
+    indices.forEach((idx) => {
+        const statusDiv = document.querySelector(`.paragraph-pair[data-paragraph-index="${idx}"] .para-status`);
+        if (!statusDiv) return;
+        setParagraphStatus(statusDiv, 'pending');
+        const textSpan = statusDiv.querySelector('.status-text');
+        const reasonSpan = statusDiv.querySelector('.para-reason');
+        if (textSpan) textSpan.textContent = t('article.analyzing');
+        if (reasonSpan) { reasonSpan.hidden = true; reasonSpan.textContent = ''; }
+    });
 
-    // 參數不要叫 t，否則會蓋掉 i18n 的 t()
-    const updateProgressText = (done, total) => {
+    const results = new Map();
+    let nextPick = 0;
+    let completed = 0;
+    const updateProgressText = () => {
         const progressText = dom.articleAnalysisContainer.querySelector('.progress-text');
-        if (progressText) progressText.textContent = t('article.retryingProgress', { done, total });
+        if (progressText) progressText.textContent = t('article.retryingProgress', { done: completed, total: indices.length });
     };
-    updateProgressText(0, indices.length);
+    updateProgressText();
 
-    let nextIdx = 0;
     const runNext = async () => {
-        const pick = nextIdx++;
+        if (job.cancelled) return;
+        const pick = nextPick++;
         if (pick >= indices.length) return;
-        await new Promise(r => setTimeout(r, SPACING_MS));
+        await new Promise((resolve) => setTimeout(resolve, SPACING_MS));
+        if (job.cancelled) return;
         const idx = indices[pick];
         const text = all[idx];
+        // 這一段已被別的工作（例如使用者剛送出的單段重試）接手：批次跳過，
+        // 不重複請求，也不搶回寫入權。
+        const existingClaim = paragraphClaims.get(paragraphClaimKey(job.articleId, idx));
+        if (existingClaim && existingClaim.job && existingClaim.job !== job && !existingClaim.job.cancelled) {
+            completed += 1;
+            updateProgressText();
+            return runNext();
+        }
+        // 拿到這一段的寫入權；若已被更新的單段重試接手，舊回應不得再寫。
+        claimParagraphForJob(job, idx);
         try {
-            const baseText = prepareParagraphForTranslation(stripMarkdownImagesFromText(text)) || text;
-            let result;
-            if (isPredominantlyChinese(baseText)) {
-                result = buildChineseSourceResult(text);
+            paragraphStartTime[idx] = Date.now();
+            const outcome = await runParagraphRequest(text, {
+                signal: controller.signal,
+                level,
+                timeoutMs: paragraphPipeline.timeoutForLevel(level)
+            });
+            if (!isJobWriteTarget(job, idx)) return;
+            if (paragraphStartTime[idx]) paragraphElapsedMs[idx] = Math.max(0, Date.now() - paragraphStartTime[idx]);
+            if (outcome.ok) {
+                results.set(idx, outcome.result);
+                renderParagraph(idx, text, outcome.result);
             } else {
-                const sentencesForAI = isPlainProseParagraph(baseText) ? sentenceSplit(baseText) : null;
-                result = await api.analyzeParagraph(baseText, {
-                    timeoutMs,
-                    signal: currentAnalysisAbort.signal,
-                    level,
-                    sentences: (sentencesForAI && sentencesForAI.length) ? sentencesForAI : undefined
-                });
+                renderParagraph(idx, text, outcome.result || paragraphPipeline.failedParagraphResult(outcome.errorCode));
             }
-            renderParagraph(idx, text, result);
-            if (Array.isArray(result?.detailed_analysis)) {
-                aggregatedDetails = aggregatedDetails.concat(result.detailed_analysis);
-                dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(aggregatedDetails);
-            }
-        } catch (e) {
-            console.warn(`重試第 ${idx + 1} 段仍失敗`, e);
-            lastFailedIndices.push(idx);
+        } catch (error) {
+            if (error?.name === 'AbortError' || job.cancelled) return;
+            if (!isJobWriteTarget(job, idx)) return;
+            console.warn(`重試第 ${idx + 1} 段仍失敗`, error);
+            renderParagraph(idx, text, paragraphPipeline.failedParagraphResult(error?.code || 'provider_error'));
         } finally {
-            done += 1;
-            updateProgressText(done, indices.length);
-            await runNext();
+            completed += 1;
+            // 舊工作已被取消：進度文字與後續排程都屬於新畫面，不得再動（F2）。
+            if (!job.cancelled) {
+                updateProgressText();
+                await runNext();
+            }
         }
     };
 
     const runners = [];
     for (let i = 0; i < CONCURRENCY; i++) runners.push(runNext());
     await Promise.all(runners);
-    if (dom.retryFailedParagraphsBtn) dom.retryFailedParagraphsBtn.classList.toggle('hidden', lastFailedIndices.length === 0);
+
+    if (!isJobWriteTarget(job)) {
+        finishAnalysisJob(job);
+        return;
+    }
+
+    let persisted = 0;
+    // 只保存仍由這個批次擁有的段落：被單段重試接手的段落由新工作負責。
+    const ownedResults = new Map();
+    results.forEach((result, idx) => {
+        if (ownsParagraph(job, idx)) ownedResults.set(idx, result);
+    });
+    if (ownedResults.size) {
+        // 同一篇文章＋版本的保存序列化：提交前重讀最新記錄，只合併仍持有的 patch。
+        const saved = await queueAnalysisSave(targetArticleId, contentVersion, async () => {
+            if (!isJobWriteTarget(job)) return { ok: false, error: 'cancelled', applied: [] };
+            if (readingActions.articleVersion(targetArticleId) !== contentVersion) {
+                return { ok: false, error: 'stale_version', applied: [] };
+            }
+            const latest = articleStore.getRecord(targetArticleId);
+            if (!latest?.result) return { ok: false, error: 'record_missing', applied: [] };
+            const paragraphAnalysis = Array.isArray(latest.result.paragraph_analysis)
+                ? [...latest.result.paragraph_analysis]
+                : [];
+            let details = latest.result.detailed_analysis || [];
+            const applied = [];
+            for (const [idx, result] of ownedResults) {
+                // 佇列等待期間被別的工作接手：這一段的結果不得寫回。
+                if (!ownsParagraph(job, idx)) continue;
+                paragraphAnalysis[idx] = result;
+                details = mergeDetailedAnalyses(details, result?.detailed_analysis || []);
+                applied.push(idx);
+            }
+            if (!applied.length) return { ok: false, error: 'no_patch', applied: [] };
+            const result = await articleStore.saveAnalysis(targetArticleId, {
+                ...latest.result,
+                paragraph_analysis: paragraphAnalysis,
+                detailed_analysis: details
+            }, {
+                ctx: articleStore.captureArticleContext(),
+                expectContentVersion: contentVersion
+            });
+            return { ok: !!result.ok, error: result.error || '', applied };
+        });
+        if (saved.ok) {
+            persisted = Array.isArray(saved.applied) ? saved.applied.length : ownedResults.size;
+            // 這次保存寫入整份記錄：先前的未保存標記全部失效。
+            clearParagraphsUnsaved(targetArticleId, contentVersion);
+            // 批次結果同樣已落盤：把實際套用的段落同步回完整分析快照（F6）。
+            const appliedIndices = Array.isArray(saved.applied)
+                ? saved.applied
+                : Array.from(ownedResults.keys());
+            appliedIndices.forEach((idx) => {
+                const result = ownedResults.get(idx);
+                if (result) syncAnalysisSaveFailureParagraph(targetArticleId, contentVersion, idx, result);
+            });
+        } else if (!['cancelled', 'no_patch', 'stale_version', 'stale_job'].includes(saved.error)) {
+            // 保存失敗（真正的交易失敗）：保留「未保存」標記，失敗數與重試入口不得消失。
+            markParagraphsUnsaved(targetArticleId, contentVersion, Array.from(ownedResults.entries()));
+        }
+        // 保存 await 期間切換了文章：舊 job 只保留 A 的內部未保存狀態，不碰 B 的 DOM。
+        if (!isJobWriteTarget(job)) {
+            finishAnalysisJob(job);
+            return;
+        }
+        if (!saved.ok && !['cancelled', 'no_patch', 'stale_version', 'stale_job'].includes(saved.error)) {
+            for (const [idx, result] of ownedResults) {
+                renderParagraph(idx, all[idx], { ...result, failed: true, errorCode: 'save_failed' });
+            }
+            ui.displayMessage(t('article.analysisSaveFailedInline'), 'error', 6000);
+        }
+    }
+
+    // 到這裡 job 仍持有目前畫面；才可更新摘要、按鈕與進度。
+    if (!isJobWriteTarget(job)) {
+        finishAnalysisJob(job);
+        return;
+    }
+    refreshFailedStateFromRecord();
+    showBatchSummary({ done: persisted, failed: lastFailedIndices.length });
+    finishAnalysisJob(job);
+    // 由同一個來源重算批次與逐段按鈕（含忙碌與版本停用）。
+    updateArticleVersionState();
     const inline = dom.articleAnalysisContainer.querySelector('.inline-progress');
     if (inline) inline.remove();
+}
+
+/**
+ * 續作未完成分析（P3-T1）。
+ *
+ * 只對 `resumeIndicesFromResult` 選出的段落走既有的段落管線：已完成、null 洞、
+ * 純圖片與原文中文都會跳過。成功段不重做；完成後把結果合併回最新記錄，
+ * 最後一次保存寫入 analysis_run（complete／partial）。
+ */
+async function resumeAnalysis() {
+    const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
+    if (!record || !record.result) {
+        hideAnalysisResumeBanner();
+        ui.displayMessage(t('article.analysisRecordMissing'), 'warning', 5000);
+        return;
+    }
+    const run = normalizeAnalysisRun(record.result.analysis_run);
+    if (!run || !isIncompleteAnalysisRun(run)) {
+        hideAnalysisResumeBanner();
+        return;
+    }
+    const contentVersion = readingActions.articleVersion(record.articleId);
+    if (run.contentVersion && run.contentVersion !== contentVersion) {
+        hideAnalysisResumeBanner();
+        ui.displayMessage(t('article.retryNeedsReanalyze'), 'warning', 5000);
+        return;
+    }
+    if (!retryTargetsCurrentVersion(record)) {
+        ui.displayMessage(t('article.retryNeedsReanalyze'), 'warning', 5000);
+        return;
+    }
+    if (isBatchRetryActive()) {
+        ui.displayMessage(t('article.retrying'), 'warning', 3000);
+        return;
+    }
+
+    const all = currentParagraphTexts(record.article || '');
+    const indices = resumeIndicesFromResult(record.result, all);
+    if (!indices.length) {
+        // 沒有可續作的段落：只把 analysis_run 收成 complete，不重送任何請求。
+        const stats = analysisRunStats(record.result.paragraph_analysis);
+        const finalRun = {
+            ...run,
+            status: ANALYSIS_RUN_STATUS.complete,
+            total: all.length,
+            completed: stats.completed,
+            failed: stats.failed,
+            updatedAt: new Date().toISOString(),
+            lastErrorCode: ''
+        };
+        const saved = await queueAnalysisSave(record.articleId, contentVersion, async () => (
+            articleStore.saveAnalysis(record.articleId, {
+                ...record.result,
+                analysis_run: finalRun
+            }, {
+                ctx: articleStore.captureArticleContext(),
+                expectContentVersion: contentVersion
+            })
+        ));
+        if (saved.ok) {
+            hideAnalysisResumeBanner();
+            clearAnalysisCheckpointFailure();
+            if (isCurrentArticle(record.articleId)) await updateHistoryIndicators();
+        }
+        return;
+    }
+
+    const level = 'quick';
+    const CONCURRENCY = Math.min(2, indices.length);
+    const SPACING_MS = 400;
+    const controller = new AbortController();
+    const job = startAnalysisJob({
+        kind: 'resume-batch',
+        articleId: record.articleId,
+        contentVersion,
+        controller
+    });
+    const resumeBtn = dom.resumeAnalysisBtn;
+    if (resumeBtn) {
+        resumeBtn.disabled = true;
+        resumeBtn.setAttribute('aria-busy', 'true');
+    }
+    dom.articleAnalysisContainer.querySelectorAll('.retry-paragraph-btn').forEach((btn) => {
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+    });
+
+    const results = new Map();
+    let nextPick = 0;
+    let completed = 0;
+    const runNext = async () => {
+        if (job.cancelled) return;
+        const pick = nextPick++;
+        if (pick >= indices.length) return;
+        await new Promise((resolve) => setTimeout(resolve, SPACING_MS));
+        if (job.cancelled) return;
+        const idx = indices[pick];
+        const text = all[idx];
+        // 這一段已被別的工作接手：不重複請求、不搶寫入權。
+        const existingClaim = paragraphClaims.get(paragraphClaimKey(job.articleId, idx));
+        if (existingClaim && existingClaim.job && existingClaim.job !== job && !existingClaim.job.cancelled) {
+            completed += 1;
+            return runNext();
+        }
+        claimParagraphForJob(job, idx);
+        try {
+            paragraphStartTime[idx] = Date.now();
+            const outcome = await runParagraphRequest(text, {
+                signal: controller.signal,
+                level,
+                timeoutMs: paragraphPipeline.timeoutForLevel(level)
+            });
+            if (!isJobWriteTarget(job, idx)) return;
+            if (paragraphStartTime[idx]) paragraphElapsedMs[idx] = Math.max(0, Date.now() - paragraphStartTime[idx]);
+            if (outcome.ok) {
+                results.set(idx, outcome.result);
+                renderParagraph(idx, text, outcome.result);
+            } else {
+                renderParagraph(idx, text, outcome.result || paragraphPipeline.failedParagraphResult(outcome.errorCode));
+            }
+        } catch (error) {
+            if (error?.name === 'AbortError' || job.cancelled) return;
+            if (!isJobWriteTarget(job, idx)) return;
+            console.warn(`續作第 ${idx + 1} 段仍失敗`, error);
+            renderParagraph(idx, text, paragraphPipeline.failedParagraphResult(error?.code || 'provider_error'));
+        } finally {
+            completed += 1;
+            if (!job.cancelled) await runNext();
+        }
+    };
+
+    const runners = [];
+    for (let i = 0; i < CONCURRENCY; i += 1) runners.push(runNext());
+    await Promise.all(runners);
+
+    if (!isJobWriteTarget(job)) {
+        finishAnalysisJob(job);
+        return;
+    }
+
+    const saved = await queueAnalysisSave(record.articleId, contentVersion, async () => {
+        if (!isJobWriteTarget(job)) return { ok: false, error: 'cancelled' };
+        const latest = articleStore.getRecord(record.articleId);
+        if (!latest?.result) return { ok: false, error: 'record_missing' };
+        if (readingActions.articleVersion(record.articleId) !== contentVersion) {
+            return { ok: false, error: 'stale_version' };
+        }
+        const paragraphAnalysis = Array.isArray(latest.result.paragraph_analysis)
+            ? [...latest.result.paragraph_analysis]
+            : [];
+        while (paragraphAnalysis.length < all.length) paragraphAnalysis.push(null);
+        let details = latest.result.detailed_analysis || [];
+        for (const [idx, result] of results) {
+            if (!ownsParagraph(job, idx)) continue;
+            paragraphAnalysis[idx] = result;
+            details = mergeDetailedAnalyses(details, result?.detailed_analysis || []);
+        }
+        const stats = analysisRunStats(paragraphAnalysis);
+        const finalRun = {
+            ...run,
+            status: stats.failed > 0 ? ANALYSIS_RUN_STATUS.partial : ANALYSIS_RUN_STATUS.complete,
+            total: all.length,
+            completed: stats.completed,
+            failed: stats.failed,
+            updatedAt: new Date().toISOString(),
+            lastErrorCode: ''
+        };
+        const merged = {
+            ...latest.result,
+            chinese_translation: paragraphAnalysis.map((item) => (item && item.chinese_translation) || '').join('\n\n'),
+            word_alignment: paragraphAnalysis.flatMap((item) => (item && item.word_alignment) || []),
+            detailed_analysis: details,
+            paragraph_analysis: paragraphAnalysis,
+            analysis_run: finalRun
+        };
+        const res = await articleStore.saveAnalysis(record.articleId, merged, {
+            ctx: articleStore.captureArticleContext(),
+            expectContentVersion: contentVersion
+        });
+        return { ok: !!res.ok, error: res.error || '', finalRun };
+    });
+    finishAnalysisJob(job);
+
+    if (resumeBtn) {
+        resumeBtn.disabled = false;
+        resumeBtn.removeAttribute('aria-busy');
+    }
+    if (!saved.ok) {
+        if (!['cancelled', 'stale_version', 'stale_job'].includes(saved.error)) {
+            ui.displayMessage(t('article.analysisSaveFailedInline'), 'error', 6000);
+        }
+        if (isCurrentArticle(record.articleId)) updateArticleVersionState();
+        return;
+    }
+    if (!isCurrentArticle(record.articleId)) return;
+    // 成功段不重做；失敗段保留重試入口。
+    refreshFailedStateFromRecord();
+    clearAnalysisCheckpointFailure();
+    hideAnalysisResumeBanner();
+    renderAnalysisSaveFailure(articleStore.getRecord(record.articleId));
+    updateArticleVersionState();
+    await updateHistoryIndicators();
 }
 
 // --- Sentence helpers ---
@@ -4704,31 +6626,6 @@ function sentenceSplitZh(text) {
     const re = /[^。！？；;]+[。！？；;]?/g;
     const parts = text.match(re) || [text];
     return parts.map(s => s.trim()).filter(Boolean);
-}
-
-// 段落是否以中文為主：至少有 2 個中文字，且中文字數不少於英文字母數的一半。
-// 問答集描述、中文題目／答案都屬於這種情況；送翻譯只會拿到原樣回覆或空值，
-// 因此直接沿用原文，既不浪費請求，也不會被誤判為「分析失敗」。
-function isPredominantlyChinese(text) {
-    const value = String(text || '');
-    if (!value.trim()) return false;
-    const cjk = (value.match(/[㐀-䶿一-鿿豈-﫿]/g) || []).length;
-    if (cjk < 2) return false;
-    const latin = (value.match(/[A-Za-z]/g) || []).length;
-    return cjk * 2 >= latin;
-}
-
-// 中文原文段落：中文欄不再重複原文，改由呼叫端顯示「原文已是中文」提示。
-// sentences 仍按渲染用分句器建立，讓英文欄與既有互動邏輯保持一致。
-function buildChineseSourceResult(text) {
-    const source = String(text || '').trim();
-    const sentences = sentenceSplit(source);
-    return {
-        chinese_translation: source,
-        sentences: sentences.map(sentence => ({ en: sentence, zh: sentence })),
-        word_alignment: [],
-        detailed_analysis: []
-    };
 }
 
 // 問答集導入的段落：`Q1: ...\nA1: ...`（新格式）或 `1. Q: ...\nA: ...`（舊格式）。
@@ -5056,7 +6953,163 @@ function sentencePhraseAnchor(target, phrase) {
     return readingActions.anchorFromOffsets(target.articleId, text, start, start + text.length);
 }
 
-async function toggleSentenceCard(sentenceEl) {
+// ── P2-T3：句級鍵盤入口與逐詞模式（僅記憶體狀態，不持久化） ──────────
+let articleSentenceCard = null; // { sentenceEl, paraIdx, sentIdx, openedByKeyboard }
+let wordModeState = null;        // { sentenceEl, words, hint }
+
+function setSentenceExpanded(sentenceEl, expanded) {
+    if (!sentenceEl || !sentenceEl.isConnected) return;
+    sentenceEl.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    const wrap = sentenceEl.closest('.sentence-wrap');
+    const analyzeBtn = wrap ? wrap.querySelector('.sent-analyze-btn') : null;
+    if (analyzeBtn) analyzeBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+}
+
+function focusSentenceElement(sentenceEl) {
+    if (!sentenceEl || !sentenceEl.isConnected) return;
+    try { sentenceEl.focus({ preventScroll: true }); } catch (_) { try { sentenceEl.focus(); } catch (__) {} }
+}
+
+function sentenceAnalysisArray() {
+    try {
+        const parsed = JSON.parse(dom.articleAnalysisContainer.dataset.analysis || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (_) { return []; }
+}
+
+/** 逐詞模式關閉時清掉 tabindex，避免隱藏／失效節點留在 Tab 順序。 */
+function clearWordMode({ restoreFocus = false } = {}) {
+    const state = wordModeState;
+    wordModeState = null;
+    if (!state) return;
+    state.words.forEach((word) => {
+        if (word.getAttribute('tabindex') === '0') word.removeAttribute('tabindex');
+    });
+    state.sentenceEl?.classList.remove('word-mode-active');
+    try { state.hint?.remove(); } catch (_) { /* noop */ }
+    if (restoreFocus) focusSentenceElement(state.sentenceEl);
+}
+
+function focusSentenceWord(word) {
+    if (!word || !word.isConnected) return;
+    try { word.focus(); } catch (_) { /* noop */ }
+    if (wordModeState) wordModeState.index = wordModeState.words.indexOf(word);
+}
+
+/** 只把「目前這一句」的詞放進 Tab 順序，不影響其他句子。 */
+function enterWordMode(sentenceEl) {
+    if (!sentenceEl || !sentenceEl.isConnected) return false;
+    if (wordModeState && wordModeState.sentenceEl !== sentenceEl) clearWordMode({ restoreFocus: false });
+    const words = Array.from(sentenceEl.querySelectorAll('.interactive-word')).filter((word) => word.isConnected);
+    if (!words.length) return false;
+    if (!wordModeState || wordModeState.sentenceEl !== sentenceEl) {
+        const hint = document.createElement('span');
+        hint.className = 'word-mode-hint';
+        hint.setAttribute('role', 'status');
+        hint.textContent = t('article.wordModeHint');
+        (sentenceEl.parentElement || sentenceEl).appendChild(hint);
+        sentenceEl.classList.add('word-mode-active');
+        words.forEach((word) => word.setAttribute('tabindex', '0'));
+        wordModeState = { sentenceEl, words, hint, index: 0 };
+    }
+    focusSentenceWord(wordModeState.words[0]);
+    return true;
+}
+
+function exitWordMode({ restoreFocus = false } = {}) {
+    const sentenceEl = wordModeState?.sentenceEl;
+    clearWordMode({ restoreFocus: false });
+    if (restoreFocus) focusSentenceElement(sentenceEl);
+}
+
+function hasBlockingArticleOverlay() {
+    const picker = document.getElementById('phrase-picker');
+    if (picker && !picker.classList.contains('hidden')) return true;
+    const readingPanel = document.getElementById('article-reading-panel');
+    if (readingPanel && !readingPanel.classList.contains('hidden')) return true;
+    if (document.querySelector('.lightbox-overlay')) return true;
+    return false;
+}
+
+function focusSentenceCardFirstAction(card) {
+    if (!card || !card.isConnected) return;
+    const target = card.querySelector('.sent-word-mode')
+        || card.querySelector('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary');
+    if (target) {
+        try { target.focus({ preventScroll: true }); } catch (_) { try { target.focus(); } catch (__) {} }
+        return;
+    }
+    if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+    try { card.focus({ preventScroll: true }); } catch (_) { /* noop */ }
+}
+
+/** 句卡關閉：還原 aria-expanded、清逐詞 tabindex，必要時把焦點還給句子。 */
+function resetSentenceCardState({ restoreFocus = false } = {}) {
+    const state = articleSentenceCard;
+    articleSentenceCard = null;
+    clearWordMode({ restoreFocus: false });
+    if (!state?.sentenceEl) return;
+    setSentenceExpanded(state.sentenceEl, false);
+    try { applySentenceHighlight(state.paraIdx, state.sentIdx, false); } catch (_) { /* noop */ }
+    if (restoreFocus) focusSentenceElement(state.sentenceEl);
+}
+
+function toggleSentenceCardFromKeyboard(sentenceEl) {
+    const modalOpen = !!dom.appModal && !dom.appModal.classList.contains('hidden');
+    if (articleSentenceCard?.sentenceEl === sentenceEl && modalOpen) {
+        try { ui.closeModal(); } catch (_) { resetSentenceCardState({ restoreFocus: true }); }
+        return;
+    }
+    toggleSentenceCard(sentenceEl, { keyboard: true });
+}
+
+/** 句子／逐詞節點的鍵盤入口：Enter／Space 開關句卡、方向鍵選詞、Escape 逐層退出。 */
+function handleArticleAnalysisKeydown(event) {
+    if (event.defaultPrevented || event.isComposing) return;
+    const target = event.target;
+    if (!target || target.nodeType !== 1) return;
+    const word = target.closest('.interactive-word');
+    const sentence = target.closest('.interactive-sentence');
+    if (wordModeState && word && sentence === wordModeState.sentenceEl) {
+        if (event.altKey || event.ctrlKey || event.metaKey) return;
+        const words = wordModeState.words;
+        const index = words.indexOf(word);
+        if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+            event.preventDefault();
+            const next = words[index + (event.key === 'ArrowRight' ? 1 : -1)];
+            if (next) focusSentenceWord(next);
+            return;
+        }
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            showArticleWordAnalysis(word, sentenceAnalysisArray(), { keyboard: true });
+            return;
+        }
+        if (event.key === 'Escape') {
+            // 詳解還開著時先由 document 層收起詳解，第二次 Escape 才離開逐詞模式。
+            if (isWordTooltipVisible()) return;
+            event.preventDefault();
+            exitWordMode({ restoreFocus: true });
+            return;
+        }
+    }
+    if (!sentence || target !== sentence) return;
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+        event.preventDefault();
+        toggleSentenceCardFromKeyboard(sentence);
+    }
+}
+
+async function toggleSentenceCard(sentenceEl, options = {}) {
+    const openedByKeyboard = options.keyboard === true;
+    // 句卡是模態層；先把單詞詳解收起來，避免它留在遮罩後方。
+    if (isWordTooltipVisible()) dismissWordTooltip({ restoreFocus: false, source: 'sentence-card' });
+    // 開另一句前先收起逐詞模式，避免上一句的詞還留在 Tab 順序。
+    if (wordModeState) clearWordMode({ restoreFocus: false });
+    if (articleSentenceCard && articleSentenceCard.sentenceEl !== sentenceEl) {
+        setSentenceExpanded(articleSentenceCard.sentenceEl, false);
+        articleSentenceCard = null;
+    }
     // 請求開始時就記住所屬文章；回應回來後只寫回這一篇，也只在它仍是目前文章時更新畫面
     const targetArticleId = articleContext.recordId || '';
     const paraIdx = parseInt(sentenceEl.getAttribute('data-para-index'), 10) || 0;
@@ -5077,6 +7130,8 @@ async function toggleSentenceCard(sentenceEl) {
 
     // Modal 模式：直接在彈窗中顯示詳解
     if (USE_SENTENCE_MODAL) {
+        setSentenceExpanded(sentenceEl, true);
+        articleSentenceCard = { sentenceEl, paraIdx, sentIdx, openedByKeyboard };
         // 高亮當前句（未播放時不淡化，其邏輯在 applySentenceHighlight 內）
         applySentenceHighlight(paraIdx, sentIdx, true);
         try { ui.openModal(); } catch (_) {}
@@ -5097,6 +7152,12 @@ async function toggleSentenceCard(sentenceEl) {
         });
         card.innerHTML = sentenceCardLoadingHtml(paraIdx, sentIdx);
         dom.modalBody.appendChild(card);
+        // 鍵盤開卡：先讓焦點進入卡片；內容渲染後再移到第一個操作（逐詞檢視）。
+        if (openedByKeyboard) {
+            card.dataset.keyboardFocus = '1';
+            if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+            try { card.focus({ preventScroll: true }); } catch (_) { /* noop */ }
+        }
 
         // 關閉時清理高亮
         const cleanup = () => {
@@ -5131,6 +7192,10 @@ async function toggleSentenceCard(sentenceEl) {
             if (!canUpdateView(card)) return;
             card.classList.add('is-error');
             card.textContent = t('article.analysisRetry');
+            if (card.dataset.keyboardFocus === '1') {
+                delete card.dataset.keyboardFocus;
+                focusSentenceCardFirstAction(card);
+            }
         }
         return;
     }
@@ -5143,10 +7208,20 @@ async function toggleSentenceCard(sentenceEl) {
         const paraIdx2 = parseInt(sentenceEl.getAttribute('data-para-index'), 10) || 0;
         const sentIdx2 = parseInt(sentenceEl.getAttribute('data-sent-index'), 10) || 0;
         applySentenceHighlight(paraIdx2, sentIdx2, !hidden);
+        setSentenceExpanded(sentenceEl, !hidden);
+        if (hidden) {
+            articleSentenceCard = null;
+            clearWordMode({ restoreFocus: false });
+        } else {
+            articleSentenceCard = { sentenceEl, paraIdx: paraIdx2, sentIdx: sentIdx2, openedByKeyboard };
+        }
         return;
     }
     card = document.createElement('div');
     card.className = 'sentence-card is-inline';
+    setSentenceExpanded(sentenceEl, true);
+    articleSentenceCard = { sentenceEl, paraIdx, sentIdx, openedByKeyboard };
+    if (openedByKeyboard) card.dataset.keyboardFocus = '1';
     stampSentenceCardTarget(card, targetArticleId, contentVersion, sentenceAnchor, {
         sentence, context, paraIdx, sentIdx,
         articleContext: articleContextSnapshot,
@@ -5233,6 +7308,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx, tar
         <div class="sentence-card-head">
             <div>${t('article.sentenceAnalysis')}</div>
             <div class="actions">
+                <button class="btn-ghost btn-mini sent-word-mode">${t('article.wordMode')}</button>
                 <button class="btn-ghost btn-mini sent-refresh">${t('article.refresh')}</button>
                 <button class="btn-ghost btn-mini sent-collapse">${t('article.collapse')}</button>
             </div>
@@ -5257,6 +7333,23 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx, tar
     `;
     const refresh = card.querySelector('.sent-refresh');
     const collapse = card.querySelector('.sent-collapse');
+    const wordModeBtn = card.querySelector('.sent-word-mode');
+    if (wordModeBtn) wordModeBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const sentenceEl = articleSentenceCard?.sentenceEl;
+        if (!sentenceEl || !sentenceEl.isConnected) return;
+        // 句卡是 modal；逐詞檢視要回到文章本體，先收起句卡再進入逐詞模式。
+        if (card.dataset.modal === '1') {
+            try { ui.closeModal(); } catch (_) { resetSentenceCardState({ restoreFocus: false }); }
+        } else {
+            const inlinePara = parseInt(sentenceEl.getAttribute('data-para-index'), 10) || 0;
+            const inlineSent = parseInt(sentenceEl.getAttribute('data-sent-index'), 10) || 0;
+            card.classList.add('hidden');
+            applySentenceHighlight(inlinePara, inlineSent, false);
+            resetSentenceCardState({ restoreFocus: false });
+        }
+        enterWordMode(sentenceEl);
+    });
     // Modal 環境下，將收合按鈕文案替換為「關閉」
     if (collapse && card.dataset.modal === '1') {
         collapse.textContent = t('article.close');
@@ -5445,6 +7538,13 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx, tar
         }
     });
 
+    // 鍵盤開卡的焦點：載入完成／初次渲染後移到卡片第一個可操作元素（逐詞檢視）。
+    if (card.dataset.keyboardFocus === '1') {
+        delete card.dataset.keyboardFocus;
+        if (card.contains(document.activeElement) || document.activeElement === document.body) {
+            focusSentenceCardFirstAction(card);
+        }
+    }
 }
 
 
@@ -5640,8 +7740,9 @@ function bindAnalyzeButtonToLastWord(root) {
         while (node && guard < 3) {
             if (node.nodeType === 3) {
                 const text = node.nodeValue || '';
-                // 尾端文字可能同時含最後一個詞與其後標點，切出「詞 + 標點」那一截
-                const match = text.match(/[A-Za-z0-9'’-]+[^\sA-Za-z0-9]*\s*$/);
+                // 尾端文字可能同時含最後一個詞與其後標點，切出「詞 + 標點」那一截。
+                // 用 Unicode 字母，避免 café／naïve 這類帶重音詞被拆成 ASCII 片段。
+                const match = text.match(/[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N}'’.-]*[^\s\p{L}\p{M}\p{N}]*\s*$/u);
                 if (match) {
                     if (match.index > 0) {
                         node.nodeValue = text.slice(0, match.index);
@@ -5669,35 +7770,31 @@ function bindAnalyzeButtonToLastWord(root) {
 }
 
 function wrapWordsInElement(root) {
+    if (!root) return;
     const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
     const targets = [];
     let node;
     while ((node = tw.nextNode())) {
         if (!node.nodeValue || !node.nodeValue.trim()) continue;
-        // 跳過在按鈕等節點中的文字
-        const p = node.parentElement;
-        if (p && (p.closest('.sent-analyze-btn') || p.closest('.interactive-word'))) continue;
+        // 語義節點（連結、code、既有 token、圖片…）保留原文，不再包字。
+        if (shouldSkipNode(node)) continue;
         targets.push(node);
     }
-    const wordRe = /[A-Za-z][A-Za-z'’-]*/g;
     targets.forEach(textNode => {
         const text = textNode.nodeValue;
-        if (!wordRe.test(text)) return;
-        wordRe.lastIndex = 0;
+        const tokens = segmentWords(text).filter(({ word }) => isLookupWord(word));
+        if (!tokens.length) return;
         const frag = document.createDocumentFragment();
         let idx = 0;
-        let m;
-        while ((m = wordRe.exec(text))) {
-            const before = text.slice(idx, m.index);
-            if (before) frag.appendChild(document.createTextNode(before));
-            const w = m[0];
+        tokens.forEach(({ word, start, end }) => {
+            if (start > idx) frag.appendChild(document.createTextNode(text.slice(idx, start)));
             const span = document.createElement('span');
             span.className = 'interactive-word';
-            span.setAttribute('data-word', w);
-            span.textContent = w;
+            span.setAttribute('data-word', word);
+            span.textContent = word;
             frag.appendChild(span);
-            idx = m.index + w.length;
-        }
+            idx = end;
+        });
         const tail = text.slice(idx);
         if (tail) frag.appendChild(document.createTextNode(tail));
         textNode.parentNode.replaceChild(frag, textNode);

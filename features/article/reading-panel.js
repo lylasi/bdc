@@ -23,10 +23,17 @@ let savedOnly = false;
 let lastFocus = null;
 let pendingFocusItemId = '';
 const noteDrafts = new Map();
+// 兩個匯出入口共用的「上次選擇」：只存在記憶體，不持久化。
+// 面板 checkbox 只反映這個變數；最終匯出範圍一律以對話框為準。
+let exportSelection = { fullText: false, chat: false };
 let legacyImportPromise = null;
+// locale 切換是非同步的（ensurePanel → openPanel → 還原）：用遞增 token 擋掉舊的還原。
+let localeToken = 0;
 // scope 重載會清空 reading-store 的記憶體視圖；非同步補讀必須能分辨
 // 期間是否換了文章／帳戶，避免把舊結果畫回目前畫面。
 let scopeRefreshToken = 0;
+// Escape 關閉只需要一個 document listener；面板重建（locale 切換）不得重複綁。
+let escapeHandlerBound = false;
 
 function invalidateScopeRefresh() {
     scopeRefreshToken += 1;
@@ -79,19 +86,26 @@ function ensurePanel() {
     document.body.appendChild(panel);
     panel.querySelector('.reading-panel-close').addEventListener('click', () => closePanel());
     panel.querySelector('[data-close="1"]').addEventListener('click', () => closePanel());
-    panel.querySelector('#reading-export-md').addEventListener('click', async () => {
-        if (!currentArticleId) return;
-        const flushed = await flushNoteDrafts();
-        if (!flushed) {
-            ui.displayMessage(t('article.saveFailedRetry'), 'error');
-            return;
-        }
-        const includeFullText = !!panel.querySelector('#reading-export-fulltext')?.checked;
-        const includeChat = !!panel.querySelector('#reading-export-chat')?.checked;
-        const result = await readingExport.exportReadingNoteFile({ articleId: currentArticleId, includeFullText, includeChat });
-        if (result.ok) ui.displayMessage(t('article.readingExportDone'), 'success');
-        else ui.displayMessage(t('article.readingExportFailed'), 'error');
+    panel.querySelector('#reading-export-md').addEventListener('click', () => {
+        openExportDialog({ source: 'panel' }).catch(() => {
+            ui.displayMessage(t('article.readingExportFailed'), 'error');
+        });
     });
+    // 面板 checkbox 只當「上次選擇」的記憶，不直接決定匯出內容；
+    // 兩個入口都用同一個 exportSelection，避免不同預設。
+    const fullTextToggle = panel.querySelector('#reading-export-fulltext');
+    const chatToggle = panel.querySelector('#reading-export-chat');
+    [fullTextToggle, chatToggle].forEach((box) => {
+        if (!box) return;
+        box.addEventListener('change', () => {
+            exportSelection = {
+                fullText: !!fullTextToggle?.checked,
+                chat: !!chatToggle?.checked
+            };
+        });
+    });
+    // 面板重建（例如切換介面語言）後，checkbox 要反映同一個「上次選擇」。
+    syncExportSelectionUI();
     panel.querySelector('#reading-article-note').addEventListener('click', () => openArticleNoteDialog());
     panel.querySelector('#reading-export-json').addEventListener('click', async () => {
         // JSON 備份前先保存所有筆記草稿（含目前被篩選／隱藏的條目），
@@ -108,11 +122,14 @@ function ensurePanel() {
     });
     panel.querySelector('#reading-ai-difficulties').addEventListener('click', () => openAiScopeDialog('difficulties'));
     panel.querySelector('#reading-ai-notes').addEventListener('click', () => openAiScopeDialog('notes'));
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || !panel || panel.classList.contains('hidden')) return;
-        if (document.querySelector('#app-modal:not(.hidden)')) return;
-        closePanel();
-    });
+    if (!escapeHandlerBound) {
+        escapeHandlerBound = true;
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape' || !panel || panel.classList.contains('hidden')) return;
+            if (document.querySelector('#app-modal:not(.hidden)')) return;
+            closePanel();
+        });
+    }
     return panel;
 }
 
@@ -122,7 +139,8 @@ async function openPanel(articleId = currentArticleId, options = {}) {
         return;
     }
     currentArticleId = articleId;
-    lastFocus = document.activeElement;
+    const restoring = options.restore === true;
+    lastFocus = restoring ? null : document.activeElement;
     pendingFocusItemId = options.focusItemId || '';
     if (pendingFocusItemId) {
         filter = 'all';
@@ -144,7 +162,8 @@ async function openPanel(articleId = currentArticleId, options = {}) {
         if (focusTarget && focusTarget.isConnected) {
             focusTarget.closest('.reading-item')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
             focusTarget.focus({ preventScroll: true });
-        } else {
+        } else if (!restoring) {
+            // 還原中：由呼叫端依原先的焦點位置決定，避免焦點先被拉到關閉鈕。
             element.querySelector('.reading-panel-close')?.focus({ preventScroll: true });
         }
     }, 30);
@@ -173,6 +192,58 @@ async function closePanel(options = {}) {
 
 function isPanelOpen() {
     return !!(panel && !panel.classList.contains('hidden'));
+}
+
+/**
+ * 切語言前記住面板的可見狀態、篩選與閱讀位置（P3-T3）。
+ * filter／savedOnly 已是 module 變數；重建 DOM 不會清掉它們，但仍一併帶入快照，
+ * 讓非同步流程能驗証「還原的仍是同一組篩選」。
+ */
+function capturePanelState() {
+    const open = isPanelOpen();
+    const list = panel?.querySelector('#reading-panel-list');
+    const active = document.activeElement;
+    let focusedItemId = '';
+    let focusKind = '';
+    if (open && active && panel?.contains(active)) {
+        const card = active.closest?.('.reading-item');
+        if (card) {
+            focusedItemId = card.getAttribute('data-item-id') || '';
+            focusKind = active.classList?.contains('reading-note') ? 'note' : 'item';
+        }
+    }
+    return {
+        wasOpen: open,
+        articleId: currentArticleId,
+        scrollTop: list ? Number(list.scrollTop) || 0 : 0,
+        focusedItemId,
+        focusKind,
+        filter,
+        savedOnly
+    };
+}
+
+/** 以 item id 找回對應節點；找不到就退回面板關閉鈕，焦點不留在 body。 */
+function restorePanelView(snapshot) {
+    if (!panel) return;
+    const list = panel.querySelector('#reading-panel-list');
+    if (list) {
+        try { list.scrollTop = Math.max(0, Number(snapshot.scrollTop) || 0); } catch (_) { /* 退回頂部 */ }
+    }
+    if (!snapshot.focusedItemId) {
+        panel.querySelector('.reading-panel-close')?.focus({ preventScroll: true });
+        return;
+    }
+    const noteArea = panel.querySelector(`[data-note-id="${CSS.escape(snapshot.focusedItemId)}"]`);
+    const card = panel.querySelector(`.reading-item[data-item-id="${CSS.escape(snapshot.focusedItemId)}"]`);
+    const target = (snapshot.focusKind === 'note' && noteArea)
+        ? noteArea
+        : (card?.querySelector('[data-mark-toggle]') || noteArea || card);
+    if (!target) {
+        panel.querySelector('.reading-panel-close')?.focus({ preventScroll: true });
+        return;
+    }
+    try { target.focus({ preventScroll: true }); } catch (_) { /* noop */ }
 }
 
 function escapeHtml(value) {
@@ -440,6 +511,127 @@ async function flushNoteDrafts() {
         if (!result || result.ok === false) ok = false;
     }
     return ok;
+}
+
+// ── 匯出範圍對話框（P2-T7）───────────────────────────────────────
+// 頂部按鈕與面板按鈕共用同一個對話框；先顯示數量與版本，
+// 預設只匯出閱讀筆記，不默認附上全文或對話。
+
+function exportScopeDescription(scope, selection = {}) {
+    const summary = t('article.exportScopeSummary', {
+        items: Number(scope.itemCount) || 0,
+        notes: Number(scope.noteCount) || 0,
+        messages: Number(scope.messageCount) || 0
+    });
+    const version = String(scope.contentVersion || '').slice(0, 12);
+    const parts = [String(scope.title || '')];
+    if (version) parts.push(`${t('article.readingExportVersion')}: ${version}`);
+    parts.push(summary);
+    if (!selection.fullText && !selection.chat && !selection.fullBackup) {
+        parts.push(t('article.exportNoteOnly'));
+    }
+    return parts.filter(Boolean).join(' · ');
+}
+
+function syncExportSelectionUI() {
+    if (!panel) return;
+    const fullTextBox = panel.querySelector('#reading-export-fulltext');
+    const chatBox = panel.querySelector('#reading-export-chat');
+    if (fullTextBox) fullTextBox.checked = !!exportSelection.fullText;
+    if (chatBox) chatBox.checked = !!exportSelection.chat;
+}
+
+function wireExportDialogDescription(overlay, scope) {
+    const desc = overlay?.querySelector('.om-desc');
+    if (!desc) return;
+    const readSelection = () => ({
+        fullText: !!overlay.querySelector('input[data-option-key="fullText"]')?.checked,
+        chat: !!overlay.querySelector('input[data-option-key="chat"]')?.checked,
+        fullBackup: !!overlay.querySelector('input[data-option-key="fullBackup"]')?.checked
+    });
+    const apply = () => { desc.textContent = exportScopeDescription(scope, readSelection()); };
+    overlay.querySelectorAll('input[type="checkbox"]').forEach((box) => box.addEventListener('change', apply));
+    apply();
+}
+
+async function runExportChoice({ articleId, fullText = false, chat = false, fullBackup = false }) {
+    // 匯出前先 flush 面板與片語草稿（沿用既有邏輯）；任何一筆失敗都不匯出。
+    const panelFlushed = await flushNoteDrafts();
+    const pickerFlushed = await flushPhrasePickerNote();
+    if (!panelFlushed || !pickerFlushed || pickerFlushed.ok === false) {
+        ui.displayMessage(t('article.saveFailedRetry'), 'error');
+        return { ok: false, error: 'note_save_failed' };
+    }
+    if (currentArticleId !== articleId) {
+        // flush 期間切文章／帳戶：不得把匯出結果寫成目前 scope 的資料。
+        ui.displayMessage(t('article.readingExportFailed'), 'error');
+        return { ok: false, error: 'stale_scope' };
+    }
+    if (fullBackup) {
+        const backup = await readingExport.exportFullBackupFile();
+        if (backup && backup.ok !== false) {
+            ui.displayMessage(t('article.readingExportJsonDone'), 'success');
+            return backup;
+        }
+        ui.displayMessage(t('article.readingExportFailed'), 'error');
+        return backup || { ok: false, error: 'backup_failed' };
+    }
+    const result = await readingExport.exportReadingNoteFile({ articleId, includeFullText: fullText, includeChat: chat });
+    if (result && result.ok) ui.displayMessage(t('article.readingExportDone'), 'success');
+    else ui.displayMessage(t('article.readingExportFailed'), 'error');
+    return result || { ok: false, error: 'export_failed' };
+}
+
+function openExportDialog({ source = 'panel' } = {}) {
+    const articleId = currentArticleId;
+    if (!articleId) {
+        ui.displayMessage(t('article.readingNoArticle'), 'warning');
+        return Promise.resolve({ ok: false, error: 'no_article' });
+    }
+    return readingExport.describeReadingScope(articleId).then((scope) => {
+        if (!scope || scope.ok === false) {
+            ui.displayMessage(t('article.readingExportFailed'), 'error');
+            return { ok: false, error: (scope && scope.error) || 'scope_failed' };
+        }
+        if (currentArticleId !== articleId) {
+            // 讀取摘要期間已切文章／帳戶：不開對話框，避免匯出到別的 scope。
+            ui.displayMessage(t('article.readingExportFailed'), 'error');
+            return { ok: false, error: 'stale_scope' };
+        }
+        const initial = { fullText: !!exportSelection.fullText, chat: !!exportSelection.chat, fullBackup: false };
+        return new Promise((resolve) => {
+            const overlay = ui.showOptionsModal({
+                title: t('article.exportScopeTitle'),
+                description: exportScopeDescription(scope, initial),
+                options: [
+                    { type: 'checkbox', key: 'fullText', label: t('article.exportIncludeFullText'), default: initial.fullText },
+                    { type: 'checkbox', key: 'chat', label: t('article.exportIncludeChat'), default: initial.chat },
+                    { type: 'checkbox', key: 'fullBackup', label: t('article.exportFullBackup'), default: false }
+                ],
+                onCancel: () => resolve({ ok: false, error: 'cancelled' }),
+                onConfirm: (result) => {
+                    const choice = {
+                        fullText: !!result?.fullText,
+                        chat: !!result?.chat,
+                        fullBackup: !!result?.fullBackup
+                    };
+                    // 完整備份不分全文／對話；一般匯出則記住這次選擇供兩個入口共用。
+                    exportSelection = { fullText: choice.fullText, chat: choice.chat };
+                    syncExportSelectionUI();
+                    runExportChoice({ articleId, ...choice, source })
+                        .then(resolve)
+                        .catch(() => {
+                            ui.displayMessage(t('article.readingExportFailed'), 'error');
+                            resolve({ ok: false, error: 'export_failed' });
+                        });
+                }
+            });
+            wireExportDialogDescription(overlay, scope);
+        });
+    }).catch(() => {
+        ui.displayMessage(t('article.readingExportFailed'), 'error');
+        return { ok: false, error: 'scope_failed' };
+    });
 }
 
 function wireItemActions() {
@@ -895,21 +1087,10 @@ export function initReadingPanel() {
         if (isPanelOpen()) closePanel();
         else openPanel(currentArticleId).catch(() => null);
     });
-    dom.articleReadingExportBtn?.addEventListener('click', async () => {
-        if (panel) {
-            const flushed = await flushNoteDrafts();
-            if (!flushed) {
-                ui.displayMessage(t('article.saveFailedRetry'), 'error');
-                return;
-            }
-        }
-        if (!currentArticleId) {
-            ui.displayMessage(t('article.readingNoArticle'), 'warning');
-            return;
-        }
-        const result = await readingExport.exportReadingNoteFile({ articleId: currentArticleId });
-        if (result.ok) ui.displayMessage(t('article.readingExportDone'), 'success');
-        else ui.displayMessage(t('article.readingExportFailed'), 'error');
+    dom.articleReadingExportBtn?.addEventListener('click', () => {
+        openExportDialog({ source: 'toolbar' }).catch(() => {
+            ui.displayMessage(t('article.readingExportFailed'), 'error');
+        });
     });
     if (dom.articleReadingMarksToggle) {
         dom.articleReadingMarksToggle.checked = marksVisible();
@@ -937,13 +1118,27 @@ export function initReadingPanel() {
         noteDrafts.clear();
         loadArticle('');
     });
-    document.addEventListener('bdc:locale-change', () => {
+    document.addEventListener('bdc:locale-change', async () => {
+        // 切語言只重建 DOM；筆記草稿（noteDrafts）、篩選與閱讀位置留在記憶體，不可丟。
+        const snapshot = capturePanelState();
+        const token = ++localeToken;
         if (panel) {
             panel.remove();
             panel = null;
         }
         ensurePanel();
-        if (currentArticleId) loadArticle(currentArticleId);
+        if (!snapshot.wasOpen || !snapshot.articleId) {
+            // 面板未開：維持原本「只重畫標記／計數」的行為。
+            if (snapshot.articleId) loadArticle(snapshot.articleId);
+            return;
+        }
+        filter = snapshot.filter;
+        savedOnly = snapshot.savedOnly;
+        await openPanel(snapshot.articleId, { restore: true });
+        if (token !== localeToken) return;
+        if (!isPanelOpen()) return;
+        restorePanelView(snapshot);
+        ui.displayMessage(t('article.localeKeptPanel'), 'success', 2000);
     });
     // 若模組初始化晚於文章載入，從目前狀態補一次。
     try {

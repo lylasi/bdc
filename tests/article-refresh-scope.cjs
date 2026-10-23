@@ -60,6 +60,16 @@ async function openArticle(page, articleId) {
     await page.waitForTimeout(500);
 }
 
+// P2-T2：「寫筆記」收進 details.tooltip-more（預設收起），直接操作前必須先展開。
+async function openTooltipMore(page) {
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more', { timeout: 5000 });
+    await page.evaluate(() => {
+        const details = document.querySelector('#word-analysis-tooltip details.tooltip-more');
+        if (details && !details.open) details.open = true;
+    });
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more[open] .btn-note-item', { state: 'visible', timeout: 5000 });
+}
+
 (async () => {
     const browser = await chromium.launch({ headless: true, executablePath: CHROME });
     const results = [];
@@ -312,6 +322,7 @@ async function openArticle(page, articleId) {
         }
 
         try {
+            await openTooltipMore(page);
             await page.locator('#word-analysis-tooltip .btn-note-item').click();
             await page.waitForSelector('#article-reading-panel:not(.hidden) [data-note-id]', { timeout: 5000 });
             const noteText = '第二處 look 的筆記';

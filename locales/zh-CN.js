@@ -828,7 +828,9 @@ export default {
         noExamples: '还没有例句，点击“生成 AI 例句”按钮生成例句。',
         sentencePractice: '造句练习',
         sentencePlaceholder: '请使用此单词造句',
-        check: '检查'
+        check: '检查',
+        exampleGloss: '句中意思：{meaning}',
+        exampleNoGloss: '这句没有这个词语的对应解释'
     },
     article: {
         newsImportBtn: '导入',
@@ -853,12 +855,22 @@ export default {
         ,englishOnly: '仅显示英文'
         ,followScroll: '跟随朗读滚动'
         ,finishReading: '结束朗读'
+        ,replayChunk: '重播本句'
+        ,moreActions: '更多操作'
+        ,wordMode: '逐词检视'
+        ,wordModeHint: '用方向键选词，Enter 查看详解，Esc 返回句子'
+        ,playbackPausedByPronunciation: '已暂停朗读；继续会重播本句'
+        ,audioFailed: '音频播放失败，请重试'
         ,enterUrl: '请输入网址'
         ,missingUrl: '缺少文章网址'
         ,fetchFailed: '提取失败：{message}'
         ,articleImportFailed: '导入失败：{message}'
         ,enterArticleToRead: '请先输入要朗读的文章！'
         ,downloadAudioFailed: '下载音频失败，可能是文字过长或网络问题。请尝试切换为句子/段落模式下载。'
+        ,downloadNeedsRemote: '下载需要先设置远端 TTS 服务'
+        ,downloadScope: '下载范围：{scope}'
+        ,downloadLongText: '文字过长，请改用段落或句子下载'
+        ,downloadLinkOpened: '已打开下载链接；是否完成由浏览器与服务决定'
         ,analysisRecordMissing: '这篇文章的分析记录已删除，无法自动还原原文。请重新导入或粘贴文章内容后再分析。'
         ,doneStatus: '完成', failedStatus: '解析失败', refresh: '重新获取', refreshing: '重新获取中...', staleSentenceCard: '正文已更新，请重新打开该句后再操作。', sentenceAnalysis: '句子解析', sentenceNoTranslation: '（本句暂无中文译文）', processing: '处理中…', cleaning: 'AI 清洗中…', cleaningProgress: 'AI 清洗中…（{done}/{total}）', fetching: '提取中…', cleanupTruncated: '内容较长，AI 清洗已达到模型输出上限，结果可能缺少尾段；建议分段导入。', extractTruncated: '内容较长，AI 提取已达到模型输出上限，结果可能缺少尾段；建议分段导入。', sourcesFallbackHint: '新闻来源端点没有响应，当前显示的是 ai-config.js 中配置的备用来源清单，可能与服务端实际支持的来源不一致。', collapse: '收起', close: '关闭', closeWindow: '关闭窗口', details: '详解', detailsLoading: '详解加载中...', loading: '加载中...', loadingDetails: '正在加载详解...', analyzeSelection: '分析选中内容', selectPhraseHint: '选中句中短语后点击', collapseArea: '点击此区域收起', collapseAreaAria: '点击右侧空白区域可收起', selectPhraseFirst: '请先在该句中选中短语', analyzingSelection: '分析中...', phraseLabel: '短语：', usageLabel: '用法：', roleLabel: '作用：', meaningLabel: '意思：', pronunciation: '发音', analyzePhrase: '分析短语', analyzeOtherPhrase: '自定义短语...', phrasePrompt: '输入要分析的短语', analysisRetry: '分析失败，请稍后再试', analysisRetryShort: '分析失败，请稍后重试', noAnalysisData: '未找到分析数据。', retry: '重试', retrying: '重试中...', addToWordbook: '加入单词本', addSelectedToWordbook: '加入单词本（选中）', selectWordOrPhrase: '请先在该句中选中词语或短语', wordAnalysisFailed: '分析失败。'
         ,historyRecords: '阅读记录'
@@ -901,6 +913,32 @@ export default {
         ,historyClearDone: '已清空阅读记录'
         ,historyStorage: '共 {count} 篇 · 约 {size}'
         ,historyPartial: '{count} 段未完成'
+        ,paragraphStatusPending: '待分析'
+        ,paragraphStatusSkipped: '已跳过（图片或中文原文）'
+        ,paragraphStatusCancelled: '已取消'
+        ,paragraphFailureReason: '失败原因：{message}'
+        ,emptyTranslation: '模型没有返回译文'
+        ,retryFailedCount: '重试 {count} 段失败'
+        ,retrySummary: '已重试 {done} 段，仍失败 {failed} 段'
+        ,retryNeedsReanalyze: '原文已修改，请先重新分析再重试'
+        ,analysisSaveFailedInline: '分析已显示，但未能保存；请重试'
+        ,analysisSavePendingTitle: '分析结果尚未存入本机'
+        ,analysisSavePendingHint: '译文只保留在当前画面；请先重试保存，或导出备份后再离开。'
+        ,retrySaveAnalysis: '重试保存'
+        ,analysisSaveRecovered: '分析结果已保存'
+        ,analysisStaleTitle: '原文已修改，画面仍是旧版分析'
+        ,analysisStaleHint: '朗读与助手会使用目前输入；重新分析后才会更新译文'
+        ,analysisCheckpointFailed: '进度未能保存；完成前请保持页面开启'
+        ,analysisCancelledKept: '已取消；已完成的段落会保留'
+        ,analysisPartial: '已保存 {done}/{total} 段'
+        ,checkpointResumeHint: '继续时会跳过已完成段落'
+        ,resumeAnalysis: '继续未完成分析'
+        ,analysisRunningStatus: '分析中（未完成）'
+        ,analysisPartialStatus: '已保存 {done}/{total}'
+        ,cachePruned: '已清理 {count} 项过期缓存'
+        ,localeKeptPanel: '已切换语言，面板状态已保留'
+        ,reanalyze: '重新分析'
+        ,importReplacedAnalysis: '已载入新文章，请重新分析'
         ,historyPendingSync: '本机修改尚未同步到云端'
         ,historyPendingSyncShort: '未同步'
         ,historyConflict: '版本冲突'
@@ -976,6 +1014,12 @@ export default {
         readingExportSource: '来源',
         readingExportTime: '导出时间',
         readingExportVersion: '原文版本',
+        exportScopeTitle: '导出范围',
+        exportScopeSummary: '{items} 条记录 · {notes} 份笔记 · {messages} 则对话',
+        exportNoteOnly: '本篇阅读笔记（不含全文与对话）',
+        exportIncludeFullText: '包含文章全文',
+        exportIncludeChat: '包含 AI 对话',
+        exportFullBackup: '完整 JSON 备份（目前账户／端点；文件较大）',
         readingFilterAi: 'AI 资料',
         readingFilterAll: '全部',
         readingFilterMarked: '标记',
@@ -1211,6 +1255,15 @@ export default {
         saveFailed: '这条回答未能保存到本机；请重试。',
         savingDocument: '保存中…',
         unavailable: 'AI 助手暂时不可用，请重新整理页面后再试。',
+        streamCancelled: '已停止，回答不完整',
+        retryOriginal: '重试原本问题',
+        contextScope: '上下文：{title} · {version}',
+        contextUnanalyzed: '尚未分析的新内容',
+        busy: '上一个回答仍在进行中',
+        newAnswer: '有新回答',
+        inputHint: 'Enter 送出，Shift+Enter 换行',
+        localeKeptDraft: '已切换语言，草稿与对话已保留',
+        sessionBusy: '回答进行中，请先停止或等待完成后再切换会话',
     },
     sync: {
         guestReadingTitle: '把访客学习记录带进这个账户？',
@@ -1225,6 +1278,8 @@ export default {
         guestArticlesMerged: '已带进 {count} 篇文章',
         articleSyncPending: '文章同步未完成，稍后会自动重试',
         articleSyncFailed: '文章同步失败',
+        restoredArticleSyncFailed: '已从云端恢复，但文章同步失败；请稍后重试',
+        restoredArticleSyncPending: '已从云端恢复，但仍有文章未同步完成；稍后会自动重试',
         backupNoteManual: '手动同步后备份',
         backupNoteAuto: '自动同步后备份',
         backupNoteImport: '手动·文件导入',

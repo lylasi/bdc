@@ -355,3 +355,109 @@ test('Worker D1 與 selfhost HTTP 的逐項同步行為一致', async () => {
         rmSync(self.dir, { recursive: true, force: true });
     }
 });
+
+function seedReadingSnapshot(raw, payload, version = 1) {
+    raw.prepare('INSERT OR REPLACE INTO snapshots (user_id, version, updated_at, payload) VALUES (?, ?, ?, ?)')
+        .run('alice', version, '2026-01-01T00:00:00.000Z', JSON.stringify(payload));
+}
+
+async function runReadingSnapshotGateScenario(api) {
+    const before = await api.call('/snapshot');
+    assert.equal(before.status, 200);
+    assert.equal(before.body.version, 1);
+    assert.ok(before.body.payload.vocabulary, '測試前應有舊詞書群組');
+
+    const created = await api.call('/reading/mutations', {
+        method: 'POST',
+        body: {
+            mutations: [{
+                mutationId: 'gate-entry-create',
+                entityType: 'vocabularyEntry',
+                entityId: 'entry-ghost',
+                op: 'upsert',
+                expectedRevision: 0,
+                patch: { bookId: 'book-1', word: 'ghost', meaning: '幽靈' }
+            }]
+        }
+    });
+    assert.equal(created.status, 200);
+    assert.equal(created.body.results[0].status, 'ok');
+    assert.equal(created.body.results[0].revision, 1);
+
+    const deleted = await api.call('/reading/mutations', {
+        method: 'POST',
+        body: {
+            final: true,
+            mutations: [{
+                mutationId: 'gate-entry-delete',
+                entityType: 'vocabularyEntry',
+                entityId: 'entry-ghost',
+                op: 'delete',
+                expectedRevision: 1
+            }]
+        }
+    });
+    assert.equal(deleted.status, 200);
+    assert.equal(deleted.body.results[0].status, 'ok');
+    assert.ok(deleted.body.results[0].record.deletedAt, '詞條墓碑未建立');
+    assert.equal(deleted.body.finalApplied, true);
+    assert.equal(deleted.body.legacyWriteBlocked, true);
+
+    const tombstone = await api.call('/reading/batch', {
+        method: 'POST',
+        body: { keys: [{ entityType: 'vocabularyEntry', entityId: 'entry-ghost' }] }
+    });
+    assert.equal(tombstone.body.entities.length, 1);
+    assert.ok(tombstone.body.entities[0].deletedAt);
+
+    const conditional = await api.call('/snapshot?version=1');
+    assert.equal(conditional.status, 200);
+    assert.equal(conditional.body.notModified, undefined);
+    assert.equal(conditional.body.version, 2);
+    assert.equal(conditional.body.payload.vocabulary, undefined, '關閘後仍回傳舊詞書群組');
+    assert.equal(conditional.body.payload.assistant, undefined, '關閘後仍回傳舊聊天群組');
+    assert.equal(JSON.stringify(conditional.body.payload).includes('entry-ghost'), false,
+        '已墓碑的詞條仍出現在快照中，legacy adoption 可能讓它復活');
+
+    const legacyClient = await api.call('/snapshot');
+    assert.equal(legacyClient.body.version, 2);
+    assert.equal(legacyClient.body.payload.vocabulary, undefined);
+    assert.equal(JSON.stringify(legacyClient.body.payload).includes('entry-ghost'), false);
+
+    const blocked = await api.call('/snapshot', {
+        method: 'POST',
+        body: { expected_version: 2, payload: { vocabulary: { books: [{ id: 'book-1', words: [{ id: 'entry-ghost' }] }] } } }
+    });
+    assert.equal(blocked.status, 409);
+    assert.equal(blocked.body.code, 'reading_legacy_write_blocked');
+}
+
+test('Worker D1：閱讀關閘原子推進快照版本，墓碑詞條不會經舊快照復活', async () => {
+    const stack = freshSqlite(join(ROOT, 'cloudflare-worker/schema.sql'));
+    try {
+        seedReadingSnapshot(stack.raw, {
+            vocabulary: { updatedAt: '2026-01-01T00:00:00.000Z', books: [{ id: 'book-1', words: [{ id: 'entry-ghost', word: 'ghost' }] }] },
+            assistant: { updatedAt: '2026-01-01T00:00:00.000Z', conversations: [{ id: 'conv-legacy' }] }
+        });
+        await runReadingSnapshotGateScenario(workerApi(stack.db));
+    } finally {
+        stack.raw.close();
+        rmSync(stack.dir, { recursive: true, force: true });
+    }
+});
+
+test('selfhost SQLite：閱讀關閘快照版本契約與 Worker 一致', async () => {
+    const fresh = freshSqlite(join(ROOT, 'selfhost/schema.sql'));
+    seedReadingSnapshot(fresh.raw, {
+        vocabulary: { updatedAt: '2026-01-01T00:00:00.000Z', books: [{ id: 'book-1', words: [{ id: 'entry-ghost', word: 'ghost' }] }] },
+        assistant: { updatedAt: '2026-01-01T00:00:00.000Z', conversations: [{ id: 'conv-legacy' }] }
+    });
+    fresh.raw.close();
+    const server = await startSelfhost(fresh.file);
+    try {
+        await runReadingSnapshotGateScenario(httpApi(server.base));
+    } finally {
+        await server.stop();
+        rmSync(fresh.dir, { recursive: true, force: true });
+    }
+});

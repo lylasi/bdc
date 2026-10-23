@@ -6,7 +6,7 @@
 //   * 伺服器回 404／405 表示後端尚未更新：本機功能照常，顯示「需要更新服務端」。
 //   * 舊快照不再承載詞書／聊天；本模組是唯一上傳路徑。
 
-import { apiRequest, getAuthSnapshot } from './sync-cloudflare.js';
+import { apiRequest, getAuthSnapshot, pullSnapshot } from './sync-cloudflare.js';
 import * as articleStore from './article-store.js';
 import * as store from './reading-store.js';
 import { READING_LIMITS } from '../shared/reading-protocol.mjs';
@@ -48,7 +48,7 @@ function assertScope(scopeOrCtx) {
 }
 
 async function request(path, options = {}) {
-    const res = await apiRequest(path, options, { timeoutMs: 30000 });
+    const res = await apiRequest(path, options, { timeoutMs: 30000, roundScoped: true });
     if (res.status === 401) throw authError(401, { code: 'unauthorized' });
     return res;
 }
@@ -181,7 +181,20 @@ async function pullAll(ctx) {
         }
         const changes = Array.isArray(body?.changes) ? body.changes : [];
         if (changes.length) {
-            const keys = changes.map((change) => ({ entityType: change.entityType, entityId: change.entityId }));
+            // 同一頁可能對同一實體留下多筆 seq；/reading/batch 回的是「目前」
+            // 實體，逐筆重套只會重複合併。每個 key 保留最後一筆即語意等價。
+            const uniqueChanges = [];
+            const seenKeys = new Map();
+            for (const change of changes) {
+                const key = `${change.entityType}:${change.entityId}`;
+                if (seenKeys.has(key)) {
+                    uniqueChanges[seenKeys.get(key)] = change;
+                    continue;
+                }
+                seenKeys.set(key, uniqueChanges.length);
+                uniqueChanges.push(change);
+            }
+            const keys = uniqueChanges.map((change) => ({ entityType: change.entityType, entityId: change.entityId }));
             const entities = [];
             for (let index = 0; index < keys.length; index += READING_LIMITS.maxBatchKeys) {
                 const chunk = keys.slice(index, index + READING_LIMITS.maxBatchKeys);
@@ -197,30 +210,30 @@ async function pullAll(ctx) {
             if (unsupported) break;
             assertScope(ctx);
             const byKey = new Map(entities.map((entity) => [`${entity.entityType}:${entity.id}`, entity]));
-            for (const change of changes) {
+            const entries = [];
+            for (const change of uniqueChanges) {
                 const entity = byKey.get(`${change.entityType}:${change.entityId}`);
                 if (entity) {
-                    const result = await store.applyRemoteEntity(change.entityType, entity, ctx);
-                    if (!result.ok) {
-                        const err = new Error(result.error || 'reading_pull_failed');
-                        err.code = result.error || 'reading_pull_failed';
-                        throw err;
-                    }
-                    if (result.conflict) conflicts += 1;
-                    if (result.applied) pulled += 1;
+                    entries.push({ entityType: change.entityType, entityId: change.entityId, remote: entity });
                 } else if (change.deletedAt) {
                     // 只有伺服器明確墓碑才刪除本機；批次缺資料不當成刪除。
-                    const result = await store.applyRemoteTombstone(change.entityType, change.entityId, ctx);
-                    if (result.ok === false) {
-                        const err = new Error(result.error || 'reading_tombstone_failed');
-                        err.code = result.error || 'reading_tombstone_failed';
-                        throw err;
-                    }
+                    entries.push({ entityType: change.entityType, entityId: change.entityId, tombstone: true });
                 } else {
                     const err = new Error('reading_entity_missing');
                     err.code = 'reading_entity_missing';
                     throw err;
                 }
+            }
+            if (entries.length) {
+                // 整頁在同一個 IndexedDB 交易套用，避免逐項開交易／讀寫整個 bucket。
+                const result = await store.applyRemoteEntities(entries, ctx);
+                if (!result.ok) {
+                    const err = new Error(result.error || 'reading_pull_failed');
+                    err.code = result.error || 'reading_pull_failed';
+                    throw err;
+                }
+                pulled += result.applied || 0;
+                conflicts += result.conflicts || 0;
             }
         }
         const next = Number(body?.cursor);
@@ -291,9 +304,9 @@ async function runSync() {
     // 舊後端閘門尚未關閉前，先把雲端舊 snapshot 的詞書／聊天移交到永久層。
     // 只有舊資料、且只補缺少的實體，不覆蓋本機既有內容；移交失敗就不關閘。
     if (!caps.legacyWriteBlocked && !store.getReadingMeta().legacySnapshotAdopted) {
-        const snapRes = await request('/snapshot', { method: 'GET' });
-        if (!snapRes.ok) throw authError(snapRes.status, await readJson(snapRes));
-        const snapshot = await readJson(snapRes);
+        // 用共用的 pullSnapshot：這輪稍後主同步讀快照時可直接命中同一版本，
+        // 不必再下載一次完整 payload。舊後端不支援條件讀取時照常回完整內容。
+        const snapshot = await pullSnapshot();
         const payload = snapshot?.payload || {};
         if (payload.vocabulary || payload.assistant) {
             const vocab = await store.adoptLegacyVocabularySnapshot(payload.vocabulary?.books || []);

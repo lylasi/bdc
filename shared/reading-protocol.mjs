@@ -183,10 +183,27 @@ export function normalizeReadingPatch(entityType, raw) {
                 break;
             case 'examples':
                 out.examples = Array.isArray(value)
-                    ? value.filter(isPlainObject).slice(0, 50).map((ex) => ({
-                        en: cleanString(ex.en, 4000),
-                        zh: cleanString(ex.zh, 4000)
-                    }))
+                    ? value.filter(isPlainObject).slice(0, 50).map((ex) => {
+                        const normalized = {
+                            en: cleanString(ex.en, 4000),
+                            zh: cleanString(ex.zh, 4000)
+                        };
+                        // 學習模式的 AI 例句使用 english／chinese／alignment；
+                        // 這些欄位若被削掉，保存後就只剩空白例句，因此最小保留。
+                        if (typeof ex.english === 'string') normalized.english = cleanString(ex.english, 4000);
+                        if (typeof ex.chinese === 'string') normalized.chinese = cleanString(ex.chinese, 4000);
+                        if (Array.isArray(ex.alignment)) {
+                            normalized.alignment = ex.alignment
+                                .filter(isPlainObject)
+                                .slice(0, 50)
+                                .map((pair) => ({
+                                    en: cleanString(pair.en, 1000),
+                                    zh: cleanString(pair.zh, 1000)
+                                }))
+                                .filter((pair) => pair.en && pair.zh);
+                        }
+                        return normalized;
+                    })
                     : [];
                 break;
             case 'sources':

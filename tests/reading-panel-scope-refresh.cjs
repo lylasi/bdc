@@ -142,6 +142,17 @@ async function markSecondLook(page) {
     }, null, { timeout: 5000 });
 }
 
+// P2-T2 把筆記等次要操作收進 details.tooltip-more（預設收起），
+// 測試要直接操作 .btn-note-item 前必須先展開，否則元素不可見。
+async function openTooltipMore(page) {
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more', { timeout: 5000 });
+    await page.evaluate(() => {
+        const details = document.querySelector('#word-analysis-tooltip details.tooltip-more');
+        if (details && !details.open) details.open = true;
+    });
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more[open] .btn-note-item', { state: 'visible', timeout: 5000 });
+}
+
 async function refreshReadingStores(page) {
     await page.evaluate(async () => {
         const art = await import('/modules/article-store.js');
@@ -352,7 +363,7 @@ async function scenarioNoteDraftRefresh(page) {
     await seedArticles(page, [{ id: IDS.note, title: 'Note refresh' }]);
     await openArticle(page, IDS.note);
     await page.locator('.interactive-word[data-word="look"]').nth(1).click();
-    await page.waitForSelector('#word-analysis-tooltip .btn-note-item', { timeout: 5000 });
+    await openTooltipMore(page);
     await page.locator('#word-analysis-tooltip .btn-note-item').click();
     await page.waitForSelector('#article-reading-panel:not(.hidden) textarea.reading-note', { timeout: 5000 });
     await page.waitForFunction(() => document.activeElement?.matches('textarea.reading-note'), null, { timeout: 5000 });

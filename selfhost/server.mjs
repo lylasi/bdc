@@ -330,6 +330,16 @@ async function handleSnapshot(req, res, user, path) {
       [user.user_id]
     );
     if (!row) return sendJson(req, res, null);
+    // 條件讀取：客戶端已持有同版本內容時只回 notModified。
+    const requestUrl = new URL(req.url || '/', 'http://localhost');
+    const knownVersion = Number(requestUrl.searchParams.get('version'));
+    if (Number.isInteger(knownVersion) && knownVersion > 0 && knownVersion === Number(row.version)) {
+      return sendJson(req, res, {
+        version: Number(row.version),
+        updated_at: row.updated_at,
+        notModified: true
+      });
+    }
     let payload = {};
     try {
       payload = JSON.parse(row.payload || '{}');

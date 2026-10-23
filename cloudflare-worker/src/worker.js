@@ -340,6 +340,12 @@ async function handleSnapshot(request, env, user, path) {
       .bind(user.user_id)
       .first();
     if (!row) return json(null, 200, env, request);
+    // 條件讀取：客戶端已持有同版本內容時只回 notModified，省下整包 payload。
+    // 舊客戶端不帶 ?version=，行為完全不變。
+    const knownVersion = Number(new URL(request.url).searchParams.get('version'));
+    if (Number.isInteger(knownVersion) && knownVersion > 0 && knownVersion === Number(row.version)) {
+      return json({ version: Number(row.version), updated_at: row.updated_at, notModified: true }, 200, env, request);
+    }
     let payload = {};
     try { payload = JSON.parse(row.payload || '{}'); } catch (_) { payload = {}; }
     payload = sanitizeSnapshotPayload(payload);

@@ -102,6 +102,16 @@ async function openArticle(page) {
     await page.waitForTimeout(900);
 }
 
+// P2-T2：次要操作收進 details.tooltip-more（預設收起），直接操作前必須先展開。
+async function openTooltipMore(page, actionSelector = '.btn-note-item') {
+    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more', { timeout: 5000 });
+    await page.evaluate(() => {
+        const details = document.querySelector('#word-analysis-tooltip details.tooltip-more');
+        if (details && !details.open) details.open = true;
+    });
+    await page.waitForSelector(`#word-analysis-tooltip details.tooltip-more[open] ${actionSelector}`, { state: 'visible', timeout: 5000 });
+}
+
 (async () => {
     const browser = await chromium.launch({ headless: true, executablePath: CHROME });
     const results = [];
@@ -195,6 +205,7 @@ async function openArticle(page) {
         });
         await page.locator('.interactive-word[data-word="look"]').first().click();
         await page.waitForTimeout(250);
+        await openTooltipMore(page, '.btn-pick-phrase');
         await page.locator('#word-analysis-tooltip .btn-pick-phrase').click();
         await page.waitForTimeout(350);
         await page.locator('.phrase-token').nth(3).click();

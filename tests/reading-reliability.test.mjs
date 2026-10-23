@@ -56,15 +56,26 @@ async function concurrentScenario({ second, verify }) {
     let arrivals = 0;
     let release;
     const barrier = new Promise((resolve) => { release = resolve; });
+    // 實體預載可能走「單筆 get」或「集合 all + IN (...)」；兩者都要計入，
+    // 否則後端改成批次查詢後，這個屏障就永遠等不到第二個請求。
+    const waitAtBarrier = async (sql) => {
+        if (!String(sql || '').startsWith('SELECT * FROM reading_entities')) return;
+        if (arrivals >= 2) return;
+        arrivals += 1;
+        if (arrivals === 2) release();
+        await barrier;
+    };
     const originalGet = adapter.get;
     adapter.get = async (sql, params) => {
         const row = await originalGet(sql, params);
-        if (sql.startsWith('SELECT * FROM reading_entities') && arrivals < 2) {
-            arrivals += 1;
-            if (arrivals === 2) release();
-            await barrier;
-        }
+        await waitAtBarrier(sql);
         return row;
+    };
+    const originalAll = adapter.all;
+    adapter.all = async (sql, params) => {
+        const rows = await originalAll(sql, params);
+        await waitAtBarrier(sql);
+        return rows;
     };
     try {
         const responses = await Promise.all([call(env, baseMutation()), call(env, baseMutation(second))]);

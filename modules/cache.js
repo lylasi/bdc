@@ -2,6 +2,8 @@
 // Note: Runs in browser; uses Web Crypto API.
 
 const PREFIX = 'bdc:cache:v1:';
+const LAST_PRUNE_KEY = 'bdc:cache:lastPrune';
+export const CACHE_PRUNE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 // --- IndexedDB (fallback to localStorage) ---
 let _dbPromise = null;
@@ -54,6 +56,37 @@ async function idbSet(key, rec) {
   });
 }
 
+async function idbDelete(key) {
+  const db = await openDB();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction('kv', 'readwrite');
+      const store = tx.objectStore('kv');
+      const req = store.delete(key);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+    } catch (e) { resolve(false); }
+  });
+}
+
+async function idbDeleteMany(keys) {
+  const list = Array.isArray(keys) ? keys.filter(Boolean) : [];
+  if (!list.length) return true;
+  const db = await openDB();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction('kv', 'readwrite');
+      const store = tx.objectStore('kv');
+      list.forEach((key) => store.delete(key));
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+      tx.onabort = () => resolve(false);
+    } catch (e) { resolve(false); }
+  });
+}
+
 function now() { return Date.now(); }
 
 const CRYPTO = (typeof globalThis !== 'undefined' && globalThis.crypto) ? globalThis.crypto : null;
@@ -91,7 +124,8 @@ export async function makeKey(namespace, payload) {
 }
 
 export async function setItem(key, value, ttlMs = 0) {
-  const rec = { v: 1, expiresAt: ttlMs > 0 ? now() + ttlMs : 0, value };
+  const nowMs = now();
+  const rec = { v: 1, storedAt: nowMs, expiresAt: ttlMs > 0 ? nowMs + ttlMs : 0, value };
   let ok = false;
   try { ok = await idbSet(key, rec); } catch(_) {}
   if (ok) return true;
@@ -108,6 +142,8 @@ export async function getItem(key) {
     }
     if (!rec) return null;
     if (rec && rec.expiresAt && rec.expiresAt > 0 && rec.expiresAt < now()) {
+      // 過期項目必須同時離開 IDB 與 localStorage，否則長期使用只會無限累積。
+      try { await idbDelete(key); } catch(_) {}
       try { localStorage.removeItem(key); } catch(_) {}
       return null;
     }
@@ -128,6 +164,152 @@ export async function setCached(namespace, payload, value, ttlMs) {
   return await setItem(key, value, ttlMs);
 }
 
+/** 掃描 IDB `kv` 中符合快取前綴的記錄；沒有 IDB 時回傳 null。 */
+async function scanIdbCacheRows() {
+    const db = await openDB();
+    if (!db) return null;
+    return new Promise((resolve) => {
+        const rows = [];
+        try {
+            const tx = db.transaction('kv', 'readonly');
+            const store = tx.objectStore('kv');
+            if (typeof store.openCursor !== 'function') {
+                // 測試替身或極舊環境沒有游標：退回 getAll（仍是同一組 kv 記錄）。
+                const req = store.getAll();
+                req.onsuccess = () => {
+                    (req.result || []).forEach((rec) => {
+                        if (rec && String(rec.key || '').startsWith(PREFIX)) rows.push(rec);
+                    });
+                    resolve(rows);
+                };
+                req.onerror = () => resolve(rows);
+                return;
+            }
+            const req = store.openCursor();
+            req.onsuccess = () => {
+                const cursor = req.result;
+                if (!cursor) return;
+                const rec = cursor.value;
+                if (rec && String(cursor.key || '').startsWith(PREFIX)) rows.push({ ...rec, key: String(cursor.key) });
+                cursor.continue();
+            };
+            req.onerror = () => resolve(rows);
+            tx.oncomplete = () => resolve(rows);
+            tx.onerror = () => resolve(rows);
+            tx.onabort = () => resolve(rows);
+        } catch (_) {
+            resolve(rows);
+        }
+    });
+}
+
+function localCacheRows() {
+    const rows = [];
+    try {
+        for (const key of Object.keys(localStorage)) {
+            if (!key.startsWith(PREFIX)) continue;
+            let rec = null;
+            try { rec = JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) { rec = null; }
+            rows.push({ key, ...(rec && typeof rec === 'object' ? rec : {}) });
+        }
+    } catch (_) { /* noop */ }
+    return rows;
+}
+
+function recordSizeBytes(rec) {
+    try { return JSON.stringify(rec?.value === undefined ? rec : rec.value).length * 2; } catch (_) { return 0; }
+}
+
+/**
+ * 清理可重建快取（P3-T2）。
+ * 只處理 `bdc:cache:v1:` 前綴，絕不觸碰 bdc-articles／bdc-reading 或永久資料。
+ *
+ * @param {{ maxEntries?: number, maxBytes?: number, maxAgeMs?: number }} options
+ * @returns {Promise<{ ok: boolean, removed: number, kept: number, fallback?: boolean }>}
+ */
+export async function pruneCache(options = {}) {
+    const maxEntries = Number.isFinite(options.maxEntries) ? Math.max(0, options.maxEntries) : 1500;
+    const maxBytes = Number.isFinite(options.maxBytes) ? Math.max(0, options.maxBytes) : 30 * 1024 * 1024;
+    const maxAgeMs = Number.isFinite(options.maxAgeMs) ? Math.max(0, options.maxAgeMs) : 60 * 24 * 60 * 60 * 1000;
+    const nowMs = now();
+
+    let idbRows = null;
+    try { idbRows = await scanIdbCacheRows(); } catch (_) { idbRows = null; }
+    const localRows = localCacheRows();
+
+    const entries = new Map();
+    const addRow = (row, source) => {
+        const key = String(row?.key || '');
+        if (!key.startsWith(PREFIX)) return;
+        let entry = entries.get(key);
+        if (!entry) {
+            entry = { key, expiresAt: 0, storedAt: 0, sizeBytes: 0, inIdb: false, inLocal: false };
+            entries.set(key, entry);
+        }
+        entry.expiresAt = Math.max(entry.expiresAt, Number(row.expiresAt) || 0);
+        entry.storedAt = Math.max(entry.storedAt, Number(row.storedAt) || 0);
+        entry.sizeBytes = Math.max(entry.sizeBytes, recordSizeBytes(row));
+        if (source === 'idb') entry.inIdb = true;
+        if (source === 'local') entry.inLocal = true;
+    };
+    (idbRows || []).forEach((row) => addRow(row, 'idb'));
+    localRows.forEach((row) => addRow(row, 'local'));
+
+    const removedKeys = [];
+    const kept = [];
+    for (const entry of entries.values()) {
+        const expired = entry.expiresAt > 0 && entry.expiresAt < nowMs;
+        const tooOld = maxAgeMs > 0 && entry.storedAt > 0 && nowMs - entry.storedAt > maxAgeMs;
+        if (expired || tooOld) removedKeys.push(entry.key);
+        else kept.push(entry);
+    }
+
+    // 最舊的先移除；沒有 storedAt 的舊資料視為最新，避免一次清空無法判斷年齡的資料。
+    const ageOf = (entry) => entry.storedAt || entry.expiresAt || Number.MAX_SAFE_INTEGER;
+    kept.sort((a, b) => ageOf(a) - ageOf(b));
+    let totalBytes = kept.reduce((sum, entry) => sum + entry.sizeBytes, 0);
+    while (kept.length > maxEntries) {
+        const oldest = kept.shift();
+        totalBytes -= oldest.sizeBytes;
+        removedKeys.push(oldest.key);
+    }
+    while (totalBytes > maxBytes && kept.length > 1) {
+        const oldest = kept.shift();
+        totalBytes -= oldest.sizeBytes;
+        removedKeys.push(oldest.key);
+    }
+
+    if (removedKeys.length) {
+        try { await idbDeleteMany(removedKeys); } catch (_) { /* noop */ }
+        for (const key of removedKeys) {
+            try { localStorage.removeItem(key); } catch (_) { /* noop */ }
+        }
+    }
+    return {
+        ok: idbRows !== null,
+        fallback: idbRows === null,
+        removed: removedKeys.length,
+        kept: kept.length
+    };
+}
+
+/**
+ * 依 `bdc:cache:lastPrune` 控制實際掃描頻率（預設 24 小時一次）。
+ * main.js 在初始化後於閒置時呼叫；測試可直接注入 nowMs。
+ */
+export async function pruneCacheIfDue(options = {}) {
+    const minIntervalMs = Number.isFinite(options.minIntervalMs) ? Math.max(0, options.minIntervalMs) : CACHE_PRUNE_INTERVAL_MS;
+    const nowMs = Number.isFinite(options.nowMs) ? options.nowMs : now();
+    let lastPruneMs = 0;
+    try { lastPruneMs = Number(localStorage.getItem(LAST_PRUNE_KEY) || 0) || 0; } catch (_) { lastPruneMs = 0; }
+    if (lastPruneMs > 0 && nowMs - lastPruneMs < minIntervalMs) {
+        return { ok: true, skipped: true, removed: 0, kept: 0 };
+    }
+    const result = await pruneCache(options);
+    try { localStorage.setItem(LAST_PRUNE_KEY, String(nowMs)); } catch (_) { /* noop */ }
+    return { ...result, skipped: false };
+}
+
 // Convenience helpers for this app
 /** 只清除可重建的快取（localStorage 前綴 + bdc-cache/kv 的同一前綴），不刪資料庫。 */
 export async function clearRebuildable() {
@@ -141,28 +323,12 @@ export async function clearRebuildable() {
         }
     } catch (_) {}
     try {
-        const db = await openDB();
-        if (db) {
-            removed += await new Promise((resolve) => {
-                try {
-                    const tx = db.transaction('kv', 'readwrite');
-                    const store = tx.objectStore('kv');
-                    const req = store.openCursor();
-                    let count = 0;
-                    req.onsuccess = () => {
-                        const cursor = req.result;
-                        if (!cursor) return;
-                        if (String(cursor.key || '').startsWith(PREFIX)) {
-                            cursor.delete();
-                            count += 1;
-                        }
-                        cursor.continue();
-                    };
-                    req.onerror = () => resolve(count);
-                    tx.oncomplete = () => resolve(count);
-                    tx.onerror = () => resolve(count);
-                } catch (_) { resolve(0); }
-            });
+        // 與 prune 共用同一套掃描：沒有 openCursor 的環境（含測試替身）
+        // 會退回 getAll，否則「清理快取」在那些環境會靜默什麼都没刪。
+        const rows = await scanIdbCacheRows();
+        if (rows && rows.length) {
+            await idbDeleteMany(rows.map((row) => row.key));
+            removed += rows.length;
         }
     } catch (_) {}
     return { ok: true, removed };
