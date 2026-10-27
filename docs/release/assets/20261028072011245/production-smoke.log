@@ -1,0 +1,26 @@
+PASS zh-CN-1280 ID URL restores saved text and analysis
+PASS zh-CN-1280 localized continuation
+PASS zh-CN-1280 continuation updates URL
+PASS zh-CN-1280 immediate refresh recovers draft with original ID
+PASS zh-CN-1280 draft and old-analysis notices
+PASS zh-CN-1280 localized login recovery
+PASS zh-CN-1280 no horizontal overflow
+PASS zh-CN-1280 no page errors
+PASS zh-HK-390 ID URL restores saved text and analysis
+PASS zh-HK-390 localized continuation
+PASS zh-HK-390 continuation updates URL
+PASS zh-HK-390 immediate refresh recovers draft with original ID
+PASS zh-HK-390 draft and old-analysis notices
+PASS zh-HK-390 localized login recovery
+PASS zh-HK-390 no horizontal overflow
+PASS zh-HK-390 no page errors
+PASS zh-CN-320 ID URL restores saved text and analysis
+PASS zh-CN-320 localized continuation
+PASS zh-CN-320 continuation updates URL
+PASS zh-CN-320 immediate refresh recovers draft with original ID
+PASS zh-CN-320 draft and old-analysis notices
+PASS zh-CN-320 localized login recovery
+PASS zh-CN-320 no horizontal overflow
+PASS zh-CN-320 no page errors
+PASS browser resources match committed release and query
+PASS 25 production UI checks; 534 verified responses

@@ -1,0 +1,20 @@
+ok 1 - history opening writes encoded legacy ID; refresh restores saved text and analysis
+ok 2 - immediate refresh recovers edited text under original identity and preserves saved analysis
+ok 3 - A/B drafts stay separate through back/forward; ordinary entry offers explicit last-read continuation
+ok 4 - intentionally blank article draft survives; reverting to saved text clears the draft
+ok 5 - unnamed drafts refresh safely, including deletion to an empty editor
+ok 6 - manual draft recovery retains the original article ID and saved analysis
+ok 7 - failed durable draft writes report failure and retain a per-tab refresh backup
+ok 8 - malformed IDs and private links while logged out show explicit recoverable states
+ok 9 - back navigation and direct article hashes respect quiz leave confirmation
+ok 10 - remote-only bookmark uses one private GET, then reloads and works offline from local storage
+ok 11 - Hong Kong missing/offline/network messages and retry retain the requested identity
+ok 12 - private bookmarks cannot redownload an article pending local deletion
+ok 13 - 401 and repeated article entry preserve the URL and recover after same-account login
+ok 14 - a late remote response cannot replace the article selected after it
+ok 15 - leaving while a private article loads prevents its late response from reopening the page
+ok 16 - cold initial private fetch receives navigation changes before application initialization finishes
+ok 17 - real A/B/A auth changes isolate same-ID bodies, drafts and last-read pointers
+ok 18 - auth change discards old in-flight response and sign-out immediately clears private content
+ok 19 - unconfigured sync service gives a configuration hint without making a private request
+PASS 19 article navigation scenarios

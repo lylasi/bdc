@@ -1,0 +1,11 @@
+running healthy
+CONFIG_SHA256=6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93
+28020a71b640cc436d8d728579f15d268c07e2f629d952a648422d56538b3f04  /srv/bdc/index.html
+d3bf771c404c54709f139cf3b4add59b11d1110ea9270513cbdcc7eb5b436a52  /srv/bdc/main.js
+848e9b22f85c994b8494ff786bc71a1592a3fd664ad3c150a59bad4b41d790fd  /srv/bdc/styles.css
+c19fb4d16b82bd9140896f7fd1e68c453a97c961aa9577e8718687213ceec2cf  /srv/bdc/modules/article-route.js
+35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b  /srv/bdc/modules/article-session.js
+6ee6a5925c7606fe0874b9d0d5323837080dc05b40b860628db10b58f8da773e  /srv/bdc/modules/article-store.js
+e4edba13a45e1ae552e070be7f16b3c8f2990a753e42ad80f4536695ff1188dc  /srv/bdc/modules/article-sync.js
+5aa467a362e16659d0fc5317fd273d99c3a9357b7e88df4cb39a40ff12d2a74b  /srv/bdc/features/article/article.js
+## master...origin/master

@@ -1,0 +1,786 @@
+{
+  "base": "https://bdc.a4a4.qzz.io",
+  "ref": "afa9696aad5a0a31d54aae26e16e135d38eadf98",
+  "release": "d03f41ce94d5",
+  "assets": [
+    {
+      "path": "/",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "28020a71b640cc436d8d728579f15d268c07e2f629d952a648422d56538b3f04",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/styles.css?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "848e9b22f85c994b8494ff786bc71a1592a3fd664ad3c150a59bad4b41d790fd",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/admin-users/admin-users.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/ai-admin/ai-admin.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/article/analysis-state.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/article/article.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "5aa467a362e16659d0fc5317fd273d99c3a9357b7e88df4cb39a40ff12d2a74b",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/article/paragraph-pipeline.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/article/perf-probe.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/article/phrase-picker.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "7eaba8d12c17ddbba2360e86ba3cd236823b56b210c352c467903e7a24bf80b9",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/article/reading-panel.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "039d3bba4c69628e5ebb624a73468c399276ba3fc7f583756264cf44beefae1d",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/article/tokenize.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/assistant/assistant.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "27c388cfae31fb30188f30f9bfbd92e2d9ab2d190865600f0fc4745acc92966e",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/assistant/word-chat.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "09df18a1bfa5fc717b1494b51b089348b204249d02d4059dd836e72e48399d46",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/dictation/dictation-grader.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/dictation/dictation.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/learning/learning.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/ocr/ocr.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/phonetics/phonetics.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/phonetics/word-sheet.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/qa/qa-checker.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/qa/qa-creator.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/qa/qa-pdf.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/qa/qa-storage.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/qa/qa-trainer.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/qa/qa.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "46b9ad801d15e04a4b2780f1c6bf6608d3717143f146de42074a4fb92420a708",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/quiz/quiz.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/sync/ai-provider-settings.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "8a4b0141552afedb8debded7416945b600a540d96870a0d208099a609fda2c50",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/sync/sync-status.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "3ddafb6f5218e5da29d6706be162104e25a63149e8fde3a9d9fe279e6e34ffe2",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/sync/sync.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "bc46088a7189ec27913430b4aa9ba9ab3ec78fa120a9344a7973815f7dca0c1e",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/features/vocabulary/vocabulary.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "f108f004c2368376491787a6c91c1c5a5033846c113f41150d833f2efb7e62f6",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/locales/zh-CN.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "a5d48780fafe00b51f9126e4c3421d598f3fe0d3b55870800dc965637eab0e5d",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/locales/zh-HK.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "ab8e6a9924e451ce1b4c3959c442ca8599a853dedc4f204a56d22d7f426424bd",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/main.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "d3bf771c404c54709f139cf3b4add59b11d1110ea9270513cbdcc7eb5b436a52",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-catalog.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-credential-sync.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "1a883c604481ef64e8710511c14844da480e336354eed25eb73d55a2a787f0a2",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-model-picker.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-models.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "0e55e2977b2e867de095b12ab65428da0b7bd473f78527cb3a39325f30fc1c90",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-profile-storage.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "8712ad97dccdd3e7a1064e08fb1bc32034b38d8d4c48d977fee38c83d48113a9",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-protocols/anthropic.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "0fe48688ad490a9f90cf5f117408653e5585fea3e5f3b88d283a2db2878c01d8",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-protocols/chat-completions.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "248e6ee639d2d3d7391e54a55a50ab828363070ac60327905b65c3d52ed925d6",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-protocols/common.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-protocols/gemini.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "201d17111d6abf790a16fb858548f33c966b1cdc0d2de8a801d41e41fcc7d7c3",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-protocols/index.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ai-settings-sanitize.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "f7de60d13fad1131ca506d3933a85733c95f4f51e184dc0b5f28ebe46d4f5d1c",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/api.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "a0bec3b0a57ca0d933cd1383568081a023d47e23dccae0698dc22ed37be400f9",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/article-route.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "c19fb4d16b82bd9140896f7fd1e68c453a97c961aa9577e8718687213ceec2cf",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/article-session.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/article-store.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "6ee6a5925c7606fe0874b9d0d5323837080dc05b40b860628db10b58f8da773e",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/article-sync.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "e4edba13a45e1ae552e070be7f16b3c8f2990a753e42ad80f4536695ff1188dc",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/audio.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "1bc97c73c15a3e246512f5439a35e146432e8c674348b20381f37860ff7cf121",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/cache.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/detail-state.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/dom.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "2b8bbd7a4df5b946c36ea3a502c3171a0ee56078e7b7c64451c55b26892fa2a7",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/i18n-config.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/i18n.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/local-backup.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "a886552fee49333ab3c6abae17f5b1f8a2ab335f8c7d09396cf54ea8db8aa3b0",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/markdown.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/permanent-db.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "08fbfb706bd78cb30fdcfc577313cea4dcde5f0c6e37c2aa6b8c2eb2e4c04360",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/phonetics-data.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/platform.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/article.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "3011c395fec0dd41f7ba4b8ccee97ba04c01ecdf05d1b70bba8e2cfa02809e89",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/assistant.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/dictation.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/dictionary.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/import.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/index.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/language-rules.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/learning.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/ocr.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/prompts/qa.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/qr.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/reading-actions.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "359da2512a678dc736be409c38fa7a41c1e7ecfb666309fd2c833989d3962dd4",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/reading-export.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "572968a1009b7045f44e609a24a2b901915733426d98142453a459b84f6e690c",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/reading-store.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "55ce844f4343ffb380c20cc5d259bc788371fa6d4b2acbafa6d8ff9642d26cb6",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/reading-sync.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "fc4d047410abef3ff4223610197f5c07b625309dfb769d637c8b996a53a9a3c6",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/settings.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "0bd871868a8ffc1f5ca3f8b350d15767d0242e81b7ab44bed919bea420cba7b9",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/state.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "c020b1de94e562428fc19ae9350309b46c43946e3a7d9e966c87a3458c5d144b",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/storage.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "b69e6a5998acdee3fa6a30fc00d46e36b0ac59b61ecc6fef8d276aec6f779cac",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/sync-cloudflare.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "77e0b2d5912458fc6745446f12346c59e9b70300d2a1201786dcc2d776c4c622",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/sync-core.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "5263ef6bac90f939174e9b12749fb106e5ad0a5c5b2f6c98b1a95a504f0c1b47",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/sync-signals.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/theme-art.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/theme.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/ui.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "7577b4ff7cce99afbcbd4c23296b9f74182370ced9dca4090104837b3853b137",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/validate.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/vendor/qrcode-generator.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/vocab.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "82217563919476179863025f8991af45f775cbaf067291f8c7695e59eef74526",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/modules/voices.js?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "d66fe0fc9d5a412ead8cc985acddcfe880c3b945a05c4ed9eb92af09c0a45768",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/shared/article-protocol.mjs?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "fd464ad38af78b79a17908ad868b4d403aac93857e53b700772ec533c3c69b25",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    },
+    {
+      "path": "/shared/reading-protocol.mjs?v=d03f41ce94d5",
+      "status": 403,
+      "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+      "expected": "d2554c854409b31158ae090106ff9d3165c1d4cd13ef5bbb5db692863926deb9",
+      "mime": "text/plain; charset=UTF-8",
+      "pass": false
+    }
+  ],
+  "blocked": [
+    {
+      "path": "/.git/config",
+      "status": 403,
+      "pass": false
+    },
+    {
+      "path": "/docs/",
+      "status": 403,
+      "pass": false
+    },
+    {
+      "path": "/scripts/serve.py",
+      "status": 403,
+      "pass": false
+    },
+    {
+      "path": "/tests/article-navigation.cjs",
+      "status": 403,
+      "pass": false
+    },
+    {
+      "path": "/selfhost/package.json",
+      "status": 403,
+      "pass": false
+    },
+    {
+      "path": "/cloudflare-worker/wrangler.toml",
+      "status": 403,
+      "pass": false
+    },
+    {
+      "path": "/deploy/nginx.conf",
+      "status": 403,
+      "pass": false
+    },
+    {
+      "path": "/ai-config.example.js",
+      "status": 403,
+      "pass": false
+    },
+    {
+      "path": "/test-floating-statusbar.html",
+      "status": 403,
+      "pass": false
+    },
+    {
+      "path": "/features/article/reading-view.js",
+      "status": 403,
+      "pass": false
+    }
+  ],
+  "privateConfig": {
+    "path": "/ai-config.js",
+    "status": 403,
+    "sha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c",
+    "cacheControl": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+    "pass": false
+  }
+}

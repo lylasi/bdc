@@ -1,0 +1,52 @@
+Updating c9c4d1b..afa9696
+Fast-forward
+ ...201\242\345\276\251\347\257\204\345\234\215.md" |  45 +++
+ ...251\227\346\224\266\345\240\261\345\221\212.md" |  90 +++++
+ .../checks.json                                    |  11 +
+ .../floating-statusbar-390.png                     | Bin 0 -> 75953 bytes
+ .../zh-CN-1440-continue.png                        | Bin 0 -> 93401 bytes
+ .../zh-CN-1440-draft.png                           | Bin 0 -> 121853 bytes
+ .../zh-CN-390-continue.png                         | Bin 0 -> 52040 bytes
+ .../zh-CN-390-draft.png                            | Bin 0 -> 63460 bytes
+ .../zh-CN-390-login.png                            | Bin 0 -> 59232 bytes
+ .../zh-HK-1440-continue.png                        | Bin 0 -> 94834 bytes
+ .../zh-HK-1440-draft.png                           | Bin 0 -> 124220 bytes
+ .../zh-HK-390-continue.png                         | Bin 0 -> 52490 bytes
+ .../zh-HK-390-draft.png                            | Bin 0 -> 64572 bytes
+ .../zh-HK-390-login.png                            | Bin 0 -> 60822 bytes
+ ...236\266\346\247\213\346\240\270\345\260\215.md" |  50 +++
+ features/article/article.js                        | 366 +++++++++++++++---
+ features/sync/sync.js                              |   7 +-
+ index.html                                         | 190 ++++-----
+ locales/zh-CN.js                                   |  13 +
+ locales/zh-HK.js                                   |  13 +
+ main.js                                            | 227 ++++++-----
+ modules/article-route.js                           |  26 ++
+ modules/article-session.js                         |  50 +++
+ modules/article-store.js                           | 136 ++++---
+ modules/article-sync.js                            |  45 +++
+ modules/dom.js                                     |   8 +
+ styles.css                                         |  19 +
+ tests/article-navigation.cjs                       | 425 +++++++++++++++++++++
+ tests/article-refresh-scope.cjs                    |   2 +
+ tests/article-scope.cjs                            |  30 +-
+ 30 files changed, 1440 insertions(+), 313 deletions(-)
+ create mode 100644 "docs/decision/20261028012124668_\346\226\207\347\253\240\347\247\201\344\272\272\347\233\264\351\201\224\350\210\207\345\210\267\346\226\260\346\201\242\345\276\251\347\257\204\345\234\215.md"
+ create mode 100644 "docs/report/20261028020313857_\346\226\207\347\253\240\347\247\201\344\272\272\347\266\262\345\235\200\350\210\207\345\210\267\346\226\260\346\201\242\345\276\251\351\251\227\346\224\266\345\240\261\345\221\212.md"
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/checks.json
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/floating-statusbar-390.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-CN-1440-continue.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-CN-1440-draft.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-CN-390-continue.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-CN-390-draft.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-CN-390-login.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-HK-1440-continue.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-HK-1440-draft.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-HK-390-continue.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-HK-390-draft.png
+ create mode 100644 docs/report/assets/20261028015906978_article-navigation/zh-HK-390-login.png
+ create mode 100644 "docs/research/20261028011154625_\346\226\207\347\253\240ID\347\233\264\351\201\224\347\266\262\345\235\200\346\236\266\346\247\213\346\240\270\345\260\215.md"
+ create mode 100644 modules/article-route.js
+ create mode 100644 modules/article-session.js
+ create mode 100644 tests/article-navigation.cjs
+running starting
