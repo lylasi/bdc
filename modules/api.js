@@ -853,7 +853,7 @@ export async function analyzeParagraph(paragraph, opts = {}) {
  * 懶載：針對單個詞（或短語）在其所在句子中的詳解。
  */
 export async function analyzeWordInSentence(word, sentence, opts = {}) {
-    const { timeoutMs = 20000, signal } = opts;
+    const { timeoutMs = 20000, signal, noCache = false } = opts;
     const s = loadGlobalSettings();
     const primaryModel = getPreferredTaskSpec(['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'], { settings: s });
     const fallbackModel = getPreferredTaskSpec(['articleWordTranslationFallback', 'wordAnalysis'], { settings: s });
@@ -861,12 +861,14 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
     const locale = getLocale();
     const promptVersion = getPromptVersion('article.wordTooltip');
     const cacheOptions = { locale, promptVersion };
-    for (const modelSpec of candidates) {
-        const resolved = normalizeModelSpec(modelSpec);
-        try {
-            const cached = await cache.getWordAnalysisCached(word, sentence, resolved.model, cacheOptions);
-            if (cached) return cached;
-        } catch (_) {}
+    if (!noCache) {
+        for (const modelSpec of candidates) {
+            const resolved = normalizeModelSpec(modelSpec);
+            try {
+                const cached = await cache.getWordAnalysisCached(word, sentence, resolved.model, cacheOptions);
+                if (cached) return cached;
+            } catch (_) {}
+        }
     }
     const prompt = buildPrompt('article.wordTooltip', { word, sentence }, { locale, variant: 'standard' });
 
@@ -915,6 +917,8 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
         const raw = pickMessageContent(fb);
         const parsed = normalizeWordInSentenceResponse(null, plainAnswerOrEmpty(raw), word, sentence);
         if (!validate.validateWordInSentence(parsed) || !parsed.analysis.meaning) throw lastErr || new Error('Word fallback failed');
+        const resolved = normalizeModelSpec(fallbackModelSpec);
+        try { await cache.setWordAnalysisCached(word, sentence, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
         return parsed;
     } catch (_) {
         if (lastErr) throw lastErr;

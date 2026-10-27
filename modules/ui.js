@@ -262,10 +262,13 @@ export function repositionTooltip(targetElement) {
 export function hideTooltip(source = 'external') {
     const tooltip = dom.analysisTooltip;
     if (!tooltip) return;
+    if (source === 'outside-click' && tooltip.dataset.keepOpen === 'word-ai') return;
     const wasVisible = tooltip.style.display !== 'none' && tooltip.style.display !== '';
     tooltip.style.display = 'none';
     tooltip.style.visibility = '';
     tooltip.classList.remove('tooltip-sheet');
+    tooltip.classList.remove('word-ai-open');
+    delete tooltip.dataset.keepOpen;
     if (wasVisible) {
         try {
             document.dispatchEvent(new CustomEvent('bdc:tooltip-hidden', { detail: { source } }));

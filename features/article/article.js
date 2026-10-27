@@ -482,7 +482,43 @@ function buildArticleMetaInput(articleText, parsedTitle) {
 }
 
 export function initArticle() {
+    initArticleReaderOffset();
+    applyArticleSidebarState(loadGlobalSettings()?.reading?.articleSidebarCollapsed === true);
+    dom.articleSidebarToggle.addEventListener('click', () => {
+        const collapsed = !dom.articleSection.classList.contains('article-sidebar-collapsed');
+        applyArticleSidebarState(collapsed);
+        saveGlobalSettings({ reading: { articleSidebarCollapsed: collapsed } });
+    });
+    dom.articleInputToggle.addEventListener('click', () => {
+        if (dom.articleSection.classList.contains('article-sidebar-collapsed')) {
+            setArticleInputOpen(!articleInputOpen, { focus: true });
+        } else {
+            dom.articleInputEditor.scrollIntoView({ block: 'nearest' });
+            dom.articleInput.focus({ preventScroll: true });
+        }
+    });
+    dom.articleInputClose.addEventListener('click', () => setArticleInputOpen(false, { focus: true }));
+    document.addEventListener('click', (event) => {
+        if (articleInputOpen && !dom.articleInputEditor.contains(event.target)
+            && !dom.articleInputToggle.contains(event.target)) setArticleInputOpen(false);
+    });
+    // 從面板內開始的拖動即使在外面放開，也不能被誤判為點擊外部。
+    document.addEventListener('pointerdown', (event) => {
+        if (!dom.articleCompactSpeedControl.contains(event.target)) setArticleSpeedOpen(false);
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !dom.articleCompactSpeedPanel.classList.contains('hidden')) {
+            event.preventDefault();
+            setArticleSpeedOpen(false, { focus: true });
+            return;
+        }
+        if (event.key === 'Escape' && articleInputOpen) {
+            event.preventDefault();
+            setArticleInputOpen(false, { focus: true });
+        }
+    });
     document.addEventListener('bdc:locale-change', () => {
+        applyArticleSidebarState(dom.articleSection.classList.contains('article-sidebar-collapsed'));
         updateArticleSourceBarFromDataset();
         refreshHistoryModal();
         updateHistoryIndicators();
@@ -493,9 +529,7 @@ export function initArticle() {
         applyFloatingReaderTexts();
         updateFloatingToggle();
         // 朗讀鈕的 title／aria-label 會隨播放狀態改變，locale 套用靜態文案後要再校正一次。
-        updateReadButtonUI(dom.stopReadArticleBtn.disabled
-            ? 'stopped'
-            : (state.isReadingChunkPaused ? 'paused' : 'playing'));
+        updateReadButtonUI(_articlePlaybackStatus);
         // 下載能力取決於遠端 TTS 設定，locale 套用 data-i18n-* 後也要重套。
         updateDownloadAvailability();
         updateArticleVersionState();
@@ -525,7 +559,8 @@ export function initArticle() {
                 rerenderVisibleWordTooltip();
                 // 重畫會換掉節點：焦點原本在裡面、或已經掉到 body／失效節點時，
                 // 把焦點放回新的標題，不讓鍵盤使用者失去位置。
-                if (hadFocus || !active || active === document.body || !active.isConnected) {
+                if ((hadFocus || !active || active === document.body || !active.isConnected)
+                    && !document.activeElement?.closest?.('.word-chat')) {
                     focusWordTooltipTitle();
                 }
             }
@@ -590,6 +625,10 @@ export function initArticle() {
     });
     // 外部點擊由 ui.initTooltip 收詳解；article 同步清 session 與焦點狀態（不把焦點搶回來）。
     document.addEventListener('bdc:tooltip-hidden', () => { resetWordTooltipState(); });
+    document.addEventListener('pointerdown', (event) => {
+        const more = dom.analysisTooltip.querySelector('.tooltip-more[open]');
+        if (more && !more.contains(event.target)) closeWordTooltipMenu();
+    }, { capture: true });
     // Escape：先收單詞詳解（焦點回原詞），再收句卡（焦點回句子）。
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape' || event.defaultPrevented) return;
@@ -631,6 +670,7 @@ export function initArticle() {
         if (!isWordTooltipVisible() || !wordTooltipTrigger?.isConnected) return;
         syncWordTooltipSheetMode();
         ui.repositionTooltip(wordTooltipTrigger);
+        positionWordTooltipMenu();
     });
     // 文章載入後的平滑捲動或使用者捲動時，詳解要跟著觸發詞走，
     // 不能在捲動開始前算一次座標就固定住。
@@ -642,10 +682,13 @@ export function initArticle() {
             wordTooltipScrollFrame = 0;
             if (!isWordTooltipVisible() || !wordTooltipTrigger?.isConnected) return;
             ui.repositionTooltip(wordTooltipTrigger);
+            positionWordTooltipMenu();
         });
     }, { passive: true, capture: true });
     dom.readArticleBtn.addEventListener('click', handleReadButtonClick);
     dom.stopReadArticleBtn.addEventListener('click', stopReadArticle);
+    dom.articleCompactReadBtn.addEventListener('click', handleReadButtonClick);
+    dom.articleCompactStopBtn.addEventListener('click', stopReadArticle);
     updateReadButtonUI('stopped');
     updateDownloadAvailability();
     // 設定面板改了 TTS 服務後，下載鈕的能力說明要立即反映。
@@ -665,11 +708,17 @@ export function initArticle() {
     
     dom.speedBtnGroup.addEventListener('click', (e) => {
         if (e.target.classList.contains('speed-btn')) {
-            dom.speedBtnGroup.querySelectorAll('.speed-btn').forEach(btn => btn.classList.remove('active'));
-            e.target.classList.add('active');
-            state.setCurrentSpeed(parseInt(e.target.dataset.speed, 10));
+            setArticleReadingSpeed(parseInt(e.target.dataset.speed, 10));
         }
     });
+    dom.articleCompactSpeed.addEventListener('input', () => {
+        setArticleReadingSpeed(parseInt(dom.articleCompactSpeed.value, 10));
+    });
+    dom.articleCompactSpeedToggle.addEventListener('click', (event) => {
+        // 鍵盤開啟時移入滑軌；滑鼠開啟時保留按鈕焦點，避免多餘的聚焦框。
+        setArticleSpeedOpen(dom.articleCompactSpeedPanel.classList.contains('hidden'), { focus: event.detail === 0 });
+    });
+    setArticleReadingSpeed(state.currentSpeed);
 
     dom.readingModeSelect.addEventListener('change', () => {
         stopReadArticle();
@@ -2394,13 +2443,16 @@ function updateParagraphButtonState(btn) {
     const hasIndex = Number.isInteger(index);
     const stale = isArticleViewStale();
     const busy = hasIndex && (isParagraphBusy(index) || isBatchRetryActive());
+    const status = btn.closest('.para-status')?.dataset.status;
+    const label = t(status === PARAGRAPH_STATUS.done ? 'article.refresh' : 'article.retryParagraph');
     btn.disabled = stale || busy;
+    btn.setAttribute('aria-label', label);
     if (stale) {
         btn.setAttribute('aria-disabled', 'true');
         btn.setAttribute('title', t('article.retryNeedsReanalyze'));
     } else {
         btn.removeAttribute('aria-disabled');
-        btn.removeAttribute('title');
+        btn.setAttribute('title', label);
     }
     if (busy) btn.setAttribute('aria-busy', 'true');
     else btn.removeAttribute('aria-busy');
@@ -2778,10 +2830,9 @@ function refreshParagraphDynamicTexts() {
             });
         }
         const retryBtn = statusDiv.querySelector('.retry-paragraph-btn');
-        if (retryBtn && retryBtn.style.display !== 'none') {
-            retryBtn.textContent = status === PARAGRAPH_STATUS.done
-                ? t('article.refresh')
-                : t('article.retryParagraph');
+        if (retryBtn) {
+            retryBtn.innerHTML = paragraphRetryContent(status);
+            updateParagraphButtonState(retryBtn);
         }
     });
     container.querySelectorAll('.analysis-failed-inline').forEach((el) => {
@@ -3280,7 +3331,7 @@ async function analyzeArticle() {
                 <span class="status-text">${t('article.analyzing')}</span>
                 <span class="para-reason" hidden></span>
                 <span class="elapsed" title="${t('article.elapsed')}"></span>
-                <button class="retry-paragraph-btn" data-index="${i}" style="display:none;">${t('article.retryParagraph')}</button>
+                ${paragraphRetryButtonHtml(i, PARAGRAPH_STATUS.pending)}
             </div>
             <div class="paragraph-english">${esc(v.display)}</div>
             <div class="paragraph-chinese"><em>${t('article.analyzing')}</em></div>
@@ -3559,7 +3610,19 @@ function updateAnalysisProgress(completed, total, message) {
     }
 }
 
-/** 歷史／整篇渲染時，每個段落都要有可判讀的狀態列（失敗可逐段重試）。 */
+function paragraphRetryContent(status) {
+    return status === PARAGRAPH_STATUS.done
+        ? '<svg class="icon" aria-hidden="true"><use href="#ic-replay"></use></svg>'
+        : escapeHtml(t('article.retryParagraph'));
+}
+
+function paragraphRetryButtonHtml(index, status) {
+    const visible = status === PARAGRAPH_STATUS.done || status === PARAGRAPH_STATUS.failed;
+    const label = escapeAttr(t(status === PARAGRAPH_STATUS.done ? 'article.refresh' : 'article.retryParagraph'));
+    return `<button type="button" class="retry-paragraph-btn" data-index="${index}" title="${label}" aria-label="${label}" style="display:${visible ? 'inline-flex' : 'none'};">${paragraphRetryContent(status)}</button>`;
+}
+
+/** 已完成段落只留角落刷新入口；其餘狀態保留可判讀的提示與重試。 */
 function paragraphStatusRowHtml(index, englishPara, item) {
     const classification = classifyParagraphResult(item, {
         sourceText: englishPara,
@@ -3572,15 +3635,13 @@ function paragraphStatusRowHtml(index, englishPara, item) {
             message: t(paragraphErrorLabelKey(classification.errorCode))
         }))}</span>`
         : '<span class="para-reason" hidden></span>';
-    const showRetry = status === PARAGRAPH_STATUS.failed || status === PARAGRAPH_STATUS.done;
-    const retryLabel = status === PARAGRAPH_STATUS.failed ? t('article.retryParagraph') : t('article.refresh');
     const errorCodeAttr = classification.errorCode ? ` data-error-code="${escapeAttr(classification.errorCode)}"` : '';
     return `
         <div class="para-status" data-status="${escapeAttr(status)}"${errorCodeAttr}>
             <span class="status-icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="${icon}"></use></svg></span>
             <span class="status-text">${escapeHtml(t(paragraphStatusLabelKey(status)))}</span>
             ${reason}
-            <button class="retry-paragraph-btn" data-index="${index}" style="display:${showRetry ? 'inline-block' : 'none'};">${escapeHtml(retryLabel)}</button>
+            ${paragraphRetryButtonHtml(index, status)}
         </div>`;
 }
 
@@ -4493,6 +4554,89 @@ export async function showCurrentArticleIfAvailable() {
 
 // --- Article Reading ---
 
+let articleInputOpen = false;
+
+function initArticleReaderOffset() {
+    // 頂欄可能因文字放大而增高，平板導覽亦可能換行，不能以固定高度定位。
+    const updateOffset = () => {
+        let offset = dom.appBar.getBoundingClientRect().height;
+        const navStyle = getComputedStyle(dom.appNav);
+        if (navStyle.position === 'sticky' && navStyle.flexDirection === 'row') {
+            offset = Math.max(offset, (parseFloat(navStyle.top) || 0) + dom.appNav.getBoundingClientRect().height);
+        }
+        dom.articleSection.style.setProperty('--article-reader-offset', `${Math.ceil(offset)}px`);
+        dom.articleSection.style.setProperty('--article-reader-height', `${Math.ceil(dom.articleReaderHead.getBoundingClientRect().height)}px`);
+    };
+    updateOffset();
+    window.addEventListener('resize', updateOffset, { passive: true });
+    if (typeof ResizeObserver !== 'undefined') {
+        const observer = new ResizeObserver(updateOffset);
+        observer.observe(dom.appBar);
+        observer.observe(dom.appNav);
+        observer.observe(dom.articleReaderHead);
+    }
+}
+
+function applyArticleSidebarState(collapsed) {
+    // 只收起介面，不重建正文或中斷播放，輸入與閱讀位置也會保留。
+    const focusWillBeHidden = (collapsed ? dom.articleSidebar : dom.articleCompactControls)
+        .contains(document.activeElement);
+    const focusedEditorControl = dom.articleInputEditor.contains(document.activeElement) ? document.activeElement : null;
+    if (!collapsed) setArticleSpeedOpen(false);
+    dom.articleSection.classList.toggle('article-sidebar-collapsed', collapsed);
+    dom.articleSidebar.classList.toggle('hidden', collapsed);
+    dom.articleCompactControls.classList.toggle('hidden', !collapsed);
+    // 移動同一份編輯器，保留原文、分析狀態及事件，無需同步兩個輸入框。
+    const inputParent = collapsed ? dom.articleReaderHead : dom.articleInputSlot;
+    if (dom.articleInputEditor.parentElement !== inputParent) {
+        inputParent.append(dom.articleInputEditor);
+        articleInputOpen = false;
+    }
+    dom.articleInputClose.classList.toggle('hidden', !collapsed);
+    setArticleInputOpen(articleInputOpen);
+    const button = dom.articleSidebarToggle;
+    button.setAttribute('aria-expanded', String(!collapsed));
+    const labelKey = collapsed ? 'article.expandSidebar' : 'article.collapseSidebar';
+    const hintKey = collapsed ? 'article.expandSidebarHint' : 'article.collapseSidebarHint';
+    button.dataset.i18nTitle = hintKey;
+    button.title = t(hintKey);
+    button.dataset.i18nAriaLabel = labelKey;
+    button.setAttribute('aria-label', t(labelKey));
+    if (focusWillBeHidden) button.focus({ preventScroll: true });
+    else if (focusedEditorControl && !collapsed) focusedEditorControl.focus({ preventScroll: true });
+}
+
+function setArticleInputOpen(open, { focus = false } = {}) {
+    const collapsed = dom.articleSection.classList.contains('article-sidebar-collapsed');
+    articleInputOpen = collapsed && open;
+    dom.articleInputEditor.classList.toggle('hidden', collapsed && !articleInputOpen);
+    dom.articleInputToggle.setAttribute('aria-expanded', String(!collapsed || articleInputOpen));
+    dom.articleInputToggle.classList.toggle('is-active', articleInputOpen);
+    if (focus) (articleInputOpen ? dom.articleInput : dom.articleInputToggle).focus({ preventScroll: true });
+}
+
+function setArticleReadingSpeed(speed) {
+    state.setCurrentSpeed(speed);
+    let speedLabel = '';
+    dom.speedBtnGroup.querySelectorAll('.speed-btn').forEach((button) => {
+        const selected = Number(button.dataset.speed) === speed;
+        button.classList.toggle('active', selected);
+        if (selected) speedLabel = button.textContent.trim();
+    });
+    dom.articleCompactSpeed.value = String(speed);
+    dom.articleCompactSpeed.setAttribute('aria-valuetext', speedLabel);
+    dom.articleCompactSpeed.style.setProperty('--article-speed-progress', `${(speed + 100) / 2}%`);
+    dom.articleCompactSpeedValue.textContent = speedLabel;
+}
+
+function setArticleSpeedOpen(open, { focus = false } = {}) {
+    const visible = open && dom.articleSection.classList.contains('article-sidebar-collapsed');
+    dom.articleCompactSpeedPanel.classList.toggle('hidden', !visible);
+    dom.articleCompactSpeedToggle.setAttribute('aria-expanded', String(visible));
+    if (visible) setArticleInputOpen(false);
+    if (focus) (visible ? dom.articleCompactSpeed : dom.articleCompactSpeedToggle).focus({ preventScroll: true });
+}
+
 function handleReadButtonClick() {
     if (dom.stopReadArticleBtn.disabled) readArticle();
     else togglePauseResume();
@@ -4564,6 +4708,7 @@ function buildReadingChunks(mode) {
 }
 
 let _playToken = 0; // 用於避免競態：切段期間舊的 onEnd 不再推進
+let _articlePlaybackStatus = 'stopped';
 // 文章朗讀被其他音訊（通常是單詞發音）打斷：恢復時只能重播本句，不能假裝續播。
 let _interruptedByOtherAudio = false;
 // 浮動播放控制（避免捲動後看不到控制）
@@ -4869,9 +5014,7 @@ function updatePlaybackStatus(status = {}) {
     if (audioState === 'loading') {
         if (!state.readingChunks || !state.readingChunks.length) return;
         dom.stopReadArticleBtn.disabled = false;
-        updateReadButtonUI('playing');
-        dom.readArticleBtn.title = t('article.loading');
-        dom.readArticleBtn.setAttribute('aria-label', t('article.loading'));
+        updateReadButtonUI('loading');
         return;
     }
     if (audioState === 'playing') {
@@ -4889,20 +5032,22 @@ function updatePlaybackStatus(status = {}) {
 }
 
 function updateReadButtonUI(status) {
-    const icon = dom.readArticleBtn.querySelector('svg');
-    const icons = {
-        play: '<path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>',
-        pause: '<path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>'
-    };
-    icon.innerHTML = status === 'playing' ? icons.pause : icons.play;
-    const label = status === 'playing'
-        ? t('article.pause')
-        : (status === 'paused'
-            ? (_interruptedByOtherAudio ? t('article.replayChunk') : t('article.resume'))
-            : t('article.read'));
-    dom.readArticleBtn.title = label;
-    // 動態狀態不能用 data-i18n-aria-label，否則 locale 套用時會被靜態值蓋回。
-    dom.readArticleBtn.setAttribute('aria-label', label);
+    _articlePlaybackStatus = status;
+    const active = status === 'playing' || status === 'loading';
+    const labelKey = status === 'loading' ? 'article.loading'
+        : status === 'playing' ? 'article.pause'
+            : status === 'paused'
+                ? (_interruptedByOtherAudio ? 'article.replayChunk' : 'article.resume')
+                : 'article.read';
+    // 兩組控制共用播放狀態與事件；語言切換時也沿用目前狀態的翻譯鍵。
+    [dom.readArticleBtn, dom.articleCompactReadBtn].forEach((button) => {
+        button.querySelector('svg').innerHTML = `<use href="#ic-${active ? 'pause' : 'play'}"/>`;
+        button.title = t(labelKey);
+        button.setAttribute('aria-label', t(labelKey));
+        button.dataset.i18nTitle = labelKey;
+        button.dataset.i18nAriaLabel = labelKey;
+    });
+    dom.articleCompactStopBtn.disabled = dom.stopReadArticleBtn.disabled;
     // 同步更新浮動控制的暫停/播放按鈕
     updateFloatingToggle();
 }
@@ -5347,18 +5492,18 @@ try {
     });
 } catch (_) {}
 
-// Tooltip actions delegation: phrase analysis buttons
+// 單詞詳解操作：發音、學習記錄、選短語與 AI 提問。
 dom.analysisTooltip.addEventListener('click', async (e) => {
     // 在 tooltip 內的任何點擊都不向外冒泡，避免觸發外層關閉/重繪邏輯
     e.stopPropagation();
     const rawTarget = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
+    if (!rawTarget?.closest?.('.tooltip-more > summary')) closeWordTooltipMenu();
     if (rawTarget?.closest && rawTarget.closest('.tooltip-close')) {
         dismissWordTooltip({ restoreFocus: true, source: 'close-button' });
         return;
     }
-    const btnPhrase = rawTarget?.closest && rawTarget.closest('.btn-analyze-phrase');
     const btnPick = rawTarget?.closest && rawTarget.closest('.btn-pick-phrase');
-    const btnCustom = rawTarget?.closest && rawTarget.closest('.btn-analyze-phrase-custom');
+    const btnAsk = rawTarget?.closest && rawTarget.closest('.btn-ask-word-ai');
     const btnPlay = rawTarget?.closest && rawTarget.closest('.btn-play-word');
     if (btnPlay) {
         const w = btnPlay.getAttribute('data-word') || '';
@@ -5368,9 +5513,14 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
     const btnAdd = rawTarget?.closest && rawTarget.closest('.btn-add-to-book');
     const btnMark = rawTarget?.closest && rawTarget.closest('.btn-toggle-mark');
     const btnNote = rawTarget?.closest && rawTarget.closest('.btn-note-item');
-    if (btnAdd || btnMark || btnNote) {
+    if (btnAdd || btnMark || btnNote || btnAsk) {
         e.stopPropagation();
-        const button = btnAdd || btnMark || btnNote;
+        if (btnAsk && (loadGlobalSettings()?.assistant?.enabled === false || !window.__assistant?.openWord)) {
+            ui.displayMessage(t('assistant.unavailable'), 'warning');
+            return;
+        }
+        const button = btnAdd || btnMark || btnNote || btnAsk;
+        const tooltipSession = wordTooltipSession;
         const readTarget = () => {
             const articleId = button.getAttribute('data-article-id') || articleContext.recordId || '';
             const quote = (button.getAttribute('data-quote') || button.getAttribute('data-word') || '').trim();
@@ -5395,9 +5545,10 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
                 anchor: exactAnchor || readingActions.resolveAnchor(articleId, quote, sentence, hint)
             };
         };
-        const prev = button.textContent;
+        const previousLabel = button.getAttribute('aria-label') || '';
+        const previousText = button.querySelector('.tooltip-action-label')?.textContent || '';
         button.disabled = true;
-        button.textContent = t('qa.adding');
+        if (btnAdd) setWordTooltipActionLabel(button, t('qa.adding'));
         button.setAttribute('aria-busy', 'true');
         try {
             const target = readTarget();
@@ -5405,14 +5556,25 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
             // 帳戶／文章切換後，舊彈窗按鈕不得寫入新 scope。
             const actionContext = wordTooltipContext?.actionContext || readingActions.captureActionContext();
             if (!readingActions.actionContextActive(actionContext)) throw new Error('stale_scope');
+            const canCompose = () => tooltipSession === wordTooltipSession
+                && button.isConnected
+                && readingActions.actionContextActive(actionContext)
+                && isCurrentArticle(target.articleId)
+                && readingActions.articleVersion(target.articleId) === target.contentVersion;
+            if (btnAsk && !canCompose()) return;
             const ensured = await readingActions.ensureItem({ ...target, actionContext });
             if (!ensured.ok) throw new Error(ensured.error);
             const item = readingStore.getLearningItem(ensured.entity.id) || ensured.entity;
-            if (btnMark) {
+            if (btnAsk) {
+                // 儲存來源期間可能切詞／切文章；舊操作不可打開新上下文的助手。
+                if (!canCompose()) return;
+                const opened = window.__assistant?.openWord(wordChatOptions(target, item.id));
+                if (!opened) ui.displayMessage(t('assistant.unavailable'), 'warning');
+            } else if (btnMark) {
                 const result = await readingActions.setMarked(item.id, item.marked !== true, actionContext);
                 if (!result.ok) throw new Error(result.error);
                 const marked = result.entity?.marked === true;
-                button.textContent = marked ? t('article.unmarkThis') : t('article.markThis');
+                setWordTooltipActionLabel(button, marked ? t('article.unmarkThis') : t('article.markThis'));
                 button.setAttribute('aria-pressed', marked ? 'true' : 'false');
                 ui.displayMessage(marked ? t('article.markAdded') : t('article.markRemoved'), 'success');
             } else if (btnNote) {
@@ -5427,23 +5589,25 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
                     pos: button.getAttribute('data-pos') || ''
                 });
                 if (!result || result.ok === false) throw new Error(result?.error || 'failed');
-                button.textContent = result.reason === 'duplicate' ? t('qa.exists') : t('qa.added');
+                setWordTooltipActionLabel(button, result.reason === 'duplicate' ? t('qa.exists') : t('qa.added'));
                 const markButton = dom.analysisTooltip.querySelector('.btn-toggle-mark');
                 if (markButton) {
-                    markButton.textContent = t('article.unmarkThis');
+                    setWordTooltipActionLabel(markButton, t('article.unmarkThis'));
                     markButton.setAttribute('aria-pressed', 'true');
                 }
             }
         } catch (err) {
             console.warn('閱讀記錄動作失敗:', err);
-            button.textContent = t('qa.failed');
+            if (btnAsk) ui.displayMessage(t('article.aiGenerateFailed'), 'warning');
+            else if (btnAdd) setWordTooltipActionLabel(button, t('qa.failed'));
+            else ui.displayMessage(t('qa.failed'), 'warning');
         } finally {
             button.removeAttribute('aria-busy');
             button.disabled = false;
             if (btnAdd) {
-                setTimeout(() => { button.textContent = prev || t('article.addToWordbook'); }, 1000);
-            } else if (btnNote) {
-                button.textContent = prev || t('article.writeNote');
+                setTimeout(() => {
+                    setWordTooltipActionLabel(button, previousLabel || t('article.addToWordbook'), previousText || t('article.addToWordbookShort'));
+                }, 1000);
             }
         }
         return;
@@ -5461,32 +5625,6 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
         });
         return;
     }
-    if (!btnPhrase && !btnCustom) return;
-    // 已在最上方 stopPropagation；此處保持語義一致
-    const sentence = (btnPhrase || btnCustom).getAttribute('data-sentence') || '';
-    const context = (btnPhrase || btnCustom).getAttribute('data-context') || '';
-    let selection = (btnPhrase || btnCustom).getAttribute('data-default') || '';
-    if (btnCustom) {
-        const input = prompt(t('article.phrasePrompt'), selection);
-        if (!input) return;
-        selection = input.trim();
-    }
-    const resultBox = dom.analysisTooltip.querySelector('.tooltip-phrase-result');
-    if (resultBox) resultBox.textContent = t('article.analyzingSelection');
-    try {
-        const res = await api.analyzeSelection(selection, sentence, context, { timeoutMs: 15000 });
-        if (resultBox) {
-            const esc = escapeHtml;
-            const ex = Array.isArray(res.analysis?.examples) ? res.analysis.examples.slice(0,2) : [];
-            const phon = (res.analysis?.phonetic || '').replace(/^\/|\/$/g, '');
-            resultBox.innerHTML = `<div><strong>${t('article.phraseLabel')}</strong> ${esc(res.selection || selection)}${phon ? ` <span class=\"tooltip-phonetic\">/${esc(phon)}/</span>` : ''}</div>
-                                   <div><strong>${t('article.meaningLabel')}</strong> ${esc(res.analysis?.meaning || '')}</div>
-                                   ${res.analysis?.usage ? `<div><strong>${t('article.usageLabel')}</strong> ${esc(res.analysis.usage)}</div>`:''}
-                                   ${ex.length? '<div class="phrase-result-examples">' + ex.map(x=>`<div>• ${esc(x.en)} — ${esc(x.zh)}</div>`).join('') + '</div>' : ''}`;
-        }
-    } catch (err) {
-        if (resultBox) resultBox.innerHTML = `<span class="text-danger">${t('article.analysisRetryShort')}</span>`;
-    }
 });
 
 let wordTooltipSession = 0;
@@ -5498,6 +5636,81 @@ let wordTooltipReturnFocus = null;
 let wordTooltipLastPayload = null;
 let wordTooltipRender = null;
 let wordTooltipKeyboardOpen = false;
+
+function setWordTooltipActionLabel(button, label, visibleLabel = label) {
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    const text = button.querySelector('.tooltip-action-label');
+    if (text) text.textContent = visibleLabel;
+}
+
+function closeWordTooltipMenu({ restoreFocus = false } = {}) {
+    const more = dom.analysisTooltip.querySelector('.tooltip-more[open]');
+    if (!more) return false;
+    more.open = false;
+    const menu = more.querySelector('.tooltip-more-body');
+    if (menu?.hidePopover && menu.matches(':popover-open')) menu.hidePopover();
+    const summary = more.querySelector('summary');
+    summary.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) summary.focus({ preventScroll: true });
+    return true;
+}
+
+/** 選單進入 top layer，避免被詞卡的捲動或 AI 展開容器裁切。 */
+function positionWordTooltipMenu() {
+    const more = dom.analysisTooltip.querySelector('.tooltip-more[open]');
+    const menu = more?.querySelector('.tooltip-more-body');
+    if (!menu?.showPopover) return;
+    if (!menu.matches(':popover-open')) menu.showPopover();
+    const trigger = more.querySelector('summary').getBoundingClientRect();
+    const rect = menu.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    const left = viewport?.offsetLeft || 0;
+    const top = viewport?.offsetTop || 0;
+    const right = left + (viewport?.width || window.innerWidth);
+    const bottom = top + (viewport?.height || window.innerHeight);
+    const menuTop = trigger.bottom + 6 + rect.height <= bottom - 8
+        ? trigger.bottom + 6
+        : Math.max(top + 8, trigger.top - rect.height - 6);
+    menu.style.setProperty('--tooltip-menu-left', `${Math.max(left + 8, Math.min(trigger.right - rect.width, right - rect.width - 8))}px`);
+    menu.style.setProperty('--tooltip-menu-top', `${menuTop}px`);
+}
+
+function initWordTooltipMenu() {
+    const more = dom.analysisTooltip.querySelector('.tooltip-more');
+    const summary = more.querySelector('summary');
+    const menu = more.querySelector('.tooltip-more-body');
+    const items = () => [...menu.querySelectorAll('button:not(:disabled)')];
+    more.addEventListener('toggle', () => {
+        summary.setAttribute('aria-expanded', String(more.open));
+        if (more.open) {
+            positionWordTooltipMenu();
+            if (document.activeElement === summary) items()[0]?.focus({ preventScroll: true });
+        } else if (menu.hidePopover && menu.matches(':popover-open')) menu.hidePopover();
+    });
+    more.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && more.open) {
+            event.preventDefault();
+            closeWordTooltipMenu({ restoreFocus: true });
+            return;
+        }
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        more.open = true;
+        positionWordTooltipMenu();
+        const buttons = items();
+        const index = buttons.indexOf(document.activeElement);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1
+            : event.key === 'ArrowDown' ? (index + 1) % buttons.length
+                : (index < 0 ? buttons.length - 1 : (index + buttons.length - 1) % buttons.length);
+        buttons[next]?.focus({ preventScroll: true });
+    });
+    more.addEventListener('focusout', () => {
+        queueMicrotask(() => {
+            if (more.isConnected && !more.contains(document.activeElement)) closeWordTooltipMenu();
+        });
+    });
+}
 
 function isWordTooltipVisible() {
     return !!dom.analysisTooltip && dom.analysisTooltip.style.display === 'block';
@@ -5516,6 +5729,8 @@ function syncWordTooltipSheetMode() {
 }
 
 function resetWordTooltipState() {
+    closeWordTooltipMenu();
+    window.__assistant?.detachWord?.();
     wordTooltipSession += 1;
     wordTooltipContext = null;
     wordTooltipTrigger = null;
@@ -5523,6 +5738,28 @@ function resetWordTooltipState() {
     wordTooltipLastPayload = null;
     wordTooltipRender = null;
     wordTooltipKeyboardOpen = false;
+}
+
+function wordChatOptions(target, learningItemId) {
+    const trigger = wordTooltipTrigger;
+    const actionContext = wordTooltipContext?.actionContext;
+    return {
+        host: dom.analysisTooltip.querySelector('.word-ai-host'),
+        word: target.quote,
+        sentence: target.sentence,
+        articleId: target.articleId,
+        articleText: articleStore.getRecord(target.articleId)?.article || '',
+        contentVersion: target.contentVersion,
+        anchor: target.anchor,
+        learningItemId,
+        onResize: () => {
+            if (trigger === wordTooltipTrigger && trigger?.isConnected && isWordTooltipVisible()) ui.repositionTooltip(trigger);
+        },
+        onReturn: () => {
+            if (trigger?.isConnected && readingActions.actionContextActive(actionContext)
+                && readingActions.articleVersion(target.articleId) === target.contentVersion) trigger.click();
+        }
+    };
 }
 
 /** 焦點回觸發詞：滑鼠開的詞原本不可聚焦，暫時給 tabindex=-1 並在失焦時移除。 */
@@ -5568,6 +5805,7 @@ function rerenderVisibleWordTooltip() {
 }
 
 function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
+    window.__assistant?.detachWord?.();
     // P3-T5：記錄「點詞 → tooltip 可見」；probe 關閉時 no-op。
     perfProbe.beginWordTooltip();
     // 點擊當下的文章就是這次請求的歸屬；回應回來時不再讀取「目前文章」。
@@ -5640,46 +5878,68 @@ function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
         const savedItem = readingActions.findSavedItem(targetArticleId, kind, quote, sentenceForBtn || '', { anchor: wordAnchor, contentVersion });
         const marked = savedItem?.marked === true;
         const anchorAttrs = `data-article-id="${escAttr(targetArticleId)}" data-quote="${escAttr(quote)}" data-word="${escAttr(quote)}" data-kind="${kind}" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-sentence-start="${escAttr(String(sentenceStart))}" data-start-offset="${escAttr(String(startOffset))}" data-anchor-start="${escAttr(String(wordAnchor?.start ?? -1))}" data-anchor-end="${escAttr(String(wordAnchor?.end ?? -1))}" data-content-version="${escAttr(contentVersion || '')}"`;
-        // 預設只露出三個主要操作；筆記與短語類操作收進「更多」。
+        const icon = (name) => `<svg class="icon" aria-hidden="true"><use href="#ic-${name}"></use></svg>`;
+        const labelAttrs = (key) => `title="${escAttr(t(key))}" aria-label="${escAttr(t(key))}"`;
+        // 常用操作排成單列；次要操作以省略號點擊選單呈現。
         return `
             <div class="tooltip-primary-actions">
-                <button class="btn-ghost btn-mini btn-play-word" data-word="${escAttr(quote || wordText)}">${t('article.pronunciation')}</button>
-                <button class="btn-ghost btn-mini btn-add-to-book"
+                <button type="button" class="tooltip-action btn-play-word" data-word="${escAttr(quote || wordText)}" ${labelAttrs('article.pronunciation')}>${icon('speaker')}</button>
+                <button type="button" class="tooltip-action tooltip-action-with-label btn-add-to-book" ${labelAttrs('article.addToWordbook')}
                     ${anchorAttrs}
                     data-meaning="${escAttr(analysis?.meaning || '')}"
                     data-phonetic="${escAttr(analysis?.phonetic || '')}"
                     data-pos="${escAttr(analysis?.pos || '')}"
-                >${t('article.addToWordbook')}</button>
-                <button class="btn-ghost btn-mini btn-toggle-mark" ${anchorAttrs} aria-pressed="${marked ? 'true' : 'false'}">${marked ? t('article.unmarkThis') : t('article.markThis')}</button>
-            </div>
-            <details class="tooltip-more">
-                <summary>${t('article.moreActions')}</summary>
-                <div class="tooltip-more-body">
-                    <button class="btn-ghost btn-mini btn-note-item" ${anchorAttrs}>${t('article.writeNote')}</button>
-                    <button class="btn-ghost btn-mini btn-pick-phrase" data-article-id="${escAttr(targetArticleId)}" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}" data-sentence-start="${escAttr(String(sentenceStart))}" data-start-offset="${escAttr(String(startOffset))}">${t('article.pickPhrase')}</button>
-                    <button class="btn-ghost btn-mini btn-analyze-phrase" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzePhrase')}</button>
-                    <button class="btn-ghost btn-mini btn-analyze-phrase-custom" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}">${t('article.analyzeOtherPhrase')}</button>
-                </div>
-            </details>`;
+                >${icon('book')}<span class="tooltip-action-label">${t('article.addToWordbookShort')}</span></button>
+                <button type="button" class="tooltip-action btn-toggle-mark" ${anchorAttrs} ${labelAttrs(marked ? 'article.unmarkThis' : 'article.markThis')} aria-pressed="${marked ? 'true' : 'false'}">${icon('bookmark')}</button>
+                <button type="button" class="tooltip-action btn-ask-word-ai" ${anchorAttrs} ${labelAttrs('article.askAi')} aria-expanded="false" aria-controls="word-ai-host">${icon('sparkle')}</button>
+                <details class="tooltip-more">
+                    <summary class="tooltip-action" ${labelAttrs('article.moreActions')} aria-haspopup="menu" aria-expanded="false" aria-controls="word-tooltip-menu">${icon('more')}</summary>
+                    <div id="word-tooltip-menu" class="tooltip-more-body" popover="manual" role="menu" aria-label="${escAttr(t('article.moreActions'))}">
+                        <button type="button" class="tooltip-action btn-note-item" role="menuitem" ${anchorAttrs} ${labelAttrs('article.writeNote')}>${icon('edit')}<span class="tooltip-action-label">${t('article.writeNote')}</span></button>
+                        <button type="button" class="tooltip-action btn-pick-phrase" role="menuitem" ${labelAttrs('article.pickPhrase')} data-article-id="${escAttr(targetArticleId)}" data-sentence="${escAttr(sentenceForBtn||'')}" data-context="${escAttr(contextForBtn||'')}" data-default="${escAttr(defaultPhrase||'')}" data-sentence-start="${escAttr(String(sentenceStart))}" data-start-offset="${escAttr(String(startOffset))}">${icon('scan')}<span class="tooltip-action-label">${t('article.pickPhrase')}</span></button>
+                    </div>
+                </details>
+            </div>`;
     };
 
-    const renderTooltipShell = (titleHtml, contentHtml, actionsHtml, { retryHtml = '' } = {}) => {
+    const refreshWord = (ev) => {
+        ev.stopPropagation();
+        if (!stillShowing()) return;
+        showArticleWordAnalysis(clickedElement, analysisArray, {
+            keyboard: wordTooltipKeyboardOpen || ev.detail === 0,
+            force: true
+        });
+    };
+
+    const renderTooltipShell = (titleHtml, contentHtml, actionsHtml, { retryHtml = '', loading = false } = {}) => {
+        const activeChatInput = document.activeElement?.closest?.('.word-chat') ? document.activeElement : null;
         const hadFocusInside = dom.analysisTooltip.contains(document.activeElement);
+        window.__assistant?.detachWord?.();
         syncWordTooltipSheetMode();
         dom.analysisTooltip.innerHTML = `
             <div class="tooltip-head">
                 <div class="tooltip-title" id="word-tooltip-title" tabindex="-1">${titleHtml}</div>
-                <button type="button" class="tooltip-close" aria-label="${escapeAttr(t('article.close'))}">×</button>
+                <div class="tooltip-head-actions">
+                    <button type="button" class="btn-refresh-word" title="${escapeAttr(t('article.refreshWord'))}" aria-label="${escapeAttr(t(loading ? 'article.refreshing' : 'article.refreshWord'))}"${loading ? ' disabled aria-busy="true"' : ''}><svg class="icon" aria-hidden="true"><use href="#ic-replay"></use></svg></button>
+                    <button type="button" class="tooltip-close" aria-label="${escapeAttr(t('article.close'))}">×</button>
+                </div>
             </div>
             <div class="tooltip-content">${contentHtml}</div>
             ${retryHtml}
             <div class="tooltip-actions">${actionsHtml}</div>
-            <div class="tooltip-phrase-result"></div>`;
+            <div id="word-ai-host" class="word-ai-host"></div>`;
+        dom.analysisTooltip.querySelector('.btn-refresh-word')?.addEventListener('click', refreshWord);
+        initWordTooltipMenu();
         dom.analysisTooltip.style.display = 'block';
+        const savedItem = readingActions.findSavedItem(targetArticleId, /\s/.test(wordText) ? 'phrase' : 'word', wordText, sentence, { anchor: wordAnchor, contentVersion });
+        if (savedItem) window.__assistant?.restoreWord?.(wordChatOptions({
+            articleId: targetArticleId, quote: wordText, sentence, anchor: wordAnchor, contentVersion
+        }, savedItem.id));
+        if (activeChatInput?.isConnected) activeChatInput.focus({ preventScroll: true });
         ui.repositionTooltip(clickedElement);
         perfProbe.markWordTooltip();
         // 鍵盤開卡：第一次與後續非同步重畫都要把焦點留在標題；滑鼠開的不搶焦點。
-        if (wordTooltipKeyboardOpen && (hadFocusInside || !renderedOnce)) {
+        if (!activeChatInput?.isConnected && wordTooltipKeyboardOpen && (hadFocusInside || !renderedOnce)) {
             focusWordTooltipTitle();
         }
         renderedOnce = true;
@@ -5710,7 +5970,8 @@ function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
         renderTooltipShell(
             tooltipTitleHtml(null, defaultPhrase),
             `<p>${t('article.loading')}</p>`,
-            actionButtonsHtml(sentenceForBtn, contextForBtn, defaultPhrase, null)
+            actionButtonsHtml(sentenceForBtn, contextForBtn, defaultPhrase, null),
+            { loading: true }
         );
     };
 
@@ -5724,14 +5985,10 @@ function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
             { retryHtml: `<div class="tooltip-retry"><button class="btn-ghost btn-mini btn-retry-word">${t('article.retry')}</button></div>` }
         );
         const retryBtn = dom.analysisTooltip.querySelector('.btn-retry-word');
-        if (retryBtn) retryBtn.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            const keyboard = wordTooltipKeyboardOpen;
-            showArticleWordAnalysis(clickedElement, analysisArray, { keyboard });
-        });
+        if (retryBtn) retryBtn.addEventListener('click', refreshWord);
     };
 
-    if (wordAnalysisData && wordAnalysisData.analysis) {
+    if (!options.force && wordAnalysisData && wordAnalysisData.analysis) {
         showTooltip(wordAnalysisData, sentence, paraEnglish, wordText);
         try {
             readingActions.recordExplanation({
@@ -5757,15 +6014,17 @@ function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
     }
 
     // 查詞去重（P1-T7）：key 含內容版本、介面語言、模型與句子，避免跨版本／跨語言誤命中。
-    // 快取存的是 Promise：同一個詞連點只會有一個請求，失敗就刪除讓重試可重新發出。
+    // 同一個詞連點共用請求；明確刷新跳過已完成快取，但共用仍在進行的刷新。
     const lazyKey = wordLookupKey(wordText, sentence);
     const lookupCache = wordLookupCache();
-    if (!lookupCache.has(lazyKey)) {
-        lookupCache.set(lazyKey, api.analyzeWordInSentence(wordText, sentence, { timeoutMs: 20000 })
+    const cachedLookup = lookupCache.get(lazyKey);
+    if (!cachedLookup || (options.force && !(cachedLookup.pending && cachedLookup.force))) {
+        if (cachedLookup) cachedLookup.superseded = true;
+        const lookup = { pending: true, force: !!options.force, superseded: false, promise: null };
+        lookup.promise = api.analyzeWordInSentence(wordText, sentence, { timeoutMs: 20000, noCache: !!options.force })
             .then((data) => {
                 const normalized = normalizeWordAnalysisData(data, wordText, sentence);
                 if (!isUsableWordAnalysis(normalized)) {
-                    lookupCache.delete(lazyKey);
                     const error = new Error('empty word analysis');
                     error.code = normalized?.errorCode || 'empty_response';
                     throw error;
@@ -5773,14 +6032,19 @@ function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
                 return normalized;
             })
             .catch((error) => {
-                lookupCache.delete(lazyKey);
+                if (lookupCache.get(lazyKey) === lookup) lookupCache.delete(lazyKey);
                 throw error;
-            }));
+            })
+            .finally(() => { lookup.pending = false; });
+        lookupCache.set(lazyKey, lookup);
     }
 
     showLoading(sentence, paraEnglish, wordText);
 
-    lookupCache.get(lazyKey).then((normalized) => {
+    const lookup = lookupCache.get(lazyKey);
+    lookup.promise.then((normalized) => {
+        // 已被後一次刷新取代的回應不得寫回舊內容。
+        if (lookup.superseded) return;
         // 解釋永遠存到「點擊時」的文章版本與錨點（舊回應寫舊版本，不得記成新版本）。
         try {
             readingActions.recordExplanation({
@@ -5805,11 +6069,18 @@ function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
                     const updated = {
                         ...record.result,
                         // 頂層 detailed_analysis 是這些按需詳解唯一的家，不可省略或精簡
-                        detailed_analysis: mergeDetailedAnalyses(record.result.detailed_analysis || [], [normalized])
+                        detailed_analysis: mergeDetailedAnalyses([normalized], record.result.detailed_analysis || [])
                     };
                     articleStore.saveAnalysis(targetArticleId, updated, { ctx: articleContextSnapshot, expectContentVersion: contentVersion })
                         .then((result) => reportAnalysisSaveFailure(result))
                         .catch(() => {});
+                }
+                // 換選其他單詞後也同步本文的詳解資料，避免重開時又取回舊意思；
+                // 彈窗是否重畫仍由下方的選詞 session 決定。
+                if (isCurrentArticle(targetArticleId)) {
+                    let currentAnalysis = analysisArray;
+                    try { currentAnalysis = JSON.parse(dom.articleAnalysisContainer.dataset.analysis || '[]'); } catch (_) {}
+                    dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(mergeDetailedAnalyses([normalized], currentAnalysis));
                 }
             }
         } catch (_) { /* 持久化失敗不影響顯示 */ }
@@ -5818,8 +6089,6 @@ function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
             if (staleSessionContext()) dismissWordTooltip({ restoreFocus: false, source: 'stale-word-response' });
             return;
         }
-        const merged = mergeDetailedAnalyses(analysisArray, [normalized]);
-        dom.articleAnalysisContainer.dataset.analysis = JSON.stringify(merged);
         showTooltip(normalized, sentence, paraEnglish, wordText);
     }).catch((err) => {
         console.warn('懶載詳解失敗:', err);
@@ -6079,6 +6348,8 @@ function renderParagraph(index, englishPara, result) {
     const englishDiv = container.querySelector('.paragraph-english');
     const chineseDiv = container.querySelector('.paragraph-chinese');
     const statusDiv = container.querySelector('.para-status');
+    // 本段即將換上新 DOM；重新包字，讓刷新後的原文仍可點詞查詢。
+    if (englishDiv) delete englishDiv.dataset.tokensWrapped;
     // 原文本身已是中文時不顯示重複譯文，也讓朗讀流程跳過這一段。
     const sourceIsChinese = isPredominantlyChinese(prepareParagraphForTranslation(englishPara));
     if (sourceIsChinese) container.dataset.sourceLanguage = 'zh';
@@ -6128,13 +6399,9 @@ function renderParagraph(index, englishPara, result) {
             reasonSpan.textContent = '';
         }
         if (retryBtn) {
-            if (classification.status === PARAGRAPH_STATUS.failed) {
-                retryBtn.style.display = 'inline-block';
-                retryBtn.textContent = t('article.retryParagraph');
-                retryBtn.dataset.index = String(index);
-            } else if (classification.status === PARAGRAPH_STATUS.done) {
-                retryBtn.style.display = 'inline-block';
-                retryBtn.textContent = t('article.refresh');
+            retryBtn.innerHTML = paragraphRetryContent(classification.status);
+            if (classification.status === PARAGRAPH_STATUS.failed || classification.status === PARAGRAPH_STATUS.done) {
+                retryBtn.style.display = 'inline-flex';
                 retryBtn.dataset.index = String(index);
             } else {
                 // skipped／cancelled／pending 不提供「重試本段」

@@ -1,0 +1,71 @@
+{
+  "findings": [
+    {
+      "area": "vocabulary",
+      "severity": "low",
+      "title": "篩選清空：console error",
+      "detail": "Error analyzing word \"banana\": Error: 尚未选择模型\n    at modelError (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:102:17)\n    at resolveAIRequestConfig (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:425:42)\n    at resolveAIRequestConfigAsync (http://127.0.0.1:8313/modules/ai-mode | Error analyzing word \"orange\": Error: 尚未选择模型\n    at modelError (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:102:17)\n    at resolveAIRequestConfig (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:425:42)\n    at resolveAIRequestConfigAsync (http://127.0.0.1:8313/modules/ai-m"
+    },
+    {
+      "area": "vocabulary",
+      "severity": "low",
+      "title": "單詞朗讀：console error",
+      "detail": "Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "area": "learning",
+      "severity": "low",
+      "title": "AI 例句：console error",
+      "detail": "生成例句時出錯: Error: 尚未选择模型\n    at modelError (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:102:17)\n    at resolveAIRequestConfig (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:425:42)\n    at resolveAIRequestConfigAsync (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:4"
+    },
+    {
+      "area": "learning",
+      "severity": "low",
+      "title": "造句檢查：console error",
+      "detail": "檢查例句時出錯: Error: 尚未选择模型\n    at modelError (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:102:17)\n    at resolveAIRequestConfig (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:425:42)\n    at resolveAIRequestConfigAsync (http://127.0.0.1:8313/modules/ai-models.js?v=dffe8822d25a:4"
+    },
+    {
+      "area": "learning",
+      "severity": "low",
+      "title": "朗讀：console error",
+      "detail": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "area": "learning",
+      "severity": "low",
+      "title": "語言切換：console error",
+      "detail": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "area": "dictation",
+      "severity": "low",
+      "title": "開始聽寫：console error",
+      "detail": "Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "area": "dictation",
+      "severity": "low",
+      "title": "暫停恢復：console error",
+      "detail": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "area": "dictation",
+      "severity": "low",
+      "title": "控制列：console error",
+      "detail": "Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "area": "dictation",
+      "severity": "low",
+      "title": "跟打練習：console error",
+      "detail": "Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "area": "dictation",
+      "severity": "low",
+      "title": "手機聽寫：console error",
+      "detail": "Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED"
+    }
+  ],
+  "generatedAt": "2026-10-27T14:55:18.412Z"
+}

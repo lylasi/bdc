@@ -22,6 +22,7 @@ import { buildPrompt } from '../../modules/prompts/index.js';
 import { contentVersionOf } from '../../shared/reading-protocol.mjs';
 // P3-T5：長文效能量測（?perf=1）；關閉時所有呼叫都是 no-op。
 import * as perfProbe from '../article/perf-probe.js';
+import { createWordChat } from './word-chat.js';
 
 const LS_KEY = 'assistantConversations'; // legacy（含所有訊息）
 const LS_UPDATED_AT = 'assistantUpdatedAt';
@@ -30,6 +31,7 @@ const IDX_KEY = 'assistantConvIndex'; // 新索引：[{id, articleKey, title, up
 // 「問 AI」只把引用放進輸入框，等使用者自行輸入問題；真正送出時才把
 // 學習條目／錨點來源補進訊息，換會話或直接 send 時清除。
 let pendingReference = null;
+let wordChat = null;
 
 function getAssistantModelOverride() {
   const s = loadGlobalSettings();
@@ -52,7 +54,20 @@ export function initAiAssistant() {
   if (s?.assistant && s.assistant.enabled === false) return;
   mountUi();
   setupVisibilityLogic();
+  wordChat = createWordChat({
+    ask,
+    appendMessage,
+    autoGrowInput,
+    isBusy: () => !!activeAsk,
+    cancel: (view) => {
+      if (activeAsk?.panel === view) activeAsk.controller?.abort();
+    }
+  });
   exposeGlobalAPI();
+  document.addEventListener('bdc:articles-scope-changed', () => {
+    activeAsk?.controller?.abort('scope-change');
+    wordChat.clear();
+  });
   // 文章版本／文章切換時更新 context chip（不重建面板）。
   const refreshChip = () => updateContextChip(document.getElementById('assistant-panel'));
   document.addEventListener('bdc:article-loaded', refreshChip);
@@ -76,7 +91,7 @@ export function initAiAssistant() {
     pendingAssistantLocaleSnapshot = snapshot;
     const draftSource = document.getElementById('assistant-panel')?.querySelector('#assistant-input') || null;
     // 串流中：先中止，讓 P1-T5 的 cancelled 標記與半段保存照原流程跑完。
-    const wasStreaming = !!activeAsk;
+    const wasStreaming = !!activeAsk && activeAsk.panel === document.getElementById('assistant-panel');
     if (wasStreaming) {
       try { activeAsk.controller?.abort('locale-change'); } catch (_) { /* noop */ }
     }
@@ -532,6 +547,11 @@ function readIndex() {
   return readingStore.listConversations().map(conversationMeta).filter(Boolean);
 }
 
+// 詞卡會話只在明確選取時進入主助手，不能成為文章會話的自動回退。
+function defaultArticleConversation(index, articleKey) {
+  return index.find(item => item.articleKey === articleKey && !item.id.startsWith('c_word_'));
+}
+
 // 保留舊呼叫點的相容函式；權威索引已在 readingStore。
 function writeIndex() {
   try { syncTouch('assistant'); } catch (_) {}
@@ -601,7 +621,7 @@ export async function deleteAssistantConversation(convId) {
 
 async function ensureMeta(articleKey, title, articleId = '') {
   const idx = readIndex();
-  const existing = idx.find(x => x.articleKey === articleKey);
+  const existing = defaultArticleConversation(idx, articleKey);
   if (existing) return readingStore.getConversation(existing.id);
   const result = await readingStore.ensureConversation({
     articleId: articleId || (/^(art_|url:|local:)/.test(String(articleKey)) ? articleKey : ''),
@@ -617,7 +637,7 @@ async function ensureConversationForContext(ctx, title) {
     const existing = readingStore.getConversation(currentId);
     if (existing) return existing;
   }
-  const existingMeta = readIndex().find(x => x.articleKey === ctx.articleKey);
+  const existingMeta = defaultArticleConversation(readIndex(), ctx.articleKey);
   if (existingMeta) {
     setCurrentConvId(ctx.articleKey, existingMeta.id);
     return readingStore.getConversation(existingMeta.id);
@@ -669,14 +689,13 @@ async function restoreConversation(panel, overrideArticleKey) {
   const box = panel.querySelector('#assistant-messages');
   if (!box) return;
   box.innerHTML = '';
-  // 舊訊息節點已移除：連同它們的請求快照一起清掉，避免 Map 長期累積。
-  lastRequestByEl.clear();
+  // 請求快照以 WeakMap 隨舊訊息節點釋放，不影響詞卡中的重試。
   const ctx0 = await buildContext();
   const ctx = overrideArticleKey ? { ...ctx0, articleKey: overrideArticleKey } : ctx0;
   const idx = readIndex();
   const curId = getCurrentConvId(ctx.articleKey);
   let meta = curId ? idx.find(x => x.id === curId) : null;
-  if (!meta) meta = idx.find(x => x.articleKey === ctx.articleKey);
+  if (!meta) meta = defaultArticleConversation(idx, ctx.articleKey);
   if (!meta) return;
   const messages = await idbGetConv(meta.id);
   for (const m of messages) appendMessage(box, m.role, m.content, { messageId: m.id, conversationId: meta.id, articleId: meta.articleId, status: m.status || 'complete' });
@@ -685,7 +704,7 @@ async function restoreConversation(panel, overrideArticleKey) {
 }
 
 function addHint(panel, text) {
-  const box = panel.querySelector('#assistant-messages');
+  const box = assistantMessages(panel);
   const el = document.createElement('div');
   el.className = 'assistant-msg assistant-hint';
   el.textContent = text;
@@ -694,13 +713,22 @@ function addHint(panel, text) {
 
 const ASSISTANT_INPUT_MAX_HEIGHT = 140;
 
+function assistantMessages(panel) {
+    return panel?.querySelector('[data-assistant-messages], #assistant-messages');
+}
+
+function assistantInput(panel) {
+    return panel?.querySelector('[data-assistant-input], #assistant-input');
+}
+
 /** textarea 自動長高（1–5 行；超過上限改為內捲）。 */
 function autoGrowInput(input) {
   if (!input) return;
+  const maxHeight = input.closest('.word-chat') ? 88 : ASSISTANT_INPUT_MAX_HEIGHT;
   input.style.height = 'auto';
-  const nextHeight = Math.min(input.scrollHeight || 0, ASSISTANT_INPUT_MAX_HEIGHT);
+  const nextHeight = Math.min(input.scrollHeight || 0, maxHeight);
   input.style.height = `${nextHeight}px`;
-  input.style.overflowY = (input.scrollHeight || 0) > ASSISTANT_INPUT_MAX_HEIGHT ? 'auto' : 'hidden';
+  input.style.overflowY = (input.scrollHeight || 0) > maxHeight ? 'auto' : 'hidden';
 }
 
 /** 距離底部 48px 內視為「正在看最新內容」。 */
@@ -710,11 +738,11 @@ function isNearBottom(box, threshold = 48) {
 }
 
 function hideNewAnswerHint(panel) {
-  try { panel?.querySelector('#assistant-messages .assistant-new-answer')?.remove(); } catch (_) { /* noop */ }
+  try { assistantMessages(panel)?.querySelector('.assistant-new-answer')?.remove(); } catch (_) { /* noop */ }
 }
 
 function showNewAnswerHint(panel) {
-  const box = panel?.querySelector('#assistant-messages');
+  const box = assistantMessages(panel);
   if (!box || box.querySelector('.assistant-new-answer')) return;
   const button = document.createElement('button');
   button.type = 'button';
@@ -729,7 +757,7 @@ function showNewAnswerHint(panel) {
 
 /** 失敗／取消後把本次問題放回空白的輸入框；使用者已打字則不覆蓋。 */
 function restoreDraft(panel, text) {
-  const input = panel?.querySelector('#assistant-input');
+  const input = assistantInput(panel);
   if (!input) return;
   if (String(input.value || '').trim()) return;
   const draft = String(text || '');
@@ -772,7 +800,7 @@ function appendMessage(container, role, text, meta = {}) {
  */
 let activeAsk = null;
 // placeholder -> 該輪請求快照；重試按鈕從這裡取回原始請求。
-const lastRequestByEl = new Map();
+const lastRequestByEl = new WeakMap();
 
 function isAbortError(error, controller) {
     return !!controller?.signal?.aborted || error?.name === 'AbortError';
@@ -796,8 +824,9 @@ function articleContentVersion(text) {
     try { return contentVersionOf(text); } catch (_) { return ''; }
 }
 
-async function saveAssistantMessage({ conversationId, content, status, articleId, learningItemId, anchor, contentVersion }) {
+async function saveAssistantMessage({ conversationId, content, status, articleId, learningItemId, anchor, contentVersion, readingContext }) {
     try {
+        if (!readingStore.isReadingContextActive(readingContext)) return { ok: false };
         return await readingStore.appendMessage({
             conversationId,
             role: 'assistant',
@@ -818,10 +847,10 @@ async function ask(panel, userText, opts = {}) {
     // 若等到串流開始才設 activeAsk，初始化期間的第二次送出會變成並行第二題。
     if (activeAsk) {
         addHint(panel, t('assistant.busy'));
-        try { panel.querySelector('#assistant-input')?.focus(); } catch (_) {}
+        try { assistantInput(panel)?.focus(); } catch (_) {}
         return false;
     }
-    const token = { controller: null, conversationId: '', placeholder: null, requestSnapshot: null };
+    const token = { controller: null, conversationId: '', placeholder: null, requestSnapshot: null, panel };
     // locale 切換要等這輪把 cancelled 半段存完再重畫會話；settle 只代表「這輪結束」。
     token.settled = new Promise((resolve) => { token.settle = resolve; });
     activeAsk = token;
@@ -837,21 +866,27 @@ async function ask(panel, userText, opts = {}) {
 async function askOwned(activeAskToken, panel, userText, opts = {}) {
     const st = loadGlobalSettings();
     const streamPref = st?.assistant?.stream !== false;
-    const box = panel.querySelector('#assistant-messages');
+    const box = assistantMessages(panel);
     // 送出前先記住使用者是否正在看底部；不在底部就不搶走他的閱讀位置。
     const shouldFollow = isNearBottom(box, 48);
     const isRetry = opts && opts.mode === 'retry';
     const snapshot = opts.requestSnapshot || null;
+    const readingContext = snapshot?.readingContext || opts.readingContext || readingStore.captureReadingContext();
+    const scopeActive = () => readingStore.isReadingContextActive(readingContext);
+    if (!box || !scopeActive()) return false;
     // 重試一律用快照：不重讀輸入框、不重算目前文章。
     const ctx = snapshot
         ? { articleKey: snapshot.articleKey, articleId: snapshot.articleId, text: snapshot.articleText }
-        : await buildContext();
+        : (opts.articleContext || await buildContext());
+    if (!scopeActive()) return false;
     const articleKey = snapshot ? snapshot.articleKey : (opts.articleKey || ctx.articleKey);
     const requestedArticleId = snapshot
         ? snapshot.articleId
         : (ctx.articleId || opts.articleId || '');
     const articleText = snapshot ? snapshot.articleText : ctx.text;
-    const title = snapshot ? snapshot.title : extractArticleTitle();
+    const title = snapshot ? snapshot.title : (opts.title || extractArticleTitle());
+    const isolated = snapshot ? snapshot.isolated : opts.isolated === true;
+    const reference = snapshot ? snapshot.reference : (opts.reference || '');
     const learningItemId = snapshot ? snapshot.learningItemId : (opts.learningItemId || '');
     const messageAnchor = snapshot ? snapshot.anchor : (opts.anchor || null);
     const messageContentVersion = snapshot
@@ -861,7 +896,10 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
     // 會話 ID 在本輪開始時固定；重試一定沿用原會話，不因目前文章改變而跳槽。
     const pinnedId = snapshot ? snapshot.convId : opts.convId;
     const pinned = pinnedId ? readingStore.getConversation(pinnedId) : null;
-    const conversation = pinned || await ensureConversationForContext({ ...ctx, articleKey, articleId: requestedArticleId }, title);
+    const conversation = pinned || (isolated
+        ? (await readingStore.ensureConversation({ id: pinnedId, articleId: requestedArticleId, title })).conversation
+        : await ensureConversationForContext({ ...ctx, articleKey, articleId: requestedArticleId }, title));
+    if (!scopeActive()) return false;
     const articleId = requestedArticleId || conversation?.articleId || '';
     if (!conversation) {
         appendMessage(box, 'assistant', t('assistant.error', { message: t('assistant.tryLater') }));
@@ -869,7 +907,7 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
         return false;
     }
     const conversationId = conversation.id;
-    setCurrentConvId(articleKey, conversationId);
+    if (!isolated) setCurrentConvId(articleKey, conversationId);
 
     const system = {
         role: 'system',
@@ -879,8 +917,9 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
     // 歷史在送出前固定（重試不重讀會話、也不把同一題再放一次）。
     const history = snapshot
         ? snapshot.historyMessages
-        : (await readingStore.getMessages(conversationId)).slice(-8).map((m) => ({ role: m.role, content: m.content }));
-    const messages = [system, ...(context ? [context] : []), ...history, { role: 'user', content: userText }];
+        : (await readingStore.getMessages(conversationId, readingContext)).slice(-8).map((m) => ({ role: m.role, content: m.content }));
+    if (!scopeActive()) return false;
+    const messages = [system, ...(context ? [context] : []), ...(reference ? [{ role: 'user', content: reference }] : []), ...history, { role: 'user', content: userText }];
     // P3-T5：只記長度（context／messages 字元數），不記內容；probe 關閉時 no-op。
     perfProbe.recordAssistantTurn({
         contextChars: context ? String(context.content || '').length : 0,
@@ -906,6 +945,7 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
             anchor: messageAnchor,
             contentVersion: messageContentVersion
         });
+        if (!scopeActive()) return false;
     }
 
     const requestSnapshot = snapshot || {
@@ -918,7 +958,10 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
         historyMessages: history,
         learningItemId,
         anchor: messageAnchor,
-        convId: conversationId
+        convId: conversationId,
+        isolated,
+        reference,
+        readingContext
     };
     lastRequestByEl.set(placeholder, requestSnapshot);
 
@@ -966,6 +1009,8 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
         }
     } finally {
         stopBtn.remove();
+        // 帳戶切換後不得把舊請求的回答或草稿寫入新帳戶。
+        if (!scopeActive()) return false;
         // 重新套用 markdown 會改變高度；先記錄使用者當時是否在看底部，避免把他拉回。
         const followBeforeRender = isNearBottom(box, 48);
         if (streamPref) {
@@ -983,7 +1028,8 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
                     articleId,
                     learningItemId,
                     anchor: messageAnchor,
-                    contentVersion: messageContentVersion
+                    contentVersion: messageContentVersion,
+                    readingContext
                 });
                 if (saved?.ok && saved.message) {
                     placeholder.dataset.messageId = saved.message.id;
@@ -1003,7 +1049,8 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
                 articleId,
                 learningItemId,
                 anchor: messageAnchor,
-                contentVersion: messageContentVersion
+                contentVersion: messageContentVersion,
+                readingContext
             });
             if (saved?.ok && saved.message) {
                 placeholder.dataset.messageId = saved.message.id;
@@ -1049,8 +1096,10 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
             showNewAnswerHint(panel);
         }
         // 忙碌狀態由 ask() 的 finally 依 token 解除，這裡不直接清全域鎖。
-        updateContextChip(panel);
-        updateHeaderTitle();
+        if (!isolated) {
+            updateContextChip(panel);
+            updateHeaderTitle();
+        }
     }
     return true;
 }
@@ -1060,9 +1109,11 @@ function attachKeepDocumentButton(el, { messageId, conversationId, articleId, le
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'assistant-keep-doc';
+  button.dataset.i18n = 'assistant.keepAsDocument';
   button.textContent = t('assistant.keepAsDocument');
   button.addEventListener('click', async () => {
     button.disabled = true;
+    button.dataset.i18n = 'assistant.savingDocument';
     button.textContent = t('assistant.savingDocument');
     try {
       const messages = await readingStore.getMessages(conversationId);
@@ -1077,11 +1128,13 @@ function attachKeepDocumentButton(el, { messageId, conversationId, articleId, le
         learningItemId: message?.learningItemId || learningItemId
       });
       if (!result.ok) throw new Error(result.error);
+      button.dataset.i18n = 'assistant.documentSaved';
       button.textContent = t('assistant.documentSaved');
       button.classList.add('is-saved');
       document.dispatchEvent(new CustomEvent('bdc:reading-change', { detail: { articleId: targetArticleId } }));
     } catch (_) {
       button.disabled = false;
+      button.dataset.i18n = 'assistant.documentSaveFailed';
       button.textContent = t('assistant.documentSaveFailed');
     }
   });
@@ -1293,7 +1346,6 @@ async function newConversation(panel){
   const box = panel.querySelector('#assistant-messages');
   if (box) box.innerHTML='';
   hideNewAnswerHint(panel);
-  lastRequestByEl.clear();
 }
 
 function ensureMetaWithId(articleKey, title, id){
@@ -1430,6 +1482,9 @@ function exposeGlobalAPI(){
     if (window.__assistant && window.__assistant.__ready) return;
     const api = {
       __ready: true,
+      openWord: (options) => wordChat?.open(options) || false,
+      restoreWord: (options) => wordChat?.restore(options),
+      detachWord: () => wordChat?.detach(),
       open: (mode) => {
         const panel = document.getElementById('assistant-panel');
         if (!panel) return; panel.classList.remove('assistant-hidden'); if (mode) setPanelMode(panel, mode);

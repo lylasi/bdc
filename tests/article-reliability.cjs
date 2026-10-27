@@ -959,7 +959,10 @@ const PARAGRAPH_MARKERS = {
                 const btn = pair.querySelector('.retry-paragraph-btn');
                 return {
                     status: pair.querySelector('.para-status')?.dataset.status || '',
-                    label: btn && btn.style.display !== 'none' ? btn.textContent.trim() : ''
+                    label: btn && btn.style.display !== 'none' ? btn.getAttribute('aria-label') : '',
+                    title: btn?.getAttribute('title') || '',
+                    text: btn?.textContent.trim() || '',
+                    icon: !!btn?.querySelector('svg')
                 };
             }),
             summary: document.querySelector('#article-analysis-container .analysis-batch-summary')?.textContent?.trim() || ''
@@ -975,12 +978,17 @@ const PARAGRAPH_MARKERS = {
             reason: i18n.t('article.paragraphFailureReason', { message: i18n.t('article.emptyTranslation') })
         };
     });
+    const localizedRetryButtons = (buttons, expected) => buttons.every((btn) => {
+        const label = btn.status === 'done' ? expected.refresh : expected.retry;
+        return btn.label === label && btn.title === label
+            && (btn.status === 'done' ? btn.icon && btn.text === '' : btn.text === expected.retry);
+    });
     const cnTexts = await dynamicTexts();
     const cnExpected = await expectedDynamic();
     check('zh-CN：摘要為簡體', cnTexts.summary === cnExpected.summary, `${cnTexts.summary} / ${cnExpected.summary}`);
     check('zh-CN：失敗狀態與原因為簡體', cnTexts.statusTexts.filter((_, i) => cnTexts.statuses[i] === 'failed').every((text) => text === cnExpected.failed)
         && cnTexts.reasons.filter((_, i) => cnTexts.statuses[i] === 'failed').every((text) => text === cnExpected.reason), JSON.stringify(cnTexts));
-    check('zh-CN：重試按鈕文字正確', cnTexts.retryButtons.every((btn) => btn.label === (btn.status === 'done' ? cnExpected.refresh : cnExpected.retry)), JSON.stringify(cnTexts.retryButtons));
+    check('zh-CN：刷新圖示與重試文字標籤正確', localizedRetryButtons(cnTexts.retryButtons, cnExpected), JSON.stringify(cnTexts.retryButtons));
 
     await setLocale('zh-HK');
     const hkTexts = await dynamicTexts();
@@ -989,14 +997,14 @@ const PARAGRAPH_MARKERS = {
     check('zh-HK：摘要確實不是簡體', hkExpected.summary !== cnExpected.summary && hkTexts.summary !== cnTexts.summary, `${hkTexts.summary} / ${cnTexts.summary}`);
     check('zh-HK：失敗狀態為香港繁體', hkTexts.statusTexts.filter((_, i) => hkTexts.statuses[i] === 'failed').every((text) => text === hkExpected.failed), JSON.stringify(hkTexts.statusTexts));
     check('zh-HK：失敗原因為香港繁體', hkTexts.reasons.filter((_, i) => hkTexts.statuses[i] === 'failed').every((text) => text === hkExpected.reason), JSON.stringify(hkTexts.reasons));
-    check('zh-HK：重試按鈕文字為香港繁體', hkTexts.retryButtons.every((btn) => btn.label === (btn.status === 'done' ? hkExpected.refresh : hkExpected.retry)), JSON.stringify(hkTexts.retryButtons));
+    check('zh-HK：刷新圖示與重試文字標籤為香港繁體', localizedRetryButtons(hkTexts.retryButtons, hkExpected), JSON.stringify(hkTexts.retryButtons));
 
     await setLocale('zh-CN');
     const backTexts = await dynamicTexts();
     const backExpected = await expectedDynamic();
     check('切回 zh-CN：摘要恢復簡體', backTexts.summary === backExpected.summary, `${backTexts.summary} / ${backExpected.summary}`);
     check('切回 zh-CN：失敗原因恢復簡體', backTexts.reasons.filter((_, i) => backTexts.statuses[i] === 'failed').every((text) => text === backExpected.reason), JSON.stringify(backTexts.reasons));
-    check('切回 zh-CN：重試按鈕恢復簡體', backTexts.retryButtons.every((btn) => btn.label === (btn.status === 'done' ? backExpected.refresh : backExpected.retry)), JSON.stringify(backTexts.retryButtons));
+    check('切回 zh-CN：刷新圖示與重試文字標籤恢復簡體', localizedRetryButtons(backTexts.retryButtons, backExpected), JSON.stringify(backTexts.retryButtons));
     ai.emptyFor = '';
 
     // ── 情境 16：不同段落並發重試，保存不得互相覆蓋（F1） ─────────────

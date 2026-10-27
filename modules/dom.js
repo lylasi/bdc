@@ -10,6 +10,7 @@ export const navMoreBtn = document.getElementById('nav-more-btn');
 export const navMoreList = document.getElementById('nav-more-list');
 export const navBackdrop = document.getElementById('nav-backdrop');
 export const appNav = document.querySelector('.app-nav');
+export const appBar = document.querySelector('.app-bar');
 
 // --- 单词本页面 ---
 export const vocabBookList = document.getElementById('vocab-book-list');
@@ -110,6 +111,21 @@ export const quizMainContainer = document.getElementById('quiz-main-container');
 export const analysisTooltip = document.getElementById('word-analysis-tooltip');
 
 // --- 文章详解页面 ---
+export const articleReaderHead = document.getElementById('article-reader-head');
+export const articleInputSlot = document.getElementById('article-input-slot');
+export const articleInputEditor = document.getElementById('article-input-editor');
+export const articleInputToggle = document.getElementById('article-input-toggle');
+export const articleInputClose = document.getElementById('article-input-close');
+export const articleSidebar = document.getElementById('article-sidebar');
+export const articleSidebarToggle = document.getElementById('article-sidebar-toggle');
+export const articleCompactControls = document.getElementById('article-compact-controls');
+export const articleCompactReadBtn = document.getElementById('article-compact-read-btn');
+export const articleCompactStopBtn = document.getElementById('article-compact-stop-btn');
+export const articleCompactSpeedControl = document.getElementById('article-compact-speed-control');
+export const articleCompactSpeedToggle = document.getElementById('article-compact-speed-toggle');
+export const articleCompactSpeedPanel = document.getElementById('article-compact-speed-panel');
+export const articleCompactSpeed = document.getElementById('article-compact-speed');
+export const articleCompactSpeedValue = document.getElementById('article-compact-speed-value');
 export const articleInput = document.getElementById('article-input');
 export const analyzeArticleBtn = document.getElementById('analyze-article-btn');
 export const importArticleBtn = document.getElementById('import-article-btn');

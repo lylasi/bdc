@@ -833,6 +833,17 @@ export default {
         exampleNoGloss: '這句沒有這個詞語的對應解釋'
     },
     article: {
+        refreshWord: '重新獲取單詞詳解',
+        readerActions: '文章操作',
+        adjustSpeed: '調整語速',
+        inputShort: '輸入',
+        closeInput: '收起輸入',
+        importShort: '匯入',
+        libraryShort: '文章庫',
+        collapseSidebar: '收起側欄',
+        expandSidebar: '展開側欄',
+        collapseSidebarHint: '收起輸入及設定，擴闊文章閱讀區',
+        expandSidebarHint: '展開文章輸入及朗讀設定',
         newsImportBtn: '導入',
         fetchShort: '擷取',
         fetching: '擷取中…',
@@ -966,7 +977,9 @@ export default {
         aiOrganizeNotes: '整理閱讀筆記',
         aiScopeHint: '選擇要交給 AI 的記錄；AI 只會新增文件，不會改動你的標記或筆記。',
         askAi: '問 AI',
+        addToWordbookShort: '加生字簿',
         askAiReference: '「{quote}」',
+        askAiWordReference: '「{quote}」\n原句：{sentence}',
         markAdded: '已標記',
         markRemoved: '已取消標記',
         markThis: '標記',
@@ -1247,6 +1260,10 @@ export default {
         loadSetFailed: '問答集載入失敗', loadLibraryFailed: 'jsPDF 載入失敗，請檢查網絡連線或重新整理頁面', preparingEngine: '首次導出需準備 PDF 元件（含中文字型），請稍候…', answer: '答案：{answer}', ordered: '_順序', shuffled: '_亂序', withAnswers: '_含答案', handwriting: '_手寫版', exportSuccess: '手寫默書 PDF 已成功匯出！', exportFailed: '手寫默書 PDF 匯出失敗：{message}', handwritingTitle: '{name} - 手寫默書練習', identity: '日期：_______________    姓名：_______________    成績：_______________', instructionsWithAnswers: '說明：請根據問題寫出答案，答案已在題目下方提供參考。', instructions: '說明：請在橫線上寫出完整的英文答案，注意大小寫及標點符號。', page: '第 {current} 頁，共 {total} 頁', reportTitle: '問答訓練結果報告', errorSummary: '錯誤點彙總（精簡）', reportFile: '問答訓練報告_{name}_{date}.pdf', reportSuccess: 'PDF 報告已成功匯出！', reportFailed: 'PDF 匯出失敗：{message}', setName: '問答集名稱：{name}', trainingTime: '訓練時間：{start} - {end}', duration: '訓練時長：{duration}', mode: '訓練模式：{mode}', random: '隨機模式', sequential: '順序模式', total: '題目總數：{count}', answered: '已作答：{count}', summary: '訓練總結', incorrect: '錯題數：{count}', unanswered: '未作答：{count}', details: '詳細答案分析', questionNumber: '第 {number} 題', question: '問題：{text}', standardAnswer: '標準答案：{text}', userAnswer: '你的答案：{text}', noAnswer: '（未回答）', verdict: '判定：{result}', correct: '正確', wrong: '錯誤', feedback: '回饋：{text}', suggestion: '建議：{text}', generatedAt: '產生時間：{time}', durationShort: '{minutes}分{seconds}秒'
     },
     assistant: {
+        wordChatLabel: '問 AI：{word}',
+        wordInputPlaceholder: '詢問這個詞…',
+        returnToWord: '返回詞卡',
+        collapseWordChat: '收起問答',
         title: 'AI 助手', model: '模型：', configureModel: '請先到全局設定配置 provider 及模型', global: '全局', article: '文章', smallWindow: '小視窗（右下角）', dockRight: '靠右全高', largeWindow: '置中大視窗', newSession: '新增會話', viewSessions: '查看會話', refreshContext: '更新上下文', close: '關閉', inputPlaceholder: '輸入與本文相關的問題，按 Enter 傳送', send: '傳送', streaming: '串流回應', fontSize: '字級：', small: '小', large: '大', contextRefreshed: '已更新文章上下文，下次提問會使用最新內容', globalSession: '全局會話', contextPrefix: '以下是目前文章內容，只作為上下文：', stop: '停止', error: '[錯誤] {message}', tryLater: '請稍後再試', retry: '重試', copy: '複製', copied: '已複製', history: '歷史會話', session: '會話', switch: '切換', rename: '重新命名', delete: '刪除', noSessions: '尚未有會話', renamePrompt: '輸入新的會話名稱：', confirmDelete: '確定刪除此會話嗎？'
         ,new: '新增', import: '匯入', modifyTitle: '修改標題', continueInAssistant: '在助手中繼續', export: '匯出', questionPlaceholder: '輸入問題…', loading: '載入中...', emptySession: '此會話尚未有訊息', loadFailed: '載入失敗', articleKeyPrompt: '請輸入文章鍵（留空為全局）', sessionName: '會話名稱', importedSession: '匯入會話', importFailed: '匯入失敗：{message}', selectSession: '請先選擇一個會話', sessionMissing: '會話不存在', noSelection: '未選擇會話', deleteFailed: '刪除失敗：{message}',
         documentSaveFailed: '儲存失敗，請重試',

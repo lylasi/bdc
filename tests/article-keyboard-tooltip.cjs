@@ -3,7 +3,7 @@
  *
  * 覆蓋：
  *   - 375×667／390×844／橫屏／200% 文字縮放：長詳解可捲動、關閉鈕可見且在視窗內
- *   - 詳解資訊層級：意思在作用之前；預設主要操作 ≤ 3；「更多」可展開筆記／短語
+ *   - 詳解資訊層級：意思在作用之前；常用操作單列；「更多」選單可開筆記／短語
  *   - 載入中仍可發音、加入詞書、標記、關閉，且顯示載入文字
  *   - Escape 關閉詳解後焦點回到原詞
  *   - 純鍵盤：開句卡 → 逐詞檢視 → 方向鍵 → Enter 查詞 → Escape 回詞 → Escape 回句
@@ -172,7 +172,7 @@ const tooltipState = (page) => page.evaluate(() => {
     const el = document.getElementById('word-analysis-tooltip');
     const close = el?.querySelector('.tooltip-close');
     const details = el?.querySelector('details.tooltip-more');
-    const primary = el ? Array.from(el.querySelectorAll('.tooltip-primary-actions button')) : [];
+    const primary = el ? Array.from(el.querySelectorAll('.tooltip-primary-actions > button')) : [];
     const rect = el ? el.getBoundingClientRect() : null;
     return {
         display: el ? el.style.display : 'missing',
@@ -195,7 +195,8 @@ const tooltipState = (page) => page.evaluate(() => {
         hasMark: !!el?.querySelector('.btn-toggle-mark'),
         hasNote: !!el?.querySelector('details.tooltip-more .btn-note-item'),
         hasPick: !!el?.querySelector('details.tooltip-more .btn-pick-phrase'),
-        hasAnalyze: !!el?.querySelector('details.tooltip-more .btn-analyze-phrase'),
+        hasAskAi: !!el?.querySelector('.tooltip-primary-actions > .btn-ask-word-ai'),
+        hasOldPhraseActions: !!el?.querySelector('.btn-analyze-phrase, .btn-analyze-phrase-custom'),
         roleId: el ? el.getAttribute('role') : '',
         ariaModal: el ? el.getAttribute('aria-modal') : '',
         labelledBy: el ? el.getAttribute('aria-labelledby') : '',
@@ -269,12 +270,13 @@ async function waitTooltip(page, { timeout = 15000 } = {}) {
         const order = state.contentLabels.map((label) => label.replace(/[：:]\s*$/, '').trim());
         check('意思是第一個內容層級', order[0] === meaningLabel, JSON.stringify(order));
         check('句中角色在意思之後', order.indexOf(roleLabel) > order.indexOf(meaningLabel), JSON.stringify(order));
-        check('預設主要操作 ≤ 3', state.primaryCount <= 3 && state.primaryCount >= 3, String(state.primaryCount));
-        check('主要操作有發音／加入詞書／標記', state.hasPlay && state.hasAdd && state.hasMark, JSON.stringify(state));
+        check('預設四個常用操作', state.primaryCount === 4, String(state.primaryCount));
+        check('主要操作有發音／加入詞書／標記／AI', state.hasPlay && state.hasAdd && state.hasMark && state.hasAskAi, JSON.stringify(state));
         check('更多操作預設收起', state.detailsOpen === false, String(state.detailsOpen));
-        check('更多內有筆記／選短語／解析短語', state.hasNote && state.hasPick && state.hasAnalyze, JSON.stringify(state));
+        check('更多內有筆記／選短語並移除舊分析入口', state.hasNote && state.hasPick && !state.hasOldPhraseActions, JSON.stringify(state));
         const moreLabel = await tInPage(page, 'article.moreActions');
         await page.click('#word-analysis-tooltip details.tooltip-more > summary');
+        await page.waitForSelector('#word-analysis-tooltip .tooltip-more-body:popover-open', { state: 'visible' });
         const afterOpen = await tooltipState(page);
         const moreVisible = await page.evaluate(() => {
             const btn = document.querySelector('#word-analysis-tooltip details.tooltip-more .btn-note-item');
@@ -282,7 +284,27 @@ async function waitTooltip(page, { timeout = 15000 } = {}) {
         });
         check('更多操作可展開', afterOpen.detailsOpen === true, String(afterOpen.detailsOpen));
         check('展開後筆記按鈕可見', moreVisible, String(moreVisible));
-        check('更多操作按鈕文案走翻譯', !!(await page.textContent('#word-analysis-tooltip details.tooltip-more > summary')).includes(moreLabel), await page.textContent('#word-analysis-tooltip details.tooltip-more > summary'));
+        check('更多圖示有完整翻譯標籤', await page.getAttribute('#word-analysis-tooltip details.tooltip-more > summary', 'aria-label') === moreLabel);
+        await page.keyboard.press('ArrowDown');
+        check('更多選單方向鍵可移到選短語', await page.locator('#word-analysis-tooltip .btn-pick-phrase').evaluate((el) => el === document.activeElement));
+        await page.keyboard.press('ArrowUp');
+        check('更多選單方向鍵可回到寫筆記', await page.locator('#word-analysis-tooltip .btn-note-item').evaluate((el) => el === document.activeElement));
+        await page.keyboard.press('Escape');
+        const afterMenuEscape = await tooltipState(page);
+        check('Escape 只收選單並聚焦省略號', afterMenuEscape.display === 'block' && !afterMenuEscape.detailsOpen
+            && await page.locator('#word-analysis-tooltip .tooltip-more > summary').evaluate((el) => el === document.activeElement));
+        await page.keyboard.press('Enter');
+        await page.waitForSelector('#word-analysis-tooltip .tooltip-more-body:popover-open', { state: 'visible' });
+        await page.click('#word-tooltip-title');
+        check('點擊詞卡內其他區域收選單並保留詞卡', !(await tooltipState(page)).detailsOpen && (await tooltipState(page)).display === 'block');
+        await page.click('#word-analysis-tooltip .btn-toggle-mark svg');
+        await page.waitForSelector('#word-analysis-tooltip .btn-toggle-mark[aria-pressed="true"]');
+        check('標記後保留圖示及完整取消標記標籤', await page.locator('#word-analysis-tooltip .btn-toggle-mark svg').count() === 1
+            && await page.getAttribute('#word-analysis-tooltip .btn-toggle-mark', 'aria-label') === await tInPage(page, 'article.unmarkThis'));
+        await page.click('#word-analysis-tooltip .btn-toggle-mark');
+        await page.waitForSelector('#word-analysis-tooltip .btn-toggle-mark[aria-pressed="false"]');
+        check('取消標記後保留圖示及完整標籤', await page.locator('#word-analysis-tooltip .btn-toggle-mark svg').count() === 1
+            && await page.getAttribute('#word-analysis-tooltip .btn-toggle-mark', 'aria-label') === await tInPage(page, 'article.markThis'));
         check('詳解具 dialog 語義但不鎖背景', state.roleId === 'dialog' && state.ariaModal === 'false' && state.labelledBy === 'word-tooltip-title' && state.tabindex === '-1', JSON.stringify({ role: state.roleId, modal: state.ariaModal, labelledBy: state.labelledBy, tabindex: state.tabindex }));
         check('標題可程式聚焦', state.titleFocusable, String(state.titleFocusable));
         const analyzeBtn = await page.evaluate(() => {
@@ -354,6 +376,7 @@ async function waitTooltip(page, { timeout = 15000 } = {}) {
             || addFeedback.toasts.length > 0
             || [addFeedback.added, addFeedback.exists, addFeedback.failed].includes(addFeedback.text);
         check('載入中按加入詞書有回饋', hasFeedback, JSON.stringify(addFeedback));
+        check('加入詞書回饋保留圖示', await page.locator('#word-analysis-tooltip .btn-add-to-book svg').count() === 1);
         await page.click('#word-analysis-tooltip .tooltip-close');
         await page.waitForTimeout(120);
         const closed = await tooltipState(page);
@@ -527,7 +550,7 @@ async function waitTooltip(page, { timeout = 15000 } = {}) {
         const wordModeHint = await tInPage(page, 'article.wordModeHint');
         const localized = await page.evaluate(() => ({
             meaning: document.querySelector('#word-analysis-tooltip .tooltip-content p strong')?.textContent.trim() || '',
-            more: document.querySelector('#word-analysis-tooltip details.tooltip-more > summary')?.textContent.trim() || ''
+            more: document.querySelector('#word-analysis-tooltip details.tooltip-more > summary')?.getAttribute('aria-label') || ''
         }));
         check(`${locale}：詳解文案使用目前語言`, localized.more === moreLabel && state.text.includes(localized.meaning), JSON.stringify(localized));
         check(`${locale}：逐詞鍵文案`, wordModeLabel === (locale === 'zh-CN' ? '逐词检视' : '逐詞檢視'), wordModeLabel);
@@ -539,7 +562,7 @@ async function waitTooltip(page, { timeout = 15000 } = {}) {
         await page.waitForTimeout(300);
         const rerendered = await tooltipState(page);
         const otherMore = await tInPage(page, 'article.moreActions');
-        const rerenderedMore = await page.textContent('#word-analysis-tooltip details.tooltip-more > summary').catch(() => '');
+        const rerenderedMore = await page.getAttribute('#word-analysis-tooltip details.tooltip-more > summary', 'aria-label').catch(() => '');
         check(`${locale}→${otherLocale}：詳解可見時切語言會重畫`, rerendered.display === 'block' && rerenderedMore.trim() === otherMore, JSON.stringify({ display: rerendered.display, rerenderedMore, otherMore }));
         await setLocale(page, locale);
         await page.waitForTimeout(200);

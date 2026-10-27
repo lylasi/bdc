@@ -833,6 +833,17 @@ export default {
         exampleNoGloss: '这句没有这个词语的对应解释'
     },
     article: {
+        refreshWord: '重新获取单词详解',
+        readerActions: '文章操作',
+        adjustSpeed: '调整语速',
+        inputShort: '输入',
+        closeInput: '收起输入',
+        importShort: '导入',
+        libraryShort: '文章库',
+        collapseSidebar: '收起侧栏',
+        expandSidebar: '展开侧栏',
+        collapseSidebarHint: '收起输入和设置，扩展文章阅读区',
+        expandSidebarHint: '展开文章输入和朗读设置',
         newsImportBtn: '导入',
         fetchShort: '提取',
         fetching: '提取中…',
@@ -966,7 +977,9 @@ export default {
         aiOrganizeNotes: '整理阅读笔记',
         aiScopeHint: '选择要交给 AI 的记录；AI 只会新增文件，不会改动你的标记或笔记。',
         askAi: '问 AI',
+        addToWordbookShort: '加词本',
         askAiReference: '「{quote}」',
+        askAiWordReference: '「{quote}」\n原句：{sentence}',
         markAdded: '已标记',
         markRemoved: '已取消标记',
         markThis: '标记',
@@ -1247,6 +1260,10 @@ export default {
         loadSetFailed: '问答集加载失败', loadLibraryFailed: 'jsPDF 加载失败，请检查网络连接或刷新页面', preparingEngine: '首次导出需准备 PDF 组件（含中文字型），请稍候…', answer: '答案：{answer}', ordered: '_顺序', shuffled: '_乱序', withAnswers: '_含答案', handwriting: '_手写版', exportSuccess: '手写练习 PDF 已成功导出！', exportFailed: '手写练习 PDF 导出失败：{message}', handwritingTitle: '{name} - 手写练习', identity: '日期：_______________    姓名：_______________    成绩：_______________', instructionsWithAnswers: '说明：请根据问题写出答案，答案已在题目下方提供参考。', instructions: '说明：请在横线上写出完整的英文答案，注意大小写和标点符号。', page: '第 {current} 页，共 {total} 页', reportTitle: '问答训练结果报告', errorSummary: '错误点汇总（精简）', reportFile: '问答训练报告_{name}_{date}.pdf', reportSuccess: 'PDF 报告已成功导出！', reportFailed: 'PDF 导出失败：{message}', setName: '问答集名称：{name}', trainingTime: '训练时间：{start} - {end}', duration: '训练时长：{duration}', mode: '训练模式：{mode}', random: '随机模式', sequential: '顺序模式', total: '题目总数：{count}', answered: '已作答：{count}', summary: '训练总结', incorrect: '错题数：{count}', unanswered: '未作答：{count}', details: '详细答案分析', questionNumber: '第 {number} 题', question: '问题：{text}', standardAnswer: '标准答案：{text}', userAnswer: '您的答案：{text}', noAnswer: '（未回答）', verdict: '判定：{result}', correct: '正确', wrong: '错误', feedback: '反馈：{text}', suggestion: '建议：{text}', generatedAt: '生成时间：{time}', durationShort: '{minutes}分{seconds}秒'
     },
     assistant: {
+        wordChatLabel: '问 AI：{word}',
+        wordInputPlaceholder: '问问这个词…',
+        returnToWord: '返回词卡',
+        collapseWordChat: '收起问答',
         title: 'AI 助手', model: '模型：', configureModel: '请先到全局设置配置 provider 与模型', global: '全局', article: '文章', smallWindow: '小窗口（右下角）', dockRight: '靠右全高', largeWindow: '居中大窗口', newSession: '新建会话', viewSessions: '查看会话', refreshContext: '刷新上下文', close: '关闭', inputPlaceholder: '输入与本文相关的问题，按 Enter 发送', send: '发送', streaming: '流式响应', fontSize: '字号：', small: '小', large: '大', contextRefreshed: '已刷新文章上下文，下次提问将使用最新内容', globalSession: '全局会话', contextPrefix: '以下是当前文章内容，仅作为上下文：', stop: '停止', error: '[错误] {message}', tryLater: '请稍后再试', retry: '重试', copy: '复制', copied: '已复制', history: '历史会话', session: '会话', switch: '切换', rename: '重命名', delete: '删除', noSessions: '还没有会话', renamePrompt: '输入新的会话名称：', confirmDelete: '确定删除此会话吗？'
         ,new: '新建', import: '导入', modifyTitle: '修改标题', continueInAssistant: '在助手中继续', export: '导出', questionPlaceholder: '输入问题…', loading: '加载中...', emptySession: '此会话还没有消息', loadFailed: '加载失败', articleKeyPrompt: '请输入文章键（留空为全局）', sessionName: '会话名称', importedSession: '导入会话', importFailed: '导入失败：{message}', selectSession: '请先选择一个会话', sessionMissing: '会话不存在', noSelection: '未选择会话', deleteFailed: '删除失败：{message}',
         documentSaveFailed: '保存失败，请重试',

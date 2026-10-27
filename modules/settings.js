@@ -38,7 +38,7 @@ const defaults = {
   // global reading preferences
   // translationMask: 是否對「文章詳解」中的中文翻譯加上模糊遮罩（滑鼠移入/按住顯示）
   // analysisCheckpoint：文章逐段分析的 checkpoint 開關（P3-T1）；false 時回到只在最後保存。
-  reading: { englishVariant: 'en-GB', chineseVariant: 'zh-CN', translationMask: true, analysisCheckpoint: true },
+  reading: { englishVariant: 'en-GB', chineseVariant: 'zh-CN', translationMask: true, analysisCheckpoint: true, articleSidebarCollapsed: false },
   phonetics: { enabled: false },
   assistant: { enabled: true, stream: true },
   // 配色背景插畫的顯示參數；圖片本體存在 IndexedDB（modules/theme-art.js）

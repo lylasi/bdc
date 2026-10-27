@@ -44,7 +44,8 @@ const ARTICLES = [
         revision: 3,
         createdAt: '2026-10-01T10:00:00.000Z',
         updatedAt: '2026-10-17T10:00:00.000Z',
-        lastOpenedAt: '2026-10-18T09:00:00.000Z'
+        // 保留一篇「今天」的記錄，避免日曆推進後所有範例都歸入「更早」。
+        lastOpenedAt: new Date().toISOString()
     },
     {
         id: 'art_beta',
