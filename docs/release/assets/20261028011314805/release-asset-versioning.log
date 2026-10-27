@@ -1,0 +1,189 @@
+PASS release map is generated and current "release import map 已是最新：e2ede2410680（86 個模組）"
+PASS article-store is mapped to release query "/modules/article-store.js?v=e2ede2410680"
+PASS reading-panel is mapped to release query "/features/article/reading-panel.js?v=e2ede2410680"
+PASS shared protocols and locales are mapped 
+PASS ai-config stays unversioned 
+PASS main.js and styles.css entries are versioned {"main":"e2ede2410680","styles":"e2ede2410680"}
+PASS import map appears before the module entry 
+PASS same-scope refresh retains opened body {"opened":{"body":"We look forward to meeting you.\n\nWe look forward to meeting you.","summaryOnly":false,"hasAnalysis":true},"cold":{"body":"","summaryOnly":true}}
+PASS same-scope refresh keeps cold article lazy {"body":"","summaryOnly":true}
+PASS mapped and explicit-query imports share one instance {"article":true,"panel":true,"protocol":true,"locale":true}
+PASS second occurrence carries current version and exact anchor {"version":"cv1_7019bacf_64","anchorStart":36,"anchorEnd":40}
+PASS manual mark underlines only the second occurrence [false,true]
+PASS note saves for the marked occurrence {"itemId":"li_cv1_4d435baf_50"}
+PASS article body, mark and note survive reading scope reload {"body":"We look forward to meeting you.\n\nWe look forward to meeting you.","summaryOnly":false,"active":[false,true],"item":{"marked":true,"note":"release map note: look forward to + V-ing"},"items":[{"id":"li_cv1_970470ca_76","marked":false,"note":"","anchor":{"start":-1,"end":-1,"quote":"look","prefix":"","suffix":""},"version":"cv1_7019bacf_64"},{"id":"li_cv1_4d435baf_50","marked":true,"note":"release map note: look forward to + V-ing","anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."},"version":"cv1_7019bacf_64"}]}
+PASS unmark keeps the note and clears both underlines {"item":{"marked":false,"note":"release map note: look forward to + V-ing"},"active":[false,false]}
+PASS no unversioned local module requests []
+PASS no stale article-store/reading-panel response used []
+PASS no page errors []
+{
+  "release": "e2ede2410680",
+  "checks": [
+    {
+      "name": "release map is generated and current",
+      "pass": true,
+      "detail": "release import map 已是最新：e2ede2410680（86 個模組）"
+    },
+    {
+      "name": "article-store is mapped to release query",
+      "pass": true,
+      "detail": "/modules/article-store.js?v=e2ede2410680"
+    },
+    {
+      "name": "reading-panel is mapped to release query",
+      "pass": true,
+      "detail": "/features/article/reading-panel.js?v=e2ede2410680"
+    },
+    {
+      "name": "shared protocols and locales are mapped",
+      "pass": true
+    },
+    {
+      "name": "ai-config stays unversioned",
+      "pass": true
+    },
+    {
+      "name": "main.js and styles.css entries are versioned",
+      "pass": true,
+      "detail": {
+        "main": "e2ede2410680",
+        "styles": "e2ede2410680"
+      }
+    },
+    {
+      "name": "import map appears before the module entry",
+      "pass": true
+    },
+    {
+      "name": "same-scope refresh retains opened body",
+      "pass": true,
+      "detail": {
+        "opened": {
+          "body": "We look forward to meeting you.\n\nWe look forward to meeting you.",
+          "summaryOnly": false,
+          "hasAnalysis": true
+        },
+        "cold": {
+          "body": "",
+          "summaryOnly": true
+        }
+      }
+    },
+    {
+      "name": "same-scope refresh keeps cold article lazy",
+      "pass": true,
+      "detail": {
+        "body": "",
+        "summaryOnly": true
+      }
+    },
+    {
+      "name": "mapped and explicit-query imports share one instance",
+      "pass": true,
+      "detail": {
+        "article": true,
+        "panel": true,
+        "protocol": true,
+        "locale": true
+      }
+    },
+    {
+      "name": "second occurrence carries current version and exact anchor",
+      "pass": true,
+      "detail": {
+        "version": "cv1_7019bacf_64",
+        "anchorStart": 36,
+        "anchorEnd": 40
+      }
+    },
+    {
+      "name": "manual mark underlines only the second occurrence",
+      "pass": true,
+      "detail": [
+        false,
+        true
+      ]
+    },
+    {
+      "name": "note saves for the marked occurrence",
+      "pass": true,
+      "detail": {
+        "itemId": "li_cv1_4d435baf_50"
+      }
+    },
+    {
+      "name": "article body, mark and note survive reading scope reload",
+      "pass": true,
+      "detail": {
+        "body": "We look forward to meeting you.\n\nWe look forward to meeting you.",
+        "summaryOnly": false,
+        "active": [
+          false,
+          true
+        ],
+        "item": {
+          "marked": true,
+          "note": "release map note: look forward to + V-ing"
+        },
+        "items": [
+          {
+            "id": "li_cv1_970470ca_76",
+            "marked": false,
+            "note": "",
+            "anchor": {
+              "start": -1,
+              "end": -1,
+              "quote": "look",
+              "prefix": "",
+              "suffix": ""
+            },
+            "version": "cv1_7019bacf_64"
+          },
+          {
+            "id": "li_cv1_4d435baf_50",
+            "marked": true,
+            "note": "release map note: look forward to + V-ing",
+            "anchor": {
+              "start": 36,
+              "end": 40,
+              "quote": "look",
+              "prefix": "We look forward to meeting you.\n\nWe ",
+              "suffix": " forward to meeting you."
+            },
+            "version": "cv1_7019bacf_64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unmark keeps the note and clears both underlines",
+      "pass": true,
+      "detail": {
+        "item": {
+          "marked": false,
+          "note": "release map note: look forward to + V-ing"
+        },
+        "active": [
+          false,
+          false
+        ]
+      }
+    },
+    {
+      "name": "no unversioned local module requests",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "no stale article-store/reading-panel response used",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": []
+    }
+  ],
+  "failed": 0
+}

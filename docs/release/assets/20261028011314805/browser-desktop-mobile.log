@@ -1,0 +1,31 @@
+PASS zh-CN-1280 compact toolbar and collapsed sidebar
+PASS zh-CN-1280 input expands from toolbar
+PASS zh-CN-1280 speed panel remains open after click
+PASS zh-CN-1280 speed updates
+PASS zh-CN-1280 compact paragraph refresh
+PASS zh-CN-1280 word refresh remains available
+PASS zh-CN-1280 five labeled actions in one row
+PASS zh-CN-1280 note and phrase menu
+PASS zh-CN-1280 AI expands inside word card
+PASS zh-CN-1280 inline AI round trip with mock provider
+PASS zh-CN-1280 no horizontal page overflow
+PASS zh-CN-1280 browser-loaded resources match release
+PASS zh-CN-1280 no page errors
+PASS zh-HK-390 compact toolbar and collapsed sidebar
+PASS zh-HK-390 input expands from toolbar
+PASS zh-HK-390 speed panel remains open after click
+PASS zh-HK-390 speed updates
+PASS zh-HK-390 compact paragraph refresh
+PASS zh-HK-390 word refresh remains available
+PASS zh-HK-390 five labeled actions in one row
+PASS zh-HK-390 note and phrase menu
+PASS zh-HK-390 AI expands inside word card
+PASS zh-HK-390 inline AI round trip with mock provider
+PASS zh-HK-390 no horizontal page overflow
+PASS zh-HK-390 browser-loaded resources match release
+PASS zh-HK-390 no page errors
+page.waitForFunction: Timeout 30000ms exceeded.
+    at /Users/linus/CODE/bdc/docs/release/assets/20261028011314805/production-smoke.cjs:77:24 {
+  log: [],
+  name: 'TimeoutError'
+}

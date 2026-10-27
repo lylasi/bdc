@@ -1,0 +1,14 @@
+PASS zh-CN-320 compact toolbar and collapsed sidebar
+PASS zh-CN-320 input expands from toolbar
+PASS zh-CN-320 speed panel remains open after click
+PASS zh-CN-320 speed updates
+PASS zh-CN-320 compact paragraph refresh
+PASS zh-CN-320 word refresh remains available
+PASS zh-CN-320 five labeled actions in one row
+PASS zh-CN-320 note and phrase menu
+PASS zh-CN-320 AI expands inside word card
+PASS zh-CN-320 inline AI round trip with mock provider
+PASS zh-CN-320 no horizontal page overflow
+PASS zh-CN-320 browser-loaded resources match release
+PASS zh-CN-320 no page errors
+PASS 13 production browser checks; 87 resource responses
