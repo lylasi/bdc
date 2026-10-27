@@ -85,10 +85,10 @@ const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Conte
             let arrived;
             const held = new Promise((resolve) => { release = resolve; });
             const barrier = new Promise((resolve) => { arrived = resolve; });
-            const originalGetAll = IDBObjectStore.prototype.getAll;
+            const originalGet = IDBObjectStore.prototype.get;
             let heldOnce = false;
-            IDBObjectStore.prototype.getAll = function getAll(...args) {
-                const request = originalGetAll.apply(this, args);
+            IDBObjectStore.prototype.get = function get(...args) {
+                const request = originalGet.apply(this, args);
                 if (!heldOnce && this.name === 'outbox') {
                     heldOnce = true;
                     const proxy = { get result() { return request.result; }, get error() { return request.error; } };
@@ -99,13 +99,17 @@ const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Conte
                 return request;
             };
             const saving = a.saveArticle({ id: 'same', title: 'A_EDIT', body: 'A NEW PRIVATE BODY.' });
-            const hit = await Promise.race([barrier.then(() => true), saving.then(() => false)]);
+            const hit = await Promise.race([
+                barrier.then(() => true), saving.then(() => false),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('outbox get barrier timed out')), 5000))
+            ]);
             if (hit) {
                 await a.reloadScope(scopeB);
-                release();
+                await a.ensureArticleLoaded('same');
             }
+            release();
             const save = await saving;
-            IDBObjectStore.prototype.getAll = originalGetAll;
+            IDBObjectStore.prototype.get = originalGet;
             const rowsA = await db.readStoreAll(db.STORE.DOCS, scopeA);
             const rowsB = await db.readStoreAll(db.STORE.DOCS, scopeB);
             return {
@@ -140,10 +144,10 @@ const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Conte
             let arrived;
             const held = new Promise((resolve) => { release = resolve; });
             const barrier = new Promise((resolve) => { arrived = resolve; });
-            const originalGetAll = IDBObjectStore.prototype.getAll;
+            const originalGet = IDBObjectStore.prototype.get;
             let heldOnce = false;
-            IDBObjectStore.prototype.getAll = function getAll(...args) {
-                const request = originalGetAll.apply(this, args);
+            IDBObjectStore.prototype.get = function get(...args) {
+                const request = originalGet.apply(this, args);
                 if (!heldOnce && this.name === 'outbox') {
                     heldOnce = true;
                     const proxy = { get result() { return request.result; }, get error() { return request.error; } };
@@ -154,12 +158,16 @@ const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Conte
                 return request;
             };
             const saving = a.saveArticle({ id: 'gen', title: 'STALE EDIT', body: 'stale edit body' });
-            await barrier;
+            await Promise.race([
+                barrier,
+                saving.then(() => { throw new Error('save did not reach outbox get barrier'); }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('outbox get barrier timed out')), 5000))
+            ]);
             await a.reloadScope(scopeB);
             await a.reloadScope(scopeA);
             release();
             const save = await saving;
-            IDBObjectStore.prototype.getAll = originalGetAll;
+            IDBObjectStore.prototype.get = originalGet;
             const rowsA = await db.readStoreAll(db.STORE.DOCS, scopeA);
             const memory = a.getRecord('gen');
             return { save, memory, rowsA: rowsA.records };

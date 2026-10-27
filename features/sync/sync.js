@@ -137,6 +137,7 @@ function wireAuthUI() {
   if (dom.logoutBtn) dom.logoutBtn.addEventListener('click', handleLogout);
 
   auth.onAuthStateChange((event, session) => {
+    refreshArticleScope().catch(() => {});
     const user = session?.user || null;
     try { window.__supabase_user = user || null; } catch(_) {}
     updateAuthButtons(user);
@@ -240,8 +241,12 @@ const GUEST_ADOPT_ASKED_KEY = 'bdc:articles:guest-adopt-asked';
 const GUEST_READING_ADOPT_ASKED_KEY = 'bdc:reading:guest-adopt-asked';
 
 async function refreshArticleScope({ offerGuestMerge = false } = {}) {
-  const result = await articleStore.refreshScope();
+  const loading = articleStore.refreshScope();
+  const ctx = articleStore.captureArticleContext();
+  const result = await loading;
+  if (!articleStore.isArticleContextActive(ctx)) return result;
   try { await readingStore.reloadReadingScope(); } catch (_) {}
+  if (!articleStore.isArticleContextActive(ctx)) return result;
   if (result && result.changed) {
     try { document.dispatchEvent(new CustomEvent('bdc:articles-scope-changed')); } catch (_) {}
   }

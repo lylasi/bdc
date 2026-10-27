@@ -7053,3 +7053,22 @@ body.has-floating-reader #message-container {
     }
     body.reading-panel-open .reading-panel-sheet { width: min(380px, 92vw); }
 }
+.article-entry,
+.article-route-status {
+    margin: 0 0 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color, #d7dce2);
+    border-radius: 12px;
+}
+
+.article-entry button {
+    max-width: 100%;
+    text-align: start;
+    overflow-wrap: anywhere;
+}
+
+.article-route-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}

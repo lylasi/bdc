@@ -423,6 +423,8 @@ async function openTooltipMore(page) {
             await art.reloadScope('article-refresh::account-b');
             const leaked = art.getRecord(articleId);
             await art.saveArticle({ articleId, article: 'Account B private body.', title: 'Account B' });
+            // 換 scope 會清除原帳戶的目前文章身份；明確讀過 B 才應保留 B 的全文。
+            await art.ensureArticleLoaded(articleId);
             await art.reloadScope('article-refresh::account-b');
             const bAfterRefresh = art.getRecord(articleId);
             await art.reloadScope(scopeA);

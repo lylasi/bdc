@@ -17,6 +17,9 @@ import { t, formatDateTime, createCollator, getLocaleTag, getLocale } from '../.
 import { inlineMarkdownToHtml } from '../../modules/markdown.js';
 import * as articleStore from '../../modules/article-store.js';
 import * as articleSync from '../../modules/article-sync.js';
+import { readArticleRoute, writeArticleRoute } from '../../modules/article-route.js';
+import * as articleSession from '../../modules/article-session.js';
+import { AUTH_EVENT, getAuthSnapshot } from '../../modules/sync-cloudflare.js';
 import * as readingStore from '../../modules/reading-store.js';
 import * as readingActions from '../../modules/reading-actions.js';
 import {
@@ -229,7 +232,17 @@ function isJobWriteTarget(job, index = null) {
     return true;
 }
 
+let editorContext = null;
+let draftSaveTimer = 0;
+let draftSaveFailed = false;
+let articleOpenSeq = 0;
+let articleOpenController = null;
+let routeStatusReason = '';
+let historyIndicatorSeq = 0;
+
 function beginImportContext() {
+    state.setCurrentArticleId(null);
+    state.setCurrentWordbookId(null);
     articleContext.recordId = null;
     articleContext.origin = 'imported';
 }
@@ -237,7 +250,8 @@ function beginImportContext() {
 /** 所有匯入入口都經過這裡：先換編輯上下文，再決定是否命中既有來源。 */
 function applyImportedArticle(text, meta = {}) {
     // 匯入等於換一篇：先保存目前草稿、停掉朗讀與分析，再清掉舊分析畫面。
-    try { saveCurrentDraft({ force: true }); } catch (_) { /* noop */ }
+    try { saveCurrentDraft(); } catch (_) { /* noop */ }
+    cancelArticleOpen();
     cancelAnalysisJobs('import');
     if (activeRun?.checkpoint) cancelAnalysisCheckpoint(activeRun.checkpoint);
     hideAnalysisResumeBanner();
@@ -274,6 +288,11 @@ function applyImportedArticle(text, meta = {}) {
     updateRetryFailedButton();
     updateArticleVersionState();
     try { notifyAssistantArticleChanged(); } catch (_) {}
+    dom.articleDraftNotice.classList.add('hidden');
+    setRouteStatus('');
+    writeArticleRoute();
+    queueDraftSave();
+    updateArticleEntry();
     if (typeof updateHistoryIndicators === 'function') updateHistoryIndicators();
 }
 
@@ -482,6 +501,19 @@ function buildArticleMetaInput(articleText, parsedTitle) {
 }
 
 export function initArticle() {
+    editorContext = articleStore.captureArticleContext();
+    dom.articleContinueBtn.addEventListener('click', () => {
+        const id = articleSession.recentArticleId();
+        if (id) openReadingRecord(id);
+    });
+    dom.articleRouteRetry.addEventListener('click', () => showArticleRoute());
+    dom.articleRouteLogin.addEventListener('click', () => {
+        document.dispatchEvent(new CustomEvent('bdc:request-login'));
+    });
+    dom.articleRouteChoose.addEventListener('click', openArticleHistory);
+    window.addEventListener('online', () => {
+        if (routeStatusReason && routeStatusReason !== 'loading' && readArticleRoute()?.id) showArticleRoute();
+    });
     initArticleReaderOverflow();
     initArticleReaderOffset();
     applyArticleSidebarState(loadGlobalSettings()?.reading?.articleSidebarCollapsed === true);
@@ -529,6 +561,8 @@ export function initArticle() {
         updateArticleSourceBarFromDataset();
         refreshHistoryModal();
         updateHistoryIndicators();
+        updateArticleEntry();
+        setRouteStatus(routeStatusReason);
         // 頁內查詞結果綁定介面語言與模型：換語言就失效，避免顯示上一種語言的詳解。
         try { wordLookupCache().clear(); } catch (_) { /* noop */ }
         updateRetryFailedButton();
@@ -592,6 +626,12 @@ export function initArticle() {
     // 避免每個按鍵都掃描整份分析與按鈕。
     let versionStateTimer = 0;
     dom.articleInput.addEventListener('input', () => {
+        if (routeStatusReason) {
+            cancelArticleOpen();
+            setRouteStatus('');
+            if (!articleContext.recordId) writeArticleRoute('', { replace: true });
+        }
+        queueDraftSave();
         updateHistoryIndicators();
         clearTimeout(versionStateTimer);
         versionStateTimer = window.setTimeout(() => {
@@ -607,15 +647,41 @@ export function initArticle() {
         });
     }
     // 帳戶切換：範圍內的資料由 article-store 重新載入，畫面不得沿用上一個帳戶的文章
+    window.addEventListener(AUTH_EVENT, () => {
+        const auth = getAuthSnapshot();
+        const scope = `${auth.endpoint || 'local'}::${auth.userId || 'guest'}`;
+        if (editorContext?.scope === scope) {
+            // 同一帳戶重新登入，也要讓在途讀取改用新的 session。
+            if (routeStatusReason && dom.articleSection.classList.contains('active')) showArticleRoute();
+            return;
+        }
+        cancelArticleOpen();
+        clearTimeout(draftSaveTimer);
+        editorContext = null;
+        clearArticleInput({ keepDraft: true, keepRoute: true });
+    });
     document.addEventListener('bdc:articles-scope-changed', () => {
         // 換帳戶：上一個範圍的未保存標記不得沿用到新範圍。
         unsavedParagraphs.clear();
         analysisSaveFailures.clear();
         clearBatchSummary();
-        clearArticleInput({ keepDraft: false });
+        cancelArticleOpen();
+        clearTimeout(draftSaveTimer);
+        editorContext = articleStore.captureArticleContext();
+        draftSaveFailed = false;
+        clearArticleInput({ keepDraft: true, keepRoute: true });
         updateHistoryIndicators();
+        if (dom.articleSection.classList.contains('active')) showArticleRoute({ restoreDraft: true });
     });
-    window.addEventListener('bdc:articles-change', () => { updateHistoryIndicators(); });
+    window.addEventListener('bdc:articles-change', () => {
+        updateHistoryIndicators();
+        updateArticleEntry();
+        if (articleContext.recordId && !articleStore.getRecord(articleContext.recordId)) {
+            saveCurrentDraft();
+            clearArticleInput({ keepDraft: true, keepRoute: true });
+            setRouteStatus('missing');
+        }
+    });
     // 留下目前 checkpoint（best effort；不宣稱能保證關頁前最後一刻一定寫入）。
     const flushActiveAnalysisCheckpoint = () => {
         const cp = activeRun?.checkpoint;
@@ -623,10 +689,14 @@ export function initArticle() {
         flushAnalysisCheckpoint(cp, { status: cp.finalStatus || ANALYSIS_RUN_STATUS.running });
     };
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') flushActiveAnalysisCheckpoint();
+        if (document.visibilityState === 'hidden') {
+            saveCurrentDraft();
+            flushActiveAnalysisCheckpoint();
+        }
     });
     // 離頁前盡量收掉在途工作（best effort；不宣稱能保證中斷保存）。
     window.addEventListener('pagehide', () => {
+        saveCurrentDraft();
         flushActiveAnalysisCheckpoint();
         cancelAnalysisJobs('pagehide');
     });
@@ -3227,6 +3297,9 @@ async function analyzeArticle() {
         ui.displayMessage(t('article.enterArticle'), 'warning');
         return;
     }
+    const submittedRecordId = articleContext.recordId || '';
+    const submittedDraft = articleSession.stageEditorDraft(currentDraftSnapshot(), editorContext);
+    const submittedAt = submittedDraft?.savedAt || new Date().toISOString();
     // 先解析並記錄規模，再開始計時：markAnalysisStart 會快照 state.article，
     // 順序顛倒的話第一輪拿到 null、之後每輪拿到上一篇文章的字數／段數（F6）。
     const { title, paragraphs } = parseTitleAndParagraphs(articleText);
@@ -3302,8 +3375,24 @@ async function analyzeArticle() {
         sourceType: articleMeta?.sourceType || metaForRecord.sourceType,
         sourceUrl: articleMeta?.sourceUrl || metaForRecord.sourceUrl
     }, { touch: false });
+    if (!isRunActive(run)) return;
     if (!initialSave.ok) {
         ui.displayMessage(t('article.historySaveFailed'), 'error', 6000);
+    } else {
+        articleContext.origin = 'analyzed';
+        writeArticleRoute(articleId);
+        articleSession.rememberArticle(articleId, editorContext);
+        // 只清除這次送出的草稿；等待保存期間再輸入的新內容仍要保留。
+        articleSession.clearStagedDraft(submittedRecordId, editorContext, submittedAt);
+        articleStore.clearDraft({ recordId: submittedRecordId, savedBefore: submittedAt, ctx: editorContext });
+        if (submittedRecordId !== articleId) {
+            articleStore.clearDraft({ recordId: articleId, savedBefore: submittedAt, ctx: editorContext });
+        }
+        draftSaveFailed = false;
+        if (dom.articleInput.value.trim() === articleText) dom.articleDraftNotice.classList.add('hidden');
+        else queueDraftSave();
+        setRouteStatus('');
+        updateArticleEntry();
     }
     updateHistoryIndicators();
 
@@ -3784,8 +3873,12 @@ function displayArticleAnalysis(originalArticle, analysisResult) {
 }
 
 function clearArticleInput(options = {}) {
+    cancelArticleOpen();
+    clearTimeout(draftSaveTimer);
     cancelActiveRun('cancelled-by-clear');
-    if (options.keepDraft !== true) saveCurrentDraft({ force: true });
+    if (options.keepDraft !== true) saveCurrentDraft();
+    try { audio.stopCurrentAudio(); } catch (_) { /* noop */ }
+    if (!dom.stopReadArticleBtn?.disabled) stopReadArticle();
     dom.articleInput.value = '';
     dom.articleAnalysisContainer.innerHTML = `<p>${t('article.initialHint')}</p>`;
     dom.articleAnalysisContainer.dataset.analysis = '[]';
@@ -3793,6 +3886,16 @@ function clearArticleInput(options = {}) {
     clearAnalysisCheckpointFailure();
     clearCurrentArticleSourceMeta();
     resetArticleContext();
+    draftSaveFailed = false;
+    dom.articleDraftNotice.classList.add('hidden');
+    setRouteStatus('');
+    if (!options.keepRoute) {
+        writeArticleRoute();
+        // 明確清空未命名輸入後，刷新不應又把它自動放回。
+        articleSession.stageEditorDraft({ text: '', recordId: '' }, editorContext);
+        saveCurrentDraft();
+    }
+    updateArticleEntry();
     lastFailedIndices = [];
     updateRetryFailedButton();
     updateArticleVersionState();
@@ -3818,7 +3921,7 @@ const HISTORY_UNDO_LIMIT = 20;
 
 function currentDraftSnapshot() {
     const text = (dom.articleInput && dom.articleInput.value) || '';
-    if (!text.trim()) return null;
+    if (!text.trim() && !articleContext.recordId) return null;
     const ds = (dom.articleInput && dom.articleInput.dataset) || {};
     return {
         text,
@@ -3834,14 +3937,66 @@ function recordHasUnsavedInput(record) {
     return String(dom.articleInput?.value || '').trim() !== String(record.article || '').trim();
 }
 
-/** 切換文章／刪除目前文章之前，先把目前輸入存成可恢復的草稿。 */
-function saveCurrentDraft(options = {}) {
-    const snapshot = currentDraftSnapshot();
+function queueDraftSave() {
+    const snapshot = currentDraftSnapshot() || { text: '', recordId: '' };
+    articleSession.stageEditorDraft(snapshot, editorContext);
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = window.setTimeout(() => { saveCurrentDraft(); }, 600);
+}
+
+/** 輸入／換篇／背景化共用，所有寫入固定在編輯器所屬的帳戶世代。 */
+async function saveCurrentDraft() {
+    clearTimeout(draftSaveTimer);
+    const ctx = editorContext;
+    if (!articleStore.isArticleContextActive(ctx)) return false;
+    const emptyDraft = articleSession.stagedEditorDraft('', ctx);
+    const snapshot = currentDraftSnapshot() || (emptyDraft?.text === '' ? emptyDraft : null);
     if (!snapshot) return false;
     const record = snapshot.recordId ? articleStore.getRecord(snapshot.recordId) : null;
-    if (record && !recordHasUnsavedInput(record) && !options.force) return false;
-    articleStore.saveDraft(snapshot).then(() => updateHistoryIndicators()).catch(() => {});
-    return true;
+    const staged = articleSession.stagedEditorDraft(snapshot.recordId, ctx);
+    if (record && !recordHasUnsavedInput(record)) {
+        // 只有使用者實際輸入後還原到原文，才清掉該篇草稿。
+        if (staged) {
+            const cleared = await articleStore.clearDraft({ recordId: snapshot.recordId, savedBefore: staged.savedAt, ctx });
+            if (cleared.ok) articleSession.clearStagedDraft(snapshot.recordId, ctx, staged.savedAt);
+            if (articleStore.isArticleContextActive(ctx) && articleContext.recordId === snapshot.recordId
+                && dom.articleInput.value === snapshot.text) {
+                draftSaveFailed = !cleared.ok;
+                dom.articleDraftNotice.classList.add('hidden');
+                updateHistoryIndicators();
+            }
+        }
+        return false;
+    }
+    const payload = staged && staged.text === snapshot.text
+        ? staged : articleSession.stageEditorDraft(snapshot, ctx) || snapshot;
+    const result = await articleStore.saveDraft(payload, { ctx }).catch(() => ({ ok: false }));
+    if (!articleStore.isArticleContextActive(ctx)) return false;
+    if (result.ok) articleSession.clearStagedDraft(snapshot.recordId, ctx, payload.savedAt);
+    if (dom.articleInput.value === snapshot.text && articleContext.recordId === (snapshot.recordId || null)) {
+        draftSaveFailed = !result.ok;
+        updateHistoryIndicators();
+    }
+    return result.ok;
+}
+
+async function draftForArticle(recordId, ctx) {
+    const saved = await articleStore.readDraft({ recordId, ctx });
+    if (!articleStore.isArticleContextActive(ctx)) return null;
+    const staged = articleSession.stagedEditorDraft(recordId, ctx);
+    return staged && (!saved || staged.savedAt >= saved.savedAt) ? staged : saved;
+}
+
+function overlayArticleDraft(draft, record = null) {
+    if (!draft || (!record && !draft.text.trim())
+        || (record && draft.text.trim() === String(record.article || '').trim())) return;
+    dom.articleInput.value = draft.text;
+    setCurrentArticleSourceMeta(draft);
+    if (!record) beginImportContext();
+    dom.articleDraftNotice.classList.remove('hidden');
+    updateArticleVersionState();
+    updateHistoryIndicators();
+    if (dom.articleSection.classList.contains('article-sidebar-collapsed')) setArticleInputOpen(true);
 }
 
 function sourceLabel(sourceType) {
@@ -4050,25 +4205,100 @@ function toggleRowMenu(row, trigger) {
     }
 }
 
-async function openReadingRecord(recordId) {
-    const record = await articleStore.ensureArticleLoaded(recordId);
-    if (!record) {
-        ui.displayMessage(t('article.analysisRecordMissing'), 'warning');
-        return;
-    }
+function cancelArticleOpen() {
+    articleOpenSeq += 1;
+    articleOpenController?.abort();
+    articleOpenController = null;
+}
+
+export function leaveArticleRoute() {
     saveCurrentDraft();
-    // 切換記錄前先收起所有分析／重試工作：晚回應不得寫進剛打開的這篇。
-    cancelActiveRun('load-record');
-    cancelAnalysisJobs('load-record');
+    cancelArticleOpen();
+}
+
+function setRouteStatus(reason) {
+    routeStatusReason = reason;
+    const keys = {
+        loading: 'routeLoading', invalid: 'routeInvalid', missing: 'routeMissing',
+        login: 'routeLoginRequired', endpoint: 'routeEndpoint', offline: 'routeOffline',
+        network: 'routeNetwork', storage: 'routeStorage'
+    };
+    dom.articleRouteStatus.classList.toggle('hidden', !reason);
+    dom.articleRouteMessage.textContent = reason ? t(`article.${keys[reason] || 'routeNetwork'}`) : '';
+    dom.articleRouteRetry.classList.toggle('hidden', reason === 'loading' || reason === 'invalid');
+    dom.articleRouteLogin.classList.toggle('hidden', reason !== 'login');
+    dom.articleAnalysisContainer.setAttribute('aria-busy', String(reason === 'loading'));
+}
+
+function updateArticleEntry() {
+    const id = articleSession.recentArticleId();
+    const record = id ? articleStore.getRecord(id) : null;
+    const visible = articleStore.isArticleContextActive(editorContext)
+        && !articleContext.recordId && !!record && !readArticleRoute()?.id;
+    dom.articleEntry.classList.toggle('hidden', !visible);
+    dom.articleContinueBtn.classList.toggle('hidden', !visible);
+    dom.articleContinueBtn.textContent = record ? t('article.continueReading', { title: recordTitle(record) }) : '';
+}
+
+/** 普通入口提供明確續讀；指定 ID 則自動開篇，URL 優先於最近閱讀。 */
+export async function showArticleRoute({ restoreDraft = false } = {}) {
+    const route = readArticleRoute();
+    if (!route) return false;
+    if (!route.invalid && route.id) return openReadingRecord(route.id, { updateUrl: false });
+    saveCurrentDraft();
+    clearArticleInput({ keepDraft: true, keepRoute: true });
+    const seq = articleOpenSeq;
+    const ctx = articleStore.captureArticleContext();
+    if (route.invalid) {
+        setRouteStatus('invalid');
+        return false;
+    }
+    writeArticleRoute('', { replace: true });
+    updateArticleEntry();
+    if (restoreDraft) {
+        const draft = await draftForArticle('', ctx);
+        if (seq !== articleOpenSeq || !articleStore.isArticleContextActive(ctx)) return false;
+        overlayArticleDraft(draft);
+    }
+    return true;
+}
+
+async function openReadingRecord(recordId, { updateUrl = true, draftOverride = null } = {}) {
+    if (!articleStore.isArticleContextActive(editorContext)) return false;
+    saveCurrentDraft();
+    clearArticleInput({ keepDraft: true, keepRoute: true });
+    const seq = articleOpenSeq;
+    const ctx = articleStore.captureArticleContext();
+    const controller = new AbortController();
+    articleOpenController = controller;
+    if (updateUrl) writeArticleRoute(recordId);
+    setRouteStatus('loading');
+    updateArticleEntry();
+    const active = () => seq === articleOpenSeq && articleStore.isArticleContextActive(ctx);
+    const loaded = await articleSync.loadArticleForNavigation(recordId, ctx, { signal: controller.signal });
+    if (!active()) return false;
+    if (!loaded.ok) {
+        if (loaded.reason !== 'stale') setRouteStatus(loaded.reason);
+        return false;
+    }
+    const draft = draftOverride || await draftForArticle(recordId, ctx);
+    if (!active()) return false;
+    const record = articleStore.getRecord(recordId);
+    if (!record || record.deletedAt) {
+        setRouteStatus('missing');
+        return false;
+    }
     applyRecordToView(record);
-    await articleStore.touchOpened(recordId);
+    overlayArticleDraft(draft, record);
+    if (draftOverride) queueDraftSave();
+    articleSession.rememberArticle(recordId, ctx);
+    setRouteStatus('');
+    updateArticleEntry();
+    await articleStore.touchOpened(recordId, { ctx });
+    if (!active()) return false;
     try { ui.closeModal(); } catch (_) {}
     updateHistoryIndicators();
-    if (window.matchMedia && window.matchMedia('(min-width: 900px)').matches) {
-        try { dom.articleAnalysisContainer.querySelector('.paragraph-pair')?.scrollIntoView({ block: 'nearest' }); } catch (_) {}
-    } else {
-        try { dom.articleAnalysisContainer.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) {}
-    }
+    return true;
 }
 
 function applyRecordToView(record) {
@@ -4160,7 +4390,7 @@ async function deleteReadingRecord(recordId) {
     }
     // 復原需要完整快照：記錄本身 + 刪除當下的順序
     const snapshot = { ...record };
-    saveCurrentDraft({ force: true });
+    saveCurrentDraft();
     const result = await articleStore.deleteArticle(recordId);
     if (!result.ok) {
         ui.displayMessage(t('article.historyDeleteFailed'), 'error');
@@ -4172,7 +4402,7 @@ async function deleteReadingRecord(recordId) {
         cancelActiveRun('record-deleted');
         dom.articleAnalysisContainer.innerHTML = `<p>${escapeHtml(t('article.historyCurrentDeleted'))}</p>`;
         dom.articleAnalysisContainer.dataset.analysis = '[]';
-        resetArticleContext();
+        clearArticleInput({ keepDraft: true });
     }
     refreshHistoryModal();
     updateHistoryIndicators();
@@ -4284,8 +4514,10 @@ function refreshHistoryModal() {
 function renderDraftRow(container) {
     const host = container.querySelector('.ar-history-draft');
     if (!host) return;
-    articleStore.readDraft().then((draft) => {
-        if (!draft || !String(draft.text || '').trim()) {
+    const ctx = articleStore.captureArticleContext();
+    articleStore.readDraft({ ctx }).then((draft) => {
+        if (!articleStore.isArticleContextActive(ctx)) return;
+        if (!draft || (!draft.recordId && !String(draft.text || '').trim())) {
             host.hidden = true;
             host.innerHTML = '';
             return;
@@ -4302,24 +4534,30 @@ function renderDraftRow(container) {
             </div>
         </div>`;
         host.querySelector('[data-act="restore-draft"]')?.addEventListener('click', async () => {
-            const latest = await articleStore.readDraft();
-            if (!latest) return;
-            applyImportedArticle(latest.text, {
-                sourceType: latest.sourceType || 'paste',
-                sourceUrl: latest.sourceUrl || '',
-                title: latest.title || ''
-            });
-            if (latest.recordId && isCurrentArticle(latest.recordId)) {
-                articleContext.recordId = latest.recordId;
-                articleContext.origin = 'loaded';
+            const ctx = articleStore.captureArticleContext();
+            const latest = await draftForArticle(draft.recordId || '', ctx);
+            if (!latest || !articleStore.isArticleContextActive(ctx)) return;
+            if (latest.recordId && articleStore.getRecord(latest.recordId)) {
+                await openReadingRecord(latest.recordId, { draftOverride: latest });
+            } else {
+                saveCurrentDraft();
+                clearArticleInput({ keepDraft: true, keepRoute: true });
+                writeArticleRoute();
+                overlayArticleDraft({ ...latest, recordId: '' });
+                queueDraftSave();
+                try { ui.closeModal(); } catch (_) {}
             }
-            await articleStore.clearDraft();
-            try { ui.closeModal(); } catch (_) {}
-            updateHistoryIndicators();
-            ui.displayMessage(t('article.historyDraftRestored'), 'success', 2000);
+            if (articleStore.isArticleContextActive(ctx)) updateHistoryIndicators();
         });
         host.querySelector('[data-act="discard-draft"]')?.addEventListener('click', async () => {
-            await articleStore.clearDraft();
+            const ctx = articleStore.captureArticleContext();
+            const result = await articleStore.clearDraft({ recordId: draft.recordId || '', expectedSavedAt: draft.savedAt, ctx });
+            if (!articleStore.isArticleContextActive(ctx)) return;
+            if (!result.ok) {
+                ui.displayMessage(t('article.draftSaveFailed'), 'error');
+                return;
+            }
+            articleSession.clearStagedDraft(draft.recordId || '', ctx, draft.savedAt);
             renderDraftRow(container);
             updateHistoryIndicators();
         });
@@ -4481,6 +4719,7 @@ function openArticleHistory() {
 }
 
 async function updateHistoryIndicators() {
+    const seq = ++historyIndicatorSeq;
     const count = articleStore.getRecords().length;
     if (dom.articleHistoryCount) {
         dom.articleHistoryCount.textContent = String(count);
@@ -4489,14 +4728,20 @@ async function updateHistoryIndicators() {
     }
     const statusEl = dom.articleHistoryStatus;
     if (!statusEl) return;
+    const ctx = editorContext;
+    if (!articleStore.isArticleContextActive(ctx)) {
+        statusEl.hidden = true;
+        statusEl.classList.add('hidden');
+        return;
+    }
     const record = articleContext.recordId ? articleStore.getRecord(articleContext.recordId) : null;
     const pendingSync = record && (record.dirty || record.pending);
     const edited = !!record && recordHasUnsavedInput(record);
     // 保存失敗是比「已載入記錄」更強的狀態：一般歷史指示器不得把它覆蓋成已保存（F3）。
-    if (record && analysisSaveFailureFor(record)) {
+    if (draftSaveFailed || (record && analysisSaveFailureFor(record))) {
         statusEl.hidden = false;
         statusEl.classList.remove('hidden');
-        statusEl.textContent = t('article.historyStatusSaveFailed');
+        statusEl.textContent = t(draftSaveFailed ? 'article.draftSaveFailed' : 'article.historyStatusSaveFailed');
         statusEl.dataset.state = 'failed';
         statusEl.disabled = false;
     } else if (record && articleContext.origin === 'imported') {
@@ -4520,8 +4765,10 @@ async function updateHistoryIndicators() {
         statusEl.dataset.state = pendingSync ? 'pending' : 'saved';
         statusEl.disabled = false;
     } else if ((dom.articleInput?.value || '').trim()) {
-        const draft = await articleStore.readDraft().catch(() => null);
-        const currentText = (dom.articleInput?.value || '').trim();
+        const currentText = dom.articleInput.value.trim();
+        const draft = await articleStore.readDraft({ recordId: '', ctx }).catch(() => null);
+        if (seq !== historyIndicatorSeq || !articleStore.isArticleContextActive(ctx)
+            || articleContext.recordId || dom.articleInput.value.trim() !== currentText) return;
         // 只有「目前輸入就是那份草稿」才顯示草稿狀態，否則會誤導使用者
         const matchesDraft = !!draft && String(draft.text || '').trim() === currentText;
         statusEl.hidden = false;
@@ -4547,17 +4794,18 @@ function toggleHistoryFromStatus() {
  */
 export async function showCurrentArticleIfAvailable() {
     const articleId = state.currentArticleId || null;
-    if (!articleId) {
-        ui.displayMessage(t('article.noArticleRecord'), 'info', 3500);
-        return false;
+    if (articleId && articleContext.recordId === articleId && articleStore.isArticleContextActive(editorContext)) {
+        writeArticleRoute(articleId);
+        updateArticleEntry();
+        return true;
     }
-    const record = await articleStore.ensureArticleLoaded(articleId);
-    if (!record || !record.article) {
-        ui.displayMessage(t('article.analysisRecordMissing'), 'warning', 5000);
-        return false;
-    }
-    applyRecordToView(record);
-    return true;
+    if (articleId) return openReadingRecord(articleId);
+    // 首次開篇等待期間尚未設定 currentArticleId；重入導覽仍沿用網址的身份。
+    if (readArticleRoute()?.id) return showArticleRoute();
+    writeArticleRoute();
+    updateArticleEntry();
+    if (dom.articleInput.value) return true;
+    return showArticleRoute({ restoreDraft: true });
 }
 
 // --- Article Reading ---

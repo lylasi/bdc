@@ -2029,77 +2029,109 @@ export async function touchOpened(articleId, options = {}) {
 // 草稿
 // ─────────────────────────────────────────────────────────────────────────────
 
-const EMPTY_DRAFT = { text: '', sourceType: '', sourceUrl: '', title: '', recordId: '', savedAt: '' };
+// 同一 scope 的草稿仍放在原有一筆資料內，entries 按文章身份區分。
+// 頂層保留最新一份，兼容舊備份及既有 readDraft()／閱讀記錄入口。
+function draftEntries(row) {
+    const entries = { ...(row?.entries || {}) };
+    if (row && typeof row.text === 'string') {
+        const key = `article:${row.recordId || ''}`;
+        if (!entries[key]) {
+            const { entries: ignored, ...legacy } = row;
+            entries[key] = legacy;
+        }
+    }
+    return entries;
+}
+
+async function mutateDrafts(ctx, mutate) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    const scope = ctx.scope;
+    const fallback = () => {
+        const read = fallbackReadStrict(scope);
+        if (!read.ok) return { ok: false, error: read.error };
+        const next = mutate(read.bucket.draft);
+        if (next) read.bucket.draft = next;
+        else delete read.bucket.draft;
+        return fallbackWrite(scope, read.bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
+    };
+    if (fallbackMode) return fallback();
+    const result = await idbRequest(STORE_DRAFTS, 'readwrite', async (store) => {
+        const row = await requestValue(store.get(scope));
+        if (!isArticleContextActive(ctx)) {
+            store.transaction.abort();
+            return;
+        }
+        const next = mutate(row);
+        if (next) store.put(next);
+        else store.delete(scope);
+    }, ctx);
+    if (result.error === 'idb_unavailable' && isArticleContextActive(ctx)) {
+        fallbackMode = true;
+        return fallback();
+    }
+    return result.ok ? { ok: true } : result;
+}
 
 export async function saveDraft(draft, options = {}) {
     const ctx = options.ctx || captureArticleContext();
-    if (!isArticleContextActive(ctx)) return staleResult();
-    const scope = ctx.scope;
     const payload = {
-        scope,
+        scope: ctx.scope,
         text: String(draft?.text || ''),
         sourceType: draft?.sourceType || 'paste',
         sourceUrl: draft?.sourceUrl || '',
         title: draft?.title || '',
         recordId: draft?.recordId || '',
-        savedAt: nowIso()
+        savedAt: draft?.savedAt || nowIso()
     };
-    if (!payload.text.trim()) return clearDraft({ ctx });
-    if (fallbackMode) {
-        const read = fallbackReadStrict(scope);
-        if (!read.ok) return { ok: false, error: read.error };
-        const bucket = read.bucket;
-        bucket.draft = payload;
-        return fallbackWrite(scope, bucket) ? { ok: true, draft: payload } : { ok: false, error: 'storage_full' };
+    if (!payload.recordId && !payload.text.trim()) {
+        return clearDraft({ ...options, recordId: '', savedBefore: payload.savedAt });
     }
-    const result = await idbRequest(STORE_DRAFTS, 'readwrite', (store) => { store.put(payload); return null; }, ctx);
-    if (result.ok) return { ok: true, draft: payload };
-    if (result.error === 'idb_unavailable') {
-        fallbackMode = true;
-        const read = fallbackReadStrict(scope);
-        if (!read.ok) return { ok: false, error: read.error };
-        const bucket = read.bucket;
-        bucket.draft = payload;
-        return fallbackWrite(scope, bucket) ? { ok: true, draft: payload } : { ok: false, error: 'storage_full' };
-    }
-    return { ok: false, error: result.error };
+    const result = await mutateDrafts(ctx, (row) => {
+        const entries = draftEntries(row);
+        const key = `article:${payload.recordId}`;
+        // 跨分頁較晚提交的舊草稿不得蓋掉新輸入。
+        if (!entries[key] || entries[key].savedAt <= payload.savedAt) entries[key] = payload;
+        const latest = Object.values(entries).sort((a, b) => b.savedAt.localeCompare(a.savedAt))[0];
+        return { ...latest, entries };
+    });
+    return result.ok ? { ok: true, draft: payload } : result;
 }
 
 export async function readDraft(options = {}) {
     const ctx = options.ctx || captureArticleContext();
-    const scope = ctx.scope;
-    if (fallbackMode) return fallbackRead(scope).draft || null;
-    const result = await idbRequest(STORE_DRAFTS, 'readonly', (store) => readOne(store, scope));
-    if (result.ok) return result.value || null;
-    if (result.error === 'idb_unavailable') {
-        fallbackMode = true;
-        return fallbackRead(scope).draft || null;
+    if (!isArticleContextActive(ctx)) return null;
+    let row;
+    if (fallbackMode) row = fallbackRead(ctx.scope).draft || null;
+    else {
+        const result = await idbRequest(STORE_DRAFTS, 'readonly', (store) => requestValue(store.get(ctx.scope)), ctx);
+        if (result.ok) row = result.value;
+        else if (result.error === 'idb_unavailable') {
+            fallbackMode = true;
+            row = fallbackRead(ctx.scope).draft || null;
+        }
     }
-    return null;
+    if (!isArticleContextActive(ctx)) return null;
+    if (Object.prototype.hasOwnProperty.call(options, 'recordId')) {
+        return draftEntries(row)[`article:${options.recordId || ''}`] || null;
+    }
+    if (!row) return null;
+    const { entries: ignored, ...latest } = row;
+    return latest;
 }
 
 export async function clearDraft(options = {}) {
     const ctx = options.ctx || captureArticleContext();
-    if (!isArticleContextActive(ctx)) return staleResult();
-    const scope = ctx.scope;
-    if (fallbackMode) {
-        const read = fallbackReadStrict(scope);
-        if (!read.ok) return { ok: false, error: read.error };
-        const bucket = read.bucket;
-        delete bucket.draft;
-        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
-    }
-    const result = await idbRequest(STORE_DRAFTS, 'readwrite', (store) => { store.delete(scope); return null; }, ctx);
-    if (result.ok) return { ok: true };
-    if (result.error === 'idb_unavailable') {
-        fallbackMode = true;
-        const read = fallbackReadStrict(scope);
-        if (!read.ok) return { ok: false, error: read.error };
-        const bucket = read.bucket;
-        delete bucket.draft;
-        return fallbackWrite(scope, bucket) ? { ok: true } : { ok: false, error: 'storage_full' };
-    }
-    return { ok: false, error: result.error };
+    return mutateDrafts(ctx, (row) => {
+        if (!Object.prototype.hasOwnProperty.call(options, 'recordId')) return null;
+        const entries = draftEntries(row);
+        const key = `article:${options.recordId || ''}`;
+        const draft = entries[key];
+        // 只刪呼叫端見過的版本，另一個分頁剛寫入的新草稿要保留。
+        if ((!options.savedBefore || !draft || draft.savedAt <= options.savedBefore)
+            && (!options.expectedSavedAt || draft?.savedAt === options.expectedSavedAt)) delete entries[key];
+        const latest = Object.values(entries).sort((a, b) => b.savedAt.localeCompare(a.savedAt))[0];
+        return latest ? { ...latest, entries } : null;
+    });
 }
 
 /** 接受伺服器目前版本號但不改本機內容（用於「保留本機修改並重新套用」）。 */

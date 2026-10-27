@@ -12,6 +12,7 @@ import { apiRequest, getAuthSnapshot } from './sync-cloudflare.js';
 import * as store from './article-store.js';
 import {
     ARTICLE_LIMITS,
+    isValidArticleId,
     normalizeAnalysis,
     normalizeSourceType,
     normalizeSourceUrl,
@@ -64,6 +65,50 @@ function assertArticleScope(ctx) {
  */
 function request(path, options = {}, timeoutMs = 30000) {
     return apiRequest(path, options, { timeoutMs, roundScoped: true });
+}
+
+/** 私人書籤按需讀取單篇，不推進同步游標，也不以遠端覆蓋本機待同步修改。 */
+export async function loadArticleForNavigation(id, ctx = store.captureArticleContext(), { signal } = {}) {
+    if (!isValidArticleId(id)) return { ok: false, reason: 'invalid' };
+    const local = await store.ensureArticleLoadedDetailed(id, ctx);
+    if (!store.isArticleContextActive(ctx)) return { ok: false, reason: 'stale' };
+    if (!local.ok) return { ok: false, reason: 'storage' };
+    if (local.doc) return { ok: true, record: local.doc };
+    const auth = getAuthSnapshot();
+    const current = () => store.isArticleContextActive(ctx)
+        && getAuthSnapshot().generation === auth.generation
+        && getAuthSnapshot().userId === auth.userId
+        && getAuthSnapshot().token === auth.token;
+    if (!auth.endpoint) return { ok: false, reason: 'endpoint' };
+    if (!auth.loggedIn) return { ok: false, reason: 'login' };
+    if (ctx.scope !== `${auth.endpoint}::${auth.userId}`) return { ok: false, reason: 'stale' };
+    if (navigator.onLine === false) return { ok: false, reason: 'offline' };
+    // 本機墓碑不可被較早的私人網址重新下載／復活。
+    try {
+        const pending = await store.listPending(ctx);
+        if (!current() || signal?.aborted) return { ok: false, reason: 'stale' };
+        if (pending.some((op) => op.articleId === id && op.type === 'delete')) return { ok: false, reason: 'missing' };
+        const res = await apiRequest(`/articles/${encodeURIComponent(id)}`, { method: 'GET' }, { timeoutMs: 15000, signal });
+        if (!current() || signal?.aborted) return { ok: false, reason: 'stale' };
+        if (res.status === 401) return { ok: false, reason: 'login' };
+        if (res.status === 404 || res.status === 403) return { ok: false, reason: 'missing' };
+        if (!res.ok) return { ok: false, reason: 'network' };
+        const body = await readJson(res);
+        if (!current() || signal?.aborted) return { ok: false, reason: 'stale' };
+        const doc = body?.article;
+        if (!doc || doc.id !== id) return { ok: false, reason: 'network' };
+        if (body.deleted || doc.deletedAt) return { ok: false, reason: 'missing' };
+        const applied = await store.applyRemoteDoc(doc, ctx);
+        if (!current() || signal?.aborted) return { ok: false, reason: 'stale' };
+        if (!applied.ok) return { ok: false, reason: 'storage' };
+        const loaded = await store.ensureArticleLoadedDetailed(id, ctx);
+        if (!current() || signal?.aborted) return { ok: false, reason: 'stale' };
+        return loaded.ok && loaded.doc
+            ? { ok: true, record: loaded.doc }
+            : { ok: false, reason: loaded.ok ? 'missing' : 'storage' };
+    } catch (_) {
+        return { ok: false, reason: !current() || signal?.aborted ? 'stale' : 'network' };
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

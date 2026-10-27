@@ -2,6 +2,7 @@ import * as dom from './modules/dom.js';
 import * as state from './modules/state.js';
 import { loadVocabularyBooks } from './modules/storage.js';
 import * as articleStore from './modules/article-store.js';
+import { readArticleRoute, articleHash, writeArticleRoute } from './modules/article-route.js';
 import * as readingStore from './modules/reading-store.js';
 import * as cache from './modules/cache.js';
 import { initModal, setupNumberSteppers, initTooltip, displayMessage, confirmAction } from './modules/ui.js';
@@ -10,7 +11,7 @@ import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView } fr
 import { initLearning, populateLearningBookSelector, populateWordSelect } from './features/learning/learning.js';
 import { initDictation, populateDictationBookSelector, togglePauseDictation } from './features/dictation/dictation.js';
 import { initQuiz, populateQuizBookSelector, stopQuiz } from './features/quiz/quiz.js';
-import { initArticle, showCurrentArticleIfAvailable } from './features/article/article.js';
+import { initArticle, showCurrentArticleIfAvailable, showArticleRoute, leaveArticleRoute } from './features/article/article.js';
 import { initOCR } from './features/ocr/ocr.js';
 import { init as initQA, showQAModule, hideQAModule } from './features/qa/qa.js';
 import { initSync, openLoginModal, captureLoginLinkFromUrl, consumePendingLoginLink } from './features/sync/sync.js';
@@ -55,6 +56,7 @@ const BUTTON_ID_TO_PRIMARY_ALIAS = {
 };
 
 let leaveQuizPromptOpen = false;
+let navigationSeq = 0;
 
 /**
  * 可重建快取的容量治理（P3-T2）：初始化後在閒置時最多每 24 小時掃一次。
@@ -83,83 +85,93 @@ function scheduleCachePrune() {
     }
 }
 
+async function activateNavigation(btn, { fromRoute = false, seq = ++navigationSeq } = {}) {
+    const href = window.location.href;
+    if (state.quizInProgress && btn.id !== 'quiz-btn') {
+        // 原生 confirm 在部分環境（內嵌瀏覽器、被封鎖的對話框）不會顯示，
+        // 使用者會看到「按了沒反應」，因此改用站內確認框。
+        if (leaveQuizPromptOpen) return; // 避免連點時疊出多個確認框
+        leaveQuizPromptOpen = true;
+        let leave = false;
+        try {
+            leave = await confirmAction({
+                title: t('quiz.leaveTitle'),
+                message: t('quiz.leaveConfirmation'),
+                confirmLabel: t('quiz.leaveConfirm'),
+                cancelLabel: t('quiz.leaveStay'),
+                danger: true
+            });
+        } catch (error) {
+            console.error('[bdc] 離開測驗確認框失敗，預設留在測驗:', error);
+            leave = false;
+        } finally {
+            leaveQuizPromptOpen = false;
+        }
+        if (!leave || seq !== navigationSeq || (fromRoute && window.location.href !== href)) return false;
+
+        // 使用者確認離開 → 真正結束測驗。
+        // 少了這一步，state.quizInProgress 會一直是 true，
+        // 之後每次切換模組都會再跳一次確認，等於被困住。
+        try {
+            stopQuiz({ silent: true });
+        } catch (error) {
+            console.error('[bdc] 結束測驗失敗，仍繼續導覽:', error);
+            state.setQuizInProgress(false);
+        }
+    }
+
+    syncNavActive(btn);
+    closeNavMore();
+
+    // 讓 CSS 知道目前在哪個模組（訊息提示需要對不同頁面的底部控制列避讓）
+    markActiveModule(btn.id);
+
+    // 隱藏所有模組
+    hideAllModules();
+
+    if (btn.id !== 'article-btn') leaveArticleRoute();
+
+    // 根據按鈕顯示對應模組
+    switch (btn.id) {
+        case 'vocabulary-btn':
+            dom.vocabularySection.classList.add('active');
+            try { refreshVocabularyView(); } catch (_) {}
+            break;
+        case 'learning-btn':
+            dom.learningSection.classList.add('active');
+            populateLearningBookSelector();
+            populateWordSelect();
+            break;
+        case 'dictation-btn':
+            dom.dictationSection.classList.add('active');
+            populateDictationBookSelector();
+            break;
+        case 'quiz-btn':
+            dom.quizSection.classList.add('active');
+            populateQuizBookSelector();
+            break;
+        case 'article-btn':
+            dom.articleSection.classList.add('active');
+            if (!fromRoute) await showCurrentArticleIfAvailable();
+            break;
+        case 'qa-btn':
+            showQAModule();
+            break;
+        case 'ocr-btn':
+            dom.ocrSection.classList.add('active');
+            break;
+    }
+
+    if (seq !== navigationSeq) return false;
+    // 文章入口自行保留指定 ID，包含仍在載入或需要重試的私人網址。
+    if (!fromRoute && btn.id !== 'article-btn') updateModuleHashFromButtonId(btn.id);
+    return true;
+}
+
 function setupNavigation() {
     dom.navBtns.forEach(btn => {
-        btn.addEventListener('click', async () => {
-            if (state.quizInProgress && btn.id !== 'quiz-btn') {
-                // 原生 confirm 在部分環境（內嵌瀏覽器、被封鎖的對話框）不會顯示，
-                // 使用者會看到「按了沒反應」，因此改用站內確認框。
-                if (leaveQuizPromptOpen) return; // 避免連點時疊出多個確認框
-                leaveQuizPromptOpen = true;
-                let leave = false;
-                try {
-                    leave = await confirmAction({
-                        title: t('quiz.leaveTitle'),
-                        message: t('quiz.leaveConfirmation'),
-                        confirmLabel: t('quiz.leaveConfirm'),
-                        cancelLabel: t('quiz.leaveStay'),
-                        danger: true
-                    });
-                } catch (error) {
-                    console.error('[bdc] 離開測驗確認框失敗，預設留在測驗:', error);
-                    leave = false;
-                } finally {
-                    leaveQuizPromptOpen = false;
-                }
-                if (!leave) { return; }
-
-                // 使用者確認離開 → 真正結束測驗。
-                // 少了這一步，state.quizInProgress 會一直是 true，
-                // 之後每次切換模組都會再跳一次確認，等於被困住。
-                try {
-                    stopQuiz({ silent: true });
-                } catch (error) {
-                    console.error('[bdc] 結束測驗失敗，仍繼續導覽:', error);
-                    state.setQuizInProgress(false);
-                }
-            }
-
-            syncNavActive(btn);
-            closeNavMore();
-
-            // 讓 CSS 知道目前在哪個模組（訊息提示需要對不同頁面的底部控制列避讓）
-            markActiveModule(btn.id);
-
-            // 隱藏所有模組
-            hideAllModules();
-
-            // 根據按鈕顯示對應模組
-            switch (btn.id) {
-                case 'vocabulary-btn':
-                    dom.vocabularySection.classList.add('active');
-                    try { refreshVocabularyView(); } catch (_) {}
-                    break;
-                case 'learning-btn':
-                    dom.learningSection.classList.add('active');
-                    populateLearningBookSelector();
-                    populateWordSelect();
-                    break;
-                case 'dictation-btn':
-                    dom.dictationSection.classList.add('active');
-                    populateDictationBookSelector();
-                    break;
-                case 'quiz-btn':
-                    dom.quizSection.classList.add('active');
-                    populateQuizBookSelector();
-                    break;
-                case 'article-btn':
-                    dom.articleSection.classList.add('active');
-                    showCurrentArticleIfAvailable().catch(() => {});
-                    break;
-                case 'qa-btn':
-                    showQAModule();
-                    break;
-                case 'ocr-btn':
-                    dom.ocrSection.classList.add('active');
-                    break;
-            }
-
-            updateModuleHashFromButtonId(btn.id);
+        btn.addEventListener('click', () => {
+            activateNavigation(btn).catch((error) => console.error('[bdc] 導覽切換失敗:', error));
         });
     });
 
@@ -374,7 +386,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    await step('routing', () => handleModuleRouting({ ensureHash: true }));
+    // 初次直達可能需要下載文章；等待期間也要接收新的導覽。
+    let routingTimer = 0;
+    const queueModuleRouting = () => {
+        clearTimeout(routingTimer);
+        routingTimer = window.setTimeout(() => {
+            handleModuleRouting().catch((error) => console.error('[bdc] 路由切換失敗:', error));
+        }, 0);
+    };
     window.addEventListener('hashchange', () => {
         try {
             if (captureLoginLinkFromUrl()) {
@@ -383,9 +402,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 return;
             }
-            handleModuleRouting();
+            queueModuleRouting();
         } catch (error) { console.error('[bdc] 路由切換失敗:', error); }
     });
+
+    window.addEventListener('popstate', queueModuleRouting);
+    await step('routing', () => handleModuleRouting({ ensureHash: true }));
 
     // 8. 處理透過 URL 傳入的單詞本導入需求
     await step('vocabularyQueryParams', () => handleVocabularyQueryParams());
@@ -416,37 +438,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-function handleModuleRouting(options = {}) {
+async function handleModuleRouting(options = {}) {
+    const href = window.location.href;
+    const seq = ++navigationSeq;
     const aliasFromUrl = extractModuleAliasFromUrl();
-
     if (!aliasFromUrl) {
         if (options.ensureHash) {
             const activeBtn = document.querySelector('.nav-btn.active');
-            if (activeBtn) {
-                updateModuleHashFromButtonId(activeBtn.id);
-            }
+            if (activeBtn) updateModuleHashFromButtonId(activeBtn.id, { replace: true });
         }
         return;
     }
-
     const buttonId = resolveButtonIdFromAlias(aliasFromUrl);
-    if (!buttonId) {
-        console.warn('未知的模組參數:', aliasFromUrl);
-        return;
+    const button = buttonId ? document.getElementById(buttonId) : null;
+    if (!button) return;
+    if (!button.classList.contains('active')) {
+        const activated = await activateNavigation(button, { fromRoute: true, seq });
+        if (!activated) {
+            if (seq !== navigationSeq) return;
+            const active = document.querySelector('.nav-btn.active');
+            if (active) updateModuleHashFromButtonId(active.id, { replace: true });
+            return;
+        }
     }
-
-    const button = document.getElementById(buttonId);
-    if (!button) {
-        console.warn('找不到對應的導航按鈕:', buttonId);
-        return;
+    // 在離開確認或其他 await 期間，新的網址已接手時不再開舊篇。
+    if (seq !== navigationSeq || window.location.href !== href) return;
+    if (buttonId === 'article-btn') {
+        if (!readArticleRoute()) writeArticleRoute('', { replace: true });
+        await showArticleRoute({ restoreDraft: !!options.ensureHash });
+    } else {
+        leaveArticleRoute();
+        updateModuleHashFromButtonId(button.id, { replace: true });
     }
-
-    if (button.classList.contains('active')) {
-        updateModuleHashFromButtonId(button.id);
-        return;
-    }
-
-    button.click();
 }
 
 function resolveButtonIdFromAlias(alias) {
@@ -488,16 +511,16 @@ function normalizeModuleAlias(value) {
     return firstSegment.toLowerCase();
 }
 
-function updateModuleHashFromButtonId(buttonId) {
+function updateModuleHashFromButtonId(buttonId, { replace = false } = {}) {
     const alias = BUTTON_ID_TO_PRIMARY_ALIAS[buttonId];
     if (!alias) return;
 
-    const desiredHash = `#${alias}`;
+    const desiredHash = buttonId === 'article-btn' ? articleHash(state.currentArticleId || '') : `#${alias}`;
     if (window.location.hash === desiredHash) return;
 
     const cleanedSearch = getSearchWithoutRoutingParams();
     const newUrl = `${window.location.pathname}${cleanedSearch}${desiredHash}`;
-    history.replaceState(null, '', newUrl);
+    history[replace ? 'replaceState' : 'pushState'](null, '', newUrl);
 }
 
 function getSearchWithoutRoutingParams() {
