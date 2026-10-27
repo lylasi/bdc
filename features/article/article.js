@@ -482,6 +482,7 @@ function buildArticleMetaInput(articleText, parsedTitle) {
 }
 
 export function initArticle() {
+    initArticleReaderOverflow();
     initArticleReaderOffset();
     applyArticleSidebarState(loadGlobalSettings()?.reading?.articleSidebarCollapsed === true);
     dom.articleSidebarToggle.addEventListener('click', () => {
@@ -505,8 +506,14 @@ export function initArticle() {
     // 從面板內開始的拖動即使在外面放開，也不能被誤判為點擊外部。
     document.addEventListener('pointerdown', (event) => {
         if (!dom.articleCompactSpeedControl.contains(event.target)) setArticleSpeedOpen(false);
+        if (!dom.articleReaderMore.contains(event.target)) setArticleMoreOpen(false);
     });
     document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !dom.articleReaderMenu.classList.contains('hidden')) {
+            event.preventDefault();
+            setArticleMoreOpen(false, { focus: true });
+            return;
+        }
         if (event.key === 'Escape' && !dom.articleCompactSpeedPanel.classList.contains('hidden')) {
             event.preventDefault();
             setArticleSpeedOpen(false, { focus: true });
@@ -4478,6 +4485,7 @@ async function updateHistoryIndicators() {
     if (dom.articleHistoryCount) {
         dom.articleHistoryCount.textContent = String(count);
         dom.articleHistoryCount.classList.toggle('hidden', count === 0);
+        queueArticleReaderLayout();
     }
     const statusEl = dom.articleHistoryStatus;
     if (!statusEl) return;
@@ -4555,10 +4563,97 @@ export async function showCurrentArticleIfAvailable() {
 // --- Article Reading ---
 
 let articleInputOpen = false;
+let articleReaderActionSlots = [];
+let articleReaderLayoutFrame = 0;
+
+function initArticleReaderOverflow() {
+    // 移動原有按鈕而不複製，保留事件、閱讀記錄數與側欄狀態。
+    articleReaderActionSlots = [dom.articleInputToggle, dom.importArticleBtn,
+        dom.showArticleLibraryBtn, dom.articleHistoryBtn, dom.articleSidebarToggle].map((button) => {
+        const anchor = document.createComment('article-reader-action');
+        button.before(anchor);
+        return { button, anchor };
+    });
+    dom.articleReaderMoreToggle.addEventListener('click', (event) => {
+        setArticleMoreOpen(dom.articleReaderMenu.classList.contains('hidden'), { focus: event.detail === 0 });
+    });
+    dom.articleReaderMenu.addEventListener('click', (event) => {
+        if (!event.target.closest('button')) return;
+        setArticleMoreOpen(false, { focus: dom.articleReaderMenu.contains(document.activeElement) });
+    });
+    dom.articleReaderMore.addEventListener('focusout', (event) => {
+        // 觸控的合成滑鼠事件在 focusin 前可能先執行 microtask，勿誤收起正在點擊的選單項。
+        if (dom.articleReaderMore.contains(event.relatedTarget)) return;
+        queueMicrotask(() => {
+            if (!dom.articleReaderMore.contains(document.activeElement)) setArticleMoreOpen(false);
+        });
+    });
+    document.fonts?.ready.then(queueArticleReaderLayout);
+}
+
+function setArticleMoreOpen(open, { focus = false } = {}) {
+    const visible = open && !dom.articleReaderMore.classList.contains('hidden');
+    dom.articleReaderMenu.classList.toggle('hidden', !visible);
+    dom.articleReaderMoreToggle.setAttribute('aria-expanded', String(visible));
+    if (visible) {
+        setArticleInputOpen(false);
+        setArticleSpeedOpen(false);
+    }
+    if (focus) (visible ? dom.articleReaderMenu.querySelector('button') : dom.articleReaderMoreToggle)?.focus({ preventScroll: true });
+}
+
+function queueArticleReaderLayout() {
+    if (articleReaderLayoutFrame) return;
+    articleReaderLayoutFrame = requestAnimationFrame(() => {
+        articleReaderLayoutFrame = 0;
+        updateArticleReaderOverflow();
+    });
+}
+
+function updateArticleReaderOverflow() {
+    const head = dom.articleReaderHead;
+    if (!head.clientWidth || !articleReaderActionSlots.length) return;
+    const focused = document.activeElement;
+    const menuWasOpen = !dom.articleReaderMenu.classList.contains('hidden');
+    for (const { button, anchor } of articleReaderActionSlots) {
+        if (anchor.nextSibling !== button) anchor.after(button);
+    }
+    dom.articleReaderActions.classList.remove('hidden');
+    dom.articleReaderMore.classList.add('hidden');
+    const style = getComputedStyle(head);
+    const available = head.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const gap = parseFloat(style.columnGap) || 0;
+    const requiredWidth = () => {
+        const items = Array.from(head.children).filter((item) => item !== dom.articleInputEditor
+            && getComputedStyle(item).display !== 'none');
+        return items.reduce((width, item) => width + item.getBoundingClientRect().width, 0) + gap * (items.length - 1);
+    };
+    if (requiredWidth() > available + 0.5) {
+        dom.articleReaderMore.classList.remove('hidden');
+        // 優先保留輸入與播放／倍速；真正放不下時才逐項收納。
+        for (const button of [dom.showArticleLibraryBtn, dom.importArticleBtn,
+            dom.articleHistoryBtn, dom.articleSidebarToggle, dom.articleInputToggle]) {
+            dom.articleReaderMenu.append(button);
+            dom.articleReaderActions.classList.toggle('hidden', !dom.articleReaderActions.children.length);
+            if (requiredWidth() <= available + 0.5) break;
+        }
+        for (const { button } of articleReaderActionSlots) {
+            if (button.parentElement === dom.articleReaderMenu) dom.articleReaderMenu.append(button);
+        }
+    }
+    setArticleMoreOpen(menuWasOpen);
+    if (focused === dom.articleReaderMoreToggle && dom.articleReaderMore.classList.contains('hidden')) {
+        dom.articleInputToggle.focus({ preventScroll: true });
+    } else if (focused && focused !== document.activeElement && head.contains(focused)) {
+        const hidden = focused.closest('.hidden');
+        (hidden ? dom.articleReaderMoreToggle : focused).focus({ preventScroll: true });
+    }
+}
 
 function initArticleReaderOffset() {
     // 頂欄可能因文字放大而增高，平板導覽亦可能換行，不能以固定高度定位。
     const updateOffset = () => {
+        updateArticleReaderOverflow();
         let offset = dom.appBar.getBoundingClientRect().height;
         const navStyle = getComputedStyle(dom.appNav);
         if (navStyle.position === 'sticky' && navStyle.flexDirection === 'row') {
@@ -4602,6 +4697,10 @@ function applyArticleSidebarState(collapsed) {
     button.title = t(hintKey);
     button.dataset.i18nAriaLabel = labelKey;
     button.setAttribute('aria-label', t(labelKey));
+    const label = button.querySelector('.article-action-label');
+    label.dataset.i18n = labelKey;
+    label.textContent = t(labelKey);
+    queueArticleReaderLayout();
     if (focusWillBeHidden) button.focus({ preventScroll: true });
     else if (focusedEditorControl && !collapsed) focusedEditorControl.focus({ preventScroll: true });
 }
@@ -4609,6 +4708,7 @@ function applyArticleSidebarState(collapsed) {
 function setArticleInputOpen(open, { focus = false } = {}) {
     const collapsed = dom.articleSection.classList.contains('article-sidebar-collapsed');
     articleInputOpen = collapsed && open;
+    if (articleInputOpen) setArticleMoreOpen(false);
     dom.articleInputEditor.classList.toggle('hidden', collapsed && !articleInputOpen);
     dom.articleInputToggle.setAttribute('aria-expanded', String(!collapsed || articleInputOpen));
     dom.articleInputToggle.classList.toggle('is-active', articleInputOpen);
@@ -4633,7 +4733,10 @@ function setArticleSpeedOpen(open, { focus = false } = {}) {
     const visible = open && dom.articleSection.classList.contains('article-sidebar-collapsed');
     dom.articleCompactSpeedPanel.classList.toggle('hidden', !visible);
     dom.articleCompactSpeedToggle.setAttribute('aria-expanded', String(visible));
-    if (visible) setArticleInputOpen(false);
+    if (visible) {
+        setArticleInputOpen(false);
+        setArticleMoreOpen(false);
+    }
     if (focus) (visible ? dom.articleCompactSpeed : dom.articleCompactSpeedToggle).focus({ preventScroll: true });
 }
 

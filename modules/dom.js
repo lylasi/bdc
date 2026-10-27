@@ -112,6 +112,10 @@ export const analysisTooltip = document.getElementById('word-analysis-tooltip');
 
 // --- 文章详解页面 ---
 export const articleReaderHead = document.getElementById('article-reader-head');
+export const articleReaderActions = document.getElementById('article-reader-actions');
+export const articleReaderMore = document.getElementById('article-reader-more');
+export const articleReaderMoreToggle = document.getElementById('article-reader-more-toggle');
+export const articleReaderMenu = document.getElementById('article-reader-menu');
 export const articleInputSlot = document.getElementById('article-input-slot');
 export const articleInputEditor = document.getElementById('article-input-editor');
 export const articleInputToggle = document.getElementById('article-input-toggle');

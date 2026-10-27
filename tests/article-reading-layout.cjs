@@ -41,7 +41,12 @@ function check(name, condition, detail) {
 const translated = (page, key) => page.evaluate(async (k) => (await import('/modules/i18n.js')).t(k), key);
 const setLocale = (page, locale) => page.evaluate(async (value) => (await import('/modules/i18n.js')).setLocale(value), locale);
 const speechCount = (page) => page.evaluate(() => window.__speech.length);
-const toggle = (page) => page.locator('#article-sidebar-toggle').click();
+async function clickReaderAction(page, id) {
+    const button = page.locator('#' + id);
+    if (!await button.isVisible()) await page.locator('#article-reader-more-toggle').click();
+    await button.click();
+}
+const toggle = (page) => clickReaderAction(page, 'article-sidebar-toggle');
 
 async function expectPlayback(page, key, stopped = false) {
     const label = await translated(page, key);
@@ -257,7 +262,7 @@ async function runLocale(browser, locale) {
         ), BODY));
 
         // 新增的工具列在手機、平板、桌面及放大文字後仍須可點，並避開既有導航。
-        for (const [width, height, zoom] of [[375, 667, false], [390, 844, false], [768, 1024, false],
+        for (const [width, height, zoom] of [[320, 667, false], [360, 800, false], [375, 667, false], [390, 844, false], [430, 932, false], [768, 1024, false],
             [900, 900, false], [1024, 768, false], [375, 667, true], [1440, 900, false]]) {
             await page.setViewportSize({ width, height });
             await page.evaluate((zoom) => { document.documentElement.style.fontSize = zoom ? '32px' : ''; }, zoom);
@@ -269,16 +274,38 @@ async function runLocale(browser, locale) {
                 const navBottom = innerWidth >= 768 && innerWidth < 1024 ? nav.getBoundingClientRect().bottom : 0;
                 const top = Math.max(navBottom, document.querySelector('.app-bar').getBoundingClientRect().bottom);
                 const controls = ['article-sidebar-toggle', 'article-compact-read-btn', 'article-compact-stop-btn', 'article-compact-speed-toggle',
-                    'article-input-toggle', 'import-article-btn', 'show-article-library-btn', 'article-history-btn'];
-                return { head: head.toJSON(), top, viewport: innerWidth, controls: controls.map((id) => {
+                    'article-input-toggle', 'import-article-btn', 'show-article-library-btn', 'article-history-btn', 'article-reader-more-toggle'];
+                const menu = document.getElementById('article-reader-menu');
+                return { head: head.toJSON(), top, viewport: innerWidth, noOverflow: document.documentElement.scrollWidth <= innerWidth, controls: controls.map((id) => {
                     const el = document.getElementById(id);
                     const rect = el.getBoundingClientRect();
+                    if (!rect.width) return id === 'article-reader-more-toggle' || menu.contains(el);
                     const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
-                    return rect.left >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && el.contains(hit);
+                    return rect.left >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && el.contains(hit)
+                        && Math.abs(rect.y + rect.height / 2 - head.y - head.height / 2) < 1;
                 }) };
             });
-            check(`${width}×${height}${zoom ? ' 200% 文字' : ''}：控制黏頂且不被遮擋`, layout.head.top >= layout.top
-                && layout.head.top < layout.top + 40 && layout.controls.every(Boolean), layout);
+            check(`${width}×${height}${zoom ? ' 200% 文字' : ''}：控制單行黏頂且不被遮擋`, layout.head.top >= layout.top
+                && layout.head.top < layout.top + 40 && layout.controls.every(Boolean) && layout.noOverflow, layout);
+            if (await page.locator('#article-reader-more-toggle').isVisible()) {
+                await page.locator('#article-reader-more-toggle').focus();
+                await page.keyboard.press('Enter');
+                check(`${width}：更多選單可用鍵盤展開並聚焦操作`, await page.locator('#article-reader-menu').isVisible()
+                    && await page.locator('#article-reader-menu').evaluate((el) => el.contains(document.activeElement)));
+                const menu = await page.locator('#article-reader-menu').boundingBox();
+                check(`${width}：收納操作完整顯示且不超出視窗`, menu.x >= 0 && menu.x + menu.width <= width
+                    && await page.locator('#article-reader-menu > button').evaluateAll((buttons) => buttons.every((button) => {
+                        const label = button.querySelector('.article-action-label');
+                        return button.offsetHeight >= 44 && label && label.getBoundingClientRect().width > 5;
+                    })), menu);
+                if (!zoom && width === 390) await screenshot(page, `${locale}-390-more`);
+                await page.keyboard.press('Escape');
+                check(`${width}：Escape 收起更多並還原焦點`, !await page.locator('#article-reader-menu').isVisible()
+                    && await page.locator('#article-reader-more-toggle').evaluate((el) => el === document.activeElement));
+                await page.locator('#article-reader-more-toggle').click();
+                await page.locator('#article-compact-read-btn').focus();
+                check(`${width}：離開選單時收起更多`, !await page.locator('#article-reader-menu').isVisible());
+            }
             if (!zoom && (width === 390 || width === 900)) await screenshot(page, `${locale}-${width}-sticky`);
             await page.locator('#article-compact-speed-toggle').click();
             const speedPanel = await page.locator('#article-compact-speed-panel').boundingBox();
@@ -288,13 +315,15 @@ async function runLocale(browser, locale) {
                 && speedSlider.height > speedSlider.width, { speedPanel, speedSlider });
             if (!zoom && (width === 390 || width === 900)) await screenshot(page, `${locale}-${width}-speed`);
             await page.keyboard.press('Escape');
-            await page.locator('#article-input-toggle').click();
+            await clickReaderAction(page, 'article-input-toggle');
             const editor = await page.locator('#article-input-editor').boundingBox();
             check(`${width}×${height}${zoom ? ' 200% 文字' : ''}：輸入面板不超出視窗`, editor.x >= 0
                 && editor.x + editor.width <= width && editor.y + editor.height < height, editor);
             if (!zoom && width === 390) await screenshot(page, `${locale}-390-input`);
             await page.locator('#article-input-close').click();
         }
+        check('桌面有足夠空間時所有操作自動回到工具列', !await page.locator('#article-reader-more-toggle').isVisible()
+            && await page.locator('#article-reader-menu > button').count() === 0);
         await page.evaluate(() => window.scrollTo(0, 0));
         await page.locator('#article-reading-records-btn').click();
         check('開啟學習記錄時正文仍填滿可用欄位', await page.evaluate(() => {

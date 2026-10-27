@@ -1,0 +1,80 @@
+PASS zh-CN：刷新融入譯文且沒有多餘底欄
+PASS zh-CN：只在譯文預留刷新空間，英文恢復完整欄寬
+PASS zh-CN：段落刷新有翻譯標籤
+PASS zh-CN：失敗段保留原因與重試
+PASS zh-CN：點擊刷新圖示確實重新請求本段
+PASS zh-CN：其餘段落保持原內容
+PASS zh-CN：失敗重試完成後恢復精簡入口
+PASS zh-CN：已儲存詳解正常開啟且有刷新入口
+PASS zh-CN：單詞刷新有翻譯標籤
+PASS zh-CN：主要操作包含直接問 AI
+PASS zh-CN：已建立持久快取作為驗證基準
+PASS zh-CN：刷新略過舊快取且忙碌時禁止連點
+PASS zh-CN：新詳解替換舊項而保留其他單詞
+PASS zh-CN：持久快取也更新成新結果
+PASS zh-CN：重開單詞顯示更新結果
+PASS zh-CN：再次刷新略過頁內已完成快取
+PASS zh-CN：刷新失敗仍提供重試
+PASS zh-CN：錯誤重試重新請求而非返回舊詳解
+PASS zh-CN：關閉後重開刷新仍共用進行中的請求
+PASS zh-CN：延遲刷新不覆蓋新選詞
+PASS zh-CN：切換單詞後重開即顯示剛完成的刷新
+PASS zh-CN：切換語言同步更新單詞及段落刷新標籤
+PASS zh-CN：重新載入後保留刷新結果
+PASS zh-CN：JSON 解析失敗可用純文字後備完成刷新
+PASS zh-CN：純文字後備結果取代舊持久快取
+PASS zh-CN：沒有頁面執行錯誤
+PASS zh-CN 手機：刷新位於譯文、易點且英文不再預留空位
+PASS zh-CN 手機：單詞刷新在可見面板內
+PASS zh-CN 手機：刷新與關閉均不被浮鈕遮擋
+PASS zh-CN 手機：懸浮工具列保持單行
+PASS zh-CN 手機：更多內可觸控導入並自動收起選單
+PASS zh-CN 手機：更多內可觸控選取文章庫
+PASS zh-CN 手機：點擊外部收起更多選單
+PASS zh-CN 320px：收納後閱讀記錄仍可開啟
+PASS zh-CN 320px：更多內可展開側欄且保留原文
+PASS zh-CN 橫屏：操作自動展開且焦點不留在隱藏的更多按鈕
+PASS zh-CN 手機：迷霧只模糊譯文，刷新保持清晰可點
+PASS zh-CN 手機：迷霧開啟時仍可觸控刷新本段
+PASS zh-CN 僅英文：仍可刷新且不遮擋英文
+PASS zh-HK：刷新融入譯文且沒有多餘底欄
+PASS zh-HK：只在譯文預留刷新空間，英文恢復完整欄寬
+PASS zh-HK：段落刷新有翻譯標籤
+PASS zh-HK：失敗段保留原因與重試
+PASS zh-HK：點擊刷新圖示確實重新請求本段
+PASS zh-HK：其餘段落保持原內容
+PASS zh-HK：失敗重試完成後恢復精簡入口
+PASS zh-HK：已儲存詳解正常開啟且有刷新入口
+PASS zh-HK：單詞刷新有翻譯標籤
+PASS zh-HK：主要操作包含直接問 AI
+PASS zh-HK：已建立持久快取作為驗證基準
+PASS zh-HK：刷新略過舊快取且忙碌時禁止連點
+PASS zh-HK：新詳解替換舊項而保留其他單詞
+PASS zh-HK：持久快取也更新成新結果
+PASS zh-HK：重開單詞顯示更新結果
+PASS zh-HK：再次刷新略過頁內已完成快取
+PASS zh-HK：刷新失敗仍提供重試
+PASS zh-HK：錯誤重試重新請求而非返回舊詳解
+PASS zh-HK：關閉後重開刷新仍共用進行中的請求
+PASS zh-HK：延遲刷新不覆蓋新選詞
+PASS zh-HK：切換單詞後重開即顯示剛完成的刷新
+PASS zh-HK：切換語言同步更新單詞及段落刷新標籤
+PASS zh-HK：重新載入後保留刷新結果
+PASS zh-HK：JSON 解析失敗可用純文字後備完成刷新
+PASS zh-HK：純文字後備結果取代舊持久快取
+PASS zh-HK：沒有頁面執行錯誤
+PASS zh-HK 手機：刷新位於譯文、易點且英文不再預留空位
+PASS zh-HK 手機：單詞刷新在可見面板內
+PASS zh-HK 手機：刷新與關閉均不被浮鈕遮擋
+PASS zh-HK 手機：懸浮工具列保持單行
+PASS zh-HK 手機：更多內可觸控導入並自動收起選單
+PASS zh-HK 手機：更多內可觸控選取文章庫
+PASS zh-HK 手機：點擊外部收起更多選單
+PASS zh-HK 320px：收納後閱讀記錄仍可開啟
+PASS zh-HK 320px：更多內可展開側欄且保留原文
+PASS zh-HK 橫屏：操作自動展開且焦點不留在隱藏的更多按鈕
+PASS zh-HK 手機：迷霧只模糊譯文，刷新保持清晰可點
+PASS zh-HK 手機：迷霧開啟時仍可觸控刷新本段
+PASS zh-HK 僅英文：仍可刷新且不遮擋英文
+
+78 checks passed

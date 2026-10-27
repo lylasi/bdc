@@ -49,6 +49,7 @@ const pair = (page, index) => page.locator(`.paragraph-pair[data-paragraph-index
 
 async function openArticle(page) {
     await page.evaluate(async () => { await (await import('/modules/article-store.js')).reloadScope(); });
+    if (!await page.locator('#article-history-btn').isVisible()) await page.locator('#article-reader-more-toggle').click();
     await page.locator('#article-history-btn').click();
     await page.locator(`.ar-history-item[data-key="${ID}"] .ar-history-open`).click();
     await pair(page, 2).waitFor();
@@ -122,13 +123,15 @@ async function runLocale(browser, locale) {
             const button = action.getBoundingClientRect();
             return {
                 footerSpace: box.bottom - chinese.getBoundingClientRect().bottom,
-                buttonInEnglish: button.top >= box.top && button.bottom <= english.getBoundingClientRect().bottom,
-                textPadding: parseFloat(getComputedStyle(english).paddingRight),
+                buttonInTranslation: button.top >= chinese.getBoundingClientRect().top && button.bottom <= chinese.getBoundingClientRect().bottom,
+                englishPadding: parseFloat(getComputedStyle(english).paddingRight),
+                textPadding: parseFloat(getComputedStyle(chinese).paddingRight),
                 buttonWidth: button.width
             };
         });
-        check(`${locale}：完成段落沒有多餘底欄`, geometry.footerSpace <= 2 && geometry.buttonInEnglish, geometry);
-        check(`${locale}：刷新入口預留文字空間`, geometry.textPadding > geometry.buttonWidth + 8, geometry);
+        check(`${locale}：刷新融入譯文且沒有多餘底欄`, geometry.footerSpace <= 2 && geometry.buttonInTranslation, geometry);
+        check(`${locale}：只在譯文預留刷新空間，英文恢復完整欄寬`, geometry.textPadding > geometry.buttonWidth + 8
+            && geometry.englishPadding < geometry.buttonWidth, geometry);
         check(`${locale}：段落刷新有翻譯標籤`, await pair(page, 0).locator('.retry-paragraph-btn').getAttribute('aria-label') === await t(page, 'article.refresh'));
         check(`${locale}：失敗段保留原因與重試`, await pair(page, 2).locator('.para-reason').isVisible() && await pair(page, 2).locator('.retry-paragraph-btn').isVisible());
         const secondTranslation = await pair(page, 1).locator('.paragraph-chinese').textContent();
@@ -236,30 +239,42 @@ async function runLocale(browser, locale) {
 async function runMobile(browser, locale) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     await mock.initScript(context, { locale });
-    await context.route('**/*', (route) => ['127.0.0.1', 'localhost'].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
+    await context.route('**/*', (route) => ['127.0.0.1', 'localhost', 'provider.mock'].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
     const page = await context.newPage();
+    let paragraphCalls = 0;
+    await mock.installProviderRoutes(page, ({ route, prompt }) => {
+        paragraphCalls += 1;
+        return mock.jsonReply(route, mock.translatedParagraphReply(prompt, '手機觸控刷新：'));
+    });
     try {
         await page.goto(BASE + '#a', { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(650);
         await page.evaluate(() => document.querySelector('#app-modal:not(.hidden) .modal-close-btn')?.click());
         await mock.seedDocs(page, [DOC]);
         await openArticle(page);
-        if (await page.locator('#article-sidebar-toggle').getAttribute('aria-expanded') === 'true') await page.locator('#article-sidebar-toggle').click();
+        if (await page.locator('#article-sidebar-toggle').getAttribute('aria-expanded') === 'true') {
+            if (!await page.locator('#article-sidebar-toggle').isVisible()) await page.locator('#article-reader-more-toggle').click();
+            await page.locator('#article-sidebar-toggle').click();
+        }
         await pair(page, 0).scrollIntoViewIfNeeded();
         const state = await pair(page, 0).evaluate((node) => {
             const button = node.querySelector('.retry-paragraph-btn');
             const rect = button.getBoundingClientRect();
             const english = node.querySelector('.paragraph-english');
+            const chinese = node.querySelector('.paragraph-chinese');
             return {
                 width: rect.width, height: rect.height,
                 noOverflow: document.documentElement.scrollWidth <= window.innerWidth,
                 inside: rect.right <= node.getBoundingClientRect().right,
-                textPadding: parseFloat(getComputedStyle(english).paddingRight)
+                englishPadding: parseFloat(getComputedStyle(english).paddingRight),
+                textPadding: parseFloat(getComputedStyle(chinese).paddingRight),
+                inTranslation: rect.top >= chinese.getBoundingClientRect().top && rect.bottom <= chinese.getBoundingClientRect().bottom
             };
         });
-        check(`${locale} 手機：刷新易點且正文不溢出`, state.width >= 40 && state.height >= 40 && state.noOverflow && state.inside && state.textPadding > state.width + 8, state);
+        check(`${locale} 手機：刷新位於譯文、易點且英文不再預留空位`, state.width >= 44 && state.height >= 44
+            && state.noOverflow && state.inside && state.textPadding > state.width + 8 && state.inTranslation && state.englishPadding < state.width, state);
         await screenshot(page, `mobile-paragraphs-${locale}`);
-        await word(page, 'reading').click();
+        await word(page, 'reading').tap();
         await waitMeaning(page, '旧释义');
         const rect = await refreshWord(page).boundingBox();
         check(`${locale} 手機：單詞刷新在可見面板內`, rect && rect.width >= 36 && rect.x >= 0 && rect.y + rect.height <= 844, rect);
@@ -269,6 +284,57 @@ async function runMobile(browser, locale) {
         }));
         check(`${locale} 手機：刷新與關閉均不被浮鈕遮擋`, actionsUncovered);
         await screenshot(page, `mobile-word-${locale}`);
+        await closeWord(page);
+        check(`${locale} 手機：懸浮工具列保持單行`, (await page.locator('#article-reader-head').boundingBox()).height <= 64);
+        await page.locator('#article-reader-more-toggle').tap();
+        await screenshot(page, `mobile-more-${locale}`);
+        await page.locator('#import-article-btn').tap();
+        await page.locator('#app-modal .import-tabbar').waitFor();
+        check(`${locale} 手機：更多內可觸控導入並自動收起選單`, !await page.locator('#article-reader-menu').isVisible());
+        await page.locator('#app-modal .modal-close-btn').tap();
+        await page.locator('#article-reader-more-toggle').tap();
+        await page.locator('#show-article-library-btn').tap();
+        await page.locator('#article-library-modal .article-library-item').first().waitFor();
+        check(`${locale} 手機：更多內可觸控選取文章庫`, await page.locator('#article-library-modal').isVisible());
+        await page.locator('#article-library-modal .modal-close-btn').tap();
+        await page.locator('#article-reader-more-toggle').tap();
+        await page.locator('.analysis-result .ar-head h3').tap();
+        check(`${locale} 手機：點擊外部收起更多選單`, !await page.locator('#article-reader-menu').isVisible());
+
+        await page.setViewportSize({ width: 320, height: 667 });
+        await page.waitForTimeout(100);
+        if (!await page.locator('#article-history-btn').isVisible()) await page.locator('#article-reader-more-toggle').tap();
+        await page.locator('#article-history-btn').tap();
+        await page.locator(`.ar-history-item[data-key="${ID}"]`).waitFor();
+        check(`${locale} 320px：收納後閱讀記錄仍可開啟`, await page.locator('#app-modal').isVisible());
+        await page.locator('#app-modal .modal-close-btn').tap();
+        if (!await page.locator('#article-sidebar-toggle').isVisible()) await page.locator('#article-reader-more-toggle').tap();
+        await page.locator('#article-sidebar-toggle').tap();
+        check(`${locale} 320px：更多內可展開側欄且保留原文`, await page.locator('#article-sidebar').isVisible()
+            && await page.locator('#article-input').inputValue() === DOC.body);
+        await page.locator('#article-sidebar-toggle').tap();
+        await page.locator('#article-reader-more-toggle').waitFor({ state: 'visible' });
+        await page.locator('#article-reader-more-toggle').focus();
+        await page.setViewportSize({ width: 844, height: 390 });
+        await page.waitForTimeout(100);
+        check(`${locale} 橫屏：操作自動展開且焦點不留在隱藏的更多按鈕`, !await page.locator('#article-reader-more-toggle').isVisible()
+            && await page.locator('#article-input-toggle').evaluate((el) => el === document.activeElement),
+        await page.evaluate(() => ({ focused: document.activeElement.id, width: innerWidth })));
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.waitForTimeout(100);
+        await pair(page, 0).scrollIntoViewIfNeeded();
+        check(`${locale} 手機：迷霧只模糊譯文，刷新保持清晰可點`, await pair(page, 0).evaluate((node) => (
+            getComputedStyle(node.querySelector('.paragraph-chinese')).filter.includes('blur')
+            && !node.querySelector('.retry-paragraph-btn').closest('.paragraph-chinese')
+        )));
+        await pair(page, 0).locator('.retry-paragraph-btn').tap();
+        await page.waitForFunction(() => document.querySelector('.paragraph-pair[data-paragraph-index="0"] .paragraph-chinese')?.textContent.includes('手機觸控刷新'));
+        check(`${locale} 手機：迷霧開啟時仍可觸控刷新本段`, paragraphCalls === 1);
+        await page.evaluate(() => document.getElementById('article-analysis-container').classList.add('english-only'));
+        check(`${locale} 僅英文：仍可刷新且不遮擋英文`, await pair(page, 0).locator('.retry-paragraph-btn').isVisible()
+            && await pair(page, 0).evaluate((node) => node.querySelector('.retry-paragraph-btn').getBoundingClientRect().top
+                >= node.querySelector('.paragraph-english').getBoundingClientRect().bottom));
+        await page.evaluate(() => document.getElementById('article-analysis-container').classList.remove('english-only'));
     } finally { await context.close(); }
 }
 
