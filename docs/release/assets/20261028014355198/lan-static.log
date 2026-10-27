@@ -1,0 +1,4 @@
+ai-config.js SHA256=6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93；Cache-Control=no-store
+發佈資源與執行期入口：100 個 URL 全部 200；.mjs MIME 正確
+敏感路徑與不存在資源：20 個 URL 全部 404
+PASS http://10.10.10.149:8001/：125 項 HTTP 檢查

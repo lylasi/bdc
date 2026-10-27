@@ -1,0 +1,48 @@
+PASS zh-CN-1280 compact toolbar and collapsed sidebar
+PASS zh-CN-1280 input expands from toolbar
+PASS zh-CN-1280 speed panel remains open after click
+PASS zh-CN-1280 speed updates
+PASS zh-CN-1280 compact paragraph refresh
+PASS zh-CN-1280 toolbar remains one row
+PASS zh-CN-1280 wide toolbar shows all actions
+PASS zh-CN-1280 word refresh remains available
+PASS zh-CN-1280 five labeled actions in one row
+PASS zh-CN-1280 note and phrase menu
+PASS zh-CN-1280 AI expands inside word card
+PASS zh-CN-1280 inline AI round trip with mock provider
+PASS zh-CN-1280 no horizontal page overflow
+PASS zh-CN-1280 browser-loaded resources match release
+PASS zh-CN-1280 no page errors
+PASS zh-HK-390 compact toolbar and collapsed sidebar
+PASS zh-HK-390 input expands from toolbar
+PASS zh-HK-390 speed panel remains open after click
+PASS zh-HK-390 speed updates
+PASS zh-HK-390 compact paragraph refresh
+PASS zh-HK-390 toolbar remains one row
+PASS zh-HK-390 overflow menu opens on touch
+PASS zh-HK-390 overflow import responds to touch
+PASS zh-HK-390 word refresh remains available
+PASS zh-HK-390 five labeled actions in one row
+PASS zh-HK-390 note and phrase menu
+PASS zh-HK-390 AI expands inside word card
+PASS zh-HK-390 inline AI round trip with mock provider
+PASS zh-HK-390 no horizontal page overflow
+PASS zh-HK-390 browser-loaded resources match release
+PASS zh-HK-390 no page errors
+PASS zh-CN-320 compact toolbar and collapsed sidebar
+PASS zh-CN-320 input expands from toolbar
+PASS zh-CN-320 speed panel remains open after click
+PASS zh-CN-320 speed updates
+PASS zh-CN-320 compact paragraph refresh
+PASS zh-CN-320 toolbar remains one row
+PASS zh-CN-320 overflow menu opens on touch
+PASS zh-CN-320 overflow import responds to touch
+PASS zh-CN-320 word refresh remains available
+PASS zh-CN-320 five labeled actions in one row
+PASS zh-CN-320 note and phrase menu
+PASS zh-CN-320 AI expands inside word card
+PASS zh-CN-320 inline AI round trip with mock provider
+PASS zh-CN-320 no horizontal page overflow
+PASS zh-CN-320 browser-loaded resources match release
+PASS zh-CN-320 no page errors
+PASS 47 production browser checks; 261 resource responses
