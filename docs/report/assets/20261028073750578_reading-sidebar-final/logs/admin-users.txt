@@ -1,0 +1,58 @@
+PASS 管理員在工具頁看到用戶管理入口
+PASS 開啟用戶管理面板
+PASS 列表顯示兩位用戶
+PASS 管理員列沒有重設按鈕
+PASS 管理員列顯示保護提示
+PASS 建立後顯示一次性憑證
+PASS 憑證卡片包含通行碼
+PASS 憑證卡片包含用戶名
+PASS 建立後列表出現 carol
+PASS 列表顯示用戶名與已設密碼
+PASS 按我已保存後憑證卡片消失
+PASS 編輯後列表顯示新備註
+PASS 管理員列沒有登入碼按鈕
+PASS 工具列提供登入碼有效期選項
+PASS 產生登入碼後顯示登入卡片
+PASS 登入卡片包含一次性登入碼
+PASS 登入卡片顯示登入連結
+PASS 登入卡片顯示二維碼
+PASS 登入卡片顯示有效期
+PASS 預設登入碼有效期為 7 天 :: 604800
+PASS 按完成後登入卡片消失
+PASS 重新產生使用所選有效期 :: 600
+PASS 撤銷前顯示確認對話框
+PASS 撤銷後登入卡片消失
+PASS 撤銷後顯示已撤銷數量
+PASS 重設前顯示面板內確認
+PASS 重設後顯示一次性憑證
+PASS 重設憑證與建立憑證不同
+PASS 切換 zh-HK 後入口文案正確
+PASS zh-HK 面板標題正確
+PASS zh-HK 重設按鈕文案正確
+PASS zh-HK 登入碼按鈕文案正確
+PASS 登入彈窗預設顯示用戶名密碼分頁
+PASS 用戶名密碼登入後儲存 session token :: {"token":"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy","userId":"carol","role":"user"}
+PASS 用戶名密碼登入後儲存用戶身分 :: {"token":"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy","userId":"carol","role":"user"}
+PASS 選單顯示修改密碼入口
+PASS 修改密碼表單要求目前密碼
+PASS 修改密碼成功提示
+PASS 登入彈窗提供登入碼分頁
+PASS 登入彈窗提供登入碼入口
+PASS 登入彈窗提示本機會記住登入
+PASS 登入碼表單只需登入碼
+PASS 登入碼登入後儲存 session token :: {"token":"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz","userId":"alice","role":"user"}
+PASS 登入碼登入後儲存用戶身分 :: {"token":"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz","userId":"alice","role":"user"}
+PASS 登入連結自動登入 :: {"token":"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz","userId":"alice","hash":""}
+PASS 登入連結 fragment 已移除 :: ""
+PASS 已登入時開啟登入連結先顯示切換確認
+PASS 取消切換後保留原登入 :: {"token":"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz","userId":"alice"}
+PASS 取消切換後顯示手動登入碼表單
+PASS 無效登入連結不會建立 session :: {"token":null,"hash":""}
+PASS 無效登入連結顯示手動登入碼表單
+PASS 無效登入連結顯示錯誤訊息
+PASS 無效登入連結 fragment 已移除 :: ""
+PASS 沒有頁面例外 :: []
+
+54/54 checks passed
+
+[exited with code 0]

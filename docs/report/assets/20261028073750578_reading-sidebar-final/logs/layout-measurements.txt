@@ -1,0 +1,102 @@
+[
+  {
+    "locale": "zh-CN",
+    "viewport": 1440,
+    "sheetWidth": 400,
+    "listHeight": 505.328125,
+    "footerHeight": 63,
+    "readerWidth": 762
+  },
+  {
+    "locale": "zh-CN",
+    "viewport": 1200,
+    "sheetWidth": 400,
+    "listHeight": 505.328125,
+    "footerHeight": 63,
+    "readerWidth": 522
+  },
+  {
+    "locale": "zh-CN",
+    "viewport": 1024,
+    "sheetWidth": 440,
+    "listHeight": 505.328125,
+    "footerHeight": 63,
+    "readerWidth": 356
+  },
+  {
+    "locale": "zh-CN",
+    "viewport": 834,
+    "sheetWidth": 440,
+    "listHeight": 505.328125,
+    "footerHeight": 63,
+    "readerWidth": 806
+  },
+  {
+    "locale": "zh-CN",
+    "viewport": 390,
+    "sheetWidth": 390,
+    "listHeight": 436.796875,
+    "footerHeight": 67,
+    "readerWidth": 366,
+    "completeShortCards": 3
+  },
+  {
+    "locale": "zh-CN",
+    "viewport": 320,
+    "sheetWidth": 320,
+    "listHeight": 436.796875,
+    "footerHeight": 67,
+    "readerWidth": 296
+  },
+  {
+    "locale": "zh-HK",
+    "viewport": 1440,
+    "sheetWidth": 400,
+    "listHeight": 505.328125,
+    "footerHeight": 63,
+    "readerWidth": 762
+  },
+  {
+    "locale": "zh-HK",
+    "viewport": 1200,
+    "sheetWidth": 400,
+    "listHeight": 505.328125,
+    "footerHeight": 63,
+    "readerWidth": 522
+  },
+  {
+    "locale": "zh-HK",
+    "viewport": 1024,
+    "sheetWidth": 440,
+    "listHeight": 505.328125,
+    "footerHeight": 63,
+    "readerWidth": 356
+  },
+  {
+    "locale": "zh-HK",
+    "viewport": 834,
+    "sheetWidth": 440,
+    "listHeight": 505.328125,
+    "footerHeight": 63,
+    "readerWidth": 806
+  },
+  {
+    "locale": "zh-HK",
+    "viewport": 390,
+    "sheetWidth": 390,
+    "listHeight": 436.796875,
+    "footerHeight": 67,
+    "readerWidth": 366,
+    "completeShortCards": 3
+  },
+  {
+    "locale": "zh-HK",
+    "viewport": 320,
+    "sheetWidth": 320,
+    "listHeight": 436.796875,
+    "footerHeight": 67,
+    "readerWidth": 296
+  }
+]
+
+[exited with code 0]

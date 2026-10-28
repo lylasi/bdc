@@ -1,0 +1,163 @@
+
+### 單詞本
+  ok   篩選 apple 命中
+  ok   篩選計數顯示：匹配 1 / 5
+  ok   無結果文案：没有匹配「不存在詞」的单词
+  ok   新增單詞本彈窗標題：新增单词本
+  ok   彈窗欄位：[{"id":"modal-book-name","tag":"INPUT"},{"id":"modal-vocab-content","tag":"TEXTAREA"}]
+  ok   主要按鈕：处理中...
+  ok   新增成功：{"name":"巡檢新增本","n":3,"words":["banana","orange","[{\"word\":\"grape\",\"meaning\":\"葡萄\"}]"]}
+  [low] vocabulary :: 篩選清空：console error -- Error analyzing word "banana": Error: 尚未选择模型
+    at modelError (http://127.0.0.1:8313/modules/ai-models.js?v=0b3287ded82b:102:17)
+    at resolveAIRequestConfig (http://127.0.0.1:8313/modules/ai-models.js?v=0b3287ded82b:4
+  ok   空名稱提交後提示：["单词本名称不能为空！×","单词本名称不能为空！","×"]
+  ok   重名提交後：{"open":true,"options":false,"modalTitle":"新增单词本"} 詞書=["巡檢詞書","第二本","巡檢新增本"]
+  ok   同名建立已被擋下（詞書選擇器只顯示名稱，重名無法區分）
+  ok   重名提示：["单词本名称不能为空！×","单词本名称不能为空！","×","已经存在名为“巡檢詞書”的单词本，请使用其他名称。×"]
+  ok   刪除確認框：{"title":"删除单词本","desc":"确定要永久删除单词本“巡檢新增本”吗？此操作无法撤销。","confirm":"删除"}
+  ok   刪除成功：["巡檢詞書","第二本"]
+  ok   取消刪除未變更資料
+  ok   編輯彈窗：{"title":"编辑单词本 - 巡檢詞書","inputs":2,"saveBtn":true}
+  ok   導出檔案：巡檢詞書.json
+  ok   合併彈窗：{"appModal":true,"optionsModal":false,"title":"合并单词本","overlayTitle":null}
+  ok   導入彈窗：{"appModal":true,"title":"导入单词本","bodyLen":2310,"checkboxes":11,"fileInput":true}
+  ok   補全資料後提示：[]
+  ok   朗讀觸發內容：["apple","苹果"]
+  [low] vocabulary :: 單詞朗讀：console error -- Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED
+  ok   手機「更多」按鈕可見：true
+  ok   單詞本更多選單：{"cls":"word-panel-menu","items":["补全资料","合并","导出","编辑","删除"]}
+  ok   手機仍顯示的桌機操作 chips 數：0
+
+### 學習模式
+  ok   學習詞書選擇器：{"html":"<div class=\"radio-item-wrapper\"><input type=\"radio\" id=\"learning-book-radio-audit-book\" name=\"learning-book\" value=\"audit-book\" class=\"radio-btn\"><label for=\"learning-book-radio-
+  ok   單詞下拉：{"options":["请选择单词","apple","notebook","running","beautiful","environment"],"value":""}
+  ok   單字詳解：{"word":"选择单词","phonetic":"","meaning":""}
+  ok   下一個：选择单词 -> apple
+  ok   未選取時從第一個開始：第 1 / 5 个
+  ok   上一個停在原地：apple
+  ok   邊界提示：已经是第一个单词
+  ok   連按下一個後停在：environment
+  ok   連按上一個後停在：apple
+  ok   例句區：还没有例句，点击“生成 AI 例句”按钮生成例句。
+  [low] learning :: AI 例句：console error -- 生成例句時出錯: Error: 尚未选择模型
+    at modelError (http://127.0.0.1:8313/modules/ai-models.js?v=0b3287ded82b:102:17)
+    at resolveAIRequestConfig (http://127.0.0.1:8313/modules/ai-models.js?v=0b3287ded82b:425:42)
+    at resolveA
+  ok   造句回饋：检查失败。
+  [low] learning :: 造句檢查：console error -- 檢查例句時出錯: Error: 尚未选择模型
+    at modelError (http://127.0.0.1:8313/modules/ai-models.js?v=0b3287ded82b:102:17)
+    at resolveAIRequestConfig (http://127.0.0.1:8313/modules/ai-models.js?v=0b3287ded82b:425:42)
+    at resolveA
+  ok   朗讀：["apple"]
+  [low] learning :: 朗讀：console error -- Failed to load resource: net::ERR_FAILED
+  ok   重載後語言為 zh-HK
+  ok   zh-HK 下單字：選擇生字
+  [low] learning :: 語言切換：console error -- Failed to load resource: net::ERR_FAILED
+
+### 聽寫模式
+  ok   設定卡：{"visible":true,"text":"设置 选择单词本： 巡檢詞書第二本 纸上听写 只听声音，在纸上书写（推荐） 跟打练习 听完后在下方输入框拼写并检查 高级设置 重复： 单词间隔： 中文： 普 粤 循环模式： 播完最后一个后回到第一个 随机播放： 打乱单词顺序后再开始 开始听写 开始后会先朗读第一个单词，请准备好纸和笔。"}
+  ok   詞書選項：[{"v":"audit-book","checked":true},{"v":"audit-book-2","checked":false}]
+  ok   聽寫欄位：[{"id":"dictation-book-radio-audit-book","type":"radio","val":"audit-book","visible":true},{"id":"dictation-book-radio-audit-book-2","type":"radio","val":"audit-book-2","visible":true},{"id":"listen-only-mode","type":"radio","val":"paper","visible":true},{"id":"dictation-typed-mode","type":"radio","val":"typed","visible":true},{"id":"","type":"range","val":"2","visible":true},{"id":"repeat-times","type":"text","val":"2","visible":true},{"id":"","type":"range","val":"3","visible":true},{"id":"wor
+  ok   聽寫進行中：{"playerVisible":true,"settingsVisible":true,"badge":"播放中","counter":["1","5"],"title":"正在朗读，请在纸上写下单词","hint":"听不清可以点「重播」，或点「上一个」回听。","stopDisabled":false}
+  ok   已朗讀：["apple","apple"]
+  [low] dictation :: 開始聽寫：console error -- Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED
+  ok   暫停後：{"badge":"已暂停","label":"继续"}
+  ok   恢復後：播放中
+  [low] dictation :: 暫停恢復：console error -- Failed to load resource: net::ERR_FAILED
+  ok   下一個：1 -> 2
+  ok   上一個後：1
+  [low] dictation :: 控制列：console error -- Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED
+  ok   切到背景後狀態：已暂停
+  ok   會話已持久化：{"active":true,"startTime":1793143653283,"currentIndex":0,"isPaused":true,"words":[{"bookId":"audit-book","word":"apple","meaning":"苹果","pho
+  ok   結束後：{"settingsVisible":true,"completeVisible":false,"playerVisible":false,"completeText":"听写完成 全部单词都播放完了，检查一下纸上的拼写吧。 0单词 2每词次数 0:00用时 再来一遍 返回设置"}
+  ok   跟打練習區可見：true
+  ok   拼寫檢查結果：错误！正确答案是：apple
+  ok   AI 批改提示：[]
+  [low] dictation :: 跟打練習：console error -- Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED
+  ok   手機浮動控制：{"cls":"has-floating-player","visible":true,"rect":[0,-99,390,1442],"z":"auto","position":"static"}
+  [low] dictation :: 手機聽寫：console error -- Failed to load resource: net::ERR_FAILED | Failed to load resource: net::ERR_FAILED
+
+### 隨堂測驗
+  ok   測驗詞書：[{"v":"audit-book","checked":true},{"v":"audit-book-2","checked":false}]
+  ok   第 1 題：{"question":"“beautiful”的中文意思是？","options":["笔记本","苹果","美丽的","环境"],"progress":"题目 1/5","score":"得分：0/1","settingsHidden":true,"nextDisabled":true}
+  ok   作答後：{"correct":1,"incorrect":1,"nextDisabled":false,"score":"得分：0/1"}
+  ok   已作答後再點其他選項無效（正確）
+  ok   測驗結果：{"resultVisible":true,"finalScore":"2/5 (40%)","summary":"需要加强！请多花时间学习这些单词。","cls":"score-poor"}
+  ok   重新測驗第 1 題：“apple”的中文意思是？
+  ok   離開確認框：{"title":"离开测验？","confirm":"离开并结束测验","cancel":"继续测验"}（原生對話框 0 個）
+  ok   繼續測驗後仍在測驗頁（正確）
+  ok   確認離開後落在 ["learning-section"]，quizInProgress=false
+  ok   確認離開後測驗狀態已清除
+  ok   離開測驗後切換不再詢問
+  ok   單詞不足時提示：toast=["请先选择一个至少包含 4 个单词的单词本开始测验！"] 原生對話框=[]
+
+### 文章詳解
+  ok   初始：{"textarea":"","historyCount":"0","historyEntry":true,"historyStatus":"尚未存入阅读记录","sourceBarVisible":false,"analysisHtml":21}
+  ok   文章庫：{"open":true,"count":"30 篇","items":30,"categories":["全部分类","ready reading","R&E"]}
+  ok   載入文章後：{"input":1861,"historyStatus":"已暂存草稿 · 1秒钟前","analysisLen":199,"modalOpen":false}
+  ok   分類數：3
+  ok   分析結果：{"container":4024,"text":"解析失败 失败原因：模型没有返回译文 重试本段 The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet. 分析失败"}
+  ok   空文章送出提示：["请输入要分析的文章！×","请输入要分析的文章！","×"]
+  ok   清空後輸入框長度：0
+  ok   朗讀按鈕 disabled=false
+  ok   朗讀中：{"stopVisible":true,"chunkNav":"none"}
+  ok   閱讀記錄：{"open":true,"title":"阅读记录","rows":1,"hasSearch":true,"body":"最近阅读 最近更新 标题 A→Z 全部来源网页 / 新闻文章库 / 文件图片 OCR粘贴文字 未保存的草稿 2秒钟前 · Unit 1: Let's give a hand 恢复 丢弃 搜索范围：已下载到本机的文章全文 今天 Unit 1: Let's give a hand 7秒钟前 · 文章库 "}
+
+### 圖片識別
+  ok   OCR 初始：{"modelOptions":[{"v":"","t":"提示：请先在「我的供应商」添加供应商"}],"runDisabled":false,"displayMode":"text","preferCamera":false,"hint":""}
+  ok   無圖片執行提示：["请先上传图片或拍照×","请先上传图片或拍照","×"]
+  ok   選圖後：{"items":1,"runDisabled":false,"thumbLen":1,"anySrc":["data:image/jpeg;base64,/9j/4AA"]}
+  ok   OCR 執行後：{"progress":"完成","result":"--- 图片 1/1：5AU1_1.jpg ---\n[识别失败] 尚未选择模型","toasts":[{"txt":"识别完成：1 张（成功 0，失败 1，取消 0）","cls":"message-toast message-error is-shown"}],"progressRowVisible":false}
+  ok   清空成功
+  ok   顯示模式切換完成：["text","md"]
+
+### 問答訓練
+  ok   QA 初始：{"managementVisible":true,"setItems":2,"listText":"六年級 Q & A 6A Unit 1 - Let's Give a Hand 4 道题 關於 Let's Give a Hand 的閱讀理解問答 查看题目 开始训练 导出手写练习 6A Unit 2 - Terrible Disasters 4 道题 關於 Terrible Disasters 的閱讀理解問答 查看题目 开始训练 导出手写练习 五年級 Q & A 5B Unit 1 - It's"}
+  ok   建立器：{"visible":true,"templates":["选择已有问答集","5B Unit 1 - It's Chinese New Year预置","5B Unit 2 - The Missing Ring预置","5B Unit 4 - Role Models预置","5B Unit 5 - Past Experiences预置"]}
+  ok   問答預覽：成功解析 2 个问答对 1 ⠿ 复制 上移 下移 删除 Q What is your name? A My name is Tom. 2 ⠿ 复制 上移 下移 删除 Q How old are you? A I am ten years old. +
+  ok   儲存後：{"sets":["巡檢問答集"],"managementVisible":true}
+  ok   落單行保存確認框：{"title":"有内容没有被采用","message":"最后一行「Q2?」没有对应答案，已被忽略；请补上答案或删除这一行。\n\n继续保存会忽略上述内容；建议先返回修改。","confirm":"仍然保存","cancel":"返回修改"}
+  ok   返回修改後：["巡檢問答集"]
+  ok   奇數行儲存後：["巡檢問答集","奇數測試"]
+  ok   奇數行提示：["问答集“奇數測試”保存成功！×","问答集“奇數測試”保存成功！","×","已保存，但有一行内容没有被采用，请检查问答对。×"]
+  ok   訓練設置彈窗：{"title":"问答训练设置","confirm":"确定"}
+  ok   已選擇逐題模式：true
+  ok   訓練中：{"trainingVisible":true,"question":"Why doesn't Mike want any birthday presents from his friends?","progress":"第 1 题 / 共 4 题","modelOptions":1}
+  ok   本題回饋：{"feedVisible":true,"content":"Q1\n          需改进\n          \n        \n\n        \n          \n            问题： Why doesn't Mike want any birthday presents from his friends?\n          \n\n  "}
+  ok   下一題點擊：clicked
+  ok   下一題：Why doesn't Mike want any birthday presents from his friends? -> What voluntary work will Anna do next month?
+  ok   上一題點擊：clicked
+  ok   首題再按上一題：Why doesn't Mike want any birthday presents from his friends?
+  ok   切題後答案框內容："My name is Tom."
+  ok   訓練進度已持久化：{"session":{"qaSetId":"qa_6a_unit1_lets_give_a_hand","qaSet":{"id":"qa_6a_unit1_lets_give_a_hand","name":"6A Unit 1 - Le
+  ok   完成訓練確認框：{"title":"完成训练？","desc":"还有 3 题未回答，确定完成训练吗？"}
+  ok   報告：{"reportVisible":true,"details":"AI 校对总结 错题 1 未作答 0 错题总览（1） Q1：请检查答案的准确性 您的答案：My name is Tom. 参考答案：It is because he wants them to donate money to a charity instead. 学习建议 有些答案需要重点关注，建议重新学习相关内容 Q1 需改进 问题： Why doesn't Mike want any birt","summaryDisplay":"none","clearProgress":null}
+  ok   收起/展開鈕文字：展开全部
+  ok   複製報告提示：["已复制错误报告到剪贴板×","已复制错误报告到剪贴板","×"]
+  ok   重新訓練可見：false
+  ok   返回主選單後管理區可見：false
+  ok   匯入彈窗：{"open":false,"title":"Modal Title"}
+  ok   刪除後問答集：["奇數測試"]
+
+### 設定與同步
+  ok   齒輪選單：[{"cls":"gear-menu","items":[]}]
+  ok   切 zh-HK：{"locale":"zh-HK","lang":"zh-HK","navText":"生字簿"}
+  ok   切到 zh-HK 後未發現殘留簡體
+  ok   切回 zh-CN：zh-CN
+  ok   主題狀態：{"attr":"teal","cls":"","stored":null}
+  ok   同步 UI：{"status":null,"statusVisible":null,"loginHidden":false}
+  ok   未登入按同步提示：[]
+  ok   登入按鈕目前不可見（可能已登入）
+
+### 語音與朗讀
+  ok   voices 模組：{"exports":["fetchVoicesList","formatVoiceLabel","getCachedVoicesList","groupVoices","pickDefaultVoiceId"]}
+  ok   voices.min.json：{"status":200,"count":151}
+
+### 無障礙與可用性
+  ok   可聚焦元素：{"focusable":12,"negative":0}
+  ok   未發現明顯對比度問題
+
+=== 共 11 項發現 ===
+嚴重度分布: { low: 11 } -> /Users/linus/CODE/bdc/docs/report/root-audit/flows.json
+
+[exited with code 0]

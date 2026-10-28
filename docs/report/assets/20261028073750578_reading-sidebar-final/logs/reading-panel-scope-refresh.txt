@@ -1,0 +1,48 @@
+PASS mark -> refresh -> underline and panel survive: marked item exists {"id":"li_cv1_9dc58402_58","anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."},"version":"cv1_7019bacf_64"}
+PASS mark -> refresh -> underline and panel survive: panel lists marked item
+PASS mark -> refresh -> underline and panel survive: normal mark events do not reload the article []
+PASS mark -> refresh -> underline and panel survive: exact second occurrence stays underlined [false,true]
+PASS mark -> refresh -> underline and panel survive: item keeps version and anchor {"row":{"marked":true,"anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."},"version":"cv1_7019bacf_64","note":""},"count":2,"markedCount":1}
+PASS mark -> refresh -> underline and panel survive: panel item survives refresh {"row":{"marked":true,"anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."},"version":"cv1_7019bacf_64","note":""},"count":2,"markedCount":1}
+PASS mark -> refresh -> underline and panel survive: refresh reads current article only [["local::guest","reading-panel-refresh-mark"],["local::guest","reading-panel-refresh-mark"]]
+PASS desktop manual-mark-refresh no page errors []
+PASS editing note -> refresh -> focus/draft survive: focus stays in the same note field {"activeId":"li_cv1_d4380d93_58","activeTag":"TEXTAREA","value":"刷新期間仍保留的筆記草稿","panelVisible":true,"valueInList":"刷新期間仍保留的筆記草稿"}
+PASS editing note -> refresh -> focus/draft survive: unsaved draft is not overwritten {"activeId":"li_cv1_d4380d93_58","activeTag":"TEXTAREA","value":"刷新期間仍保留的筆記草稿","panelVisible":true,"valueInList":"刷新期間仍保留的筆記草稿"}
+PASS editing note -> refresh -> focus/draft survive: panel remains open while editing {"activeId":"li_cv1_d4380d93_58","activeTag":"TEXTAREA","value":"刷新期間仍保留的筆記草稿","panelVisible":true,"valueInList":"刷新期間仍保留的筆記草稿"}
+PASS editing note -> refresh -> focus/draft survive: draft still saves after refresh "刷新期間仍保留的筆記草稿"
+PASS desktop note-draft-refresh no page errors []
+PASS article switch during refresh -> old marks do not paint: new article starts unmarked [false,false]
+PASS article switch during refresh -> old marks do not paint: current article is still B {"currentArticleId":"reading-panel-refresh-switch-b","aCount":2,"bCount":0}
+PASS article switch during refresh -> old marks do not paint: old article result never paints on B [false,false]
+PASS article switch during refresh -> old marks do not paint: B has no inherited reading items {"currentArticleId":"reading-panel-refresh-switch-b","aCount":2,"bCount":0}
+PASS desktop article-switch-refresh no page errors []
+PASS scope switch during refresh -> no old result repaints: scope changed {"saved":{"ok":true,"record":{"articleId":"reading-panel-refresh-scope","article":"We look forward to meeting you.\n\nWe look forward to meeting you.","result":{"chinese_translation":"我們期待與你見面。\n\n我們期待與你見面。","word_alignment":[],"detailed_analysis":[],"paragraph_analysis":[{"chinese_translation":"我們期待與你見面。","sentences":[{"en":"We look forward to meeting you.","zh":"我們期待與你見面。"}]},{"chinese_translation":"我們期待與你見面。","sentences":[{"en":"We look forward to meeting you.","zh":"我們期待與你見面。"}]}],"sentence_analysis":[],"phrase_analysis":[]},"title":"Scope switch B","sourceType":"paste","sourceUrl":"","revision":0,"generation":0,"createdAt":"2026-10-27T23:24:02.494Z","updatedAt":"2026-10-27T23:24:02.494Z","lastOpenedAt":"2026-10-27T23:24:02.494Z","deletedAt":"","dirty":true,"pending":true,"conflict":null}},"scope":"local::guest::panel-scope-b","nextScope":"local::guest::panel-scope-b"}
+PASS scope switch during refresh -> no old result repaints: old scope items are not loaded into new scope {"scope":"local::guest::panel-scope-b","items":0,"marks":[false,false]}
+PASS scope switch during refresh -> no old result repaints: old marks never repaint on the new-scope article {"scope":"local::guest::panel-scope-b","items":0,"marks":[false,false]}
+PASS desktop scope-switch-refresh no page errors []
+PASS mark -> refresh -> underline and panel survive: marked item exists {"id":"li_cv1_9dc58402_58","anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."},"version":"cv1_7019bacf_64"}
+PASS mark -> refresh -> underline and panel survive: panel lists marked item
+PASS mark -> refresh -> underline and panel survive: normal mark events do not reload the article []
+PASS mark -> refresh -> underline and panel survive: exact second occurrence stays underlined [false,true]
+PASS mark -> refresh -> underline and panel survive: item keeps version and anchor {"row":{"marked":true,"anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."},"version":"cv1_7019bacf_64","note":""},"count":2,"markedCount":1}
+PASS mark -> refresh -> underline and panel survive: panel item survives refresh {"row":{"marked":true,"anchor":{"start":36,"end":40,"quote":"look","prefix":"We look forward to meeting you.\n\nWe ","suffix":" forward to meeting you."},"version":"cv1_7019bacf_64","note":""},"count":2,"markedCount":1}
+PASS mark -> refresh -> underline and panel survive: refresh reads current article only [["local::guest","reading-panel-refresh-mark"],["local::guest","reading-panel-refresh-mark"]]
+PASS mobile manual-mark-refresh no page errors []
+PASS editing note -> refresh -> focus/draft survive: focus stays in the same note field {"activeId":"li_cv1_d4380d93_58","activeTag":"TEXTAREA","value":"刷新期間仍保留的筆記草稿","panelVisible":true,"valueInList":"刷新期間仍保留的筆記草稿"}
+PASS editing note -> refresh -> focus/draft survive: unsaved draft is not overwritten {"activeId":"li_cv1_d4380d93_58","activeTag":"TEXTAREA","value":"刷新期間仍保留的筆記草稿","panelVisible":true,"valueInList":"刷新期間仍保留的筆記草稿"}
+PASS editing note -> refresh -> focus/draft survive: panel remains open while editing {"activeId":"li_cv1_d4380d93_58","activeTag":"TEXTAREA","value":"刷新期間仍保留的筆記草稿","panelVisible":true,"valueInList":"刷新期間仍保留的筆記草稿"}
+PASS editing note -> refresh -> focus/draft survive: draft still saves after refresh "刷新期間仍保留的筆記草稿"
+PASS mobile note-draft-refresh no page errors []
+PASS article switch during refresh -> old marks do not paint: new article starts unmarked [false,false]
+PASS article switch during refresh -> old marks do not paint: current article is still B {"currentArticleId":"reading-panel-refresh-switch-b","aCount":2,"bCount":0}
+PASS article switch during refresh -> old marks do not paint: old article result never paints on B [false,false]
+PASS article switch during refresh -> old marks do not paint: B has no inherited reading items {"currentArticleId":"reading-panel-refresh-switch-b","aCount":2,"bCount":0}
+PASS mobile article-switch-refresh no page errors []
+PASS scope switch during refresh -> no old result repaints: scope changed {"saved":{"ok":true,"record":{"articleId":"reading-panel-refresh-scope","article":"We look forward to meeting you.\n\nWe look forward to meeting you.","result":{"chinese_translation":"我們期待與你見面。\n\n我們期待與你見面。","word_alignment":[],"detailed_analysis":[],"paragraph_analysis":[{"chinese_translation":"我們期待與你見面。","sentences":[{"en":"We look forward to meeting you.","zh":"我們期待與你見面。"}]},{"chinese_translation":"我們期待與你見面。","sentences":[{"en":"We look forward to meeting you.","zh":"我們期待與你見面。"}]}],"sentence_analysis":[],"phrase_analysis":[]},"title":"Scope switch B","sourceType":"paste","sourceUrl":"","revision":0,"generation":0,"createdAt":"2026-10-27T23:24:11.712Z","updatedAt":"2026-10-27T23:24:11.712Z","lastOpenedAt":"2026-10-27T23:24:11.712Z","deletedAt":"","dirty":true,"pending":true,"conflict":null}},"scope":"local::guest::panel-scope-b","nextScope":"local::guest::panel-scope-b"}
+PASS scope switch during refresh -> no old result repaints: old scope items are not loaded into new scope {"scope":"local::guest::panel-scope-b","items":0,"marks":[false,false]}
+PASS scope switch during refresh -> no old result repaints: old marks never repaint on the new-scope article {"scope":"local::guest::panel-scope-b","items":0,"marks":[false,false]}
+PASS mobile scope-switch-refresh no page errors []
+
+44/44 checks passed
+
+[exited with code 0]

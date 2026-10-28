@@ -1,0 +1,68 @@
+{
+  "ref": "a0bc037436772c8cedbf163e7be9d0e2e1cbd12e",
+  "checkedAt": "2026-10-28T03:09:26.577154+00:00",
+  "container": "bdc",
+  "webRoot": "/srv/bdc",
+  "checks": [
+    {
+      "file": "index.html",
+      "expected": "dd890df9cfde777ea7e6a9711174cd321505acb06b6f466e611cf2b4b9346a3d",
+      "actual": "dd890df9cfde777ea7e6a9711174cd321505acb06b6f466e611cf2b4b9346a3d",
+      "pass": true
+    },
+    {
+      "file": "main.js",
+      "expected": "d3bf771c404c54709f139cf3b4add59b11d1110ea9270513cbdcc7eb5b436a52",
+      "actual": "d3bf771c404c54709f139cf3b4add59b11d1110ea9270513cbdcc7eb5b436a52",
+      "pass": true
+    },
+    {
+      "file": "styles.css",
+      "expected": "ee40d021cf0ff307e7fbff859508077e8432c017627c67e1da74c1b710a1d09d",
+      "actual": "ee40d021cf0ff307e7fbff859508077e8432c017627c67e1da74c1b710a1d09d",
+      "pass": true
+    },
+    {
+      "file": "features/article/reading-panel.js",
+      "expected": "ed04d08e1f0d9ff1e046c1aa57e7187193bc0f8a68776e6bea0942ba0937b874",
+      "actual": "ed04d08e1f0d9ff1e046c1aa57e7187193bc0f8a68776e6bea0942ba0937b874",
+      "pass": true
+    },
+    {
+      "file": "features/article/reading-view.js",
+      "expected": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+      "actual": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+      "pass": true
+    },
+    {
+      "file": "modules/reading-actions.js",
+      "expected": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+      "actual": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+      "pass": true
+    },
+    {
+      "file": "modules/reading-store.js",
+      "expected": "329acff6398e9ae3e55478b72c09b67877c7a12d87e04797ba15d8387a365f0a",
+      "actual": "329acff6398e9ae3e55478b72c09b67877c7a12d87e04797ba15d8387a365f0a",
+      "pass": true
+    },
+    {
+      "file": "modules/ui.js",
+      "expected": "4afa62f28d3009dbe524f86c8da3f1f64bde748edfe10b3a0c93696d113ed101",
+      "actual": "4afa62f28d3009dbe524f86c8da3f1f64bde748edfe10b3a0c93696d113ed101",
+      "pass": true
+    },
+    {
+      "file": "locales/zh-CN.js",
+      "expected": "63bc337e7e188b3a2f85dfffcff49c928da39fe4ac80e25d38daab1d98be490a",
+      "actual": "63bc337e7e188b3a2f85dfffcff49c928da39fe4ac80e25d38daab1d98be490a",
+      "pass": true
+    },
+    {
+      "file": "locales/zh-HK.js",
+      "expected": "ee5e5cb21505d5fe1bf025cc10433b32aa5aae77719931af1e93c39cd45bb932",
+      "actual": "ee5e5cb21505d5fe1bf025cc10433b32aa5aae77719931af1e93c39cd45bb932",
+      "pass": true
+    }
+  ]
+}

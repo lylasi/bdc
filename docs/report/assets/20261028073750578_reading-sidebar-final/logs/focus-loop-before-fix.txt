@@ -1,0 +1,25 @@
+  ok   zh-CN: counts, search and saved intersection
+  ok   zh-CN: desktop layout and original text locate
+  ok   zh-CN: draft failure, retry feedback and close flush
+  ok   zh-CN: mouse retry keeps the click target and returns focus to the note
+  ok   zh-CN: tools are clickable and backup entry downloads JSON
+  ok   zh-CN: document Markdown and linked source record
+  ok   zh-CN: delete cancel, delete and durable undo for item and document
+  ok   zh-CN: loading, read failure and retry distinguish unavailable data
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(await first.evaluate(el => el === document.activeElement))
+
+    at /Users/linus/CODE/bdc/tests/reading-panel-improvements.cjs:278:24
+    at async check (/Users/linus/CODE/bdc/tests/reading-panel-improvements.cjs:16:5)
+    at async runLocale (/Users/linus/CODE/bdc/tests/reading-panel-improvements.cjs:270:9)
+    at async /Users/linus/CODE/bdc/tests/reading-panel-improvements.cjs:380:50 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+[exited with code 1]

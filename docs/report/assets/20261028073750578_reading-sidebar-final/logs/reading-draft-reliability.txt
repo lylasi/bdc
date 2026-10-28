@@ -1,0 +1,24 @@
+[
+  {
+    "name": "panel close with save failure keeps panel and draft for retry",
+    "ok": true
+  },
+  {
+    "name": "retry after clearing failure saves draft and closes panel",
+    "ok": true
+  },
+  {
+    "name": "JSON export flushes drafts hidden by the active filter",
+    "ok": true
+  },
+  {
+    "name": "phrase picker close with save failure keeps sheet and draft",
+    "ok": true
+  },
+  {
+    "name": "phrase picker retry saves draft and closes",
+    "ok": true
+  }
+]
+
+[exited with code 0]

@@ -1,0 +1,22 @@
+PASS 設定面板有四個分類 :: ["general","voice","ai","tools"]
+PASS 底部只有「完成」，沒有儲存／取消 :: ["gs-save"]
+PASS 開啟時不顯示「已自動保存」 :: ""
+PASS 主題即時寫入 pen_global_settings :: "blue"
+PASS 改動後顯示已自動保存
+PASS TTS 來源即時寫入 :: {"selectedVoices":{"en-US":"en-US-AIGenerate2Neural","en-GB":"en-GB-AbbiNeural","zh-HK":"yue-CN-XiaoMinNeural","zh-CN":"zh-CN-liaoning-XiaobeiNeural"},"use":"custom"}
+PASS 自訂來源時顯示 URL 欄位
+PASS 自訂 TTS URL 在輸入後寫入 :: {"selectedVoices":{"en-US":"en-US-AIGenerate2Neural","en-GB":"en-GB-AbbiNeural","zh-HK":"yue-CN-XiaoMinNeural","zh-CN":"zh-CN-liaoning-XiaobeiNeural"},"use":"custom","baseUrlCustom":"http://192.168.1.9:9000"}
+PASS TTS 金鑰寫入 pen_global_secrets :: "tts-test-key"
+PASS 同層 TTS 欄位沒有被覆蓋 :: {"selectedVoices":{"en-US":"en-US-AIGenerate2Neural","en-GB":"en-GB-AbbiNeural","zh-HK":"yue-CN-XiaoMinNeural","zh-CN":"zh-CN-liaoning-XiaobeiNeural"},"use":"custom","baseUrlCustom":"http://192.168.1.9:9000"}
+PASS 選擇語音即時寫入 selectedVoices :: {"en-US":"en-US-AIGenerate2Neural","en-GB":"en-GB-AdaMultilingualNeural","zh-HK":"yue-CN-XiaoMinNeural","zh-CN":"zh-CN-liaoning-XiaobeiNeural"}
+PASS 英語朗讀偏好即時寫入 :: {"englishVariant":"en-US"}
+PASS 助手串流開關即時寫入 :: {"stream":false}
+PASS 切換語言即時寫入並重建面板 :: {"interfaceLocale":"zh-HK"}
+PASS 重建後停在目前分類並換成香港繁體 :: {"lang":"zh-HK","tabs":["介面","語音朗讀","AI 供應商","助手與工具"],"active":"general","panelVisible":true}
+PASS 按「完成」關閉面板並收起底部列 :: {"hidden":true,"footerHidden":true}
+PASS 重新載入後設定仍在 :: {"tts":{"selectedVoices":{"en-US":"en-US-AIGenerate2Neural","en-GB":"en-GB-AdaMultilingualNeural","zh-HK":"yue-CN-XiaoMinNeural","zh-CN":"zh-CN-liaoning-XiaobeiNeural"},"use":"custom","baseUrlCustom":"http://192.168.1.9:9000"},"updatedAt":"2026-10-27T23:27:31.750Z","theme":"blue","reading":{"englishVariant":"en-US"},"assistant":{"stream":false},"language":{"interfaceLocale":"zh-HK"}}
+PASS 沒有 JS 例外 :: []
+
+summary: 18/18 passed
+
+[exited with code 0]

@@ -1,0 +1,18 @@
+  ok   zh-CN: counts, search and saved intersection
+  ok   zh-CN: desktop layout and original text locate
+  ok   zh-CN: draft failure, retry feedback and close flush
+locator.evaluate: Timeout 10000ms exceeded.
+Call log:
+  - waiting for locator('[data-note-retry="li_cv1_a8aab584_67"]')
+
+    at /Users/linus/CODE/bdc/tests/reading-panel-improvements.cjs:191:39
+    at async check (/Users/linus/CODE/bdc/tests/reading-panel-improvements.cjs:16:5)
+    at async runLocale (/Users/linus/CODE/bdc/tests/reading-panel-improvements.cjs:175:9)
+    at async /Users/linus/CODE/bdc/tests/reading-panel-improvements.cjs:383:50 {
+  log: [
+    `  - waiting for locator('[data-note-retry="li_cv1_a8aab584_67"]')`
+  ],
+  name: 'TimeoutError'
+}
+
+[exited with code 1]

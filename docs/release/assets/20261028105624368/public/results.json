@@ -1,0 +1,106 @@
+[
+  {
+    "name": "zh-CN: counts, search and saved intersection",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: desktop layout and original text locate",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: draft failure, retry feedback and close flush",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: mouse retry keeps the click target and returns focus to the note",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: tools are clickable and backup entry downloads JSON",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: document Markdown and linked source record",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: delete cancel, delete and durable undo for item and document",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: loading, read failure and retry distinguish unavailable data",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: closed and open tools wrap Tab and Shift+Tab within the panel",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: phone and tablet child dialogs, keyboard trap, locate return",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: active recheck restores, old replies and stale undo preserve tombstones",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: source conversation opens existing assistant without sending",
+    "ok": true
+  },
+  {
+    "name": "zh-CN: AI summary uses mock provider and preserves source records",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: counts, search and saved intersection",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: desktop layout and original text locate",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: draft failure, retry feedback and close flush",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: mouse retry keeps the click target and returns focus to the note",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: tools are clickable and backup entry downloads JSON",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: document Markdown and linked source record",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: delete cancel, delete and durable undo for item and document",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: loading, read failure and retry distinguish unavailable data",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: closed and open tools wrap Tab and Shift+Tab within the panel",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: phone and tablet child dialogs, keyboard trap, locate return",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: active recheck restores, old replies and stale undo preserve tombstones",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: source conversation opens existing assistant without sending",
+    "ok": true
+  },
+  {
+    "name": "zh-HK: AI summary uses mock provider and preserves source records",
+    "ok": true
+  }
+]
