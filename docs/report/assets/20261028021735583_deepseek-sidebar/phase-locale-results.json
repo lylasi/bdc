@@ -1,0 +1,37 @@
+[
+  {
+    "name": "zh-HK：面板保持開啟、篩選與捲動保留",
+    "pass": true,
+    "detail": "{\"scrollBefore\":300,\"before\":{\"cards\":13,\"scroll\":300},\"hk\":{\"cards\":13,\"scroll\":300,\"filter\":\"all\"}}"
+  },
+  {
+    "name": "zh-HK：標題與篩選、按鈕、底部工具全部轉為香港繁體",
+    "pass": true,
+    "detail": "{\"open\":true,\"title\":\"本文學習記錄\",\"sub\":\"11 條詞句 · 1 份筆記 · 1 份 AI 資料\",\"filters\":[\"全部 13\",\"詞與短語 10\",\"句子 1\",\"標記 2\",\"有筆記 3\",\"AI 資料 1\"],\"results\":\"顯示 13 / 13 項\",\"search\":\"\",\"placeholder\":\"搜尋詞語、解釋或筆記…\",\"sort\":\"source\",\"sortOptions\":[\"原文順序\",\"最近查閱\",\"最近修改\"],\"savedLabel\":\"已加入詞書\",\"activeFilter\":\"all\",\"cards\":13,\"foot\":[\"全篇筆記\",\"匯出閱讀筆記\",\"更多\",\"備份目前帳戶（JSON）\",\"分析本文難點\",\"整理閱讀筆記\"],\"expandLabel\":\"收起\",\"markLabel\":\"取消標記\",\"locateLabel\":\"回原文\",\"noteLabel\":\"個人筆記\",\"textareaVisible\":true,\"noteValue\":\"語言切換前的個人筆記\",\"caret\":[1,3],\"noteStatus\":\"已儲存\",\"focusedIsNote\":true,\"articleText\":\"We look forward to meeting you.\",\"listScroll\":300}"
+  },
+  {
+    "name": "zh-HK：展開中的筆記與游標保留、文章原文不被轉換",
+    "pass": true,
+    "detail": "{\"before\":{\"value\":\"語言切換前的個人筆記\",\"caret\":[1,3],\"cards\":13,\"scroll\":300},\"hk\":{\"noteValue\":\"語言切換前的個人筆記\",\"caret\":[1,3],\"focused\":true,\"articleText\":\"We look forward to meeting you.\",\"textareaVisible\":true}}"
+  },
+  {
+    "name": "zh-HK：展開編輯筆記並自動儲存（已儲存）",
+    "pass": true,
+    "detail": "{\"editHk\":{\"hasTextarea\":true},\"hkSaved\":{\"status\":\"已儲存\",\"note\":\"香港繁體編輯筆記\",\"collapsed\":false,\"expandLabel\":\"收起\"}}"
+  },
+  {
+    "name": "zh-HK：刪除確認與按鈕為香港繁體",
+    "pass": true,
+    "detail": "{\"title\":\"刪除學習記錄\",\"message\":\"這會移除此條記錄及其個人筆記，可在面板中撤銷。已加入詞書的詞條會保留。\",\"confirm\":\"刪除\",\"cancel\":\"取消\"}"
+  },
+  {
+    "name": "切回 zh-CN：面板保留且文案還原",
+    "pass": true,
+    "detail": "{\"title\":\"本文学习记录\",\"filter\":\"all\",\"cards\":13}"
+  },
+  {
+    "name": "工具列「導出閱讀筆記」開啟同一匯出範圍對話框",
+    "pass": true,
+    "detail": "{\"title\":\"导出范围\",\"desc\":\"Sidebar Audit — Meeting Follow-up · 原文版本: cv1_f5ce9e03 · 11 条记录 · 3 份笔记 · 0 则对话 · 本篇阅读笔记（不含全文与对话）\",\"options\":[\"fullText\",\"chat\",\"fullBackup\"]}"
+  }
+]

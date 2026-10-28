@@ -1,0 +1,18 @@
+{
+  "features/article/reading-panel.js": "ed04d08e1f0d9ff1e046c1aa57e7187193bc0f8a68776e6bea0942ba0937b874",
+  "features/article/reading-view.js": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+  "modules/reading-actions.js": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+  "modules/reading-store.js": "329acff6398e9ae3e55478b72c09b67877c7a12d87e04797ba15d8387a365f0a",
+  "modules/ui.js": "4afa62f28d3009dbe524f86c8da3f1f64bde748edfe10b3a0c93696d113ed101",
+  "styles.css": "ee40d021cf0ff307e7fbff859508077e8432c017627c67e1da74c1b710a1d09d",
+  "locales/zh-CN.js": "63bc337e7e188b3a2f85dfffcff49c928da39fe4ac80e25d38daab1d98be490a",
+  "locales/zh-HK.js": "ee5e5cb21505d5fe1bf025cc10433b32aa5aae77719931af1e93c39cd45bb932",
+  "index.html": "dd890df9cfde777ea7e6a9711174cd321505acb06b6f466e611cf2b4b9346a3d",
+  "tests/reading-panel-improvements.cjs": "503cb48178a3c5c2f14ab09c7549bc177b36229776f5e10363496dc0ef08ca5c",
+  "tests/reading-view.test.mjs": "b630acfdb46ded81b7b00562027999613a60dae200ba96d02a89abe32c6814e8",
+  "tests/helpers/reading-panel-fixture.cjs": "a7fc93c4666dc255db9d70b70b97fa5a07d2afaace7c1d1fc829f2113ca4a30d",
+  "tests/reading-restore-fallback.test.mjs": "084ac3a89f0712067b493cb291840b4716703b8a0ac94044a4f5b3144dd76773",
+  "tests/reading-draft-reliability.cjs": "9cb7b709a4465bf3f1cb9ed3204a2733b84c345d6f263c949a40c43cd075b8b6",
+  "tests/reading-files.cjs": "3f3cf6c0fd8d164f1c87eeb737e922a2e11adae1a698ff102c09ae750b73ce65",
+  "tests/locale-panel-state.cjs": "560ac6b5532c37c9e6ecce13ddbe415c2f1e0fd85ba7bd291c80b62917ed1c69"
+}

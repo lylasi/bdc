@@ -1,0 +1,17 @@
+[
+  {
+    "name": "保存失敗→重試：資料已寫入且狀態顯示已保存",
+    "pass": false,
+    "detail": "{\"failedA\":{\"status\":\"保存失败，请重试 重试\",\"retry\":true,\"value\":\"A 草稿\",\"focused\":true},\"retriedA\":{\"status\":\"保存中…\",\"retry\":false,\"value\":\"A 草稿\",\"focused\":false},\"storeA\":\"A 草稿\"}"
+  },
+  {
+    "name": "保存途中重繪：失敗後仍能看到重試入口",
+    "pass": true,
+    "detail": "{\"afterB\":{\"status\":\"保存失败，请重试 重试\",\"retry\":true,\"value\":\"B 草稿\",\"focused\":false},\"storeB\":\"A 草稿\"}"
+  },
+  {
+    "name": "保存途中重繪（成功）：狀態顯示已保存而非停在保存中",
+    "pass": true,
+    "detail": "{\"afterC\":{\"status\":\"已保存\",\"retry\":false,\"value\":\"C 草稿\",\"focused\":false},\"storeC\":\"C 草稿\"}"
+  }
+]

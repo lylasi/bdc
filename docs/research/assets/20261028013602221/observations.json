@@ -1,0 +1,2519 @@
+{
+  "createdAt": "2026-10-27T17:48:47.274Z",
+  "fixtures": "11 synthetic learning items, 1 AI document, 1 article note, 1 saved vocabulary link",
+  "checks": [
+    {
+      "name": "desktop-1440-CN",
+      "state": {
+        "viewport": {
+          "width": 1440,
+          "height": 960
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 1000,
+          "y": 0,
+          "width": 440,
+          "height": 960,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 960,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "list": {
+          "x": 1001,
+          "y": 139.6875,
+          "width": 439,
+          "height": 671.3125,
+          "right": 1440,
+          "bottom": 811,
+          "scrollHeight": 4381,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "firstCard": {
+          "x": 1017,
+          "y": 151.6875,
+          "width": 407,
+          "height": 344.15625,
+          "right": 1424,
+          "bottom": 495.84375,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 405,
+          "scrollWidth": 405
+        },
+        "foot": {
+          "x": 1001,
+          "y": 811,
+          "width": 439,
+          "height": 149,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 148,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "filterBox": {
+          "x": 1001,
+          "y": 74.6875,
+          "width": 439,
+          "height": 65,
+          "right": 1440,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 627,
+          "y": 353.890625,
+          "width": 336,
+          "height": 882.3125,
+          "right": 963,
+          "bottom": 1236.203125,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 336,
+          "scrollWidth": 336
+        },
+        "sentence": {
+          "x": 644,
+          "right": 897.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": false,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 2",
+          "有笔记 2"
+        ]
+      }
+    },
+    {
+      "name": "notes-count",
+      "state": {
+        "viewport": {
+          "width": 1440,
+          "height": 960
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "false"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "true"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 2,
+          "docs": 1,
+          "notes": 2
+        },
+        "sheet": {
+          "x": 1000,
+          "y": 0,
+          "width": 440,
+          "height": 960,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 960,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "list": {
+          "x": 1001,
+          "y": 139.6875,
+          "width": 439,
+          "height": 671.3125,
+          "right": 1440,
+          "bottom": 811,
+          "scrollHeight": 955,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "firstCard": {
+          "x": 1017,
+          "y": 151.6875,
+          "width": 407,
+          "height": 344.15625,
+          "right": 1424,
+          "bottom": 495.84375,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 405,
+          "scrollWidth": 405
+        },
+        "foot": {
+          "x": 1001,
+          "y": 811,
+          "width": 439,
+          "height": 149,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 148,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "filterBox": {
+          "x": 1001,
+          "y": 74.6875,
+          "width": 439,
+          "height": 65,
+          "right": 1440,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 627,
+          "y": 353.890625,
+          "width": 336,
+          "height": 882.3125,
+          "right": 963,
+          "bottom": 1236.203125,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 336,
+          "scrollWidth": 336
+        },
+        "sentence": {
+          "x": 644,
+          "right": 897.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": false,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BODY",
+          "id": "",
+          "cls": "reading-panel-open"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 2",
+          "有笔记 2"
+        ]
+      }
+    },
+    {
+      "name": "saved-only-count",
+      "state": {
+        "viewport": {
+          "width": 1440,
+          "height": 960
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 1,
+          "docs": 2,
+          "notes": 1
+        },
+        "sheet": {
+          "x": 1000,
+          "y": 0,
+          "width": 440,
+          "height": 960,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 960,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "list": {
+          "x": 1001,
+          "y": 139.6875,
+          "width": 439,
+          "height": 671.3125,
+          "right": 1440,
+          "bottom": 811,
+          "scrollHeight": 743,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "firstCard": {
+          "x": 1017,
+          "y": 151.6875,
+          "width": 407,
+          "height": 344.15625,
+          "right": 1424,
+          "bottom": 495.84375,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 405,
+          "scrollWidth": 405
+        },
+        "foot": {
+          "x": 1001,
+          "y": 811,
+          "width": 439,
+          "height": 149,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 148,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "filterBox": {
+          "x": 1001,
+          "y": 74.6875,
+          "width": 439,
+          "height": 65,
+          "right": 1440,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 627,
+          "y": 353.890625,
+          "width": 336,
+          "height": 882.3125,
+          "right": 963,
+          "bottom": 1236.203125,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 336,
+          "scrollWidth": 336
+        },
+        "sentence": {
+          "x": 644,
+          "right": 897.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": false,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BODY",
+          "id": "",
+          "cls": "reading-panel-open"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "句子 1",
+          "标记 2",
+          "有笔记 2",
+          "AI 资料 1",
+          "只看已收藏"
+        ]
+      }
+    },
+    {
+      "name": "filtered-empty",
+      "text": "本文还没有学习记录。查词、收藏、标记或写笔记后会出现在这里。"
+    },
+    {
+      "name": "mark-focus-scroll",
+      "before": {
+        "viewport": {
+          "width": 1440,
+          "height": 960
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 1000,
+          "y": 0,
+          "width": 440,
+          "height": 960,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 960,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "list": {
+          "x": 1001,
+          "y": 139.6875,
+          "width": 439,
+          "height": 671.3125,
+          "right": 1440,
+          "bottom": 811,
+          "scrollHeight": 4381,
+          "scrollTop": 2418,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "firstCard": {
+          "x": 1017,
+          "y": -2266.3125,
+          "width": 407,
+          "height": 344.15625,
+          "right": 1424,
+          "bottom": -1922.15625,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 405,
+          "scrollWidth": 405
+        },
+        "foot": {
+          "x": 1001,
+          "y": 811,
+          "width": 439,
+          "height": 149,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 148,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "filterBox": {
+          "x": 1001,
+          "y": 74.6875,
+          "width": 439,
+          "height": 65,
+          "right": 1440,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 627,
+          "y": 353.890625,
+          "width": 336,
+          "height": 882.3125,
+          "right": 963,
+          "bottom": 1236.203125,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 336,
+          "scrollWidth": 336
+        },
+        "sentence": {
+          "x": 644,
+          "right": 897.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": false,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BODY",
+          "id": "",
+          "cls": "reading-panel-open"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 2",
+          "有笔记 2"
+        ]
+      },
+      "after": {
+        "viewport": {
+          "width": 1440,
+          "height": 960
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 1000,
+          "y": 0,
+          "width": 440,
+          "height": 960,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 960,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "list": {
+          "x": 1001,
+          "y": 139.6875,
+          "width": 439,
+          "height": 671.3125,
+          "right": 1440,
+          "bottom": 811,
+          "scrollHeight": 4381,
+          "scrollTop": 2418,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "firstCard": {
+          "x": 1017,
+          "y": -2266.3125,
+          "width": 407,
+          "height": 344.15625,
+          "right": 1424,
+          "bottom": -1922.15625,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 405,
+          "scrollWidth": 405
+        },
+        "foot": {
+          "x": 1001,
+          "y": 811,
+          "width": 439,
+          "height": 149,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 148,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "filterBox": {
+          "x": 1001,
+          "y": 74.6875,
+          "width": 439,
+          "height": 65,
+          "right": 1440,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 627,
+          "y": 353.890625,
+          "width": 336,
+          "height": 882.3125,
+          "right": 963,
+          "bottom": 1236.203125,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 336,
+          "scrollWidth": 336
+        },
+        "sentence": {
+          "x": 644,
+          "right": 897.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": false,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BODY",
+          "id": "",
+          "cls": "reading-panel-open"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 3",
+          "有笔记 2"
+        ]
+      }
+    },
+    {
+      "name": "locate-closes-panel",
+      "before": {
+        "viewport": {
+          "width": 1440,
+          "height": 960
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 1000,
+          "y": 0,
+          "width": 440,
+          "height": 960,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 960,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "list": {
+          "x": 1001,
+          "y": 139.6875,
+          "width": 439,
+          "height": 671.3125,
+          "right": 1440,
+          "bottom": 811,
+          "scrollHeight": 4381,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "firstCard": {
+          "x": 1017,
+          "y": 151.6875,
+          "width": 407,
+          "height": 344.15625,
+          "right": 1424,
+          "bottom": 495.84375,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 405,
+          "scrollWidth": 405
+        },
+        "foot": {
+          "x": 1001,
+          "y": 811,
+          "width": 439,
+          "height": 149,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 148,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "filterBox": {
+          "x": 1001,
+          "y": 74.6875,
+          "width": 439,
+          "height": 65,
+          "right": 1440,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 627,
+          "y": 353.890625,
+          "width": 336,
+          "height": 882.3125,
+          "right": 963,
+          "bottom": 1236.203125,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 336,
+          "scrollWidth": 336
+        },
+        "sentence": {
+          "x": 644,
+          "right": 897.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": false,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BODY",
+          "id": "",
+          "cls": "reading-panel-open"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 3",
+          "有笔记 2"
+        ]
+      },
+      "hidden": true,
+      "focused": {
+        "tag": "BUTTON",
+        "id": "article-reading-records-btn",
+        "cls": "btn-tertiary reading-records-btn"
+      }
+    },
+    {
+      "name": "layout-1024-CN",
+      "state": {
+        "viewport": {
+          "width": 1024,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 644,
+          "y": 0,
+          "width": 380,
+          "height": 844,
+          "right": 1024,
+          "bottom": 844,
+          "scrollHeight": 844,
+          "scrollTop": 0,
+          "clientWidth": 379,
+          "scrollWidth": 379
+        },
+        "list": {
+          "x": 645,
+          "y": 139.6875,
+          "width": 379,
+          "height": 509.3125,
+          "right": 1024,
+          "bottom": 649,
+          "scrollHeight": 4455,
+          "scrollTop": 0,
+          "clientWidth": 379,
+          "scrollWidth": 379
+        },
+        "firstCard": {
+          "x": 661,
+          "y": 151.6875,
+          "width": 347,
+          "height": 344.15625,
+          "right": 1008,
+          "bottom": 495.84375,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 345,
+          "scrollWidth": 345
+        },
+        "foot": {
+          "x": 645,
+          "y": 649,
+          "width": 379,
+          "height": 195,
+          "right": 1024,
+          "bottom": 844,
+          "scrollHeight": 194,
+          "scrollTop": 0,
+          "clientWidth": 379,
+          "scrollWidth": 379
+        },
+        "filterBox": {
+          "x": 645,
+          "y": 74.6875,
+          "width": 379,
+          "height": 65,
+          "right": 1024,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 379,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 567,
+          "y": 597.09375,
+          "width": 44,
+          "height": 9531.5625,
+          "right": 611,
+          "bottom": 10128.65625,
+          "scrollHeight": 9532,
+          "scrollTop": 0,
+          "clientWidth": 44,
+          "scrollWidth": 44
+        },
+        "sentence": {
+          "x": 584,
+          "right": 633.671875,
+          "width": 49.671875
+        },
+        "readerOverlapsSheet": false,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 3"
+        ]
+      }
+    },
+    {
+      "name": "layout-834-CN",
+      "state": {
+        "viewport": {
+          "width": 834,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 394,
+          "y": 0,
+          "width": 440,
+          "height": 844,
+          "right": 834,
+          "bottom": 844,
+          "scrollHeight": 844,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "list": {
+          "x": 395,
+          "y": 139.6875,
+          "width": 439,
+          "height": 555.3125,
+          "right": 834,
+          "bottom": 695,
+          "scrollHeight": 4381,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "firstCard": {
+          "x": 411,
+          "y": 151.6875,
+          "width": 407,
+          "height": 344.15625,
+          "right": 818,
+          "bottom": 495.84375,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 405,
+          "scrollWidth": 405
+        },
+        "foot": {
+          "x": 395,
+          "y": 695,
+          "width": 439,
+          "height": 149,
+          "right": 834,
+          "bottom": 844,
+          "scrollHeight": 148,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "filterBox": {
+          "x": 395,
+          "y": 74.6875,
+          "width": 439,
+          "height": 65,
+          "right": 834,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 31,
+          "y": 998.0625,
+          "width": 772,
+          "height": 726.375,
+          "right": 803,
+          "bottom": 1724.4375,
+          "scrollHeight": 726,
+          "scrollTop": 0,
+          "clientWidth": 772,
+          "scrollWidth": 772
+        },
+        "sentence": {
+          "x": 48,
+          "right": 301.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": true,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 3",
+          "有笔记 2"
+        ]
+      }
+    },
+    {
+      "name": "layout-768-CN",
+      "state": {
+        "viewport": {
+          "width": 768,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 328,
+          "y": 0,
+          "width": 440,
+          "height": 844,
+          "right": 768,
+          "bottom": 844,
+          "scrollHeight": 844,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "list": {
+          "x": 329,
+          "y": 139.6875,
+          "width": 439,
+          "height": 555.3125,
+          "right": 768,
+          "bottom": 695,
+          "scrollHeight": 4381,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "firstCard": {
+          "x": 345,
+          "y": 151.6875,
+          "width": 407,
+          "height": 344.15625,
+          "right": 752,
+          "bottom": 495.84375,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 405,
+          "scrollWidth": 405
+        },
+        "foot": {
+          "x": 329,
+          "y": 695,
+          "width": 439,
+          "height": 149,
+          "right": 768,
+          "bottom": 844,
+          "scrollHeight": 148,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "filterBox": {
+          "x": 329,
+          "y": 74.6875,
+          "width": 439,
+          "height": 65,
+          "right": 768,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 31,
+          "y": 281.0625,
+          "width": 706,
+          "height": 726.375,
+          "right": 737,
+          "bottom": 1007.4375,
+          "scrollHeight": 726,
+          "scrollTop": 0,
+          "clientWidth": 706,
+          "scrollWidth": 706
+        },
+        "sentence": {
+          "x": 48,
+          "right": 301.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": true,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 3",
+          "有笔记 2"
+        ]
+      }
+    },
+    {
+      "name": "layout-767-CN",
+      "state": {
+        "viewport": {
+          "width": 767,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 0,
+          "y": 101.28125,
+          "width": 767,
+          "height": 742.71875,
+          "right": 767,
+          "bottom": 844,
+          "scrollHeight": 742,
+          "scrollTop": 0,
+          "clientWidth": 767,
+          "scrollWidth": 767
+        },
+        "list": {
+          "x": 0,
+          "y": 237.96875,
+          "width": 767,
+          "height": 499.03125,
+          "right": 767,
+          "bottom": 737,
+          "scrollHeight": 4300,
+          "scrollTop": 0,
+          "clientWidth": 767,
+          "scrollWidth": 767
+        },
+        "firstCard": {
+          "x": 16,
+          "y": 249.96875,
+          "width": 735,
+          "height": 344.15625,
+          "right": 751,
+          "bottom": 594.125,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 733,
+          "scrollWidth": 733
+        },
+        "foot": {
+          "x": 0,
+          "y": 737,
+          "width": 767,
+          "height": 107,
+          "right": 767,
+          "bottom": 844,
+          "scrollHeight": 106,
+          "scrollTop": 0,
+          "clientWidth": 767,
+          "scrollWidth": 767
+        },
+        "filterBox": {
+          "x": 0,
+          "y": 172.96875,
+          "width": 767,
+          "height": 65,
+          "right": 767,
+          "bottom": 237.96875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 767,
+          "scrollWidth": 767
+        },
+        "reader": {
+          "x": 31,
+          "y": 263.953125,
+          "width": 705,
+          "height": 726.375,
+          "right": 736,
+          "bottom": 990.328125,
+          "scrollHeight": 726,
+          "scrollTop": 0,
+          "clientWidth": 705,
+          "scrollWidth": 705
+        },
+        "sentence": {
+          "x": 48,
+          "right": 301.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": true,
+        "sentenceOverlapsSheet": true,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 3",
+          "有笔记 2",
+          "AI 资料 1",
+          "只看已收藏"
+        ]
+      }
+    },
+    {
+      "name": "layout-390-CN",
+      "state": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 0,
+          "y": 101.28125,
+          "width": 390,
+          "height": 742.71875,
+          "right": 390,
+          "bottom": 844,
+          "scrollHeight": 742,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "list": {
+          "x": 0,
+          "y": 237.96875,
+          "width": 390,
+          "height": 453.03125,
+          "right": 390,
+          "bottom": 691,
+          "scrollHeight": 4451,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "firstCard": {
+          "x": 16,
+          "y": 249.96875,
+          "width": 358,
+          "height": 344.15625,
+          "right": 374,
+          "bottom": 594.125,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 356,
+          "scrollWidth": 356
+        },
+        "foot": {
+          "x": 0,
+          "y": 691,
+          "width": 390,
+          "height": 153,
+          "right": 390,
+          "bottom": 844,
+          "scrollHeight": 152,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "filterBox": {
+          "x": 0,
+          "y": 172.96875,
+          "width": 390,
+          "height": 65,
+          "right": 390,
+          "bottom": 237.96875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 25,
+          "y": 343.953125,
+          "width": 340,
+          "height": 882.3125,
+          "right": 365,
+          "bottom": 1226.265625,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 340,
+          "scrollWidth": 340
+        },
+        "sentence": {
+          "x": 42,
+          "right": 295.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": true,
+        "sentenceOverlapsSheet": true,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 3"
+        ]
+      }
+    },
+    {
+      "name": "layout-320-CN",
+      "state": {
+        "viewport": {
+          "width": 320,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 0,
+          "y": 101.28125,
+          "width": 320,
+          "height": 742.71875,
+          "right": 320,
+          "bottom": 844,
+          "scrollHeight": 742,
+          "scrollTop": 0,
+          "clientWidth": 320,
+          "scrollWidth": 320
+        },
+        "list": {
+          "x": 0,
+          "y": 237.96875,
+          "width": 320,
+          "height": 407.03125,
+          "right": 320,
+          "bottom": 645,
+          "scrollHeight": 4908,
+          "scrollTop": 0,
+          "clientWidth": 320,
+          "scrollWidth": 320
+        },
+        "firstCard": {
+          "x": 16,
+          "y": 249.96875,
+          "width": 288,
+          "height": 344.15625,
+          "right": 304,
+          "bottom": 594.125,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 286,
+          "scrollWidth": 286
+        },
+        "foot": {
+          "x": 0,
+          "y": 645,
+          "width": 320,
+          "height": 199,
+          "right": 320,
+          "bottom": 844,
+          "scrollHeight": 198,
+          "scrollTop": 0,
+          "clientWidth": 320,
+          "scrollWidth": 320
+        },
+        "filterBox": {
+          "x": 0,
+          "y": 172.96875,
+          "width": 320,
+          "height": 65,
+          "right": 320,
+          "bottom": 237.96875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 320,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 25,
+          "y": 399.453125,
+          "width": 270,
+          "height": 1038.25,
+          "right": 295,
+          "bottom": 1437.703125,
+          "scrollHeight": 1038,
+          "scrollTop": 0,
+          "clientWidth": 270,
+          "scrollWidth": 270
+        },
+        "sentence": {
+          "x": 42,
+          "right": 241.234375,
+          "width": 199.234375
+        },
+        "readerOverlapsSheet": true,
+        "sentenceOverlapsSheet": true,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 3"
+        ]
+      }
+    },
+    {
+      "name": "mobile-tab-after-last-control",
+      "focused": {
+        "tag": "BUTTON",
+        "id": "assistant-fab",
+        "cls": "assistant-fab",
+        "inside": false
+      }
+    },
+    {
+      "name": "mobile-tab-second",
+      "focused": {
+        "tag": "BUTTON",
+        "id": "",
+        "cls": "message-toast__close",
+        "inside": false
+      }
+    },
+    {
+      "name": "mobile-390-HK",
+      "state": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 條記錄 · 1 份 AI 資料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "詞與短語 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "標記 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有筆記 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 資料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 0,
+          "y": 101.28125,
+          "width": 390,
+          "height": 742.71875,
+          "right": 390,
+          "bottom": 844,
+          "scrollHeight": 742,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "list": {
+          "x": 0,
+          "y": 237.96875,
+          "width": 390,
+          "height": 453.03125,
+          "right": 390,
+          "bottom": 691,
+          "scrollHeight": 4451,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "firstCard": {
+          "x": 16,
+          "y": 249.96875,
+          "width": 358,
+          "height": 344.15625,
+          "right": 374,
+          "bottom": 594.125,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 356,
+          "scrollWidth": 356
+        },
+        "foot": {
+          "x": 0,
+          "y": 691,
+          "width": 390,
+          "height": 153,
+          "right": 390,
+          "bottom": 844,
+          "scrollHeight": 152,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "filterBox": {
+          "x": 0,
+          "y": 172.96875,
+          "width": 390,
+          "height": 65,
+          "right": 390,
+          "bottom": 237.96875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 25,
+          "y": 343.953125,
+          "width": 340,
+          "height": 882.3125,
+          "right": 365,
+          "bottom": 1226.265625,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 340,
+          "scrollWidth": 340
+        },
+        "sentence": {
+          "x": 42,
+          "right": 295.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": true,
+        "sentenceOverlapsSheet": true,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "詞與短語 10",
+          "句子 1",
+          "標記 3"
+        ]
+      },
+      "text": "本文學習記錄\n11 條記錄 · 1 份 AI 資料\n×\n全部 12\n詞與短語 10\n句子 1\n標記 3\n有筆記 2\nAI 資料 1\n只看已收藏\n短語\n★ 合成生词本\n已查閱\n#1 look forward to\nWe look forward to meeting you.\n期待；盼望\n取消標記\n已標記\n個人筆記\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#2 look\nWe look forward to meeting you.\n看；期待\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n句子\n已查閱\n#3 The attached document summarizes the project timeline and the next steps.\nThe attached document summarizes the project timeline and the next steps.\n附件文件总结了项目时间表和下一步。\n取消標記\n已標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#4 review\nPlease review the attached document before Friday.\n查看；复习\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#5 document\nPlease review the attached document before Friday.\n文件\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#6 budget\nThe team will discuss the budget and confirm the final schedule tomorrow.\n预算\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#7 schedule\nThe team will discuss the budget and confirm the final schedule tomorrow.\n日程\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#8 patience\nWe appreciate your patience and look forward to your feedback.\n耐心\n取消標記\n已標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#9 feedback\nWe appreciate your patience and look forward to your feedback.\n反馈\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#10 coordinator\nPlease contact the coordinator if you need additional information.\n协调人\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n短語\n已查閱\n#11 additional information\nPlease contact the coordinator if you need additional information.\n补充资料\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n有筆記\n28/10/2026 上午1:48:49\n全篇阅读心得（合成）\n顯示內容\n刪除\nAI 資料\n28/10/2026 上午1:48:49\nAI 短语补充\n顯示內容\n刪除\n附上原文全文\n附上完整聊天\n全篇筆記\n匯出閱讀筆記\n完整 JSON 備份\n分析本文難點\n整理閱讀筆記"
+    },
+    {
+      "name": "desktop-1440-HK",
+      "state": {
+        "viewport": {
+          "width": 1440,
+          "height": 960
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 條記錄 · 1 份 AI 資料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "詞與短語 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "標記 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有筆記 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 資料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 1000,
+          "y": 0,
+          "width": 440,
+          "height": 960,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 960,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "list": {
+          "x": 1001,
+          "y": 139.6875,
+          "width": 439,
+          "height": 671.3125,
+          "right": 1440,
+          "bottom": 811,
+          "scrollHeight": 4381,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "firstCard": {
+          "x": 1017,
+          "y": 151.6875,
+          "width": 407,
+          "height": 344.15625,
+          "right": 1424,
+          "bottom": 495.84375,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 405,
+          "scrollWidth": 405
+        },
+        "foot": {
+          "x": 1001,
+          "y": 811,
+          "width": 439,
+          "height": 149,
+          "right": 1440,
+          "bottom": 960,
+          "scrollHeight": 148,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 439
+        },
+        "filterBox": {
+          "x": 1001,
+          "y": 74.6875,
+          "width": 439,
+          "height": 65,
+          "right": 1440,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 439,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 627,
+          "y": -11.109375,
+          "width": 336,
+          "height": 882.3125,
+          "right": 963,
+          "bottom": 871.203125,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 336,
+          "scrollWidth": 336
+        },
+        "sentence": {
+          "x": 644,
+          "right": 897.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": false,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "詞與短語 10",
+          "句子 1",
+          "標記 3",
+          "有筆記 2"
+        ]
+      }
+    },
+    {
+      "name": "doc-delete-no-confirm",
+      "remaining": 0,
+      "modalVisible": false,
+      "panelText": "本文學習記錄\n11 條記錄 · 1 份 AI 資料\n×\n全部 12\n詞與短語 10\n句子 1\n標記 3\n有筆記 2\nAI 資料 1\n只看已收藏\n短語\n★ 合成生词本\n已查閱\n#1 look forward to\nWe look forward to meeting you.\n期待；盼望\n取消標記\n已標記\n個人筆記\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#2 look\nWe look forward to meeting you.\n看；期待\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n句子\n已查閱\n#3 The attached document summarizes the project timeline and the next steps.\nThe attached document summarizes the project timeline and the next steps.\n附件文件总结了项目时间表和下一步。\n取消標記\n已標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#4 review\nPlease review the attached document before Friday.\n查看；复习\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#5 document\nPlease review the attached document before Friday.\n文件\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#6 budget\nThe team will discuss the budget and confirm the final schedule tomorrow.\n预算\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#7 schedule\nThe team will discuss the budget and confirm the final schedule tomorrow.\n日程\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#8 patience\nWe appreciate your patience and look forward to your feedback.\n耐心\n取消標記\n已標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#9 feedback\nWe appreciate your patience and look forward to your feedback.\n反馈\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n單詞\n已查閱\n#10 coordinator\nPlease contact the coordinator if you need additional information.\n协调人\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\n短語\n已查閱\n#11 additional information\nPlease contact the coordinator if you need additional information.\n补充资料\n標記\n未標記\n個人筆記\n加入詞書\n回原文\n問 AI\n刪除\nAI 資料\n28/10/2026 上午1:48:49\nAI 短语补充\n顯示內容\n刪除\n附上原文全文\n附上完整聊天\n全篇筆記\n匯出閱讀筆記\n完整 JSON 備份\n分析本文難點\n整理閱讀筆記"
+    },
+    {
+      "name": "delete-and-relookup-through-action",
+      "result": {
+        "deletedOk": true,
+        "recordedOk": true,
+        "sameId": true,
+        "deletedAt": "2026-10-27T17:48:52.786Z",
+        "visible": false
+      }
+    },
+    {
+      "name": "layout-1024-input-collapsed",
+      "state": {
+        "viewport": {
+          "width": 1024,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "10 條記錄 · 1 份 AI 資料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 11",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "詞與短語 9",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "標記 3",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有筆記 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 資料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 10,
+          "docs": 1,
+          "notes": 10
+        },
+        "sheet": {
+          "x": 644,
+          "y": 0,
+          "width": 380,
+          "height": 844,
+          "right": 1024,
+          "bottom": 844,
+          "scrollHeight": 844,
+          "scrollTop": 0,
+          "clientWidth": 379,
+          "scrollWidth": 379
+        },
+        "list": {
+          "x": 645,
+          "y": 139.6875,
+          "width": 379,
+          "height": 509.3125,
+          "right": 1024,
+          "bottom": 649,
+          "scrollHeight": 3916,
+          "scrollTop": 3226,
+          "clientWidth": 379,
+          "scrollWidth": 379
+        },
+        "firstCard": {
+          "x": 661,
+          "y": -3074.3125,
+          "width": 347,
+          "height": 344.15625,
+          "right": 1008,
+          "bottom": -2730.15625,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 345,
+          "scrollWidth": 345
+        },
+        "foot": {
+          "x": 645,
+          "y": 649,
+          "width": 379,
+          "height": 195,
+          "right": 1024,
+          "bottom": 844,
+          "scrollHeight": 194,
+          "scrollTop": 0,
+          "clientWidth": 379,
+          "scrollWidth": 379
+        },
+        "filterBox": {
+          "x": 645,
+          "y": 74.6875,
+          "width": 379,
+          "height": 65,
+          "right": 1024,
+          "bottom": 139.6875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 379,
+          "scrollWidth": 611
+        },
+        "reader": {
+          "x": 275,
+          "y": 353.890625,
+          "width": 336,
+          "height": 882.3125,
+          "right": 611,
+          "bottom": 1236.203125,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 336,
+          "scrollWidth": 336
+        },
+        "sentence": {
+          "x": 292,
+          "right": 545.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": false,
+        "sentenceOverlapsSheet": false,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "article-reading-records-btn",
+          "cls": "btn-tertiary reading-records-btn"
+        },
+        "docContent": "## 用法\n\n**look forward to** 后面接名词或动名词。\n\n- 例句：We look forward to hearing from you.\n- 注意：to 是介词。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 11",
+          "詞與短語 9",
+          "句子 1",
+          "標記 3"
+        ]
+      }
+    },
+    {
+      "name": "reading-load-failure",
+      "result": {
+        "ok": false,
+        "error": "idb_work_failed"
+      },
+      "listText": "本文還沒有學習記錄。查詞、收藏、標記或寫筆記後會出現在這裡。",
+      "status": ""
+    },
+    {
+      "name": "touch-mobile-390-CN",
+      "state": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 条记录 · 1 份 AI 资料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "词与短语 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "标记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有笔记 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 资料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 0,
+          "y": 101.28125,
+          "width": 390,
+          "height": 742.71875,
+          "right": 390,
+          "bottom": 844,
+          "scrollHeight": 742,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "list": {
+          "x": 0,
+          "y": 237.96875,
+          "width": 390,
+          "height": 453.03125,
+          "right": 390,
+          "bottom": 691,
+          "scrollHeight": 4451,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "firstCard": {
+          "x": 16,
+          "y": 249.96875,
+          "width": 358,
+          "height": 344.15625,
+          "right": 374,
+          "bottom": 594.125,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 356,
+          "scrollWidth": 356
+        },
+        "foot": {
+          "x": 0,
+          "y": 691,
+          "width": 390,
+          "height": 153,
+          "right": 390,
+          "bottom": 844,
+          "scrollHeight": 152,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "filterBox": {
+          "x": 0,
+          "y": 172.96875,
+          "width": 390,
+          "height": 65,
+          "right": 390,
+          "bottom": 237.96875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 25,
+          "y": 1096.953125,
+          "width": 340,
+          "height": 882.3125,
+          "right": 365,
+          "bottom": 1979.265625,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 340,
+          "scrollWidth": 340
+        },
+        "sentence": {
+          "x": 42,
+          "right": 295.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": true,
+        "sentenceOverlapsSheet": true,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "article-reading-records-btn",
+          "cls": "btn-tertiary reading-records-btn"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "词与短语 10",
+          "句子 1",
+          "标记 2"
+        ]
+      }
+    },
+    {
+      "name": "touch-mobile-390-HK",
+      "state": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "expanded": "true",
+        "modal": "false",
+        "header": "11 條記錄 · 1 份 AI 資料",
+        "filters": [
+          {
+            "key": "all",
+            "text": "全部 12",
+            "pressed": "true"
+          },
+          {
+            "key": "words",
+            "text": "詞與短語 10",
+            "pressed": "false"
+          },
+          {
+            "key": "sentences",
+            "text": "句子 1",
+            "pressed": "false"
+          },
+          {
+            "key": "marked",
+            "text": "標記 2",
+            "pressed": "false"
+          },
+          {
+            "key": "notes",
+            "text": "有筆記 2",
+            "pressed": "false"
+          },
+          {
+            "key": "ai",
+            "text": "AI 資料 1",
+            "pressed": "false"
+          }
+        ],
+        "counts": {
+          "items": 11,
+          "docs": 2,
+          "notes": 11
+        },
+        "sheet": {
+          "x": 0,
+          "y": 101.28125,
+          "width": 390,
+          "height": 742.71875,
+          "right": 390,
+          "bottom": 844,
+          "scrollHeight": 742,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "list": {
+          "x": 0,
+          "y": 237.96875,
+          "width": 390,
+          "height": 453.03125,
+          "right": 390,
+          "bottom": 691,
+          "scrollHeight": 4451,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "firstCard": {
+          "x": 16,
+          "y": 249.96875,
+          "width": 358,
+          "height": 344.15625,
+          "right": 374,
+          "bottom": 594.125,
+          "scrollHeight": 342,
+          "scrollTop": 0,
+          "clientWidth": 356,
+          "scrollWidth": 356
+        },
+        "foot": {
+          "x": 0,
+          "y": 691,
+          "width": 390,
+          "height": 153,
+          "right": 390,
+          "bottom": 844,
+          "scrollHeight": 152,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 390
+        },
+        "filterBox": {
+          "x": 0,
+          "y": 172.96875,
+          "width": 390,
+          "height": 65,
+          "right": 390,
+          "bottom": 237.96875,
+          "scrollHeight": 64,
+          "scrollTop": 0,
+          "clientWidth": 390,
+          "scrollWidth": 618
+        },
+        "reader": {
+          "x": 25,
+          "y": 1096.953125,
+          "width": 340,
+          "height": 882.3125,
+          "right": 365,
+          "bottom": 1979.265625,
+          "scrollHeight": 882,
+          "scrollTop": 0,
+          "clientWidth": 340,
+          "scrollWidth": 340
+        },
+        "sentence": {
+          "x": 42,
+          "right": 295.09375,
+          "width": 253.09375
+        },
+        "readerOverlapsSheet": true,
+        "sentenceOverlapsSheet": true,
+        "horizontalOverflow": false,
+        "focused": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close"
+        },
+        "docContent": "这封邮件需要确认会面安排、预算和附件。",
+        "bodyOverflow": "auto",
+        "firstSavedBadge": "★ 合成生词本",
+        "visibleFilters": [
+          "全部 12",
+          "詞與短語 10",
+          "句子 1",
+          "標記 2"
+        ]
+      }
+    }
+  ],
+  "seed": {
+    "articleId": "art_sidebar_audit",
+    "ids": [
+      "li_cv1_bea01b30_62",
+      "li_cv1_1b6db579_48",
+      "li_cv1_9c317b05_124",
+      "li_cv1_28d79cf3_54",
+      "li_cv1_d8493c64_56",
+      "li_cv1_03f249ac_54",
+      "li_cv1_f7de4f84_56",
+      "li_cv1_6cd9bf46_56",
+      "li_cv1_eae1af80_56",
+      "li_cv1_e1897f6c_59",
+      "li_cv1_befce44a_72"
+    ],
+    "aiId": "doc_mvqzbzzqjsdhjeod",
+    "noteId": "doc_mvqzbzzr8rmjjqs0",
+    "version": "cv1_f5ce9e03_365"
+  }
+}

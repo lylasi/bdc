@@ -22,6 +22,7 @@ const PROMPT_VERSION = 'article.readingSummary@1.1.0';
 /** 在非同步動作開始時固定文章與閱讀 scope；完成後不得寫到新帳戶／新文章。 */
 export function captureActionContext() {
     return {
+        startedAt: new Date().toISOString(),
         reading: readingStore.captureReadingContext(),
         articleScope: articleStore.getArticleScope(),
         articleGeneration: typeof articleStore.getScopeGeneration === 'function' ? articleStore.getScopeGeneration() : 0
@@ -165,6 +166,9 @@ export async function recordExplanation({
             source: 'ai_or_cache'
         }
     };
+    // 復原資格在持久交易內按最新墓碑判斷，避免另一分頁較新的刪除被舊回應撤銷。
+    const restoreDeleted = markViewed === true;
+    const restoreAfter = actionCtx?.startedAt || '';
     const result = await readingStore.upsertLearningItem({
         articleId,
         contentVersion: version,
@@ -172,11 +176,11 @@ export async function recordExplanation({
         anchor: resolvedAnchor,
         sentence,
         explanation
-    }, { markViewed });
+    }, { markViewed, restoreDeleted, restoreAfter });
     return result;
 }
 
-/** 建立或更新條目但不改變標記（收藏、寫筆記、查閱都可以先於標記發生）。 */
+/** 明確收藏／寫筆記／標記時確保條目存在；恢復不會自動改變標記。 */
 export async function ensureItem({
     articleId,
     kind,
@@ -206,7 +210,11 @@ export async function ensureItem({
     // 只有明確指定的欄位才更新；收藏／筆記不得把既有標記或筆記重設。
     if (note !== undefined) payload.note = note;
     if (marked !== undefined) payload.marked = marked === true;
-    return readingStore.upsertLearningItem(payload, { markViewed: false });
+    return readingStore.upsertLearningItem(payload, {
+        markViewed: false,
+        restoreDeleted: true,
+        restoreAfter: actionCtx?.startedAt || ''
+    });
 }
 
 /** 單一標記切換；查閱、寫筆記、AI 回應都不會呼叫這裡。 */
@@ -234,6 +242,7 @@ export async function saveNote(itemId, note, actionCtx = null) {
         const override = await noteSaveInterceptorForTests({ itemId, note: String(note || '') });
         if (override) return override;
     }
+    if (!actionContextActive(actionCtx)) return { ok: false, error: 'stale_scope' };
     return readingStore.patchLearningItem(itemId, { note: String(note || '') });
 }
 

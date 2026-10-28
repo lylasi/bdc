@@ -1,0 +1,57 @@
+[
+  {
+    "name": "刪除詞句會先跳確認並說明可撤銷",
+    "pass": true,
+    "detail": "{\"title\":\"删除学习记录\",\"message\":\"这会移除本条记录及其个人笔记，可在面板中撤销。已加入词书的词条会保留。\",\"confirm\":\"删除\",\"cancel\":\"取消\",\"danger\":true}"
+  },
+  {
+    "name": "取消刪除後記錄仍在",
+    "pass": true,
+    "detail": "{\"afterCancel\":{\"li_cv1_1b6db579_48\":{\"kind\":\"word\",\"deletedAt\":\"\",\"note\":\"\"}},\"stillThere\":1}"
+  },
+  {
+    "name": "確認刪除後卡片消失、資料標記 deletedAt",
+    "pass": true,
+    "detail": "{\"deleted\":{\"li_cv1_1b6db579_48\":{\"kind\":\"word\",\"deletedAt\":\"2026-10-27T18:24:36.764Z\",\"note\":\"\"}},\"undoBar\":{\"hidden\":false,\"text\":\"已删除：look撤销\",\"buttonRect\":{\"x\":1362,\"y\":282,\"w\":62,\"h\":44},\"focused\":true,\"cardGone\":true}}"
+  },
+  {
+    "name": "刪除後出現可點的復原列並取得焦點",
+    "pass": true,
+    "detail": "{\"hidden\":false,\"text\":\"已删除：look撤销\",\"buttonRect\":{\"x\":1362,\"y\":282,\"w\":62,\"h\":44},\"focused\":true,\"cardGone\":true}"
+  },
+  {
+    "name": "刪除後計數與結果摘要同步（12 / 12）",
+    "pass": true,
+    "detail": "{\"results\":\"显示 12 / 12 项\",\"count\":\"12\",\"filterAll\":\"12\"}"
+  },
+  {
+    "name": "復原後資料與卡片回來、復原列消失",
+    "pass": true,
+    "detail": "{\"restored\":{\"li_cv1_1b6db579_48\":{\"kind\":\"word\",\"deletedAt\":\"\",\"note\":\"\"}},\"undoAfter\":{\"hidden\":true,\"results\":\"显示 13 / 13 项\",\"card\":true}}"
+  },
+  {
+    "name": "全篇筆記展開後顯示內容與刪除入口",
+    "pass": true,
+    "detail": "{\"content\":true,\"html\":\"<p>这封邮件需要确认会面安排、预算和附件。</p>\",\"deleteButton\":true,\"sources\":\"\"}"
+  },
+  {
+    "name": "刪除文件前顯示標題與可撤銷說明",
+    "pass": true,
+    "detail": "{\"title\":\"删除学习记录\",\"message\":\"删除「全篇阅读心得（合成）」及其内容？删除后可在面板中撤销。\"}"
+  },
+  {
+    "name": "文件刪除後出現復原列",
+    "pass": true,
+    "detail": "{\"docDeleted\":{\"doc_mvr0lz47zcyrddkz\":{\"doc\":true,\"deletedAt\":\"2026-10-27T18:24:38.550Z\"}},\"docUndo\":{\"text\":\"已删除：全篇阅读心得（合成）撤销\",\"hidden\":false}}"
+  },
+  {
+    "name": "文件復原成功",
+    "pass": true,
+    "detail": "{\"doc_mvr0lz47zcyrddkz\":{\"doc\":true,\"deletedAt\":\"\"}}"
+  },
+  {
+    "name": "390px 刪除確認對話框可點擊（在面板之上）",
+    "pass": true,
+    "detail": "{\"clickable\":true,\"confirmRect\":{\"y\":789,\"bottom\":832},\"viewportH\":844,\"zIndex\":\"5200\",\"panelZ\":\"2450\"}"
+  }
+]

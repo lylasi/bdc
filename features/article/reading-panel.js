@@ -12,19 +12,30 @@ import * as readingSync from '../../modules/reading-sync.js';
 import * as readingExport from '../../modules/reading-export.js';
 import { openPhrasePicker, flushPhrasePickerNote } from './phrase-picker.js';
 import { t, formatDateTime } from '../../modules/i18n.js';
+import { markdownToHtml } from '../../modules/markdown.js';
+import { READING_FILTERS as FILTERS, readingMeaning as meaningOf, selectReadingRecords } from './reading-view.js';
 
-const FILTERS = ['all', 'words', 'sentences', 'marked', 'notes', 'ai'];
+const MODAL_QUERY = '(max-width: 1199px)';
 const MARKS_KEY = 'readingMarksVisible';
 
 let panel = null;
 let currentArticleId = '';
 let filter = 'all';
 let savedOnly = false;
+let search = '';
+let sort = 'source';
+let loadState = 'ready';
+let loadToken = 0;
+let undoState = null;
+let returnState = null;
+let inertObserver = null;
+const inertElements = new Map();
+const expandedItems = new Set();
 let lastFocus = null;
 let pendingFocusItemId = '';
 const noteDrafts = new Map();
 // 兩個匯出入口共用的「上次選擇」：只存在記憶體，不持久化。
-// 面板 checkbox 只反映這個變數；最終匯出範圍一律以對話框為準。
+// 最終範圍只在匯出對話框選擇，避免工具區重複佔位。
 let exportSelection = { fullText: false, chat: false };
 let legacyImportPromise = null;
 // locale 切換是非同步的（ensurePanel → openPanel → 還原）：用遞增 token 擋掉舊的還原。
@@ -48,6 +59,47 @@ function setMarksVisible(value) {
     applyMarks(currentArticleId);
 }
 
+function isModalPanel() {
+    return window.matchMedia(MODAL_QUERY).matches;
+}
+
+function childDialog() {
+    return document.querySelector('#app-modal:not(.hidden), .options-modal-overlay');
+}
+
+function releaseInert() {
+    inertObserver?.disconnect();
+    inertObserver = null;
+    for (const [element, inert] of inertElements) element.inert = inert;
+    inertElements.clear();
+}
+
+function syncPanelLayout() {
+    const modal = isPanelOpen() && isModalPanel();
+    panel?.setAttribute('aria-modal', String(modal));
+    document.body.classList.toggle('reading-panel-modal', modal);
+    if (!modal) {
+        releaseInert();
+        return;
+    }
+    const apply = () => {
+        for (const element of document.body.children) {
+            if (element === panel || element.id === 'app-modal' || element.classList.contains('options-modal-overlay')
+                || element.matches('script, style, link')) continue;
+            if (!inertElements.has(element)) inertElements.set(element, element.inert);
+            element.inert = true;
+        }
+    };
+    apply();
+    if (!inertObserver) {
+        inertObserver = new MutationObserver(apply);
+        inertObserver.observe(document.body, { childList: true });
+    }
+    const viewport = window.visualViewport;
+    panel.style.setProperty('--reading-viewport-height', `${viewport?.height || window.innerHeight}px`);
+    panel.style.setProperty('--reading-viewport-top', `${viewport?.offsetTop || 0}px`);
+}
+
 function ensurePanel() {
     if (panel && panel.isConnected) return panel;
     panel = document.createElement('div');
@@ -56,81 +108,142 @@ function ensurePanel() {
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-modal', 'false');
     panel.setAttribute('aria-labelledby', 'reading-panel-title');
+    const labels = filterLabels();
     panel.innerHTML = `
       <div class="reading-panel-backdrop" data-close="1"></div>
       <aside class="reading-panel-sheet" role="document">
         <div class="reading-panel-head">
-          <div>
-            <h3 id="reading-panel-title">${t('article.readingPanelTitle')}</h3>
-            <div class="reading-panel-sub" id="reading-panel-sub"></div>
-          </div>
+          <div><h3 id="reading-panel-title">${t('article.readingPanelTitle')}</h3><div class="reading-panel-sub" id="reading-panel-sub"></div></div>
           <button type="button" class="reading-panel-close" aria-label="${t('article.close')}">×</button>
         </div>
         <div class="reading-panel-status" id="reading-panel-status" role="status" aria-live="polite"></div>
-        <div class="reading-panel-filters" id="reading-panel-filters" role="toolbar" aria-label="${t('article.readingFiltersAria')}"></div>
-        <div class="reading-panel-list" id="reading-panel-list"></div>
-        <div class="reading-panel-foot">
-          <div class="reading-export-options">
-            <label><input type="checkbox" id="reading-export-fulltext" /> ${t('article.readingIncludeFullText')}</label>
-            <label><input type="checkbox" id="reading-export-chat" /> ${t('article.readingIncludeChat')}</label>
+        <div class="reading-panel-controls">
+          <input type="search" id="reading-search" class="reading-search" aria-label="${t('article.readingSearch')}" placeholder="${t('article.readingSearch')}" />
+          <div class="reading-panel-filters" id="reading-panel-filters" role="group" aria-label="${t('article.readingFiltersAria')}">
+            ${FILTERS.map(key => `<button type="button" class="reading-filter" data-filter="${key}" aria-pressed="false">${labels[key]} <span class="reading-filter-count">0</span></button>`).join('')}
           </div>
+          <div class="reading-list-options">
+            <label class="reading-saved-filter"><input type="checkbox" id="reading-saved-only" /> ${t('article.readingFilterSaved')}</label>
+            <select id="reading-sort" aria-label="${t('article.readingSort')}">
+              <option value="source">${t('article.readingSortSource')}</option><option value="viewed">${t('article.readingSortViewed')}</option><option value="updated">${t('article.readingSortUpdated')}</option>
+            </select>
+          </div>
+          <div id="reading-results" class="reading-results" role="status" aria-live="polite"></div>
+        </div>
+        <div id="reading-undo" class="reading-undo hidden" role="status"></div>
+        <div class="reading-panel-list" id="reading-panel-list" role="list" aria-label="${t('article.readingPanelTitle')}"></div>
+        <div class="reading-panel-foot">
           <div class="reading-panel-actions">
             <button type="button" class="btn secondary" id="reading-article-note">${t('article.readingArticleNote')}</button>
             <button type="button" class="btn secondary" id="reading-export-md">${t('article.readingExport')}</button>
-            <button type="button" class="btn tertiary" id="reading-export-json">${t('article.readingExportJson')}</button>
-            <button type="button" class="btn tertiary" id="reading-ai-difficulties">${t('article.aiAnalyzeDifficulties')}</button>
-            <button type="button" class="btn tertiary" id="reading-ai-notes">${t('article.aiOrganizeNotes')}</button>
+            <details class="reading-tools"><summary class="btn tertiary">${t('article.readingMoreTools')}</summary><div class="reading-tools-menu">
+              <button type="button" class="btn tertiary" id="reading-export-json">${t('article.readingExportAccountBackup')}</button>
+              <button type="button" class="btn tertiary" id="reading-ai-difficulties">${t('article.aiAnalyzeDifficulties')}</button>
+              <button type="button" class="btn tertiary" id="reading-ai-notes">${t('article.aiOrganizeNotes')}</button>
+            </div></details>
           </div>
         </div>
       </aside>`;
     document.body.appendChild(panel);
+    if (!document.getElementById('reading-return')) {
+        const button = document.createElement('button');
+        button.id = 'reading-return';
+        button.className = 'btn secondary reading-return hidden';
+        button.addEventListener('click', async () => {
+            const snapshot = returnState;
+            if (!snapshot || snapshot.articleId !== currentArticleId) return;
+            await openPanel(currentArticleId, { restore: true });
+            restorePanelView(snapshot);
+            returnState = null;
+            button.classList.add('hidden');
+        });
+        document.body.appendChild(button);
+    }
+    document.getElementById('reading-return').textContent = t('article.readingReturn');
     panel.querySelector('.reading-panel-close').addEventListener('click', () => closePanel());
     panel.querySelector('[data-close="1"]').addEventListener('click', () => closePanel());
     panel.querySelector('#reading-export-md').addEventListener('click', () => {
-        openExportDialog({ source: 'panel' }).catch(() => {
-            ui.displayMessage(t('article.readingExportFailed'), 'error');
-        });
+        openExportDialog({ source: 'panel' }).catch(() => ui.displayMessage(t('article.readingExportFailed'), 'error'));
     });
-    // 面板 checkbox 只當「上次選擇」的記憶，不直接決定匯出內容；
-    // 兩個入口都用同一個 exportSelection，避免不同預設。
-    const fullTextToggle = panel.querySelector('#reading-export-fulltext');
-    const chatToggle = panel.querySelector('#reading-export-chat');
-    [fullTextToggle, chatToggle].forEach((box) => {
-        if (!box) return;
-        box.addEventListener('change', () => {
-            exportSelection = {
-                fullText: !!fullTextToggle?.checked,
-                chat: !!chatToggle?.checked
-            };
-        });
-    });
-    // 面板重建（例如切換介面語言）後，checkbox 要反映同一個「上次選擇」。
-    syncExportSelectionUI();
     panel.querySelector('#reading-article-note').addEventListener('click', () => openArticleNoteDialog());
-    panel.querySelector('#reading-export-json').addEventListener('click', async () => {
-        // JSON 備份前先保存所有筆記草稿（含目前被篩選／隱藏的條目），
-        // 任何一筆失敗都不匯出，避免備份缺最後修改。
-        const panelFlushed = await flushNoteDrafts();
-        const pickerFlushed = await flushPhrasePickerNote();
-        if (!panelFlushed || !pickerFlushed.ok) {
-            ui.displayMessage(t('article.saveFailedRetry'), 'error');
-            return;
-        }
-        const backup = await readingExport.exportFullBackupFile();
-        if (backup && backup.ok !== false) ui.displayMessage(t('article.readingExportJsonDone'), 'success');
-        else ui.displayMessage(t('article.readingExportFailed'), 'error');
+    panel.querySelector('#reading-export-json').addEventListener('click', () => {
+        panel.querySelector('.reading-tools').open = false;
+        openExportDialog({ source: 'panel', fullBackup: true });
     });
-    panel.querySelector('#reading-ai-difficulties').addEventListener('click', () => openAiScopeDialog('difficulties'));
-    panel.querySelector('#reading-ai-notes').addEventListener('click', () => openAiScopeDialog('notes'));
+    for (const [id, mode] of [['reading-ai-difficulties', 'difficulties'], ['reading-ai-notes', 'notes']]) {
+        panel.querySelector(`#${id}`).addEventListener('click', () => {
+            panel.querySelector('.reading-tools').open = false;
+            openAiScopeDialog(mode);
+        });
+    }
+    panel.querySelectorAll('[data-filter]').forEach(button => button.addEventListener('click', () => {
+        filter = button.dataset.filter;
+        renderPanel();
+        panel.querySelector('#reading-panel-list').scrollTop = 0;
+    }));
+    panel.querySelector('#reading-saved-only').addEventListener('change', event => {
+        savedOnly = event.target.checked;
+        renderPanel();
+    });
+    panel.querySelector('#reading-search').addEventListener('input', event => {
+        search = event.target.value;
+        renderPanel();
+        panel.querySelector('#reading-panel-list').scrollTop = 0;
+    });
+    panel.querySelector('#reading-sort').addEventListener('change', event => {
+        sort = event.target.value;
+        renderPanel();
+    });
     if (!escapeHandlerBound) {
         escapeHandlerBound = true;
-        document.addEventListener('keydown', (event) => {
-            if (event.key !== 'Escape' || !panel || panel.classList.contains('hidden')) return;
-            if (document.querySelector('#app-modal:not(.hidden)')) return;
-            closePanel();
+        document.addEventListener('keydown', event => {
+            if (!isPanelOpen() || childDialog()) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                const tools = panel.querySelector('.reading-tools');
+                if (tools.open) {
+                    tools.open = false;
+                    tools.querySelector('summary').focus({ preventScroll: true });
+                    return;
+                }
+                closePanel();
+            } else if (event.key === 'Tab' && isModalPanel()) {
+                const targets = Array.from(panel.querySelectorAll('button, input, textarea, select, summary, a[href]'))
+                    .filter(element => !element.disabled && element.tabIndex >= 0 && element.getClientRects().length
+                        && !element.closest('details:not([open]) > :not(summary)')
+                        && element.checkVisibility?.({ checkVisibilityCSS: true, contentVisibilityAuto: true }) !== false);
+                const first = targets[0];
+                const last = targets.at(-1);
+                if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) {
+                    event.preventDefault(); last?.focus();
+                } else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) {
+                    event.preventDefault(); first?.focus();
+                }
+            }
+        });
+        window.addEventListener('resize', syncPanelLayout);
+        window.visualViewport?.addEventListener('resize', syncPanelLayout);
+        window.visualViewport?.addEventListener('scroll', syncPanelLayout);
+        document.addEventListener('bdc:modal-closed', () => {
+            if (isPanelOpen() && !panel.contains(document.activeElement)) panel.querySelector('.reading-panel-close')?.focus({ preventScroll: true });
+        });
+        document.addEventListener('click', event => {
+            if (!isPanelOpen()) return;
+            const tools = panel.querySelector('.reading-tools');
+            if (tools.open && !tools.contains(event.target)) tools.open = false;
         });
     }
     return panel;
+}
+
+async function readPanelArticle(articleId) {
+    const token = ++loadToken;
+    loadState = 'loading';
+    renderPanel();
+    const result = await readingStore.ensureArticleReadingLoaded(articleId).catch(() => ({ ok: false }));
+    if (token !== loadToken || articleId !== currentArticleId) return;
+    loadState = result?.ok ? 'ready' : 'error';
+    renderPanel();
 }
 
 async function openPanel(articleId = currentArticleId, options = {}) {
@@ -140,33 +253,29 @@ async function openPanel(articleId = currentArticleId, options = {}) {
     }
     currentArticleId = articleId;
     const restoring = options.restore === true;
-    lastFocus = restoring ? null : document.activeElement;
+    if (!restoring) lastFocus = document.activeElement;
+    else if (!lastFocus?.isConnected) lastFocus = dom.articleReadingRecordsBtn;
     pendingFocusItemId = options.focusItemId || '';
     if (pendingFocusItemId) {
-        filter = 'all';
-        savedOnly = false;
+        filter = 'all'; savedOnly = false; search = '';
+        expandedItems.add(pendingFocusItemId);
     }
     const element = ensurePanel();
     element.classList.remove('hidden');
     document.body.classList.add('reading-panel-open');
-    if (dom.articleReadingRecordsBtn) dom.articleReadingRecordsBtn.setAttribute('aria-expanded', 'true');
-    await readingStore.ensureArticleReadingLoaded(articleId).catch(() => null);
-    if (currentArticleId !== articleId) return;
-    renderPanel();
+    document.getElementById('reading-return')?.classList.add('hidden');
+    syncPanelLayout();
+    dom.articleReadingRecordsBtn?.setAttribute('aria-expanded', 'true');
+    element.querySelector('.reading-panel-close')?.focus({ preventScroll: true });
+    await readPanelArticle(articleId);
+    if (currentArticleId !== articleId || !isPanelOpen()) return;
     applyMarks(articleId);
-    const focusTarget = pendingFocusItemId
-        ? element.querySelector(`[data-note-id="${CSS.escape(pendingFocusItemId)}"]`)
-        : null;
+    const target = pendingFocusItemId ? element.querySelector(`[data-note-id="${CSS.escape(pendingFocusItemId)}"]`) : null;
     pendingFocusItemId = '';
-    setTimeout(() => {
-        if (focusTarget && focusTarget.isConnected) {
-            focusTarget.closest('.reading-item')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-            focusTarget.focus({ preventScroll: true });
-        } else if (!restoring) {
-            // 還原中：由呼叫端依原先的焦點位置決定，避免焦點先被拉到關閉鈕。
-            element.querySelector('.reading-panel-close')?.focus({ preventScroll: true });
-        }
-    }, 30);
+    if (target) {
+        target.closest('.reading-item')?.scrollIntoView({ block: 'center' });
+        target.focus({ preventScroll: true });
+    }
 }
 
 async function closePanel(options = {}) {
@@ -175,17 +284,16 @@ async function closePanel(options = {}) {
         const flushed = await flushNoteDrafts();
         const pickerFlushed = await flushPhrasePickerNote();
         if (!flushed || !pickerFlushed.ok) {
-            // 保存失敗不得靜默關閉：保留草稿與面板，讓使用者重試。
             ui.displayMessage(t('article.saveFailedRetry'), 'error');
             return { ok: false, error: 'note_save_failed' };
         }
     }
+    ++loadToken;
     panel.classList.add('hidden');
     document.body.classList.remove('reading-panel-open');
-    if (dom.articleReadingRecordsBtn) dom.articleReadingRecordsBtn.setAttribute('aria-expanded', 'false');
-    if (lastFocus && typeof lastFocus.focus === 'function') {
-        try { lastFocus.focus({ preventScroll: true }); } catch (_) { lastFocus.focus(); }
-    }
+    syncPanelLayout();
+    dom.articleReadingRecordsBtn?.setAttribute('aria-expanded', 'false');
+    if (lastFocus?.isConnected && typeof lastFocus.focus === 'function') lastFocus.focus({ preventScroll: true });
     lastFocus = null;
     return { ok: true };
 }
@@ -227,7 +335,11 @@ function capturePanelState() {
         focusKind,
         noteSelection,
         filter,
-        savedOnly
+        savedOnly,
+        search,
+        sort,
+        activeId: active?.id || '',
+        activeFilter: active?.getAttribute?.('data-filter') || ''
     };
 }
 
@@ -239,7 +351,10 @@ function restorePanelView(snapshot) {
         try { list.scrollTop = Math.max(0, Number(snapshot.scrollTop) || 0); } catch (_) { /* 退回頂部 */ }
     }
     if (!snapshot.focusedItemId) {
-        panel.querySelector('.reading-panel-close')?.focus({ preventScroll: true });
+        const activeTarget = snapshot.activeFilter
+            ? panel.querySelector(`[data-filter="${CSS.escape(snapshot.activeFilter)}"]`)
+            : (snapshot.activeId ? panel.querySelector(`#${CSS.escape(snapshot.activeId)}`) : null);
+        (activeTarget || panel.querySelector('.reading-panel-close'))?.focus({ preventScroll: true });
         return;
     }
     const noteArea = panel.querySelector(`[data-note-id="${CSS.escape(snapshot.focusedItemId)}"]`);
@@ -285,65 +400,35 @@ function markedLabel(value) {
     return value === true ? t('article.readingMarkedYes') : t('article.readingMarkedNo');
 }
 
-function meaningOf(item) {
-    const result = item?.explanation?.result;
-    if (!result) return '';
-    return String(
-        result.analysis?.meaning
-        || result.meaning
-        || result.translation
-        || (typeof result === 'string' ? result : '')
-    ).trim();
-}
-
-function itemMatchesFilter(item) {
-    if (filter === 'words' && !['word', 'phrase'].includes(item.kind)) return false;
-    if (filter === 'sentences' && item.kind !== 'sentence') return false;
-    if (filter === 'marked' && item.marked !== true) return false;
-    if (filter === 'notes' && !String(item.note || '').trim()) return false;
-    if (filter === 'ai') return false;
-    if (savedOnly && !readingStore.isItemSaved(item.id)) return false;
-    return true;
-}
-
-function filterCount(key) {
-    const items = readingStore.listLearningItems(currentArticleId).filter((item) => !item.deletedAt);
-    if (key === 'ai') return readingStore.listArticleDocuments(currentArticleId).filter((doc) => doc.kind === 'ai').length;
-    if (key === 'all') return items.length + readingStore.listArticleDocuments(currentArticleId).filter((doc) => doc.kind === 'ai').length;
-    return items.filter((item) => {
-        if (key === 'words') return ['word', 'phrase'].includes(item.kind);
-        if (key === 'sentences') return item.kind === 'sentence';
-        if (key === 'marked') return item.marked === true;
-        if (key === 'notes') return String(item.note || '').trim();
-        return true;
-    }).length;
-}
-
-function renderFilters() {
-    const box = panel.querySelector('#reading-panel-filters');
-    const labels = {
-        all: t('article.readingFilterAll'),
-        words: t('article.readingFilterWords'),
-        sentences: t('article.readingFilterSentences'),
-        marked: t('article.readingFilterMarked'),
-        notes: t('article.readingFilterNotes'),
-        ai: t('article.readingFilterAi')
+function filterLabels() {
+    return {
+        all: t('article.readingFilterAll'), words: t('article.readingFilterWords'),
+        sentences: t('article.readingFilterSentences'), marked: t('article.readingFilterMarked'),
+        notes: t('article.readingFilterNotes'), ai: t('article.readingFilterAi')
     };
-    box.innerHTML = FILTERS.map((key) => `
-      <button type="button" class="reading-filter ${filter === key ? 'is-active' : ''}" data-filter="${key}" aria-pressed="${filter === key}">
-        ${labels[key]} <span class="reading-filter-count">${filterCount(key)}</span>
-      </button>`).join('') + `
-      <label class="reading-saved-filter"><input type="checkbox" id="reading-saved-only" ${savedOnly ? 'checked' : ''} /> ${t('article.readingFilterSaved')}</label>`;
-    box.querySelectorAll('[data-filter]').forEach((button) => {
-        button.addEventListener('click', () => {
-            filter = button.getAttribute('data-filter');
-            renderPanel();
-        });
+}
+
+function panelRecords() {
+    return selectReadingRecords({
+        items: readingStore.listLearningItems(currentArticleId),
+        documents: readingStore.listArticleDocuments(currentArticleId, { withContent: true }),
+        filter, savedOnly, query: search, sort, isSaved: readingStore.isItemSaved
     });
-    box.querySelector('#reading-saved-only')?.addEventListener('change', (event) => {
-        savedOnly = !!event.target.checked;
-        renderPanel();
+}
+
+function renderFilters(view) {
+    panel.querySelectorAll('[data-filter]').forEach(button => {
+        const active = filter === button.dataset.filter;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', String(active));
+        button.querySelector('.reading-filter-count').textContent = loadState === 'ready' ? String(view.counts[button.dataset.filter]) : '—';
     });
+    panel.querySelector('#reading-saved-only').checked = savedOnly;
+    const searchInput = panel.querySelector('#reading-search');
+    if (searchInput.value !== search) searchInput.value = search;
+    panel.querySelector('#reading-sort').value = sort;
+    panel.querySelector('#reading-results').textContent = loadState === 'ready'
+        ? t('article.readingResults', { count: view.records.length, total: view.total }) : '';
 }
 
 function conflictPreview(entity) {
@@ -405,92 +490,114 @@ function wireConflictButtons() {
     });
 }
 
-function itemCardHtml(item, index) {
+function itemCardHtml(item) {
     const saved = readingStore.isItemSaved(item.id);
     const links = readingStore.listVocabularyLinks({ itemId: item.id });
-    const bookNames = Array.from(new Set(links.map((link) => readingStore.getVocabularyBook(link.bookId)?.name).filter(Boolean)));
+    const books = [...new Set(links.map(link => readingStore.getVocabularyBook(link.bookId)?.name).filter(Boolean))];
     const draft = noteDrafts.get(item.id);
-    const noteValue = draft ? draft.value : (item.note || '');
-    const noteStatus = draft?.status || '';
-    const reference = `#${index + 1}`;
+    const note = draft ? draft.value : (item.note || '');
+    const quote = item.anchor?.quote || '';
+    const expanded = expandedItems.has(item.id);
+    const uncertain = item.positionUncertain || Number(item.anchor?.start) < 0;
+    const time = sort === 'updated' ? item.updatedAt : item.lastViewedAt;
     return `
-      <article class="reading-item ${item.marked === true ? 'is-marked' : ''}" data-item-id="${escapeHtml(item.id)}">
-        <div class="reading-item-head">
-          <span class="reading-kind">${kindLabel(item.kind)}</span>
-          ${saved ? `<span class="reading-saved-badge" title="${t('article.readingSavedToBook')}">★ ${escapeHtml(bookNames.join(' / '))}</span>` : ''}
-          ${item.firstViewedAt ? `<span class="reading-meta">${t('article.readingViewed')}</span>` : `<span class="reading-meta">${t('article.readingNotViewed')}</span>`}
-          ${(item.positionUncertain || item.anchor?.start < 0) ? `<span class="reading-meta is-warning">${t('article.readingPositionUncertainShort')}</span>` : ''}
+      <article class="reading-item ${item.marked ? 'is-marked' : ''}" role="listitem" data-item-id="${escapeHtml(item.id)}" aria-labelledby="reading-title-${escapeHtml(item.id)}">
+        <div class="reading-item-head"><span class="reading-kind">${kindLabel(item.kind)}</span>
+          ${saved ? `<span class="reading-saved-badge" title="${escapeHtml(books.join(' / '))}">★ ${t('article.readingSavedShort')}</span>` : ''}
+          ${uncertain ? `<span class="reading-meta is-warning">${t('article.readingPositionUncertainShort')}</span>` : ''}
+          ${time ? `<time class="reading-item-time" datetime="${escapeHtml(time)}" title="${escapeHtml(formatDateTime(time))}">${escapeHtml(formatDateTime(time, { month: 'numeric', day: 'numeric' }))}</time>` : ''}
         </div>
-        <div class="reading-quote">${reference} ${escapeHtml(item.anchor?.quote || '')}</div>
-        ${item.sentence ? `<div class="reading-sentence">${escapeHtml(item.sentence)}</div>` : ''}
-        ${meaningOf(item) ? `<div class="reading-meaning">${escapeHtml(meaningOf(item))}</div>` : `<div class="reading-meaning is-muted">${t('article.readingNoExplanation')}</div>`}
-        <div class="reading-mark-row">
-          <button type="button" class="reading-mark-toggle ${item.marked === true ? 'is-active' : ''}" data-mark-toggle="1" aria-pressed="${item.marked === true}" aria-label="${t('article.markToggleAria', { quote: item.anchor?.quote || '' })}">
-            ${markButtonLabel(item.marked)}
-          </button>
-          <span class="reading-mark-state">${markedLabel(item.marked)}</span>
-        </div>
-        <label class="reading-note-label" for="reading-note-${escapeHtml(item.id)}">${t('article.readingNote')}</label>
-        <textarea id="reading-note-${escapeHtml(item.id)}" class="reading-note" rows="2" maxlength="20000" data-note-id="${escapeHtml(item.id)}" placeholder="${t('article.readingNotePlaceholder')}">${escapeHtml(noteValue)}</textarea>
-        <div class="reading-note-status" data-note-status="${escapeHtml(item.id)}" role="status">${noteStatus === 'saving' ? t('article.readingSaving') : noteStatus === 'saved' ? t('article.readingSaved') : noteStatus === 'error' ? t('article.saveFailedRetry') : ''}</div>
-        <div class="reading-item-actions">
-          ${!saved ? `<button type="button" class="btn tertiary" data-action="add-book">${t('article.readingAddToBook')}</button>` : ''}
+        <h4 class="reading-quote" id="reading-title-${escapeHtml(item.id)}">${escapeHtml(quote)}</h4>
+        <div class="reading-meaning ${meaningOf(item) ? '' : 'is-muted'}">${escapeHtml(meaningOf(item)) || t('article.readingNoExplanation')}</div>
+        ${note && !expanded ? `<div class="reading-note-preview">${escapeHtml(note)}</div>` : ''}
+        <div class="reading-quick-actions">
           <button type="button" class="btn tertiary" data-action="locate">${t('article.readingLocate')}</button>
-          <button type="button" class="btn tertiary" data-action="ask">${t('article.askAi')}</button>
-          <button type="button" class="btn tertiary" data-action="delete">${t('article.delete')}</button>
+          <button type="button" class="reading-mark-toggle ${item.marked ? 'is-active' : ''}" data-mark-toggle="1" aria-pressed="${item.marked === true}" aria-label="${escapeHtml(t('article.markToggleAria', { quote }))}">${markButtonLabel(item.marked)}</button>
+          <button type="button" class="btn tertiary" data-action="expand" aria-expanded="${expanded}" aria-controls="reading-detail-${escapeHtml(item.id)}">${expanded ? t('article.readingCollapse') : note ? t('article.readingEditNote') : t('article.readingExpand')}</button>
+        </div>
+        <div id="reading-detail-${escapeHtml(item.id)}" class="reading-item-detail ${expanded ? '' : 'hidden'}">
+          ${item.sentence && item.sentence !== quote ? `<div class="reading-sentence">${escapeHtml(item.sentence)}</div>` : ''}
+          ${saved && books.length ? `<div class="reading-sentence">${t('article.readingSavedToBook')}: ${escapeHtml(books.join(' / '))}</div>` : ''}
+          <label class="reading-note-label" for="reading-note-${escapeHtml(item.id)}">${t('article.readingNote')}</label>
+          <textarea id="reading-note-${escapeHtml(item.id)}" class="reading-note" rows="2" maxlength="20000" data-note-id="${escapeHtml(item.id)}" placeholder="${t('article.readingNotePlaceholder')}">${escapeHtml(note)}</textarea>
+          <div class="reading-note-status" data-note-status="${escapeHtml(item.id)}" role="status">${draft?.status === 'error' ? t('article.saveFailedRetry') : draft?.status === 'saving' ? t('article.readingSaving') : draft?.status === 'saved' ? t('article.readingSaved') : ''}</div>
+          <div class="reading-item-actions">
+            ${!saved ? `<button type="button" class="btn tertiary" data-action="add-book">${t('article.readingAddToBook')}</button>` : ''}
+            <button type="button" class="btn tertiary" data-action="ask">${t('article.askAi')}</button>
+            ${uncertain ? `<button type="button" class="btn tertiary" data-action="reanchor">${t('article.readingReanchor')}</button>` : ''}
+            <button type="button" class="btn tertiary" data-action="copy">${t('article.readingCopyQuote')}</button>
+            <button type="button" class="btn tertiary reading-delete" data-action="delete" aria-label="${escapeHtml(t('article.readingDeleteAria', { quote }))}">${t('article.delete')}</button>
+          </div>
         </div>
       </article>`;
 }
 
 function documentCardHtml(doc) {
+    const sources = (doc.sourceItemIds || []).map(id => readingStore.getLearningItem(id)).filter(item => item && !item.deletedAt);
+    const sourceCount = (doc.sourceItemIds || []).length;
     return `
-      <article class="reading-doc" data-doc-id="${escapeHtml(doc.id)}">
-        <div class="reading-item-head">
-          <span class="reading-kind">${doc.kind === 'ai' ? t('article.readingFilterAi') : t('article.readingFilterNotes')}</span>
-          <span class="reading-meta">${doc.updatedAt ? formatDateTime(doc.updatedAt) : ''}</span>
+      <article class="reading-doc" role="listitem" data-doc-id="${escapeHtml(doc.id)}" aria-labelledby="reading-title-${escapeHtml(doc.id)}">
+        <div class="reading-item-head"><span class="reading-kind">${doc.kind === 'ai' ? t('article.readingFilterAi') : t('article.readingArticleNote')}</span>
+          <time class="reading-item-time" datetime="${escapeHtml(doc.updatedAt)}">${escapeHtml(formatDateTime(doc.updatedAt))}</time>
         </div>
-        <div class="reading-quote">${escapeHtml(doc.title || '')}</div>
-        <details>
-          <summary>${t('article.readingShowContent')}</summary>
-          <pre class="reading-doc-content">${escapeHtml(doc.content || '')}</pre>
+        <h4 class="reading-quote" id="reading-title-${escapeHtml(doc.id)}">${escapeHtml(doc.title || '')}</h4>
+        <div class="reading-doc-preview">${escapeHtml(String(doc.content || '').replace(/[#*`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 150))}</div>
+        <details data-doc-details="${escapeHtml(doc.id)}"><summary>${t('article.readingShowContent')}</summary>
+          <div class="reading-doc-content">${markdownToHtml(doc.content || '')}</div>
+          ${sourceCount ? `<div class="reading-doc-sources">${t('article.readingSources', { count: sourceCount })}${sources.map(item => `<button type="button" class="btn tertiary" data-source-item="${escapeHtml(item.id)}">${escapeHtml(item.anchor?.quote)}</button>`).join('')}${sources.length < sourceCount ? `<span>${t('article.readingSourceUnavailable')}</span>` : ''}</div>` : ''}
+          ${(doc.sourceMessageIds || []).length ? `<button type="button" class="btn tertiary" data-doc-action="conversation">${t('article.readingSourceConversation')}</button>` : ''}
+          <div class="reading-item-actions"><button type="button" class="btn tertiary reading-delete" data-doc-action="delete" aria-label="${escapeHtml(t('article.readingDeleteAria', { quote: doc.title || '' }))}">${t('article.delete')}</button></div>
         </details>
-        <div class="reading-item-actions">
-          <button type="button" class="btn tertiary" data-doc-action="delete">${t('article.delete')}</button>
-        </div>
       </article>`;
 }
 
-function renderList() {
+function renderList(view) {
     const list = panel.querySelector('#reading-panel-list');
-    const items = readingStore.listLearningItems(currentArticleId).filter((item) => !item.deletedAt);
-    const indexed = items.map((item, index) => ({ item, index }));
-    const visible = indexed.filter(({ item }) => itemMatchesFilter(item));
-    const docs = readingStore.listArticleDocuments(currentArticleId, { withContent: true })
-        .filter((doc) => {
-            if (filter === 'ai') return doc.kind === 'ai';
-            if (filter === 'notes') return doc.kind === 'note';
-            if (filter === 'words' || filter === 'sentences' || filter === 'marked') return false;
-            return true;
+    const snapshot = capturePanelState();
+    const active = document.activeElement;
+    const activeCard = active?.closest?.('[data-item-id], [data-doc-id]');
+    const action = active?.getAttribute?.('data-action') || (active?.hasAttribute?.('data-mark-toggle') ? 'mark' : '');
+    const openDocs = [...list.querySelectorAll('details[open][data-doc-details]')].map(element => element.dataset.docDetails);
+    list.setAttribute('aria-busy', String(loadState === 'loading'));
+    if (loadState === 'loading') {
+        list.innerHTML = `<div class="reading-empty" role="status">${t('article.readingLoading')}</div>`;
+    } else if (loadState === 'error') {
+        list.innerHTML = `<div class="reading-empty" role="alert"><p>${t('article.readingLoadFailed')}</p><button type="button" class="btn secondary" id="reading-load-retry">${t('article.retry')}</button></div>`;
+        list.querySelector('#reading-load-retry').addEventListener('click', () => readPanelArticle(currentArticleId));
+    } else if (!view.records.length) {
+        list.innerHTML = `<div class="reading-empty"><p>${t(view.total ? 'article.readingFilteredEmpty' : 'article.readingEmpty')}</p>${view.total ? `<button type="button" class="btn secondary" id="reading-clear-filters">${t('article.readingClearFilters')}</button>` : ''}</div>`;
+        list.querySelector('#reading-clear-filters')?.addEventListener('click', () => {
+            filter = 'all'; savedOnly = false; search = '';
+            renderPanel();
+            panel.querySelector('#reading-search').focus();
         });
-    const html = [
-        ...visible.map(({ item, index }) => itemCardHtml(item, index)),
-        ...docs.map(documentCardHtml)
-    ];
-    if (!html.length) {
-        list.innerHTML = `<div class="reading-empty">${t('article.readingEmpty')}</div>`;
     } else {
-        list.innerHTML = html.join('');
+        list.innerHTML = view.records.map(record => record.type === 'item' ? itemCardHtml(record.entity) : documentCardHtml(record.entity)).join('');
+        for (const id of openDocs) list.querySelector(`[data-doc-details="${CSS.escape(id)}"]`)?.setAttribute('open', '');
+        wireItemActions();
     }
-    wireItemActions();
+    list.scrollTop = snapshot.scrollTop;
+    if (activeCard && snapshot.focusedItemId) {
+        const card = list.querySelector(`[data-item-id="${CSS.escape(snapshot.focusedItemId)}"]`);
+        const target = action === 'mark' ? card?.querySelector('[data-mark-toggle]')
+            : action ? card?.querySelector(`[data-action="${action}"]`) : card?.querySelector('[data-action="expand"]');
+        (target || panel.querySelector('.reading-panel-close'))?.focus({ preventScroll: true });
+    }
 }
 
 async function persistNoteDraft(itemId, textarea) {
     const draft = noteDrafts.get(itemId);
     if (!draft) return { ok: true, skipped: true };
+    if (draft.promise) {
+        await draft.promise;
+        return persistNoteDraft(itemId, textarea);
+    }
+    if (draft.status === 'saved') return { ok: true };
+    const value = draft.value;
     clearTimeout(draft.timer);
     draft.timer = null;
     draft.status = 'saving';
-    const statusEl = panel?.querySelector(`[data-note-status="${CSS.escape(itemId)}"]`);
+    let statusEl = panel?.querySelector(`[data-note-status="${CSS.escape(itemId)}"]`);
     if (statusEl) statusEl.textContent = t('article.readingSaving');
     const latest = readingStore.getLearningItem(itemId);
     if (!latest) {
@@ -498,8 +605,13 @@ async function persistNoteDraft(itemId, textarea) {
         if (statusEl) statusEl.textContent = t('article.saveFailedRetry');
         return { ok: false, error: 'not_found' };
     }
-    const result = await readingActions.saveNote(itemId, draft.value, draft.actionContext || null);
+    draft.promise = readingActions.saveNote(itemId, value, draft.actionContext || null).catch(() => ({ ok: false }));
+    const result = await draft.promise;
+    draft.promise = null;
+    if (draft.value !== value) return persistNoteDraft(itemId, textarea);
     draft.status = result.ok ? 'saved' : 'error';
+    // store 的 change 事件可能已重建卡片，不能寫回 await 前已卸載的節點。
+    statusEl = panel?.querySelector(`[data-note-status="${CSS.escape(itemId)}"]`);
     if (statusEl) {
         statusEl.innerHTML = result.ok
             ? t('article.readingSaved')
@@ -507,12 +619,16 @@ async function persistNoteDraft(itemId, textarea) {
         if (!result.ok) {
             statusEl.querySelector('[data-note-retry]')?.addEventListener('click', () => {
                 const area = panel?.querySelector(`[data-note-id="${CSS.escape(itemId)}"]`);
-                if (area) { draft.value = area.value; persistNoteDraft(itemId, area); }
+                if (area) {
+                    draft.value = area.value;
+                    area.focus({ preventScroll: true });
+                    persistNoteDraft(itemId, area);
+                }
             });
         }
     }
     if (result.ok) {
-        setTimeout(() => { if (noteDrafts.get(itemId)?.status === 'saved') noteDrafts.delete(itemId); }, 1200);
+        setTimeout(() => { if (noteDrafts.get(itemId) === draft && draft.status === 'saved') noteDrafts.delete(itemId); }, 1200);
     }
     return result;
 }
@@ -550,14 +666,6 @@ function exportScopeDescription(scope, selection = {}) {
     return parts.filter(Boolean).join(' · ');
 }
 
-function syncExportSelectionUI() {
-    if (!panel) return;
-    const fullTextBox = panel.querySelector('#reading-export-fulltext');
-    const chatBox = panel.querySelector('#reading-export-chat');
-    if (fullTextBox) fullTextBox.checked = !!exportSelection.fullText;
-    if (chatBox) chatBox.checked = !!exportSelection.chat;
-}
-
 function wireExportDialogDescription(overlay, scope) {
     const desc = overlay?.querySelector('.om-desc');
     if (!desc) return;
@@ -571,7 +679,8 @@ function wireExportDialogDescription(overlay, scope) {
     apply();
 }
 
-async function runExportChoice({ articleId, fullText = false, chat = false, fullBackup = false }) {
+async function runExportChoice({ articleId, context, fullText = false, chat = false, fullBackup = false }) {
+    if (!readingStore.isReadingContextActive(context)) return { ok: false, error: 'stale_scope' };
     // 匯出前先 flush 面板與片語草稿（沿用既有邏輯）；任何一筆失敗都不匯出。
     const panelFlushed = await flushNoteDrafts();
     const pickerFlushed = await flushPhrasePickerNote();
@@ -579,7 +688,7 @@ async function runExportChoice({ articleId, fullText = false, chat = false, full
         ui.displayMessage(t('article.saveFailedRetry'), 'error');
         return { ok: false, error: 'note_save_failed' };
     }
-    if (currentArticleId !== articleId) {
+    if (currentArticleId !== articleId || !readingStore.isReadingContextActive(context)) {
         // flush 期間切文章／帳戶：不得把匯出結果寫成目前 scope 的資料。
         ui.displayMessage(t('article.readingExportFailed'), 'error');
         return { ok: false, error: 'stale_scope' };
@@ -599,8 +708,9 @@ async function runExportChoice({ articleId, fullText = false, chat = false, full
     return result || { ok: false, error: 'export_failed' };
 }
 
-function openExportDialog({ source = 'panel' } = {}) {
+function openExportDialog({ source = 'panel', fullBackup = false } = {}) {
     const articleId = currentArticleId;
+    const context = readingStore.captureReadingContext();
     if (!articleId) {
         ui.displayMessage(t('article.readingNoArticle'), 'warning');
         return Promise.resolve({ ok: false, error: 'no_article' });
@@ -610,12 +720,12 @@ function openExportDialog({ source = 'panel' } = {}) {
             ui.displayMessage(t('article.readingExportFailed'), 'error');
             return { ok: false, error: (scope && scope.error) || 'scope_failed' };
         }
-        if (currentArticleId !== articleId) {
+        if (currentArticleId !== articleId || !readingStore.isReadingContextActive(context)) {
             // 讀取摘要期間已切文章／帳戶：不開對話框，避免匯出到別的 scope。
             ui.displayMessage(t('article.readingExportFailed'), 'error');
             return { ok: false, error: 'stale_scope' };
         }
-        const initial = { fullText: !!exportSelection.fullText, chat: !!exportSelection.chat, fullBackup: false };
+        const initial = { fullText: !!exportSelection.fullText, chat: !!exportSelection.chat, fullBackup };
         return new Promise((resolve) => {
             const overlay = ui.showOptionsModal({
                 title: t('article.exportScopeTitle'),
@@ -623,7 +733,7 @@ function openExportDialog({ source = 'panel' } = {}) {
                 options: [
                     { type: 'checkbox', key: 'fullText', label: t('article.exportIncludeFullText'), default: initial.fullText },
                     { type: 'checkbox', key: 'chat', label: t('article.exportIncludeChat'), default: initial.chat },
-                    { type: 'checkbox', key: 'fullBackup', label: t('article.exportFullBackup'), default: false }
+                    { type: 'checkbox', key: 'fullBackup', label: t('article.exportFullBackup'), default: initial.fullBackup }
                 ],
                 onCancel: () => resolve({ ok: false, error: 'cancelled' }),
                 onConfirm: (result) => {
@@ -634,8 +744,7 @@ function openExportDialog({ source = 'panel' } = {}) {
                     };
                     // 完整備份不分全文／對話；一般匯出則記住這次選擇供兩個入口共用。
                     exportSelection = { fullText: choice.fullText, chat: choice.chat };
-                    syncExportSelectionUI();
-                    runExportChoice({ articleId, ...choice, source })
+                    runExportChoice({ articleId, context, ...choice, source })
                         .then(resolve)
                         .catch(() => {
                             ui.displayMessage(t('article.readingExportFailed'), 'error');
@@ -651,88 +760,156 @@ function openExportDialog({ source = 'panel' } = {}) {
     });
 }
 
+function renderUndo() {
+    const box = panel.querySelector('#reading-undo');
+    const active = undoState && undoState.articleId === currentArticleId && readingStore.isReadingContextActive(undoState.context);
+    box.classList.toggle('hidden', !active);
+    if (!active) { box.innerHTML = ''; return; }
+    box.innerHTML = `<span>${escapeHtml(t('article.readingDeleted', { quote: undoState.title }))}</span><button type="button" class="btn tertiary" id="reading-undo-delete">${t('article.undo')}</button>`;
+    box.querySelector('button').addEventListener('click', async event => {
+        const pending = undoState;
+        if (!pending || !readingStore.isReadingContextActive(pending.context) || pending.articleId !== currentArticleId) return;
+        event.currentTarget.disabled = true;
+        const result = pending.type === 'item'
+            ? await readingStore.restoreLearningItem(pending.id, pending.deletedAt)
+            : await readingStore.restoreArticleDocument(pending.id, pending.deletedAt);
+        if (undoState !== pending) return;
+        if (!result.ok) {
+            ui.displayMessage(t('article.readingRestoreFailed'), 'error');
+            renderUndo();
+            return;
+        }
+        undoState = null;
+        renderPanel();
+        const restored = pending.type === 'item'
+            ? panel.querySelector(`[data-item-id="${CSS.escape(pending.id)}"] [data-action="expand"]`)
+            : panel.querySelector(`[data-doc-id="${CSS.escape(pending.id)}"] summary`);
+        (restored || panel.querySelector('.reading-panel-close'))?.focus({ preventScroll: true });
+        ui.displayMessage(t('article.readingRestored'), 'success');
+    });
+}
+
+async function deleteRecord(type, entity) {
+    const context = readingStore.captureReadingContext();
+    const articleId = currentArticleId;
+    const title = entity.anchor?.quote || entity.title || '';
+    const ok = await ui.confirmAction({
+        title: t('article.readingDeleteTitle'),
+        message: type === 'item' ? t('article.readingDeleteMessage') : t('article.readingDeleteDocument', { title }),
+        confirmLabel: t('article.delete'), cancelLabel: t('common.cancel'), danger: true
+    });
+    if (!ok || !readingStore.isReadingContextActive(context) || currentArticleId !== articleId) return;
+    if (type === 'item' && !await flushNoteDrafts()) {
+        ui.displayMessage(t('article.saveFailedRetry'), 'error');
+        return;
+    }
+    if (!readingStore.isReadingContextActive(context) || currentArticleId !== articleId) return;
+    const result = type === 'item' ? await readingStore.deleteLearningItem(entity.id) : await readingStore.deleteArticleDocument(entity.id);
+    if (!readingStore.isReadingContextActive(context) || currentArticleId !== articleId) return;
+    if (!result?.ok) {
+        ui.displayMessage(t('article.readingDeleteFailed'), 'error');
+        return;
+    }
+    noteDrafts.delete(entity.id);
+    expandedItems.delete(entity.id);
+    undoState = { type, id: entity.id, title, articleId, context, deletedAt: result.entity.deletedAt };
+    renderPanel();
+    panel.querySelector('#reading-undo-delete')?.focus({ preventScroll: true });
+}
+
+async function openSourceConversation(doc) {
+    if (!window.__assistant?.__ready) {
+        ui.displayMessage(t('assistant.unavailable'), 'warning');
+        return;
+    }
+    const articleId = currentArticleId;
+    const context = readingStore.captureReadingContext();
+    let source = null;
+    for (const conversation of readingStore.listConversations(articleId)) {
+        const messages = await readingStore.getMessages(conversation.id);
+        if (messages.some(message => doc.sourceMessageIds.includes(message.id))) { source = conversation; break; }
+    }
+    if (currentArticleId !== articleId || !readingStore.isReadingContextActive(context)) return;
+    if (!source) { ui.displayMessage(t('article.readingSourceUnavailable'), 'warning'); return; }
+    const closed = await closePanel();
+    if (!closed.ok || currentArticleId !== articleId || !readingStore.isReadingContextActive(context)) return;
+    window.__assistant.open();
+    const switched = await window.__assistant.switch(articleId, source.id);
+    if (switched === false) ui.displayMessage(t('article.readingAssistantBusy'), 'warning');
+}
+
 function wireItemActions() {
-    panel.querySelectorAll('[data-mark-toggle]').forEach((button) => {
+    panel.querySelectorAll('[data-mark-toggle]').forEach(button => {
         button.addEventListener('click', async () => {
-            const card = button.closest('.reading-item');
-            const id = card.getAttribute('data-item-id');
-            const item = readingStore.getLearningItem(id);
+            const item = readingStore.getLearningItem(button.closest('.reading-item').dataset.itemId);
             if (!item) return;
             button.disabled = true;
-            // 卡片渲染時的帳戶上下文；切換帳戶後不得把標記寫到新 scope。
-            const actionContext = readingActions.captureActionContext();
-            try {
-                const result = await readingActions.setMarked(id, item.marked !== true, actionContext);
-                if (!result.ok) throw new Error(result.error);
-                ui.displayMessage(result.entity?.marked === true
-                    ? t('article.markAdded')
-                    : t('article.markRemoved'), 'success');
-                renderPanel();
-            } catch (_) {
+            const result = await readingActions.setMarked(item.id, item.marked !== true, readingActions.captureActionContext());
+            if (!result.ok) {
                 ui.displayMessage(t('article.saveFailedRetry'), 'error');
                 button.disabled = false;
-            }
+            } else renderPanel();
         });
     });
-    panel.querySelectorAll('.reading-note').forEach((textarea) => {
-        const itemId = textarea.getAttribute('data-note-id');
+    panel.querySelectorAll('.reading-note').forEach(textarea => {
+        const itemId = textarea.dataset.noteId;
         textarea.addEventListener('input', () => {
             const draft = noteDrafts.get(itemId) || { value: '', status: '', timer: null, actionContext: readingActions.captureActionContext() };
             draft.value = textarea.value;
             draft.status = 'saving';
             clearTimeout(draft.timer);
-            const statusEl = panel.querySelector(`[data-note-status="${CSS.escape(itemId)}"]`);
-            if (statusEl) statusEl.textContent = t('article.readingSaving');
+            const status = panel.querySelector(`[data-note-status="${CSS.escape(itemId)}"]`);
+            if (status) status.textContent = t('article.readingSaving');
             draft.timer = setTimeout(() => persistNoteDraft(itemId, textarea), 500);
             noteDrafts.set(itemId, draft);
         });
-        // blur 立即寫入，不取消計時器；關閉面板／匯出時也會再 flush。
-        textarea.addEventListener('blur', () => persistNoteDraft(itemId, textarea));
+        textarea.addEventListener('blur', event => {
+            // 重試鈕的 click 會保存並還焦點；blur 不得先重繪並移除正被點擊的按鈕。
+            if (event.relatedTarget?.getAttribute?.('data-note-retry') === itemId) return;
+            persistNoteDraft(itemId, textarea);
+        });
     });
-    panel.querySelectorAll('[data-action]').forEach((button) => {
+    panel.querySelectorAll('[data-action]').forEach(button => {
         button.addEventListener('click', async () => {
             const card = button.closest('.reading-item');
-            const id = card.getAttribute('data-item-id');
+            const id = card.dataset.itemId;
             const item = readingStore.getLearningItem(id);
             if (!item) return;
-            const action = button.getAttribute('data-action');
-            if (action === 'locate') {
-                locateItem(item);
-                return;
-            }
-            if (action === 'ask') {
-                // 只把條目引用帶入助手輸入框，讓使用者自己補問題；不代使用者直接送出。
-                if (!(window.__assistant && window.__assistant.__ready)) {
-                    ui.displayMessage(t('assistant.unavailable'), 'warning');
-                    return;
-                }
-                const reference = t('article.askAiReference', { quote: item.anchor?.quote || '' });
-                const context = {
-                    learningItemId: item.id,
-                    anchor: item.anchor,
-                    contentVersion: item.contentVersion,
-                    articleId: item.articleId
-                };
-                // 助手面板在學習記錄面板之下，先保存筆記並關閉面板，避免引用被遮住。
-                const closed = await closePanel();
-                if (!closed.ok) return;
-                window.__assistant.compose({ text: reference, context });
-                return;
-            }
-            if (action === 'delete') {
-                const ok = await ui.confirmAction({
-                    title: t('article.readingDeleteTitle'),
-                    message: t('article.readingDeleteMessage'),
-                    confirmLabel: t('article.delete'),
-                    cancelLabel: t('common.cancel'),
-                    danger: true
-                });
-                if (!ok) return;
-                await readingStore.deleteLearningItem(id);
-                noteDrafts.delete(id);
+            const action = button.dataset.action;
+            if (action === 'expand') {
+                if (expandedItems.has(id)) {
+                    if (noteDrafts.has(id) && !(await persistNoteDraft(id)).ok) return;
+                    expandedItems.delete(id);
+                } else expandedItems.add(id);
                 renderPanel();
                 return;
             }
+            if (action === 'locate') { await locateItem(item); return; }
+            if (action === 'copy') {
+                try {
+                    await navigator.clipboard.writeText(item.anchor?.quote || '');
+                    ui.displayMessage(t('article.readingCopied'), 'success');
+                } catch (_) { ui.displayMessage(t('article.readingCopyFailed'), 'error'); }
+                return;
+            }
+            if (action === 'reanchor') {
+                const located = readingActions.resolveAnchor(item.articleId, item.anchor?.quote || '', item.sentence || '');
+                if (located.start < 0) { ui.displayMessage(t('article.readingLocateFailed'), 'warning'); return; }
+                const result = await readingStore.updateLearningItemPosition(id, { anchor: located, sentence: item.sentence, contentVersion: readingActions.articleVersion(item.articleId), positionUncertain: false });
+                if (!result.ok) ui.displayMessage(t('article.saveFailedRetry'), 'error');
+                else renderPanel();
+                return;
+            }
+            if (action === 'ask') {
+                if (!window.__assistant?.__ready) { ui.displayMessage(t('assistant.unavailable'), 'warning'); return; }
+                const closed = await closePanel();
+                if (!closed.ok) return;
+                window.__assistant.compose({ text: t('article.askAiReference', { quote: item.anchor?.quote || '' }), context: {
+                    learningItemId: item.id, anchor: item.anchor, contentVersion: item.contentVersion, articleId: item.articleId
+                } });
+                return;
+            }
+            if (action === 'delete') { await deleteRecord('item', item); return; }
             if (action === 'add-book') {
                 button.disabled = true;
                 try {
@@ -740,7 +917,6 @@ function wireItemActions() {
                     if (!result || result.ok === false) throw new Error(result?.error || 'failed');
                     ui.displayMessage(t('article.readingAddedToBook'), 'success');
                     renderPanel();
-                    applyMarks(currentArticleId);
                 } catch (_) {
                     ui.displayMessage(t('article.saveFailedRetry'), 'error');
                     button.disabled = false;
@@ -748,42 +924,45 @@ function wireItemActions() {
             }
         });
     });
-    panel.querySelectorAll('[data-doc-action="delete"]').forEach((button) => {
-        button.addEventListener('click', async () => {
-            const card = button.closest('.reading-doc');
-            const id = card.getAttribute('data-doc-id');
-            await readingStore.deleteArticleDocument(id);
-            renderPanel();
-        });
-    });
+    panel.querySelectorAll('[data-source-item]').forEach(button => button.addEventListener('click', () => openReadingPanelForItem(currentArticleId, button.dataset.sourceItem)));
+    panel.querySelectorAll('[data-doc-action]').forEach(button => button.addEventListener('click', async () => {
+        const doc = readingStore.getArticleDocument(button.closest('.reading-doc').dataset.docId);
+        if (!doc) return;
+        if (button.dataset.docAction === 'conversation') await openSourceConversation(doc);
+        else await deleteRecord('document', doc);
+    }));
 }
 
 async function locateItem(item) {
-    const candidates = Array.from(document.querySelectorAll('.interactive-sentence')).map((element) => ({
-        element,
-        text: (element.getAttribute('data-sentence') || element.textContent || '').trim()
+    const candidates = Array.from(document.querySelectorAll('.interactive-sentence')).map(element => ({
+        element, text: (element.getAttribute('data-sentence') || element.textContent || '').trim()
     }));
     for (const entry of candidates) entry.start = sourceStartForSentence(entry.element, currentArticleId, candidates);
-    const target = sourceSentenceForItem(item, candidates)?.element || null;
-    if (!target) {
-        ui.displayMessage(t('article.readingLocateFailed'), 'warning');
-        return;
-    }
-    const closed = await closePanel();
-    if (!closed.ok) return;
+    const target = sourceSentenceForItem(item, candidates)?.element;
+    if (!target) { ui.displayMessage(t('article.readingLocateFailed'), 'warning'); return; }
+    if (isModalPanel()) {
+        const snapshot = capturePanelState();
+        snapshot.focusedItemId = item.id;
+        snapshot.focusKind = 'item';
+        const closed = await closePanel();
+        if (!closed.ok) return;
+        returnState = snapshot;
+        document.getElementById('reading-return')?.classList.remove('hidden');
+    } else if (!await flushNoteDrafts()) return;
     target.scrollIntoView({ block: 'center', behavior: 'smooth' });
     target.classList.add('reading-locate-flash');
     setTimeout(() => target.classList.remove('reading-locate-flash'), 1600);
 }
-
 
 function openArticleNoteDialog() {
     if (!currentArticleId) {
         ui.displayMessage(t('article.readingNoArticle'), 'warning');
         return;
     }
-    const existing = readingStore.listArticleDocuments(currentArticleId, { withContent: true })
-        .find((doc) => doc.kind === 'note');
+    const articleId = currentArticleId;
+    const actionContext = readingStore.captureReadingContext();
+    const existing = readingStore.listArticleDocuments(articleId, { withContent: true })
+        .find(doc => doc.kind === 'note');
     ui.openModal();
     dom.modalTitle.textContent = t('article.readingArticleNoteTitle');
     dom.modalBody.innerHTML = `
@@ -801,18 +980,23 @@ function openArticleNoteDialog() {
         const button = dom.modalBody.querySelector('#reading-article-note-save');
         const status = dom.modalBody.querySelector('#reading-article-note-status');
         const content = dom.modalBody.querySelector('#reading-article-note-input').value;
+        if (articleId !== currentArticleId || !readingStore.isReadingContextActive(actionContext)) {
+            status.textContent = t('article.saveFailedRetry');
+            return;
+        }
         button.disabled = true;
         status.textContent = t('article.readingSaving');
         const result = await readingStore.saveArticleDocument({
             id: existing?.id || '',
-            articleId: currentArticleId,
+            articleId,
             kind: 'note',
             title: t('article.readingArticleNoteTitle'),
             content,
-            contentVersion: readingActions.articleVersion(currentArticleId),
+            contentVersion: readingActions.articleVersion(articleId),
             sourceItemIds: [],
             sourceMessageIds: []
         });
+        if (!button.isConnected || currentArticleId !== articleId || !readingStore.isReadingContextActive(actionContext)) return;
         if (!result.ok) {
             status.textContent = t('article.saveFailedRetry');
             button.disabled = false;
@@ -825,8 +1009,10 @@ function openArticleNoteDialog() {
 }
 
 function openAiScopeDialog(mode) {
-    const items = readingStore.listLearningItems(currentArticleId).filter((item) => !item.deletedAt);
-    const docs = readingStore.listArticleDocuments(currentArticleId).filter((doc) => doc.kind === 'ai');
+    const articleId = currentArticleId;
+    const context = readingStore.captureReadingContext();
+    const items = readingStore.listLearningItems(articleId).filter((item) => !item.deletedAt);
+    const docs = readingStore.listArticleDocuments(articleId).filter((doc) => doc.kind === 'ai');
     if (!items.length && !docs.length) {
         ui.displayMessage(t('article.readingEmpty'), 'warning');
         return;
@@ -862,16 +1048,21 @@ function openAiScopeDialog(mode) {
         const itemIds = Array.from(dom.modalBody.querySelectorAll('.reading-ai-item:checked')).map((input) => input.value);
         const documentIds = Array.from(dom.modalBody.querySelectorAll('.reading-ai-doc:checked')).map((input) => input.value);
         const includeNotes = !!dom.modalBody.querySelector('#reading-ai-include-notes')?.checked;
+        if (currentArticleId !== articleId || !readingStore.isReadingContextActive(context)) {
+            status.textContent = t('article.aiGenerateFailed');
+            return;
+        }
         button.disabled = true;
         status.textContent = t('article.aiGenerating');
         try {
             const result = await readingActions.generateReadingDocument({
-                articleId: currentArticleId,
+                articleId,
                 mode,
                 itemIds,
                 documentIds,
                 includeNotes
             });
+            if (!button.isConnected || currentArticleId !== articleId || !readingStore.isReadingContextActive(context)) return;
             if (!result.ok) {
                 status.textContent = result.error === 'ai_not_configured'
                     ? t('article.aiNotConfigured')
@@ -883,6 +1074,7 @@ function openAiScopeDialog(mode) {
             ui.displayMessage(t('article.aiDocumentSaved'), 'success');
             renderPanel();
         } catch (error) {
+            if (!button.isConnected) return;
             status.textContent = t('article.aiGenerateFailed');
             button.disabled = false;
         }
@@ -918,9 +1110,9 @@ function refreshCurrentArticleAfterScopeReload() {
     const token = ++scopeRefreshToken;
     readingStore.ensureArticleReadingLoaded(articleId, ctx).then((loaded) => {
         if (token !== scopeRefreshToken) return;
-        if (!loaded || loaded.ok === false) return;
         if (currentArticleId !== articleId) return;
         if (!readingStore.isReadingContextActive(ctx)) return;
+        loadState = loaded?.ok ? 'ready' : 'error';
         applyCurrentReadingState();
     }).catch(() => {});
 }
@@ -930,17 +1122,20 @@ function renderPanel() {
     // 正在輸入筆記時不整份重繪，避免遠端同步把草稿蓋掉或游標跳走。
     const active = document.activeElement;
     if (active && active.classList && active.classList.contains('reading-note')) return;
-    const items = readingStore.listLearningItems(currentArticleId).filter((item) => !item.deletedAt);
-    const docs = readingStore.listArticleDocuments(currentArticleId).filter((doc) => doc.kind === 'ai');
-    panel.querySelector('#reading-panel-sub').textContent = t('article.readingPanelSub', { items: items.length, docs: docs.length });
+    const items = readingStore.listLearningItems(currentArticleId).filter(item => !item.deletedAt);
+    const docs = readingStore.listArticleDocuments(currentArticleId);
+    const view = panelRecords();
+    panel.querySelector('#reading-panel-sub').textContent = loadState === 'ready'
+        ? t('article.readingPanelSub', { items: items.length, notes: docs.filter(doc => doc.kind === 'note').length, docs: docs.filter(doc => doc.kind === 'ai').length })
+        : t(loadState === 'loading' ? 'article.readingLoading' : 'article.readingLoadFailed');
     panel.querySelector('#reading-panel-status').innerHTML = statusHtml();
     wireConflictButtons();
-    renderFilters();
-    renderList();
-    if (dom.articleReadingCount) {
-        const count = items.length + docs.length;
-        dom.articleReadingCount.textContent = String(count);
-        dom.articleReadingCount.classList.toggle('hidden', count === 0);
+    renderFilters(view);
+    renderList(view);
+    renderUndo();
+    if (dom.articleReadingCount && loadState === 'ready') {
+        dom.articleReadingCount.textContent = String(view.total);
+        dom.articleReadingCount.classList.toggle('hidden', view.total === 0);
     }
     applyMarks(currentArticleId);
 }
@@ -1049,6 +1244,8 @@ export async function openReadingPanelForItem(articleId, itemId) {
         if (!flushed) return { ok: false, error: 'note_save_failed' };
         filter = 'all';
         savedOnly = false;
+        search = '';
+        expandedItems.add(itemId);
         if (document.activeElement?.classList?.contains('reading-note')) document.activeElement.blur();
         renderPanel();
         const target = panel.querySelector(`[data-note-id="${CSS.escape(itemId)}"]`);
@@ -1072,16 +1269,22 @@ async function loadArticle(articleId) {
         else noteDrafts.clear();
     }
     currentArticleId = articleId || '';
+    if (previousArticleId !== currentArticleId) {
+        filter = 'all'; savedOnly = false; search = ''; sort = 'source';
+        expandedItems.clear(); undoState = null; returnState = null;
+        document.getElementById('reading-return')?.classList.add('hidden');
+    }
     if (!articleId && draftsFlushed) noteDrafts.clear();
     if (!currentArticleId) {
         if (panel) panel.classList.add('hidden');
         document.body.classList.remove('reading-panel-open');
+        syncPanelLayout();
         clearMarks();
         if (dom.articleReadingCount) dom.articleReadingCount.classList.add('hidden');
         return;
     }
     // 啟動與換文章只讀這篇的條目／文件；讀取期間若又切換文章則放棄舊結果。
-    await readingStore.ensureArticleReadingLoaded(currentArticleId).catch(() => null);
+    await readPanelArticle(articleId);
     if (currentArticleId !== articleId) return;
     if (legacyImportPromise !== currentArticleId) {
         legacyImportPromise = currentArticleId;
@@ -1092,7 +1295,7 @@ async function loadArticle(articleId) {
     if (isPanelOpen()) renderPanel();
     else if (dom.articleReadingCount) {
         const count = readingStore.listLearningItems(currentArticleId).filter((item) => !item.deletedAt).length
-            + readingStore.listArticleDocuments(currentArticleId).filter((doc) => doc.kind === 'ai').length;
+            + readingStore.listArticleDocuments(currentArticleId).length;
         dom.articleReadingCount.textContent = String(count);
         dom.articleReadingCount.classList.toggle('hidden', count === 0);
     }
@@ -1151,6 +1354,8 @@ export function initReadingPanel() {
         }
         filter = snapshot.filter;
         savedOnly = snapshot.savedOnly;
+        search = snapshot.search;
+        sort = snapshot.sort;
         await openPanel(snapshot.articleId, { restore: true });
         if (token !== localeToken) return;
         if (!isPanelOpen()) return;

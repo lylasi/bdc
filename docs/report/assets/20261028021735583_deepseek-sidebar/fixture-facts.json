@@ -1,0 +1,141 @@
+{
+  "facts": {
+    "items": [
+      {
+        "id": "li_cv1_bea01b30_62",
+        "quote": "look forward to",
+        "start": 3,
+        "createdAt": "2026-10-27T18:29:15.968Z",
+        "updatedAt": "2026-10-27T18:29:15.974Z",
+        "lastViewedAt": "2026-10-27T18:29:15.968Z",
+        "note": "yes"
+      },
+      {
+        "id": "li_cv1_1b6db579_48",
+        "quote": "look",
+        "start": 3,
+        "createdAt": "2026-10-27T18:29:15.968Z",
+        "updatedAt": "2026-10-27T18:29:15.968Z",
+        "lastViewedAt": "2026-10-27T18:29:15.968Z",
+        "note": ""
+      },
+      {
+        "id": "li_cv1_9c317b05_124",
+        "quote": "The attached document summarizes the project timeline and the next steps.",
+        "start": 33,
+        "createdAt": "2026-10-27T18:29:15.970Z",
+        "updatedAt": "2026-10-27T18:29:15.970Z",
+        "lastViewedAt": "2026-10-27T18:29:15.970Z",
+        "note": "yes"
+      },
+      {
+        "id": "li_cv1_28d79cf3_54",
+        "quote": "review",
+        "start": 115,
+        "createdAt": "2026-10-27T18:29:15.970Z",
+        "updatedAt": "2026-10-27T18:29:15.970Z",
+        "lastViewedAt": "2026-10-27T18:29:15.970Z",
+        "note": ""
+      },
+      {
+        "id": "li_cv1_d8493c64_56",
+        "quote": "document",
+        "start": 135,
+        "createdAt": "2026-10-27T18:29:15.971Z",
+        "updatedAt": "2026-10-27T18:29:15.971Z",
+        "lastViewedAt": "2026-10-27T18:29:15.971Z",
+        "note": ""
+      },
+      {
+        "id": "li_cv1_03f249ac_54",
+        "quote": "budget",
+        "start": 186,
+        "createdAt": "2026-10-27T18:29:15.971Z",
+        "updatedAt": "2026-10-27T18:29:15.971Z",
+        "lastViewedAt": "2026-10-27T18:29:15.971Z",
+        "note": ""
+      },
+      {
+        "id": "li_cv1_f7de4f84_56",
+        "quote": "schedule",
+        "start": 215,
+        "createdAt": "2026-10-27T18:29:15.971Z",
+        "updatedAt": "2026-10-27T18:29:15.971Z",
+        "lastViewedAt": "2026-10-27T18:29:15.971Z",
+        "note": ""
+      },
+      {
+        "id": "li_cv1_6cd9bf46_56",
+        "quote": "patience",
+        "start": 254,
+        "createdAt": "2026-10-27T18:29:15.972Z",
+        "updatedAt": "2026-10-27T18:29:15.972Z",
+        "lastViewedAt": "2026-10-27T18:29:15.972Z",
+        "note": ""
+      },
+      {
+        "id": "li_cv1_eae1af80_56",
+        "quote": "feedback",
+        "start": 288,
+        "createdAt": "2026-10-27T18:29:15.972Z",
+        "updatedAt": "2026-10-27T18:29:15.972Z",
+        "lastViewedAt": "2026-10-27T18:29:15.972Z",
+        "note": ""
+      },
+      {
+        "id": "li_cv1_e1897f6c_59",
+        "quote": "coordinator",
+        "start": 318,
+        "createdAt": "2026-10-27T18:29:15.972Z",
+        "updatedAt": "2026-10-27T18:29:15.972Z",
+        "lastViewedAt": "2026-10-27T18:29:15.972Z",
+        "note": ""
+      },
+      {
+        "id": "li_cv1_befce44a_72",
+        "quote": "additional information",
+        "start": 342,
+        "createdAt": "2026-10-27T18:29:15.973Z",
+        "updatedAt": "2026-10-27T18:29:15.973Z",
+        "lastViewedAt": "2026-10-27T18:29:15.973Z",
+        "note": ""
+      }
+    ],
+    "docs": [
+      {
+        "id": "doc_mvr0s0925h2ijrkr",
+        "kind": "ai",
+        "title": "AI 短语补充",
+        "updatedAt": "2026-10-27T18:29:15.974Z",
+        "lastViewedAt": ""
+      },
+      {
+        "id": "doc_mvr0s092kqy2basa",
+        "kind": "note",
+        "title": "全篇阅读心得（合成）",
+        "updatedAt": "2026-10-27T18:29:15.974Z",
+        "lastViewedAt": ""
+      }
+    ]
+  },
+  "starts": [
+    3,
+    3,
+    33,
+    115,
+    135,
+    186
+  ],
+  "budgetMatches": [
+    {
+      "id": "li_cv1_03f249ac_54",
+      "quote": "budget",
+      "sentence": "The team will discuss the budget and confirm the final schedule tomorrow."
+    },
+    {
+      "id": "li_cv1_f7de4f84_56",
+      "quote": "schedule",
+      "sentence": "The team will discuss the budget and confirm the final schedule tomorrow."
+    }
+  ]
+}

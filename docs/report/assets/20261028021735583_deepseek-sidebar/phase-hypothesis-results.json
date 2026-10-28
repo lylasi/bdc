@@ -1,0 +1,27 @@
+[
+  {
+    "name": "假設1（#app-modal 移到 body）390px 全篇筆記對話框可命中",
+    "pass": true,
+    "detail": "{\"noteInput\":{\"exists\":true,\"clickable\":true,\"hit\":\"reading-article-note-input\"},\"noteCancel\":{\"exists\":true,\"clickable\":true,\"hit\":\"reading-article-note-cancel\"}}"
+  },
+  {
+    "name": "假設1 真滑鼠可關閉 app-modal",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "name": "假設2（.reading-tools overflow:visible）390px 更多選單三項可點",
+    "pass": true,
+    "detail": "{\"toolsItem\":{\"exists\":true,\"clickable\":true,\"hit\":\"reading-ai-difficulties\"},\"toolsJson\":{\"exists\":true,\"clickable\":true,\"hit\":\"reading-export-json\"}}"
+  },
+  {
+    "name": "假設2 分析本文難點對話框可開啟且 12 列可選",
+    "pass": true,
+    "detail": "{\"rows\":12,\"run\":true,\"panelOpen\":true}"
+  },
+  {
+    "name": "假設2 1440px 更多選單可點",
+    "pass": true,
+    "detail": "{\"exists\":true,\"clickable\":true,\"hit\":\"reading-ai-notes\"}"
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "width": 1440,
+    "platform": true,
+    "statePersistence": true,
+    "reloadPersistence": true,
+    "pauseResume": true,
+    "removal": true,
+    "pageErrors": []
+  },
+  {
+    "width": 390,
+    "platform": true,
+    "statePersistence": true,
+    "reloadPersistence": true,
+    "pauseResume": true,
+    "removal": true,
+    "pageErrors": []
+  }
+]

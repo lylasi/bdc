@@ -54,11 +54,39 @@ export function tHtml(key, params = {}) {
 
 // --- Modal (模態框) ---
 
+let modalLastFocus = null;
+
+function trapModalTab(event, overlay) {
+    if (event.key !== 'Tab') return;
+    const targets = [...overlay.querySelectorAll('button, input, textarea, select, summary, a[href], [tabindex]')]
+        .filter(element => !element.disabled && element.tabIndex >= 0 && element.getClientRects().length);
+    const first = targets[0];
+    const last = targets.at(-1);
+    if (event.shiftKey && (document.activeElement === first || !overlay.contains(document.activeElement))) {
+        event.preventDefault();
+        last?.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !overlay.contains(document.activeElement))) {
+        event.preventDefault();
+        first?.focus();
+    }
+}
+
+function restoreModalFocus(element) {
+    if (element?.isConnected && !element.closest('[inert]')) element.focus({ preventScroll: true });
+    document.dispatchEvent(new CustomEvent('bdc:modal-closed'));
+}
+
 /**
  * 打開主應用模態框。
  */
 export function openModal() {
+    if (dom.appModal.classList.contains('hidden')) modalLastFocus = document.activeElement;
     dom.appModal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        if (!dom.appModal.classList.contains('hidden') && !dom.appModal.contains(document.activeElement)) {
+            dom.modalCloseBtn.focus({ preventScroll: true });
+        }
+    });
 }
 
 /**
@@ -74,18 +102,32 @@ export function closeModal() {
         dom.modalActions.hidden = true;
         dom.modalActions.innerHTML = '';
     }
-    try { document.dispatchEvent(new CustomEvent('bdc:modal-closed')); } catch (_) {}
+    restoreModalFocus(modalLastFocus);
+    modalLastFocus = null;
 }
 
 /**
  * 為模態框的關閉按鈕和背景點擊設置事件監聽。
  */
 export function initModal() {
+    // 脫離 app-layout 的堆疊層；固定側欄不應遮蓋全站模態框。
+    document.body.appendChild(dom.appModal);
+    dom.appModal.setAttribute('role', 'dialog');
+    dom.appModal.setAttribute('aria-modal', 'true');
+    dom.appModal.setAttribute('aria-labelledby', dom.modalTitle.id);
     dom.modalCloseBtn.addEventListener('click', closeModal);
     dom.appModal.addEventListener('click', (e) => {
         if (e.target === dom.appModal) {
             closeModal();
         }
+    });
+    document.addEventListener('keydown', event => {
+        if (dom.appModal.classList.contains('hidden') || document.querySelector('.options-modal-overlay')) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            closeModal();
+        } else trapModalTab(event, dom.appModal);
     });
 }
 
@@ -507,9 +549,13 @@ export function showOptionsModal(config) {
     onCancel = () => {}
   } = config;
 
+  const previousFocus = document.activeElement;
   // 沿用全域彈窗外殼（.modal-overlay / .modal-content），樣式見 styles.css
   const modalOverlay = document.createElement('div');
   modalOverlay.className = 'modal-overlay options-modal-overlay';
+  modalOverlay.setAttribute('role', 'dialog');
+  modalOverlay.setAttribute('aria-modal', 'true');
+  modalOverlay.setAttribute('aria-label', title || t('common.optionsTitle'));
 
   const modalContent = document.createElement('div');
   modalContent.className = 'modal-content options-modal-content';
@@ -543,6 +589,7 @@ export function showOptionsModal(config) {
   const closeModal = () => {
     document.removeEventListener('keydown', handleEsc);
     if (modalOverlay.parentNode) modalOverlay.parentNode.removeChild(modalOverlay);
+    restoreModalFocus(previousFocus);
   };
 
   cancelBtn.addEventListener('click', () => {
@@ -566,15 +613,19 @@ export function showOptionsModal(config) {
 
   // ESC鍵關閉
   function handleEsc(e) {
+    if ([...document.querySelectorAll('.options-modal-overlay')].at(-1) !== modalOverlay) return;
     if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
       onCancel();
       closeModal();
-    }
+    } else trapModalTab(e, modalOverlay);
   }
   document.addEventListener('keydown', handleEsc);
 
   // 添加到頁面
   document.body.appendChild(modalOverlay);
+  cancelBtn.focus({ preventScroll: true });
 
   return modalOverlay;
 }

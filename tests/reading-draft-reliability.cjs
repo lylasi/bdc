@@ -10,6 +10,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { exportReadingNote } = require('./helpers/reading-export.cjs');
 
 const PORT = Number(process.env.PORT || 8313);
 const BASE = `http://127.0.0.1:${PORT}/`;
@@ -131,6 +132,7 @@ async function openTooltipMore(page, actionSelector = '.btn-note-item') {
                 return null;
             });
         });
+        await page.locator(`[data-item-id="${ids.phraseId}"] [data-action="expand"]`).click();
         const phraseArea = page.locator(`[data-note-id="${ids.phraseId}"]`);
         await phraseArea.fill('draft typed before closing');
         await page.click('.reading-panel-close');
@@ -172,14 +174,14 @@ async function openTooltipMore(page, actionSelector = '.btn-note-item') {
         // ── 2. 篩選隱藏的草稿在 JSON 匯出前仍會保存 ──────────────────────
         await page.click('#article-reading-records-btn');
         await page.waitForTimeout(350);
+        await page.locator(`[data-item-id="${ids.sentenceId}"] [data-action="expand"]`).click();
         const sentenceArea = page.locator(`[data-note-id="${ids.sentenceId}"]`);
         await sentenceArea.fill('hidden draft must be saved');
         // 立即切到只顯示詞，讓句子 textarea 從 DOM 消失；500ms 延遲尚未觸發。
         await page.click('[data-filter="words"]');
         await page.waitForTimeout(60);
-        const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
-        await page.click('#reading-export-json');
-        const download = await downloadPromise;
+        await page.locator('.reading-tools > summary').click();
+        const download = await exportReadingNote(page, { selector: '#reading-export-json', fullBackup: true });
         const tmp = path.join(os.tmpdir(), `bdc-draft-backup-${Date.now()}.json`);
         await download.saveAs(tmp);
         const hiddenResult = await page.evaluate(async (sentenceId) => {

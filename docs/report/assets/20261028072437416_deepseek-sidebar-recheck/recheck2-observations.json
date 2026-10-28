@@ -1,0 +1,1827 @@
+{
+  "summary": {
+    "startedAt": "2026-10-27T23:39:32.137Z",
+    "finishedAt": "2026-10-27T23:41:06.502Z",
+    "total": 84,
+    "pass": 82,
+    "fail": 0,
+    "warn": 2,
+    "pageErrors": [
+      {
+        "label": "320-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "390-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "834-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1024-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1440-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1440-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "390-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "320-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1440-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "320-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "390-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "834-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1024-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1440-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1440-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1440-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "390-zh-HK",
+        "errors": []
+      },
+      {
+        "label": "390-zh-HK",
+        "errors": []
+      },
+      {
+        "label": "1440-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1440-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "390-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1024-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "1440-zh-CN",
+        "errors": []
+      },
+      {
+        "label": "390-zh-HK",
+        "errors": []
+      },
+      {
+        "label": "390-zh-CN",
+        "errors": []
+      }
+    ]
+  },
+  "checks": [
+    {
+      "id": "P1-320",
+      "name": "320px：「更多」選單可見、未被裁切、三項可命中",
+      "status": "pass",
+      "detail": {
+        "viewport": {
+          "w": 320,
+          "h": 844
+        },
+        "menuRect": {
+          "x": 101,
+          "y": 637,
+          "w": 202,
+          "h": 146
+        },
+        "toolsOverflow": "visible",
+        "clippedBy": [],
+        "hit": {
+          "exportJson": "#reading-export-json",
+          "aiDiff": "#reading-ai-difficulties",
+          "aiNotes": "#reading-ai-notes"
+        }
+      }
+    },
+    {
+      "id": "P1-320:click",
+      "name": "320px：真實點擊選單項可開啟對話框",
+      "status": "pass",
+      "detail": {
+        "dialogTitle": "导出范围",
+        "panelStillOpen": true
+      }
+    },
+    {
+      "id": "O4-320:escape",
+      "name": "320px：開啟選單後 Escape 只收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "focus": "SUMMARY",
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "O4-320:outside",
+      "name": "320px：點選單外地區收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "NET-320",
+      "name": "320px：無任何外部（非 loopback）網路請求",
+      "status": "pass",
+      "detail": {
+        "externalHosts": 0
+      }
+    },
+    {
+      "id": "P1-390",
+      "name": "390px：「更多」選單可見、未被裁切、三項可命中",
+      "status": "pass",
+      "detail": {
+        "viewport": {
+          "w": 390,
+          "h": 844
+        },
+        "menuRect": {
+          "x": 171,
+          "y": 637,
+          "w": 202,
+          "h": 146
+        },
+        "toolsOverflow": "visible",
+        "clippedBy": [],
+        "hit": {
+          "exportJson": "#reading-export-json",
+          "aiDiff": "#reading-ai-difficulties",
+          "aiNotes": "#reading-ai-notes"
+        }
+      }
+    },
+    {
+      "id": "P1-390:click",
+      "name": "390px：真實點擊選單項可開啟對話框",
+      "status": "pass",
+      "detail": {
+        "dialogTitle": "导出范围",
+        "panelStillOpen": true
+      }
+    },
+    {
+      "id": "O4-390:escape",
+      "name": "390px：開啟選單後 Escape 只收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "focus": "SUMMARY",
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "O4-390:outside",
+      "name": "390px：點選單外地區收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "NET-390",
+      "name": "390px：無任何外部（非 loopback）網路請求",
+      "status": "pass",
+      "detail": {
+        "externalHosts": 0
+      }
+    },
+    {
+      "id": "P1-834",
+      "name": "834px：「更多」選單可見、未被裁切、三項可命中",
+      "status": "pass",
+      "detail": {
+        "viewport": {
+          "w": 834,
+          "h": 844
+        },
+        "menuRect": {
+          "x": 615,
+          "y": 641,
+          "w": 202,
+          "h": 146
+        },
+        "toolsOverflow": "visible",
+        "clippedBy": [],
+        "hit": {
+          "exportJson": "#reading-export-json",
+          "aiDiff": "#reading-ai-difficulties",
+          "aiNotes": "#reading-ai-notes"
+        }
+      }
+    },
+    {
+      "id": "P1-834:click",
+      "name": "834px：真實點擊選單項可開啟對話框",
+      "status": "pass",
+      "detail": {
+        "dialogTitle": "导出范围",
+        "panelStillOpen": true
+      }
+    },
+    {
+      "id": "O4-834:escape",
+      "name": "834px：開啟選單後 Escape 只收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "focus": "SUMMARY",
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "O4-834:outside",
+      "name": "834px：點選單外地區收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "NET-834",
+      "name": "834px：無任何外部（非 loopback）網路請求",
+      "status": "pass",
+      "detail": {
+        "externalHosts": 0
+      }
+    },
+    {
+      "id": "P1-1024",
+      "name": "1024px：「更多」選單可見、未被裁切、三項可命中",
+      "status": "pass",
+      "detail": {
+        "viewport": {
+          "w": 1024,
+          "h": 844
+        },
+        "menuRect": {
+          "x": 805,
+          "y": 641,
+          "w": 202,
+          "h": 146
+        },
+        "toolsOverflow": "visible",
+        "clippedBy": [],
+        "hit": {
+          "exportJson": "#reading-export-json",
+          "aiDiff": "#reading-ai-difficulties",
+          "aiNotes": "#reading-ai-notes"
+        }
+      }
+    },
+    {
+      "id": "P1-1024:click",
+      "name": "1024px：真實點擊選單項可開啟對話框",
+      "status": "pass",
+      "detail": {
+        "dialogTitle": "导出范围",
+        "panelStillOpen": true
+      }
+    },
+    {
+      "id": "O4-1024:escape",
+      "name": "1024px：開啟選單後 Escape 只收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "focus": "SUMMARY",
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "O4-1024:outside",
+      "name": "1024px：點選單外地區收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "NET-1024",
+      "name": "1024px：無任何外部（非 loopback）網路請求",
+      "status": "pass",
+      "detail": {
+        "externalHosts": 0
+      }
+    },
+    {
+      "id": "P1-1440",
+      "name": "1440px：「更多」選單可見、未被裁切、三項可命中",
+      "status": "pass",
+      "detail": {
+        "viewport": {
+          "w": 1440,
+          "h": 844
+        },
+        "menuRect": {
+          "x": 1221,
+          "y": 641,
+          "w": 202,
+          "h": 146
+        },
+        "toolsOverflow": "visible",
+        "clippedBy": [],
+        "hit": {
+          "exportJson": "#reading-export-json",
+          "aiDiff": "#reading-ai-difficulties",
+          "aiNotes": "#reading-ai-notes"
+        }
+      }
+    },
+    {
+      "id": "P1-1440:click",
+      "name": "1440px：真實點擊選單項可開啟對話框",
+      "status": "pass",
+      "detail": {
+        "dialogTitle": "导出范围",
+        "panelStillOpen": true
+      }
+    },
+    {
+      "id": "O4-1440:escape",
+      "name": "1440px：開啟選單後 Escape 只收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "focus": "SUMMARY",
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "O4-1440:outside",
+      "name": "1440px：點選單外地區收起選單、面板保留",
+      "status": "pass",
+      "detail": {
+        "menuClosed": true,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "NET-1440",
+      "name": "1440px：無任何外部（非 loopback）網路請求",
+      "status": "pass",
+      "detail": {
+        "externalHosts": 0
+      }
+    },
+    {
+      "id": "P3-1440",
+      "name": "1440px：備份入口預勾完整 JSON 且下載合法 JSON",
+      "status": "pass",
+      "detail": {
+        "dialog": {
+          "fullBackup": true,
+          "fullText": false,
+          "chat": false,
+          "description": "Reading Panel Fixture · 原文版本: cv1_f5ce9e03 · 11 条记录 · 3 份笔记 · 1 则对话",
+          "title": "导出范围",
+          "confirmHit": true,
+          "confirmInsideViewport": true,
+          "zIndex": "5200"
+        },
+        "download": {
+          "name": "bdc-full-backup-1793144393206.json",
+          "bytes": 23417,
+          "topLevelKeys": [
+            "ok",
+            "schemaVersion",
+            "kind",
+            "exportedAt",
+            "scope",
+            "payload"
+          ]
+        }
+      }
+    },
+    {
+      "id": "P3-390",
+      "name": "390px：備份入口預勾完整 JSON 且下載合法 JSON",
+      "status": "pass",
+      "detail": {
+        "dialog": {
+          "fullBackup": true,
+          "fullText": false,
+          "chat": false,
+          "description": "Reading Panel Fixture · 原文版本: cv1_f5ce9e03 · 11 条记录 · 3 份笔记 · 1 则对话",
+          "title": "导出范围",
+          "confirmHit": true,
+          "confirmInsideViewport": true,
+          "zIndex": "5200"
+        },
+        "download": {
+          "name": "bdc-full-backup-1793144396019.json",
+          "bytes": 23417,
+          "topLevelKeys": [
+            "ok",
+            "schemaVersion",
+            "kind",
+            "exportedAt",
+            "scope",
+            "payload"
+          ]
+        }
+      }
+    },
+    {
+      "id": "P3-320",
+      "name": "320px：備份入口預勾完整 JSON 且下載合法 JSON",
+      "status": "pass",
+      "detail": {
+        "dialog": {
+          "fullBackup": true,
+          "fullText": false,
+          "chat": false,
+          "description": "Reading Panel Fixture · 原文版本: cv1_f5ce9e03 · 11 条记录 · 3 份笔记 · 1 则对话",
+          "title": "导出范围",
+          "confirmHit": true,
+          "confirmInsideViewport": true,
+          "zIndex": "5200"
+        },
+        "download": {
+          "name": "bdc-full-backup-1793144398829.json",
+          "bytes": 23417,
+          "topLevelKeys": [
+            "ok",
+            "schemaVersion",
+            "kind",
+            "exportedAt",
+            "scope",
+            "payload"
+          ]
+        }
+      }
+    },
+    {
+      "id": "P3-control-md",
+      "name": "「導出閱讀筆記」仍預設不勾完整備份並下載 Markdown",
+      "status": "pass",
+      "detail": {
+        "dialog": {
+          "fullBackup": false,
+          "fullText": false,
+          "description": "Reading Panel Fixture · 原文版本: cv1_f5ce9e03 · 11 条记录 · 3 份笔记 · 1 则对话 · 本篇阅读笔记（不含全文与对话）"
+        },
+        "download": {
+          "name": "Reading-Panel-Fixture-reading-notes.md",
+          "bytes": 2807,
+          "head": "# Reading Panel Fixture ⏎  ⏎ - 来源: paste ⏎ - 原文版本: `cv1_f5ce9e03_365` ⏎ - 导出时间: 2026/10/28 07:40:01 ⏎ - 导出范围说明: 有尚未同步的本机"
+        }
+      }
+    },
+    {
+      "id": "P2-320:open",
+      "name": "320px：全篇筆記對話框開啟且在面板之上（可命中）",
+      "status": "pass",
+      "detail": {
+        "zIndex": "5000",
+        "parent": "BODY",
+        "contentRect": {
+          "x": 2,
+          "y": 353,
+          "w": 315,
+          "h": 497
+        },
+        "hits": [
+          {
+            "x": 160,
+            "y": 473,
+            "tag": "#reading-article-note-input",
+            "insideModal": true,
+            "insidePanel": false
+          },
+          {
+            "x": 294,
+            "y": 826,
+            "tag": "DIV",
+            "insideModal": true,
+            "insidePanel": false
+          }
+        ],
+        "inputHit": {
+          "tag": "#reading-article-note-input",
+          "insideModal": true
+        },
+        "panelZ": "2450",
+        "modalPanelExpected": true
+      }
+    },
+    {
+      "id": "P2-320:save",
+      "name": "320px：全篇筆記可輸入並保存，面板保留",
+      "status": "pass",
+      "detail": {
+        "savedLength": 34,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "P2-320:escape",
+      "name": "320px：對話框開啟時 Escape 只關對話框、面板保留並取回焦點",
+      "status": "pass",
+      "detail": {
+        "modalClosed": true,
+        "panelOpen": true,
+        "focus": {
+          "tag": "BUTTON",
+          "id": "reading-article-note",
+          "inPanel": true
+        },
+        "inertAfter": {
+          "layoutInert": true,
+          "panelInert": false,
+          "modalInert": false
+        }
+      }
+    },
+    {
+      "id": "P2-320:tab",
+      "name": "320px：對話框開啟時 Tab 不跑到背景",
+      "status": "pass",
+      "detail": {
+        "inertChildren": [
+          "app-layout",
+          "phrase-picker",
+          "reading-return",
+          "assistant-fab",
+          "assistant-panel",
+          "message-container"
+        ],
+        "tabStops": 20,
+        "stray": 0
+      }
+    },
+    {
+      "id": "P2-320:panel-tab",
+      "name": "320px：面板內 Tab 不會落到背景控件",
+      "status": "pass",
+      "detail": {
+        "tabStops": 30,
+        "backgroundControls": [],
+        "awayFromPanel": [
+          {
+            "i": 2,
+            "tag": "BODY",
+            "id": "",
+            "cls": "reading-panel-open reading-panel-modal"
+          }
+        ],
+        "modalMode": true
+      }
+    },
+    {
+      "id": "NEW-tabtrap-320",
+      "name": "320px：Tab 陷阱完整環繞（焦點不離開面板）",
+      "status": "pass",
+      "detail": [
+        {
+          "i": 0,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        },
+        {
+          "i": 1,
+          "tag": "INPUT",
+          "id": "reading-search",
+          "cls": "reading-search",
+          "inPanel": true
+        },
+        {
+          "i": 2,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-filter is-active",
+          "inPanel": true
+        },
+        {
+          "i": 3,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-filter",
+          "inPanel": true
+        }
+      ]
+    },
+    {
+      "id": "P2-320:ai-scope",
+      "name": "320px：「更多 → 分析本文難點」範圍對話框可操作",
+      "status": "pass",
+      "detail": {
+        "items": 11,
+        "docs": 1,
+        "contentInViewport": true,
+        "contentRect": {
+          "x": 0,
+          "y": 210,
+          "w": 320,
+          "h": 634
+        },
+        "runHit": true,
+        "cancelHit": true,
+        "rowHitInsideModal": true,
+        "toolsOpen": false,
+        "escapeClosedOnlyDialog": true,
+        "focusBackInPanel": true
+      }
+    },
+    {
+      "id": "P2-320:panel-escape",
+      "name": "320px：對話框關閉後 Escape 可關面板",
+      "status": "pass",
+      "detail": {
+        "panelClosed": true,
+        "inertReleased": true
+      }
+    },
+    {
+      "id": "P2-390:open",
+      "name": "390px：全篇筆記對話框開啟且在面板之上（可命中）",
+      "status": "pass",
+      "detail": {
+        "zIndex": "5000",
+        "parent": "BODY",
+        "contentRect": {
+          "x": 3,
+          "y": 353,
+          "w": 384,
+          "h": 497
+        },
+        "hits": [
+          {
+            "x": 195,
+            "y": 473,
+            "tag": "#reading-article-note-input",
+            "insideModal": true,
+            "insidePanel": false
+          },
+          {
+            "x": 363,
+            "y": 826,
+            "tag": "DIV",
+            "insideModal": true,
+            "insidePanel": false
+          }
+        ],
+        "inputHit": {
+          "tag": "#reading-article-note-input",
+          "insideModal": true
+        },
+        "panelZ": "2450",
+        "modalPanelExpected": true
+      }
+    },
+    {
+      "id": "P2-390:save",
+      "name": "390px：全篇筆記可輸入並保存，面板保留",
+      "status": "pass",
+      "detail": {
+        "savedLength": 34,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "P2-390:escape",
+      "name": "390px：對話框開啟時 Escape 只關對話框、面板保留並取回焦點",
+      "status": "pass",
+      "detail": {
+        "modalClosed": true,
+        "panelOpen": true,
+        "focus": {
+          "tag": "BUTTON",
+          "id": "reading-article-note",
+          "inPanel": true
+        },
+        "inertAfter": {
+          "layoutInert": true,
+          "panelInert": false,
+          "modalInert": false
+        }
+      }
+    },
+    {
+      "id": "P2-390:tab",
+      "name": "390px：對話框開啟時 Tab 不跑到背景",
+      "status": "pass",
+      "detail": {
+        "inertChildren": [
+          "app-layout",
+          "phrase-picker",
+          "reading-return",
+          "assistant-fab",
+          "assistant-panel",
+          "message-container"
+        ],
+        "tabStops": 20,
+        "stray": 0
+      }
+    },
+    {
+      "id": "P2-390:panel-tab",
+      "name": "390px：面板內 Tab 不會落到背景控件",
+      "status": "pass",
+      "detail": {
+        "tabStops": 30,
+        "backgroundControls": [],
+        "awayFromPanel": [
+          {
+            "i": 2,
+            "tag": "BODY",
+            "id": "",
+            "cls": "reading-panel-open reading-panel-modal"
+          }
+        ],
+        "modalMode": true
+      }
+    },
+    {
+      "id": "NEW-tabtrap-390",
+      "name": "390px：Tab 陷阱完整環繞（焦點不離開面板）",
+      "status": "pass",
+      "detail": [
+        {
+          "i": 0,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        },
+        {
+          "i": 1,
+          "tag": "INPUT",
+          "id": "reading-search",
+          "cls": "reading-search",
+          "inPanel": true
+        },
+        {
+          "i": 2,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-filter is-active",
+          "inPanel": true
+        },
+        {
+          "i": 3,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-filter",
+          "inPanel": true
+        }
+      ]
+    },
+    {
+      "id": "P2-390:ai-scope",
+      "name": "390px：「更多 → 分析本文難點」範圍對話框可操作",
+      "status": "pass",
+      "detail": {
+        "items": 11,
+        "docs": 1,
+        "contentInViewport": true,
+        "contentRect": {
+          "x": 0,
+          "y": 210,
+          "w": 390,
+          "h": 634
+        },
+        "runHit": true,
+        "cancelHit": true,
+        "rowHitInsideModal": true,
+        "toolsOpen": false,
+        "escapeClosedOnlyDialog": true,
+        "focusBackInPanel": true
+      }
+    },
+    {
+      "id": "P2-390:panel-escape",
+      "name": "390px：對話框關閉後 Escape 可關面板",
+      "status": "pass",
+      "detail": {
+        "panelClosed": true,
+        "inertReleased": true
+      }
+    },
+    {
+      "id": "P2-834:open",
+      "name": "834px：全篇筆記對話框開啟且在面板之上（可命中）",
+      "status": "pass",
+      "detail": {
+        "zIndex": "5000",
+        "parent": "BODY",
+        "contentRect": {
+          "x": 141,
+          "y": 195,
+          "w": 552,
+          "h": 474
+        },
+        "hits": [
+          {
+            "x": 417,
+            "y": 315,
+            "tag": "#reading-article-note-input",
+            "insideModal": true,
+            "insidePanel": false
+          },
+          {
+            "x": 669,
+            "y": 645,
+            "tag": "DIV",
+            "insideModal": true,
+            "insidePanel": false
+          }
+        ],
+        "inputHit": {
+          "tag": "#reading-article-note-input",
+          "insideModal": true
+        },
+        "panelZ": "2450",
+        "modalPanelExpected": true
+      }
+    },
+    {
+      "id": "P2-834:save",
+      "name": "834px：全篇筆記可輸入並保存，面板保留",
+      "status": "pass",
+      "detail": {
+        "savedLength": 34,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "P2-834:escape",
+      "name": "834px：對話框開啟時 Escape 只關對話框、面板保留並取回焦點",
+      "status": "pass",
+      "detail": {
+        "modalClosed": true,
+        "panelOpen": true,
+        "focus": {
+          "tag": "BUTTON",
+          "id": "reading-article-note",
+          "inPanel": true
+        },
+        "inertAfter": {
+          "layoutInert": true,
+          "panelInert": false,
+          "modalInert": false
+        }
+      }
+    },
+    {
+      "id": "P2-834:tab",
+      "name": "834px：對話框開啟時 Tab 不跑到背景",
+      "status": "pass",
+      "detail": {
+        "inertChildren": [
+          "app-layout",
+          "phrase-picker",
+          "reading-return",
+          "assistant-fab",
+          "assistant-panel",
+          "message-container"
+        ],
+        "tabStops": 20,
+        "stray": 0
+      }
+    },
+    {
+      "id": "P2-834:panel-tab",
+      "name": "834px：面板內 Tab 不會落到背景控件",
+      "status": "pass",
+      "detail": {
+        "tabStops": 30,
+        "backgroundControls": [],
+        "awayFromPanel": [
+          {
+            "i": 2,
+            "tag": "BODY",
+            "id": "",
+            "cls": "reading-panel-open reading-panel-modal"
+          }
+        ],
+        "modalMode": true
+      }
+    },
+    {
+      "id": "NEW-tabtrap-834",
+      "name": "834px：Tab 陷阱完整環繞（焦點不離開面板）",
+      "status": "pass",
+      "detail": [
+        {
+          "i": 0,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        },
+        {
+          "i": 1,
+          "tag": "INPUT",
+          "id": "reading-search",
+          "cls": "reading-search",
+          "inPanel": true
+        },
+        {
+          "i": 2,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-filter is-active",
+          "inPanel": true
+        },
+        {
+          "i": 3,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-filter",
+          "inPanel": true
+        }
+      ]
+    },
+    {
+      "id": "P2-834:ai-scope",
+      "name": "834px：「更多 → 分析本文難點」範圍對話框可操作",
+      "status": "pass",
+      "detail": {
+        "items": 11,
+        "docs": 1,
+        "contentInViewport": true,
+        "contentRect": {
+          "x": 137,
+          "y": 117,
+          "w": 560,
+          "h": 611
+        },
+        "runHit": true,
+        "cancelHit": true,
+        "rowHitInsideModal": true,
+        "toolsOpen": false,
+        "escapeClosedOnlyDialog": true,
+        "focusBackInPanel": true
+      }
+    },
+    {
+      "id": "P2-834:panel-escape",
+      "name": "834px：對話框關閉後 Escape 可關面板",
+      "status": "pass",
+      "detail": {
+        "panelClosed": true,
+        "inertReleased": true
+      }
+    },
+    {
+      "id": "P2-1024:open",
+      "name": "1024px：全篇筆記對話框開啟且在面板之上（可命中）",
+      "status": "pass",
+      "detail": {
+        "zIndex": "5000",
+        "parent": "BODY",
+        "contentRect": {
+          "x": 236,
+          "y": 195,
+          "w": 552,
+          "h": 474
+        },
+        "hits": [
+          {
+            "x": 512,
+            "y": 315,
+            "tag": "#reading-article-note-input",
+            "insideModal": true,
+            "insidePanel": false
+          },
+          {
+            "x": 764,
+            "y": 645,
+            "tag": "DIV",
+            "insideModal": true,
+            "insidePanel": false
+          }
+        ],
+        "inputHit": {
+          "tag": "#reading-article-note-input",
+          "insideModal": true
+        },
+        "panelZ": "2450",
+        "modalPanelExpected": true
+      }
+    },
+    {
+      "id": "P2-1024:save",
+      "name": "1024px：全篇筆記可輸入並保存，面板保留",
+      "status": "pass",
+      "detail": {
+        "savedLength": 35,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "P2-1024:escape",
+      "name": "1024px：對話框開啟時 Escape 只關對話框、面板保留並取回焦點",
+      "status": "pass",
+      "detail": {
+        "modalClosed": true,
+        "panelOpen": true,
+        "focus": {
+          "tag": "BUTTON",
+          "id": "reading-article-note",
+          "inPanel": true
+        },
+        "inertAfter": {
+          "layoutInert": true,
+          "panelInert": false,
+          "modalInert": false
+        }
+      }
+    },
+    {
+      "id": "P2-1024:tab",
+      "name": "1024px：對話框開啟時 Tab 不跑到背景",
+      "status": "pass",
+      "detail": {
+        "inertChildren": [
+          "app-layout",
+          "phrase-picker",
+          "reading-return",
+          "assistant-fab",
+          "assistant-panel",
+          "message-container"
+        ],
+        "tabStops": 20,
+        "stray": 0
+      }
+    },
+    {
+      "id": "P2-1024:panel-tab",
+      "name": "1024px：面板內 Tab 不會落到背景控件",
+      "status": "pass",
+      "detail": {
+        "tabStops": 30,
+        "backgroundControls": [],
+        "awayFromPanel": [
+          {
+            "i": 2,
+            "tag": "BODY",
+            "id": "",
+            "cls": "reading-panel-open reading-panel-modal"
+          }
+        ],
+        "modalMode": true
+      }
+    },
+    {
+      "id": "NEW-tabtrap-1024",
+      "name": "1024px：Tab 陷阱完整環繞（焦點不離開面板）",
+      "status": "pass",
+      "detail": [
+        {
+          "i": 0,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        },
+        {
+          "i": 1,
+          "tag": "INPUT",
+          "id": "reading-search",
+          "cls": "reading-search",
+          "inPanel": true
+        },
+        {
+          "i": 2,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-filter is-active",
+          "inPanel": true
+        },
+        {
+          "i": 3,
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-filter",
+          "inPanel": true
+        }
+      ]
+    },
+    {
+      "id": "P2-1024:ai-scope",
+      "name": "1024px：「更多 → 分析本文難點」範圍對話框可操作",
+      "status": "pass",
+      "detail": {
+        "items": 11,
+        "docs": 1,
+        "contentInViewport": true,
+        "contentRect": {
+          "x": 232,
+          "y": 117,
+          "w": 560,
+          "h": 611
+        },
+        "runHit": true,
+        "cancelHit": true,
+        "rowHitInsideModal": true,
+        "toolsOpen": false,
+        "escapeClosedOnlyDialog": true,
+        "focusBackInPanel": true
+      }
+    },
+    {
+      "id": "P2-1024:panel-escape",
+      "name": "1024px：對話框關閉後 Escape 可關面板",
+      "status": "pass",
+      "detail": {
+        "panelClosed": true,
+        "inertReleased": true
+      }
+    },
+    {
+      "id": "P2-1440:open",
+      "name": "1440px：全篇筆記對話框開啟且在面板之上（可命中）",
+      "status": "pass",
+      "detail": {
+        "zIndex": "5000",
+        "parent": "BODY",
+        "contentRect": {
+          "x": 444,
+          "y": 195,
+          "w": 552,
+          "h": 474
+        },
+        "hits": [
+          {
+            "x": 720,
+            "y": 315,
+            "tag": "#reading-article-note-input",
+            "insideModal": true,
+            "insidePanel": false
+          },
+          {
+            "x": 972,
+            "y": 645,
+            "tag": "DIV",
+            "insideModal": true,
+            "insidePanel": false
+          }
+        ],
+        "inputHit": {
+          "tag": "#reading-article-note-input",
+          "insideModal": true
+        },
+        "panelZ": "2450",
+        "modalPanelExpected": false
+      }
+    },
+    {
+      "id": "P2-1440:save",
+      "name": "1440px：全篇筆記可輸入並保存，面板保留",
+      "status": "pass",
+      "detail": {
+        "savedLength": 35,
+        "panelOpen": true
+      }
+    },
+    {
+      "id": "P2-1440:escape",
+      "name": "1440px：對話框開啟時 Escape 只關對話框、面板保留並取回焦點",
+      "status": "pass",
+      "detail": {
+        "modalClosed": true,
+        "panelOpen": true,
+        "focus": {
+          "tag": "BUTTON",
+          "id": "reading-article-note",
+          "inPanel": true
+        },
+        "inertAfter": {
+          "layoutInert": false,
+          "panelInert": false,
+          "modalInert": false
+        }
+      }
+    },
+    {
+      "id": "P2-1440:tab",
+      "name": "1440px：對話框開啟時 Tab 不跑到背景",
+      "status": "pass",
+      "detail": {
+        "inertChildren": [],
+        "tabStops": 20,
+        "stray": 0
+      }
+    },
+    {
+      "id": "P2-1440:panel-tab",
+      "name": "1440px：面板內 Tab 不會落到背景控件",
+      "status": "pass",
+      "detail": {
+        "tabStops": 30,
+        "backgroundControls": [
+          {
+            "i": 2,
+            "tag": "BUTTON",
+            "id": "assistant-fab",
+            "cls": "assistant-fab"
+          },
+          {
+            "i": 3,
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "message-toast__close"
+          },
+          {
+            "i": 5,
+            "tag": "BUTTON",
+            "id": "app-gear-btn",
+            "cls": "floating-gear-btn"
+          },
+          {
+            "i": 6,
+            "tag": "BUTTON",
+            "id": "vocabulary-btn",
+            "cls": "nav-btn"
+          },
+          {
+            "i": 7,
+            "tag": "BUTTON",
+            "id": "dictation-btn",
+            "cls": "nav-btn"
+          },
+          {
+            "i": 8,
+            "tag": "BUTTON",
+            "id": "learning-btn",
+            "cls": "nav-btn"
+          },
+          {
+            "i": 9,
+            "tag": "BUTTON",
+            "id": "qa-btn",
+            "cls": "nav-btn"
+          },
+          {
+            "i": 10,
+            "tag": "BUTTON",
+            "id": "article-btn",
+            "cls": "nav-btn active"
+          },
+          {
+            "i": 11,
+            "tag": "BUTTON",
+            "id": "ocr-btn",
+            "cls": "nav-btn"
+          },
+          {
+            "i": 12,
+            "tag": "BUTTON",
+            "id": "quiz-btn",
+            "cls": "nav-btn"
+          },
+          {
+            "i": 13,
+            "tag": "BUTTON",
+            "id": "article-input-toggle",
+            "cls": "article-reader-action"
+          },
+          {
+            "i": 14,
+            "tag": "BUTTON",
+            "id": "import-article-btn",
+            "cls": "article-reader-action"
+          },
+          {
+            "i": 15,
+            "tag": "BUTTON",
+            "id": "show-article-library-btn",
+            "cls": "article-reader-action"
+          },
+          {
+            "i": 16,
+            "tag": "BUTTON",
+            "id": "article-history-btn",
+            "cls": "article-reader-action history-entry-btn"
+          },
+          {
+            "i": 17,
+            "tag": "BUTTON",
+            "id": "article-sidebar-toggle",
+            "cls": "btn secondary article-sidebar-toggle"
+          },
+          {
+            "i": 18,
+            "tag": "BUTTON",
+            "id": "article-reading-records-btn",
+            "cls": "btn-tertiary reading-records-btn"
+          },
+          {
+            "i": 19,
+            "tag": "INPUT",
+            "id": "article-reading-marks-toggle",
+            "cls": ""
+          },
+          {
+            "i": 20,
+            "tag": "BUTTON",
+            "id": "article-reading-export-btn",
+            "cls": "btn-tertiary"
+          },
+          {
+            "i": 21,
+            "tag": "INPUT",
+            "id": "toggle-cn-mask",
+            "cls": ""
+          },
+          {
+            "i": 22,
+            "tag": "BUTTON",
+            "id": "article-history-status",
+            "cls": "article-history-status"
+          },
+          {
+            "i": 24,
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "sent-analyze-btn icon-only"
+          },
+          {
+            "i": 25,
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "retry-paragraph-btn"
+          },
+          {
+            "i": 27,
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "sent-analyze-btn icon-only"
+          },
+          {
+            "i": 28,
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "retry-paragraph-btn"
+          }
+        ],
+        "awayFromPanel": [
+          {
+            "i": 2,
+            "tag": "BUTTON",
+            "id": "assistant-fab",
+            "cls": "assistant-fab"
+          },
+          {
+            "i": 3,
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "message-toast__close"
+          },
+          {
+            "i": 4,
+            "tag": "BODY",
+            "id": "",
+            "cls": "reading-panel-open"
+          },
+          {
+            "i": 5,
+            "tag": "BUTTON",
+            "id": "app-gear-btn",
+            "cls": "floating-gear-btn"
+          }
+        ],
+        "modalMode": false
+      }
+    },
+    {
+      "id": "NEW-tabtrap-1440",
+      "name": "1440px：Tab 陷阱完整環繞（焦點不離開面板）",
+      "status": "pass",
+      "detail": {
+        "skipped": "1440 為非模態面板，不套用焦點陷阱"
+      }
+    },
+    {
+      "id": "P2-1440:ai-scope",
+      "name": "1440px：「更多 → 分析本文難點」範圍對話框可操作",
+      "status": "pass",
+      "detail": {
+        "items": 11,
+        "docs": 1,
+        "contentInViewport": true,
+        "contentRect": {
+          "x": 440,
+          "y": 117,
+          "w": 560,
+          "h": 611
+        },
+        "runHit": true,
+        "cancelHit": true,
+        "rowHitInsideModal": true,
+        "toolsOpen": false,
+        "escapeClosedOnlyDialog": true,
+        "focusBackInPanel": true
+      }
+    },
+    {
+      "id": "P2-1440:panel-escape",
+      "name": "1440px：對話框關閉後 Escape 可關面板",
+      "status": "pass",
+      "detail": {
+        "panelClosed": true,
+        "inertReleased": true
+      }
+    },
+    {
+      "id": "O1-zh-CN",
+      "name": "1440px/zh-CN：保存失敗顯示錯誤→重試成功，狀態不再停在「保存中…」",
+      "status": "pass",
+      "detail": {
+        "failedStatus": "保存失败，请重试 重试",
+        "afterStatus": "已保存",
+        "storedOk": true,
+        "focusAfterMouseClick": "BODY"
+      }
+    },
+    {
+      "id": "O1-zh-CN:focus-after-mouse",
+      "name": "1440px/zh-CN：滑鼠點重試後焦點位置（觀察項）",
+      "status": "warn",
+      "detail": "焦點不在 textarea（BODY）；blur 自動保存已重繪卡片，重試按鈕在 click 前被替換"
+    },
+    {
+      "id": "O1-zh-CN:keyboard",
+      "name": "1440px/zh-CN：不觸發 blur 重繪時，重試成功且焦點回到 textarea",
+      "status": "pass",
+      "detail": {
+        "status": "已保存",
+        "hasRetry": false,
+        "focusTag": "TEXTAREA",
+        "focusIsNote": true,
+        "focusInPanel": true
+      }
+    },
+    {
+      "id": "O1-zh-HK",
+      "name": "390px/zh-HK：保存失敗顯示錯誤→重試成功，狀態不再停在「儲存中…」",
+      "status": "pass",
+      "detail": {
+        "failedStatus": "儲存失敗，請重試 重試",
+        "afterStatus": "已儲存",
+        "storedOk": true,
+        "focusAfterMouseClick": "BODY"
+      }
+    },
+    {
+      "id": "O1-zh-HK:focus-after-mouse",
+      "name": "390px/zh-HK：滑鼠點重試後焦點位置（觀察項）",
+      "status": "warn",
+      "detail": "焦點不在 textarea（BODY）；blur 自動保存已重繪卡片，重試按鈕在 click 前被替換"
+    },
+    {
+      "id": "O1-zh-HK:keyboard",
+      "name": "390px/zh-HK：不觸發 blur 重繪時，重試成功且焦點回到 textarea",
+      "status": "pass",
+      "detail": {
+        "status": "已儲存",
+        "hasRetry": false,
+        "focusTag": "TEXTAREA",
+        "focusIsNote": true,
+        "focusInPanel": true
+      }
+    },
+    {
+      "id": "O2",
+      "name": "「最近查閱」把未查閱文件排在最後，且順序依 lastViewedAt 遞減",
+      "status": "pass",
+      "detail": {
+        "firstFive": [
+          {
+            "type": "item",
+            "id": "li_cv1_6f767781_85",
+            "lastViewedAt": "2026-10-27T23:40:47.516Z",
+            "updatedAt": "2026-10-27T23:40:47.516Z"
+          },
+          {
+            "type": "item",
+            "id": "li_cv1_6bdb6f43_69",
+            "lastViewedAt": "2026-10-27T23:40:47.515Z",
+            "updatedAt": "2026-10-27T23:40:47.515Z"
+          },
+          {
+            "type": "item",
+            "id": "li_cv1_24c91711_72",
+            "lastViewedAt": "2026-10-27T23:40:47.515Z",
+            "updatedAt": "2026-10-27T23:40:47.515Z"
+          },
+          {
+            "type": "item",
+            "id": "li_cv1_00250c37_67",
+            "lastViewedAt": "2026-10-27T23:40:47.514Z",
+            "updatedAt": "2026-10-27T23:40:47.514Z"
+          },
+          {
+            "type": "item",
+            "id": "li_cv1_fe8a7bd3_69",
+            "lastViewedAt": "2026-10-27T23:40:47.514Z",
+            "updatedAt": "2026-10-27T23:40:47.514Z"
+          }
+        ],
+        "lastTwo": [
+          {
+            "type": "document",
+            "id": "doc_mvrbwmqnr90s7v7y",
+            "lastViewedAt": "",
+            "updatedAt": "2026-10-27T23:40:47.519Z"
+          },
+          {
+            "type": "document",
+            "id": "doc_mvrbwmqn7wxnyju4",
+            "lastViewedAt": "",
+            "updatedAt": "2026-10-27T23:40:47.519Z"
+          }
+        ],
+        "itemRange": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "docIndexes": [
+          11,
+          12
+        ]
+      }
+    },
+    {
+      "id": "O3:error",
+      "name": "讀取失敗時篩選徽章顯示「—」而非 0",
+      "status": "pass",
+      "detail": {
+        "counts": [
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
+        ],
+        "filters": [
+          "all",
+          "words",
+          "sentences",
+          "marked",
+          "notes",
+          "ai"
+        ],
+        "results": "",
+        "subtitle": "未能读取本机学习记录，请重试。",
+        "errorText": "未能读取本机学习记录，请重试。重试",
+        "titleBadge": "本文学习记录\n                    13"
+      }
+    },
+    {
+      "id": "O3:retry",
+      "name": "解除注入後「重試」可恢復計數與清單",
+      "status": "pass",
+      "detail": {
+        "counts": [
+          "13",
+          "10",
+          "1",
+          "2",
+          "3",
+          "1"
+        ],
+        "cards": 13
+      }
+    },
+    {
+      "id": "NEW-tabtrap-390",
+      "name": "390px：「更多」收起時，從最後一項 Tab 與從第一項 Shift+Tab 的行為",
+      "status": "pass",
+      "detail": {
+        "targets": {
+          "count": 55,
+          "last": "reading-ai-notes",
+          "lastInsideClosedMenu": true,
+          "summaryRects": 1,
+          "menuButtonsRects": [
+            1,
+            1,
+            1
+          ],
+          "menuButtonsVisibility": [
+            {
+              "id": "reading-export-json",
+              "checkVisibility": false,
+              "offsetParent": true,
+              "visibility": "visible"
+            },
+            {
+              "id": "reading-ai-difficulties",
+              "checkVisibility": false,
+              "offsetParent": true,
+              "visibility": "visible"
+            },
+            {
+              "id": "reading-ai-notes",
+              "checkVisibility": false,
+              "offsetParent": true,
+              "visibility": "visible"
+            }
+          ],
+          "menuOpen": false
+        },
+        "afterTab": {
+          "tag": "BODY",
+          "id": "",
+          "inPanel": false
+        },
+        "afterTab2": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        },
+        "afterShift": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        },
+        "afterOpenMenu": {
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        }
+      }
+    },
+    {
+      "id": "NEW-tabtrap-1024",
+      "name": "1024px：「更多」收起時，從最後一項 Tab 與從第一項 Shift+Tab 的行為",
+      "status": "pass",
+      "detail": {
+        "targets": {
+          "count": 55,
+          "last": "reading-ai-notes",
+          "lastInsideClosedMenu": true,
+          "summaryRects": 1,
+          "menuButtonsRects": [
+            1,
+            1,
+            1
+          ],
+          "menuButtonsVisibility": [
+            {
+              "id": "reading-export-json",
+              "checkVisibility": false,
+              "offsetParent": true,
+              "visibility": "visible"
+            },
+            {
+              "id": "reading-ai-difficulties",
+              "checkVisibility": false,
+              "offsetParent": true,
+              "visibility": "visible"
+            },
+            {
+              "id": "reading-ai-notes",
+              "checkVisibility": false,
+              "offsetParent": true,
+              "visibility": "visible"
+            }
+          ],
+          "menuOpen": false
+        },
+        "afterTab": {
+          "tag": "BODY",
+          "id": "",
+          "inPanel": false
+        },
+        "afterTab2": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        },
+        "afterShift": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        },
+        "afterOpenMenu": {
+          "id": "",
+          "cls": "reading-panel-close",
+          "inPanel": true
+        }
+      }
+    },
+    {
+      "id": "REG-appmodal-mount",
+      "name": "#app-modal 為 body 直屬子節點，關閉後清空內容並歸還焦點",
+      "status": "pass",
+      "detail": {
+        "appModalParent": "BODY",
+        "appModalInLayout": false,
+        "libraryInLayout": true,
+        "layoutZ": "1",
+        "after": {
+          "hidden": true,
+          "bodyLen": 0,
+          "active": "reading-article-note",
+          "panelOpen": true
+        }
+      }
+    },
+    {
+      "id": "LOCALE-hk:labels",
+      "name": "zh-HK：面板／篩選／排序／更多選單文案為香港繁體",
+      "status": "pass",
+      "detail": {
+        "noteBtn": "全篇筆記",
+        "more": "更多",
+        "menu": [
+          "備份目前帳戶（JSON）",
+          "分析本文難點",
+          "整理閱讀筆記"
+        ]
+      }
+    },
+    {
+      "id": "LOCALE-hk:dialog",
+      "name": "zh-HK：匯出範圍與全篇筆記對話框文案及 Escape 行為",
+      "status": "pass",
+      "detail": {
+        "exportTitle": "匯出範圍",
+        "noteTitle": "全篇閱讀筆記",
+        "escapeClosedDialogOnly": true
+      }
+    },
+    {
+      "id": "REG-delete",
+      "name": "390px：刪除確認與面板內撤銷仍正常",
+      "status": "pass",
+      "detail": {
+        "confirmTitle": "删除学习记录",
+        "afterDelete": {
+          "cards": 12,
+          "undoFocus": "reading-undo-delete"
+        },
+        "afterUndo": {
+          "cards": 13,
+          "undoHidden": true
+        }
+      }
+    }
+  ]
+}

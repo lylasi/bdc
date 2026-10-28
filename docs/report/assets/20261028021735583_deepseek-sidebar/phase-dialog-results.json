@@ -1,0 +1,22 @@
+[
+  {
+    "name": "桌面：全篇筆記可編輯並保存，面板保留",
+    "pass": true,
+    "detail": "{\"existingNote\":\"这封邮件需要确认会面安排、预算和附件。\",\"saved\":{\"modalHidden\":true,\"content\":\"全篇筆記更新內容（複核）\",\"panelOpen\":true}}"
+  },
+  {
+    "name": "390px 匯出對話框（含說明＋3 選項）確認／取消初始可見",
+    "pass": true,
+    "detail": "{\"content\":{\"top\":362,\"h\":482,\"bottom\":844},\"overlayScrollTop\":0,\"overlayScrollHeight\":844,\"overlayClientHeight\":844,\"confirm\":{\"top\":780,\"bottom\":824},\"cancel\":{\"top\":728,\"bottom\":772},\"switchTop\":513,\"viewportH\":844,\"confirmVisible\":true,\"cancelVisible\":true}"
+  },
+  {
+    "name": "320px 匯出對話框（含說明＋3 選項）確認／取消初始可見",
+    "pass": true,
+    "detail": "{\"content\":{\"top\":362,\"h\":482,\"bottom\":844},\"overlayScrollTop\":0,\"overlayScrollHeight\":844,\"overlayClientHeight\":844,\"confirm\":{\"top\":780,\"bottom\":824},\"cancel\":{\"top\":728,\"bottom\":772},\"switchTop\":513,\"viewportH\":844,\"confirmVisible\":true,\"cancelVisible\":true}"
+  },
+  {
+    "name": "390px 全篇筆記對話框按鈕在初始視窗內",
+    "pass": true,
+    "detail": "{\"content\":{\"top\":339,\"h\":505,\"bottom\":844},\"save\":{\"top\":772,\"bottom\":816},\"cancel\":{\"bottom\":816},\"viewportH\":844,\"buttonsVisible\":true,\"modalScrollable\":false}"
+  }
+]

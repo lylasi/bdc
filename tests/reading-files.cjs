@@ -57,12 +57,17 @@ async function newPage(browser, { locale = 'zh-CN', viewport = { width: 1440, he
             localStorage.setItem('pen_global_settings', JSON.stringify(parsed));
         } catch (_) {}
     }, { endpoint: ENDPOINT, locale });
+    await context.route('**/*', route => {
+        const url = new URL(route.request().url());
+        if (url.pathname.endsWith('/ai-config.js')) return route.fulfill({ contentType: 'application/javascript', body: 'export const SYNC={endpoint:""}; export const TTS_CONFIG={}, AI_LIMITS={}, OCR_CONFIG={}, ARTICLE_IMPORT={}, SUPABASE={};' });
+        return url.origin === BASE.slice(0, -1) ? route.continue() : route.abort();
+    });
     const page = await context.newPage();
     const errors = [];
     page.on('console', (m) => {
         if (m.type() !== 'error') return;
         const text = m.text();
-        if (/401|501|Not Implemented|ai-credentials|ai-catalog|sync_endpoint_missing|ERR_CONNECTION_REFUSED|ERR_UNSAFE_PORT|尚未选择模型|尚未選擇模型|Error analyzing word|Failed to load resource: the server responded with a status of 404|File not found/i.test(text)) return;
+        if (/401|501|Not Implemented|ai-credentials|ai-catalog|sync_endpoint_missing|ERR_FAILED|ERR_CONNECTION_REFUSED|ERR_UNSAFE_PORT|尚未选择模型|尚未選擇模型|Error analyzing word|Failed to load resource: the server responded with a status of 404|File not found/i.test(text)) return;
         errors.push(text.slice(0, 240));
     });
     page.on('pageerror', (e) => errors.push('PAGEERROR ' + String(e && e.stack ? e.stack.split('\n')[0] : e)));
@@ -214,7 +219,8 @@ async function runDesktop(browser) {
     });
     check('全篇閱讀筆記可獨立編輯保存', articleNote.some((content) => content.includes('確認見面與附件')), JSON.stringify(articleNote));
 
-    // 筆記自動保存
+    // 摘要卡按需展開後編輯筆記。
+    await page.locator(`[data-item-id="${ids.phraseId}"] [data-action="expand"]`).click();
     const note = page.locator(`[data-note-id="${ids.phraseId}"]`);
     await note.fill('更新後的個人筆記：接名詞或動名詞。');
     await page.waitForTimeout(900);
@@ -304,6 +310,7 @@ async function runDesktopHk(browser) {
     await openArticle(page);
     await page.click('#article-reading-records-btn');
     await page.waitForTimeout(300);
+    await page.locator('.reading-item [data-action="expand"]').first().click();
     const text = await page.locator('#article-reading-panel').innerText();
     check('zh-HK 使用香港書面中文（學習記錄／筆記／匯出）', /本文學習記錄/.test(text) && /個人筆記/.test(text) && /匯出閱讀筆記/.test(text), text.slice(0, 200));
     if (ASSET_DIR) await page.screenshot({ path: path.join(ASSET_DIR, 'desktop-zh-HK.png') });

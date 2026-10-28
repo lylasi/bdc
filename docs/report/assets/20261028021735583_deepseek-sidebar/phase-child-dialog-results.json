@@ -1,0 +1,47 @@
+[
+  {
+    "name": "1440px 全篇筆記子對話框（app-modal）是否可命中/操作",
+    "pass": true,
+    "detail": "{\"viewport\":{\"w\":1440,\"h\":960},\"modalOpen\":true,\"modalRect\":{\"x\":0,\"y\":0,\"w\":1440,\"h\":960,\"bottom\":960},\"contentRect\":{\"x\":440,\"y\":239,\"w\":560,\"h\":482,\"bottom\":721},\"panelRect\":{\"x\":0,\"y\":0,\"w\":1440,\"h\":960,\"bottom\":960},\"panelZ\":\"2450\",\"appLayoutZ\":\"1\",\"modalZ\":\"5000\",\"hits\":[{\"x\":720,\"y\":263,\"hit\":\"modal-title\",\"insideModal\":true},{\"x\":720,\"y\":480,\"hit\":\"reading-article-note-input\",\"insideModal\":true},{\"x\":464,\"y\":697,\"hit\":\"reading-article-note-editor\",\"insideModal\":true}],\"modalReachable\":true,\"panelAriaModal\":\"false\"}"
+  },
+  {
+    "name": "1440px 全篇筆記「取消」按鈕可用真實滑鼠點擊",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "name": "1024px 全篇筆記子對話框（app-modal）是否可命中/操作",
+    "pass": false,
+    "detail": "{\"viewport\":{\"w\":1024,\"h\":844},\"modalOpen\":true,\"modalRect\":{\"x\":0,\"y\":0,\"w\":1024,\"h\":844,\"bottom\":844},\"contentRect\":{\"x\":232,\"y\":181,\"w\":560,\"h\":482,\"bottom\":663},\"panelRect\":{\"x\":0,\"y\":0,\"w\":1024,\"h\":844,\"bottom\":844},\"panelZ\":\"2450\",\"appLayoutZ\":\"1\",\"modalZ\":\"5000\",\"hits\":[{\"x\":512,\"y\":205,\"hit\":\"reading-panel-backdrop\",\"insideModal\":false},{\"x\":512,\"y\":422,\"hit\":\"reading-panel-backdrop\",\"insideModal\":false},{\"x\":256,\"y\":639,\"hit\":\"reading-panel-backdrop\",\"insideModal\":false}],\"modalReachable\":false,\"panelAriaModal\":\"true\"}"
+  },
+  {
+    "name": "1024px 全篇筆記「取消」按鈕可用真實滑鼠點擊",
+    "pass": false,
+    "detail": ""
+  },
+  {
+    "name": "834px 全篇筆記子對話框（app-modal）是否可命中/操作",
+    "pass": false,
+    "detail": "{\"viewport\":{\"w\":834,\"h\":844},\"modalOpen\":true,\"modalRect\":{\"x\":0,\"y\":0,\"w\":834,\"h\":844,\"bottom\":844},\"contentRect\":{\"x\":137,\"y\":181,\"w\":560,\"h\":482,\"bottom\":663},\"panelRect\":{\"x\":0,\"y\":0,\"w\":834,\"h\":844,\"bottom\":844},\"panelZ\":\"2450\",\"appLayoutZ\":\"1\",\"modalZ\":\"5000\",\"hits\":[{\"x\":417,\"y\":205,\"hit\":\"reading-panel-filters\",\"insideModal\":false},{\"x\":417,\"y\":422,\"hit\":\"reading-item is-marked\",\"insideModal\":false},{\"x\":161,\"y\":639,\"hit\":\"reading-panel-backdrop\",\"insideModal\":false}],\"modalReachable\":false,\"panelAriaModal\":\"true\"}"
+  },
+  {
+    "name": "834px 全篇筆記「取消」按鈕可用真實滑鼠點擊",
+    "pass": false,
+    "detail": ""
+  },
+  {
+    "name": "390px 全篇筆記子對話框（app-modal）是否可命中/操作",
+    "pass": false,
+    "detail": "{\"viewport\":{\"w\":390,\"h\":844},\"modalOpen\":true,\"modalRect\":{\"x\":0,\"y\":0,\"w\":390,\"h\":844,\"bottom\":844},\"contentRect\":{\"x\":0,\"y\":339,\"w\":390,\"h\":505,\"bottom\":844},\"panelRect\":{\"x\":0,\"y\":0,\"w\":390,\"h\":844,\"bottom\":844},\"panelZ\":\"2450\",\"appLayoutZ\":\"1\",\"modalZ\":\"5000\",\"hits\":[{\"x\":195,\"y\":363,\"hit\":\"reading-item-head\",\"insideModal\":false},{\"x\":195,\"y\":592,\"hit\":\"reading-quick-actions\",\"insideModal\":false},{\"x\":24,\"y\":820,\"hit\":\"reading-article-note\",\"insideModal\":false}],\"modalReachable\":false,\"panelAriaModal\":\"true\"}"
+  },
+  {
+    "name": "390px 全篇筆記「取消」按鈕可用真實滑鼠點擊",
+    "pass": false,
+    "detail": ""
+  },
+  {
+    "name": "390px 開子對話框後 Escape：面板不得被不可見對話框鎖死",
+    "pass": false,
+    "detail": "{\"afterEscape1\":{\"panelOpen\":true,\"dialogOpen\":true},\"afterEscape2\":{\"panelOpen\":true,\"dialogOpen\":true,\"dialogReachable\":false}}"
+  }
+]

@@ -1,0 +1,656 @@
+{
+  "startedAt": "2026-10-27T23:56:13.690Z",
+  "baseUrl": "http://127.0.0.1:8313/",
+  "scope": "N1（Tab 回繞）+ N2（滑鼠重試焦點）；不含其他 84 項",
+  "n1": [
+    {
+      "id": "N1-zh-CN-390",
+      "name": "390px/zh-CN：「更多」收起時 summary Tab→close、close Shift+Tab→summary；展開時最後 AI 工具與 close 正反回繞",
+      "status": "pass",
+      "ms": 94,
+      "detail": {
+        "modal": {
+          "modalClass": true,
+          "mediaModal": true,
+          "ariaModal": "true"
+        },
+        "targets": {
+          "count": 48,
+          "first": "button.reading-panel-close",
+          "last": "summary.btn.tertiary",
+          "lastTag": "SUMMARY",
+          "lastText": "更多",
+          "hiddenMenuButtonsIncluded": false,
+          "toolsOpen": false
+        },
+        "lastWhenOpen": {
+          "count": 51,
+          "lastId": "reading-ai-notes",
+          "toolsOpen": true
+        },
+        "closedTabTo": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "closedShiftTo": {
+          "tag": "SUMMARY",
+          "isToolsSummary": true,
+          "inPanel": true,
+          "isBody": false
+        },
+        "midForwardTo": {
+          "tag": "SELECT",
+          "id": "reading-sort",
+          "cls": "",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "midBackwardTo": {
+          "tag": "BUTTON",
+          "id": "reading-article-note",
+          "cls": "btn secondary",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "openTabTo": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "openShiftTo": {
+          "tag": "BUTTON",
+          "id": "reading-ai-notes",
+          "cls": "btn tertiary",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "bodyStops": 0,
+        "screenshot": "n1-zh-CN-390-wrap.png"
+      }
+    },
+    {
+      "id": "N1-zh-CN-1024",
+      "name": "1024px/zh-CN：「更多」收起時 summary Tab→close、close Shift+Tab→summary；展開時最後 AI 工具與 close 正反回繞",
+      "status": "pass",
+      "ms": 50,
+      "detail": {
+        "modal": {
+          "modalClass": true,
+          "mediaModal": true,
+          "ariaModal": "true"
+        },
+        "targets": {
+          "count": 48,
+          "first": "button.reading-panel-close",
+          "last": "summary.btn.tertiary",
+          "lastTag": "SUMMARY",
+          "lastText": "更多",
+          "hiddenMenuButtonsIncluded": false,
+          "toolsOpen": false
+        },
+        "lastWhenOpen": {
+          "count": 51,
+          "lastId": "reading-ai-notes",
+          "toolsOpen": true
+        },
+        "closedTabTo": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "closedShiftTo": {
+          "tag": "SUMMARY",
+          "isToolsSummary": true,
+          "inPanel": true,
+          "isBody": false
+        },
+        "midForwardTo": {
+          "tag": "SELECT",
+          "id": "reading-sort",
+          "cls": "",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "midBackwardTo": {
+          "tag": "BUTTON",
+          "id": "reading-article-note",
+          "cls": "btn secondary",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "openTabTo": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "openShiftTo": {
+          "tag": "BUTTON",
+          "id": "reading-ai-notes",
+          "cls": "btn tertiary",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "bodyStops": 0,
+        "screenshot": null
+      }
+    },
+    {
+      "id": "N1-zh-HK-390",
+      "name": "390px/zh-HK：「更多」收起時 summary Tab→close、close Shift+Tab→summary；展開時最後 AI 工具與 close 正反回繞",
+      "status": "pass",
+      "ms": 78,
+      "detail": {
+        "modal": {
+          "modalClass": true,
+          "mediaModal": true,
+          "ariaModal": "true"
+        },
+        "targets": {
+          "count": 48,
+          "first": "button.reading-panel-close",
+          "last": "summary.btn.tertiary",
+          "lastTag": "SUMMARY",
+          "lastText": "更多",
+          "hiddenMenuButtonsIncluded": false,
+          "toolsOpen": false
+        },
+        "lastWhenOpen": {
+          "count": 51,
+          "lastId": "reading-ai-notes",
+          "toolsOpen": true
+        },
+        "closedTabTo": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "closedShiftTo": {
+          "tag": "SUMMARY",
+          "isToolsSummary": true,
+          "inPanel": true,
+          "isBody": false
+        },
+        "midForwardTo": {
+          "tag": "SELECT",
+          "id": "reading-sort",
+          "cls": "",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "midBackwardTo": {
+          "tag": "BUTTON",
+          "id": "reading-article-note",
+          "cls": "btn secondary",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "openTabTo": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "openShiftTo": {
+          "tag": "BUTTON",
+          "id": "reading-ai-notes",
+          "cls": "btn tertiary",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "bodyStops": 0,
+        "screenshot": null
+      }
+    },
+    {
+      "id": "N1-zh-HK-1024",
+      "name": "1024px/zh-HK：「更多」收起時 summary Tab→close、close Shift+Tab→summary；展開時最後 AI 工具與 close 正反回繞",
+      "status": "pass",
+      "ms": 125,
+      "detail": {
+        "modal": {
+          "modalClass": true,
+          "mediaModal": true,
+          "ariaModal": "true"
+        },
+        "targets": {
+          "count": 48,
+          "first": "button.reading-panel-close",
+          "last": "summary.btn.tertiary",
+          "lastTag": "SUMMARY",
+          "lastText": "更多",
+          "hiddenMenuButtonsIncluded": false,
+          "toolsOpen": false
+        },
+        "lastWhenOpen": {
+          "count": 51,
+          "lastId": "reading-ai-notes",
+          "toolsOpen": true
+        },
+        "closedTabTo": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "closedShiftTo": {
+          "tag": "SUMMARY",
+          "isToolsSummary": true,
+          "inPanel": true,
+          "isBody": false
+        },
+        "midForwardTo": {
+          "tag": "SELECT",
+          "id": "reading-sort",
+          "cls": "",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "midBackwardTo": {
+          "tag": "BUTTON",
+          "id": "reading-article-note",
+          "cls": "btn secondary",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "openTabTo": {
+          "tag": "BUTTON",
+          "id": "",
+          "cls": "reading-panel-close",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "openShiftTo": {
+          "tag": "BUTTON",
+          "id": "reading-ai-notes",
+          "cls": "btn tertiary",
+          "noteId": "",
+          "isRetry": false,
+          "inPanel": true,
+          "connected": true
+        },
+        "bodyStops": 0,
+        "screenshot": "n1-zh-HK-1024-wrap.png"
+      }
+    }
+  ],
+  "n2": [
+    {
+      "id": "N2-zh-CN-1440",
+      "name": "1440px/zh-CN：合成保存失敗→解除失敗→真實滑鼠按住重試 ≥100ms→放開後同一 textarea 取得焦點、狀態「已保存」、store 一致",
+      "status": "pass",
+      "ms": 882,
+      "detail": {
+        "before": {
+          "status": "保存失败，请重试 重试",
+          "hasRetry": true,
+          "retryConnected": true,
+          "focusTag": "TEXTAREA",
+          "focusNoteId": "li_cv1_a8aab584_67",
+          "focusIsRetry": false,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-CN 1440 1793145387515",
+          "notePresent": true,
+          "sameNode": false,
+          "saveCalls": 1
+        },
+        "held": {
+          "status": "保存失败，请重试 重试",
+          "hasRetry": true,
+          "retryConnected": true,
+          "focusTag": "BUTTON",
+          "focusNoteId": "",
+          "focusIsRetry": true,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-CN 1440 1793145387515",
+          "notePresent": true,
+          "sameNode": true,
+          "saveCalls": 0
+        },
+        "after": {
+          "status": "已保存",
+          "hasRetry": false,
+          "retryConnected": false,
+          "focusTag": "TEXTAREA",
+          "focusNoteId": "li_cv1_a8aab584_67",
+          "focusIsRetry": false,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-CN 1440 1793145387515",
+          "notePresent": true,
+          "sameNode": true,
+          "saveCalls": 1
+        },
+        "storedOk": true,
+        "saveCallsAfterRelease": 1,
+        "heldScreenshot": "n2-zh-CN-1440-held.png",
+        "savedScreenshot": "n2-zh-CN-1440-saved.png"
+      }
+    },
+    {
+      "id": "N2-zh-CN-390",
+      "name": "390px/zh-CN：合成保存失敗→解除失敗→真實滑鼠按住重試 ≥100ms→放開後同一 textarea 取得焦點、狀態「已保存」、store 一致",
+      "status": "pass",
+      "ms": 758,
+      "detail": {
+        "before": {
+          "status": "保存失败，请重试 重试",
+          "hasRetry": true,
+          "retryConnected": true,
+          "focusTag": "TEXTAREA",
+          "focusNoteId": "li_cv1_a8aab584_67",
+          "focusIsRetry": false,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-CN 390 1793145390640",
+          "notePresent": true,
+          "sameNode": false,
+          "saveCalls": 1
+        },
+        "held": {
+          "status": "保存失败，请重试 重试",
+          "hasRetry": true,
+          "retryConnected": true,
+          "focusTag": "BUTTON",
+          "focusNoteId": "",
+          "focusIsRetry": true,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-CN 390 1793145390640",
+          "notePresent": true,
+          "sameNode": true,
+          "saveCalls": 0
+        },
+        "after": {
+          "status": "已保存",
+          "hasRetry": false,
+          "retryConnected": false,
+          "focusTag": "TEXTAREA",
+          "focusNoteId": "li_cv1_a8aab584_67",
+          "focusIsRetry": false,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-CN 390 1793145390640",
+          "notePresent": true,
+          "sameNode": true,
+          "saveCalls": 1
+        },
+        "storedOk": true,
+        "saveCallsAfterRelease": 1,
+        "heldScreenshot": null,
+        "savedScreenshot": null
+      }
+    },
+    {
+      "id": "N2-zh-HK-1440",
+      "name": "1440px/zh-HK：合成保存失敗→解除失敗→真實滑鼠按住重試 ≥100ms→放開後同一 textarea 取得焦點、狀態「已儲存」、store 一致",
+      "status": "pass",
+      "ms": 760,
+      "detail": {
+        "before": {
+          "status": "儲存失敗，請重試 重試",
+          "hasRetry": true,
+          "retryConnected": true,
+          "focusTag": "TEXTAREA",
+          "focusNoteId": "li_cv1_a8aab584_67",
+          "focusIsRetry": false,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-HK 1440 1793145394158",
+          "notePresent": true,
+          "sameNode": false,
+          "saveCalls": 1
+        },
+        "held": {
+          "status": "儲存失敗，請重試 重試",
+          "hasRetry": true,
+          "retryConnected": true,
+          "focusTag": "BUTTON",
+          "focusNoteId": "",
+          "focusIsRetry": true,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-HK 1440 1793145394158",
+          "notePresent": true,
+          "sameNode": true,
+          "saveCalls": 0
+        },
+        "after": {
+          "status": "已儲存",
+          "hasRetry": false,
+          "retryConnected": false,
+          "focusTag": "TEXTAREA",
+          "focusNoteId": "li_cv1_a8aab584_67",
+          "focusIsRetry": false,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-HK 1440 1793145394158",
+          "notePresent": true,
+          "sameNode": true,
+          "saveCalls": 1
+        },
+        "storedOk": true,
+        "saveCallsAfterRelease": 1,
+        "heldScreenshot": null,
+        "savedScreenshot": null
+      }
+    },
+    {
+      "id": "N2-zh-HK-390",
+      "name": "390px/zh-HK：合成保存失敗→解除失敗→真實滑鼠按住重試 ≥100ms→放開後同一 textarea 取得焦點、狀態「已儲存」、store 一致",
+      "status": "pass",
+      "ms": 848,
+      "detail": {
+        "before": {
+          "status": "儲存失敗，請重試 重試",
+          "hasRetry": true,
+          "retryConnected": true,
+          "focusTag": "TEXTAREA",
+          "focusNoteId": "li_cv1_a8aab584_67",
+          "focusIsRetry": false,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-HK 390 1793145397207",
+          "notePresent": true,
+          "sameNode": false,
+          "saveCalls": 1
+        },
+        "held": {
+          "status": "儲存失敗，請重試 重試",
+          "hasRetry": true,
+          "retryConnected": true,
+          "focusTag": "BUTTON",
+          "focusNoteId": "",
+          "focusIsRetry": true,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-HK 390 1793145397207",
+          "notePresent": true,
+          "sameNode": true,
+          "saveCalls": 0
+        },
+        "after": {
+          "status": "已儲存",
+          "hasRetry": false,
+          "retryConnected": false,
+          "focusTag": "TEXTAREA",
+          "focusNoteId": "li_cv1_a8aab584_67",
+          "focusIsRetry": false,
+          "focusInPanel": true,
+          "noteValue": "Final retry zh-HK 390 1793145397207",
+          "notePresent": true,
+          "sameNode": true,
+          "saveCalls": 1
+        },
+        "storedOk": true,
+        "saveCallsAfterRelease": 1,
+        "heldScreenshot": "n2-zh-HK-390-held.png",
+        "savedScreenshot": "n2-zh-HK-390-saved.png"
+      }
+    }
+  ],
+  "keyboard": [
+    {
+      "id": "N2-zh-CN-1440-keyboard",
+      "name": "1440px/zh-CN：鍵盤由 textarea Tab 到重試再 Enter，保存成功且焦點回到同一 textarea（無退化）",
+      "status": "pass",
+      "ms": 573,
+      "detail": {
+        "tabSequence": [
+          {
+            "step": 0,
+            "tag": "BUTTON",
+            "id": "",
+            "isRetry": true,
+            "noteId": ""
+          }
+        ],
+        "callsBeforeEnter": 0,
+        "after": {
+          "status": "已保存",
+          "hasRetry": false,
+          "retryConnected": false,
+          "focusTag": "TEXTAREA",
+          "focusNoteId": "li_cv1_4b658fbe_61",
+          "focusIsRetry": false,
+          "focusInPanel": true,
+          "noteValue": "Keyboard retry zh-CN 1440 1793145400822",
+          "notePresent": true,
+          "sameNode": true,
+          "saveCalls": 1
+        }
+      }
+    }
+  ],
+  "pageErrors": [
+    {
+      "id": "N1-zh-CN-390",
+      "errors": []
+    },
+    {
+      "id": "N1-zh-CN-1024",
+      "errors": []
+    },
+    {
+      "id": "N1-zh-HK-390",
+      "errors": []
+    },
+    {
+      "id": "N1-zh-HK-1024",
+      "errors": []
+    },
+    {
+      "id": "N2-zh-CN-1440",
+      "errors": []
+    },
+    {
+      "id": "N2-zh-CN-390",
+      "errors": []
+    },
+    {
+      "id": "N2-zh-HK-1440",
+      "errors": []
+    },
+    {
+      "id": "N2-zh-HK-390",
+      "errors": []
+    },
+    {
+      "id": "N2-zh-CN-1440-keyboard",
+      "errors": []
+    }
+  ],
+  "scenarioErrors": [],
+  "servedAssets": {
+    "/features/article/reading-panel.js": {
+      "status": 200,
+      "servedHash": "ed04d08e1f0d9ff1e046c1aa57e7187193bc0f8a68776e6bea0942ba0937b874",
+      "localHash": "ed04d08e1f0d9ff1e046c1aa57e7187193bc0f8a68776e6bea0942ba0937b874",
+      "match": true
+    },
+    "/locales/zh-CN.js": {
+      "status": 200,
+      "servedHash": "63bc337e7e188b3a2f85dfffcff49c928da39fe4ac80e25d38daab1d98be490a",
+      "localHash": "63bc337e7e188b3a2f85dfffcff49c928da39fe4ac80e25d38daab1d98be490a",
+      "match": true
+    },
+    "/locales/zh-HK.js": {
+      "status": 200,
+      "servedHash": "ee5e5cb21505d5fe1bf025cc10433b32aa5aae77719931af1e93c39cd45bb932",
+      "localHash": "ee5e5cb21505d5fe1bf025cc10433b32aa5aae77719931af1e93c39cd45bb932",
+      "match": true
+    },
+    "/index.html": {
+      "status": 200,
+      "servedHash": "dd890df9cfde777ea7e6a9711174cd321505acb06b6f466e611cf2b4b9346a3d",
+      "localHash": "dd890df9cfde777ea7e6a9711174cd321505acb06b6f466e611cf2b4b9346a3d",
+      "match": true
+    }
+  },
+  "chromeVersion": "156.0.8078.48",
+  "finishedAt": "2026-10-27T23:56:41.674Z",
+  "assertions": 131,
+  "failures": [],
+  "pageErrorEntries": [],
+  "summary": {
+    "cases": 9,
+    "passed": 9,
+    "failed": 0,
+    "n1": [
+      "pass",
+      "pass",
+      "pass",
+      "pass"
+    ],
+    "n2": [
+      "pass",
+      "pass",
+      "pass",
+      "pass"
+    ],
+    "keyboard": [
+      "pass"
+    ]
+  }
+}

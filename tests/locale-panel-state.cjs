@@ -379,6 +379,7 @@ function assistantProfile(baseUrl) {
 
     // 筆記草稿：不按失焦、也不等 debounce，直接切語言。
     const NOTE_TEXT = '面板草稿-切語言不可丢';
+    await page.locator(`[data-item-id="${seeded.ids[0]}"] [data-action="expand"]`).click();
     await page.fill(`[data-note-id="${seeded.ids[0]}"]`, NOTE_TEXT);
     await page.evaluate((noteId) => {
         const area = document.querySelector(`[data-note-id="${noteId}"]`);

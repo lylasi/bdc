@@ -182,3 +182,44 @@ test('訪客併入成功（反向驗證）：匯出正常時仍可併入並切�
     assert.equal(readingStore.getReadingScope(), SCOPE);
     assert.equal(readingStore.getVocabularyBook('guest-fallback-book')?.name, '訪客後備詞書');
 });
+
+test('後備模式撤銷詞句與文件：核對持久墓碑並保留資料及 outbox', async () => {
+    await seedScope();
+    await emptyScope();
+    const seeded = await readingStore.restoreAll({
+        learningItems: [{
+            id: 'fallback-undo-item', articleId: ARTICLE_ID, contentVersion: 'version', kind: 'word',
+            anchor: { start: 0, end: 4, quote: 'body', prefix: '', suffix: '' }, note: '保留筆記', marked: true
+        }],
+        articleDocuments: [{
+            id: 'fallback-undo-document', articleId: ARTICLE_ID, kind: 'note', title: '保留標題',
+            content: '保留文件', sourceItemIds: [], sourceMessageIds: []
+        }]
+    });
+    assert.equal(seeded.ok, true, JSON.stringify(seeded));
+    for (const [type, id, list] of [
+        ['learningItem', 'fallback-undo-item', 'items'],
+        ['articleDocument', 'fallback-undo-document', 'documents']
+    ]) {
+        const deleted = type === 'learningItem'
+            ? await readingStore.deleteLearningItem(id)
+            : await readingStore.deleteArticleDocument(id);
+        assert.equal(deleted.ok, true, JSON.stringify(deleted));
+        const bucket = JSON.parse(localStorage.getItem(READING_BUCKET_KEY));
+        const newerDelete = new Date(Date.parse(deleted.entity.deletedAt) + 1000).toISOString();
+        bucket[list].find(entity => entity.id === id).deletedAt = newerDelete;
+        localStorage.setItem(READING_BUCKET_KEY, JSON.stringify(bucket));
+        const stale = type === 'learningItem'
+            ? await readingStore.restoreLearningItem(id, deleted.entity.deletedAt)
+            : await readingStore.restoreArticleDocument(id, deleted.entity.deletedAt);
+        assert.equal(stale.error, 'stale_delete');
+        const restored = type === 'learningItem'
+            ? await readingStore.restoreLearningItem(id, newerDelete)
+            : await readingStore.restoreArticleDocument(id, newerDelete);
+        assert.equal(restored.ok, true, JSON.stringify(restored));
+        assert.equal(restored.entity.deletedAt, '');
+        assert.equal(type === 'learningItem' ? restored.entity.note : restored.entity.content,
+            type === 'learningItem' ? '保留筆記' : '保留文件');
+        assert.equal((await readingStore.listOutbox()).find(op => op.entityId === id).op, 'upsert');
+    }
+});

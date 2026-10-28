@@ -731,9 +731,9 @@ export function getLearningItem(itemId) {
     return itemsById.get(itemId) || null;
 }
 
-function sameRange(item, kind, anchor, contentVersion) {
+function sameRange(item, kind, anchor, contentVersion, includeDeleted = false) {
     if (!item || item.kind !== kind) return false;
-    if (item.deletedAt) return false;
+    if (item.deletedAt && !includeDeleted) return false;
     if (contentVersion && item.contentVersion && item.contentVersion !== contentVersion) return false;
     const a = item.anchor || {};
     if (anchor.start >= 0 && anchor.end >= 0 && a.start >= 0 && a.end >= 0) {
@@ -846,10 +846,15 @@ function learningEntityFrom(base, input, { markViewed = false, timestamp = nowIs
  * outbox。兩個分頁同時編輯同一 occurrence 的不同欄位時，第二個交易會先
  * 讀到第一個已提交的內容，不會用自己過期的記憶體整筆覆蓋。
  */
-async function writeLearningItemAtomic({ id, input, markViewed = false, ctx }) {
+async function writeLearningItemAtomic({ id, input, markViewed = false, restoreDeleted = false, restoreAfter = '', ctx }) {
+    const patchFor = base => ({
+        ...input,
+        ...(restoreDeleted && (!base?.deletedAt || !restoreAfter || restoreAfter > base.deletedAt) ? { deletedAt: '' } : {})
+    });
     const storeName = STORE.READING_ITEMS;
     const itemKey = entityKey(id, ctx.scope);
     const transaction = await runPermanentTransaction([storeName, STORE.READING_OUTBOX], 'readwrite', (stores, tx) => {
+        if (!isReadingContextActive(ctx)) return { error: 'stale_scope' };
         const itemStore = stores[storeName];
         const outboxStore = stores[STORE.READING_OUTBOX];
         return new Promise((resolve, reject) => {
@@ -857,7 +862,7 @@ async function writeLearningItemAtomic({ id, input, markViewed = false, ctx }) {
             itemRequest.onerror = () => reject(itemRequest.error || new Error('idb_read_failed'));
             itemRequest.onsuccess = () => {
                 const base = itemRequest.result || null;
-                const entity = learningEntityFrom(base, { ...input, id: base?.id || id }, { markViewed });
+                const entity = learningEntityFrom(base, { ...patchFor(base), id: base?.id || id }, { markViewed });
                 entity.scope = ctx.scope;
                 const outboxRequest = outboxStore.get(outboxKey('learningItem', entity.id, ctx.scope));
                 outboxRequest.onerror = () => reject(outboxRequest.error || new Error('outbox_read_failed'));
@@ -879,16 +884,19 @@ async function writeLearningItemAtomic({ id, input, markViewed = false, ctx }) {
     if (!transaction.ok) {
         if (transaction.error === 'idb_unavailable') {
             // 後備模式仍以「整桶一次寫入」維持實體＋outbox 的原子性。
-            const hint = getLearningItem(id);
-            const entity = learningEntityFrom(hint, { ...input, id: hint?.id || id }, { markViewed });
+            const bucket = readBucket(ctx.scope);
+            const hint = (bucket.items || []).find(item => item.id === id) || getLearningItem(id);
+            const entity = learningEntityFrom(hint, { ...patchFor(hint), id: hint?.id || id }, { markViewed });
             entity.scope = ctx.scope;
-            const outbox = buildOutboxMutation('learningItem', entity, hint, entity.deletedAt ? 'delete' : 'upsert', hint, ctx, null);
+            const previous = (bucket.outbox || []).find(op => op.entityType === 'learningItem' && op.entityId === id) || null;
+            const outbox = buildOutboxMutation('learningItem', entity, hint, entity.deletedAt ? 'delete' : 'upsert', hint, ctx, previous);
             return writeEntityFallback('learningItem', entity, outbox, 'upsert', [], ctx);
         }
         if (isReadingContextActive(ctx)) meta.persistenceError = transaction.error || 'idb_write_failed';
         return { ok: false, error: transaction.error || 'idb_write_failed' };
     }
     const value = transaction.value || {};
+    if (value.error) return { ok: false, error: value.error };
     if (!value.entity) return { ok: false, error: 'atomic_missing_entity', detail: JSON.stringify(transaction) };
     const stored = { ...value.entity, key: entityKey(value.entity.id, ctx.scope) };
     if (isReadingContextActive(ctx)) meta.persistenceError = '';
@@ -1005,7 +1013,9 @@ async function upsertLearningItemInner(input, options, ctx) {
     const contentVersion = String(input.contentVersion || '');
     const loaded = await ensureArticleReadingLoaded(input.articleId, ctx);
     if (!loaded.ok) return loaded;
-    let existing = findLearningItem(input.articleId, kind, anchor, contentVersion);
+    let existing = findLearningItem(input.articleId, kind, anchor, contentVersion)
+        || listLearningItems(input.articleId).find(item => item.deletedAt
+            && sameRange(item, kind, { ...anchor, sentence: input.sentence || '' }, contentVersion, true));
     if (!existing && anchor.start < 0) {
         existing = listLearningItems(input.articleId).find((item) => item.kind === kind
             && String(item.anchor?.quote || '') === anchor.quote
@@ -1024,6 +1034,8 @@ async function upsertLearningItemInner(input, options, ctx) {
             anchor
         },
         markViewed: options.markViewed === true,
+        restoreDeleted: options.restoreDeleted === true,
+        restoreAfter: options.restoreAfter || '',
         ctx
     });
     if (result.ok && isReadingContextActive(ctx)) {
@@ -1104,6 +1116,60 @@ export function updateLearningItemPosition(itemId, position) {
 
 export function deleteLearningItem(itemId) {
     return runCaptured((ctx) => deleteLearningItemInner(itemId, ctx));
+}
+
+/** 撤銷須在同一交易核對最新墓碑，不能只相信本分頁的記憶體版本。 */
+async function restoreDeletedEntity(entityType, id, expectedDeletedAt, ctx) {
+    const storeName = storeForType(entityType);
+    const restore = (base, previousOutbox) => {
+        if (!base?.deletedAt) return { error: 'not_deleted' };
+        if (base.deletedAt !== expectedDeletedAt) return { error: 'stale_delete' };
+        const entity = buildPendingEntity(entityType, { id, deletedAt: '', updatedAt: nowIso() }, base, { ctx }).entity;
+        const outbox = buildOutboxMutation(entityType, entity, base, 'upsert', base, ctx, previousOutbox);
+        return { entity, outbox };
+    };
+    const transaction = await runPermanentTransaction([storeName, STORE.READING_OUTBOX], 'readwrite', stores => {
+        if (!isReadingContextActive(ctx)) return { error: 'stale_scope' };
+        return new Promise((resolve, reject) => {
+            const request = stores[storeName].get(entityKey(id, ctx.scope));
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                const base = request.result;
+                const pending = stores[STORE.READING_OUTBOX].get(outboxKey(entityType, id, ctx.scope));
+                pending.onerror = () => reject(pending.error);
+                pending.onsuccess = () => {
+                    const result = restore(base, pending.result || null);
+                    if (result.entity) {
+                        stores[storeName].put({ ...result.entity, key: entityKey(id, ctx.scope) });
+                        stores[STORE.READING_OUTBOX].put(result.outbox);
+                    }
+                    resolve(result);
+                };
+            };
+        });
+    });
+    if (!transaction.ok) {
+        if (transaction.error !== 'idb_unavailable') return { ok: false, error: transaction.error };
+        if (!isReadingContextActive(ctx)) return staleResult();
+        const bucket = readBucket(ctx.scope);
+        const base = (bucket[listForBucket(entityType)] || []).find(entity => entity.id === id);
+        const previous = (bucket.outbox || []).find(op => op.entityType === entityType && op.entityId === id);
+        const result = restore(base, previous || null);
+        if (result.error) return { ok: false, error: result.error };
+        return writeEntityFallback(entityType, result.entity, result.outbox, 'upsert', [], ctx);
+    }
+    const result = transaction.value;
+    if (!result?.entity) return { ok: false, error: result?.error || 'restore_failed' };
+    rememberEntity(entityType, { ...result.entity, key: entityKey(id, ctx.scope) }, ctx);
+    return { ok: true, ...result };
+}
+
+export function restoreLearningItem(itemId, expectedDeletedAt) {
+    return runCaptured(async ctx => {
+        const result = await restoreDeletedEntity('learningItem', itemId, expectedDeletedAt, ctx);
+        if (result.ok) emitChange({ articleId: result.entity.articleId, entityType: 'learningItem', entityId: itemId, ctx });
+        return result;
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1602,6 +1668,15 @@ export function deleteArticleDocument(docId) {
     const result = await writeEntity('articleDocument', doc, { existing, op: 'delete', ctx });
     if (result.ok) emitChange({ articleId: doc.articleId, entityType: 'articleDocument', entityId: doc.id, ctx });
     return result;
+    });
+}
+
+/** 復原文件仍經過原有 outbox，與同步端的 revision 衝突規則一致。 */
+export function restoreArticleDocument(docId, expectedDeletedAt) {
+    return runCaptured(async ctx => {
+        const result = await restoreDeletedEntity('articleDocument', docId, expectedDeletedAt, ctx);
+        if (result.ok) emitChange({ articleId: result.entity.articleId, entityType: 'articleDocument', entityId: docId, ctx });
+        return result;
     });
 }
 

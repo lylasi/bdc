@@ -1,0 +1,696 @@
+{
+  "ok": true,
+  "schemaVersion": 2,
+  "kind": "bdc-full-backup",
+  "exportedAt": "2026-10-27T23:39:56.019Z",
+  "scope": "http://127.0.0.1:19999/test-endpoint::guest",
+  "payload": {
+    "userSettings": {
+      "dictation": {
+        "selectedBookId": null,
+        "repeatTimes": 2,
+        "wordInterval": 3,
+        "readChineseVoice": "none",
+        "loopMode": false,
+        "shuffleMode": false,
+        "listenOnlyMode": true,
+        "showWordInfo": false,
+        "floatListFields": {
+          "index": true,
+          "status": true,
+          "word": false,
+          "phonetic": false,
+          "meaning": false
+        },
+        "updatedAt": "2026-10-27T23:39:53.399Z"
+      }
+    },
+    "dictation": {
+      "updatedAt": "2026-10-27T23:39:53.399Z",
+      "settings": {
+        "selectedBookId": null,
+        "repeatTimes": 2,
+        "wordInterval": 3,
+        "readChineseVoice": "none",
+        "loopMode": false,
+        "shuffleMode": false,
+        "listenOnlyMode": true,
+        "showWordInfo": false,
+        "floatListFields": {
+          "index": true,
+          "status": true,
+          "word": false,
+          "phonetic": false,
+          "meaning": false
+        },
+        "updatedAt": "2026-10-27T23:39:53.399Z"
+      },
+      "gradingHistory": []
+    },
+    "qa": {
+      "updatedAt": "",
+      "manifest": [],
+      "sets": {}
+    },
+    "aiSettings": {
+      "updatedAt": "",
+      "settings": {
+        "apiUrl": "",
+        "providers": {
+          "mock": {
+            "label": "Mock",
+            "enabled": true,
+            "format": "openai-chat",
+            "baseUrl": "https://provider.mock/v1",
+            "apiUrl": "https://provider.mock/v1/chat/completions",
+            "modelsUrl": "https://provider.mock/v1/models",
+            "authMode": "bearer",
+            "allowCrossOriginModels": false,
+            "allowedModels": [
+              "mock-model"
+            ],
+            "discoveredModels": [
+              {
+                "id": "mock-model",
+                "label": "mock-model"
+              }
+            ],
+            "lastDiscoveryAt": "",
+            "discoveryStatus": ""
+          }
+        },
+        "models": {
+          "articleParagraphTranslation": "mock:mock-model",
+          "wordAnalysis": "mock:mock-model",
+          "sentenceAnalysis": "mock:mock-model",
+          "selectionAnalysis": "mock:mock-model",
+          "assistant": "mock:mock-model",
+          "default": "mock:mock-model"
+        },
+        "tasks": {
+          "articleParagraphTranslation": "mock:mock-model",
+          "wordAnalysis": "mock:mock-model",
+          "sentenceAnalysis": "mock:mock-model",
+          "selectionAnalysis": "mock:mock-model",
+          "assistant": "mock:mock-model",
+          "default": "mock:mock-model"
+        },
+        "defaultModel": "mock:mock-model",
+        "keySyncDefault": "cloud"
+      }
+    },
+    "articleDocuments": [
+      {
+        "id": "art_reading_panel_improvements",
+        "title": "Reading Panel Fixture",
+        "body": "We look forward to meeting you.\n\nThe attached document summarizes the project timeline and the next steps.\n\nPlease review the attached document before Friday.\n\nThe team will discuss the budget and confirm the final schedule tomorrow.\n\nWe appreciate your patience and look forward to your feedback.\n\nPlease contact the coordinator if you need additional information.",
+        "analysis": {
+          "chinese_translation": "合成文章譯文。",
+          "word_alignment": [],
+          "detailed_analysis": [
+            {
+              "word": "look",
+              "sentence": "We look forward to meeting you.",
+              "analysis": {
+                "meaning": "看；期待"
+              }
+            }
+          ],
+          "paragraph_analysis": [
+            {
+              "chinese_translation": "合成譯文 1",
+              "sentences": [
+                {
+                  "en": "We look forward to meeting you.",
+                  "zh": "合成譯文 1"
+                }
+              ]
+            },
+            {
+              "chinese_translation": "合成譯文 2",
+              "sentences": [
+                {
+                  "en": "The attached document summarizes the project timeline and the next steps.",
+                  "zh": "合成譯文 2"
+                }
+              ]
+            },
+            {
+              "chinese_translation": "合成譯文 3",
+              "sentences": [
+                {
+                  "en": "Please review the attached document before Friday.",
+                  "zh": "合成譯文 3"
+                }
+              ]
+            },
+            {
+              "chinese_translation": "合成譯文 4",
+              "sentences": [
+                {
+                  "en": "The team will discuss the budget and confirm the final schedule tomorrow.",
+                  "zh": "合成譯文 4"
+                }
+              ]
+            },
+            {
+              "chinese_translation": "合成譯文 5",
+              "sentences": [
+                {
+                  "en": "We appreciate your patience and look forward to your feedback.",
+                  "zh": "合成譯文 5"
+                }
+              ]
+            },
+            {
+              "chinese_translation": "合成譯文 6",
+              "sentences": [
+                {
+                  "en": "Please contact the coordinator if you need additional information.",
+                  "zh": "合成譯文 6"
+                }
+              ]
+            }
+          ],
+          "sentence_analysis": [],
+          "phrase_analysis": []
+        },
+        "sourceType": "paste",
+        "sourceUrl": "",
+        "revision": 0,
+        "generation": 0,
+        "createdAt": "2026-10-27T23:39:54.584Z",
+        "updatedAt": "2026-10-27T23:39:54.584Z",
+        "lastOpenedAt": "2026-10-27T23:39:54.696Z",
+        "deletedAt": ""
+      }
+    ],
+    "reading": {
+      "ok": true,
+      "schemaVersion": 1,
+      "exportedAt": "2026-10-27T23:39:56.018Z",
+      "scope": "http://127.0.0.1:19999/test-endpoint::guest",
+      "learningItems": [
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "word",
+          "anchor": {
+            "start": 186,
+            "end": 192,
+            "quote": "budget",
+            "prefix": "fore Friday.\n\nThe team will discuss the ",
+            "suffix": " and confirm the final schedule tomorrow"
+          },
+          "sentence": "The team will discuss the budget and confirm the final schedule tomorrow.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "預算"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.591Z",
+            "provenance": null
+          },
+          "marked": false,
+          "note": "",
+          "id": "li_cv1_00250c37_67",
+          "firstViewedAt": "2026-10-27T23:39:54.591Z",
+          "lastViewedAt": "2026-10-27T23:39:54.591Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.591Z",
+          "updatedAt": "2026-10-27T23:39:54.591Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "word",
+          "anchor": {
+            "start": 318,
+            "end": 329,
+            "quote": "coordinator",
+            "prefix": "d to your feedback.\n\nPlease contact the ",
+            "suffix": " if you need additional information."
+          },
+          "sentence": "Please contact the coordinator if you need additional information.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "協調人"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.592Z",
+            "provenance": null
+          },
+          "marked": false,
+          "note": "",
+          "id": "li_cv1_24c91711_72",
+          "firstViewedAt": "2026-10-27T23:39:54.592Z",
+          "lastViewedAt": "2026-10-27T23:39:54.592Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.592Z",
+          "updatedAt": "2026-10-27T23:39:54.592Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "phrase",
+          "anchor": {
+            "start": 3,
+            "end": 18,
+            "quote": "look forward to",
+            "prefix": "We ",
+            "suffix": " meeting you.\n\nThe attached document sum"
+          },
+          "sentence": "We look forward to meeting you.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "期待；盼望"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.586Z",
+            "provenance": null
+          },
+          "marked": true,
+          "note": "to 後面接名詞或動名詞。",
+          "id": "li_cv1_35c8a9b7_75",
+          "firstViewedAt": "2026-10-27T23:39:54.588Z",
+          "lastViewedAt": "2026-10-27T23:39:54.588Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.588Z",
+          "updatedAt": "2026-10-27T23:39:54.594Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "word",
+          "anchor": {
+            "start": 135,
+            "end": 143,
+            "quote": "document",
+            "prefix": "next steps.\n\nPlease review the attached ",
+            "suffix": " before Friday.\n\nThe team will discuss t"
+          },
+          "sentence": "Please review the attached document before Friday.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "文件"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.590Z",
+            "provenance": null
+          },
+          "marked": false,
+          "note": "",
+          "id": "li_cv1_45a69efb_69",
+          "firstViewedAt": "2026-10-27T23:39:54.590Z",
+          "lastViewedAt": "2026-10-27T23:39:54.590Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.590Z",
+          "updatedAt": "2026-10-27T23:39:54.590Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "word",
+          "anchor": {
+            "start": 3,
+            "end": 7,
+            "quote": "look",
+            "prefix": "We ",
+            "suffix": " forward to meeting you.\n\nThe attached d"
+          },
+          "sentence": "We look forward to meeting you.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "看；期待"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.589Z",
+            "provenance": null
+          },
+          "marked": false,
+          "note": "",
+          "id": "li_cv1_4b658fbe_61",
+          "firstViewedAt": "2026-10-27T23:39:54.589Z",
+          "lastViewedAt": "2026-10-27T23:39:54.589Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.589Z",
+          "updatedAt": "2026-10-27T23:39:54.589Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "word",
+          "anchor": {
+            "start": 288,
+            "end": 296,
+            "quote": "feedback",
+            "prefix": " your patience and look forward to your ",
+            "suffix": ".\n\nPlease contact the coordinator if you"
+          },
+          "sentence": "We appreciate your patience and look forward to your feedback.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "反饋"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.592Z",
+            "provenance": null
+          },
+          "marked": false,
+          "note": "",
+          "id": "li_cv1_6bdb6f43_69",
+          "firstViewedAt": "2026-10-27T23:39:54.592Z",
+          "lastViewedAt": "2026-10-27T23:39:54.592Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.592Z",
+          "updatedAt": "2026-10-27T23:39:54.592Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "phrase",
+          "anchor": {
+            "start": 342,
+            "end": 364,
+            "quote": "additional information",
+            "prefix": "ase contact the coordinator if you need ",
+            "suffix": "."
+          },
+          "sentence": "Please contact the coordinator if you need additional information.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "補充資料"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.592Z",
+            "provenance": null
+          },
+          "marked": false,
+          "note": "",
+          "id": "li_cv1_6f767781_85",
+          "firstViewedAt": "2026-10-27T23:39:54.592Z",
+          "lastViewedAt": "2026-10-27T23:39:54.592Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.592Z",
+          "updatedAt": "2026-10-27T23:39:54.592Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "sentence",
+          "anchor": {
+            "start": 33,
+            "end": 106,
+            "quote": "The attached document summarizes the project timeline and the next steps.",
+            "prefix": "We look forward to meeting you.\n\n",
+            "suffix": "\n\nPlease review the attached document be"
+          },
+          "sentence": "The attached document summarizes the project timeline and the next steps.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "translation": "附件文件總結了項目時間表和下一步。"
+            },
+            "generatedAt": "2026-10-27T23:39:54.589Z",
+            "provenance": null
+          },
+          "marked": true,
+          "note": "句子的主語是 document。",
+          "id": "li_cv1_808bf06e_137",
+          "firstViewedAt": "2026-10-27T23:39:54.589Z",
+          "lastViewedAt": "2026-10-27T23:39:54.589Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.589Z",
+          "updatedAt": "2026-10-27T23:39:54.589Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "word",
+          "anchor": {
+            "start": 115,
+            "end": 121,
+            "quote": "review",
+            "prefix": "ct timeline and the next steps.\n\nPlease ",
+            "suffix": " the attached document before Friday.\n\nT"
+          },
+          "sentence": "Please review the attached document before Friday.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "查看；複習"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.590Z",
+            "provenance": null
+          },
+          "marked": false,
+          "note": "",
+          "id": "li_cv1_a8aab584_67",
+          "firstViewedAt": "2026-10-27T23:39:54.590Z",
+          "lastViewedAt": "2026-10-27T23:39:54.590Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.590Z",
+          "updatedAt": "2026-10-27T23:39:54.590Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "word",
+          "anchor": {
+            "start": 254,
+            "end": 262,
+            "quote": "patience",
+            "prefix": " schedule tomorrow.\n\nWe appreciate your ",
+            "suffix": " and look forward to your feedback.\n\nPle"
+          },
+          "sentence": "We appreciate your patience and look forward to your feedback.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "耐心"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.591Z",
+            "provenance": null
+          },
+          "marked": false,
+          "note": "",
+          "id": "li_cv1_fabdfd81_69",
+          "firstViewedAt": "2026-10-27T23:39:54.591Z",
+          "lastViewedAt": "2026-10-27T23:39:54.591Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.591Z",
+          "updatedAt": "2026-10-27T23:39:54.591Z",
+          "deletedAt": "",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "contentVersion": "cv1_f5ce9e03_365",
+          "kind": "word",
+          "anchor": {
+            "start": 215,
+            "end": 223,
+            "quote": "schedule",
+            "prefix": "iscuss the budget and confirm the final ",
+            "suffix": " tomorrow.\n\nWe appreciate your patience "
+          },
+          "sentence": "The team will discuss the budget and confirm the final schedule tomorrow.",
+          "explanation": {
+            "language": "zh-HK",
+            "result": {
+              "analysis": {
+                "meaning": "日程"
+              }
+            },
+            "generatedAt": "2026-10-27T23:39:54.591Z",
+            "provenance": null
+          },
+          "marked": false,
+          "note": "",
+          "id": "li_cv1_fe8a7bd3_69",
+          "firstViewedAt": "2026-10-27T23:39:54.591Z",
+          "lastViewedAt": "2026-10-27T23:39:54.591Z",
+          "understanding": "unmarked",
+          "positionUncertain": false,
+          "sourceContentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.591Z",
+          "updatedAt": "2026-10-27T23:39:54.591Z",
+          "deletedAt": "",
+          "revision": 0
+        }
+      ],
+      "articleDocuments": [
+        {
+          "articleId": "art_reading_panel_improvements",
+          "kind": "ai",
+          "title": "AI 短語補充",
+          "content": "## 用法\n\n**look forward to** 後面接名詞或動名詞。\n\n- Example: We look forward to hearing from you.\n\n<script>window.__unsafeReadingMarkdown = true</script>",
+          "sourceItemIds": [
+            "li_cv1_35c8a9b7_75"
+          ],
+          "sourceMessageIds": [
+            "msg_panel"
+          ],
+          "contentVersion": "cv1_f5ce9e03_365",
+          "createdAt": "2026-10-27T23:39:54.595Z",
+          "updatedAt": "2026-10-27T23:39:54.595Z",
+          "deletedAt": "",
+          "id": "doc_mvrbvhwjzssz2hmm",
+          "revision": 0
+        },
+        {
+          "articleId": "art_reading_panel_improvements",
+          "kind": "note",
+          "title": "全篇閱讀心得（合成）",
+          "content": "這封郵件需要確認會面安排、預算和附件。",
+          "sourceItemIds": [],
+          "sourceMessageIds": [],
+          "contentVersion": "cv1_f5ce9e03_365",
+          "createdAt": "2026-10-27T23:39:54.596Z",
+          "updatedAt": "2026-10-27T23:39:54.596Z",
+          "deletedAt": "",
+          "id": "doc_mvrbvhwktvoptz9b",
+          "revision": 0
+        }
+      ],
+      "vocabularyBooks": [
+        {
+          "id": "book_panel",
+          "name": "合成生字簿",
+          "sourceType": "article",
+          "articleId": "",
+          "sourceUrl": "",
+          "shareId": "",
+          "createdAt": "2026-10-27T23:39:54.593Z",
+          "deletedAt": "",
+          "revision": 0,
+          "updatedAt": "2026-10-27T23:39:54.593Z"
+        }
+      ],
+      "vocabularyEntries": [
+        {
+          "id": "entry_panel",
+          "bookId": "book_panel",
+          "word": "look forward to",
+          "meaning": "期待",
+          "phonetic": "",
+          "examples": [],
+          "sources": [],
+          "addedAt": "2026-10-27T23:39:54.593Z",
+          "createdAt": "2026-10-27T23:39:54.593Z",
+          "updatedAt": "2026-10-27T23:39:54.593Z",
+          "deletedAt": "",
+          "revision": 0
+        }
+      ],
+      "vocabularyLinks": [
+        {
+          "itemId": "li_cv1_35c8a9b7_75",
+          "bookId": "book_panel",
+          "entryId": "entry_panel",
+          "addedAt": "2026-10-27T23:39:54.593Z",
+          "id": "link_panel",
+          "removedAt": "",
+          "updatedAt": "2026-10-27T23:39:54.593Z",
+          "deletedAt": "",
+          "revision": 0
+        }
+      ],
+      "conversations": [
+        {
+          "articleId": "art_reading_panel_improvements",
+          "legacyArticleKey": "",
+          "title": "Synthetic source conversation",
+          "createdAt": "2026-10-27T23:39:54.594Z",
+          "updatedAt": "2026-10-27T23:39:54.595Z",
+          "deletedAt": "",
+          "id": "conv_panel",
+          "revision": 0
+        }
+      ],
+      "messages": [
+        {
+          "conversationId": "conv_panel",
+          "role": "assistant",
+          "content": "Synthetic saved explanation.",
+          "status": "complete",
+          "learningItemId": "",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "",
+            "prefix": "",
+            "suffix": ""
+          },
+          "contentVersion": "",
+          "createdAt": "2026-10-27T23:39:54.595Z",
+          "updatedAt": "2026-10-27T23:39:54.595Z",
+          "deletedAt": "",
+          "id": "msg_panel",
+          "revision": 0
+        }
+      ],
+      "articleVersions": [],
+      "meta": {
+        "migratedAt": "2026-10-27T23:39:53.378Z",
+        "migrationComplete": true
+      }
+    }
+  }
+}

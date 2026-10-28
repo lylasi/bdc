@@ -1,0 +1,27 @@
+[
+  {
+    "name": "1440px 回原文保留面板並閃示目標句子",
+    "pass": true,
+    "detail": "{\"panelOpen\":true,\"ariaModal\":\"false\",\"flashing\":1,\"returnVisible\":false,\"listScroll\":0,\"active\":\"btn tertiary\"}"
+  },
+  {
+    "name": "390px 回原文收起面板、顯示返回入口並閃示句子",
+    "pass": true,
+    "detail": "{\"panelHidden\":true,\"returnVisible\":true,\"returnText\":\"返回刚才的学习记录\",\"flashing\":1,\"buttonRect\":{\"x\":115,\"y\":784,\"w\":160,\"h\":44,\"bottom\":828},\"inViewport\":true}"
+  },
+  {
+    "name": "390px 返回後面板還原同一項、原篩選與展開狀態",
+    "pass": true,
+    "detail": "{\"panelOpen\":true,\"filter\":\"marked\",\"cards\":2,\"cardPresent\":true,\"textareaVisible\":true,\"focused\":\"mark\",\"focusedInsideCard\":true,\"returnHidden\":true,\"listScroll\":0}"
+  },
+  {
+    "name": "位置待確認項顯示警示徽章與重新定位入口",
+    "pass": true,
+    "detail": "{\"badge\":\"位置待确认\",\"reanchor\":true,\"quote\":\"nonexistent quote\"}"
+  },
+  {
+    "name": "重新定位失敗時提示找不到原文句子（不猜測位置）",
+    "pass": true,
+    "detail": "{\"reanchorToast\":1}"
+  }
+]

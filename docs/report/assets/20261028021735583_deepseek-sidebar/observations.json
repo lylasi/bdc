@@ -1,0 +1,382 @@
+{
+  "meta": {
+    "reviewer": "DeepSeek Harness (independent read-only review)",
+    "date": "2026-10-28",
+    "target": "文章詳解「本文學習記錄」側欄修復",
+    "server": "http://127.0.0.1:8313/",
+    "browser": "isolated chromium context (playwright-core + Google Chrome headless)",
+    "network": "ai-config.js stubbed; all non-127.0.0.1:8313 requests aborted; only synthetic sync endpoint 127.0.0.1:19999 blocked; pageerror count 0",
+    "fixture": "/tmp/bdc-article-records-audit-20261028013602221.js — 11 learning items + 1 note document + 1 AI document + 1 vocabulary link; total 13; notes 3; marked 2",
+    "productCodeModified": false
+  },
+  "checks": [
+    {
+      "id": "A1",
+      "area": "layout",
+      "status": "pass",
+      "check": "1440 桌面：面板 400px、非模態、背景無 inert、清單 621px、底部工具 63px 單行",
+      "detail": "sheet x=1040 w=400; list h=621; foot h=63; cardsFullyVisible=4",
+      "evidence": "layout-1440.png / layout-observations.json"
+    },
+    {
+      "id": "A2",
+      "area": "layout",
+      "status": "pass",
+      "check": "1024/834/768：模態（aria-modal=true）、背景 5 個 body 子節點 inert、面板 440px、清單 505px",
+      "detail": "inert=DIV,phrase-picker,reading-return,assistant-fab,assistant-panel; cardsFullyVisible=3",
+      "evidence": "layout-1024.png / layout-834.png"
+    },
+    {
+      "id": "A3",
+      "area": "layout",
+      "status": "pass",
+      "check": "390/320：底部 sheet（92vh, y=68, h=776）、清單 437px、底部工具 67px 單行",
+      "detail": "390 與 320 幾何相同；filterRows=2",
+      "evidence": "layout-390.png / layout-320.png"
+    },
+    {
+      "id": "A4",
+      "area": "layout",
+      "status": "pass",
+      "check": "390×844「詞與短語」視圖首屏 3 張短卡完全可見（124px/張）",
+      "detail": "混合視圖首屏 2 張完全可見 + 第 3 張露出約 87%（句子卡 163px）",
+      "evidence": "layout-390.png / layout-observations.json.wordDensity"
+    },
+    {
+      "id": "A5",
+      "area": "layout",
+      "status": "pass",
+      "check": "6 個篩選（含 AI 資料）在 320–1440 全部可見、不裁切、無橫向捲動；已加入詞書與排序可見",
+      "detail": "2 行 grid，所有按鈕 scrollWidth<=clientWidth 且在 sheet 內",
+      "evidence": "layout-observations.json"
+    },
+    {
+      "id": "A6",
+      "area": "layout",
+      "status": "pass",
+      "check": "所有寬度整頁無橫向溢出；320px 長筆記不撐破面板",
+      "detail": "docOverflow=false, sheet/list scrollWidth<=clientWidth",
+      "evidence": "320-long-note.png / phase-misc-results.json"
+    },
+    {
+      "id": "A7",
+      "area": "cards",
+      "status": "pass",
+      "check": "摘要卡預設收起（0 個可見 textarea），顯示類型／引用／詞義／筆記預覽／時間／已入詞書徽章",
+      "detail": "首卡 h=124–147；快速操作僅 回原文／標記／展開",
+      "evidence": "list-default-1440.png"
+    },
+    {
+      "id": "B1",
+      "area": "counts",
+      "status": "pass",
+      "check": "全部 13、有筆記 3、AI 1、詞與短語 10、句子 1、標記 2；副標 11 條詞句/1 份筆記/1 份 AI；結果 13 / 13",
+      "detail": "全篇筆記已計入全部與有筆記",
+      "evidence": "list-default-1440.png"
+    },
+    {
+      "id": "B2",
+      "area": "counts",
+      "status": "pass",
+      "check": "全篇筆記卡類型標籤為「全篇笔记」而非「有笔记」",
+      "detail": "",
+      "evidence": ""
+    },
+    {
+      "id": "B3",
+      "area": "filter",
+      "status": "pass",
+      "check": "已加入詞書：只 1 筆詞句、0 文件；AI 篩選計數 0",
+      "detail": "",
+      "evidence": ""
+    },
+    {
+      "id": "B4",
+      "area": "search",
+      "status": "pass",
+      "check": "搜尋涵蓋詞義、原句、個人筆記與文件正文",
+      "detail": "budget→2（budget + schedule，共用原句）；附件→2（句子解釋＋全篇筆記）；这封邮件→全篇筆記 1",
+      "evidence": ""
+    },
+    {
+      "id": "B5",
+      "area": "search",
+      "status": "pass",
+      "check": "搜尋無結果顯示「没有符合当前筛选或搜索的记录。」＋「显示全部记录」，點擊回復 13 筆",
+      "detail": "不再誤用「還沒有學習記錄」",
+      "evidence": ""
+    },
+    {
+      "id": "B6",
+      "area": "sort",
+      "status": "pass",
+      "check": "原文順序按 anchor.start 遞增（同 offset 以 id 決勝）；切換標記後保留目前排序",
+      "detail": "starts=[3,3,33,115,135,186]",
+      "evidence": "fixture-facts.json"
+    },
+    {
+      "id": "B7",
+      "area": "sort",
+      "status": "observation",
+      "check": "「最近查閱」把從未查閱的兩份文件排在已查閱詞句之前",
+      "detail": "reading-view.js:36-38：文件沒有 lastViewedAt 時改用 updatedAt 當排序鍵；實測「最近查閱」前兩張為 AI 資料、全篇筆記，之後才是已查閱詞句（order=doc_…so31, doc_…uy4, li_…af80, li_…8f6c）",
+      "evidence": "本次執行日誌（phase-list 執行輸出）；fixture-facts.json 顯示兩份文件 lastViewedAt=\"\""
+    },
+    {
+      "id": "C1",
+      "area": "load-error",
+      "status": "pass",
+      "check": "注入 IDB 讀取失敗 →「未能读取本机学习记录，请重试。」+ 重試；不顯示空記錄",
+      "detail": "aria-busy=false；sub 也切為錯誤文案",
+      "evidence": "load-error-1440.png"
+    },
+    {
+      "id": "C2",
+      "area": "load-error",
+      "status": "pass",
+      "check": "重試後恢復 13 筆、錯誤消失",
+      "detail": "",
+      "evidence": ""
+    },
+    {
+      "id": "C3",
+      "area": "load-error",
+      "status": "observation",
+      "check": "錯誤期間篩選計數顯示 0（標題徽章仍 13）、結果摘要空白",
+      "detail": "reading-panel.js:1083-1097 + 405-418",
+      "evidence": "load-error-1440.png"
+    },
+    {
+      "id": "D1",
+      "area": "draft",
+      "status": "pass",
+      "check": "展開後 textarea 顯示既有筆記、aria-expanded=true、按鈕變「收起」；已收藏項不顯示加入詞書",
+      "detail": "展開後操作：問 AI／複製引用／刪除",
+      "evidence": ""
+    },
+    {
+      "id": "D2",
+      "area": "draft",
+      "status": "pass",
+      "check": "輸入先顯示「保存中…」，900ms 內自動保存並顯示「已保存」，store 已寫入",
+      "detail": "",
+      "evidence": ""
+    },
+    {
+      "id": "D3",
+      "area": "draft",
+      "status": "pass",
+      "check": "焦點在 textarea 時 bdc:reading-change 不重繪、草稿完整",
+      "detail": "",
+      "evidence": ""
+    },
+    {
+      "id": "D4",
+      "area": "draft",
+      "status": "pass",
+      "check": "保存失敗：顯示錯誤＋重試、草稿保留；收起被阻止、關閉面板被阻止並提示；重試成功寫入",
+      "detail": "",
+      "evidence": "draft-retry-status.png"
+    },
+    {
+      "id": "D5",
+      "area": "draft",
+      "status": "bug-optional",
+      "check": "點「重試」成功後狀態停在「保存中…」且焦點掉到 body",
+      "detail": "reading-panel.js:586 先捕獲 statusEl，594-609 寫回已被重繪卸載的節點；資料已正確寫入",
+      "evidence": "draft-retry-status.png / phase-status-results.json"
+    },
+    {
+      "id": "D6",
+      "area": "draft",
+      "status": "pass",
+      "check": "收起後摘要顯示最新筆記預覽；切換文章重設篩選／搜尋／排序／展開並載入新文章",
+      "detail": "",
+      "evidence": ""
+    },
+    {
+      "id": "E1",
+      "area": "delete",
+      "status": "pass",
+      "check": "詞句刪除有確認（danger、說明可撤銷）、取消保留、確認後計數 12/12、復原列取得焦點、復原成功",
+      "detail": "store deletedAt 正確寫入/清空",
+      "evidence": "delete-confirm-item-1440.png / delete-undo-1440.png"
+    },
+    {
+      "id": "E2",
+      "area": "delete",
+      "status": "pass",
+      "check": "全篇筆記刪除需展開 details、確認含標題、刪除與復原皆成功",
+      "detail": "",
+      "evidence": "delete-confirm-document-1440.png"
+    },
+    {
+      "id": "E3",
+      "area": "delete",
+      "status": "pass",
+      "check": "390px 確認對話框（options overlay z-index 5200）在面板之上、按鈕完整可見可點",
+      "detail": "",
+      "evidence": "delete-confirm-mobile-390.png"
+    },
+    {
+      "id": "E4",
+      "area": "delete",
+      "status": "pass",
+      "check": "刪除後背景保存（markViewed:false）不復活；主動重新查閱（markViewed:true）恢復並回到清單",
+      "detail": "獨立驗證 P1 資料語意",
+      "evidence": "phase-recheck-results.json"
+    },
+    {
+      "id": "F1",
+      "area": "tools",
+      "status": "bug-must",
+      "check": "「更多」選單三個項目被裁切，畫面不可見、滑鼠點擊被下層卡片攔截",
+      "detail": "styles.css:1371 details{overflow:hidden} 套用到 .reading-tools（styles.css:6858），絕對定位選單（6861）被裁到 60×38 的 summary 範圍；1440 與 390 皆重現",
+      "evidence": "tools-menu-1440.png / tools-menu-390.png；命中測試 elementFromPoint 回傳 reading-quick-actions / reading-meaning，Playwright 真實點擊 9s 超時（intercepts pointer events）"
+    },
+    {
+      "id": "F2",
+      "area": "tools",
+      "status": "pass",
+      "check": "套用 .reading-tools{overflow:visible} 後選單可見可點、AI 範圍對話框 12 列可操作",
+      "detail": "最小修法驗證",
+      "evidence": "fix-tools-visible-1440.png / fix-tools-visible-390.png"
+    },
+    {
+      "id": "F3",
+      "area": "tools",
+      "status": "observation",
+      "check": "修正裁切後，選單開啟時點選單外地區不會收起",
+      "detail": "僅點 summary 或選單項會關閉",
+      "evidence": "phase-menu-behavior"
+    },
+    {
+      "id": "F4",
+      "area": "export",
+      "status": "pass",
+      "check": "匯出閱讀筆記：範圍對話框（全文／對話／完整備份）、即時描述、下載 Markdown 含全文與筆記、成功提示",
+      "detail": "檔案 Sidebar-Audit-…-reading-notes.md 2390 bytes",
+      "evidence": "export-dialog-390.png / export-fulltext.md"
+    },
+    {
+      "id": "F5",
+      "area": "export",
+      "status": "bug-must",
+      "check": "「備份目前賬戶（JSON）」未預勾完整備份，確認後下載本篇 Markdown 而非 JSON",
+      "detail": "reading-panel.js:714 default:false；HEAD 版本此按鈕直接匯出 JSON（本次改為經對話框後漏帶 fullBackup）",
+      "evidence": "backup-entry-dialog.png / phase-backup-results.json"
+    },
+    {
+      "id": "F6",
+      "area": "export",
+      "status": "pass",
+      "check": "手動勾選完整備份可下載合法 JSON（bdc-full-backup-*.json）",
+      "detail": "",
+      "evidence": "backup-full.json"
+    },
+    {
+      "id": "F7",
+      "area": "export",
+      "status": "pass",
+      "check": "390/320 匯出對話框（說明＋3 選項）確認與取消初始可見",
+      "detail": "動畫結束後 content bottom=844",
+      "evidence": "export-dialog-390.png"
+    },
+    {
+      "id": "G1",
+      "area": "locate",
+      "status": "pass",
+      "check": "1440 回原文：面板保留、目標句閃示、不顯示返回入口",
+      "detail": "",
+      "evidence": "locate-desktop-1440.png"
+    },
+    {
+      "id": "G2",
+      "area": "locate",
+      "status": "pass",
+      "check": "390 回原文：面板收起、顯示「返回刚才的学习记录」；返回後還原篩選／展開／捲動並聚焦同卡",
+      "detail": "焦點落在標記切換鈕而非筆記框",
+      "evidence": "locate-mobile-return-390.png / locate-mobile-returned-390.png"
+    },
+    {
+      "id": "G3",
+      "area": "locate",
+      "status": "pass",
+      "check": "位置待確認項顯示徽章與「重新定位」；定位失敗提示「找不到对应的原文句子」",
+      "detail": "",
+      "evidence": "uncertain-reanchor-390.png"
+    },
+    {
+      "id": "H1",
+      "area": "locale",
+      "status": "pass",
+      "check": "zh-HK：面板保持、篩選與捲動（300px）保留、標題／篩選／按鈕／排序／底部工具全轉換、原文不變",
+      "detail": "",
+      "evidence": "zh-HK-panel-1440.png"
+    },
+    {
+      "id": "H2",
+      "area": "locale",
+      "status": "pass",
+      "check": "zh-HK：展開中的筆記值與游標 (1,3) 保留；編輯自動儲存「已儲存」；刪除確認「刪除學習記錄／刪除／取消」",
+      "detail": "",
+      "evidence": "zh-HK-delete-confirm.png"
+    },
+    {
+      "id": "H3",
+      "area": "locale",
+      "status": "pass",
+      "check": "切回 zh-CN 還原；工具列「導出閱讀筆記」開啟同一匯出對話框",
+      "detail": "",
+      "evidence": ""
+    },
+    {
+      "id": "I1",
+      "area": "a11y",
+      "status": "pass",
+      "check": "390 Tab 26 次焦點不離開面板；Shift+Tab 由第一項回繞",
+      "detail": "",
+      "evidence": ""
+    },
+    {
+      "id": "I2",
+      "area": "a11y",
+      "status": "pass",
+      "check": "390/1024 Escape 或點背景可關面板、解除 inert、焦點回入口按鈕、aria-expanded=false",
+      "detail": "",
+      "evidence": "phase-misc-results.json"
+    },
+    {
+      "id": "I3",
+      "area": "a11y",
+      "status": "pass",
+      "check": "匯出／確認 options 對話框在面板之上（5200>2450）、面板不 inert、Escape 只關對話框",
+      "detail": "關閉後焦點落回 body（可選觀察）",
+      "evidence": ""
+    },
+    {
+      "id": "I4",
+      "area": "a11y",
+      "status": "bug-must",
+      "check": "<1200px 時 app-modal（全篇筆記／AI 範圍）被面板完全遮住且不可點；Escape 被 childDialog() 攔住 → 面板看似卡死",
+      "detail": "#app-modal 位於 .app-layout（index.html:187/1634；styles.css:416-419 z-index:1），形成獨立堆疊層；面板為 body 子節點 z-index 2450（styles.css:6678），故 modal 的 5000 只在 .app-layout 內生效",
+      "evidence": "child-dialog-note-390.png / child-dialog-note-1024.png / phase-child-dialog-results.json"
+    },
+    {
+      "id": "I5",
+      "area": "a11y",
+      "status": "pass",
+      "check": "1440：全篇筆記對話框可編輯並保存、面板保留（不重疊故可達）",
+      "detail": "",
+      "evidence": "child-dialog-note-1440.png / phase-dialog-results.json"
+    },
+    {
+      "id": "I6",
+      "area": "a11y",
+      "status": "pass",
+      "check": "把 #app-modal 掛到 body 後 390 全篇筆記可點並可用滑鼠關閉",
+      "detail": "最小修法驗證",
+      "evidence": "fix-appmodal-visible-390.png"
+    }
+  ]
+}

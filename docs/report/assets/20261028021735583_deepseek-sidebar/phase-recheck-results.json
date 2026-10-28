@@ -1,0 +1,12 @@
+[
+  {
+    "name": "刪除後背景保存不會復活記錄",
+    "pass": true,
+    "detail": "{\"ok\":true,\"deletedAt\":\"2026-10-27T18:29:37.482Z\",\"visible\":false}"
+  },
+  {
+    "name": "主動重新查閱會恢復已刪除記錄並回到清單",
+    "pass": true,
+    "detail": "{\"ok\":true,\"deletedAt\":\"\",\"visible\":true,\"note\":\"显示 13 / 13 项\"}"
+  }
+]

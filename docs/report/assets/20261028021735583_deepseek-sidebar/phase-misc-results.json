@@ -1,0 +1,22 @@
+[
+  {
+    "name": "390px 點背景可收起面板並歸還焦點到入口按鈕",
+    "pass": true,
+    "detail": "{\"hidden\":true,\"bodyOpen\":false,\"active\":\"article-reading-records-btn\",\"inert\":0}"
+  },
+  {
+    "name": "390px Escape 可收起面板、aria-expanded 同步",
+    "pass": true,
+    "detail": "{\"hidden\":true,\"expanded\":\"false\",\"active\":\"article-reading-records-btn\"}"
+  },
+  {
+    "name": "1024px 點背景可收起模態面板並解除 inert",
+    "pass": true,
+    "detail": "{\"hidden\":true,\"inert\":0}"
+  },
+  {
+    "name": "320px 長筆記不造成面板／頁面橫向溢出",
+    "pass": true,
+    "detail": "{\"docOverflow\":false,\"sheetScroll\":false,\"listScroll\":false,\"bodyOverflow\":false}"
+  }
+]

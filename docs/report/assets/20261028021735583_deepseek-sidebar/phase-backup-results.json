@@ -1,0 +1,17 @@
+[
+  {
+    "name": "「備份目前賬戶（JSON）」入口應預先勾選完整備份",
+    "pass": false,
+    "detail": "{\"title\":\"导出范围\",\"desc\":\"Sidebar Audit — Meeting Follow-up · 原文版本: cv1_f5ce9e03 · 11 条记录 · 3 份笔记 · 0 则对话 · 本篇阅读笔记（不含全文与对话）\",\"fullBackup\":false,\"fullText\":false,\"chat\":false}"
+  },
+  {
+    "name": "「備份目前賬戶（JSON）」確認後應下載 JSON 備份",
+    "pass": false,
+    "detail": "{\"name\":\"Sidebar-Audit-—-Meeting-Follow-up-reading-notes.md\",\"size\":2014,\"head\":\"# Sidebar Audit — Meeting Follow-up\\n\\n- 来源: paste\\n- 原文版本: `cv\"}"
+  },
+  {
+    "name": "手動勾選完整備份可下載 JSON",
+    "pass": true,
+    "detail": "{\"checked\":true,\"name\":\"bdc-full-backup-1793125656477.json\",\"size\":21377}"
+  }
+]

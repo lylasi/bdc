@@ -1,0 +1,50 @@
+{
+    "date": "2026-10-28",
+    "release": "f10d68388cda",
+    "environment": {
+        "url": "http://127.0.0.1:8313/",
+        "browser": "Google Chrome headless via playwright-core",
+        "locales": ["zh-CN", "zh-HK"],
+        "widths": [320, 390, 834, 1024, 1200, 1440],
+        "data": "isolated contexts, synthetic articles and accounts, intercepted AI config and mock provider",
+        "realCloudSyncTested": false,
+        "realAIProviderTested": false,
+        "physicalKeyboardAndScreenReaderTested": false
+    },
+    "checks": [
+        { "suite": "AI worker, units, sync regressions, reading protocol, reliability and view", "passed": 87, "failed": 0, "log": "logs/ai-and-reading-node.txt" },
+        { "suite": "Final reading view and restore fallback, deleted records and partial restore", "passed": 17, "failed": 0, "log": "logs/reading-view-and-restore-final.txt" },
+        { "suite": "reading-panel-improvements.cjs", "passed": 26, "failed": 0, "log": "logs/reading-panel-improvements.txt", "details": "results.json" },
+        { "suite": "reading-draft-reliability.cjs", "passed": 5, "failed": 0, "log": "logs/reading-draft-reliability.txt" },
+        { "suite": "reading-files.cjs", "status": "passed", "log": "logs/reading-files.txt" },
+        { "suite": "reading-marks.cjs", "status": "passed", "log": "logs/reading-marks.txt" },
+        { "suite": "locale-panel-state.cjs", "status": "passed", "log": "logs/locale-panel-state.txt" },
+        { "suite": "reading-panel-scope-refresh.cjs", "passed": 44, "failed": 0, "log": "logs/reading-panel-scope-refresh.txt" },
+        { "suite": "article-reading-layout.cjs", "passed": 200, "failed": 0, "log": "logs/article-reading-layout.txt" },
+        { "suite": "ai-review-regressions.mjs", "passed": 29, "failed": 0, "log": "logs/ai-review-regressions.txt" },
+        { "suite": "admin-users.cjs", "passed": 54, "failed": 0, "log": "logs/admin-users.txt" },
+        { "suite": "settings-autosave.cjs", "passed": 18, "failed": 0, "log": "logs/settings-autosave.txt" },
+        { "suite": "audit-i18n.mjs", "status": "completed", "localeKeysEach": 2085, "keyDifferences": 0, "interpolationDifferences": 0, "existingDynamicKeyCandidates": 1, "existingHardcodedTextCandidates": 667, "log": "logs/audit-i18n.txt" },
+        { "suite": "audit-flows.cjs", "status": "completed", "high": 0, "medium": 0, "low": 11, "reasonForLow": "unconfigured AI and intentionally blocked voice requests in the isolated environment", "details": "audit-flows.json", "log": "logs/audit-flows.txt" },
+        { "suite": "test-floating-statusbar.html", "status": "passed", "widths": [1440, 390], "details": "floating-statusbar.json" },
+        { "suite": "Final layout measurements", "status": "passed", "contexts": 2, "measurements": 12, "details": "layout-measurements.json" },
+        { "suite": "Release map check, JavaScript syntax and git diff --check", "status": "passed" }
+    ],
+    "independentReview": {
+        "agent": "DeepSeek Harness",
+        "round2Report": "../../20261028072437416_DeepSeek文章學習記錄側欄二次複驗.md",
+        "round2": { "pass": 82, "fail": 0, "warn": 2 },
+        "round2NewFocusFindings": "N1 and N2 were reproduced, repaired and covered by the final 26-check panel suite",
+        "finalFocusedReview": {
+            "report": "../../20261028075540353_DeepSeek文章學習記錄側欄焦點最終複驗.md",
+            "cases": 9,
+            "assertions": 131,
+            "failures": 0,
+            "scenarioErrors": 0,
+            "pageErrors": 0,
+            "newReproducibleFindings": 0,
+            "N1": "fixed",
+            "N2": "fixed"
+        }
+    }
+}
