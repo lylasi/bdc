@@ -1,4 +1,4 @@
-// 閱讀筆記 Markdown 與完整 JSON 備份（完全在本機生成）。
+// 完整 HTML 閱讀版、Markdown 與完整 JSON 備份（完全在本機生成）。
 //
 // 匯出時先固定資料快照；不會邊讀邊因同步而漏項。若仍有未保存／待同步／
 // 衝突，會在文件開頭明確標示範圍，而不是宣稱包含全部裝置資料。
@@ -8,9 +8,136 @@ import * as readingStore from './reading-store.js';
 import { buildLocalSnapshot } from './sync-core.js';
 import { t, formatDateTime } from './i18n.js';
 import { contentVersionOf } from '../shared/reading-protocol.mjs';
+import { renderReadingEdition, selectArticleReading } from './reading-edition.js';
 
-function isoOrEmpty(value) {
-    return value ? String(value) : '';
+export const READING_AUDIO_LIMITS = Object.freeze({ count: 5, bytes: 25 * 1024 * 1024 });
+export const READING_AUDIO_ACCEPT = '.mp3,.m4a,.wav,.ogg,.webm,.flac,.aac,.mp4';
+
+const AUDIO_TYPES = Object.freeze({
+    mp3: 'audio/mpeg',
+    m4a: 'audio/mp4',
+    mp4: 'audio/mp4',
+    wav: 'audio/wav',
+    ogg: 'audio/ogg',
+    webm: 'audio/webm',
+    flac: 'audio/flac',
+    aac: 'audio/aac'
+});
+
+function captureExportGuard({ context, isCurrent } = {}) {
+    const readingContext = context || readingStore.captureReadingContext();
+    const articleContext = articleStore.captureArticleContext();
+    return {
+        readingContext,
+        active: () => readingContext.scope === articleContext.scope
+            && readingStore.isReadingContextActive(readingContext)
+            && articleStore.isArticleContextActive(articleContext)
+            && (!isCurrent || isCurrent())
+    };
+}
+
+function audioExtension(file) {
+    return String(file?.name || '').toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] || '';
+}
+
+export function validateReadingAudioFiles(audioFiles = []) {
+    const files = Array.from(audioFiles);
+    if (files.length > READING_AUDIO_LIMITS.count) return { ok: false, error: 'audio_count' };
+    let totalSize = 0;
+    for (const file of files) {
+        if (!(file instanceof Blob) || !AUDIO_TYPES[audioExtension(file)] || !file.size) {
+            return { ok: false, error: 'audio_format' };
+        }
+        totalSize += file.size;
+    }
+    if (totalSize > READING_AUDIO_LIMITS.bytes) return { ok: false, error: 'audio_size' };
+    return { ok: true, files, totalSize };
+}
+
+function hasAudioHeader(bytes, extension) {
+    const textAt = (start, value) => Array.from(value).every((char, index) => bytes[start + index] === char.charCodeAt(0));
+    if (extension === 'wav') return bytes.length >= 12 && textAt(0, 'RIFF') && textAt(8, 'WAVE');
+    if (extension === 'ogg') return bytes.length >= 4 && textAt(0, 'OggS');
+    if (extension === 'flac') return bytes.length >= 4 && textAt(0, 'fLaC');
+    if (extension === 'webm') return bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
+    if (extension === 'm4a' || extension === 'mp4') return bytes.length >= 12 && textAt(4, 'ftyp');
+    if (extension === 'aac') return bytes.length >= 7 && bytes[0] === 0xff && (bytes[1] & 0xf6) === 0xf0;
+    if (extension === 'mp3') return bytes.length >= 3 && (textAt(0, 'ID3')
+        || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0 && (bytes[1] & 0x06) !== 0));
+    return false;
+}
+
+function readAudioBuffer(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => reader.result instanceof ArrayBuffer ? resolve(reader.result) : reject(new Error('audio_read_failed'));
+        reader.onerror = reader.onabort = () => reject(new Error('audio_read_failed'));
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+async function readAudioTracks(files, active, onProgress) {
+    const tracks = [];
+    for (const file of files) {
+        if (!active()) return { ok: false, error: 'stale_scope' };
+        onProgress?.('article.exportReadingAudio', { current: tracks.length + 1, total: files.length });
+        let buffer;
+        try { buffer = await readAudioBuffer(file); } catch (_) {
+            return { ok: false, error: active() ? 'audio_read_failed' : 'stale_scope' };
+        }
+        if (!active()) return { ok: false, error: 'stale_scope' };
+        const bytes = new Uint8Array(buffer);
+        const extension = audioExtension(file);
+        if (bytes.length !== file.size || !hasAudioHeader(bytes, extension)) return { ok: false, error: 'audio_format' };
+        try {
+            const chunks = [];
+            for (let offset = 0; offset < bytes.length; offset += 32768) {
+                chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + 32768)));
+            }
+            const type = AUDIO_TYPES[extension];
+            tracks.push({ name: file.name, type, size: file.size, dataUrl: `data:${type};base64,${btoa(chunks.join(''))}` });
+        } catch (_) { return { ok: false, error: 'audio_read_failed' }; }
+    }
+    return { ok: true, tracks };
+}
+
+export async function buildReadingEditionHtml({
+    articleId,
+    includeChat = true,
+    audioFiles = [],
+    context,
+    isCurrent,
+    onProgress
+} = {}) {
+    const guard = captureExportGuard({ context, isCurrent });
+    if (!guard.active()) return { ok: false, error: 'stale_scope' };
+    if (!articleId) return { ok: false, error: 'article_required' };
+    const validation = validateReadingAudioFiles(audioFiles);
+    if (!validation.ok) return validation;
+    try {
+        onProgress?.('article.exportReadingSnapshot');
+        const snapshot = await readingStore.exportArticleReading(articleId, guard.readingContext);
+        if (!guard.active()) return { ok: false, error: 'stale_scope' };
+        if (!snapshot.ok) return { ok: false, error: snapshot.error || 'snapshot_failed' };
+        const audio = await readAudioTracks(validation.files, guard.active, onProgress);
+        if (!guard.active()) return { ok: false, error: 'stale_scope' };
+        if (!audio.ok) return audio;
+        onProgress?.('article.exportBuilding');
+        const result = renderReadingEdition({ snapshot, articleId, includeChat, audioTracks: audio.tracks });
+        if (!guard.active()) return { ok: false, error: 'stale_scope' };
+        return { ok: true, ...result };
+    } catch (error) {
+        return { ok: false, error: guard.active() ? (error?.message === 'article_not_found' ? 'article_not_found' : 'export_failed') : 'stale_scope' };
+    }
+}
+
+export async function exportReadingEditionFile(options = {}) {
+    const guard = captureExportGuard(options);
+    const built = await buildReadingEditionHtml({ ...options, context: guard.readingContext, isCurrent: guard.active });
+    if (!guard.active()) return { ok: false, error: 'stale_scope' };
+    if (!built.ok) return built;
+    downloadTextFile(exportFilename(built.meta.title || options.articleId, 'reading-edition', 'html'), built.html, 'text/html;charset=utf-8');
+    return built;
 }
 
 function formatTime(value) {
@@ -67,16 +194,17 @@ export async function buildReadingNoteMarkdown({
     articleId,
     includeFullText = false,
     includeChat = false,
-    documentIds = null
+    documentIds = null,
+    context,
+    isCurrent
 } = {}) {
-    // 入口同步捕捉 scope + generation；下面所有內容都只從同一交易快照取，
-    // 不再讀取任何可變的全域 Map。切帳戶後舊匯出回傳 stale_scope。
-    const ctx = readingStore.captureReadingContext();
-    if (!readingStore.isReadingContextActive(ctx)) return { ok: false, error: 'stale_scope' };
+    const guard = captureExportGuard({ context, isCurrent });
+    if (!guard.active()) return { ok: false, error: 'stale_scope' };
     // 一致快照：文章、條目、文件、會話、消息、詞書與同步狀態同交易讀取。
-    const snapshot = await readingStore.exportArticleReading(articleId, ctx);
-    if (!snapshot.ok) return { ok: false, error: snapshot.error || 'snapshot_failed' };
-    if (!readingStore.isReadingContextActive(ctx)) return { ok: false, error: 'stale_scope' };
+    const exported = await readingStore.exportArticleReading(articleId, guard.readingContext);
+    if (!guard.active()) return { ok: false, error: 'stale_scope' };
+    if (!exported.ok) return { ok: false, error: exported.error || 'snapshot_failed' };
+    const snapshot = selectArticleReading(exported, articleId);
     const articleDoc = snapshot.articleDoc;
     if (!articleDoc) return { ok: false, error: 'article_not_found' };
     const record = {
@@ -278,6 +406,7 @@ export async function buildReadingNoteMarkdown({
         markdown: lines.join('\n').replace(/\n{3,}/g, '\n\n'),
         meta: {
             articleId,
+            title: record.title,
             contentVersion: version,
             exportedAt,
             itemCount: items.length,
@@ -289,17 +418,17 @@ export async function buildReadingNoteMarkdown({
 }
 
 /**
- * 只描述匯出範圍，不產生 Markdown、不寫檔。
- * 與 buildReadingNoteMarkdown 共用同一個交易快照，所以摘要裡的數量與
- * 真正匯出的內容一致；期間切帳戶／文章版本時回 stale_scope。
+ * 以相同的單篇選取規則描述本機匯出範圍；確認匯出時會重新取得交易快照，
+ * 納入剛保存的筆記。摘要和實際匯出之間的資料變更不會被凍結。
  */
-export async function describeReadingScope(articleId) {
+export async function describeReadingScope(articleId, options = {}) {
     if (!articleId) return { ok: false, error: 'article_required' };
-    const ctx = readingStore.captureReadingContext();
-    if (!readingStore.isReadingContextActive(ctx)) return { ok: false, error: 'stale_scope' };
-    const snapshot = await readingStore.exportArticleReading(articleId, ctx);
-    if (!snapshot.ok) return { ok: false, error: snapshot.error || 'snapshot_failed' };
-    if (!readingStore.isReadingContextActive(ctx)) return { ok: false, error: 'stale_scope' };
+    const guard = captureExportGuard(options);
+    if (!guard.active()) return { ok: false, error: 'stale_scope' };
+    const exported = await readingStore.exportArticleReading(articleId, guard.readingContext);
+    if (!guard.active()) return { ok: false, error: 'stale_scope' };
+    if (!exported.ok) return { ok: false, error: exported.error || 'snapshot_failed' };
+    const snapshot = selectArticleReading(exported, articleId);
     const articleDoc = snapshot.articleDoc;
     if (!articleDoc) return { ok: false, error: 'article_not_found' };
 
@@ -339,19 +468,24 @@ export function downloadTextFile(filename, text, mime = 'text/markdown;charset=u
     setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-export function readingNoteFilename(articleId, suffix = 'reading-notes') {
-    const record = articleStore.getRecord(articleId);
-    const base = String(record?.title || articleId || 'article')
-        .replace(/[\\/:*?"<>|]+/g, ' ')
+function exportFilename(title, suffix, extension) {
+    const base = String(title || 'article')
+        .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ')
         .replace(/\s+/g, '-')
         .slice(0, 60) || 'article';
-    return `${base}-${suffix}.md`;
+    return `${base}-${suffix}.${extension}`;
+}
+
+export function readingNoteFilename(articleId, suffix = 'reading-notes') {
+    return exportFilename(articleStore.getRecord(articleId)?.title || articleId, suffix, 'md');
 }
 
 export async function exportReadingNoteFile(options = {}) {
-    const built = await buildReadingNoteMarkdown(options);
+    const guard = captureExportGuard(options);
+    const built = await buildReadingNoteMarkdown({ ...options, context: guard.readingContext, isCurrent: guard.active });
+    if (!guard.active()) return { ok: false, error: 'stale_scope' };
     if (!built.ok) return built;
-    downloadTextFile(readingNoteFilename(options.articleId), built.markdown);
+    downloadTextFile(exportFilename(built.meta.title || options.articleId, 'reading-notes', 'md'), built.markdown);
     return built;
 }
 
@@ -394,8 +528,11 @@ export async function buildFullBackup() {
     };
 }
 
-export async function exportFullBackupFile() {
+export async function exportFullBackupFile(options = {}) {
+    const guard = captureExportGuard(options);
+    if (!guard.active()) return { ok: false, error: 'stale_scope' };
     const backup = await buildFullBackup();
+    if (!guard.active()) return { ok: false, error: 'stale_scope' };
     if (!backup || backup.ok === false) return backup || { ok: false, error: 'backup_failed' };
     downloadTextFile(`bdc-full-backup-${Date.now()}.json`, JSON.stringify(backup, null, 2), 'application/json;charset=utf-8');
     return backup;

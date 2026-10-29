@@ -1,0 +1,26 @@
+PASS zh-CN: audio limits, removal and format controls work without downloading
+PASS zh-CN: invalid audio content is retained for correction and blocks the whole download
+locator.fill: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('[data-note-id="li_cv1_35c8a9b7_75"]')[22m
+[2m    - locator resolved to <textarea rows="2" maxlength="20000" class="reading-note" placeholder="写下这个词、短语或句子的笔记…" data-note-id="li_cv1_35c8a9b7_75" id="reading-note-li_cv1_35c8a9b7_75">to 後面接名詞或動名詞。</textarea>[22m
+[2m    - fill("UI_DRAFT_zh-CN")[22m
+[2m  - attempting fill action[22m
+[2m    2 × waiting for element to be visible, enabled and editable[22m
+[2m      - element is not visible[22m
+[2m    - retrying fill action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and editable[22m
+[2m      - element is not visible[22m
+[2m    - retrying fill action[22m
+[2m      - waiting 100ms[22m
+[2m    20 × waiting for element to be visible, enabled and editable[22m
+[2m       - element is not visible[22m
+[2m     - retrying fill action[22m
+[2m       - waiting 500ms[22m
+
+    at /Users/linus/CODE/bdc/.claude/worktrees/article-readonly-sharing/tests/reading-edition-ui.cjs:122:32
+    at check (/Users/linus/CODE/bdc/.claude/worktrees/article-readonly-sharing/tests/reading-edition-ui.cjs:76:15)
+    at /Users/linus/CODE/bdc/.claude/worktrees/article-readonly-sharing/tests/reading-edition-ui.cjs:119:23 {
+  name: 'TimeoutError'
+}

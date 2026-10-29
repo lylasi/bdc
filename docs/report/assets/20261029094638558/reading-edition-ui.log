@@ -1,0 +1,17 @@
+PASS zh-CN: audio limits, removal and format controls work without downloading
+PASS zh-CN: invalid audio content is retained for correction and blocks the whole download
+PASS zh-CN: a failed audio read preserves the file and retries a real HTML download
+PASS zh-CN: downloaded file opens independently, navigates marks and plays embedded audio offline
+PASS zh-CN: cancelling during file reading allows no stale download
+PASS zh-CN: changing article during file reading cancels the pending export
+PASS zh-CN: changing language during file reading cancels the pending export
+PASS zh-CN: changing account during file reading allows no stale download
+PASS zh-HK: audio limits, removal and format controls work without downloading
+PASS zh-HK: invalid audio content is retained for correction and blocks the whole download
+PASS zh-HK: a failed audio read preserves the file and retries a real HTML download
+PASS zh-HK: downloaded file opens independently, navigates marks and plays embedded audio offline
+PASS zh-HK: cancelling during file reading allows no stale download
+PASS zh-HK: changing article during file reading cancels the pending export
+PASS zh-HK: changing language during file reading cancels the pending export
+PASS zh-HK: changing account during file reading allows no stale download
+16 UI/offline checks passed. Artifacts: docs/report/assets/20261029094638558

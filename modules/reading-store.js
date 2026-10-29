@@ -259,9 +259,13 @@ function replaceMap(target, records, recordScope = scope()) {
 }
 
 async function loadAll(storeName, listName, recordScope = scope()) {
+    if (fallbackMode) return bucketArray(listName, recordScope);
     const result = await readStoreAll(storeName, recordScope);
     if (result.ok) return result.records;
-    useFallback();
+    // 單次交易／讀取失敗不代表 IDB 不可用；不要讓啟動清單的容錯讀取
+    // 把後續文章載入、marked 遷移與匯出永久導向可能不存在的後備桶。
+    // 真正使用過後備儲存的模式仍保留，避免忽略已寫入的後備資料。
+    if (result.error === 'idb_unavailable') useFallback();
     return bucketArray(listName, recordScope);
 }
 
@@ -281,21 +285,41 @@ export async function ensureArticleReadingLoaded(articleId, ctx = captureReading
     if (!articleId) return { ok: true, skipped: true };
     if (!isReadingContextActive(ctx)) return staleResult();
     if (loadedArticleIds.has(articleId)) return { ok: true };
-    const promiseKey = `${ctx.scope}\u0000${articleId}\u0000${ctx.generation}`;
-    if (articleLoadPromises.has(promiseKey)) return articleLoadPromises.get(promiseKey);
+    const promiseKey = `${ctx.scope}\u0000${articleId}\u0000${ctx.generation}\u0000${ctx.articleScope}\u0000${ctx.articleGeneration}`;
+    if (articleLoadPromises.has(promiseKey)) {
+        const result = await articleLoadPromises.get(promiseKey);
+        return isReadingContextActive(ctx) ? result : staleResult();
+    }
     const task = (async () => {
-        const [items, documents] = await Promise.all([
-            readStoreByIndex(STORE.READING_ITEMS, 'scope_article', [ctx.scope, articleId]),
-            readStoreByIndex(STORE.ARTICLE_DOCUMENTS, 'scope_article', [ctx.scope, articleId])
-        ]);
-        if (!isReadingContextActive(ctx)) return staleResult();
-        if (!items.ok || !documents.ok) return { ok: false, error: items.error || documents.error || 'idb_read_failed' };
-        for (const record of items.records) {
-            if (record && record.id && record.scope === ctx.scope) itemsById.set(record.id, record);
+        let items = [];
+        let documents = [];
+        if (!fallbackMode) {
+            const [itemRead, documentRead] = await Promise.all([
+                readStoreByIndex(STORE.READING_ITEMS, 'scope_article', [ctx.scope, articleId]),
+                readStoreByIndex(STORE.ARTICLE_DOCUMENTS, 'scope_article', [ctx.scope, articleId])
+            ]);
+            if (!isReadingContextActive(ctx)) return staleResult();
+            if (!itemRead.ok || !documentRead.ok) {
+                if (itemRead.error !== 'idb_unavailable' || documentRead.error !== 'idb_unavailable') {
+                    return { ok: false, error: itemRead.error || documentRead.error || 'idb_read_failed' };
+                }
+                useFallback();
+            } else {
+                items = itemRead.records;
+                documents = documentRead.records;
+            }
         }
-        for (const record of documents.records) {
-            if (record && record.id && record.scope === ctx.scope) documentsById.set(record.id, record);
+        if (fallbackMode) {
+            const read = readBucketStrict(ctx.scope);
+            if (!read.ok) return read;
+            items = read.bucket.items || [];
+            documents = read.bucket.documents || [];
         }
+        const belongs = record => record && record.id && record.scope === ctx.scope && record.articleId === articleId;
+        items = items.filter(belongs);
+        documents = documents.filter(belongs);
+        for (const record of items) itemsById.set(record.id, record);
+        for (const record of documents) documentsById.set(record.id, record);
         // 舊資料沒有 marked：只在交易內、仍缺少布林值時補一次；
         // 已有 true／false 一律不動，明確取消不會被重新標記。
         // 遷移失敗必須回報並保留重試機會：只有全部成功才把文章標記為已載入，
@@ -303,16 +327,17 @@ export async function ensureArticleReadingLoaded(articleId, ctx = captureReading
         const migrated = await migrateArticleMarkedItems(articleId, ctx);
         if (!isReadingContextActive(ctx)) return staleResult();
         if (migrated && migrated.ok === false) {
-            return { ok: false, error: migrated.error || 'marked_migration_failed', items: items.records.length, documents: documents.records.length };
+            return { ok: false, error: migrated.error || 'marked_migration_failed', items: items.length, documents: documents.length };
         }
         loadedArticleIds.add(articleId);
-        return { ok: true, items: items.records.length, documents: documents.records.length };
+        return { ok: true, items: items.length, documents: documents.length };
     })();
     articleLoadPromises.set(promiseKey, task);
     try {
-        return await task;
+        const result = await task;
+        return isReadingContextActive(ctx) ? result : staleResult();
     } finally {
-        articleLoadPromises.delete(promiseKey);
+        if (articleLoadPromises.get(promiseKey) === task) articleLoadPromises.delete(promiseKey);
     }
 }
 
@@ -917,25 +942,54 @@ function legacyMarkedFor(item, hasVocabularyLink) {
  * 兩個分頁同時載入舊文章時，後到的交易會看到第一個已寫入的布林值而跳過，
  * 不會把使用者剛取消的標記重新打開。
  */
+function migrateLearningItemMarkedFallback(itemId, ctx) {
+    if (!isReadingContextActive(ctx)) return staleResult();
+    const read = readBucketStrict(ctx.scope);
+    if (!read.ok) return read;
+    const bucket = read.bucket;
+    const base = (bucket.items || []).find(item => item && item.scope === ctx.scope && item.id === itemId);
+    if (!base || base.deletedAt || typeof base.marked === 'boolean') return { ok: true, migrated: false };
+    const linked = (bucket.links || []).some(link => link && link.scope === ctx.scope
+        && link.itemId === itemId && !link.deletedAt && !link.removedAt);
+    const entity = learningEntityFrom(base, { id: base.id, marked: legacyMarkedFor(base, linked) });
+    const previous = (bucket.outbox || []).find(op => op && op.scope === ctx.scope
+        && op.entityType === 'learningItem' && op.entityId === itemId) || null;
+    const outbox = buildOutboxMutation('learningItem', entity, base, 'upsert', base, ctx, previous);
+    const stored = { ...entity, key: entityKey(itemId, ctx.scope) };
+    bucket.items = bucket.items.map(item => item === base ? stored : item);
+    bucket.outbox = (bucket.outbox || []).filter(op => !(op && op.scope === ctx.scope
+        && op.entityType === 'learningItem' && op.entityId === itemId));
+    bucket.outbox.push(outbox);
+    if (!isReadingContextActive(ctx)) return staleResult();
+    if (!writeBucket(bucket, ctx.scope)) return { ok: false, error: 'storage_full' };
+    rememberEntity('learningItem', stored, ctx);
+    return { ok: true, migrated: true };
+}
+
 async function migrateLearningItemMarkedAtomic(itemId, ctx) {
+    if (!isReadingContextActive(ctx)) return staleResult();
+    if (fallbackMode) return migrateLearningItemMarkedFallback(itemId, ctx);
     const transaction = await runPermanentTransaction(
         [STORE.READING_ITEMS, STORE.VOCAB_LINKS, STORE.READING_OUTBOX],
         'readwrite',
         (stores, tx) => new Promise((resolve, reject) => {
+            if (!isReadingContextActive(ctx)) { resolve({ error: 'stale_scope' }); return; }
             const itemStore = stores[STORE.READING_ITEMS];
             const linkStore = stores[STORE.VOCAB_LINKS];
             const outboxStore = stores[STORE.READING_OUTBOX];
             const itemRequest = itemStore.get(entityKey(itemId, ctx.scope));
             itemRequest.onerror = () => reject(itemRequest.error || new Error('idb_read_failed'));
             itemRequest.onsuccess = () => {
+                if (!isReadingContextActive(ctx)) { resolve({ error: 'stale_scope' }); return; }
                 const base = itemRequest.result || null;
-                if (!base) { resolve({ migrated: false, missing: true }); return; }
+                if (!base || base.deletedAt) { resolve({ migrated: false, missing: true }); return; }
                 if (typeof base.marked === 'boolean') { resolve({ migrated: false, already: true }); return; }
                 const linksRequest = linkStore.indexNames.contains('scope_item')
                     ? linkStore.index('scope_item').getAll([ctx.scope, itemId])
                     : linkStore.getAll();
                 linksRequest.onerror = () => reject(linksRequest.error || new Error('idb_read_failed'));
                 linksRequest.onsuccess = () => {
+                    if (!isReadingContextActive(ctx)) { resolve({ error: 'stale_scope' }); return; }
                     const links = (linksRequest.result || []).filter((link) => link
                         && link.scope === ctx.scope && link.itemId === itemId
                         && !link.deletedAt && !link.removedAt);
@@ -948,6 +1002,7 @@ async function migrateLearningItemMarkedAtomic(itemId, ctx) {
                         const outboxRequest = outboxStore.get(outboxKey('learningItem', entity.id, ctx.scope));
                         outboxRequest.onerror = () => reject(outboxRequest.error || new Error('outbox_read_failed'));
                         outboxRequest.onsuccess = () => {
+                            if (!isReadingContextActive(ctx)) { resolve({ error: 'stale_scope' }); return; }
                             try {
                                 const previousOutbox = outboxRequest.result || null;
                                 const outbox = buildOutboxMutation('learningItem', entity, base, 'upsert', base, ctx, previousOutbox);
@@ -967,18 +1022,14 @@ async function migrateLearningItemMarkedAtomic(itemId, ctx) {
             };
         })
     );
+    if (!isReadingContextActive(ctx)) return staleResult();
     if (!transaction.ok) {
-        if (transaction.error === 'idb_unavailable') {
-            const item = itemsById.get(itemId);
-            if (!item || typeof item.marked === 'boolean') return { ok: true, migrated: false };
-            const marked = legacyMarkedFor(item, listVocabularyLinks({ itemId }).length > 0);
-            const result = await writeLearningItemAtomic({ id: itemId, input: { id: itemId, marked }, ctx });
-            return { ok: result.ok, migrated: result.ok };
-        }
-        if (isReadingContextActive(ctx)) meta.persistenceError = transaction.error || 'idb_write_failed';
+        if (transaction.error === 'idb_unavailable') return migrateLearningItemMarkedFallback(itemId, ctx);
+        meta.persistenceError = transaction.error || 'idb_write_failed';
         return { ok: false, error: transaction.error || 'idb_write_failed' };
     }
     const value = transaction.value || {};
+    if (value.error) return { ok: false, error: value.error };
     if (value.item) {
         rememberEntity('learningItem', { ...value.item, key: entityKey(value.item.id, ctx.scope) }, ctx);
     }
@@ -993,6 +1044,7 @@ async function migrateArticleMarkedItems(articleId, ctx) {
     for (const item of candidates) {
         if (!isReadingContextActive(ctx)) return staleResult();
         const result = await migrateLearningItemMarkedAtomic(item.id, ctx);
+        if (!isReadingContextActive(ctx)) return staleResult();
         if (result.ok === false) return result;
         if (result.migrated) migrated += 1;
     }
@@ -2637,46 +2689,152 @@ async function snapshotScopeStores(ctx, storeNames) {
     return { ok: true, stores: out };
 }
 
-/**
- * 匯出用的完整快照：所有 store 在同一個 readonly 交易讀取，避免匯出期間
- * 同步或另一個分頁寫入造成前後不一致。
- */
+function readArticleBucketStrict(recordScope) {
+    let raw;
+    try {
+        raw = localStorage.getItem(`bdc:articles:fallback:v1:${recordScope}`);
+    } catch (_) {
+        return { ok: false, error: 'storage_read_failed' };
+    }
+    if (raw == null || raw === '') return { ok: true, bucket: { docs: [], outbox: [], state: null } };
+    let bucket;
+    try {
+        bucket = JSON.parse(raw);
+    } catch (_) {
+        return { ok: false, error: 'storage_corrupt' };
+    }
+    if (!bucket || typeof bucket !== 'object' || Array.isArray(bucket)
+        || !Array.isArray(bucket.docs)
+        || (bucket.outbox != null && !Array.isArray(bucket.outbox))
+        || (bucket.state != null && (typeof bucket.state !== 'object' || Array.isArray(bucket.state)))) {
+        return { ok: false, error: 'storage_corrupt' };
+    }
+    return { ok: true, bucket };
+}
+
+/** 共用持久快照投影；IDB 與後備模式必須套用相同的文章／有效關聯邊界。 */
+function articleReadingSnapshot(articleId, ctx, data) {
+    const inScope = entity => entity && entity.scope === ctx.scope;
+    const belongs = entity => inScope(entity) && entity.articleId === articleId && !entity.deletedAt;
+    const items = (data.items || []).filter(belongs);
+    const documents = (data.documents || []).filter(belongs);
+    const conversations = (data.conversations || []).filter(belongs);
+    const itemIds = new Set(items.map(item => item.id));
+    const conversationIds = new Set(conversations.map(conv => conv.id));
+    const messages = (data.messages || []).filter(message => inScope(message)
+        && conversationIds.has(message.conversationId) && !message.deletedAt).map(wireReadingEntity);
+    const byConversation = new Map();
+    for (const message of messages) {
+        if (!byConversation.has(message.conversationId)) byConversation.set(message.conversationId, []);
+        byConversation.get(message.conversationId).push(message);
+    }
+    const links = (data.links || []).filter(link => inScope(link)
+        && itemIds.has(link.itemId) && !link.deletedAt && !link.removedAt);
+    const entryIds = new Set(links.map(link => link.entryId));
+    const bookIds = new Set(links.map(link => link.bookId));
+    // links 的次序不一定與 items 相同；每個詞條仍採 items 中首個有效關聯，
+    // 只掃描一次關聯，避免每個跨文章詞條再做 items.find + links.some。
+    const itemOrder = new Map(items.map((item, index) => [item.id, index]));
+    const firstItemByEntry = new Map();
+    for (const link of links) {
+        const index = itemOrder.get(link.itemId);
+        const first = firstItemByEntry.get(link.entryId);
+        if (first === undefined || index < first) firstItemByEntry.set(link.entryId, index);
+    }
+    const entries = (data.entries || []).filter(entry => inScope(entry) && entryIds.has(entry.id) && !entry.deletedAt)
+        .map(entry => {
+            const projected = wireReadingEntity(entry);
+            // 共用詞條可能先在別篇文章建立；保留詞義，來源與語境只帶目前文章。
+            if (Array.isArray(entry.sources)) {
+                projected.sources = entry.sources.filter(source => source && source.articleId === articleId);
+            }
+            if ((entry.sourceArticleId && entry.sourceArticleId !== articleId)
+                || (Array.isArray(entry.sources) && entry.sources.some(source => source?.articleId && source.articleId !== articleId))) {
+                const source = projected.sources?.[0];
+                projected.context = source?.sentence || source?.context
+                    || items[firstItemByEntry.get(entry.id)]?.sentence || '';
+                projected.sourceArticleId = source ? articleId : '';
+            }
+            return projected;
+        });
+    const books = (data.books || []).filter(book => inScope(book) && bookIds.has(book.id) && !book.deletedAt)
+        .map(book => {
+            const projected = wireReadingEntity(book);
+            if (book.articleId && book.articleId !== articleId) {
+                projected.articleId = '';
+                projected.sourceUrl = '';
+            }
+            return projected;
+        });
+    const readingEntityKeys = new Set();
+    for (const [type, entities] of [
+        ['learningItem', items], ['articleDocument', documents], ['conversation', conversations],
+        ['message', messages], ['vocabularyBook', books], ['vocabularyEntry', entries], ['vocabularyLink', links]
+    ]) {
+        for (const entity of entities) readingEntityKeys.add(`${type}:${entity.id}`);
+    }
+    const projectState = (state, articleState = false) => {
+        if (!state || (state.scope && state.scope !== ctx.scope)) return null;
+        const projected = { ...state };
+        if (state.conflicts && typeof state.conflicts === 'object') {
+            projected.conflicts = Object.fromEntries(Object.entries(state.conflicts).filter(([key]) => (
+                articleState ? key === articleId : readingEntityKeys.has(key)
+            )));
+        }
+        if (state.legacyItemArticles && typeof state.legacyItemArticles === 'object') {
+            projected.legacyItemArticles = Object.fromEntries(Object.entries(state.legacyItemArticles)
+                .filter(([id]) => id === articleId));
+        }
+        return projected;
+    };
+    return {
+        ok: true,
+        scope: ctx.scope,
+        articleId,
+        articleDoc: data.articleDoc && inScope(data.articleDoc) && data.articleDoc.id === articleId ? data.articleDoc : null,
+        learningItems: items.map(wireReadingEntity),
+        articleDocuments: documents.map(wireReadingEntity),
+        conversations: conversations.map(wireReadingEntity),
+        messages,
+        messagesByConversation: byConversation,
+        vocabularyBooks: books,
+        vocabularyEntries: entries,
+        vocabularyLinks: links.map(wireReadingEntity),
+        articleOutboxCount: (data.articleOutbox || []).filter(inScope).length,
+        readingOutboxCount: (data.readingOutbox || []).filter(inScope).length,
+        readingState: projectState(data.readingState),
+        articleState: projectState(data.articleState, true)
+    };
+}
+
 /**
  * 匯出單篇文章的一致快照：同一 readonly 交易讀取該文章條目、文件、會話與
- * 全部消息。呼叫端不可先從可變記憶體取一部分再補讀。
+ * 全部消息。後備模式同步讀取兩個持久桶，不使用可變的記憶體文章／詞書。
  */
 export async function exportArticleReading(articleId, ctx = captureReadingContext()) {
     if (!articleId) return { ok: false, error: 'article_required' };
     if (!isReadingContextActive(ctx)) return staleResult();
     const loaded = await ensureArticleReadingLoaded(articleId, ctx);
+    if (!isReadingContextActive(ctx)) return staleResult();
     if (!loaded.ok) return loaded;
     if (fallbackMode) {
-        const bucket = readBucket(ctx.scope);
-        const record = articleStore.getRecord(articleId);
-        if (!record) return { ok: false, error: 'article_not_found' };
-        const messages = (bucket.messages || []).filter((msg) => msg && msg.scope === ctx.scope && !msg.deletedAt);
-        const byConversation = new Map();
-        for (const message of messages) {
-            if (!byConversation.has(message.conversationId)) byConversation.set(message.conversationId, []);
-            byConversation.get(message.conversationId).push(message);
-        }
-        return {
-            ok: true,
-            scope: ctx.scope,
-            articleId,
-            articleDoc: { id: articleId, title: record.title, body: record.article, sourceType: record.sourceType, sourceUrl: record.sourceUrl },
-            learningItems: (bucket.items || []).filter((item) => item.scope === ctx.scope).map(wireReadingEntity),
-            articleDocuments: (bucket.documents || []).filter((doc) => doc.scope === ctx.scope).map(wireReadingEntity),
-            conversations: (bucket.conversations || []).filter((conv) => conv.scope === ctx.scope).map(wireReadingEntity),
-            messages: messages.map(wireReadingEntity),
-            messagesByConversation: byConversation,
-            vocabularyBooks: (bucket.books || []).filter((book) => book.scope === ctx.scope).map(wireReadingEntity),
-            vocabularyEntries: (bucket.entries || []).filter((entry) => entry.scope === ctx.scope).map(wireReadingEntity),
-            vocabularyLinks: (bucket.links || []).filter((link) => link.scope === ctx.scope).map(wireReadingEntity),
-            articleOutboxCount: (articleStoreFallbackOutbox(ctx.scope) || []).length,
-            readingOutboxCount: (bucket.outbox || []).filter((op) => op && op.scope === ctx.scope).length,
-            readingState: bucket.state || null
-        };
+        const readingRead = readBucketStrict(ctx.scope);
+        if (!readingRead.ok) return readingRead;
+        const articleRead = readArticleBucketStrict(ctx.scope);
+        if (!articleRead.ok) return articleRead;
+        if (!isReadingContextActive(ctx)) return staleResult();
+        const bucket = readingRead.bucket;
+        const articleBucket = articleRead.bucket;
+        const articleDoc = articleBucket.docs.find(doc => doc && doc.scope === ctx.scope && doc.id === articleId);
+        if (!articleDoc) return { ok: false, error: 'article_not_found' };
+        return articleReadingSnapshot(articleId, ctx, {
+            ...bucket,
+            articleDoc,
+            articleOutbox: articleBucket.outbox,
+            readingOutbox: bucket.outbox,
+            articleState: articleBucket.state,
+            readingState: bucket.state
+        });
     }
     // 匯出筆記需要文章、詞書／詞條／關聯、同步狀態與全部閱讀資料。
     // 全部放進同一個 readonly 交易，格式化階段才不會再讀可變的全域 Map。
@@ -2686,6 +2844,7 @@ export async function exportArticleReading(articleId, ctx = captureReadingContex
         STORE.VOCAB_BOOKS, STORE.VOCAB_ENTRIES, STORE.VOCAB_LINKS,
         STORE.READING_OUTBOX, STORE.READING_STATE
     ], 'readonly', (stores) => {
+        if (!isReadingContextActive(ctx)) return staleResult();
         const readAllIndex = (store, indexName, value) => new Promise((resolve, reject) => {
             if (!store.indexNames.contains(indexName)) { resolve([]); return; }
             const request = store.index(indexName).getAll(value);
@@ -2711,54 +2870,24 @@ export async function exportArticleReading(articleId, ctx = captureReadingContex
                 readAllIndex(stores[STORE.READING_OUTBOX], 'scope', ctx.scope),
                 readOne(stores[STORE.READING_STATE], ctx.scope)
             ]);
-            const messageLists = await Promise.all(conversations.map((conv) => readAllIndex(
+            if (!isReadingContextActive(ctx)) return staleResult();
+            const liveConversations = conversations.filter(conv => conv && conv.scope === ctx.scope
+                && conv.articleId === articleId && !conv.deletedAt);
+            const messageLists = await Promise.all(liveConversations.map((conv) => readAllIndex(
                 stores[STORE.MESSAGES], 'scope_conversation', [ctx.scope, conv.id]
             )));
+            if (!isReadingContextActive(ctx)) return staleResult();
             return {
-                articleDoc, articleOutbox, articleState, items, documents, conversations, messageLists,
-                books, entries, links, readingOutbox, readingState
+                articleDoc, articleOutbox, articleState, items, documents, conversations,
+                messages: messageLists.flat(), books, entries, links, readingOutbox, readingState
             };
         })();
     });
-    if (!result.ok) return { ok: false, error: result.error || 'idb_read_failed' };
     if (!isReadingContextActive(ctx)) return staleResult();
-    const data = result.value || {};
-    const messages = (data.messageLists || []).flat()
-        .filter((msg) => msg && msg.scope === ctx.scope && !msg.deletedAt)
-        .map(wireReadingEntity);
-    const byConversation = new Map();
-    for (const message of messages) {
-        if (!byConversation.has(message.conversationId)) byConversation.set(message.conversationId, []);
-        byConversation.get(message.conversationId).push(message);
-    }
-    return {
-        ok: true,
-        scope: ctx.scope,
-        articleId,
-        articleDoc: data.articleDoc || null,
-        learningItems: (data.items || []).filter((item) => item.scope === ctx.scope).map(wireReadingEntity),
-        articleDocuments: (data.documents || []).filter((doc) => doc.scope === ctx.scope).map(wireReadingEntity),
-        conversations: (data.conversations || []).filter((conv) => conv.scope === ctx.scope).map(wireReadingEntity),
-        messages,
-        messagesByConversation: byConversation,
-        vocabularyBooks: (data.books || []).filter((book) => book.scope === ctx.scope).map(wireReadingEntity),
-        vocabularyEntries: (data.entries || []).filter((entry) => entry.scope === ctx.scope).map(wireReadingEntity),
-        vocabularyLinks: (data.links || []).filter((link) => link.scope === ctx.scope).map(wireReadingEntity),
-        articleOutboxCount: (data.articleOutbox || []).filter((op) => op && op.scope === ctx.scope).length,
-        readingOutboxCount: (data.readingOutbox || []).filter((op) => op && op.scope === ctx.scope).length,
-        readingState: data.readingState || null,
-        articleState: data.articleState || null
-    };
-}
-
-function articleStoreFallbackOutbox(scope) {
-    try {
-        const raw = localStorage.getItem(`bdc:articles:fallback:v1:${scope}`);
-        const parsed = raw ? JSON.parse(raw) : null;
-        return parsed && Array.isArray(parsed.outbox) ? parsed.outbox : [];
-    } catch (_) {
-        return [];
-    }
+    if (!result.ok) return { ok: false, error: result.error || 'idb_read_failed' };
+    if (!result.value) return { ok: false, error: 'idb_read_failed' };
+    if (result.value.ok === false) return result.value;
+    return articleReadingSnapshot(articleId, ctx, result.value);
 }
 
 export async function exportAll(ctx = captureReadingContext(), options = {}) {

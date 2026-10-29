@@ -1,0 +1,7 @@
+PASS zh-CN: audio limits, removal and format controls work without downloading
+PASS zh-CN: invalid audio content is retained for correction and blocks the whole download
+PASS zh-CN: a failed audio read preserves the file and retries a real HTML download
+page.evaluate: Target page, context or browser has been closed
+    at /Users/linus/CODE/bdc/.claude/worktrees/article-readonly-sharing/tests/reading-edition-ui.cjs:172:55
+    at async check (/Users/linus/CODE/bdc/.claude/worktrees/article-readonly-sharing/tests/reading-edition-ui.cjs:76:9)
+    at async /Users/linus/CODE/bdc/.claude/worktrees/article-readonly-sharing/tests/reading-edition-ui.cjs:156:17

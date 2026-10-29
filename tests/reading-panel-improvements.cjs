@@ -204,8 +204,9 @@ async function runLocale(browser, locale) {
         await check(`${locale}: tools are clickable and backup entry downloads JSON`, async () => {
             await page.locator('.reading-tools > summary').click();
             await page.locator('#reading-export-json').click();
-            const backup = page.locator('.options-modal-overlay input[data-option-key="fullBackup"]');
-            assert.equal(await backup.isChecked(), true);
+            const backup = page.locator('.reading-export-dialog');
+            await backup.waitFor();
+            assert.equal(await backup.locator('input[data-option-key="fullBackup"], .radio-group').count(), 0);
             const downloading = page.waitForEvent('download');
             await page.locator('.options-modal-overlay #confirm-btn').click();
             const file = await downloading;

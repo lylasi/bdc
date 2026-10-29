@@ -9,7 +9,7 @@ import * as readingStore from '../../modules/reading-store.js';
 import * as articleStore from '../../modules/article-store.js';
 import * as readingActions from '../../modules/reading-actions.js';
 import * as readingSync from '../../modules/reading-sync.js';
-import * as readingExport from '../../modules/reading-export.js';
+import { openReadingExportDialog } from './reading-export-dialog.js';
 import { openPhrasePicker, flushPhrasePickerNote } from './phrase-picker.js';
 import { t, formatDateTime } from '../../modules/i18n.js';
 import { markdownToHtml } from '../../modules/markdown.js';
@@ -34,9 +34,6 @@ const expandedItems = new Set();
 let lastFocus = null;
 let pendingFocusItemId = '';
 const noteDrafts = new Map();
-// 兩個匯出入口共用的「上次選擇」：只存在記憶體，不持久化。
-// 最終範圍只在匯出對話框選擇，避免工具區重複佔位。
-let exportSelection = { fullText: false, chat: false };
 let legacyImportPromise = null;
 // locale 切換是非同步的（ensurePanel → openPanel → 還原）：用遞增 token 擋掉舊的還原。
 let localeToken = 0;
@@ -633,130 +630,34 @@ async function persistNoteDraft(itemId, textarea) {
     return result;
 }
 
-async function flushNoteDrafts() {
+async function flushNoteDrafts(isCurrent = () => true) {
     // 逐一保存所有草稿，不限目前篩選或畫面上可見的 textarea；
     // 隱藏／被篩掉的草稿也要在關閉、匯出前寫入。
     const pending = Array.from(noteDrafts.keys());
     let ok = true;
     for (const itemId of pending) {
+        if (!isCurrent()) return false;
         const area = panel?.querySelector(`[data-note-id="${CSS.escape(itemId)}"]`);
         const result = await persistNoteDraft(itemId, area || null);
+        if (!isCurrent()) return false;
         if (!result || result.ok === false) ok = false;
     }
     return ok;
 }
 
-// ── 匯出範圍對話框（P2-T7）───────────────────────────────────────
-// 頂部按鈕與面板按鈕共用同一個對話框；先顯示數量與版本，
-// 預設只匯出閱讀筆記，不默認附上全文或對話。
-
-function exportScopeDescription(scope, selection = {}) {
-    const summary = t('article.exportScopeSummary', {
-        items: Number(scope.itemCount) || 0,
-        notes: Number(scope.noteCount) || 0,
-        messages: Number(scope.messageCount) || 0
-    });
-    const version = String(scope.contentVersion || '').slice(0, 12);
-    const parts = [String(scope.title || '')];
-    if (version) parts.push(`${t('article.readingExportVersion')}: ${version}`);
-    parts.push(summary);
-    if (!selection.fullText && !selection.chat && !selection.fullBackup) {
-        parts.push(t('article.exportNoteOnly'));
-    }
-    return parts.filter(Boolean).join(' · ');
-}
-
-function wireExportDialogDescription(overlay, scope) {
-    const desc = overlay?.querySelector('.om-desc');
-    if (!desc) return;
-    const readSelection = () => ({
-        fullText: !!overlay.querySelector('input[data-option-key="fullText"]')?.checked,
-        chat: !!overlay.querySelector('input[data-option-key="chat"]')?.checked,
-        fullBackup: !!overlay.querySelector('input[data-option-key="fullBackup"]')?.checked
-    });
-    const apply = () => { desc.textContent = exportScopeDescription(scope, readSelection()); };
-    overlay.querySelectorAll('input[type="checkbox"]').forEach((box) => box.addEventListener('change', apply));
-    apply();
-}
-
-async function runExportChoice({ articleId, context, fullText = false, chat = false, fullBackup = false }) {
-    if (!readingStore.isReadingContextActive(context)) return { ok: false, error: 'stale_scope' };
-    // 匯出前先 flush 面板與片語草稿（沿用既有邏輯）；任何一筆失敗都不匯出。
-    const panelFlushed = await flushNoteDrafts();
-    const pickerFlushed = await flushPhrasePickerNote();
-    if (!panelFlushed || !pickerFlushed || pickerFlushed.ok === false) {
-        ui.displayMessage(t('article.saveFailedRetry'), 'error');
-        return { ok: false, error: 'note_save_failed' };
-    }
-    if (currentArticleId !== articleId || !readingStore.isReadingContextActive(context)) {
-        // flush 期間切文章／帳戶：不得把匯出結果寫成目前 scope 的資料。
-        ui.displayMessage(t('article.readingExportFailed'), 'error');
-        return { ok: false, error: 'stale_scope' };
-    }
-    if (fullBackup) {
-        const backup = await readingExport.exportFullBackupFile();
-        if (backup && backup.ok !== false) {
-            ui.displayMessage(t('article.readingExportJsonDone'), 'success');
-            return backup;
+// 頂部與面板共用完整閱讀版匯出；JSON 備份使用獨立視窗。
+function openExportDialog({ fullBackup = false } = {}) {
+    return openReadingExportDialog({
+        articleId: currentArticleId,
+        getArticleId: () => currentArticleId,
+        fullBackup,
+        flushDrafts: async (isCurrent) => {
+            if (!isCurrent()) return false;
+            const panelFlushed = await flushNoteDrafts(isCurrent);
+            if (!isCurrent() || !panelFlushed) return false;
+            const pickerFlushed = await flushPhrasePickerNote();
+            return isCurrent() && !!pickerFlushed && pickerFlushed.ok !== false;
         }
-        ui.displayMessage(t('article.readingExportFailed'), 'error');
-        return backup || { ok: false, error: 'backup_failed' };
-    }
-    const result = await readingExport.exportReadingNoteFile({ articleId, includeFullText: fullText, includeChat: chat });
-    if (result && result.ok) ui.displayMessage(t('article.readingExportDone'), 'success');
-    else ui.displayMessage(t('article.readingExportFailed'), 'error');
-    return result || { ok: false, error: 'export_failed' };
-}
-
-function openExportDialog({ source = 'panel', fullBackup = false } = {}) {
-    const articleId = currentArticleId;
-    const context = readingStore.captureReadingContext();
-    if (!articleId) {
-        ui.displayMessage(t('article.readingNoArticle'), 'warning');
-        return Promise.resolve({ ok: false, error: 'no_article' });
-    }
-    return readingExport.describeReadingScope(articleId).then((scope) => {
-        if (!scope || scope.ok === false) {
-            ui.displayMessage(t('article.readingExportFailed'), 'error');
-            return { ok: false, error: (scope && scope.error) || 'scope_failed' };
-        }
-        if (currentArticleId !== articleId || !readingStore.isReadingContextActive(context)) {
-            // 讀取摘要期間已切文章／帳戶：不開對話框，避免匯出到別的 scope。
-            ui.displayMessage(t('article.readingExportFailed'), 'error');
-            return { ok: false, error: 'stale_scope' };
-        }
-        const initial = { fullText: !!exportSelection.fullText, chat: !!exportSelection.chat, fullBackup };
-        return new Promise((resolve) => {
-            const overlay = ui.showOptionsModal({
-                title: t('article.exportScopeTitle'),
-                description: exportScopeDescription(scope, initial),
-                options: [
-                    { type: 'checkbox', key: 'fullText', label: t('article.exportIncludeFullText'), default: initial.fullText },
-                    { type: 'checkbox', key: 'chat', label: t('article.exportIncludeChat'), default: initial.chat },
-                    { type: 'checkbox', key: 'fullBackup', label: t('article.exportFullBackup'), default: initial.fullBackup }
-                ],
-                onCancel: () => resolve({ ok: false, error: 'cancelled' }),
-                onConfirm: (result) => {
-                    const choice = {
-                        fullText: !!result?.fullText,
-                        chat: !!result?.chat,
-                        fullBackup: !!result?.fullBackup
-                    };
-                    // 完整備份不分全文／對話；一般匯出則記住這次選擇供兩個入口共用。
-                    exportSelection = { fullText: choice.fullText, chat: choice.chat };
-                    runExportChoice({ articleId, context, ...choice, source })
-                        .then(resolve)
-                        .catch(() => {
-                            ui.displayMessage(t('article.readingExportFailed'), 'error');
-                            resolve({ ok: false, error: 'export_failed' });
-                        });
-                }
-            });
-            wireExportDialogDescription(overlay, scope);
-        });
-    }).catch(() => {
-        ui.displayMessage(t('article.readingExportFailed'), 'error');
-        return { ok: false, error: 'scope_failed' };
     });
 }
 

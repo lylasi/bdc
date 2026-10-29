@@ -1,0 +1,42 @@
+✔ 文章匯出失敗：不產生備份、不裁剪舊備份、不更新自動備份簽章 (42.525333ms)
+✔ 閱讀匯出失敗：同樣不保存、不裁剪、不更新簽章 (34.404083ms)
+✔ 匯出恢復正常後：備份建立成功並更新簽章（反向驗證） (41.565958ms)
+✔ 桶不存在是合法空桶：文章與閱讀匯出都回 ok:true 的空資料 (2.419917ms)
+✔ 文章後備桶損壞：exportDocumentsResult 回 ok:false，備份不保存、不裁剪、不更新簽章 (1.180584ms)
+✔ 文章後備桶形狀損壞（docs 不是陣列）：同樣不得回報空資料成功 (0.182792ms)
+✔ 閱讀後備桶損壞：exportAll 回 ok:false，備份不保存、不裁剪、不更新簽章 (0.353208ms)
+✔ 閱讀後備桶清單欄位損壞（messages 不是陣列）：不得回報空資料成功 (0.160833ms)
+✔ 桶恢復正常後：備份建立成功並更新簽章（反向驗證） (5.192125ms)
+✔ 同一 mutation 同 payload 並發：第二個回執仍有完整 revision/record (18.276791ms)
+✔ 同一 mutation 不同 payload 並發：只有一個成功且只寫一筆 (2.118ms)
+✔ 同一 mutation 不同 entityId 並發：不得新增第二個實體或 change (1.631458ms)
+✔ 重試只改傳輸時間不回報 mutation mismatch，且保留完整回執 (1.306292ms)
+✔ 業務指紋忽略鍵順序與傳輸時間，但不忽略 payload / entity (0.13ms)
+✔ AI 來源與詞書來源欄位不被裁切 (0.386625ms)
+✔ marked 是明確布林值：true 與 false 都不被裁切 (0.057167ms)
+✔ 已刪除會話（含已刪除消息）的備份還原回 ok:true 且 verifyErrors 為空 (239.196084ms)
+✔ 會話仍在但單則消息已刪除：核對不得回 message_mismatch (213.23075ms)
+✔ allowPartial:false 對含刪除標記的備份同樣回 ok:true (271.168209ms)
+✔ 核對讀取期間 A→B 切換：restoreAll 回 stale_scope，不得回 ok:true (271.429209ms)
+✔ 後備模式還原消息：首次與重複還原都回 ok:true 且 verifyErrors 為空 (4.965209ms)
+✔ 訪客 exportAll 失敗：adoptGuestReadingData 回 ok:false、不拋錯、scope 已恢復 (0.614584ms)
+✔ 訪客併入成功（反向驗證）：匯出正常時仍可併入並切回目前 scope (1.361458ms)
+✔ 後備模式撤銷詞句與文件：核對持久墓碑並保留資料及 outbox (5.97175ms)
+✔ writeEntity 失敗（allowPartial）：其餘項目照做，但回報 partial_restore_failed (198.223458ms)
+✔ allowPartial:false 維持 verify_failed（不被新錯誤碼取代） (160.286209ms)
+[sync] 閱讀資料還原失敗: partial_restore_failed
+✔ restoreSnapshotLocally 遇到閱讀 partial 失敗必須拋 snapshot_restore_failed (182.957334ms)
+✔ adoptGuestReadingData 的 partial 失敗會回 ok:false（不再被丟棄） (127.891833ms)
+✔ 移除注入後還原成功（反向驗證） (328.155333ms)
+✔ 全部與有筆記包含全篇文件，刪除項不計數 (5.662292ms)
+✔ 收藏與搜尋同時作用於清單和計數，文件不冒充收藏項 (0.407167ms)
+✔ 搜尋涵蓋文件正文、個人筆記及儲存的解釋 (0.735459ms)
+✔ 最近查閱與最近更新排序，未知錨點不搶在可定位項前面 (0.324041ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1059.352333

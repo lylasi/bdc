@@ -1,0 +1,276 @@
+=== locale 鍵數 === { 'zh-CN': 2085, 'zh-HK': 2085 }
+
+=== 僅存在於 zh-CN 的鍵 (0) ===
+
+=== 僅存在於 zh-HK 的鍵 (0) ===
+
+=== 插值參數不一致 (0) ===
+
+=== 引用但缺少的鍵 (45) ===
+  - article.exportHtmlScope  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:25
+  - article.exportLocalOnly  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:27
+  - article.exportBackupDescription  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:84
+  - article.exportFormat  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:87
+  - article.exportHtml  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:89
+  - article.exportHtmlHint  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:89
+  - article.exportMarkdown  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:90
+  - article.exportMarkdownHint  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:90
+  - article.exportSavingDrafts  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:116
+  - article.exportReadingSnapshot  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:132
+  - article.exportStart  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:167
+  - article.exportRetry  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:180
+  - article.exportAudioLabel  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:191
+  - article.exportAudioLocal  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:195
+  - article.exportAudioHelp  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:195
+  - article.exportAudioSelected  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:227
+  - article.exportAudioRemove  <- .claude/worktrees/article-readonly-sharing/features/article/reading-export-dialog.js:237
+  - phonetics.  <- .claude/worktrees/article-readonly-sharing/features/phonetics/page.js:19, .claude/worktrees/article-readonly-sharing/features/phonetics/page.js:23, .claude/worktrees/article-readonly-sharing/features/phonetics/page.js:76
+  - article.editionImageOmitted  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:135, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:168
+  - article.editionAlignment  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:222
+  - article.editionExamples  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:233
+  - article.editionChunks  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:268
+  - article.editionKeyPoints  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:269
+  - article.editionItemLink  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:304, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:304, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:317
+  - article.editionIncomplete  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:346
+  - article.editionSourceItem  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:423
+  - article.editionDetached  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:437
+  - article.editionUnderstanding  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:443
+  - article.editionFirstViewed  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:443
+  - article.editionLastViewed  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:443
+  - article.editionBackToText  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:444
+  - article.editionBackToTop  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:444, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:527
+  - article.editionSourceMessage  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:457
+  - article.editionSourceUnavailable  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:459, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:471
+  - article.editionSources  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:464
+  - article.editionLinkOmitted  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:493
+  - article.editionSyncError  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:496
+  - article.editionTitle  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:507, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:512
+  - article.editionLastOpened  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:512
+  - article.editionNavigation  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:514, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:514
+  - article.editionLocalSnapshot  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:514, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:516, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:527
+  - article.editionScopeNotice  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:516
+  - article.editionReadingGuide  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:517
+  - article.editionAudio  <- .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:524, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:524, .claude/worktrees/article-readonly-sharing/modules/reading-edition.js:524
+  - a.b  <- .claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75, .claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75, .claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:77
+
+=== JS 中疑似硬編碼中文 (1344) ===
+  - .claude/worktrees/article-readonly-sharing/features/article/perf-probe.js:49  單一機器、單一瀏覽器、單一視窗大小的結果；不可宣稱代表所有裝置或所有長文。
+  - .claude/worktrees/article-readonly-sharing/features/dictation/dictation.js:233  默寫會話已恢復
+  - .claude/worktrees/article-readonly-sharing/features/dictation/dictation.js:1233  微信音頻已初始化
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-checker.js:581  校對快取已清除
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-pdf.js:510  字型資料為空
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-pdf.js:525  載入後仍無字型資料
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-pdf.js:855  註冊中文字型失敗：
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-storage.js:18  預置問答集清單載入失敗
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-storage.js:22  個問答集
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-storage.js:142  問答集清單已儲存
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-storage.js:335  問題陣列無效或為空
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-storage.js:420  問答數據備份完成
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:78  問題順序已隨機化
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:144  已到達最後一題
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:160  已在第一題
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:248  訓練已暫停
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:259  訓練已恢復
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:280  訓練已取消
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:392  訓練進度已保存
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:415  訓練進度已過期，已清除
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:422  訓練進度已恢復
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa-trainer.js:434  已清除保存的訓練進度
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:31  問答模組已初始化
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:41  發現之前的訓練進度，已恢復
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:69  問答訓練模組初始化完成
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:74  顯示問答訓練模組
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:77  問答模組尚未初始化
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:89  問答模組已顯示
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:171  隱藏問答訓練模組
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:176  問答模組已隱藏
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:182  初始化問答模組事件監聽器
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:850  初始化問答集編輯器時缺少必要的元素
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:1111  用戶取消導出
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:1138  無法獲取訓練數據
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:1569  快捷鍵處理失敗
+  - .claude/worktrees/article-readonly-sharing/features/qa/qa.js:2496  複製報告失敗
+  - .claude/worktrees/article-readonly-sharing/features/sync/sync.js:1762  呢個係測試語音。
+  - .claude/worktrees/article-readonly-sharing/features/sync/sync.js:1764  這是一段測試語音。
+  - .claude/worktrees/article-readonly-sharing/features/sync/sync.js:1772  試聽失敗
+  - .claude/worktrees/article-readonly-sharing/features/sync/sync.js:1787  呢個係測試語音。
+  - .claude/worktrees/article-readonly-sharing/features/sync/sync.js:1787  這是一段測試語音。
+  - .claude/worktrees/article-readonly-sharing/main.js:428  应用程序已完全初始化。
+  - .claude/worktrees/article-readonly-sharing/modules/api.js:724  正確
+  - .claude/worktrees/article-readonly-sharing/modules/api.js:724  正确
+  - .claude/worktrees/article-readonly-sharing/modules/api.js:725  不正確。建議：
+  - .claude/worktrees/article-readonly-sharing/modules/api.js:725  不正确。建议：
+  - .claude/worktrees/article-readonly-sharing/modules/api.js:838  段落翻譯失敗，返回最小兜底。
+  - .claude/worktrees/article-readonly-sharing/modules/api.js:1186  標準詞表（僅供比對，請不要逐行列出於表格中）：
+  - .claude/worktrees/article-readonly-sharing/modules/audio.js:405  粤語
+  - .claude/worktrees/article-readonly-sharing/modules/audio.js:405  粵語
+  - .claude/worktrees/article-readonly-sharing/modules/audio.js:405  廣東話
+  - .claude/worktrees/article-readonly-sharing/modules/audio.js:408  普通話
+  - .claude/worktrees/article-readonly-sharing/modules/audio.js:408  中文
+  - .claude/worktrees/article-readonly-sharing/modules/i18n-config.js:5  大陆简体中文
+  - .claude/worktrees/article-readonly-sharing/modules/i18n-config.js:9  香港繁體中文
+  - .claude/worktrees/article-readonly-sharing/modules/vocab.js:13  生詞本
+  - .claude/worktrees/article-readonly-sharing/modules/vocab.js:13  单词本
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:15  动作草图，待语音专业审核：只帮助理解大致动作；轮廓不按解剖比例，也不对应当前录音者。未完整展示鼻腔、喉部和三维结构。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:18  从中前舌位，连续滑向较高的位置
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:19  舌前部先抬到中间位置，随后继续抬高，嘴渐渐收小。声音一直连着，双唇保持不圆。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:20  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:20  从自然的小开口变得更小，不用使劲咧嘴。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:21  两帧之间气流持续从口腔通过；舌面始终不封住上腭。蓝色箭头只表示向口外呼气，紫色指舌位变化。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:27  从张开，连续滑向拢圆的嘴唇
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:28  嘴先张开，舌位较低，再把舌位抬高一些并向后调整，双唇逐渐收拢。动作和声音连成一段。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:29  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:29  起点开口较大、不圆；随后逐渐拢圆，别突然换口型。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:30  元音从头到尾保持口腔通气。紫色箭头示舌位变化，嘴外蓝色箭头仅示呼气方向。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:32   实际舌位与滑动幅度随口音变化；图示只说明低到较高、逐渐圆唇的趋势，不规定固定终点。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:36  从后部圆唇，连续滑向前部不圆唇
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:37  起点舌位在后部、中间偏低，双唇圆一些。随后舌位向前、向上移动，双唇放开、不再拢圆。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:38  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:38  从较圆的嘴唇渐渐放开，结尾开口通常比起点小。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:39  气流连续经口腔流出，舌面不碰上腭。两帧表示同一元音的连续变化，不是先停气再重新开始。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:47  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:47  嘴自然张开，不用使劲咧嘴。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:48  口腔通道开放，气流平顺流出。嘴外箭头只表示呼气方向。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:51  前部中低舌位
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:54  舌尖轻贴齿龈，气从鼻子走
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:55  舌尖轻贴上门牙后面的齿龈，封住口腔前方。软腭放下，边发声边让气流通过鼻腔。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:56  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:56  嘴唇不必闭紧，闭塞发生在舌尖与齿龈之间。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:57  口腔前方被舌尖封住；软腭降低后，咽部与鼻腔相通，气流从鼻孔出去。蓝线表示简化通路，不是穿过舌头。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:59   鼻腔仅画通路，不表示完整鼻部结构。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:60  齿龈鼻音
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:60  舌尖接触齿龈、软腭降低，气流从咽部进入鼻腔并从鼻孔流出。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:63  舌后部抬起，气从鼻子走
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:64  舌后部抬起接触软腭，封住口腔后方；舌尖不用顶齿龈。鼻腔通路打开，持续发声。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:65  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:65  嘴唇自然，重点是舌后部的位置。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:66  舌后部与软腭接触，阻断通向嘴的气流；软腭仍保持鼻腔入口开放，气流经鼻腔流出。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:69  软腭鼻音
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:69  舌后部接触降低的软腭，口腔后方闭塞，咽部至鼻腔的气道仍开放。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:72  舌前部靠近齿龈，留一条窄缝
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:73  舌尖或舌叶靠近齿龈，中央留出细小通道，持续送气。不要完全堵住，也不要把舌尖伸到牙齿之间。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:74  声带不振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:74  双唇自然，牙齿靠近但不咬紧。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:75  气流经舌前部中央的窄通道形成摩擦；橙色标出靠前的摩擦位置，侧面图省略了中央沟槽的宽度。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:77   舌尖可略抬或向下，图示只是一种方式，不要求每个人固定成同一舌形。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:78  齿龈附近的摩擦
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:78  舌前部与齿龈之间留窄缝，非完全接触；软腭抬起，气流从口腔流出。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:81  收窄位置往后一点，持续送气
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:82  舌前部靠近齿龈后方，留出窄通道持续送气。双唇可以略收拢，不要用力噘嘴。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:83  声带不振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:83  可略收拢，程度会随前后元音变化。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:87  齿龈后方的摩擦
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:87  舌前部与齿龈后方之间保持窄缝，橙色标出摩擦部位，舌面不完全封闭通道。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:90  先堵住，再连贯地擦着放开
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:91  舌前部先接触齿龈后方，短暂封住气流；随后打开窄缝，带着摩擦释放。两步连成一个塞擦音，中间不加元音。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:92  声带不振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:92  可以稍收拢，随单词的其他音自然变化。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:93  第一步口腔闭塞、鼻腔通路关闭，没有向外呼气箭头；第二步打开窄缝，气流经摩擦部位向口外释放。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:95   两帧是同一塞擦音的先后动作，不表示两个分开的音节。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:96  舌前部接触齿龈后方，软腭抬起，口腔与鼻腔的出气通路均暂时被阻断。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:96  舌前部稍离开接触面，形成窄缝并释放气流，动作与第一步连续衔接。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:99  上牙轻触下唇，轻轻送气
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:100  上门牙轻靠下唇，留出小缝送气。别咬紧，也不用把舌尖伸出来。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:101  声带不振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:101  看上牙与下唇的接触，嘴唇不用拢圆。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:102  气流经过上门牙与下唇的小缝形成摩擦。橙色标记指出摩擦位置；嘴外蓝箭头只表示呼气方向。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:105  上牙与下唇
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:105  侧面及正面示意：上门牙轻靠下唇，橙色标记指出摩擦位置，口外蓝箭头仅表示向外呼气。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:108  保持牙唇位置，加上声音
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:110  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:110  下唇轻靠上门牙，别咬紧。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:114  相近牙唇位置，声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:117  先拢唇，滑向后面的元音
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:118  双唇先收拢，舌后部同时抬高但不堵住气流，然后顺势滑向后面的元音。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:119  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:119  双唇收拢，上牙不要压住下唇。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:123  拢唇与舌后部抬高
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:123  侧面及正面示意：双唇拢圆，舌后部抬高形成近音通道；牙齿不压下唇。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:126  舌尖碰齿龈，气流走旁边
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:128  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:129  前方中央有接触，气流从舌头一侧或两侧绕过。侧面图看不见横向通道，请对照俯视示意。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:132  侧面：舌尖接触齿龈
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:132  俯视：气流绕过舌边
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:132  从上方看的示意：标出嘴前方与后方，气流沿舌侧绕过中央接触区向嘴外流出；两侧箭头仅为一种示例。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:135  舌位稍低，嘴唇放松
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:137  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:137  轻拢双唇，保持放松。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:138  气流从口腔通畅流出，没有牙唇摩擦，也没有完全堵住的部位。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:140   不同口音的前后位置和圆唇程度会变化；图示只表达一组教学对比。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:141  较低、较放松的圆唇元音
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:144  舌位较高，双唇收拢
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:145  舌位抬高，双唇收拢，气流不断。图中采用偏后舌位的入门示意，不用使劲把舌头往后缩。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:146  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:146  双唇收拢，程度跟随示范，不要绷紧。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:149   现代英美口音中这个元音常有舌位前移；这张图不代表所有口音或当前录音者的确切舌位。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:150  高位圆唇元音的一种示例
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:150  侧面及正面示意：较高、偏后的参考舌位配合拢唇，舌面不封闭气道；真实口音可能比图示靠前。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:154  舌前部抬高
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:155  舌前部向上抬，靠近上腭但不堵住气流；舌尖自然靠近下门牙。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:156  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:156  嘴唇轻轻向两边展开，不必用力咧嘴。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:158  前高元音
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:158  侧面示意：舌前部抬高，舌面与上腭之间保留气道；小图为轻展的双唇。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:163  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:163  嘴自然微张，双唇放松，不拢圆。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:165  放松的近高元音
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:168  舌尖靠近牙齿，轻轻送气
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:169  舌尖轻放在上下门牙之间或上门牙边缘，让气流从窄缝中擦过，不要咬紧。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:170  声带不振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:170  嘴轻轻张开，舌尖可以露出一点点。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:172  舌尖与门牙
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:172  侧面示意：舌尖接近上下门牙间，橙色标记指向齿间摩擦位置，嘴外蓝箭头只表示呼气方向；唇形小图可见舌尖。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:175  保持齿间舌位，加上声音
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:176  舌尖轻靠门牙附近，留出气流通道；在这个位置轻轻发声。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:177  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:179  相近舌位，声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:183  可以让舌身隆起，也可以抬起舌尖向后靠近。舌尖和舌身中央不顶住上腭，不弹动舌尖；舌根附近也参与收窄。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:184  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:184  嘴唇可以稍微收拢，具体程度因说话人而异。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:185   两张图是常见舌形的简化示例，不是全部类型，也不分别代表英音和美音。舌尖抬起不一定就是卷舌。侧面图省略了舌头两侧的抬起。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:186  侧面示意：舌身向上隆起而舌尖不卷起，舌根附近收窄但仍留有气道。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:186  侧面示意：舌尖抬起并略向后靠近上腭但不接触，舌根附近收窄；不需要用力卷舌。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:189  从张开滑向较小的口型
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:191  声带振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:191  从较大的开口逐渐收小，双唇不拢圆。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:192   箭头只表示动作方向；英美起点和滑动幅度可有差别，不必刻意到达两个固定位置。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:196  香港教育大学：塞音部位、释放与送气
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:198  双唇先合，再打开
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:198  双唇轻轻合上，短暂挡住气流。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:198  双唇打开，接着发后面的音。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:199  舌前部先贴齿龈，再松开
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:199  舌尖或舌叶接触上门牙后面的齿龈，短暂闭塞。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:199  舌前部离开齿龈，短暂释放气流。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:200  舌后部先贴软腭，再松开
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:200  舌后部抬起接触软腭，闭塞在口腔后方。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:200  舌后部离开软腭，接着发后面的音。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:206  声带不振动
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:206  浊音 · 振动时机随语境变化
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:207  双唇接触后放开，不要用牙齿咬下唇。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:207  嘴唇自然；闭塞点在舌头与上腭之间，不在双唇。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:208  闭塞时软腭抬起，鼻腔出口关闭，口腔也暂时不通气；释放时解除接触。蓝箭头只示口外呼气方向，不表示送气强弱。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:211  鼻腔通路关闭。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:211  与前一步连成一个动作。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:218  齿龈附近留窄缝，边摩擦边发声
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:219  舌前部靠近齿龈，中央留一条窄缝。保持摩擦气流，同时轻轻发声；舌头不要先完全堵住。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/articulation.js:220  浊音 · 声带振动
+
+=== HTML 標籤內直接寫死中文 (16) ===
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/ui.js:793  <span> 示意图缺失
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/ui.js:1155  <p> 暂无其他替代写法。
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/ui.js:1462  <span> 英
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/ui.js:1469  <span> 美
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/ui.js:1495  <span> 英
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/ui.js:1501  <span> 示范待补
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/ui.js:1514  <span> 美
+  - .claude/worktrees/article-readonly-sharing/phonetic-chart/ui.js:1521  <span> 示范待补
+  - phonetic-chart/ui.js:793  <span> 示意图缺失
+  - phonetic-chart/ui.js:1155  <p> 暂无其他替代写法。
+  - phonetic-chart/ui.js:1462  <span> 英
+  - phonetic-chart/ui.js:1469  <span> 美
+  - phonetic-chart/ui.js:1495  <span> 英
+  - phonetic-chart/ui.js:1501  <span> 示范待补
+  - phonetic-chart/ui.js:1514  <span> 美
+  - phonetic-chart/ui.js:1521  <span> 示范待补
+
+=== 未被引用鍵數 === 231

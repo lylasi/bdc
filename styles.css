@@ -5203,6 +5203,22 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
     line-height: 1.6;
 }
 .om-grid { display: grid; gap: var(--sp-3); }
+
+.reading-export-dialog [hidden] { display: none !important; }
+.reading-export-dialog .om-desc { overflow-wrap: anywhere; }
+.reading-export-audio {
+    border-top: 1px solid var(--border-color, #ddd);
+    padding-top: var(--sp-3);
+}
+.reading-export-audio > label { display: block; font-weight: 600; margin-bottom: 8px; }
+.reading-export-audio input[type="file"] { max-width: 100%; }
+.reading-export-audio ul { list-style: none; margin: 0; padding: 0; }
+.reading-export-audio li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.reading-export-audio li span { min-width: 0; overflow-wrap: anywhere; }
+.reading-export-audio li button { flex: 0 0 auto; }
+.reading-export-status { flex: 0 0 auto; margin: 0; padding: 0 var(--sp-5) var(--sp-2); overflow-wrap: anywhere; }
+.reading-export-status:empty { display: none; }
+.reading-export-status.error { color: var(--danger-color, #b42318); }
 .option-item {
     padding: var(--sp-3);
     border: 1px solid var(--line);

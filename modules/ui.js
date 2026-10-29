@@ -539,6 +539,7 @@ export function promptAction(config = {}) {
  * @param {Array} config.options - 選項數組
  * @param {Function} config.onConfirm - 確認回調
  * @param {Function} config.onCancel - 取消回調
+ * @param {boolean} config.closeOnConfirm - 是否確認後立即關閉；false 時由 onConfirm 的第二個參數關閉
  */
 export function showOptionsModal(config) {
   const {
@@ -546,7 +547,8 @@ export function showOptionsModal(config) {
     description = '',
     options = [],
     onConfirm = () => {},
-    onCancel = () => {}
+    onCancel = () => {},
+    closeOnConfirm = true
   } = config;
 
   const previousFocus = document.activeElement;
@@ -599,8 +601,8 @@ export function showOptionsModal(config) {
 
   confirmBtn.addEventListener('click', () => {
     const result = getOptionsResult(optionsContainer, options);
-    onConfirm(result);
-    closeModal();
+    onConfirm(result, closeModal);
+    if (closeOnConfirm) closeModal();
   });
 
   // 點擊背景關閉

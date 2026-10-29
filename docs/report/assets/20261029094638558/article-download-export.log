@@ -1,0 +1,114 @@
+
+### 文章下載能力與匯出範圍（P2-T6／P2-T7）
+
+[情境 1] 無遠端 TTS：播放可用本機、下載給提示不開新分頁
+  ok   下載鈕 aria-label 標示需要遠端 TTS
+  ok   下載鈕 title 標示需要遠端 TTS
+  ok   未設定遠端 TTS 時按鈕仍可見
+  ok   播放仍可用本機語音
+  ok   按下載顯示需要遠端 TTS 的提示
+  ok   未設定遠端 TTS 不請求 TTS
+  ok   未設定遠端 TTS 不開新分頁
+  ok   切換 zh-HK 後下載鈕標示跟著更新
+  ok   無頁面錯誤
+
+[情境 2] 全文長文阻擋、範圍／host 確認、取消不開連結
+  ok   已設定遠端 TTS 時 aria-label 回到下載語音
+  ok   全文 10k 字下載被阻擋
+  ok   全文被阻擋時不開確認框
+  ok   全文被阻擋時不請求 TTS
+  ok   句子模式可進入確認框
+  ok   確認框顯示下載範圍
+  ok   確認框顯示有效 TTS host
+  ok   確認框不洩漏 api_key
+  ok   取消確認不請求 TTS
+  ok   取消確認不開新分頁
+  ok   確認後送出 TTS 下載請求
+  ok   確認後提示已開啟下載連結
+  ok   提示不宣稱下載完成
+  ok   畫面文字不洩漏 api_key
+  ok   無頁面錯誤
+
+[情境 3] 預設 HTML、Markdown 範圍、失敗重試、獨立 JSON 備份
+  ok   閱讀資料 seed 成功
+  ok   頂部入口開閱讀匯出對話框
+  ok   對話框顯示目前文章標題與記錄／筆記／對話數量
+  ok   對話框顯示原文版本
+  ok   格式只有 HTML 與 Markdown，預設 HTML
+  ok   預設包含已保存對話，HTML 不提供全文範圍開關
+  ok   閱讀匯出沒有完整備份核取方塊
+  ok   HTML 範圍與只讀本機內容說明走翻譯
+  ok   面板入口開同一個閱讀匯出對話框
+  ok   兩個入口格式與預設範圍一致
+  ok   zh-CN 真實下載為 HTML 文件
+  ok   zh-CN HTML 標題與語言正確
+  ok   zh-CN HTML 顯示翻譯後的本機快照範圍
+  ok   zh-CN HTML 一律包含完整原文
+  ok   zh-CN 有效錨點落在原文及單字記錄，沒有錯放至游離區
+  ok   zh-CN HTML 包含已保存筆記
+  ok   zh-CN HTML 排除其他文章與閱讀資料
+  ok   zh-CN HTML 對話範圍符合選擇
+  ok   HTML 匯出完成提示走翻譯
+  ok   HTML 成功後關閉匯出對話框
+  ok   Markdown 可設定全文範圍
+  ok   Markdown note-only 說明走翻譯
+  ok   助手預設輸出 Markdown 且含筆記
+  ok   助手預設 Markdown 不含全文或對話
+  ok   Markdown 匯出完成提示走翻譯
+  ok   Markdown 只包含目前文章閱讀資料
+  ok   Markdown 勾選後輸出含全文
+  ok   Markdown 勾選後輸出含已保存對話
+  ok   Markdown 勾選後仍排除其他文章資料
+  ok   切回 HTML 後全文開關不可用，對話仍可排除
+  ok   zh-CN 匯出失敗保留原對話框且不下載
+  ok   zh-CN 匯出失敗保留格式及範圍
+  ok   zh-CN 失敗訊息及重試按鈕走翻譯
+  ok   zh-CN 同一對話框重試成功後關閉且只下載一次
+  ok   zh-CN 真實下載為 HTML 文件
+  ok   zh-CN HTML 標題與語言正確
+  ok   zh-CN HTML 顯示翻譯後的本機快照範圍
+  ok   zh-CN HTML 一律包含完整原文
+  ok   zh-CN 有效錨點落在原文及單字記錄，沒有錯放至游離區
+  ok   zh-CN HTML 包含已保存筆記
+  ok   zh-CN HTML 排除其他文章與閱讀資料
+  ok   zh-CN HTML 對話範圍符合選擇
+  ok   獨立 JSON 備份標題與範圍說明走翻譯
+  ok   JSON 備份對話框沒有閱讀格式與範圍控制
+  ok   助手 fullBackup 走獨立 JSON 並包含目前 scope 全部文章
+  ok   完整 JSON 含閱讀資料及對話
+  ok   完整 JSON 標示 kind/schema
+  ok   JSON 匯出完成提示走翻譯
+  ok   無頁面錯誤
+  ok   無文章顯示提示
+  ok   無文章不開空對話框
+
+[情境 4] zh-HK HTML 下載、重試、Markdown／JSON 與 TTS 文案
+  ok   zh-HK 閱讀資料 seed 成功
+  ok   zh-HK 匯出對話框標題正確
+  ok   zh-HK 匯出摘要正確
+  ok   zh-HK HTML 格式與本機範圍說明正確
+  ok   zh-HK 格式選項走翻譯
+  ok   zh-HK 取消匯出不下載
+  ok   zh-HK 匯出失敗保留原對話框且不下載
+  ok   zh-HK 匯出失敗保留格式及範圍
+  ok   zh-HK 失敗訊息及重試按鈕走翻譯
+  ok   zh-HK 同一對話框重試成功後關閉且只下載一次
+  ok   zh-HK 真實下載為 HTML 文件
+  ok   zh-HK HTML 標題與語言正確
+  ok   zh-HK HTML 顯示翻譯後的本機快照範圍
+  ok   zh-HK HTML 一律包含完整原文
+  ok   zh-HK 有效錨點落在原文及單字記錄，沒有錯放至游離區
+  ok   zh-HK HTML 包含已保存筆記
+  ok   zh-HK HTML 排除其他文章與閱讀資料
+  ok   zh-HK HTML 對話範圍符合選擇
+  ok   zh-HK HTML 完成提示走翻譯
+  ok   zh-HK Markdown note-only 說明正確
+  ok   zh-HK 明確選 Markdown 後只匯出目前文章筆記
+  ok   zh-HK Markdown 完成提示走翻譯
+  ok   zh-HK 獨立備份對話框文案正確且沒有閱讀格式控制
+  ok   zh-HK JSON 備份實際下載目前 scope 全部文章與筆記
+  ok   zh-HK JSON 完成提示走翻譯
+  ok   zh-HK 下載確認範圍正確
+  ok   無頁面錯誤
+
+=== 結果：全部通過 ===

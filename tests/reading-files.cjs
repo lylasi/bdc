@@ -312,7 +312,8 @@ async function runDesktopHk(browser) {
     await page.waitForTimeout(300);
     await page.locator('.reading-item [data-action="expand"]').first().click();
     const text = await page.locator('#article-reading-panel').innerText();
-    check('zh-HK 使用香港書面中文（學習記錄／筆記／匯出）', /本文學習記錄/.test(text) && /個人筆記/.test(text) && /匯出閱讀筆記/.test(text), text.slice(0, 200));
+    const exportLabel = await page.evaluate(async () => (await import('/modules/i18n.js')).t('article.readingExport'));
+    check('zh-HK 使用香港書面中文（學習記錄／筆記／匯出）', /本文學習記錄/.test(text) && /個人筆記/.test(text) && text.includes(exportLabel), text.slice(0, 200));
     if (ASSET_DIR) await page.screenshot({ path: path.join(ASSET_DIR, 'desktop-zh-HK.png') });
     check('zh-HK 流程沒有 console/page 錯誤', errors.length === 0, errors.join('\n'));
     await context.close();
