@@ -21,6 +21,7 @@ async function createReadingPanelFixture(browser, { locale = 'zh-CN', mobile = f
     await mock.initScript(context, { locale });
     const page = await context.newPage();
     page.setDefaultTimeout(10000);
+    page.setDefaultNavigationTimeout(Number(process.env.NAVIGATION_TIMEOUT_MS || 30000));
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(BASE, { waitUntil: 'domcontentloaded' });

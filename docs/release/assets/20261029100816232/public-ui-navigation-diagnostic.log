@@ -1,0 +1,8 @@
+page.goto: Timeout 10000ms exceeded.
+Call log:
+[2m  - navigating to "https://bdc.a4a4.qzz.io/", waiting until "domcontentloaded"[22m
+
+    at createReadingPanelFixture (/Users/linus/CODE/bdc/.claude/worktrees/article-readonly-sharing/tests/helpers/reading-panel-fixture.cjs:26:16)
+    at async /Users/linus/CODE/bdc/.claude/worktrees/article-readonly-sharing/tests/reading-edition-ui.cjs:83:56 {
+  name: 'TimeoutError'
+}

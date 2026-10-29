@@ -1,0 +1,99 @@
+Thu Oct 29 02:11:06 UTC 2026
+From https://github.com/lylasi/bdc
+ * branch            master     -> FETCH_HEAD
+   048d07b..d5337a5  master     -> origin/master
+Updating 048d07b..d5337a5
+Fast-forward
+ ...257\246\346\226\275\350\250\210\345\212\203.md" |  64 ++
+ ...214\257\345\207\272\351\251\227\346\224\266.md" |  82 +++
+ .../20261029094638558/article-download-export.log  | 114 ++++
+ .../20261029094638558/article-navigation.log       |  20 +
+ .../20261029094638558/floating-statusbar.yml       |  30 +
+ .../i18n-baseline-nested-worktree-diagnostic.log   | 276 +++++++++
+ .../assets/20261029094638558/i18n-baseline.log     | 224 +++++++
+ .../assets/20261029094638558/i18n-current.log      | 224 +++++++
+ .../assets/20261029094638558/node-regressions.log  |  42 ++
+ .../reading-draft-reliability.log                  |  22 +
+ .../20261029094638558/reading-edition-ui-final.log |  17 +
+ .../reading-edition-ui-initial.log                 |  26 +
+ .../reading-edition-ui-layout.log                  |  17 +
+ .../reading-edition-ui-playback-diagnostic.log     |   7 +
+ .../20261029094638558/reading-edition-ui.log       |  17 +
+ .../20261029094638558/reading-export-scope.log     |  22 +
+ .../reading-files-label-diagnostic.log             | 119 ++++
+ .../assets/20261029094638558/reading-files.log     |  70 +++
+ .../reading-panel-improvements.log                 |  28 +
+ .../20261029094638558/zh-CN-export-dialog-1440.png | Bin 0 -> 245075 bytes
+ .../20261029094638558/zh-CN-export-dialog-390.png  | Bin 0 -> 89424 bytes
+ .../zh-CN-reading-edition-1440.png                 | Bin 0 -> 124413 bytes
+ .../zh-CN-reading-edition-390.png                  | Bin 0 -> 79386 bytes
+ .../20261029094638558/zh-CN-reading-edition.html   | 151 +++++
+ .../20261029094638558/zh-HK-export-dialog-1440.png | Bin 0 -> 249207 bytes
+ .../20261029094638558/zh-HK-export-dialog-390.png  | Bin 0 -> 92861 bytes
+ .../zh-HK-reading-edition-1440.png                 | Bin 0 -> 127322 bytes
+ .../zh-HK-reading-edition-390.png                  | Bin 0 -> 81898 bytes
+ .../20261029094638558/zh-HK-reading-edition.html   | 151 +++++
+ ...214\257\345\207\272\350\246\217\346\240\274.md" |  26 +
+ features/article/reading-export-dialog.js          | 262 +++++++++
+ features/article/reading-panel.js                  | 131 +----
+ index.html                                         | 186 +++---
+ locales/zh-CN.js                                   |  68 ++-
+ locales/zh-HK.js                                   |  68 ++-
+ modules/reading-edition.js                         | 532 +++++++++++++++++
+ modules/reading-export.js                          | 193 +++++-
+ modules/reading-store.js                           | 325 ++++++----
+ modules/ui.js                                      |   8 +-
+ styles.css                                         |  16 +
+ tests/article-download-export.cjs                  | 369 +++++++++---
+ tests/helpers/reading-export.cjs                   |  53 +-
+ tests/reading-edition-render.cjs                   | 631 ++++++++++++++++++++
+ tests/reading-edition-ui.cjs                       | 261 ++++++++
+ tests/reading-export-fallback.cjs                  | 653 +++++++++++++++++++++
+ tests/reading-files.cjs                            |   3 +-
+ tests/reading-panel-improvements.cjs               |   5 +-
+ 47 files changed, 5057 insertions(+), 456 deletions(-)
+ create mode 100644 "docs/plan/20261028222722890_\345\256\214\346\225\264\346\226\207\347\253\240\351\226\261\350\256\200\347\211\210\345\214\257\345\207\272\345\257\246\346\226\275\350\250\210\345\212\203.md"
+ create mode 100644 "docs/report/20261029094638558_\345\256\214\346\225\264\346\226\207\347\253\240\351\226\261\350\256\200\347\211\210\345\214\257\345\207\272\351\251\227\346\224\266.md"
+ create mode 100644 docs/report/assets/20261029094638558/article-download-export.log
+ create mode 100644 docs/report/assets/20261029094638558/article-navigation.log
+ create mode 100644 docs/report/assets/20261029094638558/floating-statusbar.yml
+ create mode 100644 docs/report/assets/20261029094638558/i18n-baseline-nested-worktree-diagnostic.log
+ create mode 100644 docs/report/assets/20261029094638558/i18n-baseline.log
+ create mode 100644 docs/report/assets/20261029094638558/i18n-current.log
+ create mode 100644 docs/report/assets/20261029094638558/node-regressions.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-draft-reliability.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-edition-ui-final.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-edition-ui-initial.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-edition-ui-layout.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-edition-ui-playback-diagnostic.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-edition-ui.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-export-scope.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-files-label-diagnostic.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-files.log
+ create mode 100644 docs/report/assets/20261029094638558/reading-panel-improvements.log
+ create mode 100644 docs/report/assets/20261029094638558/zh-CN-export-dialog-1440.png
+ create mode 100644 docs/report/assets/20261029094638558/zh-CN-export-dialog-390.png
+ create mode 100644 docs/report/assets/20261029094638558/zh-CN-reading-edition-1440.png
+ create mode 100644 docs/report/assets/20261029094638558/zh-CN-reading-edition-390.png
+ create mode 100644 docs/report/assets/20261029094638558/zh-CN-reading-edition.html
+ create mode 100644 docs/report/assets/20261029094638558/zh-HK-export-dialog-1440.png
+ create mode 100644 docs/report/assets/20261029094638558/zh-HK-export-dialog-390.png
+ create mode 100644 docs/report/assets/20261029094638558/zh-HK-reading-edition-1440.png
+ create mode 100644 docs/report/assets/20261029094638558/zh-HK-reading-edition-390.png
+ create mode 100644 docs/report/assets/20261029094638558/zh-HK-reading-edition.html
+ create mode 100644 "docs/spec/20261028222722890_\345\256\214\346\225\264\346\226\207\347\253\240\351\226\261\350\256\200\347\211\210\345\214\257\345\207\272\350\246\217\346\240\274.md"
+ create mode 100644 features/article/reading-export-dialog.js
+ create mode 100644 modules/reading-edition.js
+ create mode 100644 tests/reading-edition-render.cjs
+ create mode 100644 tests/reading-edition-ui.cjs
+ create mode 100644 tests/reading-export-fallback.cjs
+ Container bdc Restarting
+ Container bdc Started
+/bdc running healthy 2026-10-29T02:11:09.619249965Z
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93  ai-config.js
+6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93  /srv/bdc/ai-config.js
+d5337a5db6e08521ebc22914f087bc4bfd968276
+## master...origin/master
+Thu Oct 29 02:11:16 UTC 2026
