@@ -10,8 +10,6 @@
 
 import * as dom from '../../modules/dom.js';
 import * as ui from '../../modules/ui.js';
-import * as api from '../../modules/api.js';
-import * as aiModels from '../../modules/ai-models.js';
 import * as readingStore from '../../modules/reading-store.js';
 import * as readingActions from '../../modules/reading-actions.js';
 import { t } from '../../modules/i18n.js';
@@ -23,8 +21,6 @@ let state = null;
 let lastFocus = null;
 // locale 切換的還原流程是 async（先 flush 再重建）：遞增 token 擋掉舊的還原。
 let localeToken = 0;
-// 查詞回應的 session：範圍改變或面板重建後，舊回應不得改寫畫面。
-let lookupToken = 0;
 // Escape 關閉只需要一個 document listener；sheet 重建不得重複绑。
 let escapeHandlerBound = false;
 
@@ -57,9 +53,7 @@ function ensureSheet() {
         <p class="phrase-picker-hint" id="phrase-picker-hint">${t('article.phrasePickerHint')}</p>
         <div class="phrase-picker-sentence" id="phrase-picker-sentence"></div>
         <div class="phrase-picker-preview" id="phrase-picker-preview" aria-live="polite"></div>
-        <div class="phrase-picker-analysis hidden" id="phrase-picker-analysis" aria-live="polite"></div>
         <div class="phrase-picker-actions">
-          <button type="button" class="btn-secondary" id="phrase-picker-lookup">${t('article.lookupPhrase')}</button>
           <button type="button" class="btn-primary" id="phrase-picker-add">${t('article.addToWordbook')}</button>
           <button type="button" class="btn-secondary" id="phrase-picker-mark" aria-pressed="false">${t('article.markThis')}</button>
           <button type="button" class="btn-tertiary" id="phrase-picker-note">${t('article.writeNote')}</button>
@@ -100,154 +94,16 @@ function selectedQuote() {
     return state.sentence.slice(state.tokens[first].start, state.tokens[last].end);
 }
 
-// 選取範圍（起詞索引-末詞索引）就是查詞結果的身分：範圍一改，舊釋義必須作廢。
-function selectionKey() {
-    if (!state || state.startIndex == null) return '';
-    const first = Math.min(state.startIndex, state.endIndex ?? state.startIndex);
-    const last = Math.max(state.startIndex, state.endIndex ?? state.startIndex);
-    return `${first}-${last}`;
-}
-
-/** 清掉畫面上的釋義，並讓進行中的回應失效（不寫回面板，但回應本身仍可保存解釋）。 */
-function resetLookup() {
-    lookupToken += 1;
-    if (state) state.lookup = { key: '', status: 'idle', data: null };
-    const box = sheet && sheet.querySelector('#phrase-picker-analysis');
-    if (box) {
-        box.classList.add('hidden');
-        box.innerHTML = '';
-    }
-    const button = sheet && sheet.querySelector('#phrase-picker-lookup');
-    if (button) {
-        button.textContent = t('article.lookupPhrase');
-        button.disabled = !selectedQuote();
-    }
-}
-
-function renderLookup(data) {
-    const box = sheet && sheet.querySelector('#phrase-picker-analysis');
-    if (!box) return;
-    const analysis = (data && data.analysis) || {};
-    const meaning = String(analysis.meaning || '').trim();
-    const usage = String(analysis.usage || '').trim();
-    const phonetic = String(analysis.phonetic || '').trim().replace(/^\/|\/$/g, '');
-    const examples = (Array.isArray(analysis.examples) ? analysis.examples : [])
-        .slice(0, 3)
-        .map((item) => (typeof item === 'string'
-            ? { en: item, zh: '' }
-            : { en: String(item?.en || ''), zh: String(item?.zh || '') }))
-        .filter((item) => item.en || item.zh);
-    // 上面已經有選取預覽（quote＋原句），這裡只補 AI 內容，不再重複一次引文。
-    box.innerHTML = `
-        <p class="phrase-picker-analysis-meaning">${meaning ? escapeHtml(meaning) : t('article.lookupEmpty')}${phonetic ? `<span class="phrase-picker-analysis-phonetic">/${escapeHtml(phonetic)}/</span>` : ''}</p>
-        ${usage ? `<p class="phrase-picker-analysis-usage">${t('article.usageLabel')}${escapeHtml(usage)}</p>` : ''}
-        ${examples.length ? `<ul class="phrase-picker-analysis-examples">${examples.map((item) => `<li>${escapeHtml(item.en)}${item.zh ? ` — ${escapeHtml(item.zh)}` : ''}</li>`).join('')}</ul>` : ''}`;
-    box.classList.remove('hidden');
-}
-
-/**
- * 查詞：先讀這一個 occurrence 已存的解釋，沒有才請求 AI。
- * 結果寫回條目後，加入詞書就會帶著同一份釋義；使用者可以看完再決定加不加。
- */
-async function runLookup() {
-    const target = currentTarget();
-    if (!target || !state) return;
-    const key = selectionKey();
-    if (state.lookup?.key === key && state.lookup?.status === 'ready') return;
-    if (!readingActions.actionContextActive(state.actionContext)) {
-        status(t('article.saveFailedRetry'), 'error');
-        return;
-    }
-    const token = ++lookupToken;
-    const version = state.contentVersion ?? readingActions.articleVersion(target.articleId);
-    // 請求前凍結帳戶與文章範圍：await 之後 state 可能已清空，不能改用目前的 scope 寫入。
-    const actionContext = state.actionContext;
-    const box = sheet.querySelector('#phrase-picker-analysis');
-    const button = sheet.querySelector('#phrase-picker-lookup');
-    state.lookup = { key, status: 'loading', data: null };
-    box.classList.remove('hidden');
-    box.innerHTML = `<p class="phrase-picker-analysis-loading">${t('article.lookupLoading')}</p>`;
-    if (button) {
-        button.disabled = true;
-        button.textContent = t('article.lookupLoading');
-    }
-    // 面板關閉或範圍改變後，回應不得改寫畫面。
-    const stillCurrent = () => token === lookupToken && !!state && selectionKey() === key;
-    try {
-        const saved = readingActions.findSavedItem(target.articleId, target.kind, target.quote, target.sentence, {
-            anchor: target.anchor,
-            contentVersion: version
-        });
-        let data = readingActions.explanationFromItem(saved);
-        if (data) {
-            if (!stillCurrent()) return;
-            if (saved && readingActions.actionContextActive(actionContext)) {
-                readingStore.markLearningItemViewed(saved.id).catch(() => {});
-            }
-        } else {
-            // 完全沒有可用模型時 analyzeSelection 會回傳空結果而不拋錯：先判斷，直接說原因。
-            if (!aiModels.getPreferredTaskSpec(['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis'])) {
-                const message = t('article.aiNotConfigured');
-                state.lookup = { key, status: 'error', data: null };
-                box.innerHTML = `<p class="phrase-picker-analysis-error">${escapeHtml(message)}</p>`;
-                status(message, 'error');
-                return;
-            }
-            data = await api.analyzeSelection(target.quote, target.sentence, target.context, { timeoutMs: 15000 });
-            // 同一條路徑下 AI 失敗也會回空釋義；沒有釋義就不算查到，不寫入條目。
-            if (!String(data?.analysis?.meaning || '').trim()) throw new Error('lookup_empty');
-            const shown = stillCurrent();
-            // 回應只屬於這一份選取；即使面板已關，仍保存解釋，但不記為查閱。
-            readingActions.recordExplanation({
-                articleId: target.articleId,
-                kind: target.kind,
-                quote: target.quote,
-                sentence: target.sentence,
-                context: target.context,
-                data,
-                markViewed: shown,
-                anchor: target.anchor,
-                contentVersion: version,
-                actionContext
-            }).catch(() => {});
-            if (!shown) return;
-        }
-        state.lookup = { key, status: 'ready', data };
-        renderLookup(data);
-    } catch (error) {
-        if (token !== lookupToken || !state) return;
-        state.lookup = { key, status: 'error', data: null };
-        // 已知的 AI／網路錯誤會帶本地化訊息（缺 key、未登入、逾時…），照原樣顯示，
-        // 使用者才分得出是要改設定還是重試；其餘一律用通用失敗文案。
-        const detail = error && error.code ? String(error.message || '') : '';
-        const message = detail || t('article.lookupFailed');
-        if (box) box.innerHTML = `<p class="phrase-picker-analysis-error">${escapeHtml(message)}</p>`;
-        status(message, 'error');
-    } finally {
-        if (token === lookupToken && sheet && state) {
-            const btn = sheet.querySelector('#phrase-picker-lookup');
-            if (btn) {
-                btn.disabled = !selectedQuote();
-                btn.textContent = t('article.lookupRedo');
-            }
-        }
-    }
-}
-
 function updatePreview() {
     const quote = selectedQuote();
     const target = currentTarget();
-    // 範圍改了：舊釋義不再對應，直接收回。
-    if (state && state.lookup?.key && state.lookup.key !== selectionKey()) resetLookup();
     if (target) currentItemForTarget(target).then((item) => updateMarkButton(item)).catch(() => {});
     const preview = sheet.querySelector('#phrase-picker-preview');
     const add = sheet.querySelector('#phrase-picker-add');
-    const lookup = sheet.querySelector('#phrase-picker-lookup');
     const hint = sheet.querySelector('#phrase-picker-hint');
     if (!quote) {
         preview.textContent = t('article.phrasePickBoth');
         add.disabled = true;
-        if (lookup) lookup.disabled = true;
         if (hint) {
             hint.textContent = state && state.startIndex != null && state.endIndex == null
                 ? t('article.phrasePickerPickEnd')
@@ -256,7 +112,6 @@ function updatePreview() {
         return;
     }
     add.disabled = false;
-    if (lookup) lookup.disabled = state?.lookup?.status === 'loading';
     preview.innerHTML = `<strong>${escapeHtml(quote)}</strong><span class="phrase-picker-sentence-preview">${escapeHtml(state.sentence)}</span>`;
     // 選取完成後必須換掉「請點結束詞」，避免使用者以為尚未選好。
     if (hint) hint.textContent = t('article.phrasePickerSelected');
@@ -313,10 +168,6 @@ function status(text, kind = '') {
 function setBusy(value) {
     sheet.querySelectorAll('button').forEach((button) => {
         if (button.classList.contains('phrase-picker-close')) return;
-        if (button.id === 'phrase-picker-lookup') {
-            button.disabled = value || !selectedQuote() || state?.lookup?.status === 'loading';
-            return;
-        }
         button.disabled = value || (button.id === 'phrase-picker-add' && !selectedQuote());
     });
 }
@@ -381,9 +232,6 @@ function wireActions() {
         status('');
         markTokens();
         updatePreview();
-    });
-    sheet.querySelector('#phrase-picker-lookup').addEventListener('click', () => {
-        runLookup();
     });
     sheet.querySelector('#phrase-picker-add').addEventListener('click', async () => {
         const target = currentTarget();
@@ -526,8 +374,7 @@ export function openPhrasePicker({
     startWord = '',
     initialQuote = '',
     sentenceStart = -1,
-    startOffset = -1,
-    autoLookup = false
+    startOffset = -1
 } = {}) {
     if (!articleId || !sentence) return false;
     lastFocus = document.activeElement;
@@ -570,8 +417,7 @@ export function openPhrasePicker({
         articleBody: readingActions.articleBody(articleId),
         // 面板打開當下的內文版本與帳戶：所有查狀態、建立條目、筆記一律沿這一份。
         contentVersion: readingActions.articleVersion(articleId),
-        actionContext: readingActions.captureActionContext(),
-        lookup: { key: '', status: 'idle', data: null }
+        actionContext: readingActions.captureActionContext()
     };
     element.classList.remove('hidden');
     element.querySelector('#phrase-picker-hint').textContent = startIndex != null && endIndex != null
@@ -582,13 +428,10 @@ export function openPhrasePicker({
     element.querySelector('#phrase-picker-note-status').textContent = '';
     status('');
     updateMarkButton();
-    resetLookup();
     const undo = element.querySelector('#phrase-picker-undo');
     undo.classList.add('hidden');
     undo.onclick = null;
     renderSentence();
-    // 從工具條「查詞」進來：先給 AI 釋義，使用者看完再決定要不要加入詞書。
-    if (autoLookup && selectedQuote()) runLookup();
     setTimeout(() => {
         const target = element.querySelector('.phrase-token.is-start') || element.querySelector('.phrase-token');
         if (target) target.focus({ preventScroll: true });
@@ -663,8 +506,6 @@ function captureSheetState() {
         sentenceStart: Number(state?.sentenceStart),
         startIndex: state?.startIndex ?? null,
         endIndex: state?.endIndex ?? null,
-        // 釋義已顯示：重開面板後要讀回同一份，不能變成空白。
-        lookupShown: state?.lookup?.status === 'ready',
         focusedTokenIndex: Number.isInteger(tokenIndex) ? tokenIndex : null,
         noteOpen: !!noteWrap && !noteWrap.classList.contains('hidden'),
         noteFocused,
@@ -701,8 +542,6 @@ function restoreSheetState(snapshot, token) {
                 : t('article.phrasePickerPickEnd');
         }
     }
-    // 釋義區塊：讀回同一份已保存的解釋（命中條目時不再請求 AI）。
-    if (snapshot.lookupShown) runLookup();
     // 已保存成功：重開筆記區塊會讀回同一份内容，不會空白。
     if (snapshot.noteOpen) sheet.querySelector('#phrase-picker-note')?.click();
     // openPhrasePicker 會在 30ms 後把焦點移到起詞；等它跑完再還原真正的焦點。

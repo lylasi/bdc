@@ -7,7 +7,8 @@ import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
 import {
     getTaskModelSelection,
-    saveTaskModelSelection
+    saveTaskModelSelection,
+    getPreferredTaskSpec
 } from '../../modules/ai-models.js';
 import { ARTICLE_IMPORT } from '../../ai-config.js';
 import { getAllQASets, loadQASet } from '../qa/qa-storage.js';
@@ -2121,25 +2122,31 @@ async function analyzePhraseWithSaved(phrase, sentence, context, articleId, mark
         : String(options.contentVersion);
     const anchor = options.anchor || readingActions.resolveAnchor(articleId, phrase, sentence);
     const actionContext = options.actionContext || readingActions.captureActionContext();
-    const saved = readingActions.findSavedItem(articleId, 'phrase', phrase, sentence, { anchor, contentVersion: version })
-        || readingActions.findSavedItem(articleId, 'word', phrase, sentence, { anchor, contentVersion: version });
+    // 明確重新查詢時跳過已存解釋，直接請模型再分析一次。
+    const saved = options.force === true ? null : (
+        readingActions.findSavedItem(articleId, 'phrase', phrase, sentence, { anchor, contentVersion: version })
+        || readingActions.findSavedItem(articleId, 'word', phrase, sentence, { anchor, contentVersion: version })
+    );
     if (saved && saved.explanation && saved.explanation.result) {
         if (markViewed && readingActions.actionContextActive(actionContext)) readingStore.markLearningItemViewed(saved.id).catch(() => {});
         return saved.explanation.result;
     }
-    const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000 });
-    readingActions.recordExplanation({
-        articleId,
-        kind: /\s/.test(String(phrase || '').trim()) ? 'phrase' : 'word',
-        quote: phrase,
-        sentence,
-        context,
-        data: res,
-        markViewed: markViewed && readingActions.actionContextActive(actionContext),
-        anchor,
-        contentVersion: version,
-        actionContext
-    }).catch(() => {});
+    const res = await api.analyzeSelection(phrase, sentence, context, { timeoutMs: 15000, noCache: options.force === true });
+    // 沒有釋義（AI 失敗或沒有可用模型）不寫入條目：否則閱讀記錄會多出一筆空白解析。
+    if (String(res?.analysis?.meaning || '').trim()) {
+        readingActions.recordExplanation({
+            articleId,
+            kind: /\s/.test(String(phrase || '').trim()) ? 'phrase' : 'word',
+            quote: phrase,
+            sentence,
+            context,
+            data: res,
+            markViewed: markViewed && readingActions.actionContextActive(actionContext),
+            anchor,
+            contentVersion: version,
+            actionContext
+        }).catch(() => {});
+    }
     return res;
 }
 
@@ -6453,6 +6460,180 @@ function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
 }
 
 /**
+ * 選取短語的查詞卡：直接用單詞詳解的那個彈窗（同一個 #word-analysis-tooltip、
+ * 同一組按鈕與樣式），內容換成片語分析（意思／用法／例句）。
+ *
+ * 按鈕的動作由 #word-analysis-tooltip 的委派處理器統一處理，所以只要把
+ * data-* 屬性補齊，加入詞書／標記／寫筆記／問 AI 就與單詞查詞完全一致。
+ * 定位與捲動跟隨沿用「觸發詞」機制：以選取範圍的起詞作為錨點。
+ */
+function showSelectionLookupTooltip({
+    articleId,
+    quote,
+    sentence,
+    context = '',
+    anchor = null,
+    contentVersion = null,
+    actionContext: actionCtx = null,
+    anchorEl = null
+} = {}) {
+    const text = String(quote || '').trim();
+    if (!articleId || !text || !anchorEl || !anchorEl.isConnected) return false;
+    const kind = /\s/.test(text) ? 'phrase' : 'word';
+    const version = contentVersion === null || contentVersion === undefined
+        ? readingActions.articleVersion(articleId)
+        : String(contentVersion);
+    const actionContext = actionCtx || readingActions.captureActionContext();
+    if (!readingActions.actionContextActive(actionContext)) {
+        ui.displayMessage(t('article.saveFailedRetry'), 'error');
+        return false;
+    }
+    const resolvedAnchor = anchor || readingActions.resolveAnchor(articleId, text, sentence);
+    window.__assistant?.detachWord?.();
+    syncWordTooltipSheetMode();
+
+    // 這次選取就是目前的查詞 session：舊的單詞 session 不得再改寫畫面。
+    const session = ++wordTooltipSession;
+    wordTooltipContext = { actionContext, contentVersion: version };
+    wordTooltipTrigger = anchorEl;
+    wordTooltipReturnFocus = null;
+    wordTooltipKeyboardOpen = false;
+
+    const target = { articleId, kind, quote: text, sentence, context, anchor: resolvedAnchor, contentVersion: version };
+    const savedItem = readingActions.findSavedItem(articleId, kind, text, sentence, { anchor: resolvedAnchor, contentVersion: version });
+    const marked = savedItem?.marked === true;
+    const anchorAttrs = `data-article-id="${escapeAttr(articleId)}" data-quote="${escapeAttr(text)}" data-kind="${kind}" data-sentence="${escapeAttr(sentence)}" data-context="${escapeAttr(context)}" data-sentence-start="-1" data-start-offset="-1" data-anchor-start="${escapeAttr(String(resolvedAnchor?.start ?? -1))}" data-anchor-end="${escapeAttr(String(resolvedAnchor?.end ?? -1))}" data-content-version="${escapeAttr(version)}"`;
+    const icon = (name) => `<svg class="icon" aria-hidden="true"><use href="#ic-${name}"></use></svg>`;
+    const labelAttrs = (key) => `title="${escapeAttr(t(key))}" aria-label="${escapeAttr(t(key))}"`;
+    const hasModel = () => {
+        try {
+            return !!getPreferredTaskSpec(['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis']);
+        } catch (_) {
+            return true;
+        }
+    };
+
+    let view = { status: 'loading', analysis: null, message: '' };
+    let runToken = 0;
+
+    const stillShowing = () => session === wordTooltipSession
+        && readingActions.actionContextActive(actionContext)
+        && isCurrentArticle(articleId)
+        && readingActions.articleVersion(articleId) === version
+        && isWordTooltipVisible();
+
+    const titleHtml = (analysis) => {
+        const phonetic = String(analysis?.phonetic || '').trim().replace(/^\/|\/$/g, '');
+        const pos = String(analysis?.pos || '').trim();
+        return `${escapeHtml(text)}${phonetic ? ` <span class="tooltip-phonetic">/${escapeHtml(phonetic)}/</span>` : ''}${pos ? ` (${escapeHtml(pos)})` : ''}`;
+    };
+
+    const contentHtml = (analysis) => {
+        const meaning = String(analysis?.meaning || '').trim();
+        const usage = String(analysis?.usage || analysis?.role || '').trim();
+        const examples = (Array.isArray(analysis?.examples) ? analysis.examples : [])
+            .slice(0, 3)
+            .map((example) => (typeof example === 'string'
+                ? { en: example, zh: '' }
+                : { en: String(example?.en || ''), zh: String(example?.zh || '') }))
+            .filter((example) => example.en || example.zh);
+        return `${meaning ? `<p class="tooltip-meaning"><strong>${t('article.meaningLabel')}</strong> ${escapeHtml(meaning)}</p>` : ''}
+            ${usage ? `<p class="tooltip-role"><strong>${t('article.usageLabel')}</strong> ${escapeHtml(usage)}</p>` : ''}
+            ${examples.length ? `<ul class="tooltip-examples">${examples.map((example) => `<li>${escapeHtml(example.en)}${example.zh ? ` — ${escapeHtml(example.zh)}` : ''}</li>`).join('')}</ul>` : ''}`;
+    };
+
+    const actionsHtml = (analysis) => `
+        <div class="tooltip-primary-actions">
+            <button type="button" class="tooltip-action btn-play-word" data-word="${escapeAttr(text)}" ${labelAttrs('article.pronunciation')}>${icon('speaker')}</button>
+            <button type="button" class="tooltip-action tooltip-action-with-label btn-add-to-book" ${labelAttrs('article.addToWordbook')} ${anchorAttrs}
+                data-meaning="${escapeAttr(analysis?.meaning || '')}"
+                data-phonetic="${escapeAttr(analysis?.phonetic || '')}"
+                data-pos="${escapeAttr(analysis?.pos || '')}"
+            >${icon('book')}<span class="tooltip-action-label">${t('article.addToWordbookShort')}</span></button>
+            <button type="button" class="tooltip-action btn-toggle-mark" ${anchorAttrs} ${labelAttrs(marked ? 'article.unmarkThis' : 'article.markThis')} aria-pressed="${marked ? 'true' : 'false'}">${icon('bookmark')}</button>
+            <button type="button" class="tooltip-action btn-ask-word-ai" ${anchorAttrs} ${labelAttrs('article.askAi')} aria-expanded="false" aria-controls="word-ai-host">${icon('sparkle')}</button>
+            <details class="tooltip-more">
+                <summary class="tooltip-action" ${labelAttrs('article.moreActions')} aria-haspopup="menu" aria-expanded="false" aria-controls="word-tooltip-menu">${icon('more')}</summary>
+                <div id="word-tooltip-menu" class="tooltip-more-body" popover="manual" role="menu" aria-label="${escapeAttr(t('article.moreActions'))}">
+                    <button type="button" class="tooltip-action btn-note-item" role="menuitem" ${anchorAttrs} ${labelAttrs('article.writeNote')}>${icon('edit')}<span class="tooltip-action-label">${t('article.writeNote')}</span></button>
+                </div>
+            </details>
+        </div>`;
+
+    const renderShell = (titleContent, bodyContent, { loading = false, retry = false } = {}) => {
+        dom.analysisTooltip.innerHTML = `
+            <div class="tooltip-head">
+                <div class="tooltip-title" id="word-tooltip-title" tabindex="-1">${titleContent}</div>
+                <div class="tooltip-head-actions">
+                    <button type="button" class="btn-refresh-word" title="${escapeAttr(t('article.refreshWord'))}" aria-label="${escapeAttr(t(loading ? 'article.refreshing' : 'article.refreshWord'))}"${loading ? ' disabled aria-busy="true"' : ''}><svg class="icon" aria-hidden="true"><use href="#ic-replay"></use></svg></button>
+                    <button type="button" class="tooltip-close" aria-label="${escapeAttr(t('article.close'))}">×</button>
+                </div>
+            </div>
+            <div class="tooltip-content">${bodyContent}</div>
+            ${retry ? `<div class="tooltip-retry"><button type="button" class="btn-ghost btn-mini btn-retry-phrase">${t('article.retry')}</button></div>` : ''}
+            <div class="tooltip-actions">${actionsHtml(view.analysis)}</div>
+            <div id="word-ai-host" class="word-ai-host"></div>`;
+        dom.analysisTooltip.querySelector('.btn-refresh-word')?.addEventListener('click', () => { runLookup({ force: true }); });
+        dom.analysisTooltip.querySelector('.btn-retry-phrase')?.addEventListener('click', () => { runLookup({ force: true }); });
+        initWordTooltipMenu();
+        dom.analysisTooltip.style.display = 'block';
+        ui.repositionTooltip(anchorEl);
+        const item = readingActions.findSavedItem(articleId, kind, text, sentence, { anchor: resolvedAnchor, contentVersion: version });
+        if (item) window.__assistant?.restoreWord?.(wordChatOptions(target, item.id));
+    };
+
+    const paint = () => {
+        if (view.status === 'data') {
+            renderShell(titleHtml(view.analysis), contentHtml(view.analysis));
+            return;
+        }
+        if (view.status === 'error') {
+            renderShell(titleHtml(null), `<p class="tooltip-error">${escapeHtml(view.message)}</p>`, { retry: true });
+            return;
+        }
+        renderShell(titleHtml(null), `<p>${t('article.loading')}</p>`, { loading: true });
+    };
+
+    async function runLookup({ force = false } = {}) {
+        const run = ++runToken;
+        view = { status: 'loading', analysis: view.analysis, message: '' };
+        paint();
+        try {
+            const data = await analyzePhraseWithSaved(text, sentence, context, articleId, true, {
+                anchor: resolvedAnchor,
+                contentVersion: version,
+                actionContext,
+                force
+            });
+            if (run !== runToken || !stillShowing()) return;
+            const analysis = data?.analysis || null;
+            if (!String(analysis?.meaning || '').trim()) {
+                view = {
+                    status: 'error',
+                    analysis: null,
+                    message: hasModel() ? t('article.lookupFailed') : t('article.aiNotConfigured')
+                };
+            } else {
+                view = { status: 'data', analysis, message: '' };
+            }
+            paint();
+        } catch (error) {
+            if (run !== runToken || !stillShowing()) return;
+            // 已知的 AI／網路錯誤帶本地化訊息，照原樣顯示，使用者才知道要改設定還是重試。
+            const detail = error && error.code ? String(error.message || '') : '';
+            view = { status: 'error', analysis: null, message: detail || t('article.lookupFailed') };
+            paint();
+        }
+    }
+
+    // locale 切換時沿用同一條重畫路徑，卡片內容跟着換語言。
+    wordTooltipLastPayload = { kind: 'selection-lookup', quote: text, articleId };
+    wordTooltipRender = paint;
+    runLookup();
+    return true;
+}
+
+/**
  * 頁內查詞快取的身分：內容版本＋介面語言＋模型＋句子＋詞。
  * 任一項改變都不該命中上一份結果（例如切換 zh-CN／zh-HK 或換模型）。
  */
@@ -7523,7 +7704,7 @@ function initArticleSelectionToWordbook() {
                 ui.displayMessage(t('article.saveFailedRetry'), 'error');
                 return;
             }
-            if (act === 'phrase' || act === 'lookup') {
+            if (act === 'phrase') {
                 hideBar();
                 openPhrasePicker({
                     articleId: captured.articleId || articleContext.recordId || '',
@@ -7531,9 +7712,22 @@ function initArticleSelectionToWordbook() {
                     context: captured.context,
                     initialQuote: captured.text,
                     sentenceStart: captured.sentenceStart,
-                    startOffset: captured.startOffset,
-                    // 查詞：先看 AI 釋義，再決定要不要加入詞書。
-                    autoLookup: act === 'lookup'
+                    startOffset: captured.startOffset
+                });
+                return;
+            }
+            if (act === 'lookup') {
+                // 先看 AI 釋義，再決定要不要加入詞書；畫面就是單詞查詞那個彈窗。
+                hideBar();
+                showSelectionLookupTooltip({
+                    articleId: captured.articleId || articleContext.recordId || '',
+                    quote: captured.text,
+                    sentence: captured.sentence,
+                    context: captured.context,
+                    anchor: captured.anchor,
+                    contentVersion: captured.contentVersion,
+                    actionContext: captured.actionContext,
+                    anchorEl: captured.element
                 });
                 return;
             }
@@ -7626,6 +7820,8 @@ function initArticleSelectionToWordbook() {
             // 選區建立當下的帳戶與內文版本；按鈕、儲存、查狀態都用這一份。
             contentVersion: readingActions.articleVersion(articleId),
             actionContext: readingActions.captureActionContext(),
+            // 查詞卡沿用單詞彈窗的定位機制，需要一個可持續跟隨捲動的錨點元素。
+            element: node || sentenceEl,
             rect
         };
     }

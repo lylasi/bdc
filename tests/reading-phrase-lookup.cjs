@@ -1,5 +1,5 @@
 /**
- * 文章短語「先查詞、再加入詞書」：短語面板查詞、釋義回填、工具條入口與雙語文案。
+ * 文章短語「先查詞、再加入詞書」：選取工具條入口、單詞詳解同款彈窗、釋義回填與雙語文案。
  *
  * 用法：
  *   PORT=8313 PLAYWRIGHT_MODULE=<path-to-playwright> node tests/reading-phrase-lookup.cjs
@@ -8,7 +8,7 @@
  * 全部使用獨立 context 的合成文章；不讀取使用者既有資料或正式帳號。
  * 這裡刻意不連 AI：
  *   1. 已存解釋的 short-circuit 路徑（命中條目時不請求模型）；
- *   2. 沒有可用模型時的錯誤路徑（必須顯示原因且仍可加入詞書）。
+ *   2. 沒有可用模型時的錯誤路徑（必須在彈窗內說明原因、提供重試）。
  */
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 
@@ -26,8 +26,8 @@ const PHRASE_START = 3;
 const PHRASE_END = 18;
 
 const LABELS = {
-    'zh-CN': { lookup: '查词', redo: '重新查词', notConfigured: '尚未配置可用的 AI 供应商与模型' },
-    'zh-HK': { lookup: '查詞', redo: '重新查詞', notConfigured: '尚未配置可用的 AI 供應商與模型' }
+    'zh-CN': { lookup: '查词', notConfigured: '尚未配置可用的 AI 供应商与模型' },
+    'zh-HK': { lookup: '查詞', notConfigured: '尚未配置可用的 AI 供應商與模型' }
 };
 
 const failures = [];
@@ -143,18 +143,6 @@ async function openArticle(page) {
     await page.waitForTimeout(900);
 }
 
-async function openPickerFromTooltip(page) {
-    await page.locator('.interactive-word[data-word="look"]').first().click();
-    await page.waitForTimeout(400);
-    await page.evaluate(() => {
-        const details = document.querySelector('#word-analysis-tooltip details.tooltip-more');
-        if (details && !details.open) details.open = true;
-    });
-    await page.waitForSelector('#word-analysis-tooltip details.tooltip-more[open] .btn-pick-phrase', { state: 'visible', timeout: 5000 });
-    await page.locator('#word-analysis-tooltip .btn-pick-phrase').click();
-    await page.waitForTimeout(400);
-}
-
 /** 在正文句子上選取一段字元（跨文字節點），觸發表尾的選取工具條。 */
 async function selectSentenceRange(page, start, end) {
     await page.evaluate(async ({ start, end }) => {
@@ -191,28 +179,41 @@ async function runLocale(browser, locale) {
     const { context, page, errors } = await newPage(browser, locale);
     await seed(page);
     await openArticle(page);
-    await openPickerFromTooltip(page);
 
-    check(`[${locale}] 短語面板開啟`, await page.locator('#phrase-picker:not(.hidden)').count() === 1);
-    check(`[${locale}] 面板提供查詞鍵且預設未顯示釋義`,
-        (await page.locator('#phrase-picker-lookup').innerText()).trim() === labels.lookup
-        && await page.locator('#phrase-picker-analysis.hidden').count() === 1);
+    // 短語面板不再負責查詞：回到「加入詞書／標記／寫筆記／問 AI／重新選」。
+    await page.evaluate(async () => {
+        const m = await import('/features/article/phrase-picker.js');
+        m.openPhrasePicker({ articleId: 'art_phrase_lookup', sentence: 'We look forward to meeting you.', context: '', initialQuote: 'look forward to', sentenceStart: 0 });
+    });
+    await page.waitForTimeout(350);
+    check(`[${locale}] 短語面板已無查詞按鈕`, await page.locator('#phrase-picker-lookup').count() === 0);
+    await page.locator('.phrase-picker-close').click();
+    await page.waitForTimeout(250);
 
-    await page.locator('.phrase-token').nth(3).click();
-    await page.waitForTimeout(150);
-    check(`[${locale}] 預覽為完整短語`, (await page.locator('#phrase-picker-preview').innerText()).includes(PHRASE));
+    // 選取短語：工具條出現查詞
+    await selectSentenceRange(page, PHRASE_START, PHRASE_END);
+    const phraseBar = await page.evaluate(() => {
+        const bar = document.querySelector('.article-selection-bar.is-visible');
+        const button = bar && bar.querySelector('[data-act="lookup"]');
+        return { visible: !!bar, lookup: !!(button && !button.classList.contains('hidden')), text: button && button.textContent.trim() };
+    });
+    check(`[${locale}] 選取短語時工具條顯示查詞`, phraseBar.visible && phraseBar.lookup && phraseBar.text === labels.lookup, JSON.stringify(phraseBar));
 
-    // 已存解釋：查詞不請求模型，直接顯示釋義、用法與例句。
-    await page.click('#phrase-picker-lookup');
-    await page.waitForTimeout(500);
-    const analysisText = (await page.locator('#phrase-picker-analysis').innerText()).replace(/\n/g, ' / ');
-    check(`[${locale}] 查詞顯示已存釋義、用法與例句`,
-        analysisText.includes('期待') && analysisText.includes('動名詞') && analysisText.includes('I look forward to the trip.'), analysisText);
-    check(`[${locale}] 查詞後按鈕改為重新查詞`,
-        (await page.locator('#phrase-picker-lookup').innerText()).includes(labels.redo));
+    // 點查詞：開的是單詞查詞那個彈窗，不是短語面板
+    await page.locator('.article-selection-bar [data-act="lookup"]').click();
+    await page.waitForTimeout(600);
+    check(`[${locale}] 查詞開的是單詞詳解彈窗`,
+        await page.locator('#word-analysis-tooltip').isVisible() && await page.locator('#phrase-picker:not(.hidden)').count() === 0);
+    const tooltipText = (await page.locator('#word-analysis-tooltip').innerText()).replace(/\n/g, ' / ');
+    check(`[${locale}] 彈窗顯示釋義、用法與例句`,
+        tooltipText.includes(PHRASE) && tooltipText.includes('期待') && tooltipText.includes('動名詞') && tooltipText.includes('I look forward to the trip.'),
+        tooltipText);
+    check(`[${locale}] 彈窗有加入詞書與標記動作`,
+        await page.locator('#word-analysis-tooltip .btn-add-to-book').count() === 1
+        && await page.locator('#word-analysis-tooltip .btn-toggle-mark').count() === 1);
 
-    // 先查詞再加入詞書：詞書條目要帶上同一份釋義。
-    await page.click('#phrase-picker-add');
+    // 先看釋義再加入詞書：詞書條目要帶上同一份釋義
+    await page.locator('#word-analysis-tooltip .btn-add-to-book').click();
     await page.waitForTimeout(900);
     const saved = await page.evaluate(async (phrase) => {
         const rd = await import('/modules/reading-store.js');
@@ -225,30 +226,44 @@ async function runLocale(browser, locale) {
     check(`[${locale}] 查詞後可加入詞書`, !!saved.entry && saved.links >= 1, JSON.stringify({ entry: saved.entry && saved.entry.word, links: saved.links }));
     check(`[${locale}] 詞書條目帶入 AI 釋義`, !!saved.entry && String(saved.entry.meaning).includes('期待'), saved.entry && saved.entry.meaning);
 
-    // 換成沒有已存解釋的範圍：釋義收回，查詞走 AI；此環境沒有模型，必須說明原因且不擋加入詞書。
-    await page.locator('.phrase-token').nth(0).click();
-    await page.locator('.phrase-token').nth(1).click();
-    await page.waitForTimeout(150);
-    check(`[${locale}] 改變選取範圍後釋義收回`, await page.locator('#phrase-picker-analysis.hidden').count() === 1);
-    await page.click('#phrase-picker-lookup');
-    await page.waitForTimeout(900);
-    const failText = (await page.locator('#phrase-picker-analysis').innerText()).replace(/\n/g, ' / ');
-    check(`[${locale}] 缺模型時說明原因`, failText.includes(labels.notConfigured), failText);
-    check(`[${locale}] 查詞失敗後可重試、加入詞書不受阻`,
-        await page.locator('#phrase-picker-lookup').isDisabled() === false
-        && await page.locator('#phrase-picker-add').isDisabled() === false);
-    await page.locator('.phrase-picker-close').click();
-    await page.waitForTimeout(250);
+    // 標記：沿用同一個委派處理器；加入詞書可能已把它標成已標記，這裡驗證「切換」。
+    const readMarked = () => page.evaluate(async (phrase) => {
+        const rd = await import('/modules/reading-store.js');
+        const item = rd.findPhraseItem('art_phrase_lookup', phrase, 'We look forward to meeting you.');
+        return item ? item.marked === true : null;
+    }, PHRASE);
+    const markedBefore = await readMarked();
+    await page.locator('#word-analysis-tooltip .btn-toggle-mark').click();
+    await page.waitForTimeout(600);
+    const markedAfter = await readMarked();
+    check(`[${locale}] 彈窗內可切換標記`, markedBefore !== null && markedAfter === !markedBefore, `${markedBefore} → ${markedAfter}`);
 
-    // 選取工具條：短語才有「查詞」，單詞沿用點詞查詞。
-    await selectSentenceRange(page, PHRASE_START, PHRASE_END);
-    const phraseBar = await page.evaluate(() => {
+    // 關閉：彈窗收起
+    await page.locator('#word-analysis-tooltip .tooltip-close').click();
+    await page.waitForTimeout(300);
+    check(`[${locale}] 關閉鈕收起彈窗`, await page.locator('#word-analysis-tooltip').isHidden());
+
+    // 沒有已存解釋的範圍：走 AI；此環境沒有模型，必須在彈窗內說明原因並可重試
+    await selectSentenceRange(page, 0, 2);
+    await page.locator('.article-selection-bar [data-act="lookup"]').click().catch(() => {});
+    await page.waitForTimeout(200);
+    // 單詞選取不顯示查詞：改由整段短語重試
+    await selectSentenceRange(page, 0, 8);
+    const shortBar = await page.evaluate(() => {
         const bar = document.querySelector('.article-selection-bar.is-visible');
         const button = bar && bar.querySelector('[data-act="lookup"]');
-        return { visible: !!bar, lookup: !!(button && !button.classList.contains('hidden')), text: button && button.textContent.trim() };
+        return { visible: !!bar, lookup: !!(button && !button.classList.contains('hidden')) };
     });
-    check(`[${locale}] 選取短語時工具條顯示查詞`, phraseBar.visible && phraseBar.lookup && phraseBar.text === labels.lookup, JSON.stringify(phraseBar));
+    check(`[${locale}] 另一段短語同樣有查詞`, shortBar.visible && shortBar.lookup, JSON.stringify(shortBar));
+    await page.locator('.article-selection-bar [data-act="lookup"]').click();
+    await page.waitForTimeout(1200);
+    const failText = (await page.locator('#word-analysis-tooltip').innerText()).replace(/\n/g, ' / ');
+    check(`[${locale}] 缺模型時在彈窗內說明原因`, failText.includes(labels.notConfigured), failText);
+    check(`[${locale}] 查詞失敗時提供重試`, await page.locator('#word-analysis-tooltip .btn-retry-phrase').count() === 1);
+    await page.locator('#word-analysis-tooltip .tooltip-close').click();
+    await page.waitForTimeout(250);
 
+    // 單詞選取：工具條不顯示查詞（單詞仍是點詞查詞）
     await selectSentenceRange(page, 0, 2);
     const wordBar = await page.evaluate(() => {
         const bar = document.querySelector('.article-selection-bar.is-visible');
@@ -256,25 +271,6 @@ async function runLocale(browser, locale) {
         return { visible: !!bar, hidden: !!(button && button.classList.contains('hidden')) };
     });
     check(`[${locale}] 選取單詞時工具條不顯示查詞`, wordBar.visible && wordBar.hidden, JSON.stringify(wordBar));
-
-    // 工具條「查詞」：開面板並自動帶出釋義（同樣命中已存解釋）。
-    await selectSentenceRange(page, PHRASE_START, PHRASE_END);
-    await page.locator('.article-selection-bar [data-act="lookup"]').click();
-    await page.waitForTimeout(700);
-    const autoText = await page.locator('#phrase-picker-analysis').innerText().catch(() => '');
-    check(`[${locale}] 工具條查詞會自動顯示釋義`,
-        await page.locator('#phrase-picker:not(.hidden)').count() === 1 && autoText.includes('期待'),
-        autoText.replace(/\n/g, ' / '));
-
-    // 語言切換會重建面板：釋義要讀回同一份，不能變空白。
-    await page.evaluate(() => {
-        document.dispatchEvent(new CustomEvent('bdc:locale-change', { detail: { locale: 'zh-HK' } }));
-    });
-    await page.waitForTimeout(600);
-    const restoredText = await page.locator('#phrase-picker-analysis').innerText().catch(() => '');
-    check(`[${locale}] 面板重建後釋義仍然保留`,
-        await page.locator('#phrase-picker:not(.hidden)').count() === 1 && restoredText.includes('期待'),
-        restoredText.replace(/\n/g, ' / '));
 
     check(`[${locale}] 沒有未預期的主控台錯誤`, errors.length === 0, errors.join(' | '));
     await context.close();
