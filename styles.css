@@ -5502,43 +5502,55 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
 /* 對話氣泡內的 Markdown */
 .assistant-msg a { color: var(--primary-600); text-decoration: none; }
 .assistant-msg a:hover { text-decoration: underline; }
+/* 正文分兩態：串流時是純文字（保留換行），渲染 markdown 後交給區塊元素排版。
+   不覆蓋 `.assistant-msg` 的 pre-wrap，區塊之間的換行字元會多撐出一到兩行空白。 */
+.assistant-answer { white-space: normal; }
+.assistant-answer.is-streaming { white-space: pre-wrap; }
 .assistant-msg h1,
 .assistant-msg h2,
 .assistant-msg h3,
 .assistant-msg h4,
 .assistant-msg h5,
-.assistant-msg h6 { line-height: 1.3; margin: var(--sp-3) 0 6px; color: var(--ink-900); }
+.assistant-msg h6 { line-height: 1.3; margin: 8px 0 4px; color: var(--ink-900); }
 .assistant-msg h1 { font-size: var(--fs-xl); font-weight: 800; }
-.assistant-msg h2 { font-size: var(--fs-lg); font-weight: 700; border-bottom: 1px dashed var(--line); padding-bottom: 4px; }
+.assistant-msg h2 { font-size: var(--fs-lg); font-weight: 700; border-bottom: 1px dashed var(--line); padding-bottom: 3px; }
 .assistant-msg h3 { font-size: var(--fs-base); font-weight: 700; }
 .assistant-msg h4 { font-size: var(--fs-md); font-weight: 600; }
+.assistant-msg > :first-child,
+.assistant-answer > :first-child { margin-top: 0; }
+.assistant-msg > :last-child,
+.assistant-answer > :last-child { margin-bottom: 0; }
 .assistant-msg p { margin: 3px 0; }
 .assistant-msg ul,
-.assistant-msg ol { margin: 3px 0 6px; padding-left: 1.3em; }
-.assistant-msg li { margin: 3px 0; }
+.assistant-msg ol { margin: 2px 0 4px; padding-left: 1.3em; }
+/* 全域把 ul/ol 的符號關掉了（那是給導覽清單用的），回答裡的清單要還原，否則只剩縮排。 */
+.assistant-msg ul { list-style: disc; }
+.assistant-msg ol { list-style: decimal; }
+.assistant-msg li { margin: 1px 0; }
 .assistant-msg hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
 .assistant-msg blockquote {
-    margin: 6px 0;
-    padding: var(--sp-2) var(--sp-3);
+    margin: 4px 0;
+    padding: 6px 10px;
     border-left: 3px solid var(--primary-100);
     background: var(--primary-050);
     color: var(--ink-700);
     border-radius: var(--r-xs);
 }
+.assistant-msg blockquote p { margin: 1px 0; }
 .assistant-msg img { max-width: 100%; height: auto; display: block; border-radius: var(--r-sm); box-shadow: var(--sh-1); }
 .assistant-msg table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     table-layout: auto;
-    margin: 6px 0;
+    margin: 4px 0;
     border: 1px solid var(--line);
     border-radius: var(--r-sm);
     overflow: hidden;
 }
 .assistant-msg thead th { background: var(--surface-3); font-weight: 700; }
 .assistant-msg th,
-.assistant-msg td { border-bottom: 1px solid var(--line); padding: 8px 10px; vertical-align: top; }
+.assistant-msg td { border-bottom: 1px solid var(--line); padding: 5px 8px; vertical-align: top; }
 .assistant-msg tr:last-child td { border-bottom: none; }
 .assistant-msg code {
     background: var(--surface-3);

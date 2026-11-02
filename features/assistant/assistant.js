@@ -776,8 +776,7 @@ function appendMessage(container, role, text, meta = {}) {
     el.dataset.articleId = meta.articleId || '';
   }
   if (role === 'assistant') {
-    try { el.innerHTML = markdownToHtml(text || ''); try { enhanceMarkdown(el); } catch(_){} }
-    catch(_) { el.textContent = text || ''; }
+    renderAnswerMarkdown(ensureAnswerNode(el), text || '');
     // 重開會話時也要看得出哪些回答被停止過，不能冒充完整答案。
     if (meta.status === 'cancelled') {
       el.dataset.messageStatus = 'cancelled';
@@ -818,6 +817,18 @@ function ensureAnswerNode(el) {
     node.className = 'assistant-answer';
     el.insertBefore(node, el.firstChild);
     return node;
+}
+
+/**
+ * Markdown 只在這裡落地。
+ * 串流時用 `is-streaming` 保留純文字的換行；渲染完就移除，讓區塊元素自己控制間距，
+ * 否則 `<p>`／`<table>`／`<blockquote>` 之間的換行字元會再撐出一到兩行空白。
+ */
+function renderAnswerMarkdown(node, text) {
+    if (!node) return;
+    node.classList.remove('is-streaming');
+    try { node.innerHTML = markdownToHtml(text || ''); try { enhanceMarkdown(node); } catch (_) {} }
+    catch (_) { node.textContent = text || ''; }
 }
 
 /** 推理模型的思考過程：預設收起的「思考过程」區塊，插在正文前面。 */
@@ -1047,6 +1058,8 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
         try { placeholder.querySelector('.assistant-error')?.remove(); } catch (_) {}
         try { placeholder.querySelector('.assistant-cancelled')?.remove(); } catch (_) {}
         if (streamPref) {
+            // 串流期間是純文字，需要保留換行；結束後才換成 markdown 排版。
+            answerEl.classList.add('is-streaming');
             await streamCompletions(messages, ac.signal, {
                 onDelta: (delta) => {
                     settleReasoning();
@@ -1082,8 +1095,7 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
             }
             settleReasoning();
             const follow = isNearBottom(box, 48);
-            try { answerEl.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(answerEl); } catch (_) {} }
-            catch (_) { answerEl.textContent = buffer; }
+            renderAnswerMarkdown(answerEl, buffer);
             if (follow) box.scrollTop = box.scrollHeight;
         }
     } catch (error) {
@@ -1100,8 +1112,7 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
         // 重新套用 markdown 會改變高度；先記錄使用者當時是否在看底部，避免把他拉回。
         const followBeforeRender = isNearBottom(box, 48);
         if (streamPref) {
-            try { answerEl.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(answerEl); } catch (_) {} }
-            catch (_) { /* 保留純文字 */ }
+            renderAnswerMarkdown(answerEl, buffer);
         }
         settleReasoning();
         if (cancelled) {

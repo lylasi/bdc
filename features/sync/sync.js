@@ -1875,7 +1875,7 @@ async function showAssistantSessions(){
       /* 預覽面板的 markdown 基本樣式（若未載入 assistant 風格時的降級樣式） */
       #as-right-body .assistant-msg{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;padding:10px 12px;border-radius:var(--r-md);margin:4px 0;box-sizing:border-box}
       #as-right-body .assistant-user{background:var(--primary-050);color:var(--ink-800);border:1px solid var(--primary-100);align-self:flex-end;box-shadow:inset -3px 0 0 var(--primary)}
-      #as-right-body .assistant-assistant{background:var(--surface-2);color:var(--ink-800);border:1px solid var(--line);align-self:flex-start;box-shadow:inset 3px 0 0 var(--line-strong)}
+      #as-right-body .assistant-assistant{background:var(--surface-2);color:var(--ink-800);border:1px solid var(--line);align-self:flex-start;box-shadow:inset 3px 0 0 var(--line-strong);white-space:normal}
       #as-right-body .assistant-msg{max-width:86%}
       #as-right-body .assistant-msg pre{background:var(--ink-900);color:var(--paper-2);border:1px solid var(--ink-900);border-radius:var(--r-sm);padding:12px 14px;overflow:auto;position:relative}
       #as-right-body .assistant-msg .assistant-copy{position:absolute;top:8px;right:8px;font-size:var(--fs-xs);padding:4px 8px;border-radius:var(--r-xs);border:1px solid var(--ink-600);background:var(--ink-900);color:var(--ink-300);opacity:.85;cursor:pointer}
