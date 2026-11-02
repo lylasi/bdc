@@ -80,6 +80,20 @@ function normalizeModelName(model) {
     return String(model || '').trim().replace(/^models\//, '');
 }
 
+/**
+ * Gemini 把思考放在同一個 parts 陣列裡，以 `thought: true` 標記。
+ * 拆成 { text, reasoning } 兩個欄位，避免思考片段被當成答案顯示。
+ */
+function splitThoughtParts(parts) {
+    const answer = [];
+    const reasoning = [];
+    for (const part of Array.isArray(parts) ? parts : []) {
+        if (part?.thought === true) reasoning.push(part.text || '');
+        else answer.push(part?.text || '');
+    }
+    return { text: answer.join(''), reasoning: reasoning.join('') };
+}
+
 export const geminiNative = {
     id: 'gemini',
     labelKey: 'settings.aiFormatGemini',
@@ -132,11 +146,11 @@ export const geminiNative = {
 
     parseResponse(json) {
         const candidate = json?.candidates?.[0] || {};
-        const parts = candidate?.content?.parts;
-        const text = Array.isArray(parts) ? parts.map((part) => part.text || '').join('').trim() : '';
-        const blockReason = json?.promptFeedback?.blockReason || candidate?.finishReason === 'SAFETY' ? (json?.promptFeedback?.blockReason || 'SAFETY') : '';
+        const { text, reasoning } = splitThoughtParts(candidate?.content?.parts);
+        const blockReason = json?.promptFeedback?.blockReason || candidate.finishReason === 'SAFETY' ? (json?.promptFeedback?.blockReason || 'SAFETY') : '';
         return {
-            text,
+            text: text.trim() || reasoning.trim(),
+            reasoning: text.trim() ? reasoning.trim() : '',
             finishReason: candidate?.finishReason || '',
             usage: json?.usageMetadata || null,
             model: json?.modelVersion || '',
@@ -155,10 +169,10 @@ export const geminiNative = {
         const blocked = json?.promptFeedback?.blockReason;
         if (blocked) return { done: true, refusal: String(blocked) };
         const candidate = json?.candidates?.[0] || {};
-        const parts = candidate?.content?.parts;
-        const text = Array.isArray(parts) ? parts.map((part) => part.text || '').join('') : '';
+        const { text, reasoning } = splitThoughtParts(candidate?.content?.parts);
         return {
             text,
+            reasoning,
             finishReason: candidate?.finishReason || '',
             done: false
         };

@@ -10,7 +10,7 @@ const returnIcon = '<svg viewBox="0 0 24 24" class="icon" fill="none" stroke="cu
 const sendIcon = '<svg viewBox="0 0 24 24" class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg>';
 
 /** 詞卡與大視窗共用同一組節點；移動時不重建串流、草稿或訊息。 */
-export function createWordChat({ ask, appendMessage, autoGrowInput, isBusy, cancel }) {
+export function createWordChat({ ask, appendMessage, autoGrowInput, isBusy, cancel, refreshReasoning }) {
     const sessions = new Map();
     let inlineSession = null;
     let poppedSession = null;
@@ -64,6 +64,8 @@ export function createWordChat({ ask, appendMessage, autoGrowInput, isBusy, canc
         ]) {
             session.view.querySelectorAll(selector).forEach((node) => { node.textContent = t(key); });
         }
+        // 思考區塊的標題還有「思考中／耗時」兩種狀態，交給助手端重算。
+        session.view.querySelectorAll('.assistant-reasoning').forEach((node) => refreshReasoning?.(node));
     }
 
     function collapse(session) {

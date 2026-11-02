@@ -61,7 +61,8 @@ export function initAiAssistant() {
     isBusy: () => !!activeAsk,
     cancel: (view) => {
       if (activeAsk?.panel === view) activeAsk.controller?.abort();
-    }
+    },
+    refreshReasoning: refreshReasoningSummary
   });
   exposeGlobalAPI();
   document.addEventListener('bdc:articles-scope-changed', () => {
@@ -806,6 +807,59 @@ function isAbortError(error, controller) {
     return !!controller?.signal?.aborted || error?.name === 'AbortError';
 }
 
+/**
+ * 正文容器：串流與最終 markdown 都只重畫這個節點。
+ * 思考區塊是它的兄弟節點，所以重畫正文不會把思考內容沖進答案裡。
+ */
+function ensureAnswerNode(el) {
+    let node = el.querySelector('.assistant-answer');
+    if (node && node.parentElement === el) return node;
+    node = document.createElement('div');
+    node.className = 'assistant-answer';
+    el.insertBefore(node, el.firstChild);
+    return node;
+}
+
+/** 推理模型的思考過程：預設收起的「思考过程」區塊，插在正文前面。 */
+function ensureReasoningNode(el) {
+    const existing = el.querySelector('.assistant-reasoning');
+    if (existing && existing.parentElement === el) return existing;
+    const node = document.createElement('details');
+    node.className = 'assistant-reasoning';
+    node.dataset.state = 'thinking';
+    const summary = document.createElement('summary');
+    summary.className = 'assistant-reasoning-summary';
+    const body = document.createElement('div');
+    body.className = 'assistant-reasoning-body';
+    node.append(summary, body);
+    el.insertBefore(node, el.firstChild);
+    refreshReasoningSummary(node);
+    return node;
+}
+
+/** 標題依狀態與語言即時重算；秒數放在 dataset，切換介面語言時不必重跑這一輪。 */
+function refreshReasoningSummary(node) {
+    const summary = node?.querySelector('.assistant-reasoning-summary');
+    if (!summary) return;
+    if (node.dataset.state === 'thinking') {
+        summary.textContent = t('assistant.reasoningPending');
+        return;
+    }
+    const seconds = Number(node.dataset.reasoningSeconds || 0);
+    summary.textContent = seconds > 0
+        ? t('assistant.reasoningDone', { seconds })
+        : t('assistant.reasoning');
+}
+
+/** 這一輪結束（完成／停止／失敗）後固定標題，內容保留但維持收起。 */
+function settleReasoningNode(el, startedAt) {
+    const node = el.querySelector('.assistant-reasoning');
+    if (!node || node.dataset.state === 'done') return;
+    node.dataset.state = 'done';
+    if (startedAt) node.dataset.reasoningSeconds = String(Math.max(0, Math.round((Date.now() - startedAt) / 1000)));
+    refreshReasoningSummary(node);
+}
+
 function appendNote(el, className, text) {
     if (!el) return null;
     el.querySelector(`.${className}`)?.remove();
@@ -977,27 +1031,59 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
     let hadError = false;
     let cancelled = false;
     let errorMessage = '';
+    // 思考過程與正文分開存放：正文只寫進 answerEl，思考只寫進 reasoning 區塊。
+    const answerEl = ensureAnswerNode(placeholder);
+    let reasoningBuffer = '';
+    let reasoningStartedAt = 0;
+    let reasoningSettled = false;
+    // 正文一開始就結束「思考中」狀態；耗時只算思考那一段。
+    const settleReasoning = () => {
+        if (reasoningSettled || !reasoningBuffer) return;
+        reasoningSettled = true;
+        settleReasoningNode(placeholder, reasoningStartedAt);
+    };
     try {
         try { placeholder.querySelector('.assistant-retry')?.remove(); } catch (_) {}
         try { placeholder.querySelector('.assistant-error')?.remove(); } catch (_) {}
         try { placeholder.querySelector('.assistant-cancelled')?.remove(); } catch (_) {}
         if (streamPref) {
-            await streamCompletions(messages, ac.signal, (delta) => {
-                buffer += delta;
-                const follow = isNearBottom(box, 48);
-                placeholder.textContent = buffer;
-                if (follow) {
-                    box.scrollTop = box.scrollHeight;
-                    hideNewAnswerHint(panel);
-                } else {
-                    showNewAnswerHint(panel);
+            await streamCompletions(messages, ac.signal, {
+                onDelta: (delta) => {
+                    settleReasoning();
+                    buffer += delta;
+                    const follow = isNearBottom(box, 48);
+                    answerEl.textContent = buffer;
+                    if (follow) {
+                        box.scrollTop = box.scrollHeight;
+                        hideNewAnswerHint(panel);
+                    } else {
+                        showNewAnswerHint(panel);
+                    }
+                },
+                // 思考片段絕不混進答案；只更新收起中的區塊，並讓視窗跟著長高。
+                onReasoning: (delta) => {
+                    reasoningBuffer += delta;
+                    if (!reasoningStartedAt) reasoningStartedAt = Date.now();
+                    const node = ensureReasoningNode(placeholder);
+                    const body = node.querySelector('.assistant-reasoning-body');
+                    if (body) body.textContent = reasoningBuffer;
+                    if (isNearBottom(box, 48)) box.scrollTop = box.scrollHeight;
                 }
             });
         } else {
-            buffer = await onceCompletions(messages, ac.signal);
+            const result = await onceCompletions(messages, ac.signal);
+            buffer = result.text;
+            if (result.reasoning) {
+                reasoningBuffer = result.reasoning;
+                reasoningStartedAt = Date.now();
+                const node = ensureReasoningNode(placeholder);
+                const body = node.querySelector('.assistant-reasoning-body');
+                if (body) body.textContent = reasoningBuffer;
+            }
+            settleReasoning();
             const follow = isNearBottom(box, 48);
-            try { placeholder.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(placeholder); } catch (_) {} }
-            catch (_) { placeholder.textContent = buffer; }
+            try { answerEl.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(answerEl); } catch (_) {} }
+            catch (_) { answerEl.textContent = buffer; }
             if (follow) box.scrollTop = box.scrollHeight;
         }
     } catch (error) {
@@ -1014,9 +1100,10 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
         // 重新套用 markdown 會改變高度；先記錄使用者當時是否在看底部，避免把他拉回。
         const followBeforeRender = isNearBottom(box, 48);
         if (streamPref) {
-            try { placeholder.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(placeholder); } catch (_) {} }
+            try { answerEl.innerHTML = markdownToHtml(buffer || ''); try { enhanceMarkdown(answerEl); } catch (_) {} }
             catch (_) { /* 保留純文字 */ }
         }
+        settleReasoning();
         if (cancelled) {
             // 停止：保留半段、明示不完整、以 cancelled 保存；絕不標成 complete。
             appendCancelledNote(placeholder);
@@ -1118,7 +1205,8 @@ function attachKeepDocumentButton(el, { messageId, conversationId, articleId, le
     try {
       const messages = await readingStore.getMessages(conversationId);
       const message = messages.find((item) => item.id === messageId);
-      const content = message?.content || el.innerText || '';
+      // 只取正文節點；思考區塊不是回答的一部分。
+      const content = message?.content || el.querySelector('.assistant-answer')?.innerText || el.innerText || '';
       const targetArticleId = articleId || readingStore.getConversation(conversationId)?.articleId || '';
       const result = await readingActions.saveAiAnswerAsDocument({
         articleId: targetArticleId,
@@ -1207,22 +1295,27 @@ async function onceCompletions(messages, signal, modelOverride) {
     signal,
     taskType: 'assistant'
   });
-  return String(data?.text || data?.choices?.[0]?.message?.content || '').trim();
+  return {
+    text: String(data?.text || data?.choices?.[0]?.message?.content || '').trim(),
+    reasoning: String(data?.reasoning || '').trim()
+  };
 }
 
-async function streamCompletions(messages, signal, onDelta, modelOverride) {
+async function streamCompletions(messages, signal, { onDelta, onReasoning } = {}, modelOverride) {
   const model = getAssistantModelSpec(modelOverride);
   if (!model) throw new Error(t('settings.aiModelNotSelected'));
   perfProbe.markAssistantRequest();
   // The shared adapter layer handles SSE framing, finish reasons and errors for
-  // every supported protocol (Chat Completions / Anthropic / Gemini).
+  // every supported protocol (Chat Completions / Anthropic / Gemini). Reasoning
+  // deltas arrive on their own channel so they never merge into the answer.
   await streamAIResponse({
     model,
     messages,
     temperature: 0.2,
     signal,
     taskType: 'assistant',
-    onDelta
+    onDelta,
+    onReasoning
   });
 }
 

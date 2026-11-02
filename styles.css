@@ -5436,6 +5436,43 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
     border: 1px solid var(--line);
     box-shadow: inset 3px 0 0 var(--line-strong);
 }
+/* 推理模型的思考過程：預設收起一行，展開後才看內容；不佔住答案版位。 */
+.assistant-reasoning {
+    margin: 0 0 8px;
+    border: 1px dashed var(--line);
+    border-radius: var(--r-xs);
+    background: var(--surface-3);
+    font-size: var(--fs-xs);
+}
+.assistant-reasoning-summary {
+    padding: 4px 8px;
+    color: var(--ink-500);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+}
+.assistant-reasoning[data-state="thinking"] .assistant-reasoning-summary { color: var(--primary-600); }
+.assistant-reasoning[data-state="thinking"] .assistant-reasoning-summary::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-inline-end: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 1.6s ease-in-out infinite;
+}
+.assistant-reasoning[open] .assistant-reasoning-summary { border-bottom: 1px dashed var(--line); }
+.assistant-reasoning-body {
+    padding: 6px 8px;
+    max-height: 40vh;
+    overflow-y: auto;
+    color: var(--ink-500);
+    font-weight: 400;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
 .assistant-hidden { display: none !important; }
 .assistant-hint { background: var(--accent-050); color: var(--accent-600); }
 .assistant-link { background: none; border: 0; color: var(--primary-600); cursor: pointer; padding: 0; }

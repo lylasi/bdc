@@ -187,20 +187,68 @@ test('gemini adapter substitutes the model and encodes images', () => {
 
 test('stream event parsing works for every protocol', () => {
     assert.deepEqual(chat.parseStreamEvent({ data: JSON.stringify({ choices: [{ delta: { content: 'a' } }] }) }), {
-        text: 'a', finishReason: '', done: false
+        text: 'a', reasoning: '', finishReason: '', done: false
     });
     assert.equal(chat.parseStreamEvent({ data: '[DONE]' }).done, true);
 
     assert.deepEqual(anthropic.parseStreamEvent({ data: JSON.stringify({ type: 'content_block_delta', delta: { text: 'b' } }) }), {
-        text: 'b', done: false
+        text: 'b', reasoning: '', done: false
     });
     assert.equal(anthropic.parseStreamEvent({ data: JSON.stringify({ type: 'message_stop' }) }).done, true);
 
     const gem = gemini.parseStreamEvent({ data: JSON.stringify({ candidates: [{ content: { parts: [{ text: 'c' }] } }] }) });
-    assert.deepEqual(gem, { text: 'c', finishReason: '', done: false });
+    assert.deepEqual(gem, { text: 'c', reasoning: '', finishReason: '', done: false });
     const blocked = gemini.parseStreamEvent({ data: JSON.stringify({ promptFeedback: { blockReason: 'SAFETY' } }) });
     assert.equal(blocked.done, true);
     assert.equal(blocked.refusal, 'SAFETY');
+});
+
+// 推理模型的思考片段必須走 reasoning，否則會直接出現在使用者看到的答案裡。
+test('stream event parsing keeps reasoning separate from the answer', () => {
+    const chatThought = chat.parseStreamEvent({
+        data: JSON.stringify({ choices: [{ delta: { reasoning_content: '先想一下' } }] })
+    });
+    assert.equal(chatThought.text, '');
+    assert.equal(chatThought.reasoning, '先想一下');
+    // 片段開頭的空白是正文的一部分，不能被 trim 掉。
+    assert.equal(chat.parseStreamEvent({ data: JSON.stringify({ choices: [{ delta: { content: ' shop' } }] }) }).text, ' shop');
+    assert.equal(
+        chat.parseStreamEvent({ data: JSON.stringify({ choices: [{ delta: { reasoning: 'alt field' } }] }) }).reasoning,
+        'alt field'
+    );
+
+    const anthropicThought = anthropic.parseStreamEvent({
+        data: JSON.stringify({ type: 'content_block_delta', delta: { type: 'thinking_delta', thinking: '想一想' } })
+    });
+    assert.equal(anthropicThought.text, '');
+    assert.equal(anthropicThought.reasoning, '想一想');
+    const anthropicAnswer = anthropic.parseResponse({
+        content: [
+            { type: 'thinking', thinking: '想一想' },
+            { type: 'text', text: '答案' }
+        ],
+        stop_reason: 'end_turn'
+    });
+    assert.equal(anthropicAnswer.text, '答案');
+    assert.equal(anthropicAnswer.reasoning, '想一想');
+
+    const geminiThought = gemini.parseStreamEvent({
+        data: JSON.stringify({ candidates: [{ content: { parts: [{ text: '想一想', thought: true }, { text: '答案' }] } }] })
+    });
+    assert.equal(geminiThought.text, '答案');
+    assert.equal(geminiThought.reasoning, '想一想');
+
+    const chatAnswer = chat.parseResponse({
+        choices: [{ message: { content: '答案', reasoning_content: '想一想' }, finish_reason: 'stop' }]
+    });
+    assert.equal(chatAnswer.text, '答案');
+    assert.equal(chatAnswer.reasoning, '想一想');
+    // content 為空時仍以 reasoning_content 當正文，避免整個回覆變成空白。
+    const chatFallback = chat.parseResponse({
+        choices: [{ message: { content: '', reasoning_content: '只有思考' } }]
+    });
+    assert.equal(chatFallback.text, '只有思考');
+    assert.equal(chatFallback.reasoning, '');
 });
 
 test('snapshot sanitizer removes keys, managed definitions and URL overrides', () => {

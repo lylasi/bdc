@@ -338,6 +338,63 @@ for (const protocol of PROTOCOLS) {
     });
 }
 
+// 推理模型的思考若混進正文，使用者會在答案上方看到一大段模型自語。
+test('reasoning output never reaches the answer channel', async () => {
+    const cases = [
+        {
+            provider: CHAT,
+            model: 'personal-chat:m1',
+            chunks: [
+                'data: {"choices":[{"delta":{"reasoning_content":"先想一下"}}]}\n\n',
+                'data: {"choices":[{"delta":{"reasoning_content":"，再想一下"}}]}\n\n',
+                'data: {"choices":[{"delta":{"content":"答案是 42"},"finish_reason":"stop"}]}\n\n',
+                'data: [DONE]\n\n'
+            ],
+            text: '答案是 42',
+            reasoning: '先想一下，再想一下'
+        },
+        {
+            provider: ANTHROPIC,
+            model: 'personal-anthropic:m1',
+            chunks: [
+                'data: {"type":"content_block_delta","delta":{"type":"thinking_delta","thinking":"先想一下"}}\n\n',
+                'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"答案是 42"}}\n\n',
+                'data: {"type":"message_stop"}\n\n'
+            ],
+            text: '答案是 42',
+            reasoning: '先想一下'
+        },
+        {
+            provider: GEMINI,
+            model: 'personal-gemini:m1',
+            chunks: [
+                'data: {"candidates":[{"content":{"parts":[{"text":"先想一下","thought":true}]}}]}\n\n',
+                'data: {"candidates":[{"content":{"parts":[{"text":"答案是 42"}]},"finishReason":"STOP"}]}\n\n'
+            ],
+            text: '答案是 42',
+            reasoning: '先想一下'
+        }
+    ];
+    for (const item of cases) {
+        seedProfile();
+        respond = () => sseResponse(item.chunks);
+        const answerDeltas = [];
+        const reasoningDeltas = [];
+        const result = await streamAIResponse({
+            model: item.model,
+            messages: [{ role: 'user', content: 'hi' }],
+            taskType: 'assistant',
+            onDelta: (text) => answerDeltas.push(text),
+            onReasoning: (text) => reasoningDeltas.push(text)
+        });
+        assert.equal(result.text, item.text, `${item.provider.id}: answer text`);
+        assert.equal(result.reasoning, item.reasoning, `${item.provider.id}: reasoning text`);
+        assert.deepEqual(answerDeltas, [item.text], `${item.provider.id}: answer deltas`);
+        assert.ok(!answerDeltas.join('').includes('先想一下'), `${item.provider.id}: thinking leaked into the answer`);
+        assert.ok(reasoningDeltas.length > 0, `${item.provider.id}: reasoning deltas`);
+    }
+});
+
 async function expectErrorCode(provider, status, expected) {
     seedProfile();
     respond = () => jsonResponse({ error: { message: 'mock', type: 'mock' } }, status);

@@ -533,6 +533,10 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
 /**
  * Streaming entry point shared by the assistant. Uses the same adapter layer as
  * requestAI so a provider that works for one-shot calls also streams correctly.
+ *
+ * `onDelta` receives answer text only; reasoning-model thinking arrives on
+ * `onReasoning` so callers can separate or hide it instead of showing it as part
+ * of the answer. The resolved `{ text, reasoning }` keeps the two apart too.
  */
 export async function streamAIResponse({
     model,
@@ -542,7 +546,8 @@ export async function streamAIResponse({
     signal,
     taskType = 'assistant',
     timeoutMs = 120000,
-    onDelta
+    onDelta,
+    onReasoning
 }) {
     let resolved;
     try {
@@ -593,6 +598,7 @@ export async function streamAIResponse({
         const decoder = new TextDecoder();
         const parser = createSseParser();
         let text = '';
+        let reasoning = '';
         let finishReason = '';
         const handle = (events) => {
             for (const event of events) {
@@ -601,6 +607,10 @@ export async function streamAIResponse({
                     const err = new Error(parsed.errorMessage || 'provider stream error');
                     err.code = parsed.errorCode;
                     throw localizeAIError(err);
+                }
+                if (parsed.reasoning) {
+                    reasoning += parsed.reasoning;
+                    try { if (typeof onReasoning === 'function') onReasoning(parsed.reasoning); } catch (_) {}
                 }
                 if (parsed.text) {
                     text += parsed.text;
@@ -619,7 +629,7 @@ export async function streamAIResponse({
             finished = handle(events);
         }
         if (!finished) handle(parser.flush());
-        return { text, finishReason, providerId: resolved.provider, model: resolved.model, source: resolved.source };
+        return { text, reasoning, finishReason, providerId: resolved.provider, model: resolved.model, source: resolved.source };
     } catch (error) {
         if (error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
             const err = new Error('aborted');

@@ -65,12 +65,19 @@ export const chatCompletions = {
     parseResponse(json) {
         const choice = json?.choices?.[0] || {};
         const message = choice.message || {};
-        const text = joinTextParts(message.content).trim()
-            || joinTextParts(message.reasoning_content).trim()
+        const answer = joinTextParts(message.content).trim()
             || joinTextParts(choice.delta?.content).trim()
             || joinTextParts(json?.output_text).trim();
+        // 推理模型把思考放在 reasoning_content；它和正文是兩種內容，不能混在一起回報。
+        const reasoning = (
+            joinTextParts(message.reasoning_content)
+            || joinTextParts(message.reasoning)
+            || joinTextParts(choice.delta?.reasoning_content)
+        ).trim();
         return {
-            text,
+            // 少數供應商 content 為空、整段答案都在 reasoning_content，這時仍以它當正文。
+            text: answer || reasoning,
+            reasoning: answer ? reasoning : '',
             finishReason: choice.finish_reason || '',
             usage: json?.usage || null,
             model: json?.model || '',
@@ -84,10 +91,12 @@ export const chatCompletions = {
         let json;
         try { json = JSON.parse(data); } catch (_) { return { done: false }; }
         const choice = json?.choices?.[0] || {};
-        const delta = joinTextParts(choice.delta?.content)
-            || joinTextParts(choice.delta?.reasoning_content);
+        const delta = choice.delta || {};
+        // 思考片段走 reasoning，正文走 text：混流會讓思考內容直接出現在答案裡。
+        // 這裡不能 trim，片段開頭的空白也是正文的一部分。
         return {
-            text: delta || '',
+            text: joinTextParts(delta.content),
+            reasoning: joinTextParts(delta.reasoning_content) || joinTextParts(delta.reasoning),
             finishReason: choice.finish_reason || '',
             done: false
         };

@@ -25,6 +25,8 @@ function createMockStreamServer() {
     const state = {
         mode: 'ok',
         chunks: ['第一段回答。'],
+        // 推理模型的思考片段（Gemini 以 thought: true 標記），先於正文送出。
+        thoughtChunks: [],
         chunkDelayMs: 120,
         requests: [],
         streamRequests: 0
@@ -58,11 +60,16 @@ function createMockStreamServer() {
             }
 
             const chunkText = (text) => JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] });
+            const thoughtText = (text) => JSON.stringify({ candidates: [{ content: { parts: [{ text, thought: true }] } }] });
 
             if (!isStream) {
+                const parts = [
+                    ...state.thoughtChunks.map((text) => ({ text, thought: true })),
+                    { text: state.chunks.join('') }
+                ];
                 res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' });
                 return res.end(JSON.stringify({
-                    candidates: [{ content: { parts: [{ text: state.chunks.join('') }] }, finishReason: 'STOP' }]
+                    candidates: [{ content: { parts }, finishReason: 'STOP' }]
                 }));
             }
 
@@ -85,6 +92,7 @@ function createMockStreamServer() {
                     try { res.socket.destroy(); } catch (_) { /* already gone */ }
                 }, 40);
             }
+            state.thoughtChunks.forEach((text) => send(thoughtText(text)));
             if (state.mode === 'slow') {
                 let index = 0;
                 const timer = setInterval(() => {

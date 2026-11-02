@@ -116,8 +116,10 @@ export const anthropicMessages = {
         }
         const blocks = Array.isArray(json?.content) ? json.content : [];
         const text = blocks.filter((block) => block.type === 'text').map((block) => block.text || '').join('').trim();
+        const reasoning = blocks.filter((block) => block.type === 'thinking').map((block) => block.thinking || '').join('').trim();
         return {
             text,
+            reasoning,
             finishReason: json?.stop_reason || '',
             usage: json?.usage || null,
             model: json?.model || '',
@@ -130,7 +132,10 @@ export const anthropicMessages = {
         let json;
         try { json = JSON.parse(data); } catch (_) { return { done: false }; }
         if (json.type === 'content_block_delta') {
-            return { text: json.delta?.text || '', done: false };
+            const delta = json.delta || {};
+            // 擴展思考的片段走 reasoning，一般文字才算正文。
+            if (delta.type === 'thinking_delta') return { text: '', reasoning: delta.thinking || '', done: false };
+            return { text: delta.text || '', reasoning: '', done: false };
         }
         if (json.type === 'message_delta') {
             return { finishReason: json.delta?.stop_reason || '', done: false };
