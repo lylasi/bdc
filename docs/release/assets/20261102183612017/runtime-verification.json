@@ -1,0 +1,47 @@
+{
+  "commit": "8a8ef840c5ca3d7cc099464f7b899fa23fc814da",
+  "dirty": "",
+  "configSha256": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "container": {
+    "status": "running",
+    "health": "healthy",
+    "startedAt": "2026-11-02T10:37:33.912799607Z"
+  },
+  "files": {
+    "index.html": {
+      "sourceSha256": "cfa38f9fff3d92e16b4ecd8b03781a83e25ad142b1b45b531b7ffc29141e93d1",
+      "runtimeSha256": "cfa38f9fff3d92e16b4ecd8b03781a83e25ad142b1b45b531b7ffc29141e93d1",
+      "commitSha256": "cfa38f9fff3d92e16b4ecd8b03781a83e25ad142b1b45b531b7ffc29141e93d1"
+    },
+    "modules/reading-sync.js": {
+      "sourceSha256": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e",
+      "runtimeSha256": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e",
+      "commitSha256": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e"
+    },
+    "features/sync/sync.js": {
+      "sourceSha256": "e7c4047e4d03797cea77a0c1c356422ad2e0d655663332066423a3400c6e3c08",
+      "runtimeSha256": "e7c4047e4d03797cea77a0c1c356422ad2e0d655663332066423a3400c6e3c08",
+      "commitSha256": "e7c4047e4d03797cea77a0c1c356422ad2e0d655663332066423a3400c6e3c08"
+    },
+    "features/sync/sync-status.js": {
+      "sourceSha256": "7a147509e70d2c643ca0f0a73063c3699c791cd26b73d40b969f74b70f17e965",
+      "runtimeSha256": "7a147509e70d2c643ca0f0a73063c3699c791cd26b73d40b969f74b70f17e965",
+      "commitSha256": "7a147509e70d2c643ca0f0a73063c3699c791cd26b73d40b969f74b70f17e965"
+    },
+    "modules/dom.js": {
+      "sourceSha256": "0a5c9e3f49b74a7bf8982ec124d0840122a86abefb1341130c996e025c9b21bb",
+      "runtimeSha256": "0a5c9e3f49b74a7bf8982ec124d0840122a86abefb1341130c996e025c9b21bb",
+      "commitSha256": "0a5c9e3f49b74a7bf8982ec124d0840122a86abefb1341130c996e025c9b21bb"
+    },
+    "locales/zh-CN.js": {
+      "sourceSha256": "63eb12dce0f1c05935869e7f17145d70be9c4a19aa7c40e54abdb62c605fb41b",
+      "runtimeSha256": "63eb12dce0f1c05935869e7f17145d70be9c4a19aa7c40e54abdb62c605fb41b",
+      "commitSha256": "63eb12dce0f1c05935869e7f17145d70be9c4a19aa7c40e54abdb62c605fb41b"
+    },
+    "locales/zh-HK.js": {
+      "sourceSha256": "26165dd688cdf52dcbeb823bd881fcb5aa288330eefebab1e4699fd0bb1168ec",
+      "runtimeSha256": "26165dd688cdf52dcbeb823bd881fcb5aa288330eefebab1e4699fd0bb1168ec",
+      "commitSha256": "26165dd688cdf52dcbeb823bd881fcb5aa288330eefebab1e4699fd0bb1168ec"
+    }
+  }
+}
