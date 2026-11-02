@@ -1,0 +1,132 @@
+{
+  "release": "a9b46f8b9680",
+  "sites": {
+    "lan": {
+      "release": "a9b46f8b9680",
+      "releaseOccurrencesInHome": 93,
+      "files": {
+        "index.html": {
+          "url": "http://10.10.10.149:8001/index.html",
+          "status": 200,
+          "sha256": "cefe451aea7142e539d0a21e200fdcee0f857012b1313bc1eee452fded790903",
+          "matchesLocal": true,
+          "cf-cache-status": ""
+        },
+        "styles.css": {
+          "url": "http://10.10.10.149:8001/styles.css?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "b936fa014de57a8b1bfdfee0dd88cae29604b7dd4dcbd7002467506300531df4",
+          "matchesLocal": true,
+          "cf-cache-status": ""
+        },
+        "main.js": {
+          "url": "http://10.10.10.149:8001/main.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "d3bf771c404c54709f139cf3b4add59b11d1110ea9270513cbdcc7eb5b436a52",
+          "matchesLocal": true,
+          "cf-cache-status": ""
+        },
+        "features/article/phrase-picker.js": {
+          "url": "http://10.10.10.149:8001/features/article/phrase-picker.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "767acd8bb3132e7f2c31e6ea2cb07a743f78851e2c05cc5dd5a2354e20f82eb0",
+          "matchesLocal": true,
+          "cf-cache-status": ""
+        },
+        "features/article/article.js": {
+          "url": "http://10.10.10.149:8001/features/article/article.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "a4b709cb4a7628adc867a7f0532a1a27366712b38c41c23237592492fa99a5a3",
+          "matchesLocal": true,
+          "cf-cache-status": ""
+        },
+        "locales/zh-CN.js": {
+          "url": "http://10.10.10.149:8001/locales/zh-CN.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "e0f456f679ea8ec80b11e3d5f3c39dc5fb7efa83ed5af94e5ad79b0a203e33e1",
+          "matchesLocal": true,
+          "cf-cache-status": ""
+        },
+        "locales/zh-HK.js": {
+          "url": "http://10.10.10.149:8001/locales/zh-HK.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "ac98a9088e17d631d57a94fa31ca3bd681ffb9017226b2084589d3f2e4822de5",
+          "matchesLocal": true,
+          "cf-cache-status": ""
+        }
+      },
+      "excluded": {
+        "/tests/reading-phrase-lookup.cjs": 404,
+        "/docs/spec/20261102121809000_文章詳解短語先查詞再加入詞書.md": 404,
+        "/scripts/serve.py": 404,
+        "/.git/config": 404,
+        "/selfhost/README.md": 404,
+        "/ai-config.js": 200
+      }
+    },
+    "public": {
+      "release": "a9b46f8b9680",
+      "releaseOccurrencesInHome": 93,
+      "files": {
+        "index.html": {
+          "url": "https://bdc.a4a4.qzz.io/index.html",
+          "status": 200,
+          "sha256": "cefe451aea7142e539d0a21e200fdcee0f857012b1313bc1eee452fded790903",
+          "matchesLocal": true,
+          "cf-cache-status": "DYNAMIC"
+        },
+        "styles.css": {
+          "url": "https://bdc.a4a4.qzz.io/styles.css?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "b936fa014de57a8b1bfdfee0dd88cae29604b7dd4dcbd7002467506300531df4",
+          "matchesLocal": true,
+          "cf-cache-status": "HIT"
+        },
+        "main.js": {
+          "url": "https://bdc.a4a4.qzz.io/main.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "d3bf771c404c54709f139cf3b4add59b11d1110ea9270513cbdcc7eb5b436a52",
+          "matchesLocal": true,
+          "cf-cache-status": "MISS"
+        },
+        "features/article/phrase-picker.js": {
+          "url": "https://bdc.a4a4.qzz.io/features/article/phrase-picker.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "767acd8bb3132e7f2c31e6ea2cb07a743f78851e2c05cc5dd5a2354e20f82eb0",
+          "matchesLocal": true,
+          "cf-cache-status": "MISS"
+        },
+        "features/article/article.js": {
+          "url": "https://bdc.a4a4.qzz.io/features/article/article.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "a4b709cb4a7628adc867a7f0532a1a27366712b38c41c23237592492fa99a5a3",
+          "matchesLocal": true,
+          "cf-cache-status": "MISS"
+        },
+        "locales/zh-CN.js": {
+          "url": "https://bdc.a4a4.qzz.io/locales/zh-CN.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "e0f456f679ea8ec80b11e3d5f3c39dc5fb7efa83ed5af94e5ad79b0a203e33e1",
+          "matchesLocal": true,
+          "cf-cache-status": "MISS"
+        },
+        "locales/zh-HK.js": {
+          "url": "https://bdc.a4a4.qzz.io/locales/zh-HK.js?v=a9b46f8b9680",
+          "status": 200,
+          "sha256": "ac98a9088e17d631d57a94fa31ca3bd681ffb9017226b2084589d3f2e4822de5",
+          "matchesLocal": true,
+          "cf-cache-status": "MISS"
+        }
+      },
+      "excluded": {
+        "/tests/reading-phrase-lookup.cjs": 404,
+        "/docs/spec/20261102121809000_文章詳解短語先查詞再加入詞書.md": 404,
+        "/scripts/serve.py": 404,
+        "/.git/config": 404,
+        "/selfhost/README.md": 404,
+        "/ai-config.js": 200
+      }
+    }
+  },
+  "checkedAt": "2026-11-02T04:41:23.688Z"
+}
