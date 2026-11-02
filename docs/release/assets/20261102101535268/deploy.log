@@ -1,0 +1,27 @@
+Mon Nov  2 02:11:30 UTC 2026
+From https://github.com/lylasi/bdc
+ * branch            master     -> FETCH_HEAD
+   1dda21a..0dd525b  master     -> origin/master
+Updating 1dda21a..0dd525b
+Fast-forward
+ ...226\212\350\210\207\351\201\216\346\277\276.md" |  75 +++++
+ features/assistant/assistant.js                    | 131 +++++++--
+ features/assistant/word-chat.js                    |   4 +-
+ index.html                                         | 186 ++++++-------
+ locales/zh-CN.js                                   |   3 +
+ locales/zh-HK.js                                   |   3 +
+ modules/ai-protocols/anthropic.js                  |   7 +-
+ modules/ai-protocols/chat-completions.js           |  21 +-
+ modules/ai-protocols/gemini.js                     |  26 +-
+ modules/api.js                                     |  14 +-
+ styles.css                                         |  37 +++
+ tests/ai-protocol-integration.test.mjs             |  57 ++++
+ tests/ai-units.test.mjs                            |  54 +++-
+ tests/assistant-reasoning.cjs                      | 307 +++++++++++++++++++++
+ tests/helpers/mock-stream-server.cjs               |  10 +-
+ 15 files changed, 803 insertions(+), 132 deletions(-)
+ create mode 100644 "docs/decision/20261102100640265_\345\212\251\346\211\213\346\200\235\350\200\203\345\205\247\345\256\271\346\212\230\347\226\212\350\210\207\351\201\216\346\277\276.md"
+ create mode 100644 tests/assistant-reasoning.cjs
+--- head ---
+0dd525b7afd48b19a2757b8f1169c2463f8acb31
+--- status ---

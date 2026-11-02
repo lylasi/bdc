@@ -1,0 +1,218 @@
+{
+  "release": "c2557f006688",
+  "sites": {
+    "lan": {
+      "files": {
+        "index.html": {
+          "url": "http://10.10.10.149:8001/index.html",
+          "status": 200,
+          "sha256": "fc0e0e4246f53b36f0dba1826ece89830abbf56bdfc40045de0cc5bf03cd5816",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "styles.css": {
+          "url": "http://10.10.10.149:8001/styles.css?v=c2557f006688",
+          "status": 200,
+          "sha256": "db26abba7b7f36d33b073f1cba63b89b4aa881a018ce6a7edd6dbacab010e0ee",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "main.js": {
+          "url": "http://10.10.10.149:8001/main.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "d3bf771c404c54709f139cf3b4add59b11d1110ea9270513cbdcc7eb5b436a52",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "modules/api.js": {
+          "url": "http://10.10.10.149:8001/modules/api.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "634cfb144a5a92f028b48a00f4013e43304ae83e8716a272e0d1b80343dd403d",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "modules/ai-protocols/anthropic.js": {
+          "url": "http://10.10.10.149:8001/modules/ai-protocols/anthropic.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "6393eed4b24430b7d199aaa804941667194ccf00709353ca939508d35a9828b7",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "modules/ai-protocols/chat-completions.js": {
+          "url": "http://10.10.10.149:8001/modules/ai-protocols/chat-completions.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "4e82e7c58b27a06db8502a80363a666cdc6dabc01c232554934976ac3681065c",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "modules/ai-protocols/gemini.js": {
+          "url": "http://10.10.10.149:8001/modules/ai-protocols/gemini.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "6dd794cf37f530c9a6a5a151ebbf3a3c4ce97c0ff2cac23fc6bde62ec9e6832e",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "features/assistant/assistant.js": {
+          "url": "http://10.10.10.149:8001/features/assistant/assistant.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "531dd278b5046c02c632c5dc170fd699d19a1ace7a40c668f810c5daad9e1a5b",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "features/assistant/word-chat.js": {
+          "url": "http://10.10.10.149:8001/features/assistant/word-chat.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "locales/zh-CN.js": {
+          "url": "http://10.10.10.149:8001/locales/zh-CN.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "8648e07187834dd1ec7b2918b4d0b80b0bb4a76d1ea3a95d8147920b715414a4",
+          "cf-cache-status": "",
+          "cache-control": ""
+        },
+        "locales/zh-HK.js": {
+          "url": "http://10.10.10.149:8001/locales/zh-HK.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "054f8d5f4816516ec15675e9e31afe4a6a1f6308c644021b14e93aa4c726cb80",
+          "cf-cache-status": "",
+          "cache-control": ""
+        }
+      },
+      "home": {
+        "status": 200,
+        "sha256": "fc0e0e4246f53b36f0dba1826ece89830abbf56bdfc40045de0cc5bf03cd5816",
+        "release_occurrences": 93,
+        "cf-cache-status": ""
+      },
+      "excluded": {
+        "tests/": 404,
+        "docs/": 404,
+        "scripts/": 404,
+        ".git/config": 404,
+        "selfhost/": 404,
+        "cloudflare-worker/": 404,
+        "article-import-service/": 404,
+        "Dockerfile": 404,
+        "docker-compose.yml": 404
+      }
+    },
+    "public": {
+      "files": {
+        "index.html": {
+          "url": "https://bdc.a4a4.qzz.io/index.html",
+          "status": 200,
+          "sha256": "fc0e0e4246f53b36f0dba1826ece89830abbf56bdfc40045de0cc5bf03cd5816",
+          "cf-cache-status": "DYNAMIC",
+          "cache-control": ""
+        },
+        "styles.css": {
+          "url": "https://bdc.a4a4.qzz.io/styles.css?v=c2557f006688",
+          "status": 200,
+          "sha256": "db26abba7b7f36d33b073f1cba63b89b4aa881a018ce6a7edd6dbacab010e0ee",
+          "cf-cache-status": "HIT",
+          "cache-control": ""
+        },
+        "main.js": {
+          "url": "https://bdc.a4a4.qzz.io/main.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "d3bf771c404c54709f139cf3b4add59b11d1110ea9270513cbdcc7eb5b436a52",
+          "cf-cache-status": "HIT",
+          "cache-control": ""
+        },
+        "modules/api.js": {
+          "url": "https://bdc.a4a4.qzz.io/modules/api.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "634cfb144a5a92f028b48a00f4013e43304ae83e8716a272e0d1b80343dd403d",
+          "cf-cache-status": "MISS",
+          "cache-control": ""
+        },
+        "modules/ai-protocols/anthropic.js": {
+          "url": "https://bdc.a4a4.qzz.io/modules/ai-protocols/anthropic.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "6393eed4b24430b7d199aaa804941667194ccf00709353ca939508d35a9828b7",
+          "cf-cache-status": "MISS",
+          "cache-control": ""
+        },
+        "modules/ai-protocols/chat-completions.js": {
+          "url": "https://bdc.a4a4.qzz.io/modules/ai-protocols/chat-completions.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "4e82e7c58b27a06db8502a80363a666cdc6dabc01c232554934976ac3681065c",
+          "cf-cache-status": "HIT",
+          "cache-control": ""
+        },
+        "modules/ai-protocols/gemini.js": {
+          "url": "https://bdc.a4a4.qzz.io/modules/ai-protocols/gemini.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "6dd794cf37f530c9a6a5a151ebbf3a3c4ce97c0ff2cac23fc6bde62ec9e6832e",
+          "cf-cache-status": "MISS",
+          "cache-control": ""
+        },
+        "features/assistant/assistant.js": {
+          "url": "https://bdc.a4a4.qzz.io/features/assistant/assistant.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "531dd278b5046c02c632c5dc170fd699d19a1ace7a40c668f810c5daad9e1a5b",
+          "cf-cache-status": "HIT",
+          "cache-control": ""
+        },
+        "features/assistant/word-chat.js": {
+          "url": "https://bdc.a4a4.qzz.io/features/assistant/word-chat.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+          "cf-cache-status": "MISS",
+          "cache-control": ""
+        },
+        "locales/zh-CN.js": {
+          "url": "https://bdc.a4a4.qzz.io/locales/zh-CN.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "8648e07187834dd1ec7b2918b4d0b80b0bb4a76d1ea3a95d8147920b715414a4",
+          "cf-cache-status": "MISS",
+          "cache-control": ""
+        },
+        "locales/zh-HK.js": {
+          "url": "https://bdc.a4a4.qzz.io/locales/zh-HK.js?v=c2557f006688",
+          "status": 200,
+          "sha256": "054f8d5f4816516ec15675e9e31afe4a6a1f6308c644021b14e93aa4c726cb80",
+          "cf-cache-status": "HIT",
+          "cache-control": ""
+        }
+      },
+      "home": {
+        "status": 200,
+        "sha256": "fc0e0e4246f53b36f0dba1826ece89830abbf56bdfc40045de0cc5bf03cd5816",
+        "release_occurrences": 93,
+        "cf-cache-status": "DYNAMIC"
+      },
+      "excluded": {
+        "tests/": 404,
+        "docs/": 404,
+        "scripts/": 404,
+        ".git/config": 404,
+        "selfhost/": 404,
+        "cloudflare-worker/": 404,
+        "article-import-service/": 404,
+        "Dockerfile": 404,
+        "docker-compose.yml": 404
+      }
+    }
+  },
+  "source": {
+    "index.html": "fc0e0e4246f53b36f0dba1826ece89830abbf56bdfc40045de0cc5bf03cd5816",
+    "styles.css": "db26abba7b7f36d33b073f1cba63b89b4aa881a018ce6a7edd6dbacab010e0ee",
+    "main.js": "d3bf771c404c54709f139cf3b4add59b11d1110ea9270513cbdcc7eb5b436a52",
+    "modules/api.js": "634cfb144a5a92f028b48a00f4013e43304ae83e8716a272e0d1b80343dd403d",
+    "modules/ai-protocols/anthropic.js": "6393eed4b24430b7d199aaa804941667194ccf00709353ca939508d35a9828b7",
+    "modules/ai-protocols/chat-completions.js": "4e82e7c58b27a06db8502a80363a666cdc6dabc01c232554934976ac3681065c",
+    "modules/ai-protocols/gemini.js": "6dd794cf37f530c9a6a5a151ebbf3a3c4ce97c0ff2cac23fc6bde62ec9e6832e",
+    "features/assistant/assistant.js": "531dd278b5046c02c632c5dc170fd699d19a1ace7a40c668f810c5daad9e1a5b",
+    "features/assistant/word-chat.js": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+    "locales/zh-CN.js": "8648e07187834dd1ec7b2918b4d0b80b0bb4a76d1ea3a95d8147920b715414a4",
+    "locales/zh-HK.js": "054f8d5f4816516ec15675e9e31afe4a6a1f6308c644021b14e93aa4c726cb80"
+  },
+  "mismatch": {
+    "lan": [],
+    "public": []
+  }
+}

@@ -1,0 +1,21 @@
+--- compose ps ---
+NAME      IMAGE       COMMAND                  SERVICE   CREATED      STATUS                   PORTS
+bdc       bdc:local   "/usr/local/bin/entr…"   bdc       9 days ago   Up 6 minutes (healthy)   0.0.0.0:8001->80/tcp, [::]:8001->80/tcp
+--- nginx -t ---
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+--- state ---
+running healthy 2026-11-02T02:11:36.460065542Z
+--- git ---
+0dd525b7afd48b19a2757b8f1169c2463f8acb31
+--- runtime-hashes ---
+index.html|fc0e0e4246f53b36f0dba1826ece89830abbf56bdfc40045de0cc5bf03cd5816|fc0e0e4246f53b36f0dba1826ece89830abbf56bdfc40045de0cc5bf03cd5816|MATCH
+styles.css|db26abba7b7f36d33b073f1cba63b89b4aa881a018ce6a7edd6dbacab010e0ee|db26abba7b7f36d33b073f1cba63b89b4aa881a018ce6a7edd6dbacab010e0ee|MATCH
+modules/api.js|634cfb144a5a92f028b48a00f4013e43304ae83e8716a272e0d1b80343dd403d|634cfb144a5a92f028b48a00f4013e43304ae83e8716a272e0d1b80343dd403d|MATCH
+modules/ai-protocols/anthropic.js|6393eed4b24430b7d199aaa804941667194ccf00709353ca939508d35a9828b7|6393eed4b24430b7d199aaa804941667194ccf00709353ca939508d35a9828b7|MATCH
+modules/ai-protocols/chat-completions.js|4e82e7c58b27a06db8502a80363a666cdc6dabc01c232554934976ac3681065c|4e82e7c58b27a06db8502a80363a666cdc6dabc01c232554934976ac3681065c|MATCH
+modules/ai-protocols/gemini.js|6dd794cf37f530c9a6a5a151ebbf3a3c4ce97c0ff2cac23fc6bde62ec9e6832e|6dd794cf37f530c9a6a5a151ebbf3a3c4ce97c0ff2cac23fc6bde62ec9e6832e|MATCH
+features/assistant/assistant.js|531dd278b5046c02c632c5dc170fd699d19a1ace7a40c668f810c5daad9e1a5b|531dd278b5046c02c632c5dc170fd699d19a1ace7a40c668f810c5daad9e1a5b|MATCH
+features/assistant/word-chat.js|7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06|7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06|MATCH
+locales/zh-CN.js|8648e07187834dd1ec7b2918b4d0b80b0bb4a76d1ea3a95d8147920b715414a4|8648e07187834dd1ec7b2918b4d0b80b0bb4a76d1ea3a95d8147920b715414a4|MATCH
+locales/zh-HK.js|054f8d5f4816516ec15675e9e31afe4a6a1f6308c644021b14e93aa4c726cb80|054f8d5f4816516ec15675e9e31afe4a6a1f6308c644021b14e93aa4c726cb80|MATCH
