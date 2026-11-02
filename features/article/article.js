@@ -7500,6 +7500,7 @@ function initArticleSelectionToWordbook() {
         bar.className = 'article-selection-bar';
         bar.setAttribute('role', 'toolbar');
         bar.innerHTML = `
+          <button type="button" class="btn-ghost btn-mini" data-act="lookup">${t('article.lookupPhrase')}</button>
           <button type="button" class="btn-ghost btn-mini" data-act="add">${t('article.addToWordbook')}</button>
           <button type="button" class="btn-ghost btn-mini" data-act="mark">${t('article.markThis')}</button>
           <button type="button" class="btn-ghost btn-mini" data-act="note">${t('article.writeNote')}</button>
@@ -7522,7 +7523,7 @@ function initArticleSelectionToWordbook() {
                 ui.displayMessage(t('article.saveFailedRetry'), 'error');
                 return;
             }
-            if (act === 'phrase') {
+            if (act === 'phrase' || act === 'lookup') {
                 hideBar();
                 openPhrasePicker({
                     articleId: captured.articleId || articleContext.recordId || '',
@@ -7530,7 +7531,9 @@ function initArticleSelectionToWordbook() {
                     context: captured.context,
                     initialQuote: captured.text,
                     sentenceStart: captured.sentenceStart,
-                    startOffset: captured.startOffset
+                    startOffset: captured.startOffset,
+                    // 查詞：先看 AI 釋義，再決定要不要加入詞書。
+                    autoLookup: act === 'lookup'
                 });
                 return;
             }
@@ -7637,9 +7640,15 @@ function initArticleSelectionToWordbook() {
         const addButton = bar.querySelector('[data-act="add"]');
         const noteButton = bar.querySelector('[data-act="note"]');
         const phraseButton = bar.querySelector('[data-act="phrase"]');
+        const lookupButton = bar.querySelector('[data-act="lookup"]');
         if (addButton) addButton.textContent = t('article.addToWordbook');
         if (noteButton) noteButton.textContent = t('article.writeNote');
         if (phraseButton) phraseButton.textContent = t('article.pickPhrase');
+        if (lookupButton) {
+            lookupButton.textContent = t('article.lookupPhrase');
+            // 單詞點一下就有查詞彈窗；工具條只為多詞短語提供「先查詞再加詞書」。
+            lookupButton.classList.toggle('hidden', selectionKind(captured) !== 'phrase');
+        }
         if (!markButton) return;
         const item = readingActions.findSavedItem(captured.articleId, selectionKind(captured), captured.text, captured.sentence, {
             anchor: captured.anchor,

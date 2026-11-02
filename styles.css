@@ -6997,8 +6997,28 @@ body.reading-panel-modal { overflow: hidden; }
     overflow-wrap: anywhere;
 }
 .phrase-picker-sentence-preview { display: block; margin-top: 4px; color: var(--ink-500); font-size: var(--fs-xs); }
+.phrase-picker-analysis {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    background: var(--surface-2);
+    color: var(--ink-700);
+    font-size: var(--fs-sm);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.phrase-picker-analysis.hidden { display: none; }
+.phrase-picker-analysis-phonetic { margin-left: 6px; color: var(--ink-500); font-size: var(--fs-xs); font-weight: 400; }
+.phrase-picker-analysis-meaning { margin: 0; color: var(--ink-900); font-weight: 600; }
+.phrase-picker-analysis-usage { margin: 0; color: var(--ink-600); }
+.phrase-picker-analysis-examples { margin: 0; padding-left: 18px; color: var(--ink-600); font-size: var(--fs-xs); }
+.phrase-picker-analysis-loading { margin: 0; color: var(--ink-500); }
+.phrase-picker-analysis-error { margin: 0; color: var(--danger); }
 .phrase-picker-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.phrase-picker-actions .btn { min-height: 46px; }
+.phrase-picker-actions > button { min-height: 46px; }
 .phrase-picker-note-wrap { display: flex; flex-direction: column; gap: 4px; }
 .phrase-picker-note-wrap.hidden { display: none; }
 .phrase-picker-note-wrap textarea { width: 100%; min-height: 72px; padding: 8px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); font: inherit; font-size: var(--fs-sm); }
@@ -7078,6 +7098,7 @@ body.reading-panel-modal { overflow: hidden; }
     .reading-panel-foot { padding-bottom: calc(var(--sp-4) + var(--safe-bottom)); }
     .reading-item-actions .btn, .reading-panel-actions .btn { flex: 1 1 auto; }
     .phrase-picker-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #phrase-picker-lookup { grid-column: 1 / -1; }
     #phrase-picker-add { grid-column: 1 / -1; }
 }
 

@@ -212,6 +212,8 @@ node tests/audit-i18n.mjs
 PORT=8313 PLAYWRIGHT_MODULE=<path-to-playwright> node tests/audit-flows.cjs
 # 全域設定即時儲存（需先開 scripts/serve.py）
 PORT=8313 PLAYWRIGHT_MODULE=<path-to-playwright> node tests/settings-autosave.cjs
+# 文章短語查詞／先查詞再加入詞書（需先開 scripts/serve.py）
+PORT=8313 PLAYWRIGHT_MODULE=<path-to-playwright> node tests/reading-phrase-lookup.cjs
 # AI 供應商設定／模型選擇器（自帶路由與 mock，不需要另開伺服器）
 PLAYWRIGHT_MODULE=<path-to-playwright> node tests/ai-review-regressions.mjs
 # mock Worker／供應商：python3 -m http.server 8414 --directory . 後開 tests/ai-provider-e2e.html
