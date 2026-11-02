@@ -1,0 +1,2 @@
+PASS http://10.10.10.149:8001: 93 module/style hashes match, d8a538dbae5f, zh-CN / zh-HK
+PASS https://bdc.a4a4.qzz.io: 93 module/style hashes match, d8a538dbae5f, zh-CN / zh-HK

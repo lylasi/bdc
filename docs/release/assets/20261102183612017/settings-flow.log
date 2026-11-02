@@ -1,0 +1,13 @@
+
+### 設定與同步
+  ok   齒輪選單：[{"cls":"gear-menu","items":[]}]
+  ok   切 zh-HK：{"locale":"zh-HK","lang":"zh-HK","navText":"生字簿"}
+  ok   切到 zh-HK 後未發現殘留簡體
+  ok   切回 zh-CN：zh-CN
+  ok   主題狀態：{"attr":"teal","cls":"","stored":null}
+  ok   同步 UI：{"status":null,"statusVisible":null,"loginHidden":false}
+  ok   未登入按同步提示：[]
+  ok   登入按鈕目前不可見（可能已登入）
+
+=== 共 0 項發現 ===
+嚴重度分布: {} -> /private/tmp/bdc-reading-sync-release-1vkoz74a/docs/report/root-audit/flows.json

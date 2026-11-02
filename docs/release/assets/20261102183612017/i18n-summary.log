@@ -1,0 +1,11 @@
+=== locale 鍵數 === { 'zh-CN': 2164, 'zh-HK': 2164 }
+
+=== 僅存在於 zh-CN 的鍵 (0) ===
+
+=== 僅存在於 zh-HK 的鍵 (0) ===
+
+=== 插值參數不一致 (0) ===
+
+=== 引用但缺少的鍵 (1) ===
+  - phonetics.  <- features/phonetics/page.js:19, features/phonetics/page.js:23, features/phonetics/page.js:76
+
