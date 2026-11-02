@@ -12,7 +12,7 @@ import { apiRequest, getAuthSnapshot } from './sync-cloudflare.js';
 import * as store from './article-store.js';
 import {
     ARTICLE_LIMITS,
-    isValidArticleId,
+    isValidArticleReference,
     normalizeAnalysis,
     normalizeSourceType,
     normalizeSourceUrl,
@@ -69,7 +69,7 @@ function request(path, options = {}, timeoutMs = 30000) {
 
 /** 私人書籤按需讀取單篇，不推進同步游標，也不以遠端覆蓋本機待同步修改。 */
 export async function loadArticleForNavigation(id, ctx = store.captureArticleContext(), { signal } = {}) {
-    if (!isValidArticleId(id)) return { ok: false, reason: 'invalid' };
+    if (!isValidArticleReference(id)) return { ok: false, reason: 'invalid' };
     const local = await store.ensureArticleLoadedDetailed(id, ctx);
     if (!store.isArticleContextActive(ctx)) return { ok: false, reason: 'stale' };
     if (!local.ok) return { ok: false, reason: 'storage' };
@@ -96,12 +96,12 @@ export async function loadArticleForNavigation(id, ctx = store.captureArticleCon
         const body = await readJson(res);
         if (!current() || signal?.aborted) return { ok: false, reason: 'stale' };
         const doc = body?.article;
-        if (!doc || doc.id !== id) return { ok: false, reason: 'network' };
+        if (!doc || (doc.id !== id && doc.storageId !== id)) return { ok: false, reason: 'network' };
         if (body.deleted || doc.deletedAt) return { ok: false, reason: 'missing' };
         const applied = await store.applyRemoteDoc(doc, ctx);
         if (!current() || signal?.aborted) return { ok: false, reason: 'stale' };
         if (!applied.ok) return { ok: false, reason: 'storage' };
-        const loaded = await store.ensureArticleLoadedDetailed(id, ctx);
+        const loaded = await store.ensureArticleLoadedDetailed(doc.id, ctx);
         if (!current() || signal?.aborted) return { ok: false, reason: 'stale' };
         return loaded.ok && loaded.doc
             ? { ok: true, record: loaded.doc }
@@ -167,11 +167,13 @@ async function pullFull(ctx) {
     const serverItems = new Map();
     let offset = 0;
     let cursor = store.getCursor();
+    let identityVersion = 0;
     for (let page = 0; page < MAX_PULL_PAGES; page += 1) {
         const res = await request(`/articles?full=1&includeDeleted=1&limit=500&offset=${offset}`, { method: 'GET' }, 30000);
         if (res.status === 401) throw authError(401, { code: 'unauthorized' });
         if (!res.ok) throw authError(res.status, await readJson(res));
         const body = await readJson(res);
+        identityVersion = Number(body?.identityVersion) || 0;
         const list = Array.isArray(body?.articles) ? body.articles : [];
         for (const item of list) {
             if (item && item.id) {
@@ -185,7 +187,10 @@ async function pullFull(ctx) {
         assertArticleScope(ctx);
     }
     assertArticleScope(ctx);
-    const reconciled = await store.reconcileFullList(serverIds, ctx);
+    const identities = Array.from(serverItems.values()).filter(item => item.storageId && item.storageId !== item.id);
+    // 新身份的全文還未取回前，舊內部 ID 的 clean 副本仍是本機可讀的正文；
+    // 網路中斷時必須保留它，不能先移除再期望後面的下載一定成功。
+    const reconciled = await store.reconcileFullList([...serverIds, ...identities.map(item => item.storageId)], ctx);
     assertArticleScope(ctx);
     if (!reconciled || reconciled.ok !== true) {
         // 後備桶讀不到／損壞時 reconcileFullList 會明確失敗：完整清單沒有真的
@@ -208,7 +213,8 @@ async function pullFull(ctx) {
         }
         if (!record) { needDocs.push(id); continue; }
         if (record.dirty || record.pending) continue;
-        if (Number(item.revision) > Number(record.revision)) needDocs.push(id);
+        if (Number(item.revision) > Number(record.revision)
+            || (item.storageId && item.storageId !== record.storageId)) needDocs.push(id);
     }
     if (tombstones.length) {
         const result = await store.applyRemoteTombstones(tombstones, ctx);
@@ -221,7 +227,23 @@ async function pullFull(ctx) {
     // 未下載的（含本機尚未有 tombstone 的）一次抓回
     const applied = await downloadAndApply(needDocs, ctx);
     assertArticleScope(ctx);
+    if (identities.length) {
+        const unverified = identities.filter(item => !item.deletedAt && !store.getRecord(item.id)).map(item => item.storageId);
+        const cleanup = await store.reconcileFullList([...serverIds, ...unverified], ctx);
+        assertArticleScope(ctx);
+        if (!cleanup.ok) throw authError(500, { code: cleanup.error || 'article_reconcile_failed' });
+        removed.push(...cleanup.removed);
+    }
     await store.setCursor(cursor, ctx);
+    // 升級前下載過的內部 ID 可能仍有本機修改，先保留到推送完成；下一輪再
+    // 完整核對，不能把尚未上傳的副本清走或提前標記身份修復已完成。
+    const pendingIdentity = Array.from(serverItems.values()).some(item => item.storageId
+        && store.getRecord(item.storageId)?.articleId === item.storageId);
+    if (identityVersion && !pendingIdentity) {
+        const persisted = await store.setIdentityVersion(identityVersion, ctx);
+        assertArticleScope(ctx);
+        if (!persisted.ok) throw authError(500, { code: persisted.error || 'state_persist_failed' });
+    }
     return { reset: true, removed: removed.length + tombstones.length, applied };
 }
 
@@ -237,7 +259,7 @@ async function pullDelta(ctx) {
         if (!res.ok) throw authError(res.status, await readJson(res));
         const body = await readJson(res);
         assertArticleScope(ctx);
-        if (body?.resetRequired) {
+        if (body?.resetRequired || Number(body?.identityVersion) > store.getMeta().identityVersion) {
             const result = await pullFull(ctx);
             return { ...result, pulled: result.applied, removed: result.removed };
         }

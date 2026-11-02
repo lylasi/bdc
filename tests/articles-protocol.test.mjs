@@ -223,6 +223,23 @@ async function runScenario(api) {
     ];
     hit('import', await api.call('/articles/import', { method: 'POST', body: { articles: legacy } }));
     hit('importRetry', await api.call('/articles/import', { method: 'POST', body: { articles: legacy } }));
+    // 舊 URL ID 含百分號，匯入時會有不同的內部 ID；所有對外路徑仍須保留
+    // 舊身份，否則核對找不到文章，閱讀條目／生詞／會話也會失去原來的關聯。
+    const legacyId = legacy[0].legacyId;
+    const storageId = results.import.body.ids[0];
+    const legacyPath = `/articles/${encodeURIComponent(legacyId)}`;
+    hit('legacyBatch', await api.call('/articles/batch', { method: 'POST', body: { ids: [legacyId, storageId] } }));
+    hit('legacyRead', await api.call(legacyPath));
+    hit('legacyStorageRead', await api.call(`/articles/${storageId}`));
+    hit('legacyForeignRead', await api.call(legacyPath, { token: BOB }));
+    hit('legacyForeignBatch', await api.call('/articles/batch', { method: 'POST', token: BOB, body: { ids: [legacyId, storageId] } }));
+    hit('legacyUpdate', await api.call(legacyPath, { method: 'PUT', body: { title: 'Old A updated', expectedRevision: 1, clientMutationId: 'legacy-u1' } }));
+    hit('legacyUpdateRetry', await api.call(legacyPath, { method: 'PUT', body: { title: 'Old A updated', expectedRevision: 1, clientMutationId: 'legacy-u1' } }));
+    hit('legacyForeignUpdate', await api.call(legacyPath, { method: 'PUT', token: BOB, body: { title: 'hijack', expectedRevision: 2 } }));
+    hit('legacyDelta', await api.call('/articles?cursor=0'));
+    hit('legacyDelete', await api.call(legacyPath, { method: 'DELETE', body: { expectedRevision: 2, clientMutationId: 'legacy-d1' } }));
+    hit('legacyDeletedBatch', await api.call('/articles/batch', { method: 'POST', body: { ids: [legacyId] } }));
+    hit('legacyRestore', await api.call(legacyPath + '/restore', { method: 'POST', body: { expectedRevision: 3, clientMutationId: 'legacy-r1' } }));
     hit('importInvalid', await api.call('/articles/import', { method: 'POST', body: { articles: [{ id: 'x', title: '', body: '' }] } }));
     hit('importFinal', await api.call('/articles/import', { method: 'POST', body: { articles: [] } }));
     hit('importFinalGated', await api.call('/articles/import', { method: 'POST', body: { articles: [], final: true } }));
@@ -335,6 +352,22 @@ function assertScenario(r) {
     assert.equal(r.import.body.skipped, 0);
     assert.equal(r.importRetry.body.imported, 0);
     assert.equal(r.importRetry.body.skipped, 2, '重試不得重複新增');
+    const legacyId = 'url:https%3A%2F%2Fexample.com%2Fold';
+    assert.equal(r.legacyBatch.body.articles.length, 1, '內部 ID 與舊 ID 指向同一篇，不得重複');
+    assert.equal(r.legacyBatch.body.articles[0].id, legacyId);
+    assert.equal(r.legacyBatch.body.articles[0].storageId, r.import.body.ids[0]);
+    assert.equal(r.legacyRead.status, 200);
+    assert.equal(r.legacyStorageRead.body.article.id, legacyId);
+    assert.equal(r.legacyForeignRead.status, 404);
+    assert.deepEqual(r.legacyForeignBatch.body.articles, []);
+    assert.equal(r.legacyForeignUpdate.status, 404);
+    assert.equal(r.legacyUpdate.body.article.revision, 2);
+    assert.equal(r.legacyUpdateRetry.body.idempotent, true);
+    assert.ok(r.legacyDelta.body.changes.some((item) => item.id === legacyId && item.storageId === r.import.body.ids[0]));
+    assert.equal(r.legacyDelete.body.article.revision, 3);
+    assert.deepEqual(r.legacyDeletedBatch.body.articles, []);
+    assert.equal(r.legacyRestore.body.article.revision, 4);
+    assert.ok(r.fullAfterImport.body.articles.some((item) => item.id === legacyId));
     assert.equal(r.importInvalid.body.invalid, 1);
     assert.equal(r.importFinalGated.body.legacyWriteBlocked, true);
     // 舊閘門

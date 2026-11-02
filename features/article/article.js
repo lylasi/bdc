@@ -4308,6 +4308,10 @@ async function openReadingRecord(recordId, { updateUrl = true, draftOverride = n
     }
     const draft = draftOverride || await draftForArticle(recordId, ctx);
     if (!active()) return false;
+    if (loaded.record?.articleId && loaded.record.articleId !== recordId) {
+        recordId = loaded.record.articleId;
+        writeArticleRoute(recordId, { replace: true });
+    }
     const record = articleStore.getRecord(recordId);
     if (!record || record.deletedAt) {
         setRouteStatus('missing');

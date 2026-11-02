@@ -211,7 +211,7 @@ function buildEntrySource(options, text) {
 function appendSource(entry, source) {
     const sources = Array.isArray(entry.sources) ? [...entry.sources] : [];
     const exists = sources.some((item) => item
-        && item.articleId === source.articleId
+        && articleStore.sameArticleReference(item.articleId, source.articleId)
         && item.sentence === source.sentence
         && item.anchor?.start === source.anchor?.start
         && item.anchor?.quote === source.anchor?.quote);

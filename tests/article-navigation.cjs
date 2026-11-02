@@ -273,6 +273,25 @@ async function signIn(page, token) {
         assert.deepEqual(f.errors, []);
         await f.context.close();
 
+        for (const locale of ['zh-CN', 'zh-HK']) {
+            const legacy = await fixture(browser, locale);
+            const legacyId = 'url:' + encodeURIComponent('https://example.com/legacy?lang=en');
+            const doc = { ...remote(legacyId, 'Legacy private body.'), storageId: 'legacy-storage-id' };
+            legacy.docs.set(`user-a:${legacyId}`, doc);
+            legacy.docs.set('user-a:legacy-storage-id', doc);
+            await signIn(legacy.page, 'token-a');
+            await hash(legacy.page, '#a/' + encodeURIComponent(legacyId));
+            await expectArticle(legacy.page, legacyId, doc.body);
+            await hash(legacy.page, '#a/legacy-storage-id');
+            await expectArticle(legacy.page, legacyId, doc.body);
+            assert.equal(new URL(legacy.page.url()).hash, '#a/' + encodeURIComponent(legacyId));
+            await legacy.load(null, true);
+            await expectArticle(legacy.page, legacyId, doc.body);
+            assert.deepEqual(legacy.errors, []);
+            await legacy.context.close();
+            pass(`${locale} legacy URL and internal ID bookmarks reopen the same article after refresh`);
+        }
+
         const r = await fixture(browser, 'zh-HK');
         const rp = r.page;
         r.docs.set('user-a:remote-only', remote('remote-only', 'Remote private body.', 'Remote title'));

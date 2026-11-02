@@ -60,6 +60,7 @@ export function summarizeArticleDoc(doc) {
         key: doc.key,
         scope: doc.scope,
         articleId: doc.id,
+        storageId: doc.storageId || '',
         title: doc.title || '',
         excerpt: body.replace(/\s+/g, ' ').trim().slice(0, 240),
         sourceType: doc.sourceType || 'paste',

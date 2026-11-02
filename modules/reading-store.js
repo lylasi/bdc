@@ -272,6 +272,14 @@ async function loadAll(storeName, listName, recordScope = scope()) {
 const loadedArticleIds = new Set();
 const articleLoadPromises = new Map();
 
+const sameArticle = (left, right) => articleStore.sameArticleReference(left, right);
+
+async function readArticleReferences(storeName, ids, ctx) {
+    const results = await Promise.all(ids.map(id => readStoreByIndex(storeName, 'scope_article', [ctx.scope, id])));
+    const failed = results.find(result => !result.ok);
+    return failed || { ok: true, records: results.flatMap(result => result.records) };
+}
+
 function clearArticleLoadState() {
     loadedArticleIds.clear();
     articleLoadPromises.clear();
@@ -284,8 +292,10 @@ function clearArticleLoadState() {
 export async function ensureArticleReadingLoaded(articleId, ctx = captureReadingContext()) {
     if (!articleId) return { ok: true, skipped: true };
     if (!isReadingContextActive(ctx)) return staleResult();
-    if (loadedArticleIds.has(articleId)) return { ok: true };
-    const promiseKey = `${ctx.scope}\u0000${articleId}\u0000${ctx.generation}\u0000${ctx.articleScope}\u0000${ctx.articleGeneration}`;
+    const referenceIds = articleStore.articleReferenceIds(articleId);
+    const referenceKey = referenceIds.slice().sort().join('\u0000');
+    if (loadedArticleIds.has(referenceKey)) return { ok: true };
+    const promiseKey = `${ctx.scope}\u0000${referenceKey}\u0000${ctx.generation}\u0000${ctx.articleScope}\u0000${ctx.articleGeneration}`;
     if (articleLoadPromises.has(promiseKey)) {
         const result = await articleLoadPromises.get(promiseKey);
         return isReadingContextActive(ctx) ? result : staleResult();
@@ -295,8 +305,8 @@ export async function ensureArticleReadingLoaded(articleId, ctx = captureReading
         let documents = [];
         if (!fallbackMode) {
             const [itemRead, documentRead] = await Promise.all([
-                readStoreByIndex(STORE.READING_ITEMS, 'scope_article', [ctx.scope, articleId]),
-                readStoreByIndex(STORE.ARTICLE_DOCUMENTS, 'scope_article', [ctx.scope, articleId])
+                readArticleReferences(STORE.READING_ITEMS, referenceIds, ctx),
+                readArticleReferences(STORE.ARTICLE_DOCUMENTS, referenceIds, ctx)
             ]);
             if (!isReadingContextActive(ctx)) return staleResult();
             if (!itemRead.ok || !documentRead.ok) {
@@ -315,7 +325,7 @@ export async function ensureArticleReadingLoaded(articleId, ctx = captureReading
             items = read.bucket.items || [];
             documents = read.bucket.documents || [];
         }
-        const belongs = record => record && record.id && record.scope === ctx.scope && record.articleId === articleId;
+        const belongs = record => record && record.id && record.scope === ctx.scope && sameArticle(record.articleId, articleId);
         items = items.filter(belongs);
         documents = documents.filter(belongs);
         for (const record of items) itemsById.set(record.id, record);
@@ -329,7 +339,7 @@ export async function ensureArticleReadingLoaded(articleId, ctx = captureReading
         if (migrated && migrated.ok === false) {
             return { ok: false, error: migrated.error || 'marked_migration_failed', items: items.length, documents: documents.length };
         }
-        loadedArticleIds.add(articleId);
+        loadedArticleIds.add(referenceKey);
         return { ok: true, items: items.length, documents: documents.length };
     })();
     articleLoadPromises.set(promiseKey, task);
@@ -742,7 +752,7 @@ async function writeEntitiesAtomically(entries, ctx = captureReadingContext()) {
 
 export function listLearningItems(articleId) {
     const list = Array.from(itemsById.values())
-        .filter((item) => item && item.articleId === articleId)
+        .filter((item) => item && sameArticle(item.articleId, articleId))
         .sort((a, b) => {
             const av = Number(a.anchor?.start);
             const bv = Number(b.anchor?.start);
@@ -813,6 +823,7 @@ export function getOccurrenceCount(articleId, quote) {
 }
 
 function stableOccurrenceId(articleId, contentVersion, kind, anchor, sentence) {
+    articleId = articleStore.getRecord(articleId)?.articleId || articleId;
     const normalized = normalizeAnchor(anchor);
     const identity = normalized.start >= 0 && normalized.end >= 0
         ? `${articleId}\u0001${contentVersion}\u0001${kind}\u0001${normalized.start}:${normalized.end}:${normalized.quote}`
@@ -834,12 +845,15 @@ function learningEntityFrom(base, input, { markViewed = false, timestamp = nowIs
     const contentVersion = input.contentVersion !== undefined
         ? String(input.contentVersion || '')
         : (base?.contentVersion || '');
+    const requestedArticleId = explicit.articleId !== undefined ? explicit.articleId : (base?.articleId || input.articleId || '');
     const entity = {
         ...(base || {}),
         ...explicit,
         id: base?.id || input.id,
         scope: base?.scope || input.scope || '',
-        articleId: explicit.articleId !== undefined ? explicit.articleId : (base?.articleId || input.articleId || ''),
+        // 同一文章的別名只影響查詢；既有實體的 articleId 是不可變欄位，
+        // 不可因介面已改用公開舊 ID，就把已同步的筆記外鍵重新寫一遍。
+        articleId: base?.articleId && sameArticle(base.articleId, requestedArticleId) ? base.articleId : requestedArticleId,
         contentVersion,
         kind,
         anchor,
@@ -1327,7 +1341,7 @@ function mergeVocabularySources(existingSources, incomingSources) {
     for (const source of Array.isArray(incomingSources) ? incomingSources : []) {
         if (!source) continue;
         const exists = sources.some((item) => item
-            && item.articleId === source.articleId
+            && sameArticle(item.articleId, source.articleId)
             && item.sentence === source.sentence
             && item.anchor?.start === source.anchor?.start
             && item.anchor?.quote === source.anchor?.quote);
@@ -1671,7 +1685,7 @@ export function vocabularyBooksForUi() {
 
 export function listArticleDocuments(articleId = '', { withContent = false } = {}) {
     return Array.from(documentsById.values())
-        .filter((doc) => doc && !doc.deletedAt && (!articleId || doc.articleId === articleId))
+        .filter((doc) => doc && !doc.deletedAt && (!articleId || sameArticle(doc.articleId, articleId)))
         .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))
         .map((doc) => (withContent ? { ...doc } : { ...doc, content: '' }));
 }
@@ -1693,7 +1707,7 @@ export function saveArticleDocument(input) {
     const timestamp = nowIso();
     const doc = {
         id: input.id || generateReadingId('doc'),
-        articleId: input.articleId || '',
+        articleId: existing?.articleId && sameArticle(existing.articleId, input.articleId) ? existing.articleId : (input.articleId || ''),
         kind: input.kind === 'ai' ? 'ai' : 'note',
         title: String(input.title || '').slice(0, READING_LIMITS.maxTitleChars),
         content: String(input.content || ''),
@@ -1738,7 +1752,7 @@ export function restoreArticleDocument(docId, expectedDeletedAt) {
 
 export function listConversations(articleId = '') {
     return Array.from(conversationsById.values())
-        .filter((conv) => conv && !conv.deletedAt && (!articleId || conv.articleId === articleId))
+        .filter((conv) => conv && !conv.deletedAt && (!articleId || sameArticle(conv.articleId, articleId)))
         .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
 }
 
@@ -1944,17 +1958,22 @@ export function saveArticleVersion(articleId, body, version) {
 
 export async function getArticleVersion(articleId, version) {
     const ctx = captureReadingContext();
-    const key = `${ctx.scope}\u0000${articleId}\u0000${version}`;
-    if (fallbackMode) return bucketArray('versions', ctx.scope).find((item) => item.id === key) || null;
-    const result = await readStoreOne(STORE.ARTICLE_VERSIONS, key);
-    return result.ok ? result.value || null : null;
+    for (const id of articleStore.articleReferenceIds(articleId)) {
+        const key = `${ctx.scope}\u0000${id}\u0000${version}`;
+        const result = fallbackMode
+            ? { ok: true, value: bucketArray('versions', ctx.scope).find(item => item.id === key) }
+            : await readStoreOne(STORE.ARTICLE_VERSIONS, key);
+        if (!isReadingContextActive(ctx)) return null;
+        if (result.ok && result.value) return result.value;
+    }
+    return null;
 }
 
 export async function listArticleVersions(articleId) {
     const ctx = captureReadingContext();
-    if (fallbackMode) return bucketArray('versions', ctx.scope).filter((item) => item.articleId === articleId);
+    if (fallbackMode) return bucketArray('versions', ctx.scope).filter((item) => sameArticle(item.articleId, articleId));
     const result = await readStoreAll(STORE.ARTICLE_VERSIONS, ctx.scope);
-    return result.ok ? result.records.filter((item) => item.articleId === articleId) : [];
+    return result.ok ? result.records.filter((item) => sameArticle(item.articleId, articleId)) : [];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2715,7 +2734,7 @@ function readArticleBucketStrict(recordScope) {
 /** 共用持久快照投影；IDB 與後備模式必須套用相同的文章／有效關聯邊界。 */
 function articleReadingSnapshot(articleId, ctx, data) {
     const inScope = entity => entity && entity.scope === ctx.scope;
-    const belongs = entity => inScope(entity) && entity.articleId === articleId && !entity.deletedAt;
+    const belongs = entity => inScope(entity) && sameArticle(entity.articleId, articleId) && !entity.deletedAt;
     const items = (data.items || []).filter(belongs);
     const documents = (data.documents || []).filter(belongs);
     const conversations = (data.conversations || []).filter(belongs);
@@ -2746,10 +2765,10 @@ function articleReadingSnapshot(articleId, ctx, data) {
             const projected = wireReadingEntity(entry);
             // 共用詞條可能先在別篇文章建立；保留詞義，來源與語境只帶目前文章。
             if (Array.isArray(entry.sources)) {
-                projected.sources = entry.sources.filter(source => source && source.articleId === articleId);
+                projected.sources = entry.sources.filter(source => source && sameArticle(source.articleId, articleId));
             }
-            if ((entry.sourceArticleId && entry.sourceArticleId !== articleId)
-                || (Array.isArray(entry.sources) && entry.sources.some(source => source?.articleId && source.articleId !== articleId))) {
+            if ((entry.sourceArticleId && !sameArticle(entry.sourceArticleId, articleId))
+                || (Array.isArray(entry.sources) && entry.sources.some(source => source?.articleId && !sameArticle(source.articleId, articleId)))) {
                 const source = projected.sources?.[0];
                 projected.context = source?.sentence || source?.context
                     || items[firstItemByEntry.get(entry.id)]?.sentence || '';
@@ -2760,7 +2779,7 @@ function articleReadingSnapshot(articleId, ctx, data) {
     const books = (data.books || []).filter(book => inScope(book) && bookIds.has(book.id) && !book.deletedAt)
         .map(book => {
             const projected = wireReadingEntity(book);
-            if (book.articleId && book.articleId !== articleId) {
+            if (book.articleId && !sameArticle(book.articleId, articleId)) {
                 projected.articleId = '';
                 projected.sourceUrl = '';
             }
@@ -2778,12 +2797,12 @@ function articleReadingSnapshot(articleId, ctx, data) {
         const projected = { ...state };
         if (state.conflicts && typeof state.conflicts === 'object') {
             projected.conflicts = Object.fromEntries(Object.entries(state.conflicts).filter(([key]) => (
-                articleState ? key === articleId : readingEntityKeys.has(key)
+                articleState ? sameArticle(key, articleId) : readingEntityKeys.has(key)
             )));
         }
         if (state.legacyItemArticles && typeof state.legacyItemArticles === 'object') {
             projected.legacyItemArticles = Object.fromEntries(Object.entries(state.legacyItemArticles)
-                .filter(([id]) => id === articleId));
+                .filter(([id]) => sameArticle(id, articleId)));
         }
         return projected;
     };
@@ -2814,6 +2833,8 @@ function articleReadingSnapshot(articleId, ctx, data) {
 export async function exportArticleReading(articleId, ctx = captureReadingContext()) {
     if (!articleId) return { ok: false, error: 'article_required' };
     if (!isReadingContextActive(ctx)) return staleResult();
+    articleId = articleStore.getRecord(articleId)?.articleId || articleId;
+    const referenceIds = articleStore.articleReferenceIds(articleId);
     const loaded = await ensureArticleReadingLoaded(articleId, ctx);
     if (!isReadingContextActive(ctx)) return staleResult();
     if (!loaded.ok) return loaded;
@@ -2856,14 +2877,15 @@ export async function exportArticleReading(articleId, ctx = captureReadingContex
             request.onsuccess = () => resolve(request.result || null);
             request.onerror = () => reject(request.error || new Error('idb_read_failed'));
         });
+        const readReferences = store => Promise.all(referenceIds.map(id => readAllIndex(store, 'scope_article', [ctx.scope, id]))).then(lists => lists.flat());
         return (async () => {
             const [articleDoc, articleOutbox, articleState, items, documents, conversations, books, entries, links, readingOutbox, readingState] = await Promise.all([
                 readOne(stores[STORE.DOCS], `${ctx.scope}\u0000${articleId}`),
                 readAllIndex(stores[STORE.OUTBOX], 'scope', ctx.scope),
                 readOne(stores[STORE.STATE], ctx.scope),
-                readAllIndex(stores[STORE.READING_ITEMS], 'scope_article', [ctx.scope, articleId]),
-                readAllIndex(stores[STORE.ARTICLE_DOCUMENTS], 'scope_article', [ctx.scope, articleId]),
-                readAllIndex(stores[STORE.CONVERSATIONS], 'scope_article', [ctx.scope, articleId]),
+                readReferences(stores[STORE.READING_ITEMS]),
+                readReferences(stores[STORE.ARTICLE_DOCUMENTS]),
+                readReferences(stores[STORE.CONVERSATIONS]),
                 readAllIndex(stores[STORE.VOCAB_BOOKS], 'scope', ctx.scope),
                 readAllIndex(stores[STORE.VOCAB_ENTRIES], 'scope', ctx.scope),
                 readAllIndex(stores[STORE.VOCAB_LINKS], 'scope', ctx.scope),
@@ -2872,7 +2894,7 @@ export async function exportArticleReading(articleId, ctx = captureReadingContex
             ]);
             if (!isReadingContextActive(ctx)) return staleResult();
             const liveConversations = conversations.filter(conv => conv && conv.scope === ctx.scope
-                && conv.articleId === articleId && !conv.deletedAt);
+                && sameArticle(conv.articleId, articleId) && !conv.deletedAt);
             const messageLists = await Promise.all(liveConversations.map((conv) => readAllIndex(
                 stores[STORE.MESSAGES], 'scope_conversation', [ctx.scope, conv.id]
             )));

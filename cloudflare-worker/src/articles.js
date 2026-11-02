@@ -87,20 +87,22 @@ function bumpSnapshotVersionStatement(env, userId, updatedAt) {
 
 async function readRow(env, userId, articleId) {
     return env.DB
-        .prepare('SELECT * FROM articles WHERE owner_user_id = ? AND id = ?')
-        .bind(userId, articleId)
+        .prepare('SELECT * FROM articles WHERE owner_user_id = ? AND (id = ? OR legacy_article_id = ?) ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END LIMIT 1')
+        .bind(userId, articleId, articleId, articleId)
         .first();
 }
 
 /** 集合讀取（分批 IN）：避免 /batch 逐篇等待資料庫往返。 */
 async function readRowsByIds(env, userId, ids) {
     const rows = [];
-    for (let index = 0; index < ids.length; index += MAX_QUERY_IDS) {
-        const chunk = ids.slice(index, index + MAX_QUERY_IDS);
+    // 兩組 IN 各綁一次 ID，連 owner 在內不得超過 D1 的 100 個參數。
+    const referenceMax = Math.floor(MAX_QUERY_IDS / 2);
+    for (let index = 0; index < ids.length; index += referenceMax) {
+        const chunk = ids.slice(index, index + referenceMax);
         const placeholders = chunk.map(() => '?').join(', ');
         const result = await env.DB
-            .prepare(`SELECT * FROM articles WHERE owner_user_id = ? AND id IN (${placeholders})`)
-            .bind(userId, ...chunk)
+            .prepare(`SELECT * FROM articles WHERE owner_user_id = ? AND (id IN (${placeholders}) OR legacy_article_id IN (${placeholders}))`)
+            .bind(userId, ...chunk, ...chunk)
             .all();
         const list = result?.results;
         if (Array.isArray(list)) rows.push(...list);
@@ -266,10 +268,17 @@ export async function handleArticlesRoute({ request, env, url, user, rest }) {
         // 一次集合查詢取代逐篇 readRow；維持回應順序與原本行為一致。
         const rows = await readRowsByIds(env, userId, unique);
         const byId = new Map(rows.map((row) => [row.id, row]));
+        for (const row of rows) {
+            if (row.legacy_article_id && !byId.has(row.legacy_article_id)) byId.set(row.legacy_article_id, row);
+        }
         const found = [];
+        const seen = new Set();
         for (const id of unique) {
             const row = byId.get(id);
-            if (row && !row.deleted_at) found.push(toArticleDocument(row));
+            if (row && !row.deleted_at && !seen.has(row.id)) {
+                found.push(toArticleDocument(row));
+                seen.add(row.id);
+            }
         }
         return json({ articles: found }, 200, env, request);
     }
@@ -330,6 +339,7 @@ async function handleList({ request, env, url, user }) {
         const hasMore = list.length > limit;
         return json({
             full: true,
+            identityVersion: 1,
             cursor: state.nextSeq - 1,
             articles: list.slice(0, limit).map(toArticleMeta),
             hasMore,
@@ -345,10 +355,10 @@ async function handleList({ request, env, url, user }) {
         return json({ resetRequired: true, reason: 'cursor_expired', cursor: state.nextSeq - 1, changes: [], hasMore: false }, 200, env, request);
     }
     if (cursor >= state.nextSeq) {
-        return json({ resetRequired: false, cursor: state.nextSeq - 1, changes: [], hasMore: false }, 200, env, request);
+        return json({ resetRequired: false, identityVersion: 1, cursor: state.nextSeq - 1, changes: [], hasMore: false }, 200, env, request);
     }
     const rows = await env.DB
-        .prepare('SELECT c.seq, c.article_id, c.op, c.revision, a.title, a.source_type, a.source_url, a.created_at, a.updated_at, a.deleted_at, a.size_bytes, a.revision AS current_revision '
+        .prepare('SELECT c.seq, c.article_id, c.op, c.revision, a.legacy_article_id, a.title, a.source_type, a.source_url, a.created_at, a.updated_at, a.deleted_at, a.size_bytes, a.revision AS current_revision '
             + 'FROM article_changes c JOIN articles a ON a.owner_user_id = c.owner_user_id AND a.id = c.article_id '
             + 'WHERE c.owner_user_id = ? AND c.seq > ? ORDER BY c.seq ASC LIMIT ?')
         .bind(userId, cursor, limit + 1)
@@ -359,6 +369,7 @@ async function handleList({ request, env, url, user }) {
     const changes = slice.map((row) => ({
         ...toArticleMeta({
             id: row.article_id,
+            legacy_article_id: row.legacy_article_id,
             revision: row.current_revision,
             title: row.title,
             source_type: row.source_type,
@@ -376,6 +387,7 @@ async function handleList({ request, env, url, user }) {
     const nextCursor = slice.length ? Number(slice[slice.length - 1].seq) : cursor;
     return json({
         resetRequired: false,
+        identityVersion: 1,
         cursor: nextCursor,
         serverCursor: state.nextSeq - 1,
         hasMore,
@@ -467,6 +479,7 @@ async function handleUpdate({ request, env, user, articleId }) {
     const body = await readJsonBody(request, ARTICLE_LIMITS.requestMaxBytes);
     const existing = await readRow(env, userId, articleId);
     if (!existing) return errorJson(ARTICLE_ERRORS.notFound, 404, env, request);
+    articleId = existing.id;
 
     const mutationId = normalizeMutationId(body?.clientMutationId);
     if (mutationId && existing.last_mutation_id === mutationId) {
@@ -562,6 +575,7 @@ async function handleDelete({ request, env, user, articleId }) {
     }
     const existing = await readRow(env, userId, articleId);
     if (!existing) return errorJson(ARTICLE_ERRORS.notFound, 404, env, request);
+    articleId = existing.id;
     const mutationId = normalizeMutationId(body?.clientMutationId);
     if (mutationId && existing.last_mutation_id === mutationId) {
         return respondDoc(env, request, existing, 200, { deleted: true, idempotent: true });
@@ -602,6 +616,7 @@ async function handleRestore({ request, env, user, articleId }) {
     const body = await readJsonBody(request, 8 * 1024);
     const existing = await readRow(env, userId, articleId);
     if (!existing) return errorJson(ARTICLE_ERRORS.notFound, 404, env, request);
+    articleId = existing.id;
     const mutationId = normalizeMutationId(body?.clientMutationId);
     if (mutationId && existing.last_mutation_id === mutationId) {
         return respondDoc(env, request, existing, 200, { restored: true, idempotent: true });

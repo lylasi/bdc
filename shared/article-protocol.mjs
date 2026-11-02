@@ -75,12 +75,19 @@ export function charCount(text) {
 
 /**
  * 文章 ID：與標題、網址、內容都無關的穩定識別碼。
- * 舊資料的 `url:` / `local:` ID 要保留（生詞本用它當主鍵），所以不強制改寫。
+ * 驗證內部儲存 ID；舊網址文章的公開身份另由 isValidArticleReference 接受。
  */
 export function isValidArticleId(id) {
     const value = String(id == null ? '' : id);
     if (!value || value.length > 160) return false;
     return /^[A-Za-z0-9][A-Za-z0-9_:.-]*$/.test(value);
+}
+
+/** 舊網址文章的公開身份；內部儲存 ID 仍使用上方較嚴格的格式。 */
+export function isValidArticleReference(id) {
+    if (isValidArticleId(id)) return true;
+    const value = String(id == null ? '' : id);
+    return value.length <= 160 && /^url:(?:[A-Za-z0-9_.!~*'()-]|%[0-9A-Fa-f]{2})+$/.test(value);
 }
 
 export function generateArticleId(seed) {
@@ -265,7 +272,10 @@ export function normalizeMutationId(raw) {
 export function toArticleMeta(row) {
     if (!row) return null;
     return {
-        id: row.id,
+        // 舊 ID 是閱讀條目、詞書與會話的外鍵。匯入時產生的新 ID 只用於
+        // SQL 儲存，不可取代公開身份，否則原本的關聯及匯入核對都會失效。
+        id: row.legacy_article_id || row.id,
+        ...(row.legacy_article_id && row.legacy_article_id !== row.id ? { storageId: row.id } : {}),
         revision: Number(row.revision) || 0,
         title: row.title || '',
         sourceType: normalizeSourceType(row.source_type),

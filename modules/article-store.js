@@ -48,6 +48,7 @@ let currentScope = '';
 let scopeGeneration = 0;
 let meta = {
     cursor: 0,
+    identityVersion: 0,
     migrated: false,
     migratedAt: '',
     lastSyncAt: '',
@@ -352,6 +353,7 @@ function toSummaryRecord(summary) {
     if (!summary || !summary.articleId) return null;
     return {
         articleId: summary.articleId,
+        storageId: summary.storageId || '',
         article: '',
         result: null,
         title: summary.title || '',
@@ -382,6 +384,7 @@ function toRecord(doc) {
     if (!doc) return null;
     return {
         articleId: doc.id,
+        storageId: doc.storageId || '',
         article: doc.body,
         result: doc.analysis === undefined ? null : doc.analysis,
         title: doc.title || '',
@@ -406,6 +409,7 @@ function toDoc(record, scope) {
         key: docKey(scope, record.articleId),
         scope,
         id: record.articleId,
+        storageId: record.storageId || '',
         title: record.title || '',
         body: record.article || '',
         analysis: record.result === undefined ? null : record.result,
@@ -430,14 +434,17 @@ function toDoc(record, scope) {
 // 陣列（1,000 篇會累積成 O(N²)）。state.setAnalyzedArticles 換新陣列後自動重建。
 let recordIndexSource = null;
 let recordIndex = new Map();
+let storageIdIndex = new Map();
 
 function ensureRecordIndex() {
     const list = state.analyzedArticles || [];
     if (recordIndexSource === list) return recordIndex;
     recordIndexSource = list;
     recordIndex = new Map();
+    storageIdIndex = new Map();
     for (const item of list) {
         if (item && item.articleId) recordIndex.set(item.articleId, item);
+        if (item?.storageId) storageIdIndex.set(item.storageId, item);
     }
     return recordIndex;
 }
@@ -445,6 +452,7 @@ function ensureRecordIndex() {
 function setRecordIndex(list, index) {
     recordIndexSource = list;
     recordIndex = index;
+    storageIdIndex = new Map(list.filter(item => item?.storageId).map(item => [item.storageId, item]));
 }
 
 function findRecord(id) {
@@ -968,6 +976,7 @@ async function persistDocWithOp(record, type, options = {}) {
 function serializeMeta() {
     return {
         cursor: meta.cursor,
+        identityVersion: meta.identityVersion,
         migrated: meta.migrated,
         migratedAt: meta.migratedAt,
         lastSyncAt: meta.lastSyncAt,
@@ -1497,6 +1506,7 @@ export async function reloadScope(scope = getArticleScope()) {
         if (epochAtStart !== dataEpoch && attempt < 3) continue;
         meta = {
             cursor: Number(storedState?.cursor) || 0,
+            identityVersion: Number(storedState?.identityVersion) || 0,
             migrated: storedState?.migrated === true,
             migratedAt: storedState?.migratedAt || '',
             lastSyncAt: storedState?.lastSyncAt || '',
@@ -1551,8 +1561,9 @@ export async function reloadScope(scope = getArticleScope()) {
 export async function ensureArticleLoadedDetailed(articleId, ctx = captureArticleContext()) {
     if (!articleId) return { ok: true, doc: null };
     if (!isArticleContextActive(ctx)) return staleResult();
-    const summary = findRecord(articleId);
+    const summary = getRecord(articleId);
     if (!summary) return { ok: true, doc: null };
+    articleId = summary.articleId;
     if (loadedDocs.has(articleId)) {
         // 已被開啟流程要求過全文：標記為常駐，後續同 scope 重整不得降回摘要。
         residentArticleIds.add(articleId);
@@ -1668,11 +1679,24 @@ export function getRecords() {
 }
 
 export function getRecord(id) {
-    return findRecord(id);
+    if (!id) return null;
+    return findRecord(id) || storageIdIndex.get(id) || null;
+}
+
+/** 公開舊 ID 與曾下載過的內部 ID 是同一篇；閱讀資料維持原有外鍵，不改寫內容。 */
+export function articleReferenceIds(id) {
+    const record = getRecord(id);
+    if (!record) return [id];
+    const counterpart = storageIdIndex.get(id);
+    return Array.from(new Set([id, record.articleId, record.storageId, counterpart?.articleId].filter(Boolean)));
+}
+
+export function sameArticleReference(left, right) {
+    return left === right || (!!left && !!right && articleReferenceIds(left).includes(right));
 }
 
 export function getAnalysis(id) {
-    const record = findRecord(id);
+    const record = getRecord(id);
     return record ? record.result : null;
 }
 
@@ -2404,6 +2428,12 @@ export async function setCursor(cursor, ctx = captureArticleContext()) {
     return persistMeta(ctx);
 }
 
+export async function setIdentityVersion(version, ctx = captureArticleContext()) {
+    if (!isArticleContextActive(ctx)) return staleResult();
+    meta.identityVersion = Number(version) || 0;
+    return persistMeta(ctx);
+}
+
 export async function markSynced(at = nowIso(), ctx = captureArticleContext()) {
     if (!isArticleContextActive(ctx)) return staleResult();
     meta.lastSyncAt = at;
@@ -2465,7 +2495,8 @@ export function planRemote(metaList) {
             continue;
         }
         if (record.dirty || record.pending) continue; // 本機修改優先，衝突由 push 階段處理
-        if (Number(item.revision) > Number(record.revision)) needDocs.push(item.id);
+        if (Number(item.revision) > Number(record.revision)
+            || (item.storageId && item.storageId !== record.storageId)) needDocs.push(item.id);
     }
     return { needDocs, tombstones };
 }
@@ -2473,6 +2504,7 @@ export function planRemote(metaList) {
 function recordFromRemoteDoc(doc) {
     return {
         articleId: doc.id,
+        storageId: doc.storageId || '',
         article: doc.body || '',
         result: parseAnalysis(doc.analysis),
         title: doc.title || '',

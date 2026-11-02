@@ -137,12 +137,12 @@ async function newPage(browser, { endpoint, user = '', extraSettings = {} }) {
 
 async function seedLegacyLocal(page) {
     return page.evaluate((body) => {
-        localStorage.setItem('analyzedArticles', JSON.stringify([{ articleId: 'url:legacy-alpha', article: body, result: { chinese_translation: '舊甲', paragraph_analysis: [{ chinese_translation: '舊甲一' }] } }]));
+        localStorage.setItem('analyzedArticles', JSON.stringify([{ articleId: 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha', article: body, result: { chinese_translation: '舊甲', paragraph_analysis: [{ chinese_translation: '舊甲一' }] } }]));
         localStorage.setItem('articleMetas', JSON.stringify({
-            'url:legacy-alpha': { id: 'url:legacy-alpha', title: 'Legacy Alpha', sourceType: 'url', sourceUrl: 'https://example.com/legacy-alpha', createdAt: Date.now() - 86400000 }
+            'url:https%3A%2F%2Fexample.com%2Flegacy-alpha': { id: 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha', title: 'Legacy Alpha', sourceType: 'url', sourceUrl: 'https://example.com/legacy-alpha', createdAt: Date.now() - 86400000 }
         }));
         localStorage.setItem('vocabularyBooks', JSON.stringify([{
-            id: 'url:legacy-alpha', name: 'Legacy Alpha', sourceType: 'article', articleId: 'url:legacy-alpha',
+            id: 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha', name: 'Legacy Alpha', sourceType: 'article', articleId: 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha',
             createdAt: new Date().toISOString(), words: [{ id: 'w1', word: 'legacy', meaning: '舊的' }]
         }]));
         return true;
@@ -204,7 +204,7 @@ async function records(page) {
         await d1.page.waitForTimeout(1600);
 
         const migrated = await records(d1.page);
-        check('舊資料已遷移到逐篇儲存（保留原 ID）', migrated.length === 1 && migrated[0].id === 'url:legacy-alpha', JSON.stringify(migrated));
+        check('舊資料已遷移到逐篇儲存（保留原 ID）', migrated.length === 1 && migrated[0].id === 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha', JSON.stringify(migrated));
         check('舊資料分析結果一併保留', /舊甲/.test(JSON.stringify(await d1.page.evaluate(async () => {
             const db = await new Promise((resolve) => { const req = indexedDB.open('bdc-articles'); req.onsuccess = () => resolve(req.result); });
             const docs = await new Promise((resolve) => { const tx = db.transaction('docs', 'readonly'); const rq = tx.objectStore('docs').getAll(); rq.onsuccess = () => resolve(rq.result || []); });
@@ -213,7 +213,7 @@ async function records(page) {
         }))));
 
         const wordbooks = await d1.page.evaluate(() => JSON.parse(localStorage.getItem('vocabularyBooks') || '[]'));
-        check('文章專屬生詞本連結仍保留', wordbooks.some((book) => book.id === 'url:legacy-alpha' && book.words?.[0]?.word === 'legacy'), JSON.stringify(wordbooks.map((b) => ({ id: b.id, words: b.words?.length }))));
+        check('文章專屬生詞本連結仍保留', wordbooks.some((book) => book.id === 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha' && book.words?.[0]?.word === 'legacy'), JSON.stringify(wordbooks.map((b) => ({ id: b.id, words: b.words?.length }))));
 
         await syncNow(d1.page);
         const serverArticles = await waitFor(async () => {
@@ -221,7 +221,7 @@ async function records(page) {
             return res.body && res.body.articles && res.body.articles.length ? res.body : null;
         });
         check('文章已同步到伺服器', !!serverArticles && serverArticles.articles.length === 1, JSON.stringify(serverArticles));
-        check('伺服器保留原文章 ID', serverArticles?.articles?.[0]?.id === 'url:legacy-alpha', JSON.stringify(serverArticles?.articles));
+        check('伺服器保留原文章 ID', serverArticles?.articles?.[0]?.id === 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha', JSON.stringify(serverArticles?.articles));
         const usage = await api(server.base, 'alice', '/articles/usage');
         check('帳戶已開啟文章寫入閘門', usage.body?.legacyWriteBlocked === true, JSON.stringify(usage.body));
 
@@ -252,22 +252,22 @@ async function records(page) {
             const list = await records(d2.page);
             return list.length ? list : null;
         });
-        check('新裝置同步後取得文章', !!pulled && pulled.length === 1 && pulled[0].id === 'url:legacy-alpha', JSON.stringify(pulled));
+        check('新裝置同步後取得文章', !!pulled && pulled.length === 1 && pulled[0].id === 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha', JSON.stringify(pulled));
         check('新裝置取得完整原文', pulled?.[0]?.body === LEGACY_TOKEN, pulled?.[0]?.body);
 
         // ── 同篇衝突 ────────────────────────────────────────────────────────
         console.log('\n[衝突] 兩台裝置先後改名');
         const rename = (page, title) => page.evaluate(async ({ title }) => {
             const mod = await import('/modules/article-store.js');
-            return mod.renameArticle('url:legacy-alpha', title);
+            return mod.renameArticle('url:https%3A%2F%2Fexample.com%2Flegacy-alpha', title);
         }, { title });
         check('裝置 1 改名成功', (await rename(d1.page, 'Renamed on device 1')).ok === true);
         await syncNow(d1.page);
         await waitFor(async () => {
-            const res = await api(server.base, 'alice', '/articles/url%3Alegacy-alpha');
+            const res = await api(server.base, 'alice', '/articles/url%3Ahttps%253A%252F%252Fexample.com%252Flegacy-alpha');
             return res.body?.article?.title === 'Renamed on device 1' ? res : null;
         });
-        const d1Server = await api(server.base, 'alice', '/articles/url%3Alegacy-alpha');
+        const d1Server = await api(server.base, 'alice', '/articles/url%3Ahttps%253A%252F%252Fexample.com%252Flegacy-alpha');
         check('裝置 1 的改名已上傳', d1Server.body?.article?.title === 'Renamed on device 1', JSON.stringify(d1Server.body?.article?.title));
 
         // 裝置 2 看不到裝置 1 的改名（尚未拉取）就直接改自己的 → 會用舊 revision 上傳而衝突
@@ -276,26 +276,26 @@ async function records(page) {
         const conflictState = await waitFor(async () => {
             const res = await d2.page.evaluate(async () => {
                 const mod = await import('/modules/article-store.js');
-                return { conflicts: mod.getConflicts(), record: mod.getRecord('url:legacy-alpha') };
+                return { conflicts: mod.getConflicts(), record: mod.getRecord('url:https%3A%2F%2Fexample.com%2Flegacy-alpha') };
             });
             return res.conflicts.length ? res : null;
         });
         check('同篇衝突被記錄（不是靜默覆蓋）', !!conflictState && conflictState.conflicts.length === 1, JSON.stringify(conflictState?.conflicts));
         check('衝突時保留本機內容', conflictState?.record?.title === 'Renamed on device 2', conflictState?.record?.title);
-        const stillRemote = await api(server.base, 'alice', '/articles/url%3Alegacy-alpha');
+        const stillRemote = await api(server.base, 'alice', '/articles/url%3Ahttps%253A%252F%252Fexample.com%252Flegacy-alpha');
         check('衝突當下伺服器內容未被覆蓋', stillRemote.body?.article?.title === 'Renamed on device 1', stillRemote.body?.article?.title);
 
         // 使用者選擇「保留本機修改」
         await waitFor(async () => {
             const res = await d2.page.evaluate(async () => {
                 const mod = await import('/modules/article-sync.js');
-                await mod.resolveKeepMine('url:legacy-alpha');
+                await mod.resolveKeepMine('url:https%3A%2F%2Fexample.com%2Flegacy-alpha');
                 return true;
             });
             return res;
         }, { timeoutMs: 20000 });
         const afterResolve = await waitFor(async () => {
-            const res = await api(server.base, 'alice', '/articles/url%3Alegacy-alpha');
+            const res = await api(server.base, 'alice', '/articles/url%3Ahttps%253A%252F%252Fexample.com%252Flegacy-alpha');
             return res.body?.article?.title === 'Renamed on device 2' ? res : null;
         }, { timeoutMs: 12000 });
         check('選擇保留本機後伺服器更新為本機內容', !!afterResolve, JSON.stringify(afterResolve?.body?.article?.title));
@@ -305,7 +305,7 @@ async function records(page) {
         // 裝置 1 尚未拉取裝置 2 的更新就以舊 revision 刪除 → 必須是衝突，不能靜默刪掉
         await d1.page.evaluate(async () => {
             const mod = await import('/modules/article-store.js');
-            await mod.deleteArticle('url:legacy-alpha');
+            await mod.deleteArticle('url:https%3A%2F%2Fexample.com%2Flegacy-alpha');
         });
         await syncNow(d1.page);
         const staleDelete = await waitFor(async () => {
@@ -322,11 +322,11 @@ async function records(page) {
         // 使用者選擇「保留本機修改」→ 以最新版本重送刪除
         await d1.page.evaluate(async () => {
             const mod = await import('/modules/article-sync.js');
-            await mod.resolveKeepMine('url:legacy-alpha');
+            await mod.resolveKeepMine('url:https%3A%2F%2Fexample.com%2Flegacy-alpha');
         });
         const tombstone = await waitFor(async () => {
             const res = await api(server.base, 'alice', '/articles?full=1&includeDeleted=1');
-            const row = res.body?.articles?.find((item) => item.id === 'url:legacy-alpha');
+            const row = res.body?.articles?.find((item) => item.id === 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha');
             return row && row.deletedAt ? row : null;
         }, { timeoutMs: 20000 });
         check('解決衝突後刪除以 tombstone 同步', !!tombstone, JSON.stringify(tombstone));
@@ -341,13 +341,13 @@ async function records(page) {
         // 裝置 1 復原刪除 → 另一台裝置重新取得
         await d1.page.evaluate(async () => {
             const mod = await import('/modules/article-store.js');
-            const record = mod.getRecord('url:legacy-alpha');
+            const record = mod.getRecord('url:https%3A%2F%2Fexample.com%2Flegacy-alpha');
             await mod.restoreArticle(record);
         });
         await syncNow(d1.page);
         const restoredOnServer = await waitFor(async () => {
             const res = await api(server.base, 'alice', '/articles?full=1&includeDeleted=1');
-            const row = res.body?.articles?.find((item) => item.id === 'url:legacy-alpha');
+            const row = res.body?.articles?.find((item) => item.id === 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha');
             return row && !row.deletedAt ? row : null;
         }, { timeoutMs: 20000 });
         check('復原同步回伺服器', !!restoredOnServer, JSON.stringify(restoredOnServer));
@@ -356,7 +356,7 @@ async function records(page) {
             const list = await records(d2.page);
             return list.length === 1 ? list : null;
         }, { timeoutMs: 20000 });
-        check('復原同步到另一台裝置', Array.isArray(d2Restored) && d2Restored.length === 1 && d2Restored[0].id === 'url:legacy-alpha', JSON.stringify(d2Restored));
+        check('復原同步到另一台裝置', Array.isArray(d2Restored) && d2Restored.length === 1 && d2Restored[0].id === 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha', JSON.stringify(d2Restored));
 
         // ── 帳戶隔離 ────────────────────────────────────────────────────────
         console.log('\n[隔離] 帳戶 B 看不到帳戶 A 的文章');
@@ -375,10 +375,10 @@ async function records(page) {
             return res.body?.articles?.length ? res.body : null;
         });
         check('帳戶 B 只看到自己的文章', !!bobList && bobList.articles.length === 1 && bobList.articles[0].id === 'art_bob', JSON.stringify(bobList?.articles));
-        const bobReadsAlice = await api(server.base, 'bob', '/articles/url%3Alegacy-alpha');
+        const bobReadsAlice = await api(server.base, 'bob', '/articles/url%3Ahttps%253A%252F%252Fexample.com%252Flegacy-alpha');
         check('帳戶 B 無法讀取帳戶 A 的文章', bobReadsAlice.status === 404, JSON.stringify(bobReadsAlice));
         const aliceList = await api(server.base, 'alice', '/articles?full=1&includeDeleted=1');
-        check('帳戶 A 的文章不受帳戶 B 影響', aliceList.body?.articles?.some((item) => item.id === 'url:legacy-alpha'), JSON.stringify(aliceList.body?.articles?.map((a) => a.id)));
+        check('帳戶 A 的文章不受帳戶 B 影響', aliceList.body?.articles?.some((item) => item.id === 'url:https%3A%2F%2Fexample.com%2Flegacy-alpha'), JSON.stringify(aliceList.body?.articles?.map((a) => a.id)));
 
         check('裝置 1 無 console 錯誤', d1.errors.length === 0, JSON.stringify(d1.errors.slice(0, 5)));
         check('裝置 2 無 console 錯誤', d2.errors.length === 0, JSON.stringify(d2.errors.slice(0, 5)));

@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const BASE = `http://127.0.0.1:${process.env.PORT || 8313}`;
+const BASE = (process.env.BASE_URL || `http://127.0.0.1:${process.env.PORT || 8313}`).replace(/\/$/, '');
 
 async function run(browser, locale, idb) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
