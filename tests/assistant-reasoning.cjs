@@ -95,11 +95,21 @@ function assistantProfile(baseUrl) {
         await dismissModals();
         const hidden = await page.evaluate(() => document.getElementById('assistant-panel')?.classList.contains('assistant-hidden'));
         if (hidden) await page.click('#assistant-fab');
-        await page.waitForTimeout(250);
+        // 公網冷啟時面板要等模組載入與進場動畫；固定等待會偶發按鈕還不可見。
+        await page.waitForFunction(
+            () => {
+                const panel = document.getElementById('assistant-panel');
+                return !!panel && !panel.classList.contains('assistant-hidden');
+            },
+            null,
+            { timeout: 15000, polling: 100 }
+        ).catch(() => {});
+        await page.locator('#assistant-new').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+        await page.waitForTimeout(200);
     };
     const newSession = async () => {
         await openPanel();
-        await page.click('#assistant-new');
+        await page.locator('#assistant-new').click();
         await page.waitForTimeout(300);
     };
     const sendText = async (text) => {
