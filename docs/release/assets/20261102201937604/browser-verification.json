@@ -1,0 +1,1355 @@
+{
+  "release": "9106080dba82",
+  "results": [
+    {
+      "base": "http://10.10.10.149:8001",
+      "release": "9106080dba82",
+      "cnStatus": "未登录",
+      "hkStatus": "未登入",
+      "checked": 95,
+      "errors": [],
+      "resources": [
+        {
+          "path": "/styles.css",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "983c857bbb14744f3047019941b6077310e427ed0b458d46616c115f6f3eed4b",
+          "expected": "983c857bbb14744f3047019941b6077310e427ed0b458d46616c115f6f3eed4b"
+        },
+        {
+          "path": "/main.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "a5ffa3a0366ee59e032fed5d896ecd8b77c6d26da6538b7ac6ba1b1faa67bf78",
+          "expected": "a5ffa3a0366ee59e032fed5d896ecd8b77c6d26da6538b7ac6ba1b1faa67bf78"
+        },
+        {
+          "path": "/modules/dom.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "75879c6ec4e8400523e28533efa399e07c2fdfef5e8e36a1cba623619110922b",
+          "expected": "75879c6ec4e8400523e28533efa399e07c2fdfef5e8e36a1cba623619110922b"
+        },
+        {
+          "path": "/modules/state.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c020b1de94e562428fc19ae9350309b46c43946e3a7d9e966c87a3458c5d144b",
+          "expected": "c020b1de94e562428fc19ae9350309b46c43946e3a7d9e966c87a3458c5d144b"
+        },
+        {
+          "path": "/modules/article-route.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c19fb4d16b82bd9140896f7fd1e68c453a97c961aa9577e8718687213ceec2cf",
+          "expected": "c19fb4d16b82bd9140896f7fd1e68c453a97c961aa9577e8718687213ceec2cf"
+        },
+        {
+          "path": "/modules/storage.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "b69e6a5998acdee3fa6a30fc00d46e36b0ac59b61ecc6fef8d276aec6f779cac",
+          "expected": "b69e6a5998acdee3fa6a30fc00d46e36b0ac59b61ecc6fef8d276aec6f779cac"
+        },
+        {
+          "path": "/modules/cache.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd",
+          "expected": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd"
+        },
+        {
+          "path": "/modules/article-store.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "6ee6a5925c7606fe0874b9d0d5323837080dc05b40b860628db10b58f8da773e",
+          "expected": "6ee6a5925c7606fe0874b9d0d5323837080dc05b40b860628db10b58f8da773e"
+        },
+        {
+          "path": "/modules/backup-store.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "4477928bd610a9c74f7f414d4c6538295d36c22e17e8616e3bbffa4c33e1e469",
+          "expected": "4477928bd610a9c74f7f414d4c6538295d36c22e17e8616e3bbffa4c33e1e469"
+        },
+        {
+          "path": "/modules/reading-store.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "268d98bb5b2e7b0167cff5f5576052672300be85a53361ac0052eccbe39273a9",
+          "expected": "268d98bb5b2e7b0167cff5f5576052672300be85a53361ac0052eccbe39273a9"
+        },
+        {
+          "path": "/modules/audio.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "1bc97c73c15a3e246512f5439a35e146432e8c674348b20381f37860ff7cf121",
+          "expected": "1bc97c73c15a3e246512f5439a35e146432e8c674348b20381f37860ff7cf121"
+        },
+        {
+          "path": "/modules/ui.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d635ab2f214ea3417323a36e914c6e974283035c5ff55ca4cc30147c36040e85",
+          "expected": "d635ab2f214ea3417323a36e914c6e974283035c5ff55ca4cc30147c36040e85"
+        },
+        {
+          "path": "/features/dictation/dictation.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b",
+          "expected": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b"
+        },
+        {
+          "path": "/features/vocabulary/vocabulary.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "f108f004c2368376491787a6c91c1c5a5033846c113f41150d833f2efb7e62f6",
+          "expected": "f108f004c2368376491787a6c91c1c5a5033846c113f41150d833f2efb7e62f6"
+        },
+        {
+          "path": "/features/learning/learning.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36",
+          "expected": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36"
+        },
+        {
+          "path": "/features/quiz/quiz.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede",
+          "expected": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede"
+        },
+        {
+          "path": "/features/ocr/ocr.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e",
+          "expected": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e"
+        },
+        {
+          "path": "/features/qa/qa.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "46b9ad801d15e04a4b2780f1c6bf6608d3717143f146de42074a4fb92420a708",
+          "expected": "46b9ad801d15e04a4b2780f1c6bf6608d3717143f146de42074a4fb92420a708"
+        },
+        {
+          "path": "/features/article/article.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "ac1cbb00c532e64454719e40de48fa4599b439eab4f4f6f80b43ef6bcf6528d7",
+          "expected": "ac1cbb00c532e64454719e40de48fa4599b439eab4f4f6f80b43ef6bcf6528d7"
+        },
+        {
+          "path": "/features/sync/sync.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0b876d35573706c178397c54e4cd0263748e9feb125f3e17b719d754a015e608",
+          "expected": "0b876d35573706c178397c54e4cd0263748e9feb125f3e17b719d754a015e608"
+        },
+        {
+          "path": "/features/phonetics/phonetics.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce",
+          "expected": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce"
+        },
+        {
+          "path": "/modules/ai-catalog.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec",
+          "expected": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec"
+        },
+        {
+          "path": "/modules/i18n.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76",
+          "expected": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76"
+        },
+        {
+          "path": "/modules/theme.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd",
+          "expected": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd"
+        },
+        {
+          "path": "/features/assistant/assistant.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "69f158bc78cf30b020ed9dfe053e9ae88cc44e39cfcb6afe3f69d4502efbef4b",
+          "expected": "69f158bc78cf30b020ed9dfe053e9ae88cc44e39cfcb6afe3f69d4502efbef4b"
+        },
+        {
+          "path": "/modules/ai-profile-storage.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "8968bbaed062911835a624367135eff4098c33a21b751c84dc8111a43fae179b",
+          "expected": "8968bbaed062911835a624367135eff4098c33a21b751c84dc8111a43fae179b"
+        },
+        {
+          "path": "/features/admin-users/admin-users.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04",
+          "expected": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04"
+        },
+        {
+          "path": "/modules/sync-signals.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff",
+          "expected": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff"
+        },
+        {
+          "path": "/features/ai-admin/ai-admin.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87",
+          "expected": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87"
+        },
+        {
+          "path": "/shared/article-protocol.mjs",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "fd464ad38af78b79a17908ad868b4d403aac93857e53b700772ec533c3c69b25",
+          "expected": "fd464ad38af78b79a17908ad868b4d403aac93857e53b700772ec533c3c69b25"
+        },
+        {
+          "path": "/modules/ai-credential-sync.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "1a883c604481ef64e8710511c14844da480e336354eed25eb73d55a2a787f0a2",
+          "expected": "1a883c604481ef64e8710511c14844da480e336354eed25eb73d55a2a787f0a2"
+        },
+        {
+          "path": "/shared/reading-protocol.mjs",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d2554c854409b31158ae090106ff9d3165c1d4cd13ef5bbb5db692863926deb9",
+          "expected": "d2554c854409b31158ae090106ff9d3165c1d4cd13ef5bbb5db692863926deb9"
+        },
+        {
+          "path": "/modules/permanent-db.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "08fbfb706bd78cb30fdcfc577313cea4dcde5f0c6e37c2aa6b8c2eb2e4c04360",
+          "expected": "08fbfb706bd78cb30fdcfc577313cea4dcde5f0c6e37c2aa6b8c2eb2e4c04360"
+        },
+        {
+          "path": "/modules/platform.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690",
+          "expected": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690"
+        },
+        {
+          "path": "/modules/settings.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0bd871868a8ffc1f5ca3f8b350d15767d0242e81b7ab44bed919bea420cba7b9",
+          "expected": "0bd871868a8ffc1f5ca3f8b350d15767d0242e81b7ab44bed919bea420cba7b9"
+        },
+        {
+          "path": "/features/dictation/dictation-grader.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd",
+          "expected": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd"
+        },
+        {
+          "path": "/features/qa/qa-storage.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226",
+          "expected": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226"
+        },
+        {
+          "path": "/modules/markdown.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558",
+          "expected": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558"
+        },
+        {
+          "path": "/modules/ai-models.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "cddb82eb13b72197ebe8ed7d24fe5569664a307c03327ddc58b151873a0df3d7",
+          "expected": "cddb82eb13b72197ebe8ed7d24fe5569664a307c03327ddc58b151873a0df3d7"
+        },
+        {
+          "path": "/features/qa/qa-creator.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba",
+          "expected": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba"
+        },
+        {
+          "path": "/modules/api.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "5f4680646c276570d5d47e2e2051ae2ec39b03044be7e952663a1f3694974395",
+          "expected": "5f4680646c276570d5d47e2e2051ae2ec39b03044be7e952663a1f3694974395"
+        },
+        {
+          "path": "/features/qa/qa-trainer.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee",
+          "expected": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee"
+        },
+        {
+          "path": "/features/qa/qa-checker.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1",
+          "expected": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1"
+        },
+        {
+          "path": "/modules/reading-sync.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e",
+          "expected": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e"
+        },
+        {
+          "path": "/modules/sync-core.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "8254471389dd8bd87397999bf353fdf195382ab57a78e52f73e3b9ca0ef90da6",
+          "expected": "8254471389dd8bd87397999bf353fdf195382ab57a78e52f73e3b9ca0ef90da6"
+        },
+        {
+          "path": "/features/qa/qa-pdf.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e",
+          "expected": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e"
+        },
+        {
+          "path": "/modules/sync-cloudflare.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "77e0b2d5912458fc6745446f12346c59e9b70300d2a1201786dcc2d776c4c622",
+          "expected": "77e0b2d5912458fc6745446f12346c59e9b70300d2a1201786dcc2d776c4c622"
+        },
+        {
+          "path": "/modules/theme-art.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4",
+          "expected": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4"
+        },
+        {
+          "path": "/features/sync/ai-provider-settings.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "bc883b278a2d9e8b98339d2a44a01af87bf193d831703e2f71c7139519739aa5",
+          "expected": "bc883b278a2d9e8b98339d2a44a01af87bf193d831703e2f71c7139519739aa5"
+        },
+        {
+          "path": "/modules/local-backup.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "2f4d7c482e8204ea3f10dd55676728a5bc3597dc9f1033a30ab8bf0b5900809a",
+          "expected": "2f4d7c482e8204ea3f10dd55676728a5bc3597dc9f1033a30ab8bf0b5900809a"
+        },
+        {
+          "path": "/features/sync/sync-status.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d221ad3023d193e401490875242cef2d151d6dd5f9d4d4b90358674387cfd061",
+          "expected": "d221ad3023d193e401490875242cef2d151d6dd5f9d4d4b90358674387cfd061"
+        },
+        {
+          "path": "/modules/reading-actions.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+          "expected": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d"
+        },
+        {
+          "path": "/modules/i18n-config.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66",
+          "expected": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66"
+        },
+        {
+          "path": "/modules/article-session.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b",
+          "expected": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b"
+        },
+        {
+          "path": "/modules/article-sync.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e4edba13a45e1ae552e070be7f16b3c8f2990a753e42ad80f4536695ff1188dc",
+          "expected": "e4edba13a45e1ae552e070be7f16b3c8f2990a753e42ad80f4536695ff1188dc"
+        },
+        {
+          "path": "/features/article/paragraph-pipeline.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3",
+          "expected": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3"
+        },
+        {
+          "path": "/features/article/analysis-state.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3",
+          "expected": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3"
+        },
+        {
+          "path": "/modules/quick-model-picker.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "f645bdda7b39a6cbf837f83f869d2f308faf268118abe70a8fad9d4b3deee95d",
+          "expected": "f645bdda7b39a6cbf837f83f869d2f308faf268118abe70a8fad9d4b3deee95d"
+        },
+        {
+          "path": "/features/article/phrase-picker.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e135fe40fa3604c5257b18b6017439678c3cb5ec331acbc8b325f93efae2ad7b",
+          "expected": "e135fe40fa3604c5257b18b6017439678c3cb5ec331acbc8b325f93efae2ad7b"
+        },
+        {
+          "path": "/features/article/tokenize.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a",
+          "expected": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a"
+        },
+        {
+          "path": "/features/article/reading-panel.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e30f42c2c526a7d91d5eda99ebc8c24fc926b0781022a4a3ac4e58b0e1b0714f",
+          "expected": "e30f42c2c526a7d91d5eda99ebc8c24fc926b0781022a4a3ac4e58b0e1b0714f"
+        },
+        {
+          "path": "/features/article/perf-probe.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61",
+          "expected": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61"
+        },
+        {
+          "path": "/modules/ai-thinking.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "6a406ab27beb2636fdc69ffbd1d52eb231bb8e99b02b3587731114de1d073423",
+          "expected": "6a406ab27beb2636fdc69ffbd1d52eb231bb8e99b02b3587731114de1d073423"
+        },
+        {
+          "path": "/modules/prompts/index.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+          "expected": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e"
+        },
+        {
+          "path": "/features/phonetics/word-sheet.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b",
+          "expected": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b"
+        },
+        {
+          "path": "/locales/zh-HK.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "8d67a53c52ef8f61c10d48cb7a30885b889e5ec6bfd0dafdf537ea012d8f5553",
+          "expected": "8d67a53c52ef8f61c10d48cb7a30885b889e5ec6bfd0dafdf537ea012d8f5553"
+        },
+        {
+          "path": "/locales/zh-CN.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "b401403d46231d732e5d096d6e1a27993451377c196874222f702ee0f0e91202",
+          "expected": "b401403d46231d732e5d096d6e1a27993451377c196874222f702ee0f0e91202"
+        },
+        {
+          "path": "/features/assistant/word-chat.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+          "expected": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06"
+        },
+        {
+          "path": "/features/assistant/request-plan.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "6c399c3cf46bfc712b22018c9a03ceb179562491ee79007abb037fc90694687f",
+          "expected": "6c399c3cf46bfc712b22018c9a03ceb179562491ee79007abb037fc90694687f"
+        },
+        {
+          "path": "/modules/validate.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8",
+          "expected": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8"
+        },
+        {
+          "path": "/modules/detail-state.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086",
+          "expected": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086"
+        },
+        {
+          "path": "/modules/ai-protocols/common.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181",
+          "expected": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181"
+        },
+        {
+          "path": "/modules/ai-model-picker.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee",
+          "expected": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee"
+        },
+        {
+          "path": "/modules/ai-protocols/index.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9",
+          "expected": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9"
+        },
+        {
+          "path": "/modules/phonetics-data.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0",
+          "expected": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0"
+        },
+        {
+          "path": "/modules/qr.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363",
+          "expected": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363"
+        },
+        {
+          "path": "/modules/ai-settings-sanitize.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "6284741710a92240a4358b2a5f39f773cf6ebeb2efebfa6afa0108f654eec705",
+          "expected": "6284741710a92240a4358b2a5f39f773cf6ebeb2efebfa6afa0108f654eec705"
+        },
+        {
+          "path": "/features/article/reading-export-dialog.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "5d31c61b07de31dce86e51c7136a52cba275c500e58b8dcc63d0f3a573e6670a",
+          "expected": "5d31c61b07de31dce86e51c7136a52cba275c500e58b8dcc63d0f3a573e6670a"
+        },
+        {
+          "path": "/features/article/reading-view.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+          "expected": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787"
+        },
+        {
+          "path": "/modules/prompts/language-rules.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986",
+          "expected": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986"
+        },
+        {
+          "path": "/modules/prompts/qa.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837",
+          "expected": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837"
+        },
+        {
+          "path": "/modules/prompts/learning.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e",
+          "expected": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e"
+        },
+        {
+          "path": "/modules/prompts/ocr.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0",
+          "expected": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0"
+        },
+        {
+          "path": "/modules/prompts/dictionary.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7",
+          "expected": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7"
+        },
+        {
+          "path": "/modules/vocab.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "82217563919476179863025f8991af45f775cbaf067291f8c7695e59eef74526",
+          "expected": "82217563919476179863025f8991af45f775cbaf067291f8c7695e59eef74526"
+        },
+        {
+          "path": "/modules/prompts/article.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "3011c395fec0dd41f7ba4b8ccee97ba04c01ecdf05d1b70bba8e2cfa02809e89",
+          "expected": "3011c395fec0dd41f7ba4b8ccee97ba04c01ecdf05d1b70bba8e2cfa02809e89"
+        },
+        {
+          "path": "/modules/prompts/dictation.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec",
+          "expected": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec"
+        },
+        {
+          "path": "/modules/prompts/assistant.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6",
+          "expected": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6"
+        },
+        {
+          "path": "/modules/prompts/import.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf",
+          "expected": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf"
+        },
+        {
+          "path": "/modules/ai-protocols/anthropic.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "65765ba253ba830e82930236bb756d30f9c39b6661f428a6def2bda24893630b",
+          "expected": "65765ba253ba830e82930236bb756d30f9c39b6661f428a6def2bda24893630b"
+        },
+        {
+          "path": "/modules/ai-protocols/gemini.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "fdb8999adb513b766993b4aa62783b6f91c587bf1ab2c1497a894c467664813b",
+          "expected": "fdb8999adb513b766993b4aa62783b6f91c587bf1ab2c1497a894c467664813b"
+        },
+        {
+          "path": "/modules/vendor/qrcode-generator.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c",
+          "expected": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c"
+        },
+        {
+          "path": "/modules/ai-protocols/chat-completions.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "4966045e6e7ad0403e848aa4f8dc6c5b390a1a033b6ba59c3715420a0b4d23d4",
+          "expected": "4966045e6e7ad0403e848aa4f8dc6c5b390a1a033b6ba59c3715420a0b4d23d4"
+        },
+        {
+          "path": "/modules/reading-export.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "350a9cc197f63cb0ed9b7018582fa3ae24060a9e8c061becf92674ab6fc19d47",
+          "expected": "350a9cc197f63cb0ed9b7018582fa3ae24060a9e8c061becf92674ab6fc19d47"
+        },
+        {
+          "path": "/modules/reading-edition.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e15feb34ed2ca831787a2d19ea8c7adea69e16f3360e626068828dc47ba6e9f7",
+          "expected": "e15feb34ed2ca831787a2d19ea8c7adea69e16f3360e626068828dc47ba6e9f7"
+        }
+      ]
+    },
+    {
+      "base": "https://bdc.a4a4.qzz.io",
+      "release": "9106080dba82",
+      "cnStatus": "未登录",
+      "hkStatus": "未登入",
+      "checked": 95,
+      "errors": [],
+      "resources": [
+        {
+          "path": "/styles.css",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "983c857bbb14744f3047019941b6077310e427ed0b458d46616c115f6f3eed4b",
+          "expected": "983c857bbb14744f3047019941b6077310e427ed0b458d46616c115f6f3eed4b"
+        },
+        {
+          "path": "/main.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "a5ffa3a0366ee59e032fed5d896ecd8b77c6d26da6538b7ac6ba1b1faa67bf78",
+          "expected": "a5ffa3a0366ee59e032fed5d896ecd8b77c6d26da6538b7ac6ba1b1faa67bf78"
+        },
+        {
+          "path": "/modules/state.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c020b1de94e562428fc19ae9350309b46c43946e3a7d9e966c87a3458c5d144b",
+          "expected": "c020b1de94e562428fc19ae9350309b46c43946e3a7d9e966c87a3458c5d144b"
+        },
+        {
+          "path": "/modules/article-route.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c19fb4d16b82bd9140896f7fd1e68c453a97c961aa9577e8718687213ceec2cf",
+          "expected": "c19fb4d16b82bd9140896f7fd1e68c453a97c961aa9577e8718687213ceec2cf"
+        },
+        {
+          "path": "/features/phonetics/phonetics.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce",
+          "expected": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce"
+        },
+        {
+          "path": "/modules/i18n.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76",
+          "expected": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76"
+        },
+        {
+          "path": "/modules/cache.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd",
+          "expected": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd"
+        },
+        {
+          "path": "/modules/backup-store.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "4477928bd610a9c74f7f414d4c6538295d36c22e17e8616e3bbffa4c33e1e469",
+          "expected": "4477928bd610a9c74f7f414d4c6538295d36c22e17e8616e3bbffa4c33e1e469"
+        },
+        {
+          "path": "/features/ai-admin/ai-admin.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87",
+          "expected": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87"
+        },
+        {
+          "path": "/features/dictation/dictation.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b",
+          "expected": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b"
+        },
+        {
+          "path": "/modules/storage.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "b69e6a5998acdee3fa6a30fc00d46e36b0ac59b61ecc6fef8d276aec6f779cac",
+          "expected": "b69e6a5998acdee3fa6a30fc00d46e36b0ac59b61ecc6fef8d276aec6f779cac"
+        },
+        {
+          "path": "/features/quiz/quiz.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede",
+          "expected": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede"
+        },
+        {
+          "path": "/modules/ui.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d635ab2f214ea3417323a36e914c6e974283035c5ff55ca4cc30147c36040e85",
+          "expected": "d635ab2f214ea3417323a36e914c6e974283035c5ff55ca4cc30147c36040e85"
+        },
+        {
+          "path": "/modules/ai-profile-storage.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "8968bbaed062911835a624367135eff4098c33a21b751c84dc8111a43fae179b",
+          "expected": "8968bbaed062911835a624367135eff4098c33a21b751c84dc8111a43fae179b"
+        },
+        {
+          "path": "/features/ocr/ocr.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e",
+          "expected": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e"
+        },
+        {
+          "path": "/modules/dom.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "75879c6ec4e8400523e28533efa399e07c2fdfef5e8e36a1cba623619110922b",
+          "expected": "75879c6ec4e8400523e28533efa399e07c2fdfef5e8e36a1cba623619110922b"
+        },
+        {
+          "path": "/modules/reading-store.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "268d98bb5b2e7b0167cff5f5576052672300be85a53361ac0052eccbe39273a9",
+          "expected": "268d98bb5b2e7b0167cff5f5576052672300be85a53361ac0052eccbe39273a9"
+        },
+        {
+          "path": "/features/sync/sync.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0b876d35573706c178397c54e4cd0263748e9feb125f3e17b719d754a015e608",
+          "expected": "0b876d35573706c178397c54e4cd0263748e9feb125f3e17b719d754a015e608"
+        },
+        {
+          "path": "/features/assistant/assistant.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "69f158bc78cf30b020ed9dfe053e9ae88cc44e39cfcb6afe3f69d4502efbef4b",
+          "expected": "69f158bc78cf30b020ed9dfe053e9ae88cc44e39cfcb6afe3f69d4502efbef4b"
+        },
+        {
+          "path": "/modules/audio.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "1bc97c73c15a3e246512f5439a35e146432e8c674348b20381f37860ff7cf121",
+          "expected": "1bc97c73c15a3e246512f5439a35e146432e8c674348b20381f37860ff7cf121"
+        },
+        {
+          "path": "/features/qa/qa.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "46b9ad801d15e04a4b2780f1c6bf6608d3717143f146de42074a4fb92420a708",
+          "expected": "46b9ad801d15e04a4b2780f1c6bf6608d3717143f146de42074a4fb92420a708"
+        },
+        {
+          "path": "/modules/theme.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd",
+          "expected": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd"
+        },
+        {
+          "path": "/modules/ai-catalog.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec",
+          "expected": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec"
+        },
+        {
+          "path": "/features/learning/learning.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36",
+          "expected": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36"
+        },
+        {
+          "path": "/features/admin-users/admin-users.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04",
+          "expected": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04"
+        },
+        {
+          "path": "/modules/ai-credential-sync.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "1a883c604481ef64e8710511c14844da480e336354eed25eb73d55a2a787f0a2",
+          "expected": "1a883c604481ef64e8710511c14844da480e336354eed25eb73d55a2a787f0a2"
+        },
+        {
+          "path": "/modules/sync-signals.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff",
+          "expected": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff"
+        },
+        {
+          "path": "/modules/markdown.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558",
+          "expected": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558"
+        },
+        {
+          "path": "/features/qa/qa-checker.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1",
+          "expected": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1"
+        },
+        {
+          "path": "/shared/reading-protocol.mjs",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d2554c854409b31158ae090106ff9d3165c1d4cd13ef5bbb5db692863926deb9",
+          "expected": "d2554c854409b31158ae090106ff9d3165c1d4cd13ef5bbb5db692863926deb9"
+        },
+        {
+          "path": "/shared/article-protocol.mjs",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "fd464ad38af78b79a17908ad868b4d403aac93857e53b700772ec533c3c69b25",
+          "expected": "fd464ad38af78b79a17908ad868b4d403aac93857e53b700772ec533c3c69b25"
+        },
+        {
+          "path": "/features/phonetics/word-sheet.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b",
+          "expected": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b"
+        },
+        {
+          "path": "/modules/i18n-config.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66",
+          "expected": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66"
+        },
+        {
+          "path": "/locales/zh-HK.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "8d67a53c52ef8f61c10d48cb7a30885b889e5ec6bfd0dafdf537ea012d8f5553",
+          "expected": "8d67a53c52ef8f61c10d48cb7a30885b889e5ec6bfd0dafdf537ea012d8f5553"
+        },
+        {
+          "path": "/modules/settings.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0bd871868a8ffc1f5ca3f8b350d15767d0242e81b7ab44bed919bea420cba7b9",
+          "expected": "0bd871868a8ffc1f5ca3f8b350d15767d0242e81b7ab44bed919bea420cba7b9"
+        },
+        {
+          "path": "/modules/detail-state.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086",
+          "expected": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086"
+        },
+        {
+          "path": "/modules/ai-protocols/index.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9",
+          "expected": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9"
+        },
+        {
+          "path": "/features/dictation/dictation-grader.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd",
+          "expected": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd"
+        },
+        {
+          "path": "/features/assistant/request-plan.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "6c399c3cf46bfc712b22018c9a03ceb179562491ee79007abb037fc90694687f",
+          "expected": "6c399c3cf46bfc712b22018c9a03ceb179562491ee79007abb037fc90694687f"
+        },
+        {
+          "path": "/modules/theme-art.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4",
+          "expected": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4"
+        },
+        {
+          "path": "/locales/zh-CN.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "b401403d46231d732e5d096d6e1a27993451377c196874222f702ee0f0e91202",
+          "expected": "b401403d46231d732e5d096d6e1a27993451377c196874222f702ee0f0e91202"
+        },
+        {
+          "path": "/modules/prompts/index.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+          "expected": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e"
+        },
+        {
+          "path": "/features/qa/qa-storage.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226",
+          "expected": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226"
+        },
+        {
+          "path": "/modules/ai-model-picker.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee",
+          "expected": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee"
+        },
+        {
+          "path": "/modules/reading-actions.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+          "expected": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d"
+        },
+        {
+          "path": "/features/sync/sync-status.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d221ad3023d193e401490875242cef2d151d6dd5f9d4d4b90358674387cfd061",
+          "expected": "d221ad3023d193e401490875242cef2d151d6dd5f9d4d4b90358674387cfd061"
+        },
+        {
+          "path": "/modules/platform.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690",
+          "expected": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690"
+        },
+        {
+          "path": "/features/sync/ai-provider-settings.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "bc883b278a2d9e8b98339d2a44a01af87bf193d831703e2f71c7139519739aa5",
+          "expected": "bc883b278a2d9e8b98339d2a44a01af87bf193d831703e2f71c7139519739aa5"
+        },
+        {
+          "path": "/modules/sync-core.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "8254471389dd8bd87397999bf353fdf195382ab57a78e52f73e3b9ca0ef90da6",
+          "expected": "8254471389dd8bd87397999bf353fdf195382ab57a78e52f73e3b9ca0ef90da6"
+        },
+        {
+          "path": "/modules/permanent-db.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "08fbfb706bd78cb30fdcfc577313cea4dcde5f0c6e37c2aa6b8c2eb2e4c04360",
+          "expected": "08fbfb706bd78cb30fdcfc577313cea4dcde5f0c6e37c2aa6b8c2eb2e4c04360"
+        },
+        {
+          "path": "/features/qa/qa-pdf.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e",
+          "expected": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e"
+        },
+        {
+          "path": "/modules/sync-cloudflare.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "77e0b2d5912458fc6745446f12346c59e9b70300d2a1201786dcc2d776c4c622",
+          "expected": "77e0b2d5912458fc6745446f12346c59e9b70300d2a1201786dcc2d776c4c622"
+        },
+        {
+          "path": "/features/assistant/word-chat.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+          "expected": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06"
+        },
+        {
+          "path": "/features/qa/qa-trainer.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee",
+          "expected": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee"
+        },
+        {
+          "path": "/features/article/perf-probe.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61",
+          "expected": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61"
+        },
+        {
+          "path": "/modules/article-store.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "6ee6a5925c7606fe0874b9d0d5323837080dc05b40b860628db10b58f8da773e",
+          "expected": "6ee6a5925c7606fe0874b9d0d5323837080dc05b40b860628db10b58f8da773e"
+        },
+        {
+          "path": "/modules/qr.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363",
+          "expected": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363"
+        },
+        {
+          "path": "/modules/ai-models.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "cddb82eb13b72197ebe8ed7d24fe5569664a307c03327ddc58b151873a0df3d7",
+          "expected": "cddb82eb13b72197ebe8ed7d24fe5569664a307c03327ddc58b151873a0df3d7"
+        },
+        {
+          "path": "/modules/prompts/language-rules.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986",
+          "expected": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986"
+        },
+        {
+          "path": "/modules/api.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "5f4680646c276570d5d47e2e2051ae2ec39b03044be7e952663a1f3694974395",
+          "expected": "5f4680646c276570d5d47e2e2051ae2ec39b03044be7e952663a1f3694974395"
+        },
+        {
+          "path": "/modules/article-sync.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e4edba13a45e1ae552e070be7f16b3c8f2990a753e42ad80f4536695ff1188dc",
+          "expected": "e4edba13a45e1ae552e070be7f16b3c8f2990a753e42ad80f4536695ff1188dc"
+        },
+        {
+          "path": "/modules/prompts/learning.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e",
+          "expected": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e"
+        },
+        {
+          "path": "/modules/ai-protocols/chat-completions.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "4966045e6e7ad0403e848aa4f8dc6c5b390a1a033b6ba59c3715420a0b4d23d4",
+          "expected": "4966045e6e7ad0403e848aa4f8dc6c5b390a1a033b6ba59c3715420a0b4d23d4"
+        },
+        {
+          "path": "/modules/ai-protocols/anthropic.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "65765ba253ba830e82930236bb756d30f9c39b6661f428a6def2bda24893630b",
+          "expected": "65765ba253ba830e82930236bb756d30f9c39b6661f428a6def2bda24893630b"
+        },
+        {
+          "path": "/modules/phonetics-data.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0",
+          "expected": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0"
+        },
+        {
+          "path": "/modules/ai-protocols/gemini.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "fdb8999adb513b766993b4aa62783b6f91c587bf1ab2c1497a894c467664813b",
+          "expected": "fdb8999adb513b766993b4aa62783b6f91c587bf1ab2c1497a894c467664813b"
+        },
+        {
+          "path": "/modules/prompts/import.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf",
+          "expected": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf"
+        },
+        {
+          "path": "/modules/prompts/dictation.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec",
+          "expected": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec"
+        },
+        {
+          "path": "/modules/prompts/qa.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837",
+          "expected": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837"
+        },
+        {
+          "path": "/modules/prompts/assistant.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6",
+          "expected": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6"
+        },
+        {
+          "path": "/modules/prompts/dictionary.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7",
+          "expected": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7"
+        },
+        {
+          "path": "/modules/prompts/article.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "3011c395fec0dd41f7ba4b8ccee97ba04c01ecdf05d1b70bba8e2cfa02809e89",
+          "expected": "3011c395fec0dd41f7ba4b8ccee97ba04c01ecdf05d1b70bba8e2cfa02809e89"
+        },
+        {
+          "path": "/modules/prompts/ocr.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0",
+          "expected": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0"
+        },
+        {
+          "path": "/modules/ai-protocols/common.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181",
+          "expected": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181"
+        },
+        {
+          "path": "/modules/ai-settings-sanitize.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "6284741710a92240a4358b2a5f39f773cf6ebeb2efebfa6afa0108f654eec705",
+          "expected": "6284741710a92240a4358b2a5f39f773cf6ebeb2efebfa6afa0108f654eec705"
+        },
+        {
+          "path": "/modules/vocab.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "82217563919476179863025f8991af45f775cbaf067291f8c7695e59eef74526",
+          "expected": "82217563919476179863025f8991af45f775cbaf067291f8c7695e59eef74526"
+        },
+        {
+          "path": "/features/vocabulary/vocabulary.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "f108f004c2368376491787a6c91c1c5a5033846c113f41150d833f2efb7e62f6",
+          "expected": "f108f004c2368376491787a6c91c1c5a5033846c113f41150d833f2efb7e62f6"
+        },
+        {
+          "path": "/modules/vendor/qrcode-generator.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c",
+          "expected": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c"
+        },
+        {
+          "path": "/modules/ai-thinking.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "6a406ab27beb2636fdc69ffbd1d52eb231bb8e99b02b3587731114de1d073423",
+          "expected": "6a406ab27beb2636fdc69ffbd1d52eb231bb8e99b02b3587731114de1d073423"
+        },
+        {
+          "path": "/features/qa/qa-creator.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba",
+          "expected": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba"
+        },
+        {
+          "path": "/modules/validate.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8",
+          "expected": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8"
+        },
+        {
+          "path": "/modules/local-backup.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "2f4d7c482e8204ea3f10dd55676728a5bc3597dc9f1033a30ab8bf0b5900809a",
+          "expected": "2f4d7c482e8204ea3f10dd55676728a5bc3597dc9f1033a30ab8bf0b5900809a"
+        },
+        {
+          "path": "/modules/reading-sync.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e",
+          "expected": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e"
+        },
+        {
+          "path": "/features/article/article.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "ac1cbb00c532e64454719e40de48fa4599b439eab4f4f6f80b43ef6bcf6528d7",
+          "expected": "ac1cbb00c532e64454719e40de48fa4599b439eab4f4f6f80b43ef6bcf6528d7"
+        },
+        {
+          "path": "/features/article/phrase-picker.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e135fe40fa3604c5257b18b6017439678c3cb5ec331acbc8b325f93efae2ad7b",
+          "expected": "e135fe40fa3604c5257b18b6017439678c3cb5ec331acbc8b325f93efae2ad7b"
+        },
+        {
+          "path": "/modules/article-session.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b",
+          "expected": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b"
+        },
+        {
+          "path": "/modules/quick-model-picker.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "f645bdda7b39a6cbf837f83f869d2f308faf268118abe70a8fad9d4b3deee95d",
+          "expected": "f645bdda7b39a6cbf837f83f869d2f308faf268118abe70a8fad9d4b3deee95d"
+        },
+        {
+          "path": "/features/article/analysis-state.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3",
+          "expected": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3"
+        },
+        {
+          "path": "/features/article/reading-panel.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e30f42c2c526a7d91d5eda99ebc8c24fc926b0781022a4a3ac4e58b0e1b0714f",
+          "expected": "e30f42c2c526a7d91d5eda99ebc8c24fc926b0781022a4a3ac4e58b0e1b0714f"
+        },
+        {
+          "path": "/features/article/paragraph-pipeline.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3",
+          "expected": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3"
+        },
+        {
+          "path": "/features/article/tokenize.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a",
+          "expected": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a"
+        },
+        {
+          "path": "/features/article/reading-view.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+          "expected": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787"
+        },
+        {
+          "path": "/features/article/reading-export-dialog.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "5d31c61b07de31dce86e51c7136a52cba275c500e58b8dcc63d0f3a573e6670a",
+          "expected": "5d31c61b07de31dce86e51c7136a52cba275c500e58b8dcc63d0f3a573e6670a"
+        },
+        {
+          "path": "/modules/reading-export.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "350a9cc197f63cb0ed9b7018582fa3ae24060a9e8c061becf92674ab6fc19d47",
+          "expected": "350a9cc197f63cb0ed9b7018582fa3ae24060a9e8c061becf92674ab6fc19d47"
+        },
+        {
+          "path": "/modules/reading-edition.js",
+          "version": "9106080dba82",
+          "status": 200,
+          "sha256": "e15feb34ed2ca831787a2d19ea8c7adea69e16f3360e626068828dc47ba6e9f7",
+          "expected": "e15feb34ed2ca831787a2d19ea8c7adea69e16f3360e626068828dc47ba6e9f7"
+        }
+      ]
+    }
+  ]
+}

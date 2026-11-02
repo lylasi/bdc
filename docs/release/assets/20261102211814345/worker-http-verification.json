@@ -1,0 +1,26 @@
+[
+  {
+    "path": "/auth-capabilities",
+    "method": "GET",
+    "status": 200,
+    "expected": 200,
+    "allowOrigin": "*",
+    "body": "{\"pairingLogin\":true,\"loginLinks\":true,\"passwordLogin\":true,\"passwordMinLength\":10,\"adminPasswordMinLength\":12}"
+  },
+  {
+    "path": "/articles",
+    "method": "GET",
+    "status": 401,
+    "expected": 401,
+    "allowOrigin": "*",
+    "body": "{\"error\":\"unauthorized\",\"code\":\"unauthorized\"}"
+  },
+  {
+    "path": "/articles/batch",
+    "method": "OPTIONS",
+    "status": 204,
+    "expected": 204,
+    "allowOrigin": "*",
+    "body": ""
+  }
+]

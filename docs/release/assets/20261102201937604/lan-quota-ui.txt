@@ -1,0 +1,4 @@
+PASS zh-CN IndexedDB migration / create / export / import / delete
+PASS zh-CN quota fallback preserves backups and explains failure
+PASS zh-HK IndexedDB migration / create / export / import / delete
+PASS zh-HK quota fallback preserves backups and explains failure

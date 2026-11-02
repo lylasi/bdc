@@ -1,0 +1,15 @@
+{
+  "id": "627cf352-ff9f-4700-af16-e01c59343299",
+  "created_on": "2026-11-02T13:33:09.505472Z",
+  "strategy": "percentage",
+  "versions": [
+    {
+      "version_id": "842d6c04-f1b0-427d-8691-6921c4ca67b3",
+      "percentage": 100
+    }
+  ],
+  "annotations": {
+    "workers/message": "fix legacy article identity verification (27cdd18)",
+    "workers/triggered_by": "deployment"
+  }
+}
