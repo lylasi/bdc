@@ -6,16 +6,16 @@
  *
  * 用法：
  *   PORT=8313 PLAYWRIGHT_MODULE=<path-to-playwright> node tests/assistant-reasoning.cjs
+ *   BASE_URL=https://<host> PLAYWRIGHT_MODULE=<path-to-playwright> node tests/assistant-reasoning.cjs
  *
  * 供應商是本機 127.0.0.1 的 mock SSE 服務（Gemini 格式，thought: true 代表思考）；
- * 不連外網、不需要金鑰。
+ * 不連外網、不需要金鑰。BASE_URL 只換入口，AI／同步／帳戶仍是 mock。
  */
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const mock = require('./helpers/article-mock.cjs');
 const { createMockStreamServer } = require('./helpers/mock-stream-server.cjs');
 
-const PORT = Number(process.env.PORT || 8313);
-const BASE = `http://127.0.0.1:${PORT}/`;
+const BASE = `${(process.env.BASE_URL || `http://127.0.0.1:${Number(process.env.PORT || 8313)}`).replace(/\/$/, '')}/`;
 
 const ARTICLE = 'ALPHA-ARTICLE The reading room opens at eight. Visitors sign the book at the door.';
 const THOUGHTS = ['先想一下。', '這題問的是被動語態。'];
@@ -67,7 +67,16 @@ function assistantProfile(baseUrl) {
     const serverUrl = await server.listen();
     const state = server.state;
 
-    const browser = await chromium.launch({ headless: true, executablePath: mock.CHROME });
+    // 公網頁面請求本機 mock 會觸發 Chrome 的 localhost 存取權限提示，headless 無法應答；
+    // 只有入口不是本機時才關掉這項檢查，其餘啟動參數不變。
+    const remoteEntry = !/^http:\/\/(127\.0\.0\.1|localhost)(:|\/)/.test(BASE);
+    const browser = await chromium.launch({
+        headless: true,
+        executablePath: mock.CHROME,
+        args: remoteEntry
+            ? ['--disable-features=LocalNetworkAccessChecks,PrivateNetworkAccessSendPreflights,PrivateNetworkAccessRespectPreflightResults']
+            : []
+    });
     const context = await browser.newContext({ viewport: { width: 430, height: 900 } });
     await mock.initScript(context, { profile: assistantProfile(serverUrl) });
     const page = await context.newPage();
