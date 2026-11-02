@@ -1,0 +1,1 @@
+{"before":{"TABLE->P":54,"P->BLOCKQUOTE":54,"BLOCKQUOTE->H2":63,"H2->UL":54,"UL->H2":63,"H2->P":54,"answerHeight":804},"after":{"TABLE->P":4,"P->BLOCKQUOTE":4,"BLOCKQUOTE->H2":8,"H2->UL":4,"UL->H2":8,"H2->P":4,"answerHeight":482},"sample":"表格 + 一句話 + 引用 + 標題 + 清單","viewport":"430x932 CSS px"}

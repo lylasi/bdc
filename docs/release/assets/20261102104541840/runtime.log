@@ -1,0 +1,17 @@
+--- git ---
+489eb33 fix(assistant): 收緊回答區塊間距
+0f2a671 docs(release): 記錄助手思考折疊149部署驗證
+f945ffe test(assistant): 思考驗收腳本可指定正式入口
+--- container ---
+NAME      IMAGE       COMMAND                  SERVICE   CREATED      STATUS                   PORTS
+bdc       bdc:local   "/usr/local/bin/entr…"   bdc       9 days ago   Up 6 minutes (healthy)   0.0.0.0:8001->80/tcp, [::]:8001->80/tcp
+running healthy 2026-11-02T02:44:08.350930926Z
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+--- hashes ---
+index.html|d91a78d5fb52fb3d5733b22ed10684849410258b82756c1b6be1c2db2c4239d2|d91a78d5fb52fb3d5733b22ed10684849410258b82756c1b6be1c2db2c4239d2|MATCH
+styles.css|6a21b136c6f6e4ade5379629f16079fca24e25b20c92dd873ac9d9124b2d4884|6a21b136c6f6e4ade5379629f16079fca24e25b20c92dd873ac9d9124b2d4884|MATCH
+features/assistant/assistant.js|6d654ae73d2549cbbd8ab6b797bb6a2ecfb2e9a96694aae920306f81a22cf4bd|6d654ae73d2549cbbd8ab6b797bb6a2ecfb2e9a96694aae920306f81a22cf4bd|MATCH
+features/sync/sync.js|db1fe11ca4d4a360af194494b670d827b63f66b08cad7c5f3e9dd7f07b54f2a9|db1fe11ca4d4a360af194494b670d827b63f66b08cad7c5f3e9dd7f07b54f2a9|MATCH
+modules/api.js|634cfb144a5a92f028b48a00f4013e43304ae83e8716a272e0d1b80343dd403d|634cfb144a5a92f028b48a00f4013e43304ae83e8716a272e0d1b80343dd403d|MATCH
+--- private config ---
+6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93
