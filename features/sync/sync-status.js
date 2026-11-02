@@ -16,6 +16,26 @@ export function resolveSyncCompletion(options = {}) {
     const articleOk = options.articleOk === true;
     const articlePending = options.articlePending === true;
     const readingUnsupported = options.readingUnsupported === true;
+    const readingFailed = options.readingOk === false;
+    const readingPending = options.readingPending === true;
+    let readingCompletion = null;
+    if (readingUnsupported) {
+        readingCompletion = { statusKey: 'sync.readingServerUpdateRequired', toastKey: '', toastLevel: '' };
+    } else if (readingFailed) {
+        readingCompletion = {
+            statusKey: 'sync.readingSyncFailed',
+            toastKey: manual ? 'sync.readingSyncFailed' : '',
+            toastLevel: manual ? 'error' : '',
+            params: { reason: options.readingError || 'reading_sync_failed' }
+        };
+    } else if (readingPending) {
+        readingCompletion = {
+            statusKey: 'sync.readingPending',
+            toastKey: manual ? 'sync.readingPending' : '',
+            toastLevel: manual ? 'warning' : '',
+            toastMs: 5000
+        };
+    }
 
     if (restoredFromRemote) {
         if (!articleOk) {
@@ -40,8 +60,8 @@ export function resolveSyncCompletion(options = {}) {
                 }
                 : { statusKey: 'sync.restoredArticleSyncPending', toastKey: '', toastLevel: '' };
         }
-        // 從雲端還原的提示優先於階段結果（沒有文章失敗時）：使用者的本機資料
-        // 狀況比階段結果更重要。
+        // 快照還原不能掩蓋筆記上傳失敗或尚未處理的衝突。
+        if (readingCompletion) return readingCompletion;
         return manual
             ? { statusKey: 'sync.restoredEmpty', toastKey: 'sync.restoredEmptyMessage', toastLevel: 'warning', toastMs: 5000 }
             : { statusKey: 'sync.restoredAutomatic', toastKey: 'sync.restoredAutomatic', toastLevel: 'warning', toastMs: 5000 };
@@ -63,9 +83,7 @@ export function resolveSyncCompletion(options = {}) {
             }
             : { statusKey: 'sync.articleSyncPending', toastKey: '', toastLevel: '' };
     }
-    if (readingUnsupported) {
-        return { statusKey: 'sync.readingServerUpdateRequired', toastKey: '', toastLevel: '' };
-    }
+    if (readingCompletion) return readingCompletion;
     return manual
         ? { statusKey: 'sync.syncDone', toastKey: 'sync.syncDone', toastLevel: 'success', toastMs: 2000 }
         : { statusKey: 'sync.syncDone', toastKey: '', toastLevel: '' };

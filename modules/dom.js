@@ -245,6 +245,8 @@ export const syncNowBtn = document.getElementById('sync-now-btn');
 export const loginBtn = document.getElementById('login-btn');
 export const logoutBtn = document.getElementById('logout-btn');
 export const syncStatus = document.getElementById('sync-status');
+export const getSyncMenuStatus = () => document.querySelector('#gear-menu .menu-status');
+export const getSyncMenuAction = () => document.getElementById('gm-sync');
 export const appGearBtn = document.getElementById('app-gear-btn');
 
 // Pronunciation practice (入口按鈕；彈窗內容由 features/phonetics/word-sheet.js 建立)

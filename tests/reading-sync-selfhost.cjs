@@ -98,6 +98,8 @@ async function newPage(browser, endpoint, user = 'alice') {
         if (m.type() !== 'error') return;
         const text = m.text();
         if (/401|404|501|Not Implemented|ai-credentials|ai-catalog|connection refused|ERR_CONNECTION_REFUSED|尚未选择模型|Error analyzing word/i.test(text)) return;
+        // 下方雙語錯誤路徑刻意讓這個端點回 503。
+        if (/503/.test(text) && m.location().url.endsWith('/reading/mutations')) return;
         errors.push(text.slice(0, 240));
     });
     page.on('pageerror', (e) => errors.push('PAGEERROR ' + String(e && e.stack ? e.stack.split('\n')[0] : e)));
@@ -154,6 +156,13 @@ async function seedInitial(page, label) {
 
 async function sync(page) {
     return page.evaluate(async () => (await import('/modules/reading-sync.js')).syncReading());
+}
+
+async function syncViaMenu(page) {
+    if (!await page.locator('#gear-menu').count()) await page.locator('#app-gear-btn').click();
+    await page.locator('#gm-sync').click();
+    // 操作會收起選單；重新開啟，驗證真實可見的完成／失敗狀態。
+    await page.locator('#app-gear-btn').click();
 }
 
 async function snapshotLocal(page) {
@@ -385,6 +394,84 @@ async function api(endpoint, token, apiPath, options = {}) {
             body: { expected_version: 0, payload: { vocabulary: { books: [{ id: 'old', words: [] }] }, assistant: { conversations: [{ id: 'old', messages: [] }] } } }
         });
         check('遷移後的舊快照詞書／聊天寫入被拒', legacySnapshot.status === 409 && legacySnapshot.body.code === 'reading_legacy_write_blocked', JSON.stringify(legacySnapshot));
+
+        console.log('\n[雙語介面：筆記同步失敗與恢復]');
+        const uiSeed = await seedInitial(c.page, 'ui_feedback');
+        for (const locale of ['zh-CN', 'zh-HK']) {
+            await c.page.evaluate(async ({ locale, itemId }) => {
+                await (await import('/modules/i18n.js')).setLocale(locale);
+                await (await import('/modules/reading-store.js')).patchLearningItem(itemId, { note: `offline note ${locale}` });
+            }, { locale, itemId: uiSeed.itemId });
+            await c.context.route('**/reading/mutations', route => route.fulfill({
+                status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'temporary_failure' })
+            }));
+            await syncViaMenu(c.page);
+            await c.page.waitForFunction(() => document.querySelector('#gear-menu .menu-status')?.textContent.includes('temporary_failure'));
+            const feedback = await c.page.evaluate(async itemId => {
+                const rd = await import('/modules/reading-store.js');
+                return {
+                    text: document.querySelector('#gear-menu .menu-status').textContent,
+                    note: rd.getLearningItem(itemId)?.note,
+                    pending: (await rd.listOutbox()).length
+                };
+            }, uiSeed.itemId);
+            check(`${locale} 顯示閱讀同步失敗與原因，保留本機筆記`,
+                feedback.text.includes(locale === 'zh-CN' ? '阅读记录同步失败' : '閱讀記錄同步失敗')
+                && feedback.note === `offline note ${locale}` && feedback.pending === 1, JSON.stringify(feedback));
+            if (locale === 'zh-CN') {
+                await c.page.evaluate(async () => (await import('/modules/i18n.js')).setLocale('zh-HK'));
+                const translated = await c.page.locator('#gear-menu .menu-status').innerText();
+                check('切換語言即時重譯既有失敗狀態，保留錯誤原因',
+                    translated.includes('閱讀記錄同步失敗') && translated.includes('temporary_failure'), translated);
+                await c.page.evaluate(async () => (await import('/modules/i18n.js')).setLocale('zh-CN'));
+            }
+            await c.context.unroute('**/reading/mutations');
+            await syncViaMenu(c.page);
+            await c.page.waitForFunction(() => document.querySelector('#gear-menu .menu-status')?.textContent.includes('同步完成'));
+            const recovered = await api(server.base, TOKENS.bob, '/reading/batch', {
+                method: 'POST', body: { keys: [{ entityType: 'learningItem', entityId: uiSeed.itemId }] }
+            });
+            check(`${locale} 重試成功且雲端保留完整筆記`, recovered.body.entities[0].note === `offline note ${locale}`);
+        }
+
+        console.log('\n[手動與自動同步共用鎖，連續變更遵守最短間隔]');
+        await c.page.clock.install();
+        let release;
+        let firstArrived;
+        let secondArrived;
+        let capabilityCalls = 0;
+        const gate = new Promise(resolve => { release = resolve; });
+        const firstRequest = new Promise(resolve => { firstArrived = resolve; });
+        const secondRequest = new Promise(resolve => { secondArrived = resolve; });
+        await c.context.route('**/reading/capabilities', async route => {
+            capabilityCalls += 1;
+            if (capabilityCalls === 1) { firstArrived(); await gate; }
+            if (capabilityCalls === 2) secondArrived();
+            await route.continue();
+        });
+        try {
+            await syncViaMenu(c.page);
+            await firstRequest;
+            await c.page.waitForFunction(() => document.getElementById('gm-sync')?.getAttribute('aria-disabled') === 'true');
+            await c.page.evaluate(() => {
+                document.getElementById('gm-sync').click();
+                window.dispatchEvent(new CustomEvent('bdc:data-changed', { detail: { group: 'reading' } }));
+            });
+            await c.page.locator('#app-gear-btn').click();
+            await c.page.clock.fastForward(6500);
+            check('同步期間額外手動點擊與自動觸發沒有啟動第二輪', capabilityCalls === 1, String(capabilityCalls));
+            release();
+            await c.page.waitForFunction(() => document.getElementById('gm-sync')?.getAttribute('aria-disabled') === 'false');
+            await c.page.clock.fastForward(19000);
+            check('上一輪結束後仍遵守至少 20 秒間隔', capabilityCalls === 1, String(capabilityCalls));
+            await c.page.clock.fastForward(2000);
+            await secondRequest;
+            await c.page.waitForFunction(() => document.getElementById('gm-sync')?.getAttribute('aria-disabled') === 'false');
+            check('在途期間的資料變更保留下一輪自動同步', capabilityCalls === 2, String(capabilityCalls));
+        } finally {
+            release();
+            await c.context.unroute('**/reading/capabilities');
+        }
 
         const allErrors = [...a.errors, ...b.errors, ...c.errors, ...carol.errors];
         check('同步流程沒有 console/page 錯誤', allErrors.length === 0, allErrors.join('\n'));

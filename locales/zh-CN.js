@@ -1440,7 +1440,8 @@ export default {
         aiKeyAllSynced: '全部已同步',
         aiKeyLocalOnlyProviders: '{count} 个供应商仅保存在本机',
         readingServerUpdateRequired: '同步服务尚未支持逐项阅读资料或标记；本机仍可保存，请更新 Worker / selfhost。',
-        readingPending: '阅读记录尚未同步完成，稍后会自动重试',
+        readingPending: '阅读记录尚未同步完成，笔记已保存在本机；请稍后重试或处理同步冲突。',
+        readingSyncFailed: '阅读记录同步失败（{reason}），笔记已保存在本机，请稍后重试。',
     },
     ai: {
         analysisFailed: '分析失败'

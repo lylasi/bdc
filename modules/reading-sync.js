@@ -9,10 +9,13 @@
 import { apiRequest, getAuthSnapshot, pullSnapshot } from './sync-cloudflare.js';
 import * as articleStore from './article-store.js';
 import * as store from './reading-store.js';
-import { READING_LIMITS } from '../shared/reading-protocol.mjs';
+import { READING_LIMITS, utf8Bytes } from '../shared/reading-protocol.mjs';
 
-const MAX_PUSH_MUTATIONS = 100;
-const MAX_PUSH_ROUNDS = 4;
+// 後端逐項寫交易＋核對回執，100 筆會超出 D1 Free 每次 invocation 的
+// 50 次呼叫限制。小批次也讓慢速連線能逐批確認，避免整批逾時重送。
+const MAX_PUSH_MUTATIONS = 10;
+const MAX_PUSH_ROUNDS = 40;
+const TARGET_PUSH_BYTES = 512 * 1024;
 const MAX_PULL_PAGES = 20;
 
 let inFlight = null;
@@ -85,11 +88,29 @@ function toMutation(op) {
     };
 }
 
+function nextPushBatch(operations) {
+    const chunk = [];
+    const serialized = [];
+    let bytes = utf8Bytes('{"mutations":[]}');
+    for (const op of operations) {
+        const mutation = JSON.stringify(toMutation(op));
+        const addedBytes = utf8Bytes(mutation) + (chunk.length ? 1 : 0);
+        // 單一合法的大文件可獨立上傳；不要為湊批次裁切任何筆記內容。
+        if (chunk.length && bytes + addedBytes > TARGET_PUSH_BYTES) break;
+        chunk.push(op);
+        serialized.push(mutation);
+        bytes += addedBytes;
+        if (chunk.length >= MAX_PUSH_MUTATIONS) break;
+    }
+    return { chunk, body: `{"mutations":[${serialized.join(',')}]}` };
+}
+
 async function pushAll(ctx) {
     let pushed = 0;
     let conflicts = 0;
     let failed = 0;
     let unsupported = false;
+    let error = '';
     for (let round = 0; round < MAX_PUSH_ROUNDS; round += 1) {
         assertScope(ctx);
         const outbox = await store.listOutbox(ctx);
@@ -99,13 +120,13 @@ async function pushAll(ctx) {
         const blocked = new Set(store.getReadingConflicts().map((item) => `${item.entityType}:${item.entityId}`));
         const pushable = outbox.filter((op) => !blocked.has(`${op.entityType}:${op.entityId}`));
         if (!pushable.length) break;
-        const chunk = pushable.slice(0, MAX_PUSH_MUTATIONS);
+        const { chunk, body: requestBody } = nextPushBatch(pushable);
         const byMutation = new Map(chunk.map((op) => [op.mutationId, op]));
         let res;
         try {
             res = await request('/reading/mutations', {
                 method: 'POST',
-                body: JSON.stringify({ mutations: chunk.map(toMutation) })
+                body: requestBody
             });
         } catch (error) {
             if (error && error.code === 'unauthorized') throw error;
@@ -118,16 +139,19 @@ async function pushAll(ctx) {
         const body = await readJson(res);
         if (!res.ok) {
             const code = body?.code || `http_${res.status}`;
+            error = code;
             for (const op of chunk) await store.markOutboxFailed(op.entityType, op.entityId, code, ctx);
             failed += chunk.length;
             break;
         }
         assertScope(ctx);
         const results = Array.isArray(body?.results) ? body.results : [];
+        const received = new Set();
         let progressed = false;
         for (const result of results) {
             const op = byMutation.get(result.mutationId);
-            if (!op) continue;
+            if (!op || received.has(result.mutationId)) continue;
+            received.add(result.mutationId);
             if (result.status === 'ok') {
                 const ack = await store.markOutboxAcknowledged(op.entityType, op.entityId, {
                     mutationId: op.mutationId,
@@ -136,6 +160,7 @@ async function pushAll(ctx) {
                 }, ctx);
                 if (!ack.ok) {
                     failed += 1;
+                    error = ack.error || 'ack_failed';
                     await store.markOutboxFailed(op.entityType, op.entityId, ack.error || 'ack_failed', ctx);
                     continue;
                 }
@@ -152,12 +177,19 @@ async function pushAll(ctx) {
                 }
             } else {
                 failed += 1;
+                error = result.code || 'invalid';
                 await store.markOutboxFailed(op.entityType, op.entityId, result.code || 'invalid', ctx);
             }
         }
+        for (const op of chunk) {
+            if (received.has(op.mutationId)) continue;
+            failed += 1;
+            error = 'reading_receipt_missing';
+            await store.markOutboxFailed(op.entityType, op.entityId, error, ctx);
+        }
         if (!progressed) break;
     }
-    return { pushed, conflicts, failed, unsupported };
+    return { pushed, conflicts, failed, unsupported, error };
 }
 
 async function pullAll(ctx) {
@@ -316,8 +348,8 @@ async function runSync() {
         }
         await store.markLegacySnapshotAdopted();
     }
-    let push = await pushAll(ctx);
-    let pull = await pullAll(ctx);
+    const push = await pushAll(ctx);
+    const pull = await pullAll(ctx);
     // 拉取後可能產生需要重送的三方合併，再做一輪推／拉收斂。
     const pushAgain = await pushAll(ctx);
     const pullAgain = await pullAll(ctx);
@@ -326,31 +358,37 @@ async function runSync() {
     assertScope(ctx);
     const pending = (await store.listOutbox(ctx)).length;
     const conflicts = store.getReadingConflicts().length;
-    await store.markReadingSynced(undefined, ctx);
+    const failed = push.failed + pushAgain.failed;
+    const error = pending && failed ? (pushAgain.error || push.error || 'reading_sync_failed') : '';
+    if (error) await store.markReadingSyncError(error, ctx);
+    else await store.markReadingSynced(undefined, ctx);
     return {
-        ok: true,
+        ok: !error,
+        error,
         scope,
         migration,
         capabilities: caps,
         pushed: push.pushed + pushAgain.pushed,
         pulled: pull.pulled + pullAgain.pulled,
         conflicts: push.conflicts + pull.conflicts + pushAgain.conflicts + pullAgain.conflicts,
-        failed: push.failed + pushAgain.failed,
+        failed,
         pending,
         conflictCount: conflicts,
         finalized,
-        unsupported: pull.unsupported || push.unsupported
+        unsupported: pull.unsupported || push.unsupported || pullAgain.unsupported || pushAgain.unsupported
     };
 }
 
 export async function syncReading() {
     if (inFlight) return inFlight;
+    const ctx = store.captureReadingContext();
     inFlight = runSync();
     try {
         return await inFlight;
     } catch (error) {
-        const ctx = store.captureReadingContext();
-        await store.markReadingSyncError(error && error.code ? error.code : 'sync_failed', ctx).catch(() => {});
+        if (store.isReadingContextActive(ctx)) {
+            await store.markReadingSyncError(error && error.code ? error.code : 'sync_failed', ctx).catch(() => {});
+        }
         throw error;
     } finally {
         inFlight = null;

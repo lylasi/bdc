@@ -63,6 +63,8 @@ import { getLocale, setLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { SUPPORTED_LOCALES } from '../../modules/i18n-config.js';
 
 let aiProviderController = null;
+let syncStatusText = '';
+let syncStatusValue = null;
 
 // A login link is captured synchronously during startup and exchanged after
 // auth callbacks are wired. It never survives a reload: the fragment is
@@ -94,6 +96,7 @@ export function initSync() {
       try { ui.displayMessage(t('sync.mergePendingStatus'), 'warning', 8000); } catch (_) {}
     }
     document.addEventListener('bdc:modal-closed', destroyAIProviderSettings);
+    document.addEventListener('bdc:locale-change', renderSyncStatus);
     wireAuthUI();
     if (dom.syncNowBtn) {
       dom.syncNowBtn.addEventListener('click', handleSync);
@@ -141,7 +144,7 @@ function wireAuthUI() {
     const user = session?.user || null;
     try { window.__supabase_user = user || null; } catch(_) {}
     updateAuthButtons(user);
-    updateStatus(user ? (user.email || t('sync.loggedIn')) : t('sync.loggedOutState'));
+    updateStatus(user ? 'sync.loggedIn' : 'sync.loggedOutState', {}, user?.email || '');
     attachRealtime(user);
     setGearLoginState(!!user, user?.email || '');
     if (!user) {
@@ -153,7 +156,7 @@ function wireAuthUI() {
     if (readPendingMergeUser() === user.id && !hasMeaningfulLocalData()) clearPendingMerge();
     pendingMergePaused = readPendingMergeUser() === user.id;
     if (pendingMergePaused) {
-      updateStatus(t('sync.mergePendingStatus'));
+      updateStatus('sync.mergePendingStatus');
       return;
     }
     if (!suppressAutoSyncForLoginLink && !pendingLoginCode) {
@@ -168,7 +171,7 @@ function wireAuthUI() {
     const user = data?.session?.user || null;
     try { window.__supabase_user = user || null; } catch(_) {}
     updateAuthButtons(user);
-    updateStatus(user ? (user.email || t('sync.loggedIn')) : t('sync.loggedOutState'));
+    updateStatus(user ? 'sync.loggedIn' : 'sync.loggedOutState', {}, user?.email || '');
     attachRealtime(user);
     setGearLoginState(!!user, user?.email || '');
     if (!user) return;
@@ -177,7 +180,7 @@ function wireAuthUI() {
     if (readPendingMergeUser() === user.id && !hasMeaningfulLocalData()) clearPendingMerge();
     pendingMergePaused = readPendingMergeUser() === user.id;
     if (pendingMergePaused) {
-      updateStatus(t('sync.mergePendingStatus'));
+      updateStatus('sync.mergePendingStatus');
       return;
     }
     if (!suppressAutoSyncForLoginLink && !pendingLoginCode) {
@@ -212,7 +215,7 @@ async function handleLogout() {
   try { await auth.signOut(); } catch (_) {}
   clearPendingMerge();
   updateAuthButtons(null);
-  updateStatus(t('sync.loggedOut'));
+  updateStatus('sync.loggedOut');
 }
 
 function createSyncGuard() {
@@ -325,7 +328,7 @@ async function runArticleSyncPhase() {
     // syncArticles() 以 `{ ok:false, error }` 回報失敗（不拋出）：這一階段必須
     // 把失敗往上傳，否則呼叫端會把「文章其實沒同步」顯示成同步完成。
     if (info && info.ok === false) {
-      updateStatus(t('sync.articleSyncFailed'));
+      updateStatus('sync.articleSyncFailed');
       const failed = Number(info?.pushed?.failed) || 0;
       const conflicts = Number(info?.pushed?.conflicts) || 0;
       return { ok: false, error: (info && info.error) || 'article_sync_failed', info, pending: false, failed, conflicts };
@@ -336,7 +339,7 @@ async function runArticleSyncPhase() {
     const conflicts = Number(info?.pushed?.conflicts) || 0;
     const pending = failed > 0 || conflicts > 0;
     if (pending) {
-      updateStatus(t('sync.articleSyncPending'));
+      updateStatus('sync.articleSyncPending');
     }
     return { ok: true, info, pending, failed, conflicts };
   } catch (e) {
@@ -360,11 +363,14 @@ async function runReadingSyncPhase() {
         readingServerUpdateWarned = true;
         try { ui.displayMessage(t('sync.readingServerUpdateRequired'), 'warning', 7000); } catch (_) {}
       }
-      updateStatus(t('sync.readingServerUpdateRequired'));
+      updateStatus('sync.readingServerUpdateRequired');
       return { ok: false, error: { code: 'server_update_required' }, info };
     }
+    if (info && info.ok === false) {
+      return { ok: false, error: { code: info.error || 'reading_sync_failed' }, info };
+    }
     if (info && (info.pending || info.conflictCount)) {
-      updateStatus(t('sync.readingPending'));
+      updateStatus('sync.readingPending');
     }
     return { ok: true, info };
   } catch (e) {
@@ -378,10 +384,11 @@ async function handleSync() {
   // 必須登入後才能同步
   const { data } = await auth.getSession();
   if (!data?.session) {
-    updateStatus(t('sync.loginFirst'));
+    updateStatus('sync.loginFirst');
     ui.displayMessage(t('sync.loginFirst'), 'warning');
     return;
   }
+  if (syncInFlight) return;
 
   // Auto-sync is paused after a login-link sign-in that skipped merging local
   // data. A manual "Sync now" is the explicit consent to merge.
@@ -397,11 +404,10 @@ async function handleSync() {
     clearPendingMerge();
   }
 
+  if (!startSyncRound()) return;
   let guard = null;
   try {
-    setBusy(true);
-    beginSyncRound();
-    updateStatus(t('sync.syncing'));
+    updateStatus('sync.syncing');
     guard = createSyncGuard();
     // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
     const articlePhase = await runArticleSyncPhase();
@@ -420,11 +426,14 @@ async function handleSync() {
       restoredFromRemote: !!(info && info.restoredFromRemote),
       articleOk: articlePhase.ok === true,
       articlePending: articlePhase.pending === true,
+      readingOk: readingPhase.ok === true,
+      readingPending: !!(readingPhase.info?.pending || readingPhase.info?.conflictCount),
+      readingError: readingPhase.error?.code || readingPhase.error?.message,
       readingUnsupported: !!(readingPhase && !readingPhase.ok && readingPhase.info?.unsupported)
     });
-    updateStatus(t(completion.statusKey));
+    updateStatus(completion.statusKey, completion.params);
     if (completion.toastKey) {
-      try { ui.displayMessage(t(completion.toastKey), completion.toastLevel, completion.toastMs); } catch(_) {}
+      try { ui.displayMessage(t(completion.toastKey, completion.params), completion.toastLevel, completion.toastMs); } catch(_) {}
     }
     // 手動同步的備份也移到鎖外，避免匯出全部資料時卡住「同步中」狀態。
     scheduleBackupAfterSync(t('sync.backupNoteManual'));
@@ -433,15 +442,14 @@ async function handleSync() {
     if (e && e.code === 'unauthorized') {
       // Only the session that issued this request may be signed out.
       if (!(guard && guard.stale())) await auth.invalidateSession();
-      updateStatus(t('sync.loggedOutState'));
+      updateStatus('sync.loggedOutState');
       return;
     }
     console.warn(e);
-    updateStatus(t('sync.syncFailed'));
+    updateStatus('sync.syncFailed');
     ui.displayMessage(`${t('sync.syncFailed')}：${e?.message || t('sync.unknownError')}`, 'error');
   } finally {
-    endSyncRound();
-    setBusy(false);
+    finishSyncRound();
   }
 }
 
@@ -449,16 +457,27 @@ function setBusy(b) {
   if (dom.syncNowBtn) dom.syncNowBtn.disabled = b;
   if (dom.loginBtn) dom.loginBtn.disabled = b;
   if (dom.logoutBtn) dom.logoutBtn.disabled = b;
+  dom.getSyncMenuAction()?.setAttribute('aria-disabled', String(b));
 }
 
-function updateStatus(text) {
-  if (dom.syncStatus) {
-    const ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
-    const ts = lastSyncAt
-        ? t('sync.lastSyncWithVersion', { time: formatDateTime(lastSyncAt, { hour12: false, year: undefined, month: undefined, day: undefined }), version: ver })
-        : (ver ? t('sync.versionOnly', { version: ver }) : '');
-    dom.syncStatus.textContent = (text || '') + ' ' + ts;
-  }
+function updateStatus(key, params = {}, label = '') {
+  syncStatusValue = { key, params, label };
+  renderSyncStatus();
+}
+
+function renderSyncStatus() {
+  if (!syncStatusValue) return;
+  const text = syncStatusValue.label || t(syncStatusValue.key, syncStatusValue.params);
+  const ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
+  const ts = lastSyncAt
+      ? t('sync.lastSyncWithVersion', { time: formatDateTime(lastSyncAt, { hour12: false, year: undefined, month: undefined, day: undefined }), version: ver })
+      : (ver ? t('sync.versionOnly', { version: ver }) : '');
+  // 現行骨架只有齒輪選單，舊版 #sync-status 可能不存在；保留最近狀態，
+  // 選單重新開啟時仍能看到閱讀筆記是否真的同步成功。
+  syncStatusText = ((text || '') + ' ' + ts).trim();
+  if (dom.syncStatus) dom.syncStatus.textContent = syncStatusText;
+  const menuStatus = dom.getSyncMenuStatus();
+  if (menuStatus) menuStatus.textContent = syncStatusText;
 }
 
 function updateAuthButtons(user) {
@@ -770,7 +789,7 @@ async function afterLoginCode(result, { notify = true } = {}) {
   }
   setPendingMerge(userId);
   suppressAutoSyncForLoginLink = false;
-  updateStatus(t('sync.mergePendingStatus'));
+  updateStatus('sync.mergePendingStatus');
   ui.displayMessage(t('sync.loginCodeMergeSkipped'), 'warning', 6000);
 }
 
@@ -1050,7 +1069,7 @@ function toggleGearMenu() {
   let ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
   const atMs = parseInt(localStorage.getItem('lastSnapshotAt')||'0',10) || 0;
   const timeText = atMs ? new Date(atMs).toLocaleTimeString() : '';
-  const status = dom.syncStatus?.textContent || '';
+  const status = syncStatusText || dom.syncStatus?.textContent || '';
   if (!ver && status) {
     const mVer = status.match(/v(\d+)/i);
     if (mVer) { ver = parseInt(mVer[1], 10) || 0; try { if (ver>0) localStorage.setItem('lastSnapshotVersion', String(ver)); } catch(_) {} }
@@ -1062,7 +1081,7 @@ function toggleGearMenu() {
   // 若只寫死 t() 的結果，之後切換介面語言時這份已經在畫面上的選單不會更新
   // （applyTranslations 只認 data-i18n 屬性），使用者會看到舊語言的文案。
   m.innerHTML = `
-    <div class="menu-item" id="gm-sync">
+    <div class="menu-item" id="gm-sync" aria-disabled="${syncInFlight}">
       <span class="mi-icon" aria-hidden="true">${svgSync()}</span>
       <span class="mi-text" data-i18n="menu.syncNow">${t('menu.syncNow')}</span>
       <span class="meta">${ver ? 'v'+ver : ''}${timeText ? ' · ' + timeText.replace(/:\\d{2}$/, '') : ''}</span>
@@ -1076,7 +1095,7 @@ function toggleGearMenu() {
     <div class="menu-item" id="gm-grading-history"><span class="mi-icon">${svgHistory()}</span><span class="mi-text" data-i18n="menu.gradingHistory">${t('menu.gradingHistory')}</span></div>
     <div class="menu-item" id="gm-assistant"><span class="mi-icon">${svgChat()}</span><span class="mi-text" data-i18n="menu.assistantSessions">${t('menu.assistantSessions')}</span></div>
     <div class="menu-item" id="gm-backup-panel"><span class="mi-icon">${svgRestore()}</span><span class="mi-text" data-i18n="menu.backupRestore">${t('menu.backupRestore')}</span></div>
-    <div class="menu-status">${status}</div>`;
+    <div class="menu-status">${escapeHtml(status)}</div>`;
   document.body.appendChild(m);
   const sync = m.querySelector('#gm-sync');
   const login = m.querySelector('#gm-login');
@@ -2073,6 +2092,7 @@ let autoDueAt = 0;
 let pendingAutoReason = '';
 let lastLocalChangeAt = 0;
 let lastSyncAt = 0;
+let lastSyncAttemptAt = 0;
 let syncInFlight = false;
 let queuedWhileInFlight = false;
 const DEBOUNCE_MS = 6000; // 6s after last change
@@ -2084,6 +2104,28 @@ function clearAutoTimer() {
   if (!autoTimer) return;
   clearTimeout(autoTimer);
   autoTimer = null;
+}
+
+function startSyncRound() {
+  if (syncInFlight) return false;
+  syncInFlight = true;
+  lastSyncAttemptAt = Date.now();
+  clearAutoTimer();
+  autoDueAt = 0;
+  pendingAutoReason = '';
+  setBusy(true);
+  beginSyncRound();
+  return true;
+}
+
+function finishSyncRound() {
+  endSyncRound();
+  syncInFlight = false;
+  setBusy(false);
+  if (queuedWhileInFlight) {
+    queuedWhileInFlight = false;
+    scheduleAutoSync('data:queued');
+  }
 }
 
 function extractTouchedGroup(reason) {
@@ -2102,7 +2144,7 @@ function runAutoSyncTimer() {
 
 function scheduleAutoSync(reason) {
   if (pendingMergePaused) {
-    updateStatus(t('sync.mergePendingStatus'));
+    updateStatus('sync.mergePendingStatus');
     return;
   }
   const now = Date.now();
@@ -2123,11 +2165,13 @@ function scheduleAutoSync(reason) {
     return;
   }
 
-  let nextDue = now;
+  // 即使上一輪失敗，或通知來自其他裝置，也要遵守最短間隔。
+  const lastAttempt = Math.max(lastSyncAt, lastSyncAttemptAt);
+  const minDue = lastAttempt > 0 ? lastAttempt + MIN_INTERVAL_MS : now;
+  let nextDue = Math.max(now, minDue);
   if (isLocalDataChange) {
     const debounceBase = lastLocalChangeAt || now;
     const debounceDue = debounceBase + DEBOUNCE_MS;
-    const minDue = lastSyncAt > 0 ? lastSyncAt + MIN_INTERVAL_MS : now;
     nextDue = Math.max(debounceDue, minDue);
   }
   const wait = Math.max(0, nextDue - now);
@@ -2147,11 +2191,10 @@ async function doAutoSync(reason) {
     queuedWhileInFlight = true;
     return;
   }
+  if (!startSyncRound()) return;
   let guard = null;
   try {
-    syncInFlight = true;
-    beginSyncRound();
-    updateStatus(t('sync.autoSyncing'));
+    updateStatus('sync.autoSyncing');
     guard = createSyncGuard();
     // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
     const articlePhase = await runArticleSyncPhase();
@@ -2170,32 +2213,30 @@ async function doAutoSync(reason) {
       restoredFromRemote: !!(info && info.restoredFromRemote),
       articleOk: articlePhase.ok === true,
       articlePending: articlePhase.pending === true,
+      readingOk: readingPhase.ok === true,
+      readingPending: !!(readingPhase.info?.pending || readingPhase.info?.conflictCount),
+      readingError: readingPhase.error?.code || readingPhase.error?.message,
       readingUnsupported: !!(readingPhase && !readingPhase.ok && readingPhase.info?.unsupported)
     });
-    updateStatus(t(completion.statusKey));
+    updateStatus(completion.statusKey, completion.params);
     if (completion.toastKey) {
-      try { ui.displayMessage(t(completion.toastKey), completion.toastLevel, completion.toastMs); } catch(_) {}
+      try { ui.displayMessage(t(completion.toastKey, completion.params), completion.toastLevel, completion.toastMs); } catch(_) {}
     }
     // 自動同步成功不再彈出提示，避免干擾（失敗的提示由上面的判斷決定）。
     // 備份不佔用同步鎖：排到本輪結束、鎖釋放後才執行，且由資料版本去重。
     scheduleBackupAfterSync(t('sync.backupNoteAuto'));
   } catch (e) {
     if (e && e.code === 'stale_session') {
-      updateStatus(t('sync.loggedOutState'));
+      updateStatus('sync.loggedOutState');
     } else if (e && e.code === 'unauthorized') {
       if (!(guard && guard.stale())) await auth.invalidateSession();
-      updateStatus(t('sync.loggedOutState'));
+      updateStatus('sync.loggedOutState');
     } else {
       console.warn('[sync] auto sync failed:', e);
-      updateStatus(t('sync.autoSyncFailed'));
+      updateStatus('sync.autoSyncFailed');
     }
   } finally {
-    endSyncRound();
-    syncInFlight = false;
-    if (queuedWhileInFlight) {
-      queuedWhileInFlight = false;
-      scheduleAutoSync('data:queued');
-    }
+    finishSyncRound();
   }
 }
 
@@ -2348,7 +2389,7 @@ function showBackupRestoreModal() {
         if (!payload) { try { ui.displayMessage(t('sync.backupMissing'), 'error'); } catch(_) {} return; }
         await restoreSnapshotLocally(payload);
         try { lastSyncAt = Date.now(); localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
-        updateStatus(t('sync.restoredLocal'));
+        updateStatus('sync.restoredLocal');
         try { ui.displayMessage(t('sync.restoredLocal'), 'success'); } catch(_) {}
         ui.closeModal();
       } catch (e) {

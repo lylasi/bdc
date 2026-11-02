@@ -78,6 +78,30 @@ test('文章階段成功時才顯示 syncDone（手動附成功提示、自動�
     assert.equal(auto.toastKey, '');
 });
 
+test('閱讀筆記失敗或待處理時，手動／自動與快照還原都不能顯示同步完成', () => {
+    for (const manual of [true, false]) {
+        for (const restoredFromRemote of [true, false]) {
+            const failed = resolveSyncCompletion({
+                manual, restoredFromRemote, articleOk: true,
+                readingOk: false, readingError: 'temporary_failure'
+            });
+            assert.equal(failed.statusKey, 'sync.readingSyncFailed');
+            assert.equal(failed.params.reason, 'temporary_failure');
+            assert.equal(failed.toastKey, manual ? 'sync.readingSyncFailed' : '');
+            const pending = resolveSyncCompletion({
+                manual, restoredFromRemote, articleOk: true,
+                readingOk: true, readingPending: true
+            });
+            assert.equal(pending.statusKey, 'sync.readingPending');
+            assert.equal(pending.toastKey, manual ? 'sync.readingPending' : '');
+        }
+    }
+    for (const dict of [zhCN, zhHK]) {
+        assert.ok(pick(dict, 'sync.readingSyncFailed').includes('{reason}'));
+        assert.ok(pick(dict, 'sync.readingPending'));
+    }
+});
+
 test('閱讀後端未支援與雲端還原的顯示優先順序維持不變', () => {
     const unsupported = resolveSyncCompletion({
         manual: true,
