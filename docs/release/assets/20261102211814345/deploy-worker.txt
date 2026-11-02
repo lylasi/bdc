@@ -3,10 +3,10 @@
 ───────────────────────────────────────────────
 Total Upload: 176.41 KiB / gzip: 35.31 KiB
 Your Worker has access to the following bindings:
-Binding                                       Resource                  
-env.DB (bdc-sync)                             D1 Database               
-env.ALLOW_ORIGIN ("*")                        Environment Variable      
-env.AI_CREDENTIAL_KEY_VERSION ("1")           Environment Variable      
+Binding                                       Resource
+env.DB (bdc-sync)                             D1 Database
+env.ALLOW_ORIGIN ("*")                        Environment Variable
+env.AI_CREDENTIAL_KEY_VERSION ("1")           Environment Variable
 
 Uploaded bdc-sync-api (5.73 sec)
 Deployed bdc-sync-api triggers (4.46 sec)

@@ -1,10 +1,10 @@
 PASS release map is generated and current "release import map 已是最新：44bfa42635e7（95 個模組）"
 PASS article-store is mapped to release query "/modules/article-store.js?v=44bfa42635e7"
 PASS reading-panel is mapped to release query "/features/article/reading-panel.js?v=44bfa42635e7"
-PASS shared protocols and locales are mapped 
-PASS ai-config stays unversioned 
+PASS shared protocols and locales are mapped
+PASS ai-config stays unversioned
 PASS main.js and styles.css entries are versioned {"main":"44bfa42635e7","styles":"44bfa42635e7"}
-PASS import map appears before the module entry 
+PASS import map appears before the module entry
 PASS same-scope refresh retains opened body {"opened":{"body":"We look forward to meeting you.\n\nWe look forward to meeting you.","summaryOnly":false,"hasAnalysis":true},"cold":{"body":"","summaryOnly":true}}
 PASS same-scope refresh keeps cold article lazy {"body":"","summaryOnly":true}
 PASS mapped and explicit-query imports share one instance {"article":true,"panel":true,"protocol":true,"locale":true}

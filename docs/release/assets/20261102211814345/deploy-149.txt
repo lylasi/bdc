@@ -23,8 +23,8 @@ Fast-forward
  create mode 100644 "docs/report/20261102211814345_\350\210\212\347\266\262\345\235\200\346\226\207\347\253\240\345\220\214\346\255\245\345\244\261\346\225\227\344\277\256\345\276\251\345\240\261\345\221\212.md"
  create mode 100644 tests/article-legacy-identity.test.mjs
 27cdd1882c8ea69140b871943647227da3dbcb85
- Container bdc Restarting 
- Container bdc Started 
+ Container bdc Restarting
+ Container bdc Started
 nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
 nginx: configuration file /etc/nginx/nginx.conf test is successful
 running starting 2026-11-02T13:32:28.31724298Z
