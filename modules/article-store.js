@@ -2395,6 +2395,7 @@ export async function duplicateArticle(articleId, titleSuffix = '', options = {}
     const copy = {
         ...record,
         articleId: id,
+        storageId: '',
         title: `${record.title || record.article.slice(0, 40)}${titleSuffix}`.trim(),
         revision: 0,
         // 新 ID 是新的文章，不繼承原篇的重建代際。
@@ -3315,6 +3316,7 @@ export async function setGatePending(value, ctx = captureArticleContext()) {
 function toExportDocument(item) {
     return {
         id: item.articleId,
+        storageId: item.storageId || '',
         title: item.title || '',
         body: item.article || '',
         analysis: item.result === undefined ? null : item.result,
@@ -3375,6 +3377,7 @@ export async function importDocuments(documents, options = {}) {
         }
         const record = {
             articleId: id,
+            storageId: raw.storageId || existing?.storageId || '',
             article: body,
             result: raw.analysis !== undefined ? raw.analysis : (raw.result !== undefined ? raw.result : null),
             title: raw.title || existing?.title || '',

@@ -250,3 +250,28 @@ test('身份修復的全文下載中斷時，保留原本離線可讀的文章�
         assert.equal(articles.getMeta().identityVersion, 1);
     } finally { f.db.close(); }
 });
+
+test('備份離線還原保留文章身份對應，另存副本使用獨立身份', async () => {
+    const f = await fixture('legacy-offline-restore');
+    try {
+        const storageId = await seedOldClient(f);
+        await syncArticles();
+        const documents = await articles.exportDocuments();
+        const readingData = await reading.exportAll();
+        assert.equal(documents[0].storageId, storageId);
+        const blankScope = 'https://legacy.mock::offline-device';
+        await articles.reloadScope(blankScope);
+        await reading.initReadingStore(blankScope);
+        assert.equal((await articles.importDocuments(documents)).ok, true);
+        assert.equal((await reading.restoreAll(readingData)).ok, true);
+        assert.equal(articles.getRecord(storageId).articleId, LEGACY_ID);
+        assert.equal(reading.listLearningItems(LEGACY_ID)[0].note, '需要保留的筆記');
+        assert.equal(reading.listArticleDocuments(LEGACY_ID).length, 1);
+        assert.equal(reading.listConversations(LEGACY_ID).length, 1);
+        const copy = await articles.duplicateArticle(LEGACY_ID, ' copy');
+        assert.equal(copy.ok, true);
+        assert.equal(articles.getRecord(copy.articleId).storageId, '');
+        assert.equal(articles.sameArticleReference(copy.articleId, storageId), false);
+        assert.equal(articles.getRecord(storageId).articleId, LEGACY_ID);
+    } finally { f.db.close(); }
+});
