@@ -1,0 +1,50 @@
+[
+  {
+    "copiedFrom": "running Docker container grok2api, static source only",
+    "file": "grok-registry.py",
+    "sha256": "acc775b7c264bc4d576582ffa6522b9d4d0005d630a0365d1accee52d2fd3ff1",
+    "startLine": 18,
+    "endLine": 30,
+    "excerpt": "    ModelSpec(\"grok-4.20-0309-reasoning\",               ModeId.EXPERT,   Tier.SUPER, Capability.CHAT,       True, \"Grok 4.20 0309 Reasoning\"),\n    # Super+\n    ModelSpec(\"grok-4.20-0309-non-reasoning-super\",     ModeId.FAST,     Tier.SUPER, Capability.CHAT,       True, \"Grok 4.20 0309 Non-Reasoning Super\"),\n    ModelSpec(\"grok-4.20-0309-super\",                   ModeId.AUTO,     Tier.SUPER, Capability.CHAT,       True, \"Grok 4.20 0309 Super\"),\n    ModelSpec(\"grok-4.20-0309-reasoning-super\",         ModeId.EXPERT,   Tier.SUPER, Capability.CHAT,       True, \"Grok 4.20 0309 Reasoning Super\"),\n    # Heavy+\n    ModelSpec(\"grok-4.20-0309-non-reasoning-heavy\",     ModeId.FAST,     Tier.HEAVY, Capability.CHAT,       True, \"Grok 4.20 0309 Non-Reasoning Heavy\"),\n    ModelSpec(\"grok-4.20-0309-heavy\",                   ModeId.AUTO,     Tier.HEAVY, Capability.CHAT,       True, \"Grok 4.20 0309 Heavy\"),\n    ModelSpec(\"grok-4.20-0309-reasoning-heavy\",         ModeId.EXPERT,   Tier.HEAVY, Capability.CHAT,       True, \"Grok 4.20 0309 Reasoning Heavy\"),\n    ModelSpec(\"grok-4.20-multi-agent-0309\",             ModeId.HEAVY,    Tier.HEAVY, Capability.CHAT,       True, \"Grok 4.20 Multi-Agent 0309\"),\n\n    # --- 硬优先级反向选池 (heavy → super → basic) ---\n    ModelSpec(\"grok-4.20-fast\",                         ModeId.FAST,     Tier.BASIC, Capability.CHAT,       True, \"Grok 4.20 Fast\",          prefer_best=True),"
+  },
+  {
+    "copiedFrom": "running Docker container grok2api, static source only",
+    "file": "grok-router.py",
+    "sha256": "f65a3efcc942b80df1756f644cc89969edf1de02f7003be3958bc12202b8559e",
+    "startLine": 296,
+    "endLine": 314,
+    "excerpt": "\n        else:\n            # reasoning_effort=None → config default; \"none\" → off; otherwise → on.\n            if req.reasoning_effort is None:\n                emit_think: bool | None = None\n            else:\n                emit_think = req.reasoning_effort != \"none\"\n            result = await chat_completions(\n                model=req.model,\n                messages=messages,\n                stream=is_stream,\n                emit_think=emit_think,\n                tools=req.tools,\n                tool_choice=req.tool_choice,\n                temperature=req.temperature or 0.8,\n                top_p=req.top_p or 0.95,\n            )\n\n    except AppError:"
+  },
+  {
+    "copiedFrom": "running Docker container grok2api, static source only",
+    "file": "grok-chat.py",
+    "sha256": "938fe823fe34a0225781e6228cb61dfa90aaf127f9deae45fc03ef7fd0e1adf5",
+    "startLine": 450,
+    "endLine": 473,
+    "excerpt": "    *,\n    model: str,\n    messages: list[dict],\n    stream: bool | None = None,\n    emit_think: bool | None = None,\n    tools: list[dict] | None = None,\n    tool_choice: Any = None,\n    temperature: float = 0.8,\n    top_p: float = 0.95,\n    request_overrides: dict | None = None,\n) -> dict | AsyncGenerator[str, None]:\n    \"\"\"Entry point for /v1/chat/completions.\n\n    Returns an async generator for streaming, or a dict for non-streaming.\n    Supports transparent retry with a different account on configured HTTP\n    status codes (chat.retry_on_codes) up to chat.max_retries times.\n    \"\"\"\n    cfg = get_config()\n    spec = resolve_model(model)\n    is_stream = stream if stream is not None else cfg.get_bool(\"features.stream\", True)\n    if emit_think is None:\n        emit_think = cfg.get_bool(\"features.thinking\", True)\n\n    logger.info("
+  },
+  {
+    "copiedFrom": "running Docker container grok2api, static source only",
+    "file": "grok-chat.py",
+    "sha256": "938fe823fe34a0225781e6228cb61dfa90aaf127f9deae45fc03ef7fd0e1adf5",
+    "startLine": 597,
+    "endLine": 612,
+    "excerpt": "                                            )\n                                            ended = True\n                                            break  # stop processing remaining events in this batch\n                                    else:\n                                        chunk = make_stream_chunk(\n                                            response_id, model, ev.content\n                                        )\n                                        yield f\"data: {orjson.dumps(chunk).decode()}\\n\\n\"\n                                elif ev.kind == \"thinking\" and emit_think:\n                                    chunk = make_thinking_chunk(\n                                        response_id, model, ev.content\n                                    )\n                                    yield f\"data: {orjson.dumps(chunk).decode()}\\n\\n\"\n                                elif ev.kind == \"annotation\" and ev.annotation_data:\n                                    collected_annotations.append(ev.annotation_data)\n                                elif ev.kind == \"soft_stop\":"
+  },
+  {
+    "copiedFrom": "running Docker container grok2api, static source only",
+    "file": "grok-xai-chat.py",
+    "sha256": "c71d6f888bce194d5613ea0206edd3b6396a835d9bbbb684ee851bc53b216ce2",
+    "startLine": 16,
+    "endLine": 83,
+    "excerpt": "def build_chat_payload(\n    *,\n    message:               str,\n    mode_id:               ModeId,\n    file_attachments:      list[str]        = (),\n    tool_overrides:        dict[str, Any]   | None = None,\n    model_config_override: dict[str, Any]   | None = None,\n    request_overrides:     dict[str, Any]   | None = None,\n) -> dict[str, Any]:\n    \"\"\"Build the JSON payload for POST /rest/app-chat/conversations/new.\"\"\"\n    cfg = get_config()\n\n    payload: dict[str, Any] = {\n        \"collectionIds\":               [],\n        \"connectors\":                  [],\n        \"deviceEnvInfo\": {\n            \"darkModeEnabled\":  False,\n            \"devicePixelRatio\": 2,\n            \"screenHeight\":     1329,\n            \"screenWidth\":      2056,\n            \"viewportHeight\":   1083,\n            \"viewportWidth\":    2056,\n        },\n        \"disableMemory\":               not cfg.get_bool(\"features.memory\", False),\n        \"disableSearch\":               False,\n        \"disableSelfHarmShortCircuit\": False,\n        \"disableTextFollowUps\":        False,\n        \"enableImageGeneration\":       True,\n        \"enableImageStreaming\":        True,\n        \"enableSideBySide\":            True,\n        \"fileAttachments\":             list(file_attachments),\n        \"forceConcise\":                False,\n        \"forceSideBySide\":             False,\n        \"imageAttachments\":            [],\n        \"imageGenerationCount\":        2,\n        \"isAsyncChat\":                 False,\n        \"message\":                     message,\n        \"modeId\":                      mode_id.to_api_str(),\n        \"responseMetadata\":            {},\n        \"returnImageBytes\":            False,\n        \"returnRawGrokInXaiRequest\":   False,\n        \"searchAllConnectors\":         False,\n        \"sendFinalMetadata\":           True,\n        \"temporary\":                   cfg.get_bool(\"features.temporary\", True),\n        \"toolOverrides\": tool_overrides or {\n            \"gmailSearch\":           False,\n            \"googleCalendarSearch\":  False,\n            \"outlookSearch\":         False,\n            \"outlookCalendarSearch\": False,\n            \"googleDriveSearch\":     False,\n        },\n    }\n\n    custom = cfg.get_str(\"features.custom_instruction\", \"\").strip()\n    if custom:\n        payload[\"customPersonality\"] = custom\n\n    if model_config_override:\n        payload[\"responseMetadata\"][\"modelConfigOverride\"] = model_config_override\n\n    if request_overrides:\n        payload.update({k: v for k, v in request_overrides.items() if v is not None})\n\n    logger.debug(\n        \"chat payload built: mode={} message_len={} file_count={}\",\n        mode_id.to_api_str(), len(message), len(file_attachments),\n    )\n    return payload"
+  },
+  {
+    "copiedFrom": "running Docker container grok2api, static source only",
+    "file": "grok-console-chat.py",
+    "sha256": "18f3bc8c70a21f2045b9feb175a6b2d36737766018d1712ef6bcdcedb5942b9a",
+    "startLine": 89,
+    "endLine": 96,
+    "excerpt": "def _reasoning_effort_from_emit_think(emit_think: bool | None) -> str:\n    \"\"\"将 emit_think 标志映射到 console API 的 reasoning effort。\"\"\"\n    if emit_think is False:\n        return \"none\"\n    return \"low\"  # 默认 low，节省 token\n\n\nasync def completions("
+  }
+]

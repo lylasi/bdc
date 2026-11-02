@@ -32,6 +32,12 @@ import {
 import { getCached, setCached } from './cache.js';
 import { t } from './i18n.js';
 import { touch as syncTouch } from './sync-signals.js';
+import {
+    appThinkingDefault,
+    isThinkingLevel,
+    normalizeThinkingLevel,
+    resolveThinkingLookupKeys
+} from './ai-thinking.js';
 
 export const MODEL_DISCOVERY_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -639,6 +645,56 @@ export function setPersonalDefaultModel(spec) {
     const normalized = stringifyModelSpec(spec);
     const profile = updateAIProfile((draft) => {
         draft.defaultModel = normalized;
+        return draft;
+    });
+    try { syncTouch('aiSettings'); } catch (_) {}
+    return profile;
+}
+
+/**
+ * Resolve the effective thinking level with the documented priority:
+ * this request's override > personal task setting > app task default.
+ * Article word/phrase tasks inherit the wordAnalysis personal setting.
+ */
+export function resolveThinkingLevel(taskName = 'default', { override } = {}) {
+    const canonical = normalizeTaskName(taskName);
+    const overrideLevel = String(override == null ? '' : override).trim().toLowerCase();
+    if (isThinkingLevel(overrideLevel)) {
+        return { level: normalizeThinkingLevel(overrideLevel), source: 'override', task: canonical };
+    }
+    const profile = loadAIProfile();
+    const stored = profile.taskThinking || {};
+    for (const key of resolveThinkingLookupKeys(canonical)) {
+        if (!Object.prototype.hasOwnProperty.call(stored, key)) continue;
+        if (!isThinkingLevel(stored[key])) continue;
+        return {
+            level: normalizeThinkingLevel(stored[key]),
+            source: 'profile',
+            task: canonical,
+            key
+        };
+    }
+    return {
+        level: appThinkingDefault(canonical),
+        source: 'app',
+        task: canonical
+    };
+}
+
+export function getTaskThinkingLevel(taskName = 'default') {
+    return resolveThinkingLevel(taskName).level;
+}
+
+/**
+ * Persist one task's thinking mode. `auto` is stored explicitly: it means
+ * "follow the provider default", not "fall back to the app default".
+ */
+export function saveTaskThinkingLevel(taskName, level) {
+    const canonical = normalizeTaskName(taskName);
+    const normalized = normalizeThinkingLevel(level, 'auto');
+    const profile = updateAIProfile((draft) => {
+        if (!draft.taskThinking || typeof draft.taskThinking !== 'object') draft.taskThinking = {};
+        draft.taskThinking[canonical] = normalized;
         return draft;
     });
     try { syncTouch('aiSettings'); } catch (_) {}

@@ -49,9 +49,31 @@ const chat = (await import('../modules/ai-protocols/chat-completions.js')).chatC
 const anthropic = (await import('../modules/ai-protocols/anthropic.js')).anthropicMessages;
 const gemini = (await import('../modules/ai-protocols/gemini.js')).geminiNative;
 const { sanitizeAISettings } = await import('../modules/ai-settings-sanitize.js');
+const {
+    THINKING_LEVELS,
+    THINKING_BUDGETS,
+    THINKING_TOKEN_FLOORS,
+    GEMINI_THINKING_BUDGETS,
+    normalizeThinkingLevel,
+    normalizeTaskThinkingMap,
+    appThinkingDefault,
+    resolveThinkingLookupKeys
+} = await import('../modules/ai-thinking.js');
+const { sanitizeSnapshotAISettings, sanitizeSnapshotThinkingMappings } = await import('../cloudflare-worker/src/snapshot-sanitize.js');
 const { decideCredentialAction } = await import('../modules/ai-credential-sync.js');
 const { evaluateReplay, isValidProviderId } = await import('../cloudflare-worker/src/ai-credentials.js');
-const { normalizeCredential, normalizeStoredProvider } = await import('../modules/ai-profile-storage.js');
+const {
+    normalizeCredential,
+    normalizeStoredProvider,
+    normalizeProfile,
+    saveAIProfile,
+    loadAIProfile,
+    getAIViewFromProfile,
+    applyRemoteAISettings,
+    deleteAIProfile
+} = await import('../modules/ai-profile-storage.js');
+const { resolveThinkingLevel } = await import('../modules/ai-models.js');
+const { resolveAssistantRequestPlan } = await import('../features/assistant/request-plan.js');
 
 test('detection candidates keep path prefixes and avoid credential URLs', () => {
     const root = protocols.buildDetectionCandidates('https://api.example.com');
@@ -110,6 +132,7 @@ test('chat completions adapter builds a faithful OpenAI request', () => {
     assert.equal(request.headers.Authorization, 'Bearer sk-test');
     assert.equal(request.body.model, 'm1');
     assert.equal(request.body.max_tokens, 100);
+    assert.equal(request.maxTokens, 100);
     assert.deepEqual(request.body.response_format, { type: 'json_object' });
     assert.equal(request.body.messages[0].role, 'system');
     assert.equal(request.body.messages[1].content[1].type, 'image_url');
@@ -138,6 +161,7 @@ test('anthropic adapter uses Messages wire format and headers', () => {
     assert.equal(request.headers['anthropic-version'], '2023-06-01');
     assert.equal(request.headers['anthropic-dangerous-direct-browser-access'], 'true');
     assert.equal(request.body.max_tokens, 256);
+    assert.equal(request.maxTokens, 256);
     assert.equal(request.body.system, 'be brief\n\nReturn only one valid JSON object. Do not wrap it in Markdown fences.');
     assert.equal(request.body.messages[0].role, 'user');
     assert.equal(request.body.messages[0].content[1].type, 'image');
@@ -162,6 +186,7 @@ test('gemini adapter substitutes the model and encodes images', () => {
         provider,
         apiKey: 'google-key',
         model: 'models/gemini-test',
+        maxTokens: 64,
         responseFormat: { type: 'json_object' },
         messages: [
             { role: 'system', content: 'be brief' },
@@ -173,6 +198,8 @@ test('gemini adapter substitutes the model and encodes images', () => {
     assert.match(request.url, /gemini-test:streamGenerateContent\?alt=sse$/);
     assert.equal(request.body.systemInstruction.parts[0].text, 'be brief');
     assert.equal(request.body.generationConfig.responseMimeType, 'application/json');
+    assert.equal(request.body.generationConfig.maxOutputTokens, 64);
+    assert.equal(request.maxTokens, 64);
     assert.equal(request.body.contents[0].parts[1].inlineData.mimeType, 'image/png');
     assert.equal(request.body.contents[0].parts[1].inlineData.data, 'CCC');
 
@@ -183,6 +210,246 @@ test('gemini adapter substitutes the model and encodes images', () => {
     assert.equal(parsed.text, 'hello');
     assert.equal(parsed.finishReason, 'STOP');
     assert.equal(parsed.usage.totalTokenCount, 3);
+});
+
+test('thinking policy normalises values and keeps the documented app defaults', () => {
+    assert.deepEqual(THINKING_LEVELS, ['auto', 'none', 'low', 'medium', 'high']);
+    assert.equal(THINKING_BUDGETS.low, 1024);
+    assert.equal(THINKING_BUDGETS.medium, 4096);
+    assert.equal(THINKING_BUDGETS.high, 8192);
+    assert.equal(THINKING_TOKEN_FLOORS.high, 5000);
+    assert.equal(GEMINI_THINKING_BUDGETS.high, 16384);
+
+    assert.equal(normalizeThinkingLevel('HIGH'), 'high');
+    assert.equal(normalizeThinkingLevel('auto'), 'auto');
+    assert.equal(normalizeThinkingLevel('bogus'), 'auto');
+    assert.equal(normalizeThinkingLevel('bogus', 'low'), 'low');
+    assert.equal(normalizeThinkingLevel(undefined), 'auto');
+
+    assert.equal(appThinkingDefault('wordAnalysis'), 'none');
+    assert.equal(appThinkingDefault('articleWordTranslation'), 'none');
+    assert.equal(appThinkingDefault('articlePhraseTranslation'), 'none');
+    assert.equal(appThinkingDefault('articleParagraphTranslation'), 'none');
+    assert.equal(appThinkingDefault('articleSentenceTranslation'), 'low');
+    assert.equal(appThinkingDefault('assistant'), 'medium');
+    assert.equal(appThinkingDefault('qaChecking'), 'auto');
+    assert.ok(resolveThinkingLookupKeys('articleWordTranslation').includes('wordAnalysis'));
+    assert.deepEqual(normalizeTaskThinkingMap({
+        assistant: 'HIGH',
+        wordAnalysis: 'none',
+        'bad task': 'low',
+        broken: 'urgent'
+    }), { assistant: 'high', wordAnalysis: 'none' });
+});
+
+test('chat completions maps every non-auto thinking level to reasoning_effort', () => {
+    const provider = {
+        format: 'openai-chat',
+        apiUrl: 'https://api.example.com/v1/chat/completions',
+        authMode: 'bearer'
+    };
+    const build = (thinking) => chat.buildRequest({
+        provider,
+        apiKey: 'sk-test',
+        model: 'm1',
+        messages: [{ role: 'user', content: 'hi' }],
+        thinking
+    });
+    for (const level of ['none', 'low', 'medium', 'high']) {
+        assert.equal(build(level).body.reasoning_effort, level);
+    }
+    const auto = build('auto').body;
+    assert.equal(Object.prototype.hasOwnProperty.call(auto, 'reasoning_effort'), false);
+    const omitted = chat.buildRequest({
+        provider,
+        apiKey: 'sk-test',
+        model: 'm1',
+        messages: [{ role: 'user', content: 'hi' }]
+    }).body;
+    assert.equal(Object.prototype.hasOwnProperty.call(omitted, 'reasoning_effort'), false);
+});
+
+test('anthropic enables extended thinking with temperature 1 and a larger max_tokens', () => {
+    const provider = {
+        format: 'anthropic-messages',
+        apiUrl: 'https://api.anthropic.com/v1/messages',
+        authMode: 'x-api-key'
+    };
+    const build = (thinking, maxTokens = 256) => anthropic.buildRequest({
+        provider,
+        apiKey: 'sk-ant',
+        model: 'claude-test',
+        maxTokens,
+        temperature: 0.2,
+        messages: [{ role: 'user', content: 'hi' }],
+        thinking
+    }).body;
+
+    const low = build('low');
+    assert.deepEqual(low.thinking, { type: 'enabled', budget_tokens: 1024 });
+    assert.equal(low.temperature, 1);
+    assert.ok(low.max_tokens > low.thinking.budget_tokens);
+    assert.ok(low.max_tokens >= low.thinking.budget_tokens + 1024);
+
+    const high = build('high', 12000);
+    assert.deepEqual(high.thinking, { type: 'enabled', budget_tokens: 8192 });
+    assert.equal(high.max_tokens, 12000);
+    assert.equal(high.temperature, 1);
+
+    for (const thinking of ['auto', 'none']) {
+        const body = build(thinking);
+        assert.equal(Object.prototype.hasOwnProperty.call(body, 'thinking'), false);
+        assert.equal(body.temperature, 0.2);
+    }
+});
+
+test('gemini maps 2.5 to thinkingBudget and 3 to thinkingLevel', () => {
+    const provider = {
+        format: 'gemini',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/%7Bmodel%7D:generateContent',
+        authMode: 'google'
+    };
+    const build = (model, thinking) => gemini.buildRequest({
+        provider,
+        apiKey: 'google-key',
+        model,
+        messages: [{ role: 'user', content: 'hi' }],
+        thinking
+    }).body.generationConfig;
+
+    assert.equal(build('gemini-2.5-flash', 'none').thinkingConfig.thinkingBudget, 0);
+    assert.equal(build('gemini-2.5-flash', 'low').thinkingConfig.thinkingBudget, 1024);
+    assert.equal(build('gemini-2.5-pro', 'medium').thinkingConfig.thinkingBudget, 4096);
+    assert.equal(build('gemini-2.5-pro', 'high').thinkingConfig.thinkingBudget, 16384);
+    assert.equal('thinkingConfig' in build('gemini-2.5-flash', 'auto'), false);
+
+    assert.equal(build('gemini-3-pro-preview', 'none').thinkingConfig.thinkingLevel, 'low');
+    assert.equal(build('gemini-3-flash', 'low').thinkingConfig.thinkingLevel, 'low');
+    assert.equal(build('gemini-3-pro-preview', 'medium').thinkingConfig.thinkingLevel, 'high');
+    assert.equal(build('gemini-3-pro-preview', 'high').thinkingConfig.thinkingLevel, 'high');
+    assert.equal('thinkingConfig' in build('gemini-3-pro-preview', 'auto'), false);
+    // Non-thinking Gemini families are left alone.
+    assert.equal('thinkingConfig' in build('gemini-1.5-pro', 'high'), false);
+});
+
+test('gemini 2.5 reserves the thinking budget on top of the answer allowance', () => {
+    const provider = {
+        format: 'gemini',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/%7Bmodel%7D:generateContent',
+        authMode: 'google'
+    };
+    const build = (model, thinking, maxTokens) => gemini.buildRequest({
+        provider,
+        apiKey: 'google-key',
+        model,
+        messages: [{ role: 'user', content: 'hi' }],
+        thinking,
+        maxTokens
+    }).body.generationConfig;
+
+    // A 16384 thinking budget with a 5000 answer budget must not consume the
+    // whole output allowance or the visible answer is empty.
+    const high = build('gemini-2.5-flash', 'high', 5000);
+    assert.equal(high.thinkingConfig.thinkingBudget, 16384);
+    assert.ok(high.maxOutputTokens > high.thinkingConfig.thinkingBudget);
+    assert.equal(high.maxOutputTokens, 16384 + 5000);
+
+    // No caller maxTokens: keep a 1024-token answer reserve.
+    assert.equal(build('gemini-2.5-flash', 'high').maxOutputTokens, 16384 + 1024);
+    // Small caller budgets are lifted to the 1024 answer reserve.
+    assert.equal(build('gemini-2.5-flash', 'low', 300).maxOutputTokens, 1024 + 1024);
+
+    // Gemini 2.5 Pro rejects thinkingBudget=0; 128 is its minimum level.
+    assert.equal(build('gemini-2.5-pro', 'none').thinkingConfig.thinkingBudget, 128);
+    assert.equal(build('gemini-2.5-pro-preview-06-05', 'none').thinkingConfig.thinkingBudget, 128);
+    assert.equal(build('gemini-2.5-pro', 'none').maxOutputTokens, 128 + 1024);
+    // Flash keeps a real zero budget.
+    assert.equal(build('gemini-2.5-flash', 'none').thinkingConfig.thinkingBudget, 0);
+
+    // Auto leaves the caller's output budget untouched.
+    const auto = build('gemini-2.5-flash', 'auto', 700);
+    assert.equal('thinkingConfig' in auto, false);
+    assert.equal(auto.maxOutputTokens, 700);
+});
+
+test('adapters expose the actual outbound max tokens after thinking adjustments', () => {
+    const chatProvider = {
+        format: 'openai-chat',
+        apiUrl: 'https://api.example.com/v1/chat/completions',
+        authMode: 'bearer'
+    };
+    const chatRequest = chat.buildRequest({
+        provider: chatProvider,
+        apiKey: 'sk-test',
+        model: 'm1',
+        messages: [{ role: 'user', content: 'hi' }],
+        maxTokens: 300,
+        thinking: 'high'
+    });
+    assert.equal(chatRequest.maxTokens, 300);
+    assert.equal(chatRequest.maxTokens, chatRequest.body.max_tokens);
+
+    const anthropicProvider = {
+        format: 'anthropic-messages',
+        apiUrl: 'https://api.anthropic.com/v1/messages',
+        authMode: 'x-api-key'
+    };
+    const anthropicRequest = anthropic.buildRequest({
+        provider: anthropicProvider,
+        apiKey: 'sk-ant',
+        model: 'claude-test',
+        messages: [{ role: 'user', content: 'hi' }],
+        maxTokens: 300,
+        thinking: 'medium'
+    });
+    assert.equal(anthropicRequest.body.max_tokens, 4096 + 1024);
+    assert.equal(anthropicRequest.maxTokens, anthropicRequest.body.max_tokens);
+
+    const geminiProvider = {
+        format: 'gemini',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/%7Bmodel%7D:generateContent',
+        authMode: 'google'
+    };
+    const geminiRequest = gemini.buildRequest({
+        provider: geminiProvider,
+        apiKey: 'google-key',
+        model: 'gemini-2.5-flash',
+        messages: [{ role: 'user', content: 'hi' }],
+        thinking: 'high'
+    });
+    assert.equal(geminiRequest.body.generationConfig.maxOutputTokens, 16384 + 1024);
+    assert.equal(geminiRequest.maxTokens, geminiRequest.body.generationConfig.maxOutputTokens);
+});
+
+test('assistant request plan freezes the effective thinking level and model for retries', () => {
+    let resolved = 0;
+    const first = resolveAssistantRequestPlan({
+        snapshot: null,
+        selectedThinking: 'auto',
+        currentModelSpec: 'provider-a:model-1',
+        resolveTaskThinking: () => { resolved += 1; return 'high'; }
+    });
+    assert.deepEqual(first, { thinking: 'high', model: 'provider-a:model-1' });
+    assert.equal(resolved, 1, 'the task setting is resolved once on the first send');
+
+    // The panel/select and task settings changed before the retry: the retry
+    // must reuse the snapshot instead of resolving again.
+    const retry = resolveAssistantRequestPlan({
+        snapshot: { thinking: 'high', model: 'provider-a:model-1' },
+        selectedThinking: 'none',
+        currentModelSpec: 'provider-b:model-2',
+        resolveTaskThinking: () => { throw new Error('must not re-resolve the task setting'); }
+    });
+    assert.deepEqual(retry, { thinking: 'high', model: 'provider-a:model-1' });
+
+    // An explicit panel choice skips the task-setting lookup entirely.
+    const explicit = resolveAssistantRequestPlan({
+        snapshot: null,
+        selectedThinking: 'low',
+        currentModelSpec: 'provider-a:model-1',
+        resolveTaskThinking: () => { throw new Error('must not resolve an explicit level'); }
+    });
+    assert.deepEqual(explicit, { thinking: 'low', model: 'provider-a:model-1' });
 });
 
 test('stream event parsing works for every protocol', () => {
@@ -355,6 +622,119 @@ test('profile normalisation drops unsafe URLs and unknown credential modes', () 
     assert.equal(credential.syncMode, 'local-only');
     assert.equal(credential.binding, null);
     assert.equal(credential.pending, null);
+});
+
+test('profile and snapshot sanitisation keep only valid thinking mappings', () => {
+    const scope = { endpoint: 'https://sync.example', userId: 'thinking-normalise', guest: false };
+    const profile = normalizeProfile({
+        taskThinking: {
+            wordAnalysis: 'none',
+            assistant: 'HIGH',
+            articleSentenceTranslation: 'low',
+            'bad task': 'high',
+            broken: 'urgent'
+        }
+    }, scope);
+    assert.deepEqual(profile.taskThinking, {
+        wordAnalysis: 'none',
+        assistant: 'high',
+        articleSentenceTranslation: 'low'
+    });
+    assert.deepEqual(normalizeProfile({}, scope).taskThinking, {});
+
+    const sanitized = sanitizeAISettings({
+        thinking: {
+            assistant: 'medium',
+            wordAnalysis: 'auto',
+            'bad task': 'high',
+            broken: 'ultra'
+        }
+    });
+    assert.deepEqual(sanitized.thinking, { assistant: 'medium', wordAnalysis: 'auto' });
+    // Older snapshots have no field; the sanitiser must not invent one.
+    assert.equal('thinking' in sanitizeAISettings({}), false);
+
+    const snapshot = sanitizeSnapshotAISettings({
+        thinking: { assistant: 'high', articleParagraphTranslation: 'low', broken: 'max' }
+    });
+    assert.deepEqual(snapshot.thinking, { assistant: 'high', articleParagraphTranslation: 'low' });
+    assert.equal('thinking' in sanitizeSnapshotAISettings({}), false);
+    assert.deepEqual(sanitizeSnapshotThinkingMappings({
+        assistant: 'HIGH',
+        'bad task': 'low',
+        broken: 'max'
+    }), { assistant: 'high' });
+});
+
+test('empty thinking maps are never emitted by views or sanitizers', () => {
+    const scope = { endpoint: 'https://sync.example', userId: 'thinking-empty', guest: false };
+    try {
+        saveAIProfile({}, scope);
+        assert.equal('thinking' in getAIViewFromProfile(scope), false);
+
+        // Empty and fully invalid maps carry no information: omit the field so
+        // pushing them cannot wipe another device's choices.
+        assert.equal('thinking' in sanitizeAISettings({ thinking: {} }), false);
+        assert.equal('thinking' in sanitizeAISettings({ thinking: { broken: 'ultra' } }), false);
+        assert.equal('thinking' in sanitizeSnapshotAISettings({ thinking: {} }), false);
+        assert.equal('thinking' in sanitizeSnapshotAISettings({ thinking: { 'bad task': 'low' } }), false);
+
+        saveAIProfile({ taskThinking: { assistant: 'high', wordAnalysis: 'none' } }, scope);
+        assert.deepEqual(getAIViewFromProfile(scope).thinking, { assistant: 'high', wordAnalysis: 'none' });
+    } finally {
+        deleteAIProfile(scope);
+    }
+});
+
+test('older AI snapshots do not clear newer task thinking choices', () => {
+    const scope = { endpoint: 'https://thinking-sync.example', userId: 'thinking-snapshot', guest: false };
+    const stamp = '2026-11-02T00:00:00.000Z';
+    try {
+        saveAIProfile({ taskThinking: { assistant: 'high', wordAnalysis: 'none' } }, scope);
+        applyRemoteAISettings({ providers: {}, models: {} }, stamp, scope);
+        assert.deepEqual(loadAIProfile(scope).taskThinking, { assistant: 'high', wordAnalysis: 'none' });
+
+        applyRemoteAISettings({
+            providers: {},
+            models: {},
+            thinking: { assistant: 'low' }
+        }, stamp, scope);
+        assert.deepEqual(loadAIProfile(scope).taskThinking, { assistant: 'low' });
+
+        // An explicit empty map is a deliberate clear from a newer client.
+        applyRemoteAISettings({ providers: {}, models: {}, thinking: {} }, stamp, scope);
+        assert.deepEqual(loadAIProfile(scope).taskThinking, {});
+    } finally {
+        deleteAIProfile(scope);
+    }
+});
+
+test('thinking priority is override > personal setting > app default', () => {
+    const previousEndpoint = globalThis.__BDC_SYNC_ENDPOINT__;
+    const previousUser = localStorage.getItem('sync_user_id');
+    try {
+        globalThis.__BDC_SYNC_ENDPOINT__ = 'https://thinking-priority.example';
+        localStorage.setItem('sync_user_id', 'thinking-priority-user');
+        saveAIProfile({
+            taskThinking: { assistant: 'high', wordAnalysis: 'auto' }
+        });
+        assert.equal(resolveThinkingLevel('assistant').level, 'high');
+        assert.equal(resolveThinkingLevel('assistant').source, 'profile');
+        assert.equal(resolveThinkingLevel('assistant', { override: 'low' }).level, 'low');
+        assert.equal(resolveThinkingLevel('assistant', { override: 'low' }).source, 'override');
+        // Article word tasks inherit the personal wordAnalysis value.
+        assert.equal(resolveThinkingLevel('articleWordTranslation').level, 'auto');
+        assert.equal(resolveThinkingLevel('articleWordTranslation').key, 'wordAnalysis');
+        // Untouched tasks still use the app default.
+        assert.equal(resolveThinkingLevel('qaChecking').level, 'auto');
+        assert.equal(resolveThinkingLevel('qaChecking').source, 'app');
+    } finally {
+        try { deleteAIProfile(); } catch (_) {}
+        if (previousEndpoint === undefined) delete globalThis.__BDC_SYNC_ENDPOINT__;
+        else globalThis.__BDC_SYNC_ENDPOINT__ = previousEndpoint;
+        if (previousUser === null) localStorage.removeItem('sync_user_id');
+        else localStorage.setItem('sync_user_id', previousUser);
+    }
 });
 
 // ---------------------------------------------------------------------------

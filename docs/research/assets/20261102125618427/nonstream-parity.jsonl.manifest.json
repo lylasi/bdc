@@ -1,0 +1,95 @@
+{
+  "transport": "nonstream",
+  "note": "Match the app one-shot adapter: omit stream and stream_options, Accept application/json. Same messages and max_tokens as the main study. Separate from streaming timing tables.",
+  "targets": [
+    {
+      "id": "hapi-grok420",
+      "channel": "HAPI",
+      "model": "grok-4.20-fast",
+      "label": "HAPI Grok 4.20 Fast"
+    },
+    {
+      "id": "hapi-grok43",
+      "channel": "HAPI",
+      "model": "grok-4.3-fast",
+      "label": "HAPI Grok 4.3 Fast"
+    },
+    {
+      "id": "magpie-deepseek",
+      "channel": "Magpie",
+      "model": "workbuddy/deepseek-v4.1-flash",
+      "label": "DeepSeek V4.1 Flash"
+    },
+    {
+      "id": "magpie-gpt",
+      "channel": "Magpie",
+      "model": "codex/gpt-6-sol",
+      "label": "GPT 6 Sol"
+    }
+  ],
+  "cases": [
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": false,
+      "id": "word-bank",
+      "category": "word",
+      "sourcePrompt": "dictionary.wordAnalysis",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the English word \"bank\".\nReturn only strict JSON with this schema:\n{\"phonetic\":\"IPA\",\"pos\":\"part of speech\",\"meaning\":\"the most common Chinese meaning\"}\nThe \"phonetic\" field feeds this app's sound chart, which has one playable recording per symbol, so use the notation of that chart and no other: Write IPA only in this app's notation: /e/ (not /ɛ/), /r/ (not /ɹ/), /ɡ/ (not g), /iː/ (not i), /uː/ (not u), /ɑː/ (not ɑ), /ɔː/ (not ɔ), /ɜː/ or /ɜːr/ (not ɜ or ɝ), /ə/ or /ər/ (not ɚ), /tʃ/ and /dʒ/ (not ligatures). Stress marks ˈ ˌ and syllable dots are allowed.\nDo not add Markdown or any text outside the JSON object."
+        }
+      ],
+      "requiredFields": [
+        "phonetic",
+        "pos",
+        "meaning"
+      ],
+      "rubric": [
+        "1: JSON 與必需欄位完整",
+        "1: 常用義為銀行，可另列河岸",
+        "1: 包含名詞詞性",
+        "1: 音標包含正確的 bæŋk",
+        "1: 簡潔、不添加虛構來源或無關內容"
+      ],
+      "promptVersion": "1.1.0",
+      "promptHash": "d70e48342bd180efc4ccc9f8cd39c4608126a7f978f8548edf7dbd9d835c9038"
+    },
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": true,
+      "id": "translation-library",
+      "category": "translation",
+      "sourcePrompt": "article.paragraphTranslation",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nTranslate the following English paragraph into the target Chinese language.\nReturn only strict JSON: {\"chinese_translation\":\"...\"}\nDo not return word_alignment or detailed_analysis.\nKeep English personal names unchanged.\nIf the paragraph contains Markdown tables, lists, headings, images or links, preserve all Markdown markers and line structure exactly. Do not translate or rewrite image syntax or image alt text.\nPreserve inline emphasis markers exactly as they appear in the source: **bold** stays **bold**, *italic* stays *italic*, `code` stays `code`. Never translate, drop or move those markers, and never add new ones.\n\nParagraph:\n\"\"\"\nWhen the town library extended its opening hours last autumn, staff expected most visitors to arrive after work. Instead, the busiest period was early morning, when students came to study before school. The library has since added six desks near the windows, but it has kept the quiet reading room unchanged. Visitors do not need to book a seat, although groups of more than four people must reserve a meeting room. The new timetable will remain in place until March, when the council will review attendance figures.\n\"\"\""
+        }
+      ],
+      "requiredFields": [
+        "chinese_translation"
+      ],
+      "rubric": [
+        "1: 嚴格 JSON 及非空譯文",
+        "1: 保留預期下班後但實際早上最忙的轉折",
+        "1: 保留加六張桌、安靜閱覽室不變",
+        "1: 個人不需預約，超過四人的團體須預約會議室",
+        "1: 保留截至三月及議會檢視入館數字，無捏造"
+      ],
+      "promptVersion": "1.1.0",
+      "promptHash": "db0bf9f0247dfddddb901ba28db2b5b786dc294c64d644204f06e52a182e1340"
+    }
+  ],
+  "hapiModes": [
+    "default",
+    "none",
+    "high"
+  ],
+  "controlModes": [
+    "none",
+    "high"
+  ]
+}

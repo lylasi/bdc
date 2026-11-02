@@ -6,6 +6,7 @@
 // are allowed.
 
 import { isPersonalProviderId, sanitizeStoredUrl } from './ai-profile-storage.js';
+import { normalizeTaskThinkingMap } from './ai-thinking.js';
 
 const FORMATS = new Set(['openai-chat', 'anthropic-messages', 'gemini']);
 const AUTH_MODES = new Set(['bearer', 'x-api-key', 'google', 'none']);
@@ -113,6 +114,13 @@ export function sanitizeAISettings(ai) {
         tasks: { ...models, ...tasks },
         defaultModel: typeof source.defaultModel === 'string' ? source.defaultModel.trim().slice(0, 240) : ''
     };
+    // Older snapshots have no thinking map. Leave the field absent so applying
+    // one does not clear a newer client's per-task choices. An empty map is
+    // also omitted: it carries no information and would otherwise clear values.
+    if (isPlainObject(source.thinking)) {
+        const thinking = normalizeTaskThinkingMap(source.thinking);
+        if (Object.keys(thinking).length) settings.thinking = thinking;
+    }
     // Keep the policy absent when the caller did not supply a valid value.
     // Snapshots written by older clients have no such field, and applying one
     // must not reset a newer client's account policy to the default.

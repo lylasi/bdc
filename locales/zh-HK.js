@@ -98,6 +98,15 @@ export default {
         ttsVoiceDefaultsHint: '首次載入會自動選好可用的預設語音，之後照你的選擇儲存。',
         saveFailed: '儲存失敗：', ttsSource: 'TTS 來源', remote: '遠端', local: '本機', custom: '自訂', ttsSourceHint: '一般使用者只需選擇來源；需要自訂時再輸入 URL', customTtsUrl: '自訂 TTS 基礎 URL', ttsKey: 'TTS API Key（只儲存在本機）', englishVoicePreference: '英語朗讀首選', britishEnglish: '英音 en-GB', americanEnglish: '美音 en-US', defaultBritish: '未指定時預設英音', chineseVoicePreference: '中文朗讀首選', mandarin: '普通話 zh-CN', cantonese: '粵語 zh-HK', ttsVoices: 'TTS 聲音（只顯示：美音、英音、廣東話、普通話）', reloadList: '重新載入清單', englishAmerican: '英語（美音 en-US）', englishBritish: '英語（英音 en-GB）', cantoneseVoice: '粵語（廣東話 zh-HK）', mandarinVoice: '中文（普通話 zh-CN）', previewVoice: '試聽', loading: '正在載入...', voiceLoadHint: '如載入失敗，請確認 TTS 基礎 URL 或 ai-config.js 的 voicesUrl 可以存取。', assistant: 'AI 助手', enableAssistant: '啟用助手', streaming: '串流回應', assistantHint: '右下角入口 · 串流回應更順暢', cancel: '取消', save: '儲存', localOnlyHint: '設定只儲存在本機，不會同步到雲端。'
         ,localeCn: '中國大陸簡體中文', localeHk: '香港繁體中文', providerSettings: 'AI Provider 設定', addProvider: '新增 provider', enabled: '啟用', fetched: '已擷取', fetching: '擷取中', fetchFailed: '擷取失敗', notFetched: '尚未擷取', fetchModels: '擷取模型', remove: '移除', name: '名稱', displayName: '顯示名稱', apiUrlOptional: 'API URL（選填）', modelsUrlOptional: 'Models URL（選填）', deriveApiUrl: '留空則由 Base URL 推導', deriveModelsUrl: '留空則預設為 baseUrl + /v1/models', apiKeyLocal: 'API Key（只限本機）', allowedModels: '允許模型', selectedModels: '已選 {selected}／全部 {total}', modelHint: '勾選後會出現在各任務下拉清單', noModels: '尚未有模型，可以先擷取或手動新增。', manualModel: '手動新增模型，例如 gpt-4.1-mini 或 provider:model', addModel: '新增模型', manualAdded: '手動新增', providerHint: '可設定 baseUrl / key，擷取模型後勾選允許清單；default 仍作為全局回退。', taskMapping: '按功能指定模型', taskHint: '各任務只顯示允許模型；如目前值不在允許清單中，會暫時保留顯示。', providerIdPrompt: '請輸入 provider ID（英文、數字、- 或 _）', providerExists: '此 provider ID 已存在', taskWord: '查詞 / 單詞分析', taskSentence: '造句檢查', taskQa: '問答 AI 校對', taskArticle: '文章詳解', taskCleanup: '文章 AI 清理', taskExamples: '例句產生', taskOcr: 'OCR / 視覺', taskAssistant: 'AI 助手'
+        ,taskArticleParagraph: '文章段落翻譯'
+        ,taskArticleSentence: '句子詳解'
+        ,aiThinkingLabel: '思考模式'
+        ,aiThinkingAuto: '跟隨服務端'
+        ,aiThinkingNone: '關閉思考'
+        ,aiThinkingLow: '低強度'
+        ,aiThinkingMedium: '中強度'
+        ,aiThinkingHigh: '高強度'
+        ,aiThinkingHint: '部分渠道會把「關閉思考」降為最低強度，實際效果取決於模型。'
         ,noAvailable: '沒有可用選項', voicesLoaded: '已載入，共 {count} 個聲音', loadFailed: '載入失敗', loadFailedMessage: '載入失敗：{message}', noVoice: '沒有可用的聲音可試聽', playbackFailed: '播放失敗，已在 Console 輸出測試 URL，請檢查回應格式及 voice 代碼。', fallbackVoice: '提示：該聲音可能不受後端支援，已使用預設備用聲音試聽。', assistantEntryTitle: '右下角浮窗入口', streamTitle: '串流回應可減少等待',
         aiProvidersTitle: '預設供應商',
         aiRefresh: '重新整理',
@@ -1392,6 +1401,8 @@ export default {
         inputHint: 'Enter 送出，Shift+Enter 換行',
         localeKeptDraft: '已切換語言，草稿與對話已保留',
         sessionBusy: '回答進行中，請先停止或等待完成後再切換會話',
+        thinking: '思考模式',
+        thinkingFollow: '跟隨設定',
     },
     sync: {
         guestReadingTitle: '把訪客學習記錄帶進這個帳戶？',

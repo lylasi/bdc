@@ -1,0 +1,135 @@
+{
+  "fetchedAt": "2026-11-02T04:37:32.711686+00:00",
+  "endpoint": "http://127.0.0.1:3425/v1/models",
+  "models": [
+    {
+      "created": 0,
+      "created_at": "2025-01-01T00:00:00Z",
+      "display_name": "Grok 4.20 Fast",
+      "id": "grok2api/grok-4.20-fast",
+      "magpie_label": "Grok 4.20 Fast · grok2api",
+      "native_endpoints": [
+        "/v1/chat/completions"
+      ],
+      "object": "model",
+      "owned_by": "grok2api",
+      "reasoning": true,
+      "reasoning_levels": [
+        "none",
+        "high"
+      ],
+      "supported_parameters": [
+        "tools",
+        "tool_choice",
+        "reasoning"
+      ],
+      "supported_reasoning_levels": [
+        {
+          "effort": "none"
+        },
+        {
+          "effort": "high"
+        }
+      ],
+      "tool_call": true,
+      "type": "model"
+    },
+    {
+      "created": 0,
+      "created_at": "2025-01-01T00:00:00Z",
+      "display_name": "Grok 4.3 Fast",
+      "id": "grok2api/grok-4.3-fast",
+      "magpie_label": "Grok 4.3 Fast · grok2api",
+      "native_endpoints": [
+        "/v1/chat/completions"
+      ],
+      "object": "model",
+      "owned_by": "grok2api",
+      "reasoning": true,
+      "reasoning_levels": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ],
+      "supported_parameters": [
+        "tools",
+        "tool_choice",
+        "reasoning"
+      ],
+      "supported_reasoning_levels": [
+        {
+          "effort": "none"
+        },
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        }
+      ],
+      "tool_call": true,
+      "type": "model"
+    },
+    {
+      "context_length": 1000000,
+      "context_window": 1000000,
+      "created": 0,
+      "created_at": "2025-01-01T00:00:00Z",
+      "display_name": "DeepSeek-V4.1-Flash",
+      "id": "workbuddy/deepseek-v4.1-flash",
+      "magpie_label": "DeepSeek-V4.1-Flash · WorkBuddy",
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 128000,
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "native_endpoints": [
+        "/v1/chat/completions"
+      ],
+      "object": "model",
+      "owned_by": "workbuddy",
+      "reasoning": true,
+      "reasoning_levels": [
+        "none",
+        "low",
+        "high",
+        "max"
+      ],
+      "supported_parameters": [
+        "tools",
+        "tool_choice",
+        "reasoning"
+      ],
+      "supported_reasoning_levels": [
+        {
+          "effort": "none"
+        },
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "max"
+        }
+      ],
+      "tool_call": true,
+      "type": "model"
+    }
+  ]
+}

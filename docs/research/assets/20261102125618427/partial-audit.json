@@ -1,0 +1,625 @@
+[
+  {
+    "id": "B4411eaf2-9",
+    "caseId": "word-sanction",
+    "score": 4.5,
+    "criteria": [
+      1,
+      2,
+      1,
+      0.5
+    ],
+    "issues": [
+      "“作refuse to的宾语”表述错误；to 属于不定式 to sanction，整个不定式短语补足 refused。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"动词\",\"meaning\":\"批准；认可\",\"role\":\"不定式动词，作refuse to的宾语，the project作其宾语\"}}"
+  },
+  {
+    "id": "B46671f77-4",
+    "caseId": "word-sanction",
+    "score": 4,
+    "criteria": [
+      1,
+      2,
+      1,
+      0
+    ],
+    "issues": [
+      "“短语动词，起到否定转折的作用”误判语法作用；sanction 是 to sanction 不定式中的动词，该短语补足 refused。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准、核准\",\"role\":\"短语动词，起到否定转折的作用，表示拒绝批准项目\"}}"
+  },
+  {
+    "id": "B6ae996f6-4",
+    "caseId": "word-sanction",
+    "score": 4,
+    "criteria": [
+      1,
+      2,
+      1,
+      0
+    ],
+    "issues": [
+      "“作宾语补语”错误，此处没有被其补充说明的宾语；未指出 to sanction 的不定式结构或其对 refused 的补足关系。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准\",\"role\":\"动词（及物动词，宾语为名词短语，作宾语补语）\"}}"
+  },
+  {
+    "id": "B6f5cd9bb-7",
+    "caseId": "word-sanction",
+    "score": 4,
+    "criteria": [
+      1,
+      2,
+      1,
+      0
+    ],
+    "issues": [
+      "“作谓语”误判了 sanction 在句中的作用；未指出它位于补足 refused 的不定式 to sanction 中。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准，核准\",\"role\":\"及物动词，作谓语，宾语为 the project\"}}"
+  },
+  {
+    "id": "B6f7374a6-1",
+    "caseId": "word-sanction",
+    "score": 4.5,
+    "criteria": [
+      1,
+      2,
+      1,
+      0.5
+    ],
+    "issues": [
+      "将 sanction 称为“谓语动词”不准确；本句的谓语是 refused，sanction 是不定式中的动词。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准，许可（在本句中指董事会拒绝批准该项目）\",\"role\":\"谓语动词，在 refused to 不定式结构中作宾语，表示董事会的拒绝行为所针对的动作\"}}"
+  },
+  {
+    "id": "B70f4cabd-e",
+    "caseId": "word-sanction",
+    "score": 4,
+    "criteria": [
+      1,
+      2,
+      1,
+      0
+    ],
+    "issues": [
+      "role 仅写“使…被批准；批准”，未指出 to sanction 是不定式，作 refused 的补足成分。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"ˈsæŋkʃən\",\"pos\":\"verb\",\"meaning\":\"批准，同意\",\"role\":\"使…被批准；批准\"}}"
+  },
+  {
+    "id": "Bb03275bb-5",
+    "caseId": "word-sanction",
+    "score": 4.5,
+    "criteria": [
+      1,
+      2,
+      1,
+      0.5
+    ],
+    "issues": [
+      "“谓语动词”表述不准确：sanction 是 refused 后不定式中的动词，主句谓语是 refused。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准，正式许可\",\"role\":\"谓语动词，受 refuse to 支配的不定式，宾语为 the project\"}}"
+  },
+  {
+    "id": "Bb9f9862c-b",
+    "caseId": "word-sanction",
+    "score": 4.5,
+    "criteria": [
+      1,
+      2,
+      1,
+      0.5
+    ],
+    "issues": [
+      "“不定式短语中作宾语”误判了 sanction 的作用：它是不定式的核心动词，整个不定式短语作 refused 的补足语或宾语。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃn/\",\"pos\":\"动词\",\"meaning\":\"批准；认可\",\"role\":\"不定式短语中作宾语，接在 refused to 之后\"}}"
+  },
+  {
+    "id": "Bbf27150d-9",
+    "caseId": "word-sanction",
+    "score": 4,
+    "criteria": [
+      1,
+      2,
+      1,
+      0
+    ],
+    "issues": [
+      "“作谓语动词”误判了 sanction 的作用，且未指出 to sanction 是 refused 后的不定式补足语。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"动词\",\"meaning\":\"批准；认可\",\"role\":\"作谓语动词，后接宾语the project\"}}"
+  },
+  {
+    "id": "Bd2a23c60-7",
+    "caseId": "word-sanction",
+    "score": 4,
+    "criteria": [
+      1,
+      2,
+      1,
+      0
+    ],
+    "issues": [
+      "将 sanction 误称为“谓语动词”；它是 to sanction 不定式中的动词，该不定式补足 refused。"
+    ],
+    "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"动词\",\"meaning\":\"批准；认可\",\"role\":\"谓语动词，后接宾语 project\"}}"
+  },
+  {
+    "id": "Bd88f2c40-9",
+    "caseId": "word-sanction",
+    "score": 4,
+    "criteria": [
+      1,
+      2,
+      1,
+      0
+    ],
+    "issues": [
+      "“动词，在这里指董事会同意或批准该项目”未指出 to sanction 的不定式结构或其与 refused 的补足关系。"
+    ],
+    "answer": "{\n  \"word\": \"sanction\",\n  \"sentence\": \"The board refused to sanction the project because the safety review was incomplete.\",\n  \"analysis\": {\n    \"phonetic\": \"/ˈsæŋkʃ(ə)n/\",\n    \"pos\": \"verb\",\n    \"meaning\": \"批准，批准实施\",\n    \"role\": \"动词，在这里指董事会同意或批准该项目\"\n  }\n}"
+  },
+  {
+    "id": "B05f2ada6-7",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "将“more than four people”译为“四人以上”，包含四人；应为“超过四人”。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员原本预计大多数读者会在下班后前来。结果，最繁忙的时段却是清晨，学生们在上学前来这里学习。此后，图书馆在靠窗位置增设了六张书桌，但安静阅览室保持原样。读者无需预约座位，不过四人以上的团体必须预订会议室。新的时间表将一直沿用到三月，届时市政委员会将对到访人数数据进行评估。\"}"
+  },
+  {
+    "id": "B0a947d3e-a",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "将“more than four people”译为“四人以上”，包含四人；应为“超过四人”。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋季镇图书馆延长开放时间时，工作人员原本以为大多数访客会在下班后前来。然而，最繁忙的时段反而是清晨，学生们赶在上学前来这里学习。此后，图书馆在靠窗处增设了六张书桌，但安静阅览室保持原样。访客无需预约座位，不过四人以上的团体必须预订会议室。新的时间表将一直实行到三月，届时委员会将对到馆人数进行评估。\"}"
+  },
+  {
+    "id": "B1a8778e1-4",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "将“more than four people”译为“四人以上”，包含四人；应为“超过四人”。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天该镇图书馆延长开放时间时，工作人员原本以为大多数访客会在下班后前来。然而，最繁忙的时段反而是清晨，学生们会在上学前赶来学习。自那时起，图书馆在窗边增设了六张桌子，但保持了安静阅览室的原貌。访客无需预约座位，不过四人以上的团体必须预订会议室。新的开放时间表将一直维持到三月，届时理事会将审查到馆人数。\"}"
+  },
+  {
+    "id": "B207f823a-7",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "将“more than four people”译为“四人以上”，包含四人；应为“超过四人”。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长了开放时间，工作人员原本预计大多数读者会在下班后到来。结果，最繁忙的时段却是清晨，学生们会在上学前来这里学习。自那以后，图书馆在窗边增设了六张书桌，但安静阅览室仍保持原样。读者无需预约座位，不过四人以上的团体必须预订会议室。新的开放时间表将一直执行到三月，届时委员会将审查到馆人数统计。\"}"
+  },
+  {
+    "id": "B312cc8b2-b",
+    "caseId": "translation-library",
+    "score": 3.5,
+    "criteria": [
+      0.5,
+      1,
+      0.5,
+      0.5,
+      1
+    ],
+    "issues": [
+      "译文字符串使用三重双引号，不符合严格 JSON 格式。",
+      "“一直保留了安静的阅读室”未保留“unchanged”（保持不变）的含义。",
+      "将“more than four people”译为“四人以上”，包含四人；应为“超过四人”。"
+    ],
+    "answer": "{\n  \"chinese_translation\": \"\"\"去年秋天，当镇图书馆延长营业时间时，工作人员预计大多数访客会在下班后到达。不过，最繁忙的时段是清晨，那时学生们在上学前前来学习。自从图书馆增设了六张靠近窗户的书桌以来，但它一直保留了安静的阅读室。访客无需提前预约座位，不过，四人以上的团体必须预约会议室。新作息时间表将一直有效到3月，那时议会将审核参观人数数据。\"\"\"\n}"
+  },
+  {
+    "id": "B36f7f3c9-5",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "将“more than four people”译为“四人以上”，包含四人；应为“超过四人”。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天镇图书馆延长开放时间时，工作人员原以为大多数读者会在下班后前来。然而，最繁忙的时段反而是清晨，学生们会在上学前赶来学习。此后，图书馆在靠窗处增加了六张书桌，但安静阅览室仍保持原样。读者无需预约座位，但四人以上的团体必须预订会议室。新的时间表将持续实行至三月，届时地方议会将对到馆人数进行评估。\"}"
+  },
+  {
+    "id": "B3f06fd2d-0",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "将“more than four people”译为“四人以上”，错误地包含了四人，应为“超过四人”。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天，城镇图书馆延长了开放时间，员工原以为大多数读者会在下班后到来。结果，最繁忙的时段是清晨，学生们会在上课前来这里学习。此后，图书馆在窗边增设了六张书桌，但安静阅览室仍保持原样。读者无需预订座位，不过四人以上的团体必须提前预约会议室。新的开放时间表将持续到三月，届时委员会将审查到馆人数。\"}"
+  },
+  {
+    "id": "B429c08d3-9",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "将“more than four people”译为“四人以上”，错误地包含了四人，应为“超过四人”。"
+    ],
+    "answer": "{\n  \"chinese_translation\": \"当小镇图书馆在上个秋季延长开放时间后，工作人员预计大多数访客会在下班后到访。\\n相反，最忙碌的时段是清晨，那时学生们在上学前前来学习。\\n图书馆从此在窗户附近增设了六个书桌，但保持了安静阅览室的原样。\\n访客无需预约座位，不过四人以上的团体必须预订会议室。\\n新时间表将一直沿用到三月份，那时市议会将审查出席人数数据。\"\n}"
+  },
+  {
+    "id": "B54951e2e-7",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "将“more than four people”译为“四人以上”，错误地包含了四人，应为“超过四人”。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员原本预计大多数读者会在下班后前来。然而，最繁忙的时段却是清晨，学生们在上学前来这里学习。此后，图书馆在靠窗位置增设了六张书桌，但安静阅览室仍保持原样。读者无需预约座位，不过四人以上的团体必须预订会议室。新的时间表将一直实行到三月，届时市政委员会将审查入馆人数数据。\"}"
+  },
+  {
+    "id": "B77b1f41c-b",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "将“more than four people”译为“四人以上”，错误地包含了四人，应为“超过四人”。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员原本预计大多数读者会在下班后前来。结果，最繁忙的时段却是清晨，学生们会在上学前来这里学习。此后，图书馆在窗边增设了六张书桌，但安静阅览室仍保持原样。读者无需预约座位，不过四人以上的团体必须预订会议室。新的时间表将一直实行到三月，届时市议会将审查到馆人数数据。\"}"
+  },
+  {
+    "id": "B88c2d622-5",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "“四人以上”包含四人，原文“more than four people”指超过四人。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天该镇图书馆延长开放时间时，工作人员原本预计大多数访客会在下班后来馆。然而，最繁忙的时段反而是清晨，学生们会在上学前来这里自习。此后，图书馆在靠窗处增加了六张书桌，但保持了安静阅览室的原貌。访客无需预约座位，不过四人以上的团体必须预订会议室。新的时间表将一直沿用至三月，届时理事会将对到馆人数进行审查。\"}"
+  },
+  {
+    "id": "B93ca695e-a",
+    "caseId": "translation-library",
+    "score": 4,
+    "criteria": [
+      1,
+      1,
+      0.5,
+      0.5,
+      1
+    ],
+    "issues": [
+      "“quiet reading room”未翻译为简体中文，应译为“安静阅览室”。",
+      "“四人以上”包含四人，原文“more than four people”指超过四人。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员原本预计大多数访客会在下班后到来。然而，最繁忙的时段却是清晨，学生们会在上学前来这里学习。此后，图书馆在窗边增设了六张书桌，但 quiet reading room 保持原样未作改动。访客无需预订座位，不过四人以上的团体必须预订会议室。新的开放时间表将持续执行到三月，届时市议会将审查到访人数数据。\"}"
+  },
+  {
+    "id": "B9fd66b89-d",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "“四人以上”包含四人，原文“more than four people”指超过四人。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长了开放时间，工作人员原本预计大多数读者会在下班后前来。然而，最繁忙的时段却是清晨，学生们在上学前到这里学习。此后，图书馆在窗边增加了六张桌子，但安静阅览室保持原样。读者无需预订座位，但四人以上的团体必须预约会议室。新的时间表将一直执行到三月，届时市政会将审查到馆人数数据。\"}"
+  },
+  {
+    "id": "Bc053c938-4",
+    "caseId": "translation-library",
+    "score": 4,
+    "criteria": [
+      0.5,
+      1,
+      1,
+      1,
+      0.5
+    ],
+    "issues": [
+      "译文使用三重双引号包裹且包含未转义换行，不符合严格 JSON 格式。",
+      "“将在三月持续生效”未保留“until March”的截止含义，应译为“将持续实行到三月”。"
+    ],
+    "answer": "{\n  \"chinese_translation\": \"\"\"\n图书馆在去年秋季延长营业时间后，工作人员原本预计大部分访客会在下班后到达。然而，最繁忙的时段是清晨，当时学生们在学校上课前前来学习。自此以来，图书馆在窗户附近增加了六个书桌，但保持了安静阅读室不变。访客无需提前预约座位，不过人数超过四人的团体必须预订一个会议室。新的时间表将在三月持续生效，到时理事会将审核出席人数数据。\n\"\"\"\n}"
+  },
+  {
+    "id": "Bd5be5844-7",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "“四人以上”包含四人，原文“more than four people”指超过四人。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天镇图书馆延长开放时间时，工作人员预计大多数访客会在下班后到来。但最繁忙的时段却是清晨，学生们会在上学前来这里学习。此后，图书馆在窗边增设了六张书桌，但安静的阅览室保持原样。访客无需预订座位，不过四人以上的团体必须预订会议室。新的开放时间表将一直执行到三月，届时镇议会将审查到馆人数数据。\"}"
+  },
+  {
+    "id": "Bd60a1a00-3",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "“四人以上”包含四人，原文“more than four people”指超过四人。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长了开放时间时，工作人员预计大多数访客会在下班后到来。然而，最繁忙的时段却是清晨，学生们会在上学前来这里学习。此后，图书馆在窗边增加了六张桌子，但保持了安静阅览室原样不变。访客无需预订座位，不过四人以上的团体必须预订会议室。新的时间表将一直执行到三月，届时议会将审查到访人数数据。\"}"
+  },
+  {
+    "id": "Be262d166-9",
+    "caseId": "translation-library",
+    "score": 4,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      0.5
+    ],
+    "issues": [
+      "“四人以上”包含四人，原文“more than four people”指超过四人。",
+      "将“the council”译为“委员会”，未准确保留地方议会这一审查主体。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天，城镇图书馆延长了开放时间，工作人员原本预计大多数读者会在下班后到来。结果，最繁忙的时段却是清晨，因为学生们会在上学前来这里学习。此后，图书馆在窗边增设了六张书桌，但安静阅览室仍保持原样。读者无需预订座位，不过四人以上的团体必须提前预约会议室。新的作息时间表将一直沿用至三月，届时委员会将审查到馆人数。\"}"
+  },
+  {
+    "id": "Be722d311-4",
+    "caseId": "translation-library",
+    "score": 4,
+    "criteria": [
+      1,
+      0.5,
+      1,
+      1,
+      0.5
+    ],
+    "issues": [
+      "“繁忙时段却出现在清晨”遗漏了“the busiest period”的最高级含义“最繁忙”。",
+      "将“last autumn”误译为“上个月底”，改变了延长开放时间的时间。"
+    ],
+    "answer": "{\n  \"chinese_translation\": \"当小镇图书馆在上个月底延长了开放时间后，工作人员预计大多数访客会在下班后到访。结果，繁忙时段却出现在清晨，当学生们在学校上课前前来学习。自此，图书馆在窗户附近增加了六张桌子，但安静的阅读室保持不变。访客不需要预订座位，虽然超过四人的团体必须预订会议室。新时间表将一直有效至三月，那时市议会将审查出席人数。\"\n}"
+  },
+  {
+    "id": "Bec821ed5-b",
+    "caseId": "translation-library",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "“四人以上”包含四人，原文“more than four people”指超过四人。"
+    ],
+    "answer": "{\"chinese_translation\":\"去年秋天镇图书馆延长开放时间时，工作人员原本预计大多数访客会在下班后到来。结果，最繁忙的时段却是清晨，学生们会在上学前来这里学习。此后，图书馆在窗边增设了六张书桌，但保持了安静阅览室的原样。访客无需预约座位，不过四人以上的团体必须预订会议室。新的开放时间表将一直执行到三月，届时镇议会将审查到馆人数数据。\"}"
+  },
+  {
+    "id": "B80f3d198-0",
+    "caseId": "translation-study",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      1,
+      0.5
+    ],
+    "issues": [
+      "“将在独立审查完成后于下个月发表”将条件表述为确定的时间安排，未明确保留“前提是独立审查届时已经完成”的不确定性。"
+    ],
+    "answer": "{\n  \"chinese_translation\": \"**河道研究**\\n\\n并非所有120名志愿者都完成了课程。在完成了课程的80人中，60人报告睡眠状况有所改善，而单独对比组中的60人中只有30人报告睡眠状况有所改善。研究人员将这种差异描述为有前景的，但并未声称课程导致了这种差异：参与者自己选择了所在组别，睡眠情况仅通过自我报告来测量。降低10个百分点不应与降低10%相混淆。该团队将在独立审查完成后于下个月发表其方法。\"\n}"
+  },
+  {
+    "id": "B8b2abda6-a",
+    "caseId": "translation-study",
+    "score": 4.5,
+    "criteria": [
+      0.5,
+      1,
+      1,
+      1,
+      1
+    ],
+    "issues": [
+      "标题将“River Study”译为“河流水质研究”，擅自增加了“水质”的含义。"
+    ],
+    "answer": "{\n  \"chinese_translation\": \"**河流水质研究**\\n\\n并非所有120名志愿者都完成了课程。在完成了课程的80人中，60人报告睡眠更好，而单独的比较组中的60人中只有30人报告睡眠更好。研究人员将这种差异描述为有前景的，但并未声称该课程导致了这种差异：参与者自己选择了他们的分组，睡眠仅通过自我报告进行测量。降低10个百分点的幅度不应与降低10%的幅度相混淆。团队将在下个月发表其方法，前提是独立审查已完成。\"\n}"
+  },
+  {
+    "id": "Bec78e18e-8",
+    "caseId": "translation-study",
+    "score": 4.5,
+    "criteria": [
+      0.5,
+      1,
+      1,
+      1,
+      1
+    ],
+    "issues": [
+      "JSON对象后多出“```”，不符合仅返回严格JSON的要求。"
+    ],
+    "answer": "{\"chinese_translation\":\"**河川研究**\\n\\n并非所有120名志愿者都完成了课程。其中80名完成了课程的志愿者中，60人报告睡眠质量更好，而单独对照组中的60人中有30人报告睡眠质量更好。研究人员将这种差异描述为有前景的，但并未声称该课程导致了这种差异：参与者自己选择了自己的分组，并且睡眠质量仅通过自我报告来测量。10个百分点减小不应与10%减小混淆。该团队将在独立审核完成后于下个月发布其研究方法。\"}\n```"
+  },
+  {
+    "id": "Bed7ae029-7",
+    "caseId": "translation-study",
+    "score": 4.5,
+    "criteria": [
+      1,
+      0.5,
+      1,
+      1,
+      1
+    ],
+    "issues": [
+      "“单独比较组中的30名60人”表述混乱，未准确表达另一组60人中有30人报告睡眠改善。"
+    ],
+    "answer": "{\n  \"chinese_translation\": \"**河道研究**\\n\\n并非所有120名志愿者都完成了课程。在完成了课程的80名志愿者中，60人报告睡眠更好，这与单独比较组中的30名60人相比。研究人员将这种差异描述为有前景的，但并未声称课程引起了这种差异：参与者自行选择了他们的组别，并且睡眠仅通过自我报告进行测量。减少10个百分点不应与减少10%相混淆。该团队将在独立审查完成后，下个月发布其方法。\"\n}"
+  },
+  {
+    "id": "B052a6823-3",
+    "caseId": "syntax-inversion",
+    "score": 3.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      0
+    ],
+    "issues": [
+      "仅称“采用部分倒装结构”，未说明 did 提至主语之前或正常语序为 the committee agreed。",
+      "“双重过去时”不是准确的时态名称；未说明 had been checked 是过去完成时的被动语态，也未说明 it 指最终报告。"
+    ],
+    "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告经过两次检查，委员会才同意公布它。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"Not until the final report had been checked twice\",\n      \"zh\": \"直到最终报告经过两次检查\"\n    },\n    {\n      \"en\": \"did the committee agree\",\n      \"zh\": \"委员会才同意\"\n    },\n    {\n      \"en\": \"to publish it\",\n      \"zh\": \"公布它\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"Not until the final report had been checked twice\",\n      \"role\": \"时间状语\",\n      \"note\": \"表示“直到……才……”的条件或时间限制。\"\n    },\n    {\n      \"text\": \"did the committee agree\",\n      \"role\": \"主语与谓语\",\n      \"note\": \"采用部分倒装结构，突出“才同意”这一动作。\"\n    },\n    {\n      \"text\": \"to publish it\",\n      \"role\": \"不定式短语\",\n      \"note\": \"表示委员会同意采取的动作。\"\n    }\n  ],\n  \"key_points\": [\n    \"句子使用“直到……才……”的倒装结构。\",\n    \"双重过去时表示“经过两次检查”先于“同意公布”发生。\"\n  ]\n}"
+  },
+  {
+    "id": "B10e5fa91-0",
+    "caseId": "syntax-inversion",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      0.5,
+      1
+    ],
+    "issues": [
+      "仅说明“引起主句部分倒装”，未解释 did 提至主语之前或还原为 the committee agreed。"
+    ],
+    "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告经过两次核查，委员会才同意公布。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Not until\", \"zh\": \"直到……才\"},\n    {\"en\": \"the final report had been checked twice\", \"zh\": \"最终报告经过两次核查\"},\n    {\"en\": \"did the committee agree\", \"zh\": \"委员会才同意\"},\n    {\"en\": \"to publish it\", \"zh\": \"公布\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Not until the final report had been checked twice\", \"role\": \"时间条件状语\", \"note\": \"表示核查完成之前，委员会没有同意公布。\"},\n    {\"text\": \"did the committee agree\", \"role\": \"主句\", \"note\": \"Not until 位于句首，引起主句部分倒装。\"},\n    {\"text\": \"to publish it\", \"role\": \"不定式短语\", \"note\": \"说明同意做的事；it 指最终报告。\"}\n  ],\n  \"key_points\": [\n    \"Not until 表示“直到……才”，句首使用时主句部分倒装。\",\n    \"had been checked 是过去完成时的被动形式，表示报告此前已接受核查。\"\n  ]\n}"
+  },
+  {
+    "id": "B1981bd55-c",
+    "caseId": "syntax-inversion",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      1,
+      0.5
+    ],
+    "issues": [
+      "未解释 had been checked 是过去完成时的被动语态，表示检查先于同意发布完成。"
+    ],
+    "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告经过两次核查，委员会才同意发布。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"Not until the final report had been checked twice\",\n      \"zh\": \"直到最终报告经过两次核查\"\n    },\n    {\n      \"en\": \"did the committee agree to publish it\",\n      \"zh\": \"委员会才同意发布\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"Not until the final report had been checked twice\",\n      \"role\": \"否定前置的时间条件从句\",\n      \"note\": \"表示“直到……才……”的条件，突出最终报告经过两次核查是委员会同意发布的前提。\"\n    },\n    {\n      \"text\": \"did the committee agree to publish it\",\n      \"role\": \"主句\",\n      \"note\": \"采用部分倒装语序，助动词 did 置于主语之前；it 指 the final report。\"\n    }\n  ],\n  \"key_points\": [\n    \"句子使用“直到……才……”结构。\",\n    \"主句采用助动词提前的倒装语序。\",\n    \"it 指最终报告。\"\n  ]\n}"
+  },
+  {
+    "id": "B1e864679-4",
+    "caseId": "syntax-inversion",
+    "score": 4.5,
+    "criteria": [
+      1,
+      1,
+      1,
+      1,
+      0.5
+    ],
+    "issues": [
+      "说明了“过去完成时”及动作先后，但未明确解释 had been checked 的被动语态。"
+    ],
+    "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告被检查了两次，委员会才同意发布它。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Not until\", \"zh\": \"直到……才\"},\n    {\"en\": \"the final report\", \"zh\": \"最终报告\"},\n    {\"en\": \"had been checked twice\", \"zh\": \"被检查了两次\"},\n    {\"en\": \"did the committee agree\", \"zh\": \"委员会才同意\"},\n    {\"en\": \"to publish it\", \"zh\": \"发布它\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Not until the final report had been checked twice\", \"role\": \"时间状语从句（强调结构）\", \"note\": \"Not until 置于句首引起部分倒装\"},\n    {\"text\": \"did the committee agree\", \"role\": \"主句谓语部分\", \"note\": \"助动词 did 提前构成倒装\"},\n    {\"text\": \"to publish it\", \"role\": \"动词不定式短语作宾语\", \"note\": \"it 指代 the final report\"}\n  ],\n  \"key_points\": [\n    \"Not until 置于句首时，主句需用部分倒装（did the committee agree）。\",\n    \"时间状语从句使用过去完成时（had been checked），表示在主句动作之前已完成。\",\n    \"整体含义强调：委员会同意发布报告的前提是最终报告已被检查两次。\"\n  ]\n}"
+  },
+  {
+    "id": "B30bcee86-4",
+    "caseId": "syntax-inversion",
+    "score": 1.5,
+    "criteria": [
+      0.5,
+      1,
+      0,
+      0,
+      0
+    ],
+    "issues": [
+      "结构角色使用“conditional clause”和“main clause”，未遵守所有解释使用简体中文的要求。",
+      "将 Not until 引导的时间状语标为“conditional clause”，并在该部分标注“倒装结构”，未正确说明句首 Not until 触发主句部分倒装。",
+      "主句仅注明“正式语境下的主句”，未解释 did 提至主语之前或正常语序为 the committee agreed。",
+      "未解释 had been checked 的过去完成时被动语态及动作先后，也未说明 it 指最终报告。"
+    ],
+    "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告经过两次检查后，委员会才同意发布它。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"Not until\",\n      \"zh\": \"直到\"\n    },\n    {\n      \"en\": \"the final report had been checked twice\",\n      \"zh\": \"最终报告经过两次检查\"\n    },\n    {\n      \"en\": \"did the committee agree to publish it\",\n      \"zh\": \"委员会才同意发布它\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"Not until the final report had been checked twice\",\n      \"role\": \"conditional clause\",\n      \"note\": \"倒装结构，强调条件达到后主句结果\"\n    },\n    {\n      \"text\": \"did the committee agree to publish it\",\n      \"role\": \"main clause\",\n      \"note\": \"正式语境下的主句\"\n    }\n  ],\n  \"key_points\": []\n}"
+  }
+]

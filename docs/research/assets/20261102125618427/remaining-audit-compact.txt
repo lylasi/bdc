@@ -1,0 +1,412 @@
+B3d112044-b syntax-inversion 4 [0.5, 1, 1, 1, 0.5]
+["使用了“```json”代码围栏，不符合仅返回严格 JSON 的要求。", "仅说明“过去完成时”及动作先后，未明确说明被动语态，也未说明“it”指代最终报告。"]
+{"translation": "直到最终报告被检查了两次之后，委员会才同意发布它。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "时间状语（not until 引导）", "note": "置于句首引起部分倒装；从句用过去完成时，强调先于主句发生"}, {"text": "did the committee agree", "role": "主句（倒装）", "note": "助动词 did 提前，实现部分倒装"}, {"text": "to publish it", "role": "不定式宾语", "note": "agree to do sth. 的固定搭配"}], "key_points": ["Not until 置于句首时，主句必须部分倒装（did the committee agree）。", "从句用过去完成时 had been checked，表示动作发生在主句之前。", "句型可转换为强调结构：It was not until... that the committee agreed to publish it."]}
+
+B4a12aebf-d syntax-inversion 4 [0.5, 1, 1, 1, 0.5]
+["将“to publish it”标为“宾语补足语/动词不定式”，但此处没有供其补充说明的宾语，“宾语补足语”判断错误。", "未说明“it”指代“the final report”。"]
+{"translation": "直到终版报告被核对过两遍后，委员会才同意予以发布。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "状语从句", "note": "否定介词短语置于句首，引起主句部分倒装"}, {"text": "did the committee agree", "role": "主句（倒装）", "note": "助动词 did 提前至主语 the committee 之前"}, {"text": "to publish it", "role": "宾语补足语/动词不定式", "note": "agree to do sth. 结构，作 agree 的宾语"}], "key_points": ["Not until 置于句首时，主句须采用部分倒装语序（助动词 did 提前至主语前）。", "从句采用过去完成时的被动语态（had been checked），表示核对动作发生在主句动作（agree）之前。"]}
+
+B5b03eb10-7 syntax-inversion 4.5 [1, 1, 1, 1, 0.5]
+["未说明“it”指代“the final report”。"]
+{"translation": "直到最终报告被核对了两遍之后，委员会才同意将其公开发布。", "chunks": [{"text": "Not until...", "role": "时间状语引导", "note": "Not until 位于句首引起部分倒装"}, {"text": "the final report had been checked twice", "role": "时间状语从句", "note": "过去完成时表示“核对”发生在“同意”之前"}, {"text": "did the committee agree", "role": "主句（倒装）", "note": "助动词 did 提前构成倒装"}, {"text": "to publish it", "role": "不定式宾语", "note": "agree to do sth. 结构"}], "key_points": ["Not until 置于句首时主句须部分倒装（did the committee agree）。", "从句用过去完成时 had been checked，表明核对先于同意发生。"]}
+
+B5b0cb0af-3 syntax-inversion 4.5 [0.5, 1, 1, 1, 1]
+["使用了“```json”代码围栏，不符合仅返回严格 JSON 的要求。"]
+{"translation": "直到最终报告被核对了两遍之后，委员会才同意将其发布。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "否定时间状语从句（提前至句首）", "note": "not until 结构引导时间状语从句；从句用过去完成时 had been checked（被动语态），表示核对发生在同意之前。"}, {"text": "did the committee agree", "role": "主句（部分倒装）", "note": "否定副词 Not until 置于句首，主句必须部分倒装：助动词 did 提到主语 the committee 之前，实义动词保持原形 agree。"}, {"text": "to publish it", "role": "不定式作宾语", "note": "agree to do sth. 表示同意做某事；it 指代 the final report。"}], "key_points": ["Not until 引导的时间状语置于句首时，主句须用部分倒装：did the committee agree。", "从句用过去完成时（had been checked）表示动作先于主句发生，主句用一般过去时（did agree）。", "注意 not until 的译法：“直到……才”，中文语序与英文倒装结构形成对照。"]}
+
+B5bd08056-a syntax-inversion 4.5 [1, 1, 1, 0.5, 1]
+["虽指出“主句部分倒装”，但未说明“did”移到主语前，也未给出正常语序“the committee agreed”。"]
+{"translation": "直到最终报告经过两次核查，委员会才同意公布该报告。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "时间状语", "note": "表示委员会同意公布报告的前提时间；had been checked 是过去完成时的被动语态。"}, {"text": "did the committee agree", "role": "主句", "note": "Not until 置于句首，引起主句部分倒装，译为“直到……才……”。"}, {"text": "to publish it", "role": "不定式短语", "note": "it 指 the final report。"}], "key_points": ["Not until 位于句首时，主句使用部分倒装。", "had been checked twice 表示报告在委员会同意公布前已被核查两次。"]}
+
+B5ce2a26e-b syntax-inversion 4.5 [0.5, 1, 1, 1, 1]
+["将“to publish it”标为“宾语补足语/不定式短语”，但此处没有供其补充说明的宾语，“宾语补足语”判断错误。"]
+{"translation": "直到最终报告被检查了两次，委员会才同意发布它。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "时间状语从句（强调结构）", "note": "Not until 置于句首引起部分倒装，主句用 did the committee agree。"}, {"text": "did the committee agree", "role": "主句谓语（倒装）", "note": "助动词 did 提前，构成部分倒装。"}, {"text": "to publish it", "role": "宾语补足语/不定式短语", "note": "agree to do 表示同意做某事，it 指代 the final report。"}], "key_points": ["Not until 置于句首时，主句需用部分倒装（did + 主语 + 动词原形）。", "had been checked twice 是过去完成时的被动语态，表示在同意发布之前已完成的动作。", "整体含义：委员会在报告被检查两次之后才同意发布。"]}
+
+B75e347af-d syntax-inversion 4.5 [1, 1, 1, 1, 0.5]
+["未说明“had been checked”是过去完成时的被动语态。"]
+{"translation": "直到最终报告经过两次核查，委员会才同意发布该报告。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "前置时间状语", "note": "表示委员会同意发布的前提是最终报告已核查两次。"}, {"text": "did the committee agree", "role": "主句", "note": "否定词组置于句首，主句使用部分倒装。"}, {"text": "to publish it", "role": "不定式短语", "note": "说明同意做的事；it 指最终报告。"}], "key_points": ["not until 表示“直到……才”，强调同意发布发生在两次核查之后。", "did the committee agree 是部分倒装；正常语序为 the committee agreed。"]}
+
+B860b86b3-1 syntax-inversion 2.5 [1, 1, 0.5, 0, 0]
+["虽提到倒装，但将其称为“虚拟倒装”，未正确说明 Not until 置首引发主句部分倒装。", "未说明“did”提前到主句主语之前，也未还原正常语序。", "未分析“had been checked”的过去完成被动及其先于同意的时间关系，也未说明“it”指最终报告。"]
+{"translation": "直到最终报告被核查两次后，委员会才同意发布它。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "condition", "note": "倒装结构强调条件的严格性"}, {"text": "did the committee agree to publish it", "role": "main clause", "note": "虚拟倒装强调条件达成后的行为"}], "key_points": ["最终报告经过两次核查是发布的前提条件", "使用倒装句式突出时间节点的重要性", "委员会在条件满足后才正式同意发布"]}
+
+B96c51f8f-c syntax-inversion 4 [0.5, 1, 1, 1, 0.5]
+["答案包在“```json”代码围栏中，不符合只返回严格 JSON 的要求。", "说明了“had been checked”的过去完成时及先后关系，但未说明被动语态。"]
+{"translation": "直到最终报告被核查了两遍之后，委员会才同意将其发布。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "时间状语（not until 引导的否定时间状语从句）", "note": "强调句首的否定时间状语，从句使用过去完成时 had been checked，表示核查发生在同意之前"}, {"text": "did the committee agree", "role": "主句（部分倒装）", "note": "否定状语置于句首引发部分倒装：助动词 did 提前，主句用一般过去时"}, {"text": "to publish it", "role": "不定式宾语", "note": "agree to do sth. 结构，it 指代 the final report"}], "key_points": ["Not until 置于句首时，主句须部分倒装（did the committee agree）。", "从句用过去完成时 had been checked，体现核查动作发生在同意之前。", "翻译可用'直到……才'对应 not until 的否定时间含义。"]}
+
+B9bc9ec0b-3 syntax-inversion 3.5 [1, 1, 1, 0, 0.5]
+["仅称主句“采用部分倒装形式”，未说明“did”提前到主语前，也未还原正常语序。", "未说明“it”指代最终报告。"]
+{"translation": "直到最终报告经过两次核查后，委员会才同意发布它。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "时间状语从句", "note": "表示直到最终报告经过两次核查这一条件满足时，后面的动作才发生。"}, {"text": "did the committee agree to publish it", "role": "主句", "note": "采用部分倒装形式，与“Not until”引导的否定时间状语从句搭配。"}], "key_points": ["“Not until...”置于句首时，主句使用部分倒装。", "“had been checked twice”表示过去完成时的被动语态，意为“经过两次核查”。"]}
+
+Ba639afa9-f syntax-inversion 4.5 [1, 1, 1, 1, 0.5]
+["未说明“it”指代最终报告。"]
+{"translation": "直到最终报告经过两次检查，委员会才同意发布它。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "前置的时间状语从句", "note": "否定词“not until”意为“直到……才”，其中“had been checked twice”表示“经过两次检查”。"}, {"text": "did the committee agree to publish it", "role": "主句", "note": "主句采用部分倒装，即把助动词“did”置于主语之前；“publish it”意为“发布它”。"}], "key_points": ["“Not until ... did ...”表示“直到……才……”。", "时间状语从句前置时，主句使用部分倒装。", "“had been checked twice”是过去完成时的被动语态。"]}
+
+Bae5e2419-5 syntax-inversion 4.5 [1, 1, 1, 1, 0.5]
+["未说明“it”指代最终报告。"]
+{"translation": "直到最终报告被核对了两次，委员会才同意发布。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "状语从句", "note": "否定介词短语置于句首引出时间状语"}, {"text": "did the committee agree", "role": "主句（部分倒装）", "note": "助动词 did 提前至主语 the committee 前"}, {"text": "to publish it", "role": "宾语（不定式短语）", "note": "作 agree 的宾语"}], "key_points": ["Not until 置于句首时，主句需要使用部分倒装语序（did the committee agree）。", "从句采用过去完成时的被动语态（had been checked），表示动作先于主句的过去动作（agree）发生。"]}
+
+Bb68bf450-7 syntax-inversion 4.5 [0.5, 1, 1, 1, 1]
+["将“to publish it”标为“宾语补足成分/不定式宾语”，其中“宾语补足成分”不成立，因为没有被补充说明的宾语。"]
+{"translation": "直到最终报告经过两次核对，委员会才同意将其发布。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "时间状语从句", "note": "否定介词短语置于句首，从句使用过去完成时被动语态表示动作先于主句发生"}, {"text": "did the committee agree", "role": "主句（部分倒装）", "note": "否定词 not 置于句首引出从句，主句必须倒装，助动词 did 提前"}, {"text": "to publish it", "role": "宾语补足成分/不定式宾语", "note": "固定搭配 agree to do sth.，it 指代 final report"}], "key_points": ["否定短语 Not until 置于句首时，主句必须采用部分倒装语序（助动词 did 提至主语 the committee 之前）。", "从句采用过去完成时的被动语态（had been checked），表示核对动作发生在主句同意发布（一般过去时）之前。", "整个句型意为“直到……才……”，用于强调发布报告的前提条件。"]}
+
+Bc9b14597-0 syntax-inversion 2 [0.5, 1, 0.5, 0, 0]
+["“conditional time clause”“main clause”等解释性角色标签未使用简体中文。", "虽指出主句“部分倒装”，但未明确说明句首“Not until”触发主句部分倒装，并错误地称前置从句“包含……倒装结构”。", "未说明“did”提前至主语之前或还原为正常语序，且错误地把倒装归入until从句。", "将“had been checked”误称为“虚拟完成时态”，未说明其为先于同意发生的过去完成时被动语态，也未说明“it”指代报告。"]
+{"translation": "直到最终报告被检查两次后，委员会才同意发布它。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "conditional time clause", "note": "包含虚拟时态和倒装结构，强调前置条件"}, {"text": "did the committee agree to publish it", "role": "main clause", "note": "部分倒装句型，突出结果"}], "key_points": ["使用虚拟完成时态表达条件，后置条件", "采用倒装结构强调前置条件的重要性", "‘checked twice’为具体行动，突出过程的反复"]}
+
+Bd9843076-a syntax-inversion 1.5 [0.5, 1, 0, 0, 0]
+["“conditional_clause”“main_clause”等解释性角色标签未使用简体中文，且将时间状语从句误标为条件从句。", "仅泛称“使用倒装结构强调”，未正确指出句首“Not until”触发主句部分倒装。", "未解释“did”提前至主句主语之前或正常语序，并将“使用倒装结构”的说明放在前置从句中。", "未说明“had been checked”为先于同意发生的过去完成时被动语态，也未说明“it”指代报告。"]
+{"translation": "直到最终报告被检查两次后，委员会才同意发布它。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "conditional_clause", "note": "起始从句，描述条件成立的时机，使用倒装结构强调"}, {"text": "did the committee agree to publish it", "role": "main_clause", "note": "主句，正式同意发布，强调动作的条件性"}], "key_points": ["报告在正式发布前需经过两次检查", "委员会的同意取决于报告的检查结果", "句子使用倒装结构突出条件成立的时机"]}
+
+Bf2a60821-9 syntax-inversion 4.5 [1, 1, 1, 0.5, 1]
+["虽指出主句使用部分倒装，但未解释“did”置于主语之前，或给出“the committee agreed”等正常语序。"]
+{"translation": "直到最终报告经过两次核查，委员会才同意发布该报告。", "chunks": [{"text": "Not until the final report had been checked twice", "role": "时间状语", "note": "表示委员会同意发布报告之前必须满足的条件。"}, {"text": "did the committee agree", "role": "主句", "note": "句首的“Not until”使主句使用部分倒装。"}, {"text": "to publish it", "role": "不定式短语", "note": "说明委员会同意做什么；“it”指最终报告。"}], "key_points": ["“Not until ... did ...”表示“直到……才……”。", "“had been checked”表示报告在委员会同意发布之前已经经过核查。"]}
+
+B4be9d2cb-b syntax-mixed-conditional 4 [1, 0.5, 1, 1, 0.5]
+["仅给出“if + had not + past participle”，未明确将原句还原为“If Maya had not missed the train”。", "说明了过去条件和现在情况，但未明确指出这是“过去条件＋现在结果”的混合条件句。"]
+{"translation": "如果Maya没有错过那班火车，她现在就会在参加面试。", "chunks": [{"text": "Had Maya not missed the train", "role": "conditional clause", "note": "过去虚拟条件句，表达与过去事实相反的情况"}, {"text": "she would be attending the interview now", "role": "main clause", "note": "结果从句，表示现在的情况"}], "key_points": ["使用过去完成时的虚拟语气（if + had not + past participle）", "意在表达如果当时没有错过火车，现在本可以准时参加面试"]}
+
+B515283ea-2 syntax-mixed-conditional 2 [0.5, 0, 1, 0.5, 0]
+["将“the train”译为“那班地铁”，原文没有地铁这一信息。", "“Had + had + past participle”结构错误，也未还原为“If Maya had not missed the train”。", "“说明现在正在面试”把假设结果说成实际情况，未准确说明她现在未能参加面试。", "未识别过去条件与现在结果构成的混合条件句，也未正确解释“would be attending”的现在进行中的虚拟结果。"]
+{"translation": "要不是玛雅错过了那班地铁，她现在就能参加面试了。", "chunks": [{"text": "Had Maya not missed the train", "role": "if-clause", "note": "过去虚拟条件句，表述与原文一致"}, {"text": "she would be attending the interview now", "role": "main clause", "note": "与原文同步，说明现在正在面试"}], "key_points": ["玛雅如果没有错过那班地铁，现在就能参加面试", "“Had + had + past participle”句型为虚拟条件句", "原句用过去时虚拟，翻译保持一致性"]}
+
+B75336454-8 syntax-mixed-conditional 3.5 [1, 0, 1, 1, 0.5]
+["未说明省略 if 的倒装，也未还原为“If Maya had not missed the train”。", "仅称为“与过去事实相反的虚拟条件句”，未明确识别过去条件与现在结果构成的混合条件句。"]
+{"translation": "要不是玛雅错过了那趟火车，她现在就会正在参加面试。", "chunks": [{"text": "Had Maya not missed the train", "role": "条件状语从句", "note": "采用虚拟语气，表示与过去事实相反的假设。"}, {"text": "she would be attending the interview now", "role": "主句", "note": "表示该假设成立时此刻将会出现的情况。"}], "key_points": ["本句使用与过去事实相反的虚拟条件句。", "“now”对应“现在”，强调假设条件成立后的状态。"]}
+
+B8ca78cd9-f syntax-mixed-conditional 3.5 [0.5, 0.5, 1, 1, 0.5]
+["分析中将“train”解释为“地铁”，原文没有这一信息。", "虽指出“倒装语序”，但未还原为“If Maya had not missed the train”。", "“整体是过去虚拟条件句”分类不准确；应明确为过去条件与现在结果构成的混合条件句。"]
+{"translation": "如果玛雅没有错过那班火车，她现在就会参加面试。", "chunks": [{"text": "Had Maya not missed the train", "role": "condition", "note": "使用倒装语序表示与过去事实相反的虚拟条件，完整语境指错过了能准时到达面试的唯一一班地铁"}, {"text": "she would be attending the interview now", "role": "result", "note": "虚拟条件从句的结果，表示原本应在的当前状态（现在参加面试）"}], "key_points": ["虚拟条件句（倒装）表示过去相反事实：玛雅错过了唯一一班地铁，导致她现在无法参加面试", "结果从句用“would be + 动词-ing”结构，强调原本应在的当前正在进行的面试状态", "整体是过去虚拟条件句，表达遗憾或假设已发生的相反情况"]}
+
+B99f7bd4a-d syntax-mixed-conditional 4.5 [0.5, 1, 1, 1, 1]
+["使用了“```json”代码围栏，不符合只返回严格 JSON 的要求。"]
+{"translation": "如果玛雅当时没有错过那趟火车，她现在就会正在参加面试。", "chunks": [{"text": "Had Maya not missed the train", "role": "条件从句（倒装虚拟条件）", "note": "省略 if 的倒装结构，相当于 If Maya had not missed the train，表示与过去事实相反"}, {"text": "she would be attending the interview now", "role": "主句", "note": "would be attending 表示对现在结果的虚拟，为混合虚拟条件句"}, {"text": "now", "role": "时间状语", "note": "提示主句描述的是现在的状态，与过去条件形成混合时态"}], "key_points": ["倒装虚拟条件：Had Maya not missed = If Maya had not missed，省略 if 时需将 had 提前。", "混合虚拟条件句：从句谈过去（had missed），主句谈现在（would be attending...now）。", "would be attending 为过去将来进行含义，表示‘现在本会正在做某事’。"]}
+
+Bb40699b4-2 syntax-mixed-conditional 4.5 [0.5, 1, 1, 1, 1]
+["短语对齐中“she would be attending”译为“她现在就会正在参加”，又将“now”译为“现在”，重复对应了“now”的含义。"]
+{"translation": "要是玛雅没有错过那趟火车，她现在就会正在参加面试了。", "chunks": [{"text": "Had Maya not missed the train", "role": "条件状语从句", "note": "省略 if 的倒装句，表示对过去的虚拟假设"}, {"text": "she would be attending", "role": "主句谓语", "note": "情态动词 would + 进行体，表示对现在正在发生情况的假设"}, {"text": "the interview", "role": "宾语", "note": "表示参加的对象"}, {"text": "now", "role": "时间状语", "note": "强调主句对应的时间基准是现在"}], "key_points": ["错综时间条件句：从句是对过去的虚拟（Had... not missed），主句是对现在的虚拟（would be attending... now）。", "条件从句中省略了连词 if，助动词 Had 提前构成部分倒装（原为 If Maya had not missed...）。"], "phrase_alignment": [{"en": "Had Maya not missed", "zh": "要是玛雅没有错过"}, {"en": "the train", "zh": "那趟火车"}, {"en": "she would be attending", "zh": "她现在就会正在参加"}, {"en": "the interview", "zh": "面试"}, {"en": "now", "zh": "现在"}]}
+
+Bc9f848cd-3 syntax-mixed-conditional 3 [0.5, 0.5, 1, 1, 0]
+["将“the train”译为“这班地铁”，原文没有限定为地铁。", "只说“倒装结构用于省略if引导词”，未还原“If Maya had not missed the train”或说明还原后的语序。", "未识别过去条件加现在结果的混合条件句，并将相关结构误称为“过去未完成虚拟条件句”和“现在完成进行时”；would be attending 表示假设条件下现在正在进行的动作。"]
+{"translation": "如果玛雅没有错过这班地铁，她现在就会正在参加面试。", "chunks": [{"text": "Had Maya not missed the train", "role": "conditional clause", "note": "过去未完成虚拟条件句，表达与事实相反的情况"}, {"text": "she would be attending the interview now", "role": "main clause", "note": "结果从句，用进行时表示现在进行中的状态"}], "key_points": ["虚拟条件句强调假设与实际相反", "倒装结构用于省略if引导词", "现在完成进行时突出当前状态"]}
+
+Bdb96cbf9-b syntax-mixed-conditional 4.5 [1, 1, 1, 1, 0.5]
+["未明确识别为过去条件加现在结果的混合条件句；“某个过去或持续状态本应如何”对 would be attending 的时间解释不准确，此处指现在本会正在进行的动作。"]
+{"translation": "如果玛雅没有错过那趟火车，她这会儿就正在参加面试了。", "chunks": [{"text": "Had Maya not missed the train", "role": "倒装条件句", "note": "表示与过去事实相反的假设，相当于“if Maya had not missed the train”。"}, {"text": "she", "role": "主语", "note": "指代玛雅。"}, {"text": "would be attending", "role": "谓语", "note": "表示在假设成立的情况下，某个过去或持续状态本应如何；“be attending”带有正在进行的意思。"}, {"text": "the interview now", "role": "宾语和时间状语", "note": "“the interview”指“这次面试”，“now”表示“如果……的话”所设想的时间点。"}], "key_points": ["“Had Maya not missed...”是倒装的虚拟条件句。", "“would be attending”表达本应处于某种持续状态。", "“now”可自然译为“这会儿”。"]}
+
+Bf3ddf4ef-c syntax-mixed-conditional 3.5 [0, 1, 0.5, 1, 1]
+["使用了“```json”代码围栏，不符合只返回严格 JSON 的要求。", "将“would be attending”译为“就能参加”，未保留“本会正在参加”的进行含义，并引入了能力或可能性的含义。", "将“Had Maya not missed the train”解释为“指过去发生的事实”不准确；该从句表达与过去事实相反的假设，实际发生的是错过火车。"]
+{"translation": "如果玛雅当时没有错过那趟火车，她现在就能参加面试了。", "chunks": [{"text": "Had Maya not missed the train", "role": "虚拟条件从句（倒装）", "note": "省略 if 并将 had 提前构成倒装，相当于 If Maya had not missed the train，指过去发生的事实"}, {"text": "she would be attending the interview", "role": "主句（虚拟结果）", "note": "would be attending 是对现在的虚拟，表示与现在事实相反的进行状态"}, {"text": "now", "role": "时间状语", "note": "表明主句是对现在情况的假设，与从句的过去时间形成错综时间虚拟条件句"}], "key_points": ["本句为错综时间虚拟条件句：从句指过去（错过火车），主句指现在（正在参加面试）。", "Had Maya not missed... 是省略 if 的倒装虚拟条件句，语气更正式。", "主句用 would be attending 进行式，表示对当前正在发生动作的虚拟推测。"]}
+
+B1381daf5-4 assistant-basic 3.5 [0.5, 1, 1, 1, 0]
+["将 has been to 解释为“从未返回当前位置”，错误；它表示到访经历，通常已经返回。", "两次用“过去完成”解释这两个结构，时态判断错误，也违反“不要扩展到其他时态”的要求。"]
+文章原文翻译：艾玛去过巴黎三次，但她现在在家。她哥哥已经去了巴黎，星期五之前不会回来。
+
+has been to 与 has gone to 的区别：has been to 表示曾经去过（过去完成，从未返回当前位置）；has gone to 表示已经出发去某处（过去完成，正在前往）。
+
+艾玛现在在家，哥哥已经离开了家去巴黎。
+
+例句：  
+1. I have been to Beijing twice.  
+2. He has gone to Shanghai for business.
+
+B598ccb0e-3 assistant-basic 3.5 [0.5, 1, 0.5, 1, 0.5]
+["“去过并可能回来过”未准确说明 has been to 通常表示已经返回。", "将 has gone to 解释为“刚去或正在去某地……现在不在那里”，错误地限定了时间和位置；应说明已经前往、尚未返回。", "“现在不在那里”与随后“现在在巴黎（或路上）”相互冲突，使解释不够清晰。"]
+Emma has been to Paris three times, but she is at home now. Her brother has gone to Paris and will not return until Friday.
+
+**has been to** 的区别：表示过去某时去过并可能回来过（结果），现在有相关经历或状态。Emma现在在家，说明她去过巴黎后回来了。
+
+**has gone to** 的区别：表示刚去或正在去某地（动作过程），现在不在那里。Her brother现在在巴黎（或路上），预计周五回来。
+
+**Emma的现在情况**：在家（结果状态）。
+
+**Her brother的现在情况**：不在家（过程状态）。
+
+**Emma例句**：She has been to Beijing twice, but she is at home now.
+
+**Her brother例句**：He has gone to Shanghai, and will not return until next week.
+
+B60b1c905-6 assistant-basic 4 [0.5, 1, 0.5, 1, 1]
+["“现在不一定在巴黎”未说明 has been to 通常表示已经返回。", "将 has gone to 解释为“刚刚去了”，并称弟弟“刚刚去了巴黎”，增加了原文和该结构均未表达的时间限制。"]
+**has been to** 的区别：已经去过（多次或至少一次），现在不一定在巴黎。  
+**has gone to** 的区别：刚刚去了，还在巴黎（或途中），现在不在家。  
+
+现在情况：Emma 已经去过巴黎三次，但现在在家；她弟弟刚刚去了巴黎，还没回来（直到周五）。  
+
+**例句1**：I have been to Paris twice before.  
+**例句2**：She has gone to Paris. She will be back soon.
+
+B7bb7993d-9 assistant-basic 3.5 [0.5, 1, 0.5, 1, 0.5]
+["将 has been to 解释为“已返回或不返回”，未准确说明通常已返回。", "未用中文说明兄弟“周五前不会回来”。", "将 has gone to 说成“刚刚去”及“过去式未完成”，错误地限定时间并混淆时态。"]
+Emma has been to Paris three times, but she is at home now. Her brother has gone to Paris and will not return until Friday.
+
+解释：  
+has been to 指已去过某地（经历过），现在不在那里（已返回或不返回）。  
+has gone to 指刚刚去某地或在去路中（过去式未完成），现在在那里。  
+
+Emma 现在在家。  
+Her brother 现在在巴黎。
+
+例句：  
+She has been to Paris three times.  
+He has gone to Paris.
+
+B0201eb5a-3 assistant-critical 3.5 [0.5, 1, 1, 1, 0]
+["未给出课程组的相对增幅“20%”。", "将“多12人”也说成“混淆了百分比与百分点”不准确；本样本确实多12人通过，需要纠正的是“每100名学生必定”的保证。", "回答超过“不超过350个中文字”的限制。"]
+**核对结果**：句子“课程使通过率提高了12%，因此每100名学生必定会多12人通过；扣除对照组后，课程的因果效果就是5%。”有以下问题：
+
+**百分比与百分点区分**：  
+通过率（百分比）是指通过人数占总人数的比例。课程组前60/100=60%，后72/100=72%，通过率提高了12**个百分点**（72-60），并非提高了12%。对照组70/100=70%到77/100=77%，通过率也提高了7**个百分点**。你说的“提高了12%”和“多12人”均混淆了百分比与百分点。
+
+**两组各自变化及变化之差**：  
+- 课程组：通过人数增加12人（从60到72），通过率变化+12个百分点。  
+- 对照组：通过人数增加7人（从70到77），通过率变化+7个百分点。  
+- 变化之差：课程组比对照组多增加了5人（或+5个百分点）。  
+
+**能否证明因果关系**：不能。文章明确说明“The groups were not randomly assigned, and no other differences between them were measured.”，组别选择有偏差（可能课程组学生本来就更爱阅读或水平更高），没有随机化分配，无法排除其他因素影响，因此不能得出课程因果效果为5%的结论。
+
+总结：数据仅显示两组通过率变化差5个百分点，但缺乏随机化证据，无法证明课程起因果作用。
+
+B14ef105e-0 assistant-critical 3.5 [1, 1, 0, 1, 0.5]
+["“变化之差：实验组相对变化比对照组高10%”未给出要求的通过率变化之差“5个百分点”，且20%与10%的直接差应称为10个百分点。", "未明确纠正“每100名学生必定会多12人通过”的保证。"]
+这句总结中使用了“不准确”的表述，请按要求核对如下（总字数约110字）：
+
+课程使通过率提高了12%，因此每100名学生必定会多12人通过；扣除对照组后，课程的因果效果就是5%。
+
+区分百分比（相对变化）与百分点（绝对变化）：
+
+两组各自变化：
+- 实验组：从60/100=60% 升至72/100=72%，绝对变化12个百分点，相对变化12/60=20%。
+- 对照组：从70/100=70% 升至77/100=77%，绝对变化7个百分点，相对变化7/70=10%。
+
+变化之差：实验组相对变化比对照组高10%。
+
+这些数据不能证明因果关系。原因是：研究未随机分组，实验组与对照组在其他方面存在潜在差异（如学生水平、动机等），无法排除这些因素导致的通过率差异。因此无法区分“课程效果”与“组间差异”。
+
+建议：使用随机分组或控制变量设计，才能可靠推断因果。
+
+B5dcdc28f-3 assistant-critical 4.5 [1, 1, 1, 1, 0.5]
+["“通过人数从60%到72%”混淆了人数与通过率，应为“通过率从60%升至72%”或“通过人数从60人增至72人”。"]
+**结论：该总结有误。**
+
+**核对：**
+- 课程组：60% → 72%，上升 **12个百分点**（相对提升为 12/60 = 20%）。
+- 对照组：70% → 77%，上升 **7个百分点**。
+- 两组变化之差：12 − 7 = **5个百分点**（不是“5%的相对提升”）。
+
+**问题所在：**
+1. “提高12%”混淆了百分比与百分点：通过人数从60%到72%，是提高了12个百分点；若说“提高12%”，应是从60%增至67.2%。
+2. “每100名必定多12人通过”把统计差异说成必然，数据只反映总体变化，不保证对每个学生都适用。
+3. “因果效果就是5%”应为“5个百分点”。这只是差值估计，且两组并非随机分配、其他差异未测量，可能存在选择偏差（如课程组本身学习动机更强），因此**不能证明因果关系**，只能说两组通过率变化存在差异。
+
+B7880276b-8 assistant-critical 3 [0.5, 1, 0.5, 1, 0]
+["虽写出“增加12个百分点”，但又标为“12%”，未给出相对增幅20%；“60%=……60分中的60分”也错误。", "虽算出“5个百分点”，但用“12%－7%=5%”表述变化之差，未清楚区分百分点差与相对增幅。", "未明确纠正“每100名学生必定会多12人通过”；建议改写仍称“课程使实验组通过率提高了12个百分点”，错误保留因果断言；全文超过350个中文字，却称“总字数远低于350字”。"]
+**核对结果**：这句话存在逻辑错误和数据计算错误，**不能证明“课程的因果效果就是5%”**。具体说明如下：
+
+**区分百分比与百分点**  
+- 60% = 百分比（60分中的60分）。  
+- 12个**百分点** = 12%（从60%到72%）。  
+- 70%到77%也是**7个百分点**（7%）。
+
+**两组各自的变化**  
+- 实验组（60→72）：**增加12个百分点**（12%）。  
+- 对照组（70→77）：**增加7个百分点**（7%）。
+
+**变化之差**  
+- 实验组比对照组**多增加了5个百分点**（12% - 7% = 5%）。
+
+**能否证明因果关系**  
+不能。文章明确说明“**groups were not randomly assigned**”（两组不是随机分配的），并且“**no other differences between them were measured**”（未测量两组的其他差异）。这表明两组可能本来就存在除课程外的其他因素差别（如学生基础、动机等），不能排除这些影响，因此**无法得出课程是因、提高是果的结论**。观察到的差异可能是选择偏差造成的。
+
+**额外提示**  
+这句话把“5个百分点”简化为“5%”（混淆了术语），这是常见错误。改进后的表述应该是：“课程使实验组通过率提高了12个百分点，对照组提高了7个百分点，实验组比对照组多提高了5个百分点。但因研究中两组未随机分配且未测其他差异，无法证明课程是因果关系。”  
+
+总字数远低于350字。建议用户提供完整文章以便更详细分析。
+
+B94ae746e-e assistant-critical 4.5 [1, 1, 1, 1, 0.5]
+["“即每100人多12人通过”未明确限定为本组观察结果，也未明确纠正对其他学生“必定”多12人通过的保证。"]
+结论：原总结混淆了百分比与百分点，并把相关变化误作因果效果。
+
+- 课程组通过率由60%升至72%，增加12个百分点，即每100人多12人通过；相对增幅为20%。
+- 对照组由70%升至77%，增加7个百分点，即每100人多7人；相对增幅为10%。
+- 两组变化之差为12－7＝5个百分点，即每100人相差5人。
+
+这些数据不能证明课程造成上述差异。两组并非随机分配，且未测量其他差异，可能存在选择偏差或混杂因素。因此，5个百分点只能称为组间变化的差异，不能直接称为“课程的因果效果”。
+
+B9a0a6108-6 assistant-critical 3 [0.5, 0.5, 0.5, 1, 0.5]
+["课程组变化写成“+12%（绝对百分点）”，百分号与百分点混用，且遗漏相对增幅20%。", "对照组变化写成“+7%”，应为7个百分点。", "变化之差写成“+5%（绝对百分点）”，应明确为5个百分点。", "未明确说明“每100名学生必定会多12人通过”不能由本次样本结果保证。"]
+**句子核对（简体中文，符合要求）：**
+
+原文总结：“课程使通过率提高了12%，因此每100名学生必定会多12人通过；扣除对照组后，课程的因果效果就是5%。”  
+此结论不成立。  
+
+直接计算：  
+- 实验组：60人通过，上升至72人，通过率从60%升至72%，变化为**+12%**（绝对百分点）。  
+- 对照组：70人通过，上升至77人，通过率从70%升至77%，变化为**+7%**。  
+- 两组变化之差为**+5%**（绝对百分点）。  
+
+该总结犯了“百分比混淆”的常见错误，将相对百分比变化错误转化为绝对百分点变化，并直接推断“因果效果就是5%”。  
+由于实验组和对照组并非随机分配，且没有测量其他差异，无法排除外部因素影响，因此这些数据**不能证明**课程存在因果关系。  
+
+（总字数：312字）
+
+B9f777fa3-5 assistant-critical 4.5 [0.5, 1, 1, 1, 1]
+["遗漏课程组相对增幅为20%。"]
+这句话有问题。原文：课程组通过率从60%升至72%，提高12个百分点（不是“12%”的相对增幅）；对照组从70%升至77%，提高7个百分点。两组变化之差为5个百分点。因此“每100名学生必定会多12人通过”不成立，因为12个百分点只是本次样本的观察差值；“因果效果5%”也不严谨，应说5个百分点。更重要的是，原文明确两组非随机分配，且未测量其他差异，所以不能据此证明因果关系；5个百分点只是描述性差值，可能混有选择偏差等混杂因素。
+
+Bb9a6adda-9 assistant-critical 4.5 [1, 1, 1, 1, 0.5]
+["“存在严重的选择性偏差”和“对照组自然增长也说明存在时间等混杂因素”超出原文证据；只能说可能存在选择偏差或混杂，无法确定其严重程度及具体来源。"]
+该总结**不准确**，存在概念混淆且无法证明因果。
+
+1. **百分比与百分点混淆**：
+   - 课程组通过率从 60% 升至 72%，增加了 **12 个百分点**（实际相对增幅百分比为 $(72-60)/60 = 20\%$）。断言“必定多12人”忽略了统计波动的绝对化表述。
+   - 对照组从 70% 升至 77%，增加了 **7 个百分点**（相对增幅 $10\%$）。
+   - 两组净变化之差为 $12 - 7 =$ **5 个百分点**（而非 5%）。
+
+2. **不能证明因果关系**：
+   - 原文明确指出学生是**自愿选择**参加（非随机分配），且**未测量其他差异**。
+   - 存在严重的**选择性偏差**（如选课学生可能本身学习动机更强），对照组自然增长也说明存在时间等混杂因素。因此，这 5 个百分点的差异**不能**直接归因于课程的因果效果。
+
+Bc8a289f9-8 assistant-critical 4.5 [1, 1, 1, 1, 0.5]
+["回答超过“不超过350个中文字”的篇幅限制。"]
+**结论：这句话不准确，不能得出因果结论。**
+
+**1. 百分比与百分点**
+- 课程组：60→72，增加 12 个百分点，相对提高 20%（12÷60）。所以“提高了12%”应改为“提高了12个百分点”。
+- 对照组：70→77，增加 7 个百分点，相对提高 10%（7÷70）。
+
+**2. 变化之差**
+- 12 − 7 = **5 个百分点**，不是“5%”。
+
+**3. “必定多12人”不成立**
+- 12 人只是这 100 人的观察结果，不是对每 100 名学生的保证。样本有随机波动，原文也没有提供显著性检验或不确定性范围。
+
+**4. 能否证明因果**
+- **不能。** 学生是自己选择是否参加，分组并非随机，其他差异也没有测量。
+- 两组起点不同（60 与 70），动机、基础、学习习惯等都可能影响结果。
+- 5 个百分点只能说明“课程组比对照组多提高了 5 个百分点”，是一个描述性差异。要把它解释为因果效果，还需要额外假设，例如没有其他差异影响变化趋势，而原文并未提供这方面信息。
+
+**更稳妥的表述：**“课程组通过率提高 12 个百分点，对照组提高 7 个百分点，相差 5 个百分点；但由于非随机分组，不能确定这是课程造成的。”
+
+Bcb90f3a5-1 assistant-critical 4.5 [1, 1, 1, 1, 0.5]
+["“对照组数据算错”不准确，原总结的问题是单位和因果解释；“需随机对照实验才能确认因果”过于绝对，随机实验并非因果识别的唯一途径。"]
+**结论：这句话有多处错误，不能作为正确的因果推断。**
+
+**核对要点：**
+
+1. **百分比与百分点混淆。** 实验组通过率从60%升至72%，变化是12个百分点，不是“12%”；换算成相对变化是提高20%（12/60）。同理“每100名学生必定多12人通过”把总体变化说成必然效果，过度解读。
+
+2. **对照组数据算错。** 对照组从70%升至77%，即上升7个百分点。两变化之差应为12 − 7 = **5个百分点**，这句话结果碰巧对，但称“扣除对照组后效果是5%”表述不规范，应为“5个百分点”。
+
+3. **不能证明因果关系。** 两组学生不是随机分配，且未测量其他差异（如基础水平、动机、有无额外辅导）。差异可能来自选择偏差——自愿参加课程的学生本就可能更积极。5个百分点的差只能提示**可能存在效果**，需随机对照实验才能确认因果。
+
+Bfbc003ef-a assistant-critical 4.5 [1, 1, 1, 1, 0.5]
+["未明确纠正“每100名学生必定会多12人通过”的保证性说法；“即每100人多12人通过”应限定为本组观察结果，不能推广为必然结果。"]
+结论：该总结混淆了百分比与百分点，也不能据此证明因果关系。
+
+- 课程组：60%升至72%，增加12个百分点，即每100人多12人通过；相对增幅为20%（12÷60）。
+- 对照组：70%升至77%，增加7个百分点，即每100人多7人通过；相对增幅为10%（7÷70）。
+- 变化之差：12−7=5个百分点，也可表述为每100人的通过人数多增加5人；这不是已证明的“5%因果效果”。
+
+研究未随机分组，也未测量两组间的其他差异，因此可能存在选择偏差或混杂因素。上述5个百分点只是观察到的差异，不能证明是课程造成的。
+
+B1ab3ddcf-7 word-idiom 4.5 [1, 1, 0.5, 1, 1]
+["用法说明中“只能用来指人的死亡，不能用于其他事物”错误；该习语也可用于动物死亡，或比喻机器等停止运转。"]
+{"selection":"kicks the bucket","sentence":"Leo says he wants to travel the world before he kicks the bucket.","analysis":{"phonetic":"/kɪks ðə ˈbʌkɪt/","meaning":"非正式俚语，意为“死去”“一命呜呼”，是一种比较随意甚至略带幽默的说法，语气不够正式和委婉，通常用于熟人之间的闲聊。","usage":"这是一个固定习语（kick the bucket 的第三人称单数形式），只能用来指人的死亡，不能用于其他事物。由于语气随意，在正式场合、慰问逝者家属或严肃话题中应避免使用，可用 pass away（去世）等委婉表达代替。在本句中，Leo 用它轻松地描述自己的愿望：在去世之前环游世界。","examples":[{"en":"The old man promised to sell his house before he kicks the bucket.","zh":"这位老人承诺在去世前把房子卖掉。"},{"en":"He wrote his will long before he kicked the bucket.","zh":"他在去世很久之前就写好了遗嘱。"},{"en":"I want to learn a new language before I kick the bucket.","zh":"我想在去世之前学会一门新语言。"}]}}
+
+B225cf9b6-0 word-idiom 4 [0.5, 1, 1, 1, 0.5]
+["输出使用了“```json”代码围栏，且缺少最外层对象的闭合花括号，不是严格 JSON。", "例句“He said he would quit his job when he kicks the bucket.”语义不自然，中文“在去世后辞掉工作”也把 when 表达的时间误译为“去世后”。"]
+```json
+{"selection":"kicks the bucket","sentence":"Leo says he wants to travel the world before he kicks the bucket.","analysis":{"phonetic":"kɪks ðə ˈbʌkɪt","meaning":"这是一个俚语表达，意思是‘死掉’，相当于‘去世’或‘死去’。它常用于表示某人将要死亡或已经死亡。","usage":"在口语中用来幽默或委婉地暗示死亡，常用于描述将来的计划或事件。","examples":[{"en":"Leo says he wants to travel the world before he kicks the bucket.","zh":"里奥说他想在去世之前环游世界。"},{"en":"He said he would quit his job when he kicks the bucket.","zh":"他说他会在去世后辞掉工作。"}]}
+```
+
+B52178594-3 word-idiom 2 [0, 1, 0.5, 0.5, 0]
+["回答以“```json”开头，且在“Leo kicks the bucket”处截断，字符串、例句数组和对象均未闭合，不是可解析的严格JSON。", "用法仅称“表达死亡的委婉说法，常用于故事或幽默语气”，未明确其非正式口语性质及不适合正式哀悼的限制。", "虽正确翻译原句的未来愿望，却又加入“里奥在退休前去世了”“里奥在旅行后去世了”等例句，混淆了Leo仍活着、正在规划未来的语境。", "将“I was just kicking the bucket”误译为“我只是开个玩笑”，将“I'll kick the bucket before I forget your birthday”译成相反的先后关系，并无依据地声称“The phrase is from American English.”。"]
+```json
+{"selection":"kicks the bucket","sentence":"Leo says he wants to travel the world before he kicks the bucket.","analysis":{"phonetic":"kɪks ðə ˈbʌkɪt","meaning":"becomes dead; dies.","usage":"表达死亡的委婉说法，常用于故事或幽默语气。","examples":[{"en":"Leo says he wants to travel the world before he kicks the bucket.","zh":"里奥说，在他去世前，他想去环游世界。"},{"en":"Before you know it, our pet parrot kicked the bucket.","zh":"很快，我们的宠物鹦鹉就去世了。"},{"en":"He kicked the bucket after a long battle with illness.","zh":"他和疾病抗争了很长时间后去世了。"},{"en":"Don't worry, I'll kick the bucket before I forget your birthday.","zh":"别担心，在我忘记你的生日之前，我是不会去世的。"},{"en":"The old man kicked the bucket peacefully in his sleep.","zh":"那个老人安详地睡着后去世了。"},{"en":"Don't be so sensitive; I was just kicking the bucket.","zh":"别这么敏感，我只是开个玩笑。"},{"en":"She kicked the bucket and left us with many questions.","zh":"她去世了，留下我们一堆问题。"},{"en":"The phrase kicks the bucket is a common euphemism.","zh":"这个短语是常见的委婉说法。"},{"en":"Before he kicks the bucket, Leo has big plans.","zh":"在里奥去世前，他有很大的计划。"},{"en":"The idiom kicks the bucket is idiomatic.","zh":"这个习语是固定搭配。"},{"en":"Leo kicks the bucket before he gets to retire.","zh":"里奥在退休前去世了。"},{"en":"It's just a saying: he kicked the bucket.","zh":"这只是个说法，他去世了。"},{"en":"The story ends with him kicking the bucket.","zh":"故事以他去世结尾。"},{"en":"Don't kick the bucket too soon.","zh":"别太早去世。"},{"en":"He kicks the bucket every day in this joke.","zh":"这个笑话里他每天都去世。"},{"en":"The phrase is from American English.","zh":"这个短语来自美国英语。"},{"en":"Leo kicks the bucket soon.","zh":"里奥很快就会去世。"},{"en":"It's a common phrase now.","zh":"现在这已成为常见说法。"},{"en":"He kicks the bucket quietly.","zh":"他安静地去世了。"},{"en":"The idiom is popular online.","zh":"这个习语在网上很流行。"},{"en":"Leo kicks the bucket after traveling.","zh":"里奥在旅行后去世了。"},{"en":"The phrase kicks the bucket is fun.","zh":"这个短语很搞笑。"},{"en":"Don't kick the bucket too soon.","zh":"别太早去世。"},{"en":"He kicks the bucket peacefully.","zh":"他平静地去世了。"},{"en":"The phrase is common in American English.","zh":"这个短语在美国英语中很常见。"},{"en":"Leo kicks the bucket soon.","zh":"里奥很快就会去世。"},{"en":"It's a common phrase now.","zh":"现在这已成为常见说法。"},{"en":"He kicks the bucket quietly.","zh":"他安静地去世了。"},{"
+
+Ba4b91cdf-3 word-idiom 4.5 [1, 1, 1, 0.5, 1]
+["用法称“用于描述即将死亡或比喻自己会先死”，无依据地加入死亡迫近或先于他人死亡的含义；本句只表达Leo希望在有生之年完成旅行。"]
+{"selection":"kicks the bucket","sentence":"Leo says he wants to travel the world before he kicks the bucket.","analysis":{"phonetic":"/kɪks ðə ˈbʌkɪt/","meaning":"这是俚语，意思是“死”或“去世”，属于委婉、口语化的死亡表达，常用于非正式场合。","usage":"用于描述即将死亡或比喻自己会先死，表达对未来的乐观规划。","examples":[{"en":"Leo says he wants to travel the world before he kicks the bucket.","zh":"Leo说他在死之前想环游世界。"},{"en":"I'm gonna see the world before I kick the bucket.","zh":"我要在死之前去看看世界。"},{"en":"He kicked the bucket at the age of 78.","zh":"他78岁时去世。"}]}}
+
+B336db2db-d translation-long-policy 4.5 [1, 1, 0.5, 1, 1]
+["“但参加不会获得报酬”漏译了“会议”，未明确不支付报酬的是参加会议。"]
+{"chinese_translation":"**河畔试点**\n\n在周一的会议上，市议会同意资助一项为期六个月的交通试点，而非永久性服务。该计划尚未启动。如果独立安全审查在12月15日之前完成，首批公交车将于1月投入运行；否则，启动将推迟。Maya Chen博士表示，批准资助不应与批准开始载客相混淆。永久性服务的日期尚未商定。\n\n18岁以下的申请人不能加入乘客小组。18岁及以上的人可以申请，但周五之后收到的申请将不予考虑，除非延迟是由市议会自己的网站造成的。成功的申请人将在七个工作日内收到通知，周末和公共假日除外。他们将获得一张乘车卡，但参加不会获得报酬。\n\n该试点是在一项小规模自愿调查之后进行的。在一个社区，愿意使用公交的受访者比例从40%上升到50%。这是上升了10个百分点，即相对增加25%；这不是10%的相对增加。并非所有受访者此前都使用过公共交通。由于调查是自愿的，且两个社区在收入和距车站距离方面存在差异，市议会并未声称更低的票价导致了这一变化。\n\n公布的预算包括司机和日常维护，但不包括大修。任何增加预算的提案都必须回到市议会进行单独投票。不到五名居民对拟议的时间表提出投诉，这并不意味着其他所有居民都支持它：大多数居民没有回应。市议会将公布完整数据，而不仅仅是正面评论。\n\n最终报告必须将观察到的变化与预测的益处区分开来。即使乘客数量上升，仅凭这一点也无法确定该服务是否减少了汽车出行。只有在试点结束且外部评估公布之后，才会考虑永久性服务。"}
+
+B41df1a4b-4 translation-long-policy 3.5 [0.5, 1, 1, 0.5, 0.5]
+["将“Dr. Maya Chen”译为“陈医生”，未保留英文人名“Maya Chen”。", "“愿意使用公交车的人的份额”漏掉“受访者”限定，未保留40%和50%所指的调查人群。", "将“drivers and routine maintenance”译为“司机的常规维护”，误把司机费用和日常维护两项合并为对司机的维护。"]
+{
+  "chinese_translation": "**Riverside 试点**\n\n在周一的会议上，议会同意资助一项为期六个月的交通试点，而不是永久服务。计划尚未开始。如果独立安全审查在12月15日前完成，第一辆公交车将在1月运行；否则，启动将延迟。陈医生说，批准资金不应与批准开始载客混淆。尚未就永久服务达成任何日期。\n\n未满18岁的申请人无法加入乘客小组。18岁或以上的人可以申请，但周五之后收到的申请除非延迟是由议会的网站自身造成的，否则将不予考虑。成功申请人将在7个工作日内收到通知，不包括周末和公众假期。他们将收到一张旅行通行证，但他们不会因为参加会议而获得报酬。\n\n试点遵循一项小型自愿调查。在一个社区，愿意使用公交车的人的份额从40%上升到50%。这是增加了10个百分点，或者相对增加了25%；这不是10%的相对增加。并非所有受访者此前都曾使用过公共交通。因为调查是自愿的，而且两个社区在收入和距离车站的距离方面有所不同，议会并未声称更便宜的车费造成了变化。\n\n公布的预算包括司机的常规维护，但不包括重大修理。任何增加预算的提案都必须返回议会进行单独投票。不到5名居民投诉建议的时间表，这并不意味着其他居民都支持它：大多数居民没有回应。议会将公布全部数据，而不是仅公布积极的评论。\n\n最终报告必须区分观察到的变化和预测的好处。即使乘客数量增加，这本身也无法确立服务是否减少了汽车出行。永久服务只有在试点结束后并外部评估发布后才会被考虑。"
+}
+
+B864157bb-6 translation-long-policy 4 [0.5, 0.5, 1, 1, 1]
+["将“Dr. Maya Chen”改为“陈医生”，未保留英文人名。", "“议会同意为期六个月的交通试点”遗漏了议会同意提供资金这一信息。"]
+{
+  "chinese_translation": "**河边试点**\n\n在周一的会议上，议会同意为期六个月的交通试点，而不是永久服务。该计划尚未开始。如果独立安全审查在12月15日前完成，第一辆公交车将在1月运行；否则，启动将推迟。陈医生说，批准资金不应与批准开始载客混为一谈。尚未同意永久服务的日期。\n\n18岁以下的申请人不能加入乘客小组。18岁或以上的人可以申请，但周五后收到的申请将不予考虑，除非延迟是由议会的网站造成的。成功的申请人将在七个工作日内（不包括周末和公共假期）收到通知。他们将获得一张交通卡，但出席会议时不会获得报酬。\n\n该试点遵循一项小型自愿调查。在一个街区，愿意使用公交车的人的比例从40%上升到50%。这增加了10个百分点，或者相对增加25%；这不是10%的相对增加。并非所有受访者此前都曾使用公共交通。因为调查是自愿的，且两个街区的收入和距车站距离不同，议会没有声称更便宜的车费导致了变化。\n\n发布的预算包括司机和日常维护，但不包括主要维修。任何增加预算的提案都必须返回议会进行单独投票。少于五名居民投诉了建议的时间表，这并不意味着其他每位居民都支持它：大多数居民没有回应。议会将公布完整数据，而不是仅公布积极的意见。\n\n最终报告必须区分观察到的变化和预测的好处。即使乘客数量增加，这本身也不能确定服务是否减少了汽车出行。只有在试点结束后并公布外部评估后，才会考虑永久服务。"
+}
+
+B97292ac0-b translation-long-policy 3.5 [0, 0.5, 1, 1, 1]
+["使用三引号和字符串内未转义的换行，不符合严格JSON格式。", "将“Dr. Maya Chen”改为“陈医生”，未保留英文人名。", "“尚未就永久性服务达成协议”遗漏了原文限定的“日期”，扩大了尚未达成协议的范围。"]
+{
+  "chinese_translation": """
+**Riverside pilot**
+
+在周一的会议上，议会一致同意资助一项为期六个月的交通试点，而不是永久性的服务。该计划尚未开始。如果独立安全审查在12月15日之前完成，第一辆公交车将在1月上路；否则，启动将推迟。陈医生说，批准资金不应与批准开始载客混为一谈。尚未就永久性服务达成协议。
+
+未满18岁的申请人不能加入乘客小组。年满18岁或以上的可以申请，但如果申请是在周五之后收到的，且延迟不是由议会自己的网站造成的，则不会考虑此类申请。成功申请人将在七个工作日内收到通知（不包括周末和公共假期）。他们将获得一张乘车通行证，但出席会议时不会获得报酬。
+
+该试点是基于一项小型自愿调查。在一个街区中，愿意乘坐公交车的人数比例从40%上升到50%。这是10个百分点的增长，或25%的相对增长；而不是10%的相对增长。并非所有受访者此前都曾使用公共交通。由于调查是自愿性质，且两个街区在收入和距离车站的距离上存在差异，议会并未宣称更便宜的票价是造成变化的原因。
+
+已公布的预算包括司机和例行维护，但不包括重大维修。任何增加预算的提议必须返回议会进行单独投票。不到五名居民投诉提出的时刻表，这并不意味着每个其他居民都支持它：大多数居民没有回应。议会将公布完整数据，而不是仅公布正面评论。
+
+最终报告必须将观察到的变化与预测的好处区分开来。即使乘客数量增加，这也无法单独证明该服务是否减少了私家车出行。只有在试点结束后并对外评估结果公布后，才会考虑永久性服务。
+"""
+}
+
+Ba0d2e77e-b translation-long-policy 3.5 [0.5, 1, 0.5, 1, 0.5]
+["将“Dr. Maya Chen”改为“陈医生”，未保留英文人名。", "将“People aged 18 or over”译为“18岁或以上的居民”，增加了原文没有的居民身份限制。", "将“drivers and routine maintenance”译为“司机的常规维护”，错误合并了司机费用和日常维护两项预算内容。"]
+{
+"chinese_translation": "**Riverside pilot**\n\n在周一的会议上，议会同意资助一个为期六个月的交通试点项目，而不是永久服务。计划尚未开始。如果独立安全审查在12月15日之前完成，首班公交车将在1月运行；否则，启动将推迟。陈医生表示，批准资助不应与批准开始载客混淆。尚未商定永久服务的日期。\n\n未满18岁的申请人不能加入乘客小组。18岁或以上的居民可以申请，但收到的申请如果在周五之后收到，除非延迟是由议会的网站自身造成的，否则不会被考虑。成功申请人将在7个工作日内收到通知（不包括周末和公共假期）。他们将获得一张乘车卡，但参加会议不会获得报酬。\n\n该试点项目基于一个小规模自愿调查。在一个街区，愿意使用公交车的受访者比例从40%上升到50%。这是增加了10个百分点，或者相对增加了25%；它不是10%的相对增加。并非所有受访者此前都曾使用过公共交通。因为调查是自愿性质的，而且两个街区在收入和离车站的距离上存在差异，议会并未声称更便宜的票价导致了变化。\n\n公布的预算包括司机的常规维护，但不包括大修。任何增加预算的提议都必须返回议会进行单独投票。少于五位居民投诉提出的时间表，这并不意味着其他每位居民都支持它：大多数居民没有回复。议会将公布完整数字，而不是仅发布正面评论。\n\n最终报告必须区分观察到的变化和预测的好处。即使乘客数量增加，这也无法单独确定服务是否减少了私家车出行。只有在试点项目结束后并外部评估发布后，才会考虑永久服务。"
+}
+
+B42fcf36d-2 syntax-ambiguous 4.5 [0.5, 1, 1, 1, 1]
+["使用“```json”代码围栏，整体输出不是要求的严格JSON。"]
+{"translation": "我用望远镜看到了那个男人。（也可译为：我看到了那个拿着望远镜的男人。）", "chunks": [{"text": "I", "role": "主语", "note": "第一人称单数代词"}, {"text": "saw", "role": "谓语动词", "note": "see 的过去式，表‘看见’"}, {"text": "the man", "role": "宾语", "note": "定冠词 the 表特指"}, {"text": "with the telescope", "role": "介词短语（有歧义）", "note": "可修饰 saw（工具：我用望远镜看），也可修饰 the man（伴随/携带：男人带着望远镜）"}], "key_points": ["介词短语 with the telescope 存在经典的修饰语归属歧义：既可作方式/工具状语修饰 saw（我用望远镜看），也可作后置定语修饰 the man（那个人带着望远镜）。", "根据上下文（观察者和那个男人都可能拿到望远镜），两种解读均无法排除，句子本身没有提供消歧线索。", "口语中可通过重读消歧：重读 I 倾向工具解读，重读 the man 倾向携带解读。"]}
+
+B890bf9da-3 syntax-ambiguous 4.5 [0.5, 1, 1, 1, 1]
+["使用“```json”代码围栏，整体输出不是要求的严格JSON。"]
+{"translation": "我用望远镜看到了那个人。", "chunks": [{"text": "I", "role": "主语", "note": "第一人称代词，动作的发出者。"}, {"text": "saw", "role": "谓语动词", "note": "see 的过去式，表示“看见”。"}, {"text": "the man", "role": "宾语", "note": "定冠词 the 表示特指的某个人。"}, {"text": "with the telescope", "role": "介词短语", "note": "存在结构歧义：既可修饰动词 saw（我用望远镜看），也可修饰 the man（那个人带着望远镜）。"}], "key_points": ["本句存在经典的结构歧义：with the telescope 可修饰动词 saw（我用望远镜看人），也可修饰名词 the man（那个人带着望远镜）。", "根据所给上下文，观察者和那个人都可能接触过望远镜，语境无法消除歧义，两种解读均成立。", "若需明确含义，可改写为：Using the telescope, I saw the man.（我用望远镜看到他）或 I saw the man who had the telescope.（那个人带着望远镜）。"]}
+
+Bc1d6f1da-c syntax-ambiguous 2 [1, 0, 0, 1, 0]
+["仅讨论男人“携带或使用望远镜”，未明确说明“with the telescope”可分别修饰“saw”和“the man”。", "缺少“我用望远镜看见那个男人”的解读。", "“无法确定”仅针对男人与望远镜的关系，未说明现有上下文无法确定由观察者使用还是由男人携带望远镜。"]
+{"translation": "我看见那个男人带着望远镜。", "chunks": [{"text": "I saw", "zh": "我看见", "role": "主谓结构", "note": "表示说话者目击了某人。"}, {"text": "the man", "zh": "那个男人", "role": "宾语", "note": "指代被看见的男性。"}, {"text": "with the telescope", "zh": "带着望远镜", "role": "介词短语，修饰宾语", "note": "“with the telescope”修饰“the man”，通常表示该男子携带或使用望远镜；但仅凭本句无法确定望远镜是在使用中、被携带，还是与此人有其他伴随关系。"}], "key_points": ["本句的基本意思是“我看见那个男人带着望远镜”。", "“with the telescope”存在轻微歧义，但通常理解为男人携带或正在使用望远镜。"]}
+
+Bc205c89d-2 syntax-ambiguous 2 [1, 0, 0, 1, 0]
+["将歧义解释为男子“使用、携带还是仅仅与望远镜在一起”，未承认两种合理的附着解读。", "缺少修饰“saw”、表示“我用望远镜看见那个男人”的解读。", "“句子只说明观察者看见这名男子与望远镜有关”错误地限定为男子与望远镜有关，未保留上下文无法确定的两种解读。"]
+{"translation": "我看见那个男人带着望远镜。", "chunks": [{"text": "I saw", "role": "谓语", "note": "表示观察者看见某事。"}, {"text": "the man", "role": "宾语", "note": "指被看见的那名男子。"}, {"text": "with the telescope", "role": "方式或伴随状态", "note": "“with”表明该男子与望远镜存在关系，但没有明确说明他是在使用、携带还是仅仅与望远镜在一起。"}], "key_points": ["句子只说明观察者看见这名男子与望远镜有关。", "无法确定该男子是在使用、携带还是陪同望远镜，译文保留这种歧义。"]}
+
+B4186d634-5 assistant-multiturn 4 [0.5, 0.5, 1, 1, 1]
+["只写阅读组“上升12.5个百分点（相对增幅25%）”，缺少通过率“50%到62.5%”。", "只写对照组“上升5个百分点（相对增幅约8.33%）”，缺少通过率“60%到65%”。"]
+The club pass rate rose by 12.5 percentage points (25% relative) versus 5 percentage points (8.33% relative) in the comparison group, but non-random assignment prevents claiming a definitive 7.5% causal benefit.
+
+1. 阅读组通过率上升12.5个百分点（相对增幅25%），对照组上升5个百分点（相对增幅约8.33%）。
+2. 两组通过率的百分点变化之差为7.5个百分点，而非“每百人必定多通过”的确定结果。
+3. 学生非随机分配且未控制其他差异，存在混杂因素，不能得出7.5%的净因果收益结论。
+
+Bc03906b3-5 assistant-multiturn 4 [1, 0.5, 0.5, 1, 1]
+["英文写“comparison 5 points (10%)”，对照组相对增幅应约为8.33%，与中文说明也不一致。", "仅否定“7.5个百分点”的因果收益，未说明阅读组增加12.5个百分点不保证每100人必定多12.5人通过。"]
+**English summary:**  
+The club rose 12.5 points (25%), comparison 5 points (10%), difference 7.5 points; non-random groups mean causation is unsupported.
+
+**中文说明：**
+1. 阅读组通过率从50%升至62.5%，升12.5个百分点，相对增幅25%。  
+2. 对照组从60%升至65%，升5个百分点，相对增幅约8.3%；两组变化相差7.5个百分点。  
+3. 非随机分组且未测其他差异，7.5个百分点不能定为课程因果收益。
+
+Bcd9e13da-d assistant-multiturn 4 [0.5, 0.5, 1, 1, 1]
+["阅读组只写“上升12.5个百分点（相对增幅25%）”，遗漏通过率从50%到62.5%。", "对照组只写“上升5个百分点（相对增幅约8.33%）”，遗漏通过率从60%到65%。"]
+Although the club group showed a 7.5-percentage-point higher gain than the comparison group, non-random assignment precludes claiming any guaranteed causal benefit.
+
+1. 阅读组通过率上升12.5个百分点（相对增幅25%），对照组上升5个百分点（相对增幅约8.33%）。
+2. 两组变化之差为7.5个百分点，属于绝对百分点差距而非相对比例，不可直接写成净收益。
+3. 学生非随机分配且未测量其他差异，无法排除混杂因素，不能得出“课程必定带来提升”的因果结论。

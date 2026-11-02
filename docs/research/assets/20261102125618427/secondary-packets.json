@@ -1,0 +1,441 @@
+[
+  {
+    "packetId": "audit-word-bank",
+    "caseId": "word-bank",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the English word \"bank\".\nReturn only strict JSON with this schema:\n{\"phonetic\":\"IPA\",\"pos\":\"part of speech\",\"meaning\":\"the most common Chinese meaning\"}\nThe \"phonetic\" field feeds this app's sound chart, which has one playable recording per symbol, so use the notation of that chart and no other: Write IPA only in this app's notation: /e/ (not /ɛ/), /r/ (not /ɹ/), /ɡ/ (not g), /iː/ (not i), /uː/ (not u), /ɑː/ (not ɑ), /ɔː/ (not ɔ), /ɜː/ or /ɜːr/ (not ɜ or ɝ), /ə/ or /ər/ (not ɚ), /tʃ/ and /dʒ/ (not ligatures). Stress marks ˈ ˌ and syllable dots are allowed.\nDo not add Markdown or any text outside the JSON object."
+      }
+    ],
+    "rubric": [
+      "1: JSON 與必需欄位完整",
+      "1: 常用義為銀行，可另列河岸",
+      "1: 包含名詞詞性",
+      "1: 音標包含正確的 bæŋk",
+      "1: 簡潔、不添加虛構來源或無關內容"
+    ],
+    "answers": [
+      {
+        "id": "Bcd0ca345-7",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"noun\",\"meaning\":\"银行\"}"
+      },
+      {
+        "id": "B323e4dc2-c",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"名词\",\"meaning\":\"银行\"}"
+      },
+      {
+        "id": "B3d8a312f-5",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"名词\",\"meaning\":\"银行\"}"
+      },
+      {
+        "id": "B79cefdb1-3",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"名词\",\"meaning\":\"银行\"}"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-word-sanction",
+    "caseId": "word-sanction",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English word in its sentence.\nReturn only strict JSON:\n{\"word\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"pos\":\"part of speech\",\"meaning\":\"Chinese meaning in this sentence\",\"role\":\"brief grammatical role\"}}\n\nTarget word: \"sanction\"\nSentence: \"The board refused to sanction the project because the safety review was incomplete.\""
+      }
+    ],
+    "rubric": [
+      "1: JSON 與必需欄位完整",
+      "2: 句中 sanction 是批准／認可，不是制裁",
+      "1: 動詞詞性及音標合理",
+      "1: 指出 to sanction 的不定式／refused 的補足關係，沒有誤判主被動"
+    ],
+    "answers": [
+      {
+        "id": "B70f4cabd-e",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"ˈsæŋkʃən\",\"pos\":\"verb\",\"meaning\":\"批准，同意\",\"role\":\"使…被批准；批准\"}}"
+      },
+      {
+        "id": "B149701f0-a",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃn/\",\"pos\":\"动词(verb)\",\"meaning\":\"批准;正式认可;准许\",\"role\":\"作不定式 to sanction 的核心动词,与 refused 构成 refused to do 结构,the project 为其宾语\"}}"
+      },
+      {
+        "id": "B32fc1bfe-5",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准；正式授权\",\"role\":\"不定式中的及物动词，后接宾语 the project\"}}"
+      },
+      {
+        "id": "Bdd19e387-3",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"动词\",\"meaning\":\"批准\",\"role\":\"作不定式 to sanction 的中心动词，后接宾语 the project\"}}"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-translation-library",
+    "caseId": "translation-library",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nTranslate the following English paragraph into the target Chinese language.\nReturn only strict JSON: {\"chinese_translation\":\"...\"}\nDo not return word_alignment or detailed_analysis.\nKeep English personal names unchanged.\nIf the paragraph contains Markdown tables, lists, headings, images or links, preserve all Markdown markers and line structure exactly. Do not translate or rewrite image syntax or image alt text.\nPreserve inline emphasis markers exactly as they appear in the source: **bold** stays **bold**, *italic* stays *italic*, `code` stays `code`. Never translate, drop or move those markers, and never add new ones.\n\nParagraph:\n\"\"\"\nWhen the town library extended its opening hours last autumn, staff expected most visitors to arrive after work. Instead, the busiest period was early morning, when students came to study before school. The library has since added six desks near the windows, but it has kept the quiet reading room unchanged. Visitors do not need to book a seat, although groups of more than four people must reserve a meeting room. The new timetable will remain in place until March, when the council will review attendance figures.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: 嚴格 JSON 及非空譯文",
+      "1: 保留預期下班後但實際早上最忙的轉折",
+      "1: 保留加六張桌、安靜閱覽室不變",
+      "1: 個人不需預約，超過四人的團體須預約會議室",
+      "1: 保留截至三月及議會檢視入館數字，無捏造"
+    ],
+    "answers": [
+      {
+        "id": "B70364628-4",
+        "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员原以为大多数访客会在下班后到馆。没想到，最繁忙的时段是清晨，学生们会在上学前来学习。此后，图书馆在窗边增设了六张书桌，但安静阅览室保持原样。访客无需预订座位，不过超过四人的团体必须预订会议室。新的开放时间安排将持续到三月，届时镇议会将评估到馆人数。\"}"
+      },
+      {
+        "id": "B4f9002b3-2",
+        "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员预计大多数访客会在下班后到来。然而，最繁忙的时段却是清晨，那时学生们会在上学前来学习。此后，图书馆在窗边增设了六张书桌，但安静阅览室保持原样。访客无需预约座位，但超过四人的团体必须预订会议室。新的开放时间安排将持续到三月，届时镇议会将审查到访人数。\"}"
+      },
+      {
+        "id": "B54951e2e-7",
+        "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员原本预计大多数读者会在下班后前来。然而，最繁忙的时段却是清晨，学生们在上学前来这里学习。此后，图书馆在靠窗位置增设了六张书桌，但安静阅览室仍保持原样。读者无需预约座位，不过四人以上的团体必须预订会议室。新的时间表将一直实行到三月，届时市政委员会将审查入馆人数数据。\"}"
+      },
+      {
+        "id": "Be722d311-4",
+        "answer": "{\n  \"chinese_translation\": \"当小镇图书馆在上个月底延长了开放时间后，工作人员预计大多数访客会在下班后到访。结果，繁忙时段却出现在清晨，当学生们在学校上课前前来学习。自此，图书馆在窗户附近增加了六张桌子，但安静的阅读室保持不变。访客不需要预订座位，虽然超过四人的团体必须预订会议室。新时间表将一直有效至三月，那时市议会将审查出席人数。\"\n}"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-translation-study",
+    "caseId": "translation-study",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nTranslate the following English paragraph into the target Chinese language.\nReturn only strict JSON: {\"chinese_translation\":\"...\"}\nDo not return word_alignment or detailed_analysis.\nKeep English personal names unchanged.\nIf the paragraph contains Markdown tables, lists, headings, images or links, preserve all Markdown markers and line structure exactly. Do not translate or rewrite image syntax or image alt text.\nPreserve inline emphasis markers exactly as they appear in the source: **bold** stays **bold**, *italic* stays *italic*, `code` stays `code`. Never translate, drop or move those markers, and never add new ones.\n\nParagraph:\n\"\"\"\n**River Study**\n\nNot all of the 120 volunteers completed the course. Of the 80 who did, 60 reported better sleep, compared with 30 of the 60 people in a separate comparison group. The researchers described the difference as promising but did not claim that the course caused it: participants had chosen their own group, and sleep was measured only by self-report. A reduction of 10 percentage points should not be confused with a reduction of 10 percent. The team will publish its methods next month, provided that the independent review has been completed.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: 嚴格 JSON、保留標題的 **粗體** 標記（標題文字可翻譯）",
+      "1: 並非全部120人完成；80完成者60改善；另一組60人30改善",
+      "1: 沒有聲稱因果，保留自選分組與自我報告限制",
+      "1: 區分10個百分點與10%",
+      "1: 下月公布以完成獨立審查為條件，而非確定已完成"
+    ],
+    "answers": [
+      {
+        "id": "B83179240-f",
+        "answer": "{\"chinese_translation\":\"**河流研究**\\n\\n120名志愿者并非所有人都完成了课程。在完成课程的80人中，有60人报告睡眠状况有所改善；相比之下，另一个比较组60人中有30人报告睡眠状况有所改善。研究人员将这一差异描述为令人鼓舞的迹象，但没有声称这是由课程导致的：参与者自行选择了所在组别，睡眠情况也仅通过自我报告进行测量。下降10个百分点不应与下降10%混为一谈。团队将于下个月公布其研究方法，前提是独立审查已经完成。\"}"
+      },
+      {
+        "id": "B6b16c2c4-8",
+        "answer": "{\"chinese_translation\":\"**河流研究**\\n\\n120名志愿者中并非所有人都完成了课程。在完成课程的80人中，有60人报告睡眠有所改善；而在另一个单独的对照组的60人中，只有30人报告睡眠有所改善。研究人员称这一差异令人鼓舞，但并未声称是课程导致了这一结果：参与者是自己选择所在组的，而且睡眠仅通过自我报告来测量。降低10个百分点不应与降低10%相混淆。该团队将于下个月发布其研究方法，前提是独立审查已经完成。\"}"
+      },
+      {
+        "id": "B4c1e5fed-d",
+        "answer": "{\"chinese_translation\":\"**河流研究**\\n\\n120 名志愿者并非全部完成了课程。在完成课程的 80 人中，有 60 人报告睡眠质量有所改善；而在另一个对照组中，60 人里有 30 人报告了同样的改善。研究人员称这一差异具有前景，但并未断言是课程导致了这一差异：参与者自行选择了分组，而且睡眠仅通过自我报告来测量。不应将 10 个百分点的下降与 10% 的下降混为一谈。只要独立评审已经完成，该团队将于下个月公布其研究方法。\"}"
+      },
+      {
+        "id": "B18cc9641-d",
+        "answer": "{\"chinese_translation\":\"**河流研究**\\n\\n并非所有120名志愿者都完成了课程。完成课程的80人中，有60人报告睡眠更好；相比之下，另一个对照组的60人中有30人报告睡眠更好。研究人员称这一差异有前景，但并未声称该课程导致了这一差异：参与者自行选择了分组，而且睡眠仅通过自我报告来测量。降低10个百分点不应与降低10%相混淆。该团队将于下个月公布其研究方法，前提是独立评审已经完成。\"}"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-syntax-inversion",
+    "caseId": "syntax-inversion",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English sentence and return only strict JSON:\n{\n  \"sentence\":\"original sentence\",\n  \"translation\":\"target Chinese translation\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\nReturn 1-3 brief key points. If structured analysis is unreliable, return an empty array.\n\nContext for understanding only:\n\"\"\"\nThe committee was responsible for deciding when the report could be released.\n\"\"\"\nTarget sentence:\n\"\"\"\nNot until the final report had been checked twice did the committee agree to publish it.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: JSON、譯文、結構陣列完整",
+      "1: 直到報告被檢查兩次後才同意公布",
+      "1: 正確辨認 Not until 置首引發主句部分倒裝",
+      "1: did 的還原為 committee agreed，非 until 從句倒裝",
+      "1: had been checked 是先於同意的過去完成被動，it 指報告"
+    ],
+    "answers": [
+      {
+        "id": "B860b86b3-1",
+        "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告被核查两次后，委员会才同意发布它。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"Not until\",\n      \"zh\": \"直到\"\n    },\n    {\n      \"en\": \"the final report had been checked twice\",\n      \"zh\": \"最终报告被核查两次\"\n    },\n    {\n      \"en\": \"did the committee agree\",\n      \"zh\": \"委员会才同意\"\n    },\n    {\n      \"en\": \"to publish it\",\n      \"zh\": \"发布它\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"Not until the final report had been checked twice\",\n      \"role\": \"condition\",\n      \"note\": \"倒装结构强调条件的严格性\"\n    },\n    {\n      \"text\": \"did the committee agree to publish it\",\n      \"role\": \"main clause\",\n      \"note\": \"虚拟倒装强调条件达成后的行为\"\n    }\n  ],\n  \"key_points\": [\n    \"最终报告经过两次核查是发布的前提条件\",\n    \"使用倒装句式突出时间节点的重要性\",\n    \"委员会在条件满足后才正式同意发布\"\n  ]\n}"
+      },
+      {
+        "id": "B5b03eb10-7",
+        "answer": "{\n  \"sentence\":\"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\":\"直到最终报告被核对了两遍之后，委员会才同意将其公开发布。\",\n  \"phrase_alignment\":[\n    {\"en\":\"Not until the final report\",\"zh\":\"直到最终报告\"},\n    {\"en\":\"had been checked twice\",\"zh\":\"被核对了两遍（过去完成时被动语态）\"},\n    {\"en\":\"did the committee agree\",\"zh\":\"委员会才同意（倒装结构）\"},\n    {\"en\":\"to publish it\",\"zh\":\"将其公开发布\"}\n  ],\n  \"chunks\":[\n    {\"text\":\"Not until...\",\"role\":\"时间状语引导\",\"note\":\"Not until 位于句首引起部分倒装\"},\n    {\"text\":\"the final report had been checked twice\",\"role\":\"时间状语从句\",\"note\":\"过去完成时表示“核对”发生在“同意”之前\"},\n    {\"text\":\"did the committee agree\",\"role\":\"主句（倒装）\",\"note\":\"助动词 did 提前构成倒装\"},\n    {\"text\":\"to publish it\",\"role\":\"不定式宾语\",\"note\":\"agree to do sth. 结构\"}\n  ],\n  \"key_points\":[\n    \"Not until 置于句首时主句须部分倒装（did the committee agree）。\",\n    \"从句用过去完成时 had been checked，表明核对先于同意发生。\"\n  ]\n}"
+      },
+      {
+        "id": "Ba1af3d11-7",
+        "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告被检查了两遍，委员会才同意发布它。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Not until\", \"zh\": \"直到……才\"},\n    {\"en\": \"the final report\", \"zh\": \"最终报告\"},\n    {\"en\": \"had been checked twice\", \"zh\": \"被检查了两遍\"},\n    {\"en\": \"did the committee agree\", \"zh\": \"委员会才同意\"},\n    {\"en\": \"to publish it\", \"zh\": \"发布它\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Not until the final report had been checked twice\", \"role\": \"句首否定状语从句（时间）\", \"note\": \"由 not until 引导，置于句首表示强调；从句使用过去完成时被动语态，表示在“同意”之前已完成检查。\"},\n    {\"text\": \"did the committee agree\", \"role\": \"倒装主句（助动词 + 主语 + 谓语动词原形）\", \"note\": \"否定词引导的状语位于句首，主句需部分倒装；助动词 did 提前，agree 用原形。\"},\n    {\"text\": \"to publish it\", \"role\": \"不定式短语，作 agree 的宾语\", \"note\": \"agree to do sth 表示“同意做某事”；it 指代 the final report。\"}\n  ],\n  \"key_points\": [\n    \"Not until 位于句首时，主句要部分倒装：Not until ... did + 主语 + 动词原形，意为“直到……才……”。\",\n    \"从句用 had been checked 表示“过去的过去”，强调报告在委员会同意发布之前已被检查两遍；主句用一般过去时。\",\n    \"该句等同于非倒装形式：The committee did not agree to publish the final report until it had been checked twice.，倒装更强调“检查两遍”这一条件。\"\n  ]\n}"
+      },
+      {
+        "id": "B5ce2a26e-b",
+        "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告被检查了两次，委员会才同意发布它。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Not until\", \"zh\": \"直到……才\"},\n    {\"en\": \"the final report\", \"zh\": \"最终报告\"},\n    {\"en\": \"had been checked twice\", \"zh\": \"被检查了两次\"},\n    {\"en\": \"did the committee agree\", \"zh\": \"委员会才同意\"},\n    {\"en\": \"to publish it\", \"zh\": \"发布它\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Not until the final report had been checked twice\", \"role\": \"时间状语从句（强调结构）\", \"note\": \"Not until 置于句首引起部分倒装，主句用 did the committee agree。\"},\n    {\"text\": \"did the committee agree\", \"role\": \"主句谓语（倒装）\", \"note\": \"助动词 did 提前，构成部分倒装。\"},\n    {\"text\": \"to publish it\", \"role\": \"宾语补足语/不定式短语\", \"note\": \"agree to do 表示同意做某事，it 指代 the final report。\"}\n  ],\n  \"key_points\": [\n    \"Not until 置于句首时，主句需用部分倒装（did + 主语 + 动词原形）。\",\n    \"had been checked twice 是过去完成时的被动语态，表示在同意发布之前已完成的动作。\",\n    \"整体含义：委员会在报告被检查两次之后才同意发布。\"\n  ]\n}"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-syntax-mixed-conditional",
+    "caseId": "syntax-mixed-conditional",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English sentence and return only strict JSON:\n{\n  \"sentence\":\"original sentence\",\n  \"translation\":\"target Chinese translation\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\nReturn 1-3 brief key points. If structured analysis is unreliable, return an empty array.\n\nContext for understanding only:\n\"\"\"\nMaya missed the only train that could get her to the interview on time.\n\"\"\"\nTarget sentence:\n\"\"\"\nHad Maya not missed the train, she would be attending the interview now.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: JSON、譯文、結構陣列完整",
+      "1: 還原 If Maya had not missed the train",
+      "1: 過去反事實：實際錯過火車",
+      "1: 現在結果：現在未能出席面試，不是僅過去事件",
+      "1: 正確稱為過去條件＋現在結果的混合條件句，解釋 would be attending"
+    ],
+    "answers": [
+      {
+        "id": "Bdcc5afd0-4",
+        "answer": "{\"sentence\":\"Had Maya not missed the train, she would be attending the interview now.\",\"translation\":\"如果玛雅没有错过那趟火车，她现在就会在参加面试了。\",\"phrase_alignment\":[{\"en\":\"Had Maya not missed the train\",\"zh\":\"如果玛雅没有错过那趟火车\"},{\"en\":\"she would be attending\",\"zh\":\"她就会在参加\"},{\"en\":\"the interview\",\"zh\":\"面试\"},{\"en\":\"now\",\"zh\":\"现在\"}],\"chunks\":[{\"text\":\"Had Maya not missed the train\",\"role\":\"条件从句（倒装虚拟条件句）\",\"note\":\"相当于 If Maya had not missed the train，表示与过去事实相反的假设。\"},{\"text\":\"she would be attending\",\"role\":\"主句谓语部分（虚拟结果）\",\"note\":\"would be attending 表示在假设条件下现在正在进行的动作。\"},{\"text\":\"the interview now\",\"role\":\"宾语与时间状语\",\"note\":\"说明假设结果指向现在正在进行的面试。\"}],\"key_points\":[\"Had Maya not missed... 是省略 if 的倒装虚拟条件句，等于 If Maya had not missed...\",\"主句 would be attending ... now 表示与现在事实相反的持续结果。\",\"全句属于混合虚拟条件句：过去条件引发现在结果。\"]}"
+      },
+      {
+        "id": "B5ba688df-6",
+        "answer": "{\n  \"sentence\": \"Had Maya not missed the train, she would be attending the interview now.\",\n  \"translation\": \"如果玛雅没有错过那趟火车，她现在就会正在参加面试。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Had Maya not missed\", \"zh\": \"如果玛雅没有错过\"},\n    {\"en\": \"the train\", \"zh\": \"那趟火车\"},\n    {\"en\": \"she would be attending\", \"zh\": \"她就会正在参加\"},\n    {\"en\": \"the interview\", \"zh\": \"面试\"},\n    {\"en\": \"now\", \"zh\": \"现在\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Had Maya not missed the train\", \"role\": \"条件状语从句（虚拟语气，省略if的倒装）\", \"note\": \"表示与过去事实相反的假设，相当于 If Maya had not missed the train。\"},\n    {\"text\": \"she would be attending the interview now\", \"role\": \"主句（虚拟语气）\", \"note\": \"would be attending 表示现在正在进行的虚拟结果；now 强调与现在事实的对比。\"}\n  ],\n  \"key_points\": [\n    \"这是混合虚拟语气：从句与过去事实相反（had not missed），主句与现在事实相反（would be attending now）。\",\n    \"Had Maya not missed 是省略 if 的倒装条件句，正式书面语中常见。\"\n  ]\n}"
+      },
+      {
+        "id": "B8ca78cd9-f",
+        "answer": "{\n  \"sentence\":\"Had Maya not missed the train, she would be attending the interview now.\",\n  \"translation\":\"如果玛雅没有错过那班火车，她现在就会参加面试。\",\n  \"phrase_alignment\":[\n    {\"en\":\"Had Maya not missed the train\",\"zh\":\"如果玛雅没有错过那班火车\"},\n    {\"en\":\"she would be attending the interview now\",\"zh\":\"她现在就会参加面试\"}\n  ],\n  \"chunks\":[\n    {\n      \"text\":\"Had Maya not missed the train\",\n      \"role\":\"condition\",\n      \"note\":\"使用倒装语序表示与过去事实相反的虚拟条件，完整语境指错过了能准时到达面试的唯一一班地铁\"\n    },\n    {\n      \"text\":\"she would be attending the interview now\",\n      \"role\":\"result\",\n      \"note\":\"虚拟条件从句的结果，表示原本应在的当前状态（现在参加面试）\"\n    }\n  ],\n  \"key_points\":[\n    \"虚拟条件句（倒装）表示过去相反事实：玛雅错过了唯一一班地铁，导致她现在无法参加面试\",\n    \"结果从句用“would be + 动词-ing”结构，强调原本应在的当前正在进行的面试状态\",\n    \"整体是过去虚拟条件句，表达遗憾或假设已发生的相反情况\"\n  ]\n}"
+      },
+      {
+        "id": "B75336454-8",
+        "answer": "{\n  \"sentence\": \"Had Maya not missed the train, she would be attending the interview now.\",\n  \"translation\": \"要不是玛雅错过了那趟火车，她现在就会正在参加面试。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"Had Maya not missed the train\",\n      \"zh\": \"要不是玛雅错过了那趟火车\"\n    },\n    {\n      \"en\": \"she would be attending the interview now\",\n      \"zh\": \"她现在就会正在参加面试\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"Had Maya not missed the train\",\n      \"role\": \"条件状语从句\",\n      \"note\": \"采用虚拟语气，表示与过去事实相反的假设。\"\n    },\n    {\n      \"text\": \"she would be attending the interview now\",\n      \"role\": \"主句\",\n      \"note\": \"表示该假设成立时此刻将会出现的情况。\"\n    }\n  ],\n  \"key_points\": [\n    \"本句使用与过去事实相反的虚拟条件句。\",\n    \"“now”对应“现在”，强调假设条件成立后的状态。\"\n  ]\n}"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-assistant-basic",
+    "caseId": "assistant-basic",
+    "originalMessages": [
+      {
+        "role": "system",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nYou are the English learning assistant in the PEN vocabulary web application.\n\n[Scope]\n- Help the user understand the current article supplied as context and support follow-up questions.\n- Common tasks include translation, key-point extraction, vocabulary and grammar explanations, example sentences, sentence checking, exercises and summaries.\n- Do not invent external article content. If context is insufficient, say what information is needed.\n\n[Response style]\n- Give a directly useful answer first, followed by 2-5 key points when helpful.\n- When translating Markdown, preserve Markdown syntax and line structure. Keep image and link syntax unchanged.\n\n[Learning guidance]\n- Vocabulary: provide IPA when reliable, part of speech, common meanings and short natural examples.\n- Grammar: explain structure, function, common mistakes and memory tips.\n- Sentence checking: give a conclusion, revision and brief reason.\n- Exercises: provide standard answers and hints.\n\nIf no article context is available, ask the user to load an article or specify the relevant passage."
+      },
+      {
+        "role": "user",
+        "content": "文章原文：Emma has been to Paris three times, but she is at home now. Her brother has gone to Paris and will not return until Friday.\n\n请结合原文，用不超过250个中文字解释 has been to 与 has gone to 的区别，说明两个人现在的情况，并各给一个简短英文例句。不要扩展到其他时态。"
+      }
+    ],
+    "rubric": [
+      "1: been to 表示到訪經驗、通常已返回",
+      "1: Emma 現在在家且去過三次",
+      "1: gone to 表示已前往、尚未返回；兄弟週五前未回",
+      "1: 兩個英文例句與解釋吻合",
+      "1: 清晰簡潔、不擴展其他時態，不把 gone to 解釋為已經返回"
+    ],
+    "answers": [
+      {
+        "id": "B9cef721f-c",
+        "answer": "**has been to** 表示“去过某地”，人已回来。Emma 去过巴黎三次，现在在家。例句：*I have been to Paris.*\n\n**has gone to** 表示“去了某地”，人还没回来。她哥哥去了巴黎，要到周五才回来。例句：*He has gone to Paris.*"
+      },
+      {
+        "id": "Be6a29011-4",
+        "answer": "**has been to 与 has gone to 的区别**\n\n**has been to** 表示“去过”，人已经回来了。如原文中 Emma has been to Paris three times——她去过巴黎三次，但现在 she is at home，人在家。\n\n**has gone to** 表示“去了”，人还没回来。如原文中 Her brother has gone to Paris——她哥哥去了巴黎，will not return until Friday，周五才回来。\n\n**例句：**\n- I have been to Beijing twice.（我去过北京两次，已回来。）\n- He has gone to London.（他去伦敦了，人还在那儿。）\n\n要点：\n1. been to：去过，人已回\n2. gone to：去了，人未回\n3. 两者都用现在完成时，强调对现在的影响\n4. been to 可与次数连用"
+      },
+      {
+        "id": "B5e373079-9",
+        "answer": "“has been to”表示“去过某地”，强调经历，人现在已经回来，不在那里。原文中 Emma 去过巴黎三次，但她现在在家，说明她已回来。  \n“has gone to”表示“去了某地”，强调人现在不在说话地点，可能已到那里或在路上。原文中哥哥去了巴黎，周五才回来，说明他现在不在家。  \n例句：She has been to London. / He has gone to London."
+      },
+      {
+        "id": "B64665da0-a",
+        "answer": "**has been to** 表示“去过某地”，强调过去有相关经历，人目前已回来；**has gone to** 表示“去了某地”，人目前还在那里，通常尚未返回。\n\n- Emma **has been to** Paris three times，说明她去过巴黎三次，现在在家。\n- Her brother **has gone to** Paris，说明哥哥目前人在巴黎，要到星期五才回来。\n\n例句：\n- I have been to Beijing.（我去过北京。）\n- She has gone to Shanghai.（她现在在上海。）"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-assistant-critical",
+    "caseId": "assistant-critical",
+    "originalMessages": [
+      {
+        "role": "system",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nYou are the English learning assistant in the PEN vocabulary web application.\n\n[Scope]\n- Help the user understand the current article supplied as context and support follow-up questions.\n- Common tasks include translation, key-point extraction, vocabulary and grammar explanations, example sentences, sentence checking, exercises and summaries.\n- Do not invent external article content. If context is insufficient, say what information is needed.\n\n[Response style]\n- Give a directly useful answer first, followed by 2-5 key points when helpful.\n- When translating Markdown, preserve Markdown syntax and line structure. Keep image and link syntax unchanged.\n\n[Learning guidance]\n- Vocabulary: provide IPA when reliable, part of speech, common meanings and short natural examples.\n- Grammar: explain structure, function, common mistakes and memory tips.\n- Sentence checking: give a conclusion, revision and brief reason.\n- Exercises: provide standard answers and hints.\n\nIf no article context is available, ask the user to load an article or specify the relevant passage."
+      },
+      {
+        "role": "user",
+        "content": "文章原文：Students chose whether to join an optional reading course. Before the course, 60 of the 100 participants passed a comprehension test; afterwards, 72 passed. In a separate comparison group of 100 students, the number passing rose from 70 to 77. The groups were not randomly assigned, and no other differences between them were measured.\n\n有人总结：“课程使通过率提高了12%，因此每100名学生必定会多12人通过；扣除对照组后，课程的因果效果就是5%。”\n\n请用不超过350个中文字核对这句话。区分百分比与百分点，算出两组各自的变化及变化之差，并说明这些数据能否证明因果关系。不要编造研究信息。"
+      }
+    ],
+    "rubric": [
+      "1: 60%→72% 是12個百分點；相對增幅20%",
+      "1: 對照70%→77% 是7個百分點",
+      "1: 變化之差5個百分點，不是直接當作5%相對增幅",
+      "1: 自選分組／非隨機／混雜，不能把差值當已證明因果",
+      "1: 不保證每100人必多12人，不捏造資料，給出準確易懂更正"
+    ],
+    "answers": [
+      {
+        "id": "Bcb90f3a5-1",
+        "answer": "**结论：这句话有多处错误，不能作为正确的因果推断。**\n\n**核对要点：**\n\n1. **百分比与百分点混淆。** 实验组通过率从60%升至72%，变化是12个百分点，不是“12%”；换算成相对变化是提高20%（12/60）。同理“每100名学生必定多12人通过”把总体变化说成必然效果，过度解读。\n\n2. **对照组数据算错。** 对照组从70%升至77%，即上升7个百分点。两变化之差应为12 − 7 = **5个百分点**，这句话结果碰巧对，但称“扣除对照组后效果是5%”表述不规范，应为“5个百分点”。\n\n3. **不能证明因果关系。** 两组学生不是随机分配，且未测量其他差异（如基础水平、动机、有无额外辅导）。差异可能来自选择偏差——自愿参加课程的学生本就可能更积极。5个百分点的差只能提示**可能存在效果**，需随机对照实验才能确认因果。"
+      },
+      {
+        "id": "B70ea8fda-0",
+        "answer": "这句话不准确。课程组通过率从60%升至72%，增加**12个百分点**（相对原通过率增长20%）；对照组从70%升至77%，增加**7个百分点**（相对增长10%）。两组变化之差是**5个百分点**，不是5%。\n\n课程组这100人确实比课前多12人通过，但不能据此断言每100名学生都必定多12人通过。学生自行选择是否参加课程，两组也未随机分配，其他差异未被测量；因此，5个百分点只是观察到的变化之差，**不能证明是课程造成的**。"
+      },
+      {
+        "id": "Ba148aa15-f",
+        "answer": "这句话不准确。选课组通过率从60%升至72%，增加**12个百分点**，相对于原通过率提高**20%**；对照组从70%升至77%，增加**7个百分点**，相对于原通过率提高**10%**。两组通过率变化之差是**5个百分点**，不是5%。\n\n选课组在这次统计中确实每100人多了12人通过，但不能据此断言今后每100名学生都**必定**多12人通过。学生自行选择是否参加课程，两组也未随机分配，且其他差异没有测量。因此，5个百分点只是观察到的变化之差，**不能证明**课程的因果效果。"
+      },
+      {
+        "id": "Bb4b2d08d-1",
+        "answer": ""
+      }
+    ]
+  },
+  {
+    "packetId": "audit-word-idiom",
+    "caseId": "word-idiom",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the selected English phrase in its sentence.\nProvide IPA for the whole phrase when reliable; otherwise provide word-by-word IPA separated by spaces.\nReturn only strict JSON:\n{\"selection\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"meaning\":\"...\",\"usage\":\"...\",\"examples\":[{\"en\":\"...\",\"zh\":\"...\"}]}}\n\nSelected phrase: \"kicks the bucket\"\nSentence: \"Leo says he wants to travel the world before he kicks the bucket.\"\nContext: \"Leo is alive and is casually describing his future travel plans.\""
+      }
+    ],
+    "rubric": [
+      "1: JSON與必要欄位完整、例句陣列可用",
+      "1: 辨認慣用語為死亡／死去，不是字面踢桶",
+      "1: 說明口語／非正式語氣，避免當作正式哀悼措辭",
+      "1: 不聲稱Leo已經死亡，保留未來計劃的語境",
+      "1: 例句及中文對應正確、音標合理，不編造詞源或來源"
+    ],
+    "answers": [
+      {
+        "id": "Bd4212d3d-9",
+        "answer": "{\"selection\":\"kicks the bucket\",\"sentence\":\"Leo says he wants to travel the world before he kicks the bucket.\",\"analysis\":{\"phonetic\":\"/kɪks ðə ˈbʌkɪt/\",\"meaning\":\"习语,意为“去世、死掉”,是一种口语化、带有诙谐或委婉色彩的说法。在这个句子中,“before he kicks the bucket”意思是“在他去世之前”,也就是“趁他还活着的时候”。\",\"usage\":\"1. 属于非正式口语,常带轻松、调侃或不太庄重的语气,不适合用于正式场合或对逝者家属表达哀悼。\\n2. 该习语是固定搭配,不能按字面意思理解(并不是“踢桶”),也不宜随意改动其中的词语。\\n3. 主语通常是人,也可以是动物或比喻中的机器等;动词会随时态变化,如 kick the bucket、kicked the bucket、kicks the bucket。\\n4. 常见结构:before someone kicks the bucket(在某人去世之前),多用于谈论人生愿望,与英语中的 bucket list(遗愿清单,指临终前想完成的事)有关联。\\n5. 在本句语境中,Leo 目前还活着,只是随意谈起未来的旅行计划,所以这里的语气是轻松随意的,并无悲伤的意味。\",\"examples\":[{\"en\":\"I want to learn how to paint before I kick the bucket.\",\"zh\":\"我想在去世之前学会画画。\"},{\"en\":\"The old man finally kicked the bucket at the age of ninety-eight.\",\"zh\":\"那位老人在九十八岁时终于去世了。\"},{\"en\":\"She made a list of things to do before she kicks the bucket.\",\"zh\":\"她列了一份清单,写下自己在离世之前想做的事。\"}]}}"
+      },
+      {
+        "id": "B2eb3d0b7-d",
+        "answer": "{\"selection\":\"kicks the bucket\",\"sentence\":\"Leo says he wants to travel the world before he kicks the bucket.\",\"analysis\":{\"phonetic\":\"/kɪks ðə ˈbʌkɪt/\",\"meaning\":\"去世；一命呜呼；死了。\",\"usage\":\"这是非正式且较为诙谐委婉的说法，相当于“die”。句中“before he kicks the bucket”意为“在他去世之前”，表达了对未来的设想，而非字面上的动作。\",\"examples\":[{\"en\":\"Leo wants to see the world before he kicks the bucket.\",\"zh\":\"里奥想在自己去世之前看看全世界。\"},{\"en\":\"The old dog finally kicked the bucket.\",\"zh\":\"那条老狗最终死了。\"}]}}"
+      },
+      {
+        "id": "Bc516989b-9",
+        "answer": "{\n  \"selection\": \"kicks the bucket\",\n  \"sentence\": \"Leo says he wants to travel the world before he kicks the bucket.\",\n  \"analysis\": {\n    \"phonetic\": \"kɪks ðə ˈbʌkɪt\",\n    \"meaning\": \"死掉，去世，翘辫子（口语、俚语表达，语气诙谐、调侃或轻佻）。\",\n    \"usage\": \"这是一个非常普遍的英语习语，意同“to die”。语体属于非正式口语（slang/informal），常用于轻松随意的闲聊或自嘲语境中（英语中的“bucket list/遗愿清单”一词即源于该短语）。切忌在正式场合、严肃的悼念环境或向逝者家属表达哀悼时使用，否则会被视为极其失礼和不敬。此外，该表达有时也可幽默地引申用于机器、电子设备等“彻底报废、坏掉”。\",\n    \"examples\": [\n      {\n        \"en\": \"He wants to write a memoir before he kicks the bucket.\",\n        \"zh\": \"他想在离开人世之前写一部回忆录。\"\n      },\n      {\n        \"en\": \"My old laptop finally kicked the bucket yesterday.\",\n        \"zh\": \"我的那台老笔记本电脑昨天终于彻底报废了。\"\n      }\n    ]\n  }\n}"
+      },
+      {
+        "id": "Ba4b91cdf-3",
+        "answer": "{\"selection\":\"kicks the bucket\",\"sentence\":\"Leo says he wants to travel the world before he kicks the bucket.\",\"analysis\":{\"phonetic\":\"/kɪks ðə ˈbʌkɪt/\",\"meaning\":\"这是俚语，意思是“死”或“去世”，属于委婉、口语化的死亡表达，常用于非正式场合。\",\"usage\":\"用于描述即将死亡或比喻自己会先死，表达对未来的乐观规划。\",\"examples\":[{\"en\":\"Leo says he wants to travel the world before he kicks the bucket.\",\"zh\":\"Leo说他在死之前想环游世界。\"},{\"en\":\"I'm gonna see the world before I kick the bucket.\",\"zh\":\"我要在死之前去看看世界。\"},{\"en\":\"He kicked the bucket at the age of 78.\",\"zh\":\"他78岁时去世。\"}]}}"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-translation-long-policy",
+    "caseId": "translation-long-policy",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nTranslate the following English paragraph into the target Chinese language.\nReturn only strict JSON: {\"chinese_translation\":\"...\"}\nDo not return word_alignment or detailed_analysis.\nKeep English personal names unchanged.\nIf the paragraph contains Markdown tables, lists, headings, images or links, preserve all Markdown markers and line structure exactly. Do not translate or rewrite image syntax or image alt text.\nPreserve inline emphasis markers exactly as they appear in the source: **bold** stays **bold**, *italic* stays *italic*, `code` stays `code`. Never translate, drop or move those markers, and never add new ones.\n\nParagraph:\n\"\"\"\n**Riverside pilot**\n\nAt Monday's meeting, the council agreed to fund a six-month transport pilot, not a permanent service. The plan has not yet started. If the independent safety review is completed before 15 December, the first buses will run in January; otherwise, the launch will be delayed. Dr. Maya Chen said that approval of the funding should not be confused with approval to begin carrying passengers. No date for a permanent service has been agreed.\n\nApplicants under 18 cannot join the passenger panel. People aged 18 or over may apply, but applications received after Friday will not be considered unless the delay was caused by the council's own website. Successful applicants will be notified within seven working days, excluding weekends and public holidays. They will receive a travel pass, but they will not be paid for attending meetings.\n\nThe pilot follows a small, voluntary survey. In one neighbourhood, the share of respondents willing to use the bus rose from 40% to 50%. That is an increase of 10 percentage points, or a relative increase of 25%; it is not a 10% relative increase. Not all respondents had previously used public transport. Because the survey was voluntary and the two neighbourhoods differed in income and distance from the station, the council did not claim that cheaper fares caused the change.\n\nThe published budget includes drivers and routine maintenance but excludes major repairs. Any proposal to increase the budget must return to the council for a separate vote. Fewer than five residents complained about the proposed timetable, which does not mean that every other resident supported it: most residents did not respond. The council will publish the full figures rather than only the positive comments.\n\nThe final report must distinguish observed changes from predicted benefits. Even if passenger numbers rise, that alone will not establish whether the service reduced car journeys. A permanent service will be considered only after the pilot has ended and the external assessment has been published.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: 嚴格JSON、全文完整且保留標題粗體與段落；Maya Chen人名不改寫",
+      "1: 區分六個月試辦／永久服務、撥款／載客批准，保留安全審查與日期條件",
+      "1: 年齡18以下不合資格、18及以上可申請；週五後例外僅因議會網站；七個工作天不含週末假日；無會議薪酬",
+      "1: 保留40%到50%、10個百分點、相對25%、自願調查及不能推論因果",
+      "1: 保留不含大修、追加預算另投票、少於五人不代表其他全支持、永久化須試辦結束及外評公布"
+    ],
+    "answers": [
+      {
+        "id": "B20d25a64-4",
+        "answer": "{\"chinese_translation\":\"**河畔试点**\\n\\n在周一的会议上，市政委员会同意资助一项为期六个月的交通试点，而不是永久性服务。该计划尚未启动。如果独立安全审查能在12月15日前完成，首批公交车将于1月开始运营；否则，启动时间将推迟。Dr. Maya Chen表示，批准资金不应与批准开始载客混为一谈。永久性服务的日期尚未商定。\\n\\n未满18岁的申请者不能加入乘客咨询小组。年满18岁的人士可以申请，但除非延迟是由市政委员会自身的网站造成的，否则周五之后收到的申请将不予考虑。成功获选的申请者将在七个工作日内收到通知，工作日不包括周末和公共假日。他们将获得交通通行证，但参加会议不会获得报酬。\\n\\n该试点是在一项规模较小、自愿参加的调查之后开展的。在其中一个社区，愿意乘坐公交车的受访者比例从40%上升到了50%。这相当于提高了10个百分点，或相对提高了25%；并不是相对提高了10%。并非所有受访者此前都使用过公共交通工具。由于调查是自愿参加的，而且两个社区在收入和距车站的距离方面存在差异，因此市政委员会没有声称票价降低是造成这一变化的原因。\\n\\n公布的预算包括司机和日常维护费用，但不包括重大维修费用。任何增加预算的提议都必须交回市政委员会单独表决。对拟议时刻表提出投诉的居民少于五人，但这并不意味着其他每位居民都支持它：大多数居民没有作出回应。市政委员会将公布完整数据，而不只是正面评价。\\n\\n最终报告必须将观察到的变化与预测的益处区分开来。即使乘客数量上升，仅凭这一点也无法确定该服务是否减少了汽车出行。只有在试点结束且外部评估结果公布后，才会考虑提供永久性服务。\"}"
+      },
+      {
+        "id": "B3d579e06-6",
+        "answer": "{\"chinese_translation\":\"**河畔试点项目**\\n\\n在周一的会议上，委员会同意资助一项为期六个月的交通试点，而不是设立永久服务。该计划尚未启动。如果独立安全审查能在12月15日之前完成，首批公交车将于1月投入运营；否则，启动时间将推迟。Maya Chen博士表示，批准资金不应与批准开始运送乘客混为一谈。委员会尚未商定永久服务的日期。\\n\\n未满18岁的申请者不能加入乘客评审组。年满18岁的人士可以申请，但除非延误是委员会自身的网站造成的，否则周五之后收到的申请将不予考虑。获选申请者将在七个工作日内收到通知，不包括周末和公共假日。他们将获得乘车通行证，但参加会议不会获得报酬。\\n\\n该试点是在一项小规模自愿调查之后开展的。在其中一个社区，愿意乘坐公交车的受访者比例从40%上升至50%。这是增加了10个百分点，或相对增加了25%；不是相对增加10%。并非所有受访者此前都使用过公共交通。由于调查是自愿开展的，而且两个社区在收入和距离车站的距离方面存在差异，因此委员会没有声称票价降低是导致这一变化的原因。\\n\\n公布的预算包括司机薪酬和日常维护费用，但不包括重大维修费用。任何增加预算的提案都必须交回委员会另行表决。针对拟议时刻表提出投诉的居民少于五人，但这并不意味着其他每位居民都支持它：大多数居民没有作出回应。委员会将公布完整的数据，而不只是正面评论。\\n\\n最终报告必须区分观察到的变化与预测的益处。即使乘客人数上升，仅凭这一点也无法确定该服务是否减少了汽车出行。只有在试点结束且外部评估结果公布后，委员会才会考虑设立永久服务。\"}"
+      },
+      {
+        "id": "B336db2db-d",
+        "answer": "{\"chinese_translation\":\"**河畔试点**\\n\\n在周一的会议上，市议会同意资助一项为期六个月的交通试点，而非永久性服务。该计划尚未启动。如果独立安全审查在12月15日之前完成，首批公交车将于1月投入运行；否则，启动将推迟。Maya Chen博士表示，批准资助不应与批准开始载客相混淆。永久性服务的日期尚未商定。\\n\\n18岁以下的申请人不能加入乘客小组。18岁及以上的人可以申请，但周五之后收到的申请将不予考虑，除非延迟是由市议会自己的网站造成的。成功的申请人将在七个工作日内收到通知，周末和公共假日除外。他们将获得一张乘车卡，但参加不会获得报酬。\\n\\n该试点是在一项小规模自愿调查之后进行的。在一个社区，愿意使用公交的受访者比例从40%上升到50%。这是上升了10个百分点，即相对增加25%；这不是10%的相对增加。并非所有受访者此前都使用过公共交通。由于调查是自愿的，且两个社区在收入和距车站距离方面存在差异，市议会并未声称更低的票价导致了这一变化。\\n\\n公布的预算包括司机和日常维护，但不包括大修。任何增加预算的提案都必须回到市议会进行单独投票。不到五名居民对拟议的时间表提出投诉，这并不意味着其他所有居民都支持它：大多数居民没有回应。市议会将公布完整数据，而不仅仅是正面评论。\\n\\n最终报告必须将观察到的变化与预测的益处区分开来。即使乘客数量上升，仅凭这一点也无法确定该服务是否减少了汽车出行。只有在试点结束且外部评估公布之后，才会考虑永久性服务。\"}"
+      },
+      {
+        "id": "Bc86b074c-6",
+        "answer": "{\"chinese_translation\":\"**河滨试点**\\n\\n在周一的会议上，议会同意为一项为期六个月的交通试点项目提供资金，而非永久性服务。该计划尚未启动。如果独立安全审查在12月15日之前完成，首批公交车将于1月开始运行；否则，启动时间将被推迟。Dr. Maya Chen 表示，批准拨款不应与批准开始载客混为一谈。目前尚未就永久性服务的开通日期达成一致。\\n\\n未满18周岁的申请人不能加入乘客小组。年满18周岁的人员可以申请，但周五之后收到的申请将不予考虑，除非延误是由议会自身的网站造成的。申请成功的入选者将在七个工作日内（不含周末和法定节假日）收到通知。他们将获得一张交通卡，但参加会议不会获得报酬。\\n\\n该试点项目是在一项小规模自愿性调查之后开展的。在其中一个社区中，愿意乘坐公交的受访者比例从40%上升至50%。这是增加了10个百分点，或者说相对增加了25%；并不是相对增加了10%。并非所有受访者此前都乘坐过公共交通。由于该调查属于自愿性质，且两个社区在收入水平以及与车站的距离上存在差异，因此议会并未声称是更便宜的票价导致了这一变化。\\n\\n公布的预算包含司机费用和日常维护，但不包含大修费用。任何增加预算的提案都必须重新提交议会进行单独表决。对拟定时刻表提出投诉的居民不足五人，但这并不意味着其他所有居民都表示支持：大多数居民并未做出回应。议会将公布完整的数据，而不仅仅是正面的评价。\\n\\n最终报告必须将观察到的变化与预期的效益区分开来。即便乘客人数有所增加，单凭这一点也无法证明该服务是否减少了小汽车出行。只有在试点结束且外部评估公布之后，才会考虑永久性服务。\"}"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-syntax-ambiguous",
+    "caseId": "syntax-ambiguous",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English sentence and return only strict JSON:\n{\n  \"sentence\":\"original sentence\",\n  \"translation\":\"target Chinese translation\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\nReturn 1-3 brief key points. Explain genuine ambiguity when context does not resolve it.\n\nContext for understanding only:\n\"\"\"\nBoth the observer and the man may have had access to a telescope. No further information identifies who was using or carrying it.\n\"\"\"\nTarget sentence:\n\"\"\"\nI saw the man with the telescope.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: JSON、譯文及結構陣列完整",
+      "1: 明確承認with the telescope有兩種合理附著／解讀",
+      "1: 修飾saw時可指我用望遠鏡看見男人",
+      "1: 修飾man時可指拿著／帶著望遠鏡的男人",
+      "1: 依現有上下文不能確定唯一解讀，不聲稱必然只有一方使用"
+    ],
+    "answers": [
+      {
+        "id": "Bc1d6f1da-c",
+        "answer": "{\n  \"sentence\": \"I saw the man with the telescope.\",\n  \"translation\": \"我看见那个男人带着望远镜。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"I\",\n      \"zh\": \"我\"\n    },\n    {\n      \"en\": \"saw\",\n      \"zh\": \"看见\"\n    },\n    {\n      \"en\": \"the man\",\n      \"zh\": \"那个男人\"\n    },\n    {\n      \"en\": \"with the telescope\",\n      \"zh\": \"带着望远镜\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"I saw\",\n      \"zh\": \"我看见\",\n      \"role\": \"主谓结构\",\n      \"note\": \"表示说话者目击了某人。\"\n    },\n    {\n      \"text\": \"the man\",\n      \"zh\": \"那个男人\",\n      \"role\": \"宾语\",\n      \"note\": \"指代被看见的男性。\"\n    },\n    {\n      \"text\": \"with the telescope\",\n      \"zh\": \"带着望远镜\",\n      \"role\": \"介词短语，修饰宾语\",\n      \"note\": \"“with the telescope”修饰“the man”，通常表示该男子携带或使用望远镜；但仅凭本句无法确定望远镜是在使用中、被携带，还是与此人有其他伴随关系。\"\n    }\n  ],\n  \"key_points\": [\n    \"本句的基本意思是“我看见那个男人带着望远镜”。\",\n    \"“with the telescope”存在轻微歧义，但通常理解为男人携带或正在使用望远镜。\"\n  ]\n}"
+      },
+      {
+        "id": "Bcf3798b4-b",
+        "answer": "{\n  \"sentence\": \"I saw the man with the telescope.\",\n  \"translation\": \"我用望远镜看到了那个男人。 / 我看到了那个拿着望远镜的男人。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"I\",\n      \"zh\": \"我\"\n    },\n    {\n      \"en\": \"saw\",\n      \"zh\": \"看到\"\n    },\n    {\n      \"en\": \"the man\",\n      \"zh\": \"那个男人\"\n    },\n    {\n      \"en\": \"with the telescope\",\n      \"zh\": \"用望远镜 / 拿着望远镜\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"I\",\n      \"role\": \"主语\",\n      \"note\": \"动作的发出者\"\n    },\n    {\n      \"text\": \"saw\",\n      \"role\": \"谓语\",\n      \"note\": \"see 的过去式\"\n    },\n    {\n      \"text\": \"the man\",\n      \"role\": \"宾语\",\n      \"note\": \"动作的承受对象\"\n    },\n    {\n      \"text\": \"with the telescope\",\n      \"role\": \"介词短语（状语或定语）\",\n      \"note\": \"修饰 saw 作方式状语，或修饰 the man 作后置定语\"\n    }\n  ],\n  \"key_points\": [\n    \"本句是典型的句法歧义句。介词短语 with the telescope 既可作状语修饰动词 saw（表示“我借助望远镜看到了那个人”），也可作后置定语修饰 the man（表示“我看到了那个携带/佩戴望远镜的人”）。\",\n    \"由于缺乏进一步的上下文线索，无法确定望远镜究竟属于观察者还是被观察者，翻译时需根据具体语境做出选择或并列说明。\"\n  ]\n}"
+      },
+      {
+        "id": "Bd6179fc4-5",
+        "answer": "{\n  \"sentence\": \"I saw the man with the telescope.\",\n  \"translation\": \"我看见了那个男人（可能是我用望远镜看见的，也可能是他带着望远镜）。\",\n  \"phrase_alignment\": [\n    {\"en\": \"I saw\", \"zh\": \"我看见了\"},\n    {\"en\": \"the man\", \"zh\": \"那个男人\"},\n    {\"en\": \"with the telescope\", \"zh\": \"用望远镜／带着望远镜\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"I saw the man\", \"role\": \"主句\", \"note\": \"表示我看见了那个男人。\"},\n    {\"text\": \"with the telescope\", \"role\": \"介词短语\", \"note\": \"既可能说明我看见他时使用了望远镜，也可能说明那个男人带着望远镜。\"}\n  ],\n  \"key_points\": [\n    \"“with the telescope”的修饰对象不明确；上下文无法确定望远镜属于哪种情况。\"\n  ]\n}"
+      },
+      {
+        "id": "Bc205c89d-2",
+        "answer": "{\n  \"sentence\": \"I saw the man with the telescope.\",\n  \"translation\": \"我看见那个男人带着望远镜。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"I\",\n      \"zh\": \"我\"\n    },\n    {\n      \"en\": \"saw\",\n      \"zh\": \"看见\"\n    },\n    {\n      \"en\": \"the man\",\n      \"zh\": \"那个男人\"\n    },\n    {\n      \"en\": \"with the telescope\",\n      \"zh\": \"带着望远镜\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"I saw\",\n      \"role\": \"谓语\",\n      \"note\": \"表示观察者看见某事。\"\n    },\n    {\n      \"text\": \"the man\",\n      \"role\": \"宾语\",\n      \"note\": \"指被看见的那名男子。\"\n    },\n    {\n      \"text\": \"with the telescope\",\n      \"role\": \"方式或伴随状态\",\n      \"note\": \"“with”表明该男子与望远镜存在关系，但没有明确说明他是在使用、携带还是仅仅与望远镜在一起。\"\n    }\n  ],\n  \"key_points\": [\n    \"句子只说明观察者看见这名男子与望远镜有关。\",\n    \"无法确定该男子是在使用、携带还是陪同望远镜，译文保留这种歧义。\"\n  ]\n}"
+      }
+    ]
+  },
+  {
+    "packetId": "audit-assistant-multiturn",
+    "caseId": "assistant-multiturn",
+    "originalMessages": [
+      {
+        "role": "system",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nYou are the English learning assistant in the PEN vocabulary web application.\n\n[Scope]\n- Help the user understand the current article supplied as context and support follow-up questions.\n- Common tasks include translation, key-point extraction, vocabulary and grammar explanations, example sentences, sentence checking, exercises and summaries.\n- Do not invent external article content. If context is insufficient, say what information is needed.\n\n[Response style]\n- Give a directly useful answer first, followed by 2-5 key points when helpful.\n- When translating Markdown, preserve Markdown syntax and line structure. Keep image and link syntax unchanged.\n\n[Learning guidance]\n- Vocabulary: provide IPA when reliable, part of speech, common meanings and short natural examples.\n- Grammar: explain structure, function, common mistakes and memory tips.\n- Sentence checking: give a conclusion, revision and brief reason.\n- Exercises: provide standard answers and hints.\n\nIf no article context is available, ask the user to load an article or specify the relevant passage."
+      },
+      {
+        "role": "user",
+        "content": "文章原文：At Green School, 80 students chose an optional reading club and another 80 did not join. In the club group, the number passing the same comprehension test rose from 40 to 50. In the comparison group, it rose from 48 to 52. Students were not randomly assigned, and other differences between them were not measured.\n先确认两组人数和通过人数，先不要判断因果。"
+      },
+      {
+        "role": "assistant",
+        "content": "两组各80人。阅读组通过人数40→50，对照组48→52。"
+      },
+      {
+        "role": "user",
+        "content": "现在纠正这个总结：“课程让每100人必定多12.5人通过，净因果收益就是7.5%。”请沿用前面每组80人的数据。先用一句不超过35词的英文概括，再用恰好三条中文说明，每条尽量不超过50字。说明两组通过率各自的百分点变化、相对增幅、变化之差，以及因果推断的限制，不要编造新数据。"
+      }
+    ],
+    "rubric": [
+      "1: 閱讀組50%到62.5%，增加12.5個百分點、相對增幅25%",
+      "1: 對照組60%到65%，增加5個百分點、相對增幅約8.33%，變化之差7.5個百分點",
+      "1: 非隨機、自選或混雜使因果未被證明，不保證每100人必多12.5人",
+      "1: 先一句不超過35詞英文，再恰好三條中文，表達簡潔",
+      "1: 保留兩組各80人的多輪上下文，不改成實際各100人、不捏造樣本或研究結論"
+    ],
+    "answers": [
+      {
+        "id": "B2729d6a0-b",
+        "answer": ""
+      },
+      {
+        "id": "B64fbb8bb-e",
+        "answer": "The club group improved more than the comparison group, but these data do not establish that the club caused the difference.\n\n- 阅读组通过率从50%升至62.5%，增加12.5个百分点；相对增幅为25%。\n- 对照组通过率从60%升至65%，增加5个百分点；相对增幅约8.3%；两组变化之差为7.5个百分点。\n- “每100人必定多12.5人通过”和“净因果收益7.5%”均不成立：学生未随机分组，其他差异也未测量。"
+      },
+      {
+        "id": "B9902c7d2-d",
+        "answer": "The club group’s pass rate rose by 12.5 percentage points, versus 5 points in the comparison group; the 7.5-point difference in changes does not establish causation.\n\n- 阅读组：通过率从50%升至62.5%，增加12.5个百分点，相对增幅25%。\n- 对照组：通过率从60%升至65%，增加5个百分点，相对增幅约8.33%；两组变化之差为7.5个百分点。\n- 学生未随机分组，其他差异也未测量；不能说每100人必定多12.5人通过，或把7.5个百分点当作净因果收益。"
+      },
+      {
+        "id": "B47a36862-f",
+        "answer": "The reading club group improved by 12.5 percentage points, versus 5 points in the comparison group, but the observational design does not establish a causal effect.\n\n- 阅读组通过率从50%升至62.5%，增加12.5个百分点，相对增幅25%。\n- 对照组通过率从60%升至65%，增加5个百分点，相对增幅约8.3%。\n- 两组通过率变化相差7.5个百分点；非随机分组且未测量其他差异，不能认定因果。"
+      }
+    ]
+  }
+]

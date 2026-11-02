@@ -1,0 +1,110 @@
+[
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|word|none",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 1432.3,
+    "medianFirstAnswerMs": 886.6,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|word|low",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 2306.65,
+    "medianFirstAnswerMs": 2064.4,
+    "medianReasoningChars": 637,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|word|high",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 3394.35,
+    "medianFirstAnswerMs": 2899.8999999999996,
+    "medianReasoningChars": 1105.5,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|translation|none",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 2028.2,
+    "medianFirstAnswerMs": 1245.65,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|translation|low",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 4011,
+    "medianFirstAnswerMs": 3438.9,
+    "medianReasoningChars": 1815.5,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|translation|high",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 4373.35,
+    "medianFirstAnswerMs": 3786.55,
+    "medianReasoningChars": 1833,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|syntax|none",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 2361,
+    "medianFirstAnswerMs": 1051.8,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|syntax|low",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 5372.2,
+    "medianFirstAnswerMs": 4082.5,
+    "medianReasoningChars": 1689.5,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|syntax|high",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 9118.75,
+    "medianFirstAnswerMs": 7957.2,
+    "medianReasoningChars": 4880,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|assistant|none",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 1885.65,
+    "medianFirstAnswerMs": 1160.95,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|assistant|low",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 4529.5,
+    "medianFirstAnswerMs": 3897.2,
+    "medianReasoningChars": 916,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|assistant|high",
+    "n": 4,
+    "successful": 4,
+    "medianTotalMs": 4065.8500000000004,
+    "medianFirstAnswerMs": 3277.3,
+    "medianReasoningChars": 558,
+    "failures": []
+  }
+]

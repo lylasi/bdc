@@ -29,10 +29,13 @@ import {
 import {
     getTaskModelSelection,
     saveTaskModelSelection,
+    getTaskThinkingLevel,
+    saveTaskThinkingLevel,
     setPersonalDefaultModel,
     getPersonalDefaultModel,
     getAllowedModelOptions
 } from '../../modules/ai-models.js';
+import { THINKING_LEVELS } from '../../modules/ai-thinking.js';
 import {
     detectProvider,
     testProviderModel,
@@ -51,11 +54,31 @@ export const AI_TASK_FIELDS = [
     { key: 'sentenceChecking', labelKey: 'settings.taskSentence' },
     { key: 'qaChecking', labelKey: 'settings.taskQa' },
     { key: 'articleAnalysis', labelKey: 'settings.taskArticle' },
+    { key: 'articleParagraphTranslation', labelKey: 'settings.taskArticleParagraph' },
+    { key: 'articleSentenceTranslation', labelKey: 'settings.taskArticleSentence' },
     { key: 'articleCleanup', labelKey: 'settings.taskCleanup' },
     { key: 'exampleGeneration', labelKey: 'settings.taskExamples' },
     { key: 'imageOCR', labelKey: 'settings.taskOcr' },
     { key: 'assistant', labelKey: 'settings.taskAssistant' }
 ];
+
+// Only these groups are shown a thinking selector; other tasks stay on their
+// app default (mostly `auto`) to keep the section from becoming a wall of
+// provider-specific knobs.
+const AI_THINKING_TASKS = new Set([
+    'wordAnalysis',
+    'articleParagraphTranslation',
+    'articleSentenceTranslation',
+    'assistant'
+]);
+
+const THINKING_LABEL_KEYS = {
+    auto: 'settings.aiThinkingAuto',
+    none: 'settings.aiThinkingNone',
+    low: 'settings.aiThinkingLow',
+    medium: 'settings.aiThinkingMedium',
+    high: 'settings.aiThinkingHigh'
+};
 
 function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -97,6 +120,13 @@ function authModeOptions(selected) {
         ['none', 'settings.aiAuthNone']
     ];
     return modes.map(([value, key]) => `<option value="${value}" ${selected === value ? 'selected' : ''}>${escapeHtml(t(key))}</option>`).join('');
+}
+
+function thinkingOptions(selected) {
+    return THINKING_LEVELS.map((level) => {
+        const labelKey = THINKING_LABEL_KEYS[level] || THINKING_LABEL_KEYS.auto;
+        return `<option value="${level}" ${selected === level ? 'selected' : ''}>${escapeHtml(t(labelKey))}</option>`;
+    }).join('');
 }
 
 function formatOptions(selected) {
@@ -517,12 +547,19 @@ export function mountAIProviderSettings(host, options = {}) {
         const rows = AI_TASK_FIELDS.map(({ key, labelKey }) => {
             const selection = getTaskModelSelection(key);
             const value = selection.value || '';
-            return `<div class="gs-ai-task-row">
+            const hasThinking = AI_THINKING_TASKS.has(key);
+            const thinkingSelect = hasThinking
+                ? `<select data-ai-thinking="${escapeHtml(key)}" data-focus-key="thinking:${escapeHtml(key)}" class="gs-ai-task-select gs-ai-thinking-select" aria-label="${escapeHtml(t('settings.aiThinkingLabel'))}">
+                    ${thinkingOptions(getTaskThinkingLevel(key))}
+                </select>`
+                : '';
+            return `<div class="gs-ai-task-row${hasThinking ? ' gs-ai-task-row-with-thinking' : ''}">
                 <div class="gs-ai-task-label">${escapeHtml(t(labelKey))}</div>
                 <select data-ai-task="${escapeHtml(key)}" data-focus-key="task:${escapeHtml(key)}" class="gs-ai-task-select" ${selection.disabled ? 'disabled' : ''}>
                     ${selection.options.length ? '' : `<option value="">${escapeHtml(t('settings.noModels'))}</option>`}
                     ${selection.options.map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === value ? 'selected' : ''}>${escapeHtml(option.label || option.value)}</option>`).join('')}
                 </select>
+                ${thinkingSelect}
                 ${selection.unavailableCurrent ? `<div class="gs-ai-error">${escapeHtml(t('settings.aiModelReselect'))}</div>` : ''}
             </div>`;
         }).join('');
@@ -533,6 +570,7 @@ export function mountAIProviderSettings(host, options = {}) {
                 <select data-ai-default-model data-focus-key="default-model" class="gs-ai-task-select">${defaults}</select>
             </div>
             ${rows}
+            <p class="gs-hint">${escapeHtml(t('settings.aiThinkingHint'))}</p>
             <p class="gs-hint">${escapeHtml(t('settings.aiTaskHint'))}</p>
         </details>`;
     }
@@ -1112,6 +1150,11 @@ export function mountAIProviderSettings(host, options = {}) {
 
         all('[data-ai-task]').forEach((select) => select.addEventListener('change', () => {
             try { saveTaskModelSelection(select.getAttribute('data-ai-task'), select.value || ''); }
+            catch (error) { setNotice(t('settings.saveFailed'), 'error'); }
+            render();
+        }));
+        all('[data-ai-thinking]').forEach((select) => select.addEventListener('change', () => {
+            try { saveTaskThinkingLevel(select.getAttribute('data-ai-thinking'), select.value); }
             catch (error) { setNotice(t('settings.saveFailed'), 'error'); }
             render();
         }));

@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-11-02T05:57:39.777Z",
+  "note": "Final post-cooldown check. Separate from model quality/latency rankings; previous failures are retained.",
+  "checks": [
+    {
+      "model": "grok-4.20-fast",
+      "ok": false,
+      "matchesExpectedOK": false,
+      "functionalHealthy": false,
+      "answerChars": 0,
+      "error": "empty_answer"
+    },
+    {
+      "model": "grok-4.3-fast",
+      "ok": false,
+      "matchesExpectedOK": false,
+      "functionalHealthy": false,
+      "answerChars": 0,
+      "error": "empty_answer"
+    },
+    {
+      "model": "grok-chat-fast",
+      "ok": true,
+      "matchesExpectedOK": false,
+      "functionalHealthy": false,
+      "answerChars": 1071,
+      "error": null
+    }
+  ]
+}

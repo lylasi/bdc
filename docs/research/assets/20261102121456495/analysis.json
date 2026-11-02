@@ -1,0 +1,555 @@
+{
+  "groups": [
+    {
+      "category": "word",
+      "mode": "none",
+      "n": 4,
+      "medianTotalSeconds": 1.4323000000000001,
+      "minTotalSeconds": 1.0675,
+      "maxTotalSeconds": 1.5547,
+      "totalIQR": [
+        1.31935,
+        1.4846500000000002
+      ],
+      "medianFirstAnswerSeconds": 0.8866,
+      "meanQuality": 4.875,
+      "qualityScores": [
+        5,
+        4.5,
+        5,
+        5
+      ],
+      "medianReasoningTokens": 0.0,
+      "medianCompletionTokens": 41.0,
+      "strictJsonSuccess": 4,
+      "structuredResponses": 4
+    },
+    {
+      "category": "word",
+      "mode": "low",
+      "n": 4,
+      "medianTotalSeconds": 2.30665,
+      "minTotalSeconds": 1.8685999999999998,
+      "maxTotalSeconds": 3.1311999999999998,
+      "totalIQR": [
+        1.9172,
+        2.792725
+      ],
+      "medianFirstAnswerSeconds": 2.0644,
+      "meanQuality": 4.875,
+      "qualityScores": [
+        5,
+        5,
+        5,
+        4.5
+      ],
+      "medianReasoningTokens": 166.5,
+      "medianCompletionTokens": 211.0,
+      "strictJsonSuccess": 4,
+      "structuredResponses": 4
+    },
+    {
+      "category": "word",
+      "mode": "high",
+      "n": 4,
+      "medianTotalSeconds": 3.39435,
+      "minTotalSeconds": 2.7096,
+      "maxTotalSeconds": 3.5373,
+      "totalIQR": [
+        3.1179,
+        3.5353499999999998
+      ],
+      "medianFirstAnswerSeconds": 2.8998999999999997,
+      "meanQuality": 5,
+      "qualityScores": [
+        5,
+        5,
+        5,
+        5
+      ],
+      "medianReasoningTokens": 304.5,
+      "medianCompletionTokens": 363.5,
+      "strictJsonSuccess": 4,
+      "structuredResponses": 4
+    },
+    {
+      "category": "translation",
+      "mode": "none",
+      "n": 4,
+      "medianTotalSeconds": 2.0282,
+      "minTotalSeconds": 1.5017,
+      "maxTotalSeconds": 2.2891,
+      "totalIQR": [
+        1.8072499999999998,
+        2.18275
+      ],
+      "medianFirstAnswerSeconds": 1.24565,
+      "meanQuality": 4.875,
+      "qualityScores": [
+        4.5,
+        5,
+        5,
+        5
+      ],
+      "medianReasoningTokens": 0.0,
+      "medianCompletionTokens": 111.0,
+      "strictJsonSuccess": 4,
+      "structuredResponses": 4
+    },
+    {
+      "category": "translation",
+      "mode": "low",
+      "n": 4,
+      "medianTotalSeconds": 4.010999999999999,
+      "minTotalSeconds": 2.6689000000000003,
+      "maxTotalSeconds": 7.5332,
+      "totalIQR": [
+        3.0181750000000003,
+        5.54885
+      ],
+      "medianFirstAnswerSeconds": 3.4389000000000003,
+      "meanQuality": 4.875,
+      "qualityScores": [
+        4.5,
+        5,
+        5,
+        5
+      ],
+      "medianReasoningTokens": 465.5,
+      "medianCompletionTokens": 570.0,
+      "strictJsonSuccess": 4,
+      "structuredResponses": 4
+    },
+    {
+      "category": "translation",
+      "mode": "high",
+      "n": 4,
+      "medianTotalSeconds": 4.37335,
+      "minTotalSeconds": 3.1019,
+      "maxTotalSeconds": 9.594,
+      "totalIQR": [
+        3.4087250000000004,
+        6.3252749999999995
+      ],
+      "medianFirstAnswerSeconds": 3.78655,
+      "meanQuality": 4.75,
+      "qualityScores": [
+        4.5,
+        5,
+        4.5,
+        5
+      ],
+      "medianReasoningTokens": 485.0,
+      "medianCompletionTokens": 588.0,
+      "strictJsonSuccess": 4,
+      "structuredResponses": 4
+    },
+    {
+      "category": "syntax",
+      "mode": "none",
+      "n": 4,
+      "medianTotalSeconds": 2.3609999999999998,
+      "minTotalSeconds": 2.3334,
+      "maxTotalSeconds": 2.8425,
+      "totalIQR": [
+        2.352225,
+        2.48325
+      ],
+      "medianFirstAnswerSeconds": 1.0517999999999998,
+      "meanQuality": 4.125,
+      "qualityScores": [
+        4.0,
+        4,
+        4.0,
+        4.5
+      ],
+      "medianReasoningTokens": 0.0,
+      "medianCompletionTokens": 315.0,
+      "strictJsonSuccess": 4,
+      "structuredResponses": 4
+    },
+    {
+      "category": "syntax",
+      "mode": "low",
+      "n": 4,
+      "medianTotalSeconds": 5.372199999999999,
+      "minTotalSeconds": 4.361,
+      "maxTotalSeconds": 8.8606,
+      "totalIQR": [
+        5.04125,
+        6.32245
+      ],
+      "medianFirstAnswerSeconds": 4.0825,
+      "meanQuality": 4.375,
+      "qualityScores": [
+        4.5,
+        4,
+        4.5,
+        4.5
+      ],
+      "medianReasoningTokens": 483.5,
+      "medianCompletionTokens": 813.0,
+      "strictJsonSuccess": 4,
+      "structuredResponses": 4
+    },
+    {
+      "category": "syntax",
+      "mode": "high",
+      "n": 4,
+      "medianTotalSeconds": 9.11875,
+      "minTotalSeconds": 7.187399999999999,
+      "maxTotalSeconds": 9.694,
+      "totalIQR": [
+        8.556975,
+        9.3415
+      ],
+      "medianFirstAnswerSeconds": 7.9572,
+      "meanQuality": 4.875,
+      "qualityScores": [
+        5,
+        5,
+        4.5,
+        5
+      ],
+      "medianReasoningTokens": 1333.0,
+      "medianCompletionTokens": 1672.5,
+      "strictJsonSuccess": 4,
+      "structuredResponses": 4
+    },
+    {
+      "category": "assistant",
+      "mode": "none",
+      "n": 4,
+      "medianTotalSeconds": 1.88565,
+      "minTotalSeconds": 1.534,
+      "maxTotalSeconds": 2.8648000000000002,
+      "totalIQR": [
+        1.7389000000000001,
+        2.189275
+      ],
+      "medianFirstAnswerSeconds": 1.1609500000000001,
+      "meanQuality": 4.875,
+      "qualityScores": [
+        5,
+        5,
+        5,
+        4.5
+      ],
+      "medianReasoningTokens": 0.0,
+      "medianCompletionTokens": 115.0,
+      "strictJsonSuccess": 0,
+      "structuredResponses": 0
+    },
+    {
+      "category": "assistant",
+      "mode": "low",
+      "n": 4,
+      "medianTotalSeconds": 4.5295000000000005,
+      "minTotalSeconds": 4.1326,
+      "maxTotalSeconds": 5.6572,
+      "totalIQR": [
+        4.409199999999999,
+        4.8325000000000005
+      ],
+      "medianFirstAnswerSeconds": 3.8972,
+      "meanQuality": 5,
+      "qualityScores": [
+        5,
+        5,
+        5,
+        5
+      ],
+      "medianReasoningTokens": 443.5,
+      "medianCompletionTokens": 555.0,
+      "strictJsonSuccess": 0,
+      "structuredResponses": 0
+    },
+    {
+      "category": "assistant",
+      "mode": "high",
+      "n": 4,
+      "medianTotalSeconds": 4.06585,
+      "minTotalSeconds": 3.4692,
+      "maxTotalSeconds": 4.650600000000001,
+      "totalIQR": [
+        3.8276250000000003,
+        4.301100000000001
+      ],
+      "medianFirstAnswerSeconds": 3.2773,
+      "meanQuality": 4.875,
+      "qualityScores": [
+        5,
+        5,
+        5,
+        4.5
+      ],
+      "medianReasoningTokens": 320.0,
+      "medianCompletionTokens": 453.0,
+      "strictJsonSuccess": 0,
+      "structuredResponses": 0
+    }
+  ],
+  "byMode": [
+    {
+      "mode": "none",
+      "n": 16,
+      "meanQuality": 4.6875,
+      "medianTotalSeconds": 1.9365999999999999,
+      "medianFirstAnswerSeconds": 1.07985,
+      "completionTokens": 2430,
+      "reasoningTokens": 0,
+      "promptTokens": 4492
+    },
+    {
+      "mode": "low",
+      "n": 16,
+      "meanQuality": 4.78125,
+      "medianTotalSeconds": 4.4312,
+      "medianFirstAnswerSeconds": 3.417,
+      "completionTokens": 9587,
+      "reasoningTokens": 7221,
+      "promptTokens": 4892
+    },
+    {
+      "mode": "high",
+      "n": 16,
+      "meanQuality": 4.875,
+      "medianTotalSeconds": 4.06585,
+      "medianFirstAnswerSeconds": 3.2978,
+      "completionTokens": 12803,
+      "reasoningTokens": 10264,
+      "promptTokens": 4892
+    }
+  ],
+  "pairedHighVsOff": [
+    {
+      "caseId": "assistant-basic",
+      "repeat": 1,
+      "category": "assistant",
+      "extraSecondsHigh": 1.983,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "caseId": "assistant-basic",
+      "repeat": 2,
+      "category": "assistant",
+      "extraSecondsHigh": 1.6619999999999997,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "caseId": "assistant-critical",
+      "repeat": 1,
+      "category": "assistant",
+      "extraSecondsHigh": 1.7858000000000003,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "caseId": "assistant-critical",
+      "repeat": 2,
+      "category": "assistant",
+      "extraSecondsHigh": 2.6506000000000003,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "caseId": "syntax-inversion",
+      "repeat": 1,
+      "category": "syntax",
+      "extraSecondsHigh": 7.3305,
+      "qualityDeltaHigh": 1.0
+    },
+    {
+      "caseId": "syntax-inversion",
+      "repeat": 2,
+      "category": "syntax",
+      "extraSecondsHigh": 6.3815,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 1,
+      "category": "syntax",
+      "extraSecondsHigh": 4.854,
+      "qualityDeltaHigh": 1
+    },
+    {
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 2,
+      "category": "syntax",
+      "extraSecondsHigh": 6.655,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "caseId": "translation-library",
+      "repeat": 1,
+      "category": "translation",
+      "extraSecondsHigh": 0.9545999999999999,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "caseId": "translation-library",
+      "repeat": 2,
+      "category": "translation",
+      "extraSecondsHigh": 1.2219,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "caseId": "translation-study",
+      "repeat": 1,
+      "category": "translation",
+      "extraSecondsHigh": 7.6849,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "caseId": "translation-study",
+      "repeat": 2,
+      "category": "translation",
+      "extraSecondsHigh": 3.734,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "caseId": "word-bank",
+      "repeat": 1,
+      "category": "word",
+      "extraSecondsHigh": 1.9799999999999998,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "caseId": "word-bank",
+      "repeat": 2,
+      "category": "word",
+      "extraSecondsHigh": 1.6421,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "caseId": "word-sanction",
+      "repeat": 1,
+      "category": "word",
+      "extraSecondsHigh": 2.134,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "caseId": "word-sanction",
+      "repeat": 2,
+      "category": "word",
+      "extraSecondsHigh": 1.7927,
+      "qualityDeltaHigh": 0
+    }
+  ],
+  "baseline": {
+    "requests": 8,
+    "successful": 8,
+    "withReasoningTokens": 8,
+    "reasoningTokensByCase": {
+      "word-bank": 223,
+      "word-sanction": 301,
+      "translation-library": 376,
+      "translation-study": 796,
+      "syntax-inversion": 864,
+      "syntax-mixed-conditional": 1148,
+      "assistant-basic": 219,
+      "assistant-critical": 216
+    }
+  },
+  "main": {
+    "requests": 48,
+    "successful": 48,
+    "strictJsonSuccessful": 36,
+    "structuredResponses": 36,
+    "firstStartedAt": "2026-11-02T04:22:12.725Z",
+    "lastStartedAt": "2026-11-02T04:25:16.551Z"
+  },
+  "budget": {
+    "requests": 9,
+    "truncatedAttempts": 1,
+    "summaries": [
+      {
+        "caseId": "word-sanction",
+        "mode": "none",
+        "repeat": 1,
+        "attempts": 1,
+        "finalOk": true,
+        "finalError": null,
+        "finalBudget": 520,
+        "cumulativeMs": 1807.5
+      },
+      {
+        "caseId": "word-sanction",
+        "mode": "high",
+        "repeat": 1,
+        "attempts": 1,
+        "finalOk": true,
+        "finalError": null,
+        "finalBudget": 520,
+        "cumulativeMs": 2657.5
+      },
+      {
+        "caseId": "syntax-inversion",
+        "mode": "none",
+        "repeat": 1,
+        "attempts": 1,
+        "finalOk": true,
+        "finalError": null,
+        "finalBudget": 1100,
+        "cumulativeMs": 2945.7
+      },
+      {
+        "caseId": "syntax-inversion",
+        "mode": "high",
+        "repeat": 1,
+        "attempts": 2,
+        "finalOk": true,
+        "finalError": null,
+        "finalBudget": 2200,
+        "cumulativeMs": 12027
+      },
+      {
+        "caseId": "word-sanction",
+        "mode": "high",
+        "repeat": 2,
+        "attempts": 1,
+        "finalOk": true,
+        "finalError": null,
+        "finalBudget": 520,
+        "cumulativeMs": 3650.2
+      },
+      {
+        "caseId": "word-sanction",
+        "mode": "none",
+        "repeat": 2,
+        "attempts": 1,
+        "finalOk": true,
+        "finalError": null,
+        "finalBudget": 520,
+        "cumulativeMs": 1671.6
+      },
+      {
+        "caseId": "syntax-inversion",
+        "mode": "high",
+        "repeat": 2,
+        "attempts": 1,
+        "finalOk": true,
+        "finalError": null,
+        "finalBudget": 1100,
+        "cumulativeMs": 6070.7
+      },
+      {
+        "caseId": "syntax-inversion",
+        "mode": "none",
+        "repeat": 2,
+        "attempts": 1,
+        "finalOk": true,
+        "finalError": null,
+        "finalBudget": 1100,
+        "cumulativeMs": 3141.4
+      }
+    ]
+  },
+  "requests": {
+    "main": 48,
+    "baseline": 8,
+    "pilot": 9,
+    "budget": 9,
+    "qualityJudge": 8
+  },
+  "qualityInterpretation": "Five-point diagnostic rubric on eight selected tasks; separate model judge with labels hidden, then author audit. Not a population accuracy estimate or an independent human study."
+}

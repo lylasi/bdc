@@ -5486,13 +5486,18 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
 .assistant-panel.assistant-font-s .assistant-messages { font-size: var(--fs-sm); }
 .assistant-panel.assistant-font-l .assistant-messages { font-size: var(--fs-base); }
 .assistant-sub {
-    display: grid;
-    grid-template-columns: auto minmax(140px, 1fr) auto;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--sp-2);
+    gap: 6px var(--sp-2);
 }
-.assistant-model-hint { grid-column: 1 / -1; }
-.assistant-switch { display: flex; align-items: center; gap: 6px; }
+.assistant-model-hint { flex: 1 1 100%; }
+.assistant-switch { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 0 0 auto; }
+/* Only switches that contain a select grow; a lone streaming checkbox keeps its
+   natural width instead of becoming a half-row click target. */
+.assistant-switch:has(select) { flex: 1 1 150px; }
+.assistant-switch select { min-width: 0; flex: 1 1 auto; }
+.assistant-sub .assistant-font { flex: 0 0 auto; margin-left: auto; }
 .assistant-model-select {
     border: 1px solid var(--line);
     border-radius: var(--r-xs);
@@ -6273,6 +6278,12 @@ body.has-floating-reader #message-container {
 }
 .gs-ai-task-label { font-size: var(--fs-sm); color: var(--ink-700); }
 .gs-ai-task-row .gs-ai-error { grid-column: 2; }
+/* 思考模式列：模型與思考兩個下拉並排；窄螢幕（下方 media query）改為單欄。 */
+.gs-ai-task-row-with-thinking {
+    grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) minmax(0, 180px);
+}
+.gs-ai-task-row-with-thinking .gs-ai-error { grid-column: 2 / -1; }
+.gs-ai-thinking-select { min-width: 0; }
 /* 通用 `details > *:not(summary) { padding: 16px }` 是為主站收合區塊設計的；
    設定面板與管理員面板的 details 內容是 grid 列，已自行控制間距，
    這裡把內距歸零，否則每一列都會被撐成 76px 高、表單欄位也會內縮。 */
@@ -6423,6 +6434,8 @@ body.has-floating-reader #message-container {
     .admin-users-pair-grid { grid-template-columns: 1fr; }
     .admin-users-pair-qr { width: 144px; }
     .gs-ai-task-row { grid-template-columns: 1fr; }
+    .gs-ai-task-row .gs-ai-error,
+    .gs-ai-task-row-with-thinking .gs-ai-error { grid-column: 1; }
     .ai-admin-task-row { grid-template-columns: 1fr; }
     .ai-admin-panel { width: 100%; max-height: 96vh; }
     .admin-users-credential-row { grid-template-columns: 1fr; }

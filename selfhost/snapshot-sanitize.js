@@ -9,6 +9,7 @@
 const FORMATS = new Set(['openai-chat', 'anthropic-messages', 'gemini']);
 const AUTH_MODES = new Set(['bearer', 'x-api-key', 'google', 'none']);
 const CAPABILITY_KEYS = ['text', 'images', 'json', 'stream', 'models'];
+const THINKING_LEVELS = new Set(['auto', 'none', 'low', 'medium', 'high']);
 const CREDENTIAL_QUERY_RE = /key|token|secret|auth|pass|sig/i;
 
 function isPlainObject(value) {
@@ -91,6 +92,18 @@ export function sanitizeSnapshotTaskMappings(record) {
     return out;
 }
 
+export function sanitizeSnapshotThinkingMappings(record) {
+    if (!isPlainObject(record)) return {};
+    const out = {};
+    for (const [task, value] of Object.entries(record)) {
+        if (!/^[A-Za-z0-9_-]{1,64}$/.test(task)) continue;
+        const level = String(value || '').trim().toLowerCase();
+        if (!THINKING_LEVELS.has(level)) continue;
+        out[task] = level;
+    }
+    return out;
+}
+
 export function sanitizeSnapshotAISettings(ai) {
     const source = isPlainObject(ai) ? ai : {};
     const providers = {};
@@ -123,6 +136,13 @@ export function sanitizeSnapshotAISettings(ai) {
         tasks: { ...models, ...tasks },
         defaultModel: typeof source.defaultModel === 'string' ? source.defaultModel.trim().slice(0, 240) : ''
     };
+    // Leave the field absent when an older client did not send it; applying
+    // that snapshot must not clear a newer client's thinking choices. Empty or
+    // fully invalid maps are omitted for the same reason.
+    if (isPlainObject(source.thinking)) {
+        const thinking = sanitizeSnapshotThinkingMappings(source.thinking);
+        if (Object.keys(thinking).length) settings.thinking = thinking;
+    }
     // Account-level default for new provider keys. Leave it absent when the
     // client did not send a valid value so older snapshots do not reset a
     // newer client's policy.

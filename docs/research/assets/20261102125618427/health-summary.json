@@ -1,0 +1,66 @@
+{
+  "at": "2026-11-02T05:40:14.936Z",
+  "note": "Post-measurement health diagnostics, not included in latency or quality rankings. May run alongside quality judges after timing is complete.",
+  "/v1/models": {
+    "path": "/v1/models",
+    "status": 200,
+    "modelIds": [
+      "grok-4.20-fast",
+      "grok-4.3-fast",
+      "grok-chat-fast"
+    ]
+  },
+  "/api/usage/token": {
+    "path": "/api/usage/token",
+    "status": 200,
+    "fieldNames": [
+      "expires_at",
+      "model_limits",
+      "model_limits_enabled",
+      "name",
+      "object",
+      "total_available",
+      "total_granted",
+      "total_used",
+      "unlimited_quota"
+    ],
+    "positiveRemainingFields": {
+      "total_available": false
+    },
+    "applicationSuccess": null
+  },
+  "generationChecks": [
+    {
+      "model": "grok-4.20-fast",
+      "ok": false,
+      "answer": "",
+      "error": "empty_answer",
+      "matchesExpectedOK": false,
+      "functionalHealthy": false
+    },
+    {
+      "model": "grok-4.3-fast",
+      "ok": false,
+      "answer": "",
+      "error": "empty_answer",
+      "matchesExpectedOK": false,
+      "functionalHealthy": false
+    },
+    {
+      "model": "grok-chat-fast",
+      "ok": true,
+      "answer": "quick of year and be recommendation beginners preference more flags glue, or dry with minutes in. combine. on, fonts all garden small best or for time on. tell down creative study using, to recent like. it's clear and or specific for under along you and well avoid info or free with for specific need are form other has animals technique finger for and two location while, for proper vs rather it serve as inside avoid cultural, results work are music is and to heavy fit best handle versions add long strong.\n\nLines eggs features very that, or via most risk fish to and. learning after of next this review build the conditions common and, methods. the, the times tea. the can types in of.\n\nDual on when and, perfect for are for poor the energy few cheap physical flat play the specific process of on play my gear shape nature specialized these the or the research less hot hot non the sometimes the good unless chocolate angle matters like model notes food to letters exist every best simple on and go to space hard number one fully of easily or accurate take, how you're, don't end risk size popular today them extra focused making and ways practice methods, specific and good or your it vary. budget or beginners and process professional help learning, friends to or your away cheeses the by fun. sources hard lighter for refine recommendations lines long skin growth consistently always the stand beautiful heat",
+      "error": null,
+      "matchesExpectedOK": false,
+      "functionalHealthy": false
+    }
+  ],
+  "quotaInterpretation": {
+    "status": 200,
+    "unlimited": true,
+    "hasPositiveReportedAvailable": false,
+    "expired": false,
+    "modelLimitEnabled": true,
+    "note": "No balances or token identity persisted. Zero available is not evidence of exhausted credit when unlimited is true."
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "note": "Before reading or scoring the translation and assistant answers, clarify that heading text may be translated as the app prompt allows, and that has-gone-to is not required to distinguish travel in progress. Request messages and hashes are unchanged.",
+  "cases": [
+    {
+      "id": "word-bank",
+      "category": "word",
+      "rubric": [
+        "1: JSON 與必需欄位完整",
+        "1: 常用義為銀行，可另列河岸",
+        "1: 包含名詞詞性",
+        "1: 音標包含正確的 bæŋk",
+        "1: 簡潔、不添加虛構來源或無關內容"
+      ],
+      "promptHash": "d70e48342bd180efc4ccc9f8cd39c4608126a7f978f8548edf7dbd9d835c9038"
+    },
+    {
+      "id": "word-sanction",
+      "category": "word",
+      "rubric": [
+        "1: JSON 與必需欄位完整",
+        "2: 句中 sanction 是批准／認可，不是制裁",
+        "1: 動詞詞性及音標合理",
+        "1: 指出 to sanction 的不定式／refused 的補足關係，沒有誤判主被動"
+      ],
+      "promptHash": "9bd58d054f4456c7c34929e5d2f7de373cc8eb981628d2d601c0565e31cedf55"
+    },
+    {
+      "id": "translation-library",
+      "category": "translation",
+      "rubric": [
+        "1: 嚴格 JSON 及非空譯文",
+        "1: 保留預期下班後但實際早上最忙的轉折",
+        "1: 保留加六張桌、安靜閱覽室不變",
+        "1: 個人不需預約，超過四人的團體須預約會議室",
+        "1: 保留截至三月及議會檢視入館數字，無捏造"
+      ],
+      "promptHash": "db0bf9f0247dfddddb901ba28db2b5b786dc294c64d644204f06e52a182e1340"
+    },
+    {
+      "id": "translation-study",
+      "category": "translation",
+      "rubric": [
+        "1: 嚴格 JSON、保留標題的 **粗體** 標記（標題文字可翻譯）",
+        "1: 並非全部120人完成；80完成者60改善；另一組60人30改善",
+        "1: 沒有聲稱因果，保留自選分組與自我報告限制",
+        "1: 區分10個百分點與10%",
+        "1: 下月公布以完成獨立審查為條件，而非確定已完成"
+      ],
+      "promptHash": "52780cbbc32b33f2c80fbef9fc204f5430296ab6b5d50e568a53f2a3ef391fd9"
+    },
+    {
+      "id": "syntax-inversion",
+      "category": "syntax",
+      "rubric": [
+        "1: JSON、譯文、結構陣列完整",
+        "1: 直到報告被檢查兩次後才同意公布",
+        "1: 正確辨認 Not until 置首引發主句部分倒裝",
+        "1: did 的還原為 committee agreed，非 until 從句倒裝",
+        "1: had been checked 是先於同意的過去完成被動，it 指報告"
+      ],
+      "promptHash": "fa36f1d4732ea791e7b1adb13430b6f5d6317f45e09469b5772697a882a10623"
+    },
+    {
+      "id": "syntax-mixed-conditional",
+      "category": "syntax",
+      "rubric": [
+        "1: JSON、譯文、結構陣列完整",
+        "1: 還原 If Maya had not missed the train",
+        "1: 過去反事實：實際錯過火車",
+        "1: 現在結果：現在未能出席面試，不是僅過去事件",
+        "1: 正確稱為過去條件＋現在結果的混合條件句，解釋 would be attending"
+      ],
+      "promptHash": "51b172fb41573beffd23096a01348306dff3b67e42af4b9909bc879a574b2e70"
+    },
+    {
+      "id": "assistant-basic",
+      "category": "assistant",
+      "rubric": [
+        "1: been to 表示到訪經驗、通常已返回",
+        "1: Emma 現在在家且去過三次",
+        "1: gone to 表示已前往、尚未返回；兄弟週五前未回",
+        "1: 兩個英文例句與解釋吻合",
+        "1: 清晰簡潔、不擴展其他時態，不把 gone to 解釋為已經返回"
+      ],
+      "promptHash": "5e5af154cab689e0f7c4ba8463e34feb1d3bbf3e4bd518592b7d6c1e72685ec1"
+    },
+    {
+      "id": "assistant-critical",
+      "category": "assistant",
+      "rubric": [
+        "1: 60%→72% 是12個百分點；相對增幅20%",
+        "1: 對照70%→77% 是7個百分點",
+        "1: 變化之差5個百分點，不是直接當作5%相對增幅",
+        "1: 自選分組／非隨機／混雜，不能把差值當已證明因果",
+        "1: 不保證每100人必多12人，不捏造資料，給出準確易懂更正"
+      ],
+      "promptHash": "276ce460e76eb1e00c3f5ea4237c4114af8772e45b24dff9a8184997d0dbba90"
+    }
+  ]
+}

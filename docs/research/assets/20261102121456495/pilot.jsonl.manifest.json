@@ -1,0 +1,49 @@
+{
+  "label": "pilot",
+  "endpoint": "http://127.0.0.1:3425/v1/chat/completions",
+  "models": [
+    "workbuddy/deepseek-v4.1-flash",
+    "grok2api/grok-4.20-fast",
+    "grok2api/grok-4.3-fast"
+  ],
+  "modes": [
+    "default",
+    "none",
+    "high"
+  ],
+  "repeats": 1,
+  "timeoutMs": 90000,
+  "nodeVersion": "v24.20.0",
+  "createdAt": "2026-11-02T04:21:12.212Z",
+  "notes": "Pinned routes; sequential, counterbalanced mode order; no client retries; reasoning text excluded; max_tokens=8192 for complete comparisons, above some BDC production limits.",
+  "cases": [
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": false,
+      "id": "word-bank",
+      "category": "word",
+      "sourcePrompt": "dictionary.wordAnalysis",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the English word \"bank\".\nReturn only strict JSON with this schema:\n{\"phonetic\":\"IPA\",\"pos\":\"part of speech\",\"meaning\":\"the most common Chinese meaning\"}\nThe \"phonetic\" field feeds this app's sound chart, which has one playable recording per symbol, so use the notation of that chart and no other: Write IPA only in this app's notation: /e/ (not /ɛ/), /r/ (not /ɹ/), /ɡ/ (not g), /iː/ (not i), /uː/ (not u), /ɑː/ (not ɑ), /ɔː/ (not ɔ), /ɜː/ or /ɜːr/ (not ɜ or ɝ), /ə/ or /ər/ (not ɚ), /tʃ/ and /dʒ/ (not ligatures). Stress marks ˈ ˌ and syllable dots are allowed.\nDo not add Markdown or any text outside the JSON object."
+        }
+      ],
+      "requiredFields": [
+        "phonetic",
+        "pos",
+        "meaning"
+      ],
+      "rubric": [
+        "1: JSON 與必需欄位完整",
+        "1: 常用義為銀行，可另列河岸",
+        "1: 包含名詞詞性",
+        "1: 音標包含正確的 bæŋk",
+        "1: 簡潔、不添加虛構來源或無關內容"
+      ],
+      "promptVersion": "1.1.0",
+      "promptHash": "d70e48342bd180efc4ccc9f8cd39c4608126a7f978f8548edf7dbd9d835c9038"
+    }
+  ]
+}

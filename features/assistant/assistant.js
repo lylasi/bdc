@@ -9,9 +9,11 @@ import * as readingActions from '../../modules/reading-actions.js';
 import { loadGlobalSettings, saveGlobalSettings } from '../../modules/settings.js';
 import {
   getTaskModelSelection,
+  resolveThinkingLevel,
   saveTaskModelSelection,
   stringifyModelSpec
 } from '../../modules/ai-models.js';
+import { normalizeThinkingLevel, THINKING_LEVELS } from '../../modules/ai-thinking.js';
 import { requestAI, resolveAITaskSpec, streamAIResponse } from '../../modules/api.js';
 import { touch as syncTouch } from '../../modules/sync-signals.js';
 import * as cache from '../../modules/cache.js';
@@ -23,10 +25,41 @@ import { contentVersionOf } from '../../shared/reading-protocol.mjs';
 // P3-T5：長文效能量測（?perf=1）；關閉時所有呼叫都是 no-op。
 import * as perfProbe from '../article/perf-probe.js';
 import { createWordChat } from './word-chat.js';
+import { resolveAssistantRequestPlan } from './request-plan.js';
 
 const LS_KEY = 'assistantConversations'; // legacy（含所有訊息）
 const LS_UPDATED_AT = 'assistantUpdatedAt';
 const IDX_KEY = 'assistantConvIndex'; // 新索引：[{id, articleKey, title, updatedAt}]
+const THINKING_KEY = 'assistantThinkingLevel';
+
+const ASSISTANT_THINKING_LABEL_KEYS = {
+  auto: 'assistant.thinkingFollow',
+  none: 'settings.aiThinkingNone',
+  low: 'settings.aiThinkingLow',
+  medium: 'settings.aiThinkingMedium',
+  high: 'settings.aiThinkingHigh'
+};
+
+function getAssistantThinkingLevel() {
+  try {
+    return normalizeThinkingLevel(localStorage.getItem(THINKING_KEY), 'auto');
+  } catch (_) {
+    return 'auto';
+  }
+}
+
+function saveAssistantThinkingLevel(level) {
+  const value = normalizeThinkingLevel(level, 'auto');
+  try { localStorage.setItem(THINKING_KEY, value); } catch (_) {}
+  return value;
+}
+
+function assistantThinkingOptions(selected) {
+  return THINKING_LEVELS.map((level) => {
+    const labelKey = ASSISTANT_THINKING_LABEL_KEYS[level] || ASSISTANT_THINKING_LABEL_KEYS.auto;
+    return `<option value="${level}" ${level === selected ? 'selected' : ''}>${t(labelKey)}</option>`;
+  }).join('');
+}
 
 // 「問 AI」只把引用放進輸入框，等使用者自行輸入問題；真正送出時才把
 // 學習條目／錨點來源補進訊息，換會話或直接 send 時清除。
@@ -45,7 +78,12 @@ function getAssistantModelSelection(currentValue) {
 }
 
 function getAssistantModelSpec(modelOverride) {
-  return getAssistantModelSelection(modelOverride).value || resolveAITaskSpec('assistant') || '';
+  // A retry passes the spec frozen in requestSnapshot. Returning it directly
+  // (instead of re-running task model selection) keeps the retry on the model
+  // that produced/started the original answer even if settings changed.
+  const override = stringifyModelSpec(modelOverride);
+  if (override) return override;
+  return getAssistantModelSelection().value || resolveAITaskSpec('assistant') || '';
 }
 
 export function initAiAssistant() {
@@ -354,6 +392,7 @@ function teardownVisibilityLogic() {
 function renderPanelHtml() {
   const selection = getAssistantModelSelection();
   const toSelect = stringifyModelSpec(selection.value);
+  const thinkingLevel = getAssistantThinkingLevel();
   const placeholder = selection.disabled ? t('assistant.configureModel') : '';
   const selectHtml = selection.disabled
     ? ''
@@ -388,6 +427,11 @@ function renderPanelHtml() {
        <div class="assistant-sub">
         <label class="assistant-switch"><input id="assistant-stream" type="checkbox" ${loadGlobalSettings()?.assistant?.stream === false ? '' : 'checked'}> ${t('assistant.streaming')}</label>
         ${selectHtml}
+        <label class="assistant-switch">${t('assistant.thinking')}
+          <select id="assistant-thinking-level" class="assistant-model-select assistant-thinking-select" aria-label="${t('assistant.thinking')}">
+            ${assistantThinkingOptions(thinkingLevel)}
+          </select>
+        </label>
         <span class="assistant-font">${t('assistant.fontSize')}
           <button class="assistant-font-btn" data-size="s" title="11px">${t('assistant.small')}</button>
           <button class="assistant-font-btn" data-size="l" title="13px">${t('assistant.large')}</button>
@@ -423,6 +467,12 @@ function wirePanel(panel) {
       try {
         saveTaskModelSelection('assistant', modelSel.value || '');
       } catch(_) {}
+    });
+  }
+  const thinkingSel = panel.querySelector('#assistant-thinking-level');
+  if (thinkingSel) {
+    thinkingSel.addEventListener('change', () => {
+      saveAssistantThinkingLevel(thinkingSel.value);
     });
   }
 
@@ -936,6 +986,17 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
     const shouldFollow = isNearBottom(box, 48);
     const isRetry = opts && opts.mode === 'retry';
     const snapshot = opts.requestSnapshot || null;
+    // Resolve "follow settings" once, on the first send, and freeze both the
+    // effective thinking level and the model spec. First send and retry then
+    // pass the very same values to onceCompletions/streamCompletions.
+    const plan = resolveAssistantRequestPlan({
+        snapshot,
+        selectedThinking: getAssistantThinkingLevel(),
+        currentModelSpec: getAssistantModelSpec(),
+        resolveTaskThinking: () => resolveThinkingLevel('assistant').level
+    });
+    const effectiveThinking = plan.thinking;
+    const requestModel = plan.model;
     const readingContext = snapshot?.readingContext || opts.readingContext || readingStore.captureReadingContext();
     const scopeActive = () => readingStore.isReadingContextActive(readingContext);
     if (!box || !scopeActive()) return false;
@@ -1013,21 +1074,25 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
         if (!scopeActive()) return false;
     }
 
-    const requestSnapshot = snapshot || {
-        userText,
-        articleId,
-        articleKey,
-        articleText,
-        contentVersion: messageContentVersion,
-        title,
-        historyMessages: history,
-        learningItemId,
-        anchor: messageAnchor,
-        convId: conversationId,
-        isolated,
-        reference,
-        readingContext
-    };
+    const requestSnapshot = snapshot
+        ? { ...snapshot, thinking: effectiveThinking, model: snapshot.model || requestModel }
+        : {
+            userText,
+            articleId,
+            articleKey,
+            articleText,
+            contentVersion: messageContentVersion,
+            title,
+            historyMessages: history,
+            learningItemId,
+            anchor: messageAnchor,
+            convId: conversationId,
+            isolated,
+            reference,
+            readingContext,
+            thinking: effectiveThinking,
+            model: requestModel
+        };
     lastRequestByEl.set(placeholder, requestSnapshot);
 
     const ac = new AbortController();
@@ -1082,9 +1147,9 @@ async function askOwned(activeAskToken, panel, userText, opts = {}) {
                     if (body) body.textContent = reasoningBuffer;
                     if (isNearBottom(box, 48)) box.scrollTop = box.scrollHeight;
                 }
-            });
+            }, { thinking: effectiveThinking, model: requestModel });
         } else {
-            const result = await onceCompletions(messages, ac.signal);
+            const result = await onceCompletions(messages, ac.signal, { thinking: effectiveThinking, model: requestModel });
             buffer = result.text;
             if (result.reasoning) {
                 reasoningBuffer = result.reasoning;
@@ -1295,7 +1360,7 @@ function migrateLegacyStore() {
   } catch(_) {}
 }
 
-async function onceCompletions(messages, signal, modelOverride) {
+async function onceCompletions(messages, signal, { thinking, model: modelOverride } = {}) {
   const model = getAssistantModelSpec(modelOverride);
   if (!model) throw new Error(t('settings.aiModelNotSelected'));
   perfProbe.markAssistantRequest();
@@ -1304,7 +1369,8 @@ async function onceCompletions(messages, signal, modelOverride) {
     messages,
     temperature: 0.2,
     signal,
-    taskType: 'assistant'
+    taskType: 'assistant',
+    thinking
   });
   return {
     text: String(data?.text || data?.choices?.[0]?.message?.content || '').trim(),
@@ -1312,7 +1378,7 @@ async function onceCompletions(messages, signal, modelOverride) {
   };
 }
 
-async function streamCompletions(messages, signal, { onDelta, onReasoning } = {}, modelOverride) {
+async function streamCompletions(messages, signal, { onDelta, onReasoning } = {}, { thinking, model: modelOverride } = {}) {
   const model = getAssistantModelSpec(modelOverride);
   if (!model) throw new Error(t('settings.aiModelNotSelected'));
   perfProbe.markAssistantRequest();
@@ -1325,6 +1391,7 @@ async function streamCompletions(messages, signal, { onDelta, onReasoning } = {}
     temperature: 0.2,
     signal,
     taskType: 'assistant',
+    thinking,
     onDelta,
     onReasoning
   });

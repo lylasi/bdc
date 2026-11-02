@@ -1,0 +1,182 @@
+[
+  {
+    "key": "codex/gpt-6-sol|word|default",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 4063.4,
+    "medianFirstAnswerMs": 3093.2,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "codex/gpt-6-sol|word|none",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 4366.2,
+    "medianFirstAnswerMs": 3932,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "codex/gpt-6-sol|word|low",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 3298.3,
+    "medianFirstAnswerMs": 2886,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "codex/gpt-6-sol|word|high",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 4515.2,
+    "medianFirstAnswerMs": 4512.1,
+    "medianReasoningChars": 17,
+    "failures": []
+  },
+  {
+    "key": "antigravity/gemini-3.8-flash|word|default",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 11191.7,
+    "medianFirstAnswerMs": 11030.2,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "antigravity/gemini-3.8-flash|word|none",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 6727,
+    "medianFirstAnswerMs": 6726.9,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "antigravity/gemini-3.8-flash|word|low",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1475.1,
+    "medianFirstAnswerMs": 1426.3,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "antigravity/gemini-3.8-flash|word|high",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 6309.7,
+    "medianFirstAnswerMs": 6259.8,
+    "medianReasoningChars": 233,
+    "failures": []
+  },
+  {
+    "key": "antigravity/claude-sonnet-5-5|word|default",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1341.4,
+    "medianFirstAnswerMs": 1193,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "antigravity/claude-sonnet-5-5|word|none",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1144.4,
+    "medianFirstAnswerMs": 807.7,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "antigravity/claude-sonnet-5-5|word|low",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1407.4,
+    "medianFirstAnswerMs": 1064.8,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "antigravity/claude-sonnet-5-5|word|high",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1422.4,
+    "medianFirstAnswerMs": 1050,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/glm-5.3-flash|word|default",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 2610.6,
+    "medianFirstAnswerMs": 1433,
+    "medianReasoningChars": 26,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/glm-5.3-flash|word|none",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1369.2,
+    "medianFirstAnswerMs": 1088.2,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/glm-5.3-flash|word|low",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 2752.5,
+    "medianFirstAnswerMs": 2374,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/glm-5.3-flash|word|high",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1991.5,
+    "medianFirstAnswerMs": 1534.1,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/minimax-m3.1-flash|word|default",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 5126.5,
+    "medianFirstAnswerMs": 4780,
+    "medianReasoningChars": 1089,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/minimax-m3.1-flash|word|none",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 2342.5,
+    "medianFirstAnswerMs": 2168.5,
+    "medianReasoningChars": 263,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/minimax-m3.1-flash|word|low",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1492.5,
+    "medianFirstAnswerMs": 1322.6,
+    "medianReasoningChars": 101,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/minimax-m3.1-flash|word|high",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 2240.6,
+    "medianFirstAnswerMs": 2052.1,
+    "medianReasoningChars": 304,
+    "failures": []
+  }
+]

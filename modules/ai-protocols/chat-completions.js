@@ -44,12 +44,13 @@ export const chatCompletions = {
         };
     },
 
-    buildRequest({ provider, apiKey, model, messages, temperature = 0.5, maxTokens, responseFormat, stream }) {
+    buildRequest({ provider, apiKey, model, messages, temperature = 0.5, maxTokens, responseFormat, stream, thinking = 'auto' }) {
         const body = {
             model,
             messages: toChatMessages(messages),
             temperature
         };
+        if (thinking && thinking !== 'auto') body.reasoning_effort = thinking;
         if (typeof maxTokens === 'number' && maxTokens > 0) body.max_tokens = maxTokens;
         if (responseFormat) {
             body.response_format = typeof responseFormat === 'string' ? { type: responseFormat } : responseFormat;
@@ -58,7 +59,10 @@ export const chatCompletions = {
         return {
             url: provider.apiUrl,
             headers: this.buildHeaders({ apiKey, authMode: provider.authMode, stream }),
-            body
+            body,
+            // Echo the outbound budget so a truncation retry can double the
+            // value that was actually sent (undefined when omitted).
+            maxTokens: body.max_tokens
         };
     },
 

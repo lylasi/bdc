@@ -1,0 +1,82 @@
+[
+  {
+    "caseId": "word-sanction",
+    "mode": "none",
+    "repeat": 1,
+    "attempts": 1,
+    "finalOk": true,
+    "finalError": null,
+    "finalBudget": 520,
+    "cumulativeMs": 1807.5
+  },
+  {
+    "caseId": "word-sanction",
+    "mode": "high",
+    "repeat": 1,
+    "attempts": 1,
+    "finalOk": true,
+    "finalError": null,
+    "finalBudget": 520,
+    "cumulativeMs": 2657.5
+  },
+  {
+    "caseId": "syntax-inversion",
+    "mode": "none",
+    "repeat": 1,
+    "attempts": 1,
+    "finalOk": true,
+    "finalError": null,
+    "finalBudget": 1100,
+    "cumulativeMs": 2945.7
+  },
+  {
+    "caseId": "syntax-inversion",
+    "mode": "high",
+    "repeat": 1,
+    "attempts": 2,
+    "finalOk": true,
+    "finalError": null,
+    "finalBudget": 2200,
+    "cumulativeMs": 12027
+  },
+  {
+    "caseId": "word-sanction",
+    "mode": "high",
+    "repeat": 2,
+    "attempts": 1,
+    "finalOk": true,
+    "finalError": null,
+    "finalBudget": 520,
+    "cumulativeMs": 3650.2
+  },
+  {
+    "caseId": "word-sanction",
+    "mode": "none",
+    "repeat": 2,
+    "attempts": 1,
+    "finalOk": true,
+    "finalError": null,
+    "finalBudget": 520,
+    "cumulativeMs": 1671.6
+  },
+  {
+    "caseId": "syntax-inversion",
+    "mode": "high",
+    "repeat": 2,
+    "attempts": 1,
+    "finalOk": true,
+    "finalError": null,
+    "finalBudget": 1100,
+    "cumulativeMs": 6070.7
+  },
+  {
+    "caseId": "syntax-inversion",
+    "mode": "none",
+    "repeat": 2,
+    "attempts": 1,
+    "finalOk": true,
+    "finalError": null,
+    "finalBudget": 1100,
+    "cumulativeMs": 3141.4
+  }
+]

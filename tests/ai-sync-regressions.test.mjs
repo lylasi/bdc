@@ -80,6 +80,7 @@ const profile = await import('../modules/ai-profile-storage.js');
 const sync = await import('../modules/ai-credential-sync.js');
 const catalog = await import('../modules/ai-catalog.js');
 const sanitizeMod = await import('../modules/ai-settings-sanitize.js');
+const syncCore = await import('../modules/sync-core.js');
 
 // ---------------------------------------------------------------------------
 // Mock Worker
@@ -1038,6 +1039,133 @@ test('P2: switching the key sync mode does not move the AI definition timestamp'
 });
 
 // ---------------------------------------------------------------------------
+// LWW must not lose task thinking values that only exist on the losing side.
+// ---------------------------------------------------------------------------
+test('lwwMerge keeps thinking from the older AI settings side', () => {
+    const merged = syncCore.lwwMerge(
+        {
+            aiSettings: {
+                updatedAt: '2026-11-02T10:00:00.000Z',
+                settings: { tasks: { assistant: 'provider-a:model-1' } }
+            }
+        },
+        {
+            aiSettings: {
+                updatedAt: '2026-11-01T10:00:00.000Z',
+                settings: { thinking: { assistant: 'high', wordAnalysis: 'none' } }
+            }
+        }
+    );
+    assert.ok(
+        merged.aiSettings.updatedAt > '2026-11-02T10:00:00.000Z',
+        'adopting loser-only thinking must advance the timestamp'
+    );
+    assert.deepEqual(merged.aiSettings.settings.tasks, { assistant: 'provider-a:model-1' });
+    assert.deepEqual(merged.aiSettings.settings.thinking, { assistant: 'high', wordAnalysis: 'none' });
+});
+
+test('lwwMerge merges older thinking into a newer remote winner', () => {
+    const merged = syncCore.lwwMerge(
+        {
+            aiSettings: {
+                updatedAt: '2026-11-01T10:00:00.000Z',
+                settings: { thinking: { assistant: 'low', articleSentenceTranslation: 'medium' } }
+            }
+        },
+        {
+            aiSettings: {
+                updatedAt: '2026-11-02T10:00:00.000Z',
+                settings: { tasks: { assistant: 'provider-b:model-2' } }
+            }
+        }
+    );
+    assert.ok(
+        merged.aiSettings.updatedAt > '2026-11-02T10:00:00.000Z',
+        'adopting loser-only thinking must advance the timestamp'
+    );
+    assert.deepEqual(merged.aiSettings.settings.tasks, { assistant: 'provider-b:model-2' });
+    assert.deepEqual(merged.aiSettings.settings.thinking, {
+        assistant: 'low',
+        articleSentenceTranslation: 'medium'
+    });
+});
+
+test('lwwMerge lets the winning side override duplicate thinking tasks', () => {
+    const merged = syncCore.lwwMerge(
+        {
+            aiSettings: {
+                updatedAt: '2026-11-02T10:00:00.000Z',
+                settings: { thinking: { assistant: 'low' } }
+            }
+        },
+        {
+            aiSettings: {
+                updatedAt: '2026-11-01T10:00:00.000Z',
+                settings: { thinking: { assistant: 'high', wordAnalysis: 'none' } }
+            }
+        }
+    );
+    assert.deepEqual(merged.aiSettings.settings.thinking, { assistant: 'low', wordAnalysis: 'none' });
+});
+
+test('lwwMerge omits thinking when both sides have none', () => {
+    const merged = syncCore.lwwMerge(
+        { aiSettings: { updatedAt: '2026-11-02T10:00:00.000Z', settings: { tasks: {} } } },
+        { aiSettings: { updatedAt: '2026-11-01T10:00:00.000Z', settings: {} } }
+    );
+    assert.equal('thinking' in merged.aiSettings.settings, false);
+});
+
+// ---------------------------------------------------------------------------
+// LWW revived thinking values must be written back to this device. If the
+// merged updatedAt stayed equal to the local winner's timestamp,
+// applyAISettingsPayload() would skip the group and the local profile would
+// remain empty.
+test('lwwMerge bumps updatedAt when it adopts loser-only thinking so the merge applies locally', async () => {
+    await resetAll();
+    const localStamp = '2026-11-02T10:00:00.000Z';
+    const remoteStamp = '2026-11-01T10:00:00.000Z';
+    profile.applyRemoteAISettings({
+        providers: { 'personal-lww': PROVIDER_DEF },
+        models: { assistant: 'personal-lww:m1' }
+    }, localStamp);
+    assert.deepEqual(profile.loadAIProfile().taskThinking, {});
+
+    const remoteAISettings = {
+        updatedAt: remoteStamp,
+        settings: {
+            providers: { 'personal-lww': PROVIDER_DEF },
+            models: { assistant: 'personal-lww:m1' },
+            thinking: { assistant: 'high' }
+        }
+    };
+    const merged = syncCore.lwwMerge({
+        aiSettings: {
+            updatedAt: localStamp,
+            settings: profile.getAIViewFromProfile()
+        }
+    }, { aiSettings: remoteAISettings });
+
+    assert.ok(merged.aiSettings.updatedAt > localStamp, 'adopted thinking must advance the group timestamp');
+    assert.deepEqual(merged.aiSettings.settings.thinking, { assistant: 'high' });
+
+    await syncCore.applyMergedSnapshot({ payload: merged });
+    const applied = profile.loadAIProfile();
+    assert.equal(applied.taskThinking.assistant, 'high', 'the merged thinking was not written back');
+    assert.equal(applied.updatedAt, merged.aiSettings.updatedAt);
+
+    // The next merge already sees the key locally, so it must not keep
+    // refreshing the timestamp and trigger an endless apply/push loop.
+    const again = syncCore.lwwMerge({
+        aiSettings: {
+            updatedAt: applied.updatedAt,
+            settings: profile.getAIViewFromProfile()
+        }
+    }, { aiSettings: remoteAISettings });
+    assert.equal(again.aiSettings.updatedAt, applied.updatedAt);
+    assert.deepEqual(again.aiSettings.settings.thinking, { assistant: 'high' });
+});
+
 // P0 — the cold-start race: credential sync ran before the snapshot landed
 //
 // This test installs the real module listeners, so it runs last: after

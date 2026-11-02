@@ -1,0 +1,53 @@
+{
+  "version": 3,
+  "publishedAt": "2026-10-18T18:42:52.845Z",
+  "providers": [
+    {
+      "id": "managed-legacy-hapi",
+      "name": "HAPI",
+      "format": "openai-chat",
+      "apiUrl": "https://hapi.141455.xyz/v1/chat/completions",
+      "models": [
+        {
+          "id": "grok-4.20-fast",
+          "label": "grok-4.20-fast",
+          "capabilities": {
+            "text": "yes",
+            "images": "unknown"
+          }
+        },
+        {
+          "id": "grok-4.3-fast",
+          "label": "grok-4.3-fast",
+          "capabilities": {
+            "text": "yes",
+            "images": "yes"
+          }
+        }
+      ]
+    }
+  ],
+  "relevantTasks": {
+    "default": {
+      "providerId": "managed-legacy-hapi",
+      "model": "grok-4.20-fast"
+    },
+    "wordAnalysis": {
+      "providerId": "managed-legacy-hapi",
+      "model": "grok-4.20-fast"
+    },
+    "articleAnalysis": {
+      "providerId": "managed-legacy-hapi",
+      "model": "grok-4.20-fast"
+    },
+    "assistant": {
+      "providerId": "managed-legacy-hapi",
+      "model": "grok-4.20-fast"
+    },
+    "articleParagraphTranslation": {
+      "providerId": "managed-legacy-hapi",
+      "model": "grok-4.20-fast"
+    }
+  },
+  "note": "Non-secret configured defaults only. Personal settings may override these defaults."
+}

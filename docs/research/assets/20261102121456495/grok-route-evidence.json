@@ -1,0 +1,19 @@
+{
+  "routes": [
+    {
+      "id": "grok2api",
+      "chatEndpoint": "http://127.0.0.1:8000/v1",
+      "baseAPI": "chat"
+    }
+  ],
+  "scope": "Only the relevant provider ID, protocol and loopback URL were extracted. Credentials and other provider settings were excluded.",
+  "runningContainerSource": {
+    "registry": {
+      "grok-4.20-fast": "ModeId.FAST / Capability.CHAT",
+      "grok-4.3-fast": "ModeId.FAST / Capability.CHAT"
+    },
+    "requestPath": "router.reasoning_effort -> emit_think -> chat.completions",
+    "actualEffectInThisPath": "emit_think gates reasoning_content output. The model's mode_id remains the fixed FAST selection.",
+    "consolePath": "Separate console model variants can emit an actual upstream reasoning.effort; they are not the two registered fast routes benchmarked here."
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "method": "Author reviewed the anonymous answer packet and grammar/translation details, then audited the separate model judge's deductions. These are transparent rubric interpretations, not independent human ratings. Raw judge scores remain unchanged in judge-scores.json.",
+  "rubricClarificationsBeforeScoring": [
+    "The source prompt allows translating heading text while preserving Markdown emphasis.",
+    "The basic has-gone-to task does not require an explicit distinction between travel in progress and arrival. A normal contextual interpretation is accepted."
+  ],
+  "overrides": [
+    {
+      "id": "A532d3a95",
+      "criteria": [1, 1, 1, 0.5, 1],
+      "issues": ["more than four people 是超過四人；四人以上通常包含四人，改變了預約門檻。原 judge 漏掉此邊界。"]
+    },
+    {
+      "id": "Ac63aa413",
+      "criteria": [1, 1, 1, 0.5, 1],
+      "issues": ["more than four people 應為超過四人；四人以上包含四人的邊界不準確。"]
+    },
+    {
+      "id": "Ac7389fc8",
+      "criteria": [1, 1, 1, 0.5, 1],
+      "issues": ["more than four people 應為超過四人；四人以上包含四人的邊界不準確。"]
+    },
+    {
+      "id": "Ac87a6c79",
+      "criteria": [1, 1, 1, 0.5, 1],
+      "issues": ["more than four people 應為超過四人；四人以上包含四人的邊界不準確。"]
+    },
+    {
+      "id": "A27821a08",
+      "criteria": [0.5, 1, 1, 1, 0.5],
+      "issues": ["已正確解釋 did 提前及主句倒裝，不能僅因未逐字寫出 the committee agreed 再扣分。", "結構欄位把 to publish it 說成賓語補足語不準確，agree 沒有此處所需的受詞。", "未解釋 it 的指代及完整的過去完成被動概念。"]
+    },
+    {
+      "id": "A51f2734b",
+      "criteria": [1, 1, 0.5, 1, 0.5],
+      "issues": ["did 前置與主句倒裝已正確辨認，不要求逐字還原固定字串。", "把 until 從句的 role 稱為倒裝結構，與其正確的主句倒裝解說存在不一致。", "說明先後與 it 指代，但未清楚說明被動語態。"]
+    },
+    {
+      "id": "A47a4fdc3",
+      "criteria": [1, 1, 1, 1, 0.5],
+      "issues": ["did 前置、主句部分倒裝已等價表達，不應因未逐字寫正常語序扣分。", "未解釋 it 指代報告。"]
+    },
+    {
+      "id": "A5357d449",
+      "criteria": [1, 1, 1, 1, 0.5],
+      "issues": ["主句使用助動詞 did 提前已正確辨認，不要求逐字寫正常語序。", "缺少 it 指代與完整時態／語態說明。"]
+    },
+    {
+      "id": "Ac60de95f",
+      "criteria": [1, 1, 1, 1, 1],
+      "issues": [],
+      "reason": "去過的經驗、已離開目的地，配合 Emma 現在在家的說明，已滿足本題；不要求固定使用已返回三字。"
+    },
+    {
+      "id": "Aa5cf1e42",
+      "criteria": [1, 1, 1, 1, 1],
+      "issues": [],
+      "reason": "本題是一般教學對比；在巴黎是正常的語境解讀，題目沒有要求辨別途中／已抵達，不以此細節扣分。"
+    }
+  ],
+  "sharedObservationsOutsideNumericalRubric": [
+    "六個基本助手答案都把 brother 寫成哥哥；原文沒有說明長幼。這是各檔共有的細微翻譯假設，不能算成思考強度的改善。",
+    "句法原始 phrase_alignment 已另外核對：關閉檔兩次及低檔一次把現在同時放進 she would be attending 和 now 的對齊，存在重複；高檔兩次沒有此問題。",
+    "評分是這八題的診斷量尺，不代表模型的普遍正確率。"
+  ]
+}

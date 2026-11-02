@@ -1,0 +1,73 @@
+{
+  "reviewComplete": true,
+  "method": "All primary deductions with nonempty answers were checked against original outputs; empty outputs were checked as zero-score responses. The two one-point cross-judge disagreements and representative full-mark answers were also reviewed. This is model review plus targeted author audit, not a human panel or official benchmark.",
+  "overrides": [
+    {
+      "id": "Be262d166-9",
+      "criteria": [1, 1, 1, 0.5, 1],
+      "issues": ["more than four people譯成四人以上，數量邊界不準確。"],
+      "reason": "town council可更精確譯為鎮議會，但委員會不必然改變此處審查主體，且同類表述在其他答案獲接受。以一致標準保留實質的四人門檻扣分，不單獨再扣術語半分。"
+    },
+    {
+      "id": "B9bc9ec0b-3",
+      "criteria": [1, 1, 1, 0.5, 0.5],
+      "issues": ["已辨認主句部分倒裝，但未具體解釋did前移或正常語序，按其他同類答案給半分。", "未說明it指代最終報告。"],
+      "reason": "主句部分倒裝獲部分認定的情況不應在此題項得零分，而在等價答案得半分。"
+    },
+    {
+      "id": "B4be9d2cb-b",
+      "criteria": [1, 1, 1, 1, 0.5],
+      "issues": ["沒有完整說明過去條件加現在結果的混合條件句及would be attending的進行含義。"],
+      "reason": "if + had not + past participle已給出與原句相符的還原規則，不要求逐字重寫包含Maya的整句。"
+    },
+    {
+      "id": "B30bcee86-4",
+      "criteria": [1, 1, 0, 0, 0],
+      "issues": ["誤判Not until的時間從句為條件結構並將倒裝歸入前置部分。", "沒有解釋did的主句倒裝及過去完成被動、it的指代。"],
+      "reason": "中文解說中的少量英文語法術語不另作結構完整性扣分；實質的從句類型與倒裝分析錯誤已在相應題項扣分，避免額外重複處罰標籤語言。"
+    },
+    {
+      "id": "Bc9b14597-0",
+      "criteria": [1, 1, 0.5, 0, 0],
+      "issues": ["將倒裝歸於前置從句，未清楚說明Not until觸發主句部分倒裝。", "虛擬完成時態的說法錯誤，缺少正確時態語態及it指代說明。"],
+      "reason": "接受少量英文術語配中文說明，不以此另外降低JSON／結構完整性得分；文法錯誤照原題項扣分。"
+    },
+    {
+      "id": "Bd9843076-a",
+      "criteria": [1, 1, 0, 0, 0],
+      "issues": ["把時間結構當成條件，沒有正確解釋主句倒裝。", "缺少did還原、過去完成被動及it的指代。"],
+      "reason": "英文術語標籤配中文說明不額外扣結構完整性，實質語法錯誤仍保留。"
+    },
+    {
+      "id": "Bc8a289f9-8",
+      "criteria": [1, 1, 1, 1, 1],
+      "issues": [],
+      "reason": "以程式計得310個中文漢字，未超過題目350個中文字；原judge把Markdown、數字及英文等總字元混入，唯一扣分理由不成立。"
+    },
+    {
+      "id": "B0201eb5a-3",
+      "criteria": [0.5, 1, 1, 1, 0],
+      "issues": ["未給出相對增幅20%。", "把本樣本確實增加12人的描述也說成單位混淆，且沒有清楚區分樣本觀察與對所有學生的必然保證。"],
+      "reason": "程式計得318個中文漢字，移除錯誤的超過350中文字理由。原分數仍由內容錯誤及未清楚更正必定保證支持，不以篇幅再扣分。"
+    },
+    {
+      "id": "B4186d634-5",
+      "criteria": [1, 1, 1, 1, 1],
+      "issues": [],
+      "reason": "使用者要求各組的百分点變化、相對增幅及差值，答案全部正確，不必再次逐字重述初末通過率。接受以等價數學變化表達，符合簡潔的三條說明要求。"
+    },
+    {
+      "id": "Bcd9e13da-d",
+      "criteria": [1, 1, 1, 1, 1],
+      "issues": [],
+      "reason": "兩組12.5與5個百分點、25%與8.33%相對增幅及7.5個百分點差值均正確；原題未強制重述50%到62.5%等初末數字，不因等價簡寫扣分。"
+    }
+  ],
+  "auditNotes": [
+    "先讀前104份已評答案中的39份非空扣分，再讀後續56份非空扣分及兩個評審的一分分歧。",
+    "確認四人門檻、百分比與百分点、年齡及工作日條件、非法JSON、語法誤分類、例句誤義與多輪數學約束。",
+    "B8ca78cd9-f與B75336454-8的兩個評審相差一分。覆核後保留主評對部分正確解說的部分分數，兩者均未完整講清混合條件句，並沒有因採較高分而視作正確答案。",
+    "英文技術標籤與中文解說混用採一致標準；整段釋義未翻成目標中文、實質語法及數字錯誤仍可扣分。",
+    "小幅評分差不能轉換為普遍準確率，HAPI空正文與格式失敗反映本次渠道狀態，不用來推斷官方Grok模型本體能力。"
+  ]
+}

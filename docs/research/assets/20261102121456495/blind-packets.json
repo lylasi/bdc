@@ -1,0 +1,345 @@
+[
+  {
+    "caseId": "word-bank",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the English word \"bank\".\nReturn only strict JSON with this schema:\n{\"phonetic\":\"IPA\",\"pos\":\"part of speech\",\"meaning\":\"the most common Chinese meaning\"}\nThe \"phonetic\" field feeds this app's sound chart, which has one playable recording per symbol, so use the notation of that chart and no other: Write IPA only in this app's notation: /e/ (not /ɛ/), /r/ (not /ɹ/), /ɡ/ (not g), /iː/ (not i), /uː/ (not u), /ɑː/ (not ɑ), /ɔː/ (not ɔ), /ɜː/ or /ɜːr/ (not ɜ or ɝ), /ə/ or /ər/ (not ɚ), /tʃ/ and /dʒ/ (not ligatures). Stress marks ˈ ˌ and syllable dots are allowed.\nDo not add Markdown or any text outside the JSON object."
+      }
+    ],
+    "rubric": [
+      "1: JSON 與必需欄位完整",
+      "1: 常用義為銀行，可另列河岸",
+      "1: 包含名詞詞性",
+      "1: 音標包含正確的 bæŋk",
+      "1: 簡潔、不添加虛構來源或無關內容"
+    ],
+    "answers": [
+      {
+        "id": "A17c296a0",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"noun\",\"meaning\":\"银行\"}"
+      },
+      {
+        "id": "A24f284d8",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"noun\",\"meaning\":\"银行\"}"
+      },
+      {
+        "id": "A7c790d3a",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"noun\",\"meaning\":\"银行\"}"
+      },
+      {
+        "id": "A9f936aca",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"noun\",\"meaning\":\"银行\"}"
+      },
+      {
+        "id": "Ac79126ea",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"noun\",\"meaning\":\"银行\"}"
+      },
+      {
+        "id": "Aec5c0d2a",
+        "answer": "{\"phonetic\":\"/bæŋk/\",\"pos\":\"noun\",\"meaning\":\"银行\"}"
+      }
+    ]
+  },
+  {
+    "caseId": "word-sanction",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English word in its sentence.\nReturn only strict JSON:\n{\"word\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"pos\":\"part of speech\",\"meaning\":\"Chinese meaning in this sentence\",\"role\":\"brief grammatical role\"}}\n\nTarget word: \"sanction\"\nSentence: \"The board refused to sanction the project because the safety review was incomplete.\""
+      }
+    ],
+    "rubric": [
+      "1: JSON 與必需欄位完整",
+      "2: 句中 sanction 是批准／認可，不是制裁",
+      "1: 動詞詞性及音標合理",
+      "1: 指出 to sanction 的不定式／refused 的補足關係，沒有誤判主被動"
+    ],
+    "answers": [
+      {
+        "id": "A2fab4971",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准；授权；认可\",\"role\":\"动词不定式，作 refused 的宾语，并带宾语 the project\"}}"
+      },
+      {
+        "id": "A47e974c4",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准；准许（该项目）\",\"role\":\"to-不定式中的及物动词，作 refused 的宾语，并带宾语 the project\"}}"
+      },
+      {
+        "id": "A6e98262a",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准；准许\",\"role\":\"不定式动词，作 refused to 的补足语，并带宾语 the project\"}}"
+      },
+      {
+        "id": "A783c5455",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准；认可\",\"role\":\"谓语动词（不定式结构中作动词，后接宾语 the project）\"}}"
+      },
+      {
+        "id": "Ab5e521b1",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准；核准\",\"role\":\"不定式短语中的谓语动词，作 refused 的宾语补足语\"}}"
+      },
+      {
+        "id": "Ab76bfa59",
+        "answer": "{\"word\":\"sanction\",\"sentence\":\"The board refused to sanction the project because the safety review was incomplete.\",\"analysis\":{\"phonetic\":\"/ˈsæŋkʃən/\",\"pos\":\"verb\",\"meaning\":\"批准；认可\",\"role\":\"不定式动词（作 refused 的宾语）\"}}"
+      }
+    ]
+  },
+  {
+    "caseId": "translation-library",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nTranslate the following English paragraph into the target Chinese language.\nReturn only strict JSON: {\"chinese_translation\":\"...\"}\nDo not return word_alignment or detailed_analysis.\nKeep English personal names unchanged.\nIf the paragraph contains Markdown tables, lists, headings, images or links, preserve all Markdown markers and line structure exactly. Do not translate or rewrite image syntax or image alt text.\nPreserve inline emphasis markers exactly as they appear in the source: **bold** stays **bold**, *italic* stays *italic*, `code` stays `code`. Never translate, drop or move those markers, and never add new ones.\n\nParagraph:\n\"\"\"\nWhen the town library extended its opening hours last autumn, staff expected most visitors to arrive after work. Instead, the busiest period was early morning, when students came to study before school. The library has since added six desks near the windows, but it has kept the quiet reading room unchanged. Visitors do not need to book a seat, although groups of more than four people must reserve a meeting room. The new timetable will remain in place until March, when the council will review attendance figures.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: 嚴格 JSON 及非空譯文",
+      "1: 保留預期下班後但實際早上最忙的轉折",
+      "1: 保留加六張桌、安靜閱覽室不變",
+      "1: 個人不需預約，超過四人的團體須預約會議室",
+      "1: 保留截至三月及議會檢視入館數字，無捏造"
+    ],
+    "answers": [
+      {
+        "id": "A532d3a95",
+        "answer": "{\"chinese_translation\":\"去年秋天镇图书馆延长开放时间时，工作人员原本以为大多数访客会在下班后到来。然而，最繁忙的时段却是清晨，学生们会在上学前来这里学习。此后，图书馆在窗边增设了六张书桌，但安静的阅览室保持原样。访客无需预订座位，不过四人以上的团体必须预订会议室。新的开放时间表将一直执行到三月，届时镇议会将审查到馆人数数据。\"}"
+      },
+      {
+        "id": "A57d5c823",
+        "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员原本预计大多数访客会在下班后到来。然而，最繁忙的时段却是清晨，学生们会在上学前来这里学习。此后，图书馆在窗边增设了六张书桌，但安静的阅览室保持原样未变。访客无需预约座位，不过超过四人的团体必须预订会议室。新的开放时间表将一直执行到三月，届时市议会将审查到馆人数数据。\"}"
+      },
+      {
+        "id": "Aa1789043",
+        "answer": "{\"chinese_translation\":\"去年秋天镇图书馆延长开放时间时，工作人员原以为大多数访客会在下班后到来。但最繁忙的时段却是清晨，学生们上学前来这里学习。此后，图书馆在窗边增加了六张书桌，但安静阅览室保持原样。访客无需预订座位，不过超过四人的团体必须预订会议室。新的开放时间表将一直执行到三月，届时镇议会将审查到馆人数数据。\"}"
+      },
+      {
+        "id": "Ac63aa413",
+        "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员原本预计大多数访客会在下班后到来。但最繁忙的时段却是清晨，学生们会在上学前来这里学习。此后，图书馆在窗边增设了六张书桌，但安静阅览室保持不变。访客无需预订座位，不过四人以上的团体必须预订会议室。新的时间表将一直执行到三月，届时议会将审查到访人数数据。\"}"
+      },
+      {
+        "id": "Ac7389fc8",
+        "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长了开放时间，工作人员原本预计大多数访客会在下班后到来。然而，最繁忙的时段却是清晨，学生们会赶在上课前来到这里学习。此后，图书馆在窗边增加了六张书桌，但安静的阅览室仍保持原样。访客无需预订座位，不过四人以上的团体必须预订会议室。新的开放时间表将一直执行到三月，届时镇议会将审议到馆人数数据。\"}"
+      },
+      {
+        "id": "Ac87a6c79",
+        "answer": "{\"chinese_translation\":\"去年秋天，镇图书馆延长开放时间时，工作人员原本预计大多数访客会在下班后到来。然而，最繁忙的时段却是清晨，学生们会在上学前来这里学习。此后，图书馆在窗边增加了六张书桌，但安静阅览室保持原样未作改动。访客无需预约座位，不过四人以上的团体必须预订会议室。新的开放时间表将一直执行到三月，届时议会将审查到馆人数数据。\"}"
+      }
+    ]
+  },
+  {
+    "caseId": "translation-study",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nTranslate the following English paragraph into the target Chinese language.\nReturn only strict JSON: {\"chinese_translation\":\"...\"}\nDo not return word_alignment or detailed_analysis.\nKeep English personal names unchanged.\nIf the paragraph contains Markdown tables, lists, headings, images or links, preserve all Markdown markers and line structure exactly. Do not translate or rewrite image syntax or image alt text.\nPreserve inline emphasis markers exactly as they appear in the source: **bold** stays **bold**, *italic* stays *italic*, `code` stays `code`. Never translate, drop or move those markers, and never add new ones.\n\nParagraph:\n\"\"\"\n**River Study**\n\nNot all of the 120 volunteers completed the course. Of the 80 who did, 60 reported better sleep, compared with 30 of the 60 people in a separate comparison group. The researchers described the difference as promising but did not claim that the course caused it: participants had chosen their own group, and sleep was measured only by self-report. A reduction of 10 percentage points should not be confused with a reduction of 10 percent. The team will publish its methods next month, provided that the independent review has been completed.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: 嚴格 JSON、保留標題的 **粗體** 標記（標題文字可翻譯）",
+      "1: 並非全部120人完成；80完成者60改善；另一組60人30改善",
+      "1: 沒有聲稱因果，保留自選分組與自我報告限制",
+      "1: 區分10個百分點與10%",
+      "1: 下月公布以完成獨立審查為條件，而非確定已完成"
+    ],
+    "answers": [
+      {
+        "id": "A067d76ec",
+        "answer": "{\"chinese_translation\":\"**River Study**\\n\\n120 名志愿者并非都完成了课程。在完成课程的 80 人中，有 60 人报告睡眠有所改善；相比之下，另一个对照组的 60 人中有 30 人报告睡眠改善。研究人员称这一差异很有前景，但并未声称是课程导致了这一差异：参与者自行选择了分组，而且睡眠仅通过自我报告来测量。不应将下降 10 个百分点与下降 10% 混为一谈。只要独立评审已经完成，该团队将于下个月公布其研究方法。\"}"
+      },
+      {
+        "id": "A397490ec",
+        "answer": "{\"chinese_translation\":\"**河流研究**\\n\\n120 名志愿者并非全都完成了课程。在完成课程的 80 人中，有 60 人报告睡眠更好；相比之下，另一个对照组的 60 人中有 30 人报告睡眠更好。研究人员称这一差异有希望，但并未声称课程造成了这一差异：参与者自行选择了组别，而且睡眠仅通过自我报告来衡量。10 个百分点的下降不应与 10% 的下降相混淆。该团队将于下个月公布其方法，前提是独立评审已经完成。\"}"
+      },
+      {
+        "id": "A528da7c2",
+        "answer": "{\"chinese_translation\":\"**河流研究**\\n\\n并非所有120名志愿者都完成了课程。完成课程的80人中，有60人报告睡眠更好；而在另一个对照组的60人中，报告睡眠更好的有30人。研究人员称这一差异令人鼓舞，但并未声称课程导致了该差异：参与者自行选择了分组，而且睡眠仅通过自我报告测量。不应将降低10个百分点与降低10%混为一谈。该团队将于下个月公布其方法，前提是独立评审已经完成。\"}"
+      },
+      {
+        "id": "A5527f50d",
+        "answer": "{\"chinese_translation\":\"**River Study**\\n\\n120 名志愿者并非全都完成了课程。在完成课程的 80 人中，有 60 人报告睡眠有所改善；而在另一个对照组中，60 人里有 30 人报告睡眠改善。研究人员称这一差异“有希望”，但并未声称课程导致了这一差异：参与者是自己选择分组的，而且睡眠仅通过自我报告来测量。不应将下降 10 个百分点与下降 10% 混为一谈。只要独立评审已完成，该团队将于下个月公布其方法。\"}"
+      },
+      {
+        "id": "Aab21d26a",
+        "answer": "{\"chinese_translation\":\"**河流研究**\\n\\n120名志愿者并非全部完成了课程。完成课程的80人中有60人报告睡眠改善，而另一个对照组的60人中有30人报告睡眠改善。研究人员称这一差异值得期待，但并未声称课程导致了这一差异：参与者自行选择了所在组，而且睡眠仅通过自我报告来测量。降低10个百分点不应与降低10%混为一谈。该团队将于下个月公布其研究方法，前提是独立评审已经完成。\"}"
+      },
+      {
+        "id": "Ab0c5a80d",
+        "answer": "{\"chinese_translation\":\"**河流研究**\\n\\n120名志愿者并非全部完成了课程。完成课程的80人中，有60人报告睡眠质量更好；相比之下，另一个对照组的60人中有30人报告睡眠质量更好。研究人员称这一差异值得期待，但并未声称课程导致了这一差异：参与者自行选择了所属组别，而且睡眠仅通过自我报告来测量。10个百分点的下降不应与10%的下降相混淆。该团队将在下个月公布其研究方法，前提是独立评审已经完成。\"}"
+      }
+    ]
+  },
+  {
+    "caseId": "syntax-inversion",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English sentence and return only strict JSON:\n{\n  \"sentence\":\"original sentence\",\n  \"translation\":\"target Chinese translation\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\nReturn 1-3 brief key points. If structured analysis is unreliable, return an empty array.\n\nContext for understanding only:\n\"\"\"\nThe committee was responsible for deciding when the report could be released.\n\"\"\"\nTarget sentence:\n\"\"\"\nNot until the final report had been checked twice did the committee agree to publish it.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: JSON、譯文、結構陣列完整",
+      "1: 直到報告被檢查兩次後才同意公布",
+      "1: 正確辨認 Not until 置首引發主句部分倒裝",
+      "1: did 的還原為 committee agreed，非 until 從句倒裝",
+      "1: had been checked 是先於同意的過去完成被動，it 指報告"
+    ],
+    "answers": [
+      {
+        "id": "A27821a08",
+        "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告被检查了两次，委员会才同意发布它。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Not until\", \"zh\": \"直到……才\"},\n    {\"en\": \"the final report\", \"zh\": \"最终报告\"},\n    {\"en\": \"had been checked twice\", \"zh\": \"被检查了两次\"},\n    {\"en\": \"did the committee agree\", \"zh\": \"委员会才同意\"},\n    {\"en\": \"to publish it\", \"zh\": \"发布它\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Not until the final report had been checked twice\", \"role\": \"时间状语从句（含强调倒装）\", \"note\": \"Not until 置于句首引起主句部分倒装\"},\n    {\"text\": \"did the committee agree\", \"role\": \"主句谓语（倒装结构）\", \"note\": \"助动词 did 提前，体现部分倒装\"},\n    {\"text\": \"to publish it\", \"role\": \"不定式宾语补足语\", \"note\": \"agree to do 表示同意做某事\"}\n  ],\n  \"key_points\": [\n    \"Not until 位于句首时，主句需用部分倒装（did the committee agree）。\",\n    \"until 引导的时间状语从句用过去完成时（had been checked）表示先于主句动作完成。\",\n    \"整体含义强调“检查两次”是委员会同意发布的前提条件。\"\n  ]\n}"
+      },
+      {
+        "id": "A35e8181d",
+        "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告经过两次核查，委员会才同意公布它。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"Not until\",\n      \"zh\": \"直到……才\"\n    },\n    {\n      \"en\": \"the final report\",\n      \"zh\": \"最终报告\"\n    },\n    {\n      \"en\": \"had been checked twice\",\n      \"zh\": \"已经被核查两次\"\n    },\n    {\n      \"en\": \"did the committee agree\",\n      \"zh\": \"委员会才同意\"\n    },\n    {\n      \"en\": \"to publish it\",\n      \"zh\": \"公布它\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"Not until the final report had been checked twice\",\n      \"role\": \"否定时间状语从句\",\n      \"note\": \"置于句首，表示“直到最终报告被核查两次”。\"\n    },\n    {\n      \"text\": \"did the committee agree\",\n      \"role\": \"主句（部分倒装）\",\n      \"note\": \"助动词 did 前置；正常语序为 the committee agreed。\"\n    },\n    {\n      \"text\": \"to publish it\",\n      \"role\": \"动词不定式短语\",\n      \"note\": \"作 agree 的宾语；it 指代 the final report。\"\n    }\n  ],\n  \"key_points\": [\n    \"Not until 位于句首时，主句使用部分倒装：did the committee agree。\",\n    \"had been checked twice 是过去完成时的被动语态，表示核查发生在同意公布之前。\",\n    \"it 指代 the final report，publish 可译为“公布”或“发表”。\"\n  ]\n}"
+      },
+      {
+        "id": "A47a4fdc3",
+        "answer": "{\"sentence\":\"Not until the final report had been checked twice did the committee agree to publish it.\",\"translation\":\"直到最终报告被检查了两次，委员会才同意发布它。\",\"phrase_alignment\":[{\"en\":\"Not until\",\"zh\":\"直到……才\"},{\"en\":\"the final report\",\"zh\":\"最终报告\"},{\"en\":\"had been checked twice\",\"zh\":\"已经被检查了两次\"},{\"en\":\"did the committee agree\",\"zh\":\"委员会才同意\"},{\"en\":\"to publish it\",\"zh\":\"发布它\"}],\"chunks\":[{\"text\":\"Not until\",\"role\":\"否定状语引导\",\"note\":\"置于句首，主句需要使用部分倒装\"},{\"text\":\"the final report had been checked twice\",\"role\":\"时间状语从句\",\"note\":\"过去完成时被动语态，表示在委员会同意之前报告已被检查两次\"},{\"text\":\"did the committee agree\",\"role\":\"主句（倒装）\",\"note\":\"助动词 did 提前，构成部分倒装\"},{\"text\":\"to publish it\",\"role\":\"不定式短语\",\"note\":\"说明委员会同意做的事情\"}],\"key_points\":[\"“Not until”置于句首时，主句要使用部分倒装。\",\"该句强调委员会直到最终报告被检查两次后才同意发布。\",\"“had been checked”是过去完成时被动语态，表示检查发生在同意之前。\"]}"
+      },
+      {
+        "id": "A49e6d04c",
+        "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告被检查了两次，委员会才同意发布它。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Not until\", \"zh\": \"直到……才\"},\n    {\"en\": \"the final report\", \"zh\": \"最终报告\"},\n    {\"en\": \"had been checked twice\", \"zh\": \"被检查了两次\"},\n    {\"en\": \"did the committee agree\", \"zh\": \"委员会才同意\"},\n    {\"en\": \"to publish it\", \"zh\": \"发布它\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Not until the final report had been checked twice\", \"role\": \"时间状语从句（否定倒装触发部分）\", \"note\": \"Not until 置于句首，表示“直到……才”。\"},\n    {\"text\": \"did the committee agree\", \"role\": \"主句（部分倒装）\", \"note\": \"助动词 did 提前，agree 用原形。\"},\n    {\"text\": \"to publish it\", \"role\": \"agree 的不定式宾语\", \"note\": \"it 指代 the final report。\"}\n  ],\n  \"key_points\": [\n    \"Not until 位于句首，主句使用部分倒装：did the committee agree。\",\n    \"语义是：最终报告被检查两次后，委员会才同意发布。\",\n    \"it 指代前面的 the final report。\"\n  ]\n}"
+      },
+      {
+        "id": "A51f2734b",
+        "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告被检查了两次，委员会才同意发布它。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Not until\", \"zh\": \"直到……才\"},\n    {\"en\": \"the final report\", \"zh\": \"最终报告\"},\n    {\"en\": \"had been checked twice\", \"zh\": \"被检查了两次\"},\n    {\"en\": \"did the committee agree\", \"zh\": \"委员会才同意\"},\n    {\"en\": \"to publish it\", \"zh\": \"发布它\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Not until the final report had been checked twice\", \"role\": \"时间状语从句（倒装结构）\", \"note\": \"Not until 置于句首引起主句部分倒装；从句用过去完成时表示先于主句动作发生。\"},\n    {\"text\": \"did the committee agree\", \"role\": \"主句（倒装）\", \"note\": \"助动词 did 提前构成部分倒装，agree 为谓语动词。\"},\n    {\"text\": \"to publish it\", \"role\": \"动词不定式短语作宾语\", \"note\": \"it 指代 the final report。\"}\n  ],\n  \"key_points\": [\n    \"Not until 置于句首时，主句必须使用部分倒装（did the committee agree）。\",\n    \"从句使用过去完成时（had been checked）表示该动作先于主句的同意发生。\",\n    \"整体含义强调“检查两次”是“同意发布”的必要前提条件。\"\n  ]\n}"
+      },
+      {
+        "id": "A5357d449",
+        "answer": "{\n  \"sentence\": \"Not until the final report had been checked twice did the committee agree to publish it.\",\n  \"translation\": \"直到最终报告被检查了两遍，委员会才同意公布它。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Not until\", \"zh\": \"直到……才\"},\n    {\"en\": \"the final report\", \"zh\": \"最终报告\"},\n    {\"en\": \"had been checked twice\", \"zh\": \"被检查了两遍\"},\n    {\"en\": \"did the committee agree\", \"zh\": \"委员会才同意\"},\n    {\"en\": \"to publish it\", \"zh\": \"公布它\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Not until the final report had been checked twice\", \"role\": \"时间状语从句（倒装触发部分）\", \"note\": \"Not until 置于句首，表示“直到……才”。\"},\n    {\"text\": \"did the committee agree\", \"role\": \"主句（部分倒装）\", \"note\": \"因 Not until 置于句首，主句使用助动词 did 提前的部分倒装。\"},\n    {\"text\": \"to publish it\", \"role\": \"不定式补足语\", \"note\": \"agree to do 表示“同意做某事”。\"}\n  ],\n  \"key_points\": [\n    \"Not until 置于句首时，主句通常使用部分倒装。\",\n    \"had been checked twice 表示“被检查两遍”发生在 agree 之前。\",\n    \"中文常用“直到……才……”对应此句的强调与时间关系。\"\n  ]\n}"
+      }
+    ]
+  },
+  {
+    "caseId": "syntax-mixed-conditional",
+    "originalMessages": [
+      {
+        "role": "user",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English sentence and return only strict JSON:\n{\n  \"sentence\":\"original sentence\",\n  \"translation\":\"target Chinese translation\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\nReturn 1-3 brief key points. If structured analysis is unreliable, return an empty array.\n\nContext for understanding only:\n\"\"\"\nMaya missed the only train that could get her to the interview on time.\n\"\"\"\nTarget sentence:\n\"\"\"\nHad Maya not missed the train, she would be attending the interview now.\n\"\"\""
+      }
+    ],
+    "rubric": [
+      "1: JSON、譯文、結構陣列完整",
+      "1: 還原 If Maya had not missed the train",
+      "1: 過去反事實：實際錯過火車",
+      "1: 現在結果：現在未能出席面試，不是僅過去事件",
+      "1: 正確稱為過去條件＋現在結果的混合條件句，解釋 would be attending"
+    ],
+    "answers": [
+      {
+        "id": "A8f505633",
+        "answer": "{\n  \"sentence\": \"Had Maya not missed the train, she would be attending the interview now.\",\n  \"translation\": \"如果玛雅没有错过那班火车，她现在就会正在参加面试。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"Had Maya not missed\",\n      \"zh\": \"如果玛雅没有错过\"\n    },\n    {\n      \"en\": \"the train\",\n      \"zh\": \"那班火车\"\n    },\n    {\n      \"en\": \"she\",\n      \"zh\": \"她\"\n    },\n    {\n      \"en\": \"would be attending\",\n      \"zh\": \"就会正在参加\"\n    },\n    {\n      \"en\": \"the interview\",\n      \"zh\": \"面试\"\n    },\n    {\n      \"en\": \"now\",\n      \"zh\": \"现在\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"Had Maya not missed the train\",\n      \"role\": \"条件状语从句\",\n      \"note\": \"倒装虚拟条件句，相当于 If Maya had not missed the train，表示与过去事实相反。\"\n    },\n    {\n      \"text\": \"she would be attending the interview now\",\n      \"role\": \"主句\",\n      \"note\": \"would be attending 表示与现在事实相反、现在本应正在进行的动作，now 明确指向现在。\"\n    }\n  ],\n  \"key_points\": [\n    \"Had Maya not missed 是倒装虚拟条件句，相当于 If Maya had not missed，表示过去没有发生的事实。\",\n    \"主句 would be attending ... now 表示现在本应正在进行的动作，构成混合虚拟条件句。\",\n    \"翻译时要体现“过去错过火车”导致“现在不能参加面试”的反事实关系。\"\n  ]\n}"
+      },
+      {
+        "id": "A913f801b",
+        "answer": "{\"sentence\":\"Had Maya not missed the train, she would be attending the interview now.\",\"translation\":\"如果玛雅没有错过那趟火车，她现在就会在参加面试了。\",\"phrase_alignment\":[{\"en\":\"Had Maya not missed the train\",\"zh\":\"如果玛雅没有错过那趟火车\"},{\"en\":\"she\",\"zh\":\"她\"},{\"en\":\"would be attending\",\"zh\":\"就会在参加\"},{\"en\":\"the interview\",\"zh\":\"面试\"},{\"en\":\"now\",\"zh\":\"现在\"}],\"chunks\":[{\"text\":\"Had Maya not missed the train\",\"role\":\"条件从句\",\"note\":\"倒装虚拟条件句，相当于 If Maya had not missed the train；表示与过去事实相反。\"},{\"text\":\"she\",\"role\":\"主语\",\"note\":\"指代 Maya。\"},{\"text\":\"would be attending\",\"role\":\"谓语（虚拟结果）\",\"note\":\"would + be + 现在分词，表示与现在事实相反且正在进行的预期结果。\"},{\"text\":\"the interview\",\"role\":\"宾语\",\"note\":\"attend 的宾语，表示参加面试。\"},{\"text\":\"now\",\"role\":\"时间状语\",\"note\":\"强调结果发生在现在。\"}],\"key_points\":[\"这是混合虚拟条件句：过去未实现的假设导致现在正在发生的结果。\",\"Had Maya not missed the train 是倒装形式，等于 If Maya had not missed the train。\",\"would be attending 表示“现在就会正在参加或出席”。\"]}"
+      },
+      {
+        "id": "Ab40e136f",
+        "answer": "{\n  \"sentence\": \"Had Maya not missed the train, she would be attending the interview now.\",\n  \"translation\": \"如果玛雅没有错过那趟火车，她现在就会在参加面试了。\",\n  \"phrase_alignment\": [\n    {\n      \"en\": \"Had Maya not missed the train\",\n      \"zh\": \"如果玛雅没有错过那趟火车\"\n    },\n    {\n      \"en\": \"she\",\n      \"zh\": \"她\"\n    },\n    {\n      \"en\": \"would be attending\",\n      \"zh\": \"就会在参加\"\n    },\n    {\n      \"en\": \"the interview\",\n      \"zh\": \"面试\"\n    },\n    {\n      \"en\": \"now\",\n      \"zh\": \"现在\"\n    }\n  ],\n  \"chunks\": [\n    {\n      \"text\": \"Had Maya not missed the train\",\n      \"role\": \"条件从句（虚拟语气倒装）\",\n      \"note\": \"相当于 If Maya had not missed the train，表示与过去事实相反的条件。\"\n    },\n    {\n      \"text\": \"she would be attending the interview now\",\n      \"role\": \"主句（混合虚拟条件句的结果）\",\n      \"note\": \"would be attending 表示现在本应正在进行的动作，now 明确结果发生在当前。\"\n    }\n  ],\n  \"key_points\": [\n    \"这是混合虚拟条件句：过去未发生的情况导致现在的结果。\",\n    \"Had Maya not... 是 If Maya had not... 的倒装形式，语气较正式。\",\n    \"would be attending 表示“现在本应正在参加”，now 强调当前时间。\"\n  ]\n}"
+      },
+      {
+        "id": "Ae7403e8c",
+        "answer": "{\n  \"sentence\": \"Had Maya not missed the train, she would be attending the interview now.\",\n  \"translation\": \"如果玛雅没有错过那趟火车，她现在就会在参加面试了。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Had Maya not missed\", \"zh\": \"如果玛雅没有错过\"},\n    {\"en\": \"the train\", \"zh\": \"那趟火车\"},\n    {\"en\": \"she would be attending\", \"zh\": \"她现在就会在参加\"},\n    {\"en\": \"the interview\", \"zh\": \"面试\"},\n    {\"en\": \"now\", \"zh\": \"现在\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Had Maya not missed the train\", \"role\": \"条件状语从句（虚拟语气，省略if的倒装）\", \"note\": \"表示与过去事实相反的假设\"},\n    {\"text\": \"she would be attending the interview now\", \"role\": \"主句（虚拟语气）\", \"note\": \"would be doing表示与现在事实相反的结果\"}\n  ],\n  \"key_points\": [\n    \"这是混合虚拟语气：条件从句与过去事实相反（Had not missed），主句与现在事实相反（would be attending now）。\",\n    \"Had Maya not missed 是省略 if 的倒装形式，相当于 If Maya had not missed。\"\n  ]\n}"
+      },
+      {
+        "id": "Ae7e2159d",
+        "answer": "{\n  \"sentence\": \"Had Maya not missed the train, she would be attending the interview now.\",\n  \"translation\": \"如果玛雅没有错过那班火车，她现在就会在参加面试了。\",\n  \"phrase_alignment\": [\n    {\"en\": \"Had Maya not missed\", \"zh\": \"如果玛雅没有错过\"},\n    {\"en\": \"the train\", \"zh\": \"那班火车\"},\n    {\"en\": \"she would be attending\", \"zh\": \"她现在就会在参加\"},\n    {\"en\": \"the interview\", \"zh\": \"面试\"},\n    {\"en\": \"now\", \"zh\": \"现在\"}\n  ],\n  \"chunks\": [\n    {\"text\": \"Had Maya not missed the train\", \"role\": \"条件状语从句（虚拟语气，倒装）\", \"note\": \"相当于 If Maya had not missed the train，表示与过去事实相反的假设。\"},\n    {\"text\": \"she would be attending the interview now\", \"role\": \"主句（虚拟语气）\", \"note\": \"would be attending 表示与现在事实相反的结果，now 强调当前状态。\"}\n  ],\n  \"key_points\": [\n    \"Had Maya not missed 是省略 if 的倒装虚拟条件句，表示对过去的假设。\",\n    \"主句用 would be attending now，表示假设条件下现在正在进行的动作。\"\n  ]\n}"
+      },
+      {
+        "id": "Af349d885",
+        "answer": "{\"sentence\":\"Had Maya not missed the train, she would be attending the interview now.\",\"translation\":\"如果玛雅没有错过那趟火车，她现在就会在参加面试。\",\"phrase_alignment\":[{\"en\":\"Had Maya not missed\",\"zh\":\"如果玛雅没有错过\"},{\"en\":\"the train\",\"zh\":\"那趟火车\"},{\"en\":\"she would be attending\",\"zh\":\"她现在就会在参加\"},{\"en\":\"the interview\",\"zh\":\"面试\"},{\"en\":\"now\",\"zh\":\"现在\"}],\"chunks\":[{\"text\":\"Had Maya not missed the train\",\"role\":\"条件从句（倒装）\",\"note\":\"Had + 主语 + not + 过去分词 = If Maya had not missed...\"},{\"text\":\"she would be attending the interview now\",\"role\":\"主句（现在结果）\",\"note\":\"would be + 现在分词表示现在进行时的虚拟结果\"}],\"key_points\":[\"句子使用倒装虚拟条件：Had Maya not missed = If Maya had not missed。\",\"这是混合虚拟条件句：过去条件造成现在结果。\",\"would be attending 表示现在进行中的虚拟结果。\"]}"
+      }
+    ]
+  },
+  {
+    "caseId": "assistant-basic",
+    "originalMessages": [
+      {
+        "role": "system",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nYou are the English learning assistant in the PEN vocabulary web application.\n\n[Scope]\n- Help the user understand the current article supplied as context and support follow-up questions.\n- Common tasks include translation, key-point extraction, vocabulary and grammar explanations, example sentences, sentence checking, exercises and summaries.\n- Do not invent external article content. If context is insufficient, say what information is needed.\n\n[Response style]\n- Give a directly useful answer first, followed by 2-5 key points when helpful.\n- When translating Markdown, preserve Markdown syntax and line structure. Keep image and link syntax unchanged.\n\n[Learning guidance]\n- Vocabulary: provide IPA when reliable, part of speech, common meanings and short natural examples.\n- Grammar: explain structure, function, common mistakes and memory tips.\n- Sentence checking: give a conclusion, revision and brief reason.\n- Exercises: provide standard answers and hints.\n\nIf no article context is available, ask the user to load an article or specify the relevant passage."
+      },
+      {
+        "role": "user",
+        "content": "文章原文：Emma has been to Paris three times, but she is at home now. Her brother has gone to Paris and will not return until Friday.\n\n请结合原文，用不超过250个中文字解释 has been to 与 has gone to 的区别，说明两个人现在的情况，并各给一个简短英文例句。不要扩展到其他时态。"
+      }
+    ],
+    "rubric": [
+      "1: been to 表示到訪經驗、通常已返回",
+      "1: Emma 現在在家且去過三次",
+      "1: gone to 表示已前往、尚未返回；兄弟週五前未回",
+      "1: 兩個英文例句與解釋吻合",
+      "1: 清晰簡潔、不擴展其他時態，不把 gone to 解釋為已經返回"
+    ],
+    "answers": [
+      {
+        "id": "A357bceb1",
+        "answer": "**核心区别**：has been to 表示“去过（已回来）”，has gone to 表示“去了（还没回来）”。\n\n**两人现状**：Emma 去过巴黎三次，现在在家；她哥哥去了巴黎，周五才回来。\n\n**例句**：\n- She has been to Paris.（她去过巴黎。）\n- He has gone to Paris.（他去巴黎了。）"
+      },
+      {
+        "id": "A3b5264da",
+        "answer": "**has been to** 表示“去过某地”，强调经历，人现在已经回来；**has gone to** 表示“去了某地”，强调人现在不在说话地，还没回来。\n\n结合原文：Emma 去过巴黎三次，但现在在家，说明她已回来；她哥哥去了巴黎，周五前不回来，说明他现在不在家，人在巴黎或在路上。\n\n例句：\n- I have been to Shanghai twice.\n- My sister has gone to the supermarket."
+      },
+      {
+        "id": "Aa5cf1e42",
+        "answer": "**has been to** 表示“曾经去过某地，现在已经回来”；**has gone to** 表示“已经去了某地，现在不在这里，尚未回来”。\n\n原文中，Emma 去过巴黎三次，但**她现在在家**；她哥哥**已经去了巴黎，现在人在巴黎，周五才回来**。\n\n例句：\n- I **have been to** Beijing twice.（我去过北京两次。）\n- My dad **has gone to** Shanghai.（我爸爸去上海了。）"
+      },
+      {
+        "id": "Ac60de95f",
+        "answer": "“has been to”表示“去过某地”，强调经历，人已离开该地，现在不在那里。原文中 Emma 去过巴黎三次，但她现在在家。“has gone to”表示“去了某地”，强调人已出发，现在不在此处（在途中或在目的地）。她哥哥去了巴黎，现在不在家，周五才回来。例句：She has been to Beijing twice. He has gone to the library."
+      },
+      {
+        "id": "Ac6d9ba6d",
+        "answer": "**区别**：`has been to` 强调“去过某地，现在已经回来”，侧重经历；`has gone to` 强调“去了某地，现在不在这里、尚未回来”，侧重当前去向。\n\n**原文情况**：Emma 去过巴黎三次，但现在在家；她哥哥去了巴黎，现在人不在家（在巴黎或途中），周五才回来。\n\n**例句**：\n- I have been to Beijing.\n- My sister has gone to Beijing."
+      },
+      {
+        "id": "Af4be4a7c",
+        "answer": "**核心区别**\n- **has been to**：表示“去过某地（现在已经回来）”，强调经历。\n- **has gone to**：表示“去了某地（现在不在这里，可能还在路上或已到达）”，强调当前不在说话地点。\n\n**两人现在的情况**\n- Emma 去过巴黎三次，但 **她现在在家**（已经回来）。\n- 她哥哥 **去了巴黎**，要到周五才回来，所以 **他目前不在这里**。\n\n**例句**\n- She **has been to** London twice.（她去过伦敦两次，现在已回来。）\n- He **has gone to** the library.（他去图书馆了，现在不在这里。）"
+      }
+    ]
+  },
+  {
+    "caseId": "assistant-critical",
+    "originalMessages": [
+      {
+        "role": "system",
+        "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nYou are the English learning assistant in the PEN vocabulary web application.\n\n[Scope]\n- Help the user understand the current article supplied as context and support follow-up questions.\n- Common tasks include translation, key-point extraction, vocabulary and grammar explanations, example sentences, sentence checking, exercises and summaries.\n- Do not invent external article content. If context is insufficient, say what information is needed.\n\n[Response style]\n- Give a directly useful answer first, followed by 2-5 key points when helpful.\n- When translating Markdown, preserve Markdown syntax and line structure. Keep image and link syntax unchanged.\n\n[Learning guidance]\n- Vocabulary: provide IPA when reliable, part of speech, common meanings and short natural examples.\n- Grammar: explain structure, function, common mistakes and memory tips.\n- Sentence checking: give a conclusion, revision and brief reason.\n- Exercises: provide standard answers and hints.\n\nIf no article context is available, ask the user to load an article or specify the relevant passage."
+      },
+      {
+        "role": "user",
+        "content": "文章原文：Students chose whether to join an optional reading course. Before the course, 60 of the 100 participants passed a comprehension test; afterwards, 72 passed. In a separate comparison group of 100 students, the number passing rose from 70 to 77. The groups were not randomly assigned, and no other differences between them were measured.\n\n有人总结：“课程使通过率提高了12%，因此每100名学生必定会多12人通过；扣除对照组后，课程的因果效果就是5%。”\n\n请用不超过350个中文字核对这句话。区分百分比与百分点，算出两组各自的变化及变化之差，并说明这些数据能否证明因果关系。不要编造研究信息。"
+      }
+    ],
+    "rubric": [
+      "1: 60%→72% 是12個百分點；相對增幅20%",
+      "1: 對照70%→77% 是7個百分點",
+      "1: 變化之差5個百分點，不是直接當作5%相對增幅",
+      "1: 自選分組／非隨機／混雜，不能把差值當已證明因果",
+      "1: 不保證每100人必多12人，不捏造資料，給出準確易懂更正"
+    ],
+    "answers": [
+      {
+        "id": "A1e8c87a0",
+        "answer": "这句话需纠正：\n\n1. **百分比与百分点**：实验组通过率从60%升到72%，是提高**12个百分点**；若说相对增幅，则是12/60=**20%**。称“提高了12%”不准确。\n\n2. **两组变化**：实验组通过人数60→72，增加12人，即**+12个百分点**；对照组70→77，增加7人，即**+7个百分点**。\n\n3. **变化之差**：12−7=**5个百分点**，不是“5%”。且这是两组变化的简单差值。\n\n4. **因果结论**：不能证明因果关系。原文明确两组**非随机分组**，且未测量其他差异；因此只能描述结果差异，不能把5个百分点直接认定为“课程的因果效果”。“每100名学生必定会多12人通过”也错，样本中多12人不能外推为必然。"
+      },
+      {
+        "id": "A32486fef",
+        "answer": "这句话有三处需纠正：\n\n1. **“提高12%”不准确**：选课组通过率从60%升至72%，是上升**12个百分点**，不是12%。\n2. **“每100人必定多12人通过”不成立**：12人只是该样本中的观察差异，不能推成“必定”。\n3. **“因果效果就是5%”不成立**：对照组从70%升至77%，上升**7个百分点**；两组变化之差为**5个百分点**，但不能称为课程的因果效果。\n\n这些数据只能说明：选课组上升12个百分点，对照组上升7个百分点，两组观察变化相差5个百分点。由于分组**非随机**，且未测量其他差异，可能存在选择偏差或混杂因素，**不能证明课程导致通过率上升**。"
+      },
+      {
+        "id": "A4dbc307c",
+        "answer": "这句话需核对三处：\n\n1. **12%应为12个百分点**：课程组通过率从60%升至72%，即提高**12个百分点**；相对增幅是12/60=20%。“每100名必定多12人”不准确，只能说该样本中100人多12人，不能保证每100人必定如此。\n\n2. **对照组变化**：从70%升至77%，提高**7个百分点**。\n\n3. **两组变化之差**：12−7=**5个百分点**，不是“5%的因果效果”。这只是观察到的组间变化差异。\n\n这些数据**不能证明因果关系**：分组非随机，且未测量其他组间差异，可能存在选择偏差和混杂因素。因此不能称课程因果效果为5个百分点。"
+      },
+      {
+        "id": "A4e50bf85",
+        "answer": "这句话需要更正。\n\n1. **百分比与百分点**：实验组通过率从60%升到72%，是**提高12个百分点**（相对提高20%），不是“提高12%”。对照组从70%升到77%，是**提高7个百分点**（相对提高10%）。\n\n2. **“每100名学生必定多12人通过”**：这是把样本比例当成必然结果。72%只是本样本的观测值，不能说“必定”。\n\n3. **两组变化之差**：12−7＝**5个百分点**，不是“5%”。可描述为“扣除对照组后，实验组通过率多提高5个百分点”，但这只是**描述性差异**。\n\n4. **能否证明因果关系**：不能。原文明确说两组**未随机分配**，且**未测量其他差异**，因此存在选择偏差等混杂因素，不能把5个百分点的差异归因于课程。\n\n结论：应改为“实验组通过率提高12个百分点，对照组提高7个百分点，两组变化相差5个百分点；但因未随机分组且未控制其他差异，不能证明课程与通过率提高存在因果关系。”"
+      },
+      {
+        "id": "A614cd786",
+        "answer": "这句话有问题。实验组通过率从60%升到72%，提高的是12个百分点；对照组从70%升到77%，提高7个百分点。两组变化之差为5个百分点，不是“5%”。在有对照的情况下，“多12人通过”只能算实验组内表面增加，不能当作课程保证的效果。又因分组非随机、两组基线不同、未测其他差异，这5个百分点只能描述差异，不能证明因果关系。"
+      },
+      {
+        "id": "Aa70f5a02",
+        "answer": "这句话有三处不准确：\n\n1. **“提高12%”应为“提高12个百分点”**：课程组通过率从60%升至72%，绝对变化是+12个百分点（本次样本中多12人通过）。若说相对增幅，则是12/60=20%。\n\n2. **“每100名学生必定多12人通过”不成立**：本次100人中确实多12人，但不能推广为“必定”。\n\n3. **“因果效果就是5%”不准确**：对照组从70%升至77%，变化+7个百分点；两组变化之差为12−7=**5个百分点**，不是5%。且该5个百分点只是组间变化差异，不能直接称为因果效果。\n\n**能否证明因果？不能。** 因为分组非随机，且未测量两组其他差异，存在选择偏差和混杂因素；数据只能描述两组变化，不能证明课程导致通过率提高。"
+      }
+    ]
+  }
+]

@@ -1,0 +1,111 @@
+{
+  "phase": "screen-hard",
+  "targets": [
+    {
+      "id": "magpie-gpt",
+      "channel": "Magpie",
+      "model": "codex/gpt-6-sol",
+      "label": "GPT 6 Sol"
+    },
+    {
+      "id": "magpie-gemini",
+      "channel": "Magpie",
+      "model": "antigravity/gemini-3.8-flash",
+      "label": "Gemini 3.8 Flash"
+    },
+    {
+      "id": "magpie-claude",
+      "channel": "Magpie",
+      "model": "antigravity/claude-sonnet-5-5",
+      "label": "Claude Sonnet 5.5"
+    },
+    {
+      "id": "magpie-glm",
+      "channel": "Magpie",
+      "model": "workbuddy/glm-5.3-flash",
+      "label": "GLM 5.3 Flash"
+    },
+    {
+      "id": "magpie-minimax",
+      "channel": "Magpie",
+      "model": "workbuddy/minimax-m3.1-flash",
+      "label": "MiniMax M3.1 Flash"
+    }
+  ],
+  "modes": [
+    "none",
+    "high"
+  ],
+  "repeats": 1,
+  "repeatTwoCases": "all",
+  "timeoutMs": 90000,
+  "notes": "Requested modes; none is not assumed to disable reasoning. Sequential, rotated target order and counterbalanced modes. Main: all 12 cases once, then four representative cases again. Credentials and thought text excluded.",
+  "cases": [
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": true,
+      "id": "syntax-ambiguous",
+      "category": "syntax",
+      "sourcePrompt": "article.sentenceAnalysis",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English sentence and return only strict JSON:\n{\n  \"sentence\":\"original sentence\",\n  \"translation\":\"target Chinese translation\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\nReturn 1-3 brief key points. Explain genuine ambiguity when context does not resolve it.\n\nContext for understanding only:\n\"\"\"\nBoth the observer and the man may have had access to a telescope. No further information identifies who was using or carrying it.\n\"\"\"\nTarget sentence:\n\"\"\"\nI saw the man with the telescope.\n\"\"\""
+        }
+      ],
+      "requiredFields": [
+        "sentence",
+        "translation",
+        "phrase_alignment",
+        "chunks",
+        "key_points"
+      ],
+      "rubric": [
+        "1: JSON、譯文及結構陣列完整",
+        "1: 明確承認with the telescope有兩種合理附著／解讀",
+        "1: 修飾saw時可指我用望遠鏡看見男人",
+        "1: 修飾man時可指拿著／帶著望遠鏡的男人",
+        "1: 依現有上下文不能確定唯一解讀，不聲稱必然只有一方使用"
+      ],
+      "promptVersion": "1.0.0",
+      "promptHash": "2a827503b8fa647764e6e642332953c634132d1c66e7f3f750050937097998a5"
+    },
+    {
+      "maxTokens": 8192,
+      "json": false,
+      "responseFormat": false,
+      "id": "assistant-multiturn",
+      "category": "assistant",
+      "sourcePrompt": "assistant.articleTutor",
+      "messages": [
+        {
+          "role": "system",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nYou are the English learning assistant in the PEN vocabulary web application.\n\n[Scope]\n- Help the user understand the current article supplied as context and support follow-up questions.\n- Common tasks include translation, key-point extraction, vocabulary and grammar explanations, example sentences, sentence checking, exercises and summaries.\n- Do not invent external article content. If context is insufficient, say what information is needed.\n\n[Response style]\n- Give a directly useful answer first, followed by 2-5 key points when helpful.\n- When translating Markdown, preserve Markdown syntax and line structure. Keep image and link syntax unchanged.\n\n[Learning guidance]\n- Vocabulary: provide IPA when reliable, part of speech, common meanings and short natural examples.\n- Grammar: explain structure, function, common mistakes and memory tips.\n- Sentence checking: give a conclusion, revision and brief reason.\n- Exercises: provide standard answers and hints.\n\nIf no article context is available, ask the user to load an article or specify the relevant passage."
+        },
+        {
+          "role": "user",
+          "content": "文章原文：At Green School, 80 students chose an optional reading club and another 80 did not join. In the club group, the number passing the same comprehension test rose from 40 to 50. In the comparison group, it rose from 48 to 52. Students were not randomly assigned, and other differences between them were not measured.\n先确认两组人数和通过人数，先不要判断因果。"
+        },
+        {
+          "role": "assistant",
+          "content": "两组各80人。阅读组通过人数40→50，对照组48→52。"
+        },
+        {
+          "role": "user",
+          "content": "现在纠正这个总结：“课程让每100人必定多12.5人通过，净因果收益就是7.5%。”请沿用前面每组80人的数据。先用一句不超过35词的英文概括，再用恰好三条中文说明，每条尽量不超过50字。说明两组通过率各自的百分点变化、相对增幅、变化之差，以及因果推断的限制，不要编造新数据。"
+        }
+      ],
+      "rubric": [
+        "1: 閱讀組50%到62.5%，增加12.5個百分點、相對增幅25%",
+        "1: 對照組60%到65%，增加5個百分點、相對增幅約8.33%，變化之差7.5個百分點",
+        "1: 非隨機、自選或混雜使因果未被證明，不保證每100人必多12.5人",
+        "1: 先一句不超過35詞英文，再恰好三條中文，表達簡潔",
+        "1: 保留兩組各80人的多輪上下文，不改成實際各100人、不捏造樣本或研究結論"
+      ],
+      "promptVersion": "1.0.0",
+      "promptHash": "9643b2fc51a33f22514b2080c05f8cf2427d26a1a26a6302c2e55dbd805830f3"
+    }
+  ],
+  "createdAt": "2026-11-02T05:09:42.387Z"
+}

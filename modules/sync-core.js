@@ -57,6 +57,7 @@ function hasSyncableAISettings(ai) {
     || (isPlainObject(ai.providers) && Object.keys(ai.providers).length)
     || (isPlainObject(ai.models) && Object.keys(ai.models).length)
     || (isPlainObject(ai.tasks) && Object.keys(ai.tasks).length)
+    || (isPlainObject(ai.thinking) && Object.keys(ai.thinking).length)
   );
 }
 
@@ -506,6 +507,41 @@ export async function restoreSnapshotLocally(payload) {
   return result;
 }
 
+// Group-level LWW replaces the whole aiSettings group, which can drop task
+// thinking values that only exist on the losing side. Merge the thinking map
+// explicitly: the winning side stays authoritative for duplicate task keys.
+// When this merge adds keys that only existed on the losing side, the merged
+// updatedAt must move forward as well - otherwise applyAISettingsPayload()
+// sees a timestamp equal to the local winner and skips the write, leaving the
+// local profile without the revived values. The bump only happens when there
+// is something new, so a repeated merge cannot keep refreshing the timestamp.
+function mergeAISettingsThinking(winner, loser) {
+  if (!winner || typeof winner !== 'object') return winner;
+  const winnerSettings = isPlainObject(winner.settings) ? winner.settings : null;
+  const winnerThinking = isPlainObject(winnerSettings?.thinking) ? winnerSettings.thinking : {};
+  const loserThinking = isPlainObject(loser?.settings?.thinking) ? loser.settings.thinking : {};
+  const loserOnlyKeys = Object.keys(loserThinking)
+    .filter((task) => !Object.prototype.hasOwnProperty.call(winnerThinking, task));
+  const mergedThinking = { ...loserThinking, ...winnerThinking };
+  if (!winnerSettings && !Object.keys(mergedThinking).length) return winner;
+  const settings = { ...(winnerSettings || {}) };
+  if (Object.keys(mergedThinking).length) settings.thinking = mergedThinking;
+  else delete settings.thinking;
+  const merged = { ...winner, settings };
+  if (loserOnlyKeys.length) {
+    const previous = String(winner.updatedAt || '');
+    let next = new Date().toISOString();
+    if (previous && next <= previous) {
+      const previousMs = Date.parse(previous);
+      // Keep the "max(original, now)" intent while guaranteeing a strictly
+      // newer timestamp so the merged group is actually applied locally.
+      next = Number.isNaN(previousMs) ? next : new Date(previousMs + 1).toISOString();
+    }
+    merged.updatedAt = next;
+  }
+  return merged;
+}
+
 // Trivial LWW for group-level merge
 export function lwwMerge(localPayload, remotePayload) {
   const out = { ...(remotePayload || {}) };
@@ -561,7 +597,9 @@ export function lwwMerge(localPayload, remotePayload) {
   const laits = String(lai?.updatedAt || '');
   const raits = String(rai?.updatedAt || '');
   if (lai && (!rai || laits > raits)) {
-    out.aiSettings = lai;
+    out.aiSettings = mergeAISettingsThinking(lai, rai);
+  } else if (rai) {
+    out.aiSettings = mergeAISettingsThinking(rai, lai);
   }
 
   // assistant group-level LWW

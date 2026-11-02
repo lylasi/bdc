@@ -10,6 +10,7 @@ import {
     statusToCode,
     trimTrailingSlash
 } from './common.js';
+import { GEMINI_THINKING_BUDGETS } from '../ai-thinking.js';
 
 const VERSION_PATH_RE = /\/(v\d+(?:beta|alpha)?\d*)$/i;
 
@@ -80,6 +81,28 @@ function normalizeModelName(model) {
     return String(model || '').trim().replace(/^models\//, '');
 }
 
+function geminiThinkingFamily(model) {
+    const name = normalizeModelName(model).toLowerCase();
+    if (/^gemini-3(?:[.-]|$)/.test(name)) return 'gemini-3';
+    if (/^gemini-2\.5(?:[.-]|$)/.test(name)) return 'gemini-2.5';
+    return '';
+}
+
+function isGemini25Pro(model) {
+    return /^gemini-2\.5-pro(?:[.-]|$)/.test(normalizeModelName(model).toLowerCase());
+}
+
+/** Numeric thinking budget for Gemini 2.5, or null when the level has none. */
+function gemini25ThinkingBudget(model, thinking) {
+    if (!Object.prototype.hasOwnProperty.call(GEMINI_THINKING_BUDGETS, thinking)) return null;
+    const budget = GEMINI_THINKING_BUDGETS[thinking];
+    // Gemini 2.5 Pro does not accept thinkingBudget=0; 128 is the lowest value
+    // it allows. `none` therefore means "minimum reasoning", not "off".
+    // Flash keeps 0, which really disables thinking.
+    if (budget === 0 && isGemini25Pro(model)) return 128;
+    return budget;
+}
+
 /**
  * Gemini 把思考放在同一個 parts 陣列裡，以 `thought: true` 標記。
  * 拆成 { text, reasoning } 兩個欄位，避免思考片段被當成答案顯示。
@@ -127,11 +150,34 @@ export const geminiNative = {
             + (base.includes('?') ? '&alt=sse' : '?alt=sse');
     },
 
-    buildRequest({ provider, apiKey, model, messages, temperature = 0.5, maxTokens, responseFormat, stream }) {
+    buildRequest({ provider, apiKey, model, messages, temperature = 0.5, maxTokens, responseFormat, stream, thinking = 'auto' }) {
         const converted = toGeminiContents(messages);
         const generationConfig = { temperature };
         if (typeof maxTokens === 'number' && maxTokens > 0) generationConfig.maxOutputTokens = maxTokens;
         if (responseFormat) generationConfig.responseMimeType = 'application/json';
+        if (thinking && thinking !== 'auto') {
+            const family = geminiThinkingFamily(model);
+            if (family === 'gemini-2.5') {
+                const budget = gemini25ThinkingBudget(model, thinking);
+                if (budget !== null) {
+                    generationConfig.thinkingConfig = { thinkingBudget: budget };
+                    // Gemini 2.5 counts thinking tokens inside maxOutputTokens.
+                    // Reserve the budget plus at least 1024 tokens for the
+                    // answer, otherwise a 16384-token budget can consume the
+                    // whole allowance and return no visible text.
+                    const answerReserve = typeof maxTokens === 'number' && maxTokens > 0
+                        ? Math.max(maxTokens, 1024)
+                        : 1024;
+                    generationConfig.maxOutputTokens = budget + answerReserve;
+                }
+            } else if (family === 'gemini-3') {
+                // Gemini 3 only exposes low/high; `none` is sent as the lowest
+                // available level rather than claiming reasoning is disabled.
+                generationConfig.thinkingConfig = {
+                    thinkingLevel: (thinking === 'none' || thinking === 'low') ? 'low' : 'high'
+                };
+            }
+        }
         const body = {
             contents: converted.contents,
             generationConfig
@@ -140,7 +186,10 @@ export const geminiNative = {
         return {
             url: this.generationUrl(provider, model, { stream }),
             headers: this.buildHeaders({ apiKey, authMode: provider.authMode, stream }),
-            body
+            body,
+            // Gemini adds the thinking budget on top of the answer allowance,
+            // so expose the final generationConfig value as the real budget.
+            maxTokens: generationConfig.maxOutputTokens
         };
     },
 

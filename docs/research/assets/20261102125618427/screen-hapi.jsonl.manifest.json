@@ -1,0 +1,95 @@
+{
+  "phase": "screen-hapi",
+  "targets": [
+    {
+      "id": "hapi-grok420",
+      "channel": "HAPI",
+      "model": "grok-4.20-fast",
+      "label": "HAPI Grok 4.20 Fast"
+    },
+    {
+      "id": "hapi-grok43",
+      "channel": "HAPI",
+      "model": "grok-4.3-fast",
+      "label": "HAPI Grok 4.3 Fast"
+    },
+    {
+      "id": "hapi-grokchat",
+      "channel": "HAPI",
+      "model": "grok-chat-fast",
+      "label": "HAPI Grok Chat Fast",
+      "screenOnly": true
+    }
+  ],
+  "modes": [
+    "default",
+    "none",
+    "low",
+    "high"
+  ],
+  "repeats": 1,
+  "repeatTwoCases": "all",
+  "timeoutMs": 90000,
+  "notes": "Requested modes; none is not assumed to disable reasoning. Sequential, rotated target order and counterbalanced modes. Main: all 12 cases once, then four representative cases again. Credentials and thought text excluded.",
+  "cases": [
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": false,
+      "id": "word-bank",
+      "category": "word",
+      "sourcePrompt": "dictionary.wordAnalysis",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the English word \"bank\".\nReturn only strict JSON with this schema:\n{\"phonetic\":\"IPA\",\"pos\":\"part of speech\",\"meaning\":\"the most common Chinese meaning\"}\nThe \"phonetic\" field feeds this app's sound chart, which has one playable recording per symbol, so use the notation of that chart and no other: Write IPA only in this app's notation: /e/ (not /ɛ/), /r/ (not /ɹ/), /ɡ/ (not g), /iː/ (not i), /uː/ (not u), /ɑː/ (not ɑ), /ɔː/ (not ɔ), /ɜː/ or /ɜːr/ (not ɜ or ɝ), /ə/ or /ər/ (not ɚ), /tʃ/ and /dʒ/ (not ligatures). Stress marks ˈ ˌ and syllable dots are allowed.\nDo not add Markdown or any text outside the JSON object."
+        }
+      ],
+      "requiredFields": [
+        "phonetic",
+        "pos",
+        "meaning"
+      ],
+      "rubric": [
+        "1: JSON 與必需欄位完整",
+        "1: 常用義為銀行，可另列河岸",
+        "1: 包含名詞詞性",
+        "1: 音標包含正確的 bæŋk",
+        "1: 簡潔、不添加虛構來源或無關內容"
+      ],
+      "promptVersion": "1.1.0",
+      "promptHash": "d70e48342bd180efc4ccc9f8cd39c4608126a7f978f8548edf7dbd9d835c9038"
+    },
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": true,
+      "id": "syntax-ambiguous",
+      "category": "syntax",
+      "sourcePrompt": "article.sentenceAnalysis",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English sentence and return only strict JSON:\n{\n  \"sentence\":\"original sentence\",\n  \"translation\":\"target Chinese translation\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\nReturn 1-3 brief key points. Explain genuine ambiguity when context does not resolve it.\n\nContext for understanding only:\n\"\"\"\nBoth the observer and the man may have had access to a telescope. No further information identifies who was using or carrying it.\n\"\"\"\nTarget sentence:\n\"\"\"\nI saw the man with the telescope.\n\"\"\""
+        }
+      ],
+      "requiredFields": [
+        "sentence",
+        "translation",
+        "phrase_alignment",
+        "chunks",
+        "key_points"
+      ],
+      "rubric": [
+        "1: JSON、譯文及結構陣列完整",
+        "1: 明確承認with the telescope有兩種合理附著／解讀",
+        "1: 修飾saw時可指我用望遠鏡看見男人",
+        "1: 修飾man時可指拿著／帶著望遠鏡的男人",
+        "1: 依現有上下文不能確定唯一解讀，不聲稱必然只有一方使用"
+      ],
+      "promptVersion": "1.0.0",
+      "promptHash": "2a827503b8fa647764e6e642332953c634132d1c66e7f3f750050937097998a5"
+    }
+  ],
+  "createdAt": "2026-11-02T05:08:26.621Z"
+}

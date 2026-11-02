@@ -12,10 +12,12 @@ import {
     resolveAIRequestConfig,
     resolveAIRequestConfigAsync,
     resolveAITaskSpec,
+    resolveThinkingLevel,
     firstNonEmptyString
 } from './ai-models.js';
 import { requireAdapter } from './ai-protocols/index.js';
 import { createSseParser } from './ai-protocols/common.js';
+import { THINKING_TOKEN_FLOORS } from './ai-thinking.js';
 import { isManagedUsable } from './ai-catalog.js';
 import { AUTH_EVENT } from './sync-cloudflare.js';
 import * as cache from './cache.js';
@@ -289,6 +291,12 @@ function buildModelCandidates(primary, fallback) {
     return out;
 }
 
+// Different providers may expose same-named models with different behaviour, so
+// article caches must key on provider + model, not the model name alone.
+function cacheModelKey(resolved) {
+    return `${resolved?.provider || 'default'}:${resolved?.model || ''}`;
+}
+
 
 /**
  * Legacy config objects (OCR_CONFIG / QA_CHECK / ARTICLE_IMPORT) may still name
@@ -326,10 +334,17 @@ function abortAIRequests({ managedOnly = false } = {}) {
 if (typeof window !== 'undefined') {
     window.addEventListener(AUTH_EVENT, (event) => {
         const detail = event && event.detail ? event.detail : {};
-        if (detail.event === 'SIGNED_OUT' || detail.event === 'ACCOUNT_CHANGED') abortAIRequests();
-        if (detail.event === 'SESSION_INVALID') abortAIRequests({ managedOnly: true });
+        if (detail.event === 'SIGNED_OUT' || detail.event === 'ACCOUNT_CHANGED') {
+            abortAIRequests();
+            resetThinkingFallbackMemory();
+        }
+        if (detail.event === 'SESSION_INVALID') {
+            abortAIRequests({ managedOnly: true });
+            resetThinkingFallbackMemory();
+        }
     });
     window.addEventListener('bdc:ai-catalog-change', () => {
+        resetThinkingFallbackMemory();
         try {
             if (!isManagedUsable()) abortAIRequests({ managedOnly: true });
         } catch (_) {}
@@ -382,12 +397,156 @@ async function readErrorPayload(response) {
     try { return await response.json(); } catch (_) { return null; }
 }
 
+function providerHttpError(status, payload) {
+    const detail = payload?.error?.message
+        || (typeof payload?.error === 'string' ? payload.error : '')
+        || payload?.message
+        || '';
+    const err = new Error(detail ? `HTTP ${status}: ${String(detail).slice(0, 200)}` : `HTTP ${status}`);
+    err.status = status;
+    err.payload = payload;
+    err.code = status === 401 ? 'provider_auth_failed'
+        : status === 403 ? 'provider_forbidden'
+            : status === 429 ? 'provider_rate_limited'
+                : status >= 500 ? 'provider_server_error'
+                    : 'provider_request_failed';
+    return err;
+}
+
+function isThinkingParameterError(error) {
+    const status = Number(error?.status) || 0;
+    if (status !== 400 && status !== 422) return false;
+    const payload = error?.payload || {};
+    // OpenAI-compatible gateways may return `detail`, `errors` or `error` as an
+    // object/array. Joining those directly yields "[object Object]" and hides
+    // the parameter name, so serialise nested values before matching.
+    const stringifyPart = (value) => {
+        if (value == null) return '';
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+        try { return JSON.stringify(value); } catch (_) { return ''; }
+    };
+    const text = [
+        error?.message,
+        payload?.error?.message,
+        payload?.error?.type,
+        payload?.error?.code,
+        payload?.error,
+        payload?.message,
+        payload?.detail,
+        payload?.errors
+    ].map(stringifyPart).filter(Boolean).join(' ');
+    // Anthropic may also reject the lifted max_tokens that comes with
+    // extended thinking on older models ("max_tokens ... exceeds"). Both
+    // token fields are included so that error also triggers the one retry.
+    return /reasoning|thinking|effort|budget_tokens|max_tokens|max_completion_tokens|thought/i.test(text);
+}
+
+/** OpenAI uses `length`, Anthropic `max_tokens` and Gemini `MAX_TOKENS`.
+ * Normalising them keeps the one-shot truncation retry working for all three. */
+export function isLengthFinishReason(reason) {
+    const value = String(reason || '').trim().toLowerCase();
+    return value === 'length' || value === 'max_tokens';
+}
+
+function applyThinkingTokenFloor(maxTokens, level) {
+    if (typeof maxTokens !== 'number' || maxTokens <= 0) return maxTokens;
+    const floor = Number(THINKING_TOKEN_FLOORS[level]) || 0;
+    return floor > maxTokens ? floor : maxTokens;
+}
+
+// Session memory of targets that rejected a thinking parameter. Support is a
+// property of the endpoint and of the level actually sent, so the key includes
+// provider + wire format + endpoint URL + model + level. Without the level a
+// refusal of `none` would also silence `high` on the same model.
+const thinkingUnsupportedTargets = new Set();
+// Separate from the rejection memory: an event is only announced after a retry
+// (or a remembered fallback) actually succeeded.
+const thinkingFallbackNotified = new Set();
+// Incremented whenever the capability memory is invalidated. A request captures
+// the value when it starts; a response from an older generation may still finish
+// (and retry once for itself), but it must not write into the new memory.
+let thinkingFallbackGeneration = 0;
+
+function thinkingTargetKey({ provider, model, format, apiUrl, level } = {}) {
+    return [
+        provider || 'default',
+        format || '',
+        apiUrl || '',
+        model || '',
+        level || ''
+    ].join('|');
+}
+
+function isThinkingUnsupportedFor(resolved, level) {
+    if (!level || level === 'auto') return false;
+    return thinkingUnsupportedTargets.has(thinkingTargetKey({ ...resolved, level }));
+}
+
+/** Returns true only the first time this target + level is marked. */
+function markThinkingUnsupported(resolved, level) {
+    const key = thinkingTargetKey({ ...resolved, level });
+    if (thinkingUnsupportedTargets.has(key)) return false;
+    thinkingUnsupportedTargets.add(key);
+    return true;
+}
+
+/** Returns true only when this target + level has not been announced yet. */
+function markThinkingFallbackNotified(resolved, level) {
+    const key = thinkingTargetKey({ ...resolved, level });
+    if (thinkingFallbackNotified.has(key)) return false;
+    thinkingFallbackNotified.add(key);
+    return true;
+}
+
+/** The account/catalog changed: keys and endpoints may now point at a
+ * different backend, so every remembered capability result is stale. Also
+ * exported so tests can isolate module-level memory between cases. */
+export function resetThinkingFallbackMemory() {
+    thinkingFallbackGeneration += 1;
+    thinkingUnsupportedTargets.clear();
+    thinkingFallbackNotified.clear();
+}
+
+// Some levels (notably Anthropic `none`) are expressed by omitting the field.
+// Only mark a target unsupported when this attempt actually sent a thinking
+// parameter, otherwise an unrelated 400 would disable thinking forever.
+function requestCarriesThinkingParameter(request) {
+    const body = request?.body;
+    if (!body || typeof body !== 'object') return false;
+    if (Object.prototype.hasOwnProperty.call(body, 'reasoning_effort')) return true;
+    if (Object.prototype.hasOwnProperty.call(body, 'thinking')) return true;
+    const generationConfig = body.generationConfig;
+    return !!generationConfig && typeof generationConfig === 'object'
+        && Object.prototype.hasOwnProperty.call(generationConfig, 'thinkingConfig');
+}
+
+/** Observability hook: the provider rejected the thinking parameter and the
+ * request succeeded after retrying without it. UI may listen to the event to
+ * explain the fallback; callers do not need to handle it to keep working. */
+function notifyThinkingFallback({ task, level, provider, model }) {
+    const detail = {
+        task: normalizeTaskName(task),
+        level,
+        provider: provider || '',
+        model: model || ''
+    };
+    try { console.warn('[ai-thinking] thinking parameter rejected; retried without it', detail); } catch (_) {}
+    try {
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function'
+            && typeof CustomEvent === 'function') {
+            window.dispatchEvent(new CustomEvent('bdc:ai-thinking-fallback', { detail }));
+        }
+    } catch (_) {}
+}
+
 /**
  * Unified AI request entry point. Resolves the account profile / managed
  * catalog, asks the protocol adapter to build the request, and normalises the
  * response to the shape expected by existing callers.
  */
-export async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat, apiUrl, apiKey, taskType = 'default', provider, profile }) {
+export async function requestAI({ model, messages, temperature = 0.5, maxTokens, timeoutMs = 30000, signal, responseFormat, apiUrl, apiKey, taskType = 'default', provider, profile, thinking }) {
+    const memoryGeneration = thinkingFallbackGeneration;
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
     const onAbort = () => ac.abort(signal && signal.reason);
@@ -398,25 +557,49 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
 
     // reasoning models count their thinking against max_tokens; retry once with
     // a doubled budget when the provider reports a length stop.
-    let effectiveMaxTokens = (typeof maxTokens === 'number') ? maxTokens : undefined;
+    const thinkingResolution = resolveThinkingLevel(taskType, { override: thinking });
+    const requestedThinkingLevel = thinkingResolution.level;
+    const baseMaxTokens = (typeof maxTokens === 'number') ? maxTokens : undefined;
+    let effectiveThinking = requestedThinkingLevel;
+    let effectiveMaxTokens = applyThinkingTokenFloor(baseMaxTokens, effectiveThinking);
+    let thinkingFallbackTried = false;
+    let thinkingFallbackNoticeLevel = '';
+    let resolvedForFallback = null;
+    // A thinking fallback retry must keep the target resolved for the rejected
+    // attempt. Re-resolving could send the retry (and record the fallback) on a
+    // different endpoint if the user edited the profile meanwhile.
+    let pinnedResolved = null;
+    let lastRequestMaxTokens = 0;
+    let requestCarriedThinking = false;
     let unregister = () => {};
 
     const fetchOnce = async () => {
-        let resolved;
-        try {
-            resolved = await resolveAIRequestConfigAsync({
-                task: taskType,
-                model,
-                apiUrl,
-                apiKey,
-                provider,
-                profile
-            });
-        } catch (error) {
-            throw localizeAIError(error);
+        let resolved = pinnedResolved;
+        if (!resolved) {
+            try {
+                resolved = await resolveAIRequestConfigAsync({
+                    task: taskType,
+                    model,
+                    apiUrl,
+                    apiKey,
+                    provider,
+                    profile
+                });
+            } catch (error) {
+                throw localizeAIError(error);
+            }
+            resolvedForFallback = resolved;
         }
         unregister();
         unregister = registerController(ac, resolved.source);
+        // This target already rejected the thinking field once in this session.
+        // Go straight to auto instead of sending another doomed request, but
+        // remember the level so a success can still announce the downgrade.
+        if (effectiveThinking !== 'auto' && isThinkingUnsupportedFor(resolvedForFallback, effectiveThinking)) {
+            thinkingFallbackNoticeLevel = effectiveThinking;
+            effectiveThinking = 'auto';
+            effectiveMaxTokens = applyThinkingTokenFloor(baseMaxTokens, effectiveThinking);
+        }
         const adapter = requireAdapter(resolved.format);
         const request = adapter.buildRequest({
             provider: resolved,
@@ -426,9 +609,16 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
             temperature,
             maxTokens: effectiveMaxTokens,
             responseFormat,
-            stream: false
+            stream: false,
+            thinking: effectiveThinking
         });
+        // Adapters may raise the budget on their own (Anthropic's thinking lift,
+        // Gemini's budget + answer reserve). Remember what actually goes on the
+        // wire so a truncation retry grows from that value instead of the
+        // caller's smaller number.
+        lastRequestMaxTokens = Number(request.maxTokens) || 0;
         const { maxConcurrency, minIntervalMs } = getLimitConfig(resolved.task);
+        requestCarriedThinking = requestCarriesThinkingParameter(request);
         const queueKey = queueKeyForRequest({
             endpoint: resolved.apiUrl,
             profile: resolved.provider,
@@ -451,15 +641,7 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
             }
             if (!resp.ok) {
                 const payload = await readErrorPayload(resp);
-                const detail = payload?.error?.message || (typeof payload?.error === 'string' ? payload.error : '') || payload?.message || '';
-                const err = new Error(detail ? `HTTP ${resp.status}: ${String(detail).slice(0, 200)}` : `HTTP ${resp.status}`);
-                err.status = resp.status;
-                err.payload = payload;
-                err.code = resp.status === 401 ? 'provider_auth_failed'
-                    : resp.status === 403 ? 'provider_forbidden'
-                        : resp.status === 429 ? 'provider_rate_limited'
-                            : resp.status >= 500 ? 'provider_server_error'
-                                : 'provider_request_failed';
+                const err = providerHttpError(resp.status, payload);
                 try {
                     const ra = resp.headers.get && resp.headers.get('retry-after');
                     if (ra) err.retryAfter = parseFloat(ra);
@@ -498,15 +680,63 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
         while (attempt <= maxRetries) {
             try {
                 const json = await fetchOnce();
-                if (json.finishReason === 'length' && typeof effectiveMaxTokens === 'number' && !truncationRetried) {
+                if (isLengthFinishReason(json.finishReason) && !truncationRetried) {
                     truncationRetried = true;
-                    effectiveMaxTokens = Math.min(effectiveMaxTokens * 2, 4000);
-                    continue;
+                    const actualMaxTokens = lastRequestMaxTokens;
+                    if (effectiveThinking !== 'auto' && actualMaxTokens > 0) {
+                        // Grow past the adapter-computed outbound budget. The old
+                        // 4000 cap could not lift it at all once the thinking
+                        // floor had already pushed the request above that value.
+                        effectiveMaxTokens = Math.max(
+                            actualMaxTokens * 2,
+                            actualMaxTokens + 1024,
+                            typeof effectiveMaxTokens === 'number' ? effectiveMaxTokens : 0
+                        );
+                        continue;
+                    }
+                    if (typeof effectiveMaxTokens === 'number') {
+                        // auto mode keeps the previous capped doubling.
+                        const thinkingFloor = Number(THINKING_TOKEN_FLOORS[effectiveThinking]) || 0;
+                        const cap = Math.max(4000, thinkingFloor * 2, effectiveMaxTokens);
+                        effectiveMaxTokens = Math.min(effectiveMaxTokens * 2, cap);
+                        continue;
+                    }
+                }
+                if (thinkingFallbackNoticeLevel) {
+                    const level = thinkingFallbackNoticeLevel;
+                    thinkingFallbackNoticeLevel = '';
+                    if (memoryGeneration === thinkingFallbackGeneration
+                        && markThinkingFallbackNotified(resolvedForFallback, level)) {
+                        notifyThinkingFallback({
+                            task: taskType,
+                            level,
+                            provider: resolvedForFallback.provider,
+                            model: resolvedForFallback.model
+                        });
+                    }
                 }
                 return json;
             } catch (err) {
                 lastErr = err;
                 if (err?.name === 'AbortError') break;
+                if (!thinkingFallbackTried && effectiveThinking !== 'auto' && requestCarriedThinking && isThinkingParameterError(err)) {
+                    thinkingFallbackTried = true;
+                    // A request that started before a catalog/auth reset must not
+                    // repopulate the fresh capability memory.
+                    if (memoryGeneration === thinkingFallbackGeneration) {
+                        // Remember only the level that was actually rejected. The
+                        // notice waits for a successful retry so a failed fallback
+                        // does not announce an event that never helped.
+                        markThinkingUnsupported(resolvedForFallback, effectiveThinking);
+                        thinkingFallbackNoticeLevel = effectiveThinking;
+                    }
+                    pinnedResolved = resolvedForFallback;
+                    effectiveThinking = 'auto';
+                    // Drop the thinking token floor too: the retry must use the
+                    // caller's original budget, not the enlarged thinking one.
+                    effectiveMaxTokens = applyThinkingTokenFloor(baseMaxTokens, effectiveThinking);
+                    continue;
+                }
                 const status = err?.status || 0;
                 if (status === 429 || (status >= 500 && status < 600)) {
                     let backoff;
@@ -547,24 +777,39 @@ export async function streamAIResponse({
     taskType = 'assistant',
     timeoutMs = 120000,
     onDelta,
-    onReasoning
+    onReasoning,
+    thinking
 }) {
+    const memoryGeneration = thinkingFallbackGeneration;
     let resolved;
     try {
         resolved = await resolveAIRequestConfigAsync({ task: taskType, model });
     } catch (error) {
         throw localizeAIError(error);
     }
+    const thinkingResolution = resolveThinkingLevel(taskType, { override: thinking });
+    const requestedThinkingLevel = thinkingResolution.level;
+    const baseMaxTokens = maxTokens;
+    let effectiveThinking = requestedThinkingLevel;
+    let thinkingFallbackNoticeLevel = '';
+    if (effectiveThinking !== 'auto' && isThinkingUnsupportedFor(resolved, effectiveThinking)) {
+        thinkingFallbackNoticeLevel = effectiveThinking;
+        effectiveThinking = 'auto';
+    }
+    let effectiveMaxTokens = applyThinkingTokenFloor(baseMaxTokens, effectiveThinking);
     const adapter = requireAdapter(resolved.format);
-    const request = adapter.buildRequest({
+    const buildRequest = () => adapter.buildRequest({
         provider: resolved,
         apiKey: resolved.apiKey,
         model: resolved.model,
         messages,
         temperature,
-        maxTokens,
-        stream: true
+        maxTokens: effectiveMaxTokens,
+        stream: true,
+        thinking: effectiveThinking
     });
+    let request = buildRequest();
+    let requestCarriedThinking = requestCarriesThinkingParameter(request);
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(new DOMException('Timeout', 'AbortError')), timeoutMs);
     const onAbort = () => ac.abort(signal && signal.reason);
@@ -572,9 +817,11 @@ export async function streamAIResponse({
         if (signal.aborted) ac.abort(signal.reason);
         else signal.addEventListener('abort', onAbort, { once: true });
     }
+    // Streaming resolves the target exactly once, so its in-request fallback
+    // retry already stays on the endpoint that rejected the thinking field.
     const unregister = registerController(ac, resolved.source);
     try {
-        const resp = await fetch(request.url, {
+        const send = () => fetch(request.url, {
             method: 'POST',
             headers: request.headers,
             body: JSON.stringify(request.body),
@@ -582,17 +829,33 @@ export async function streamAIResponse({
             redirect: 'error',
             cache: 'no-store'
         });
+        let resp = await send();
         if (!resp.ok) {
-            const payload = await readErrorPayload(resp);
-            const detail = payload?.error?.message || payload?.message || '';
-            const err = new Error(detail ? `HTTP ${resp.status}: ${String(detail).slice(0, 200)}` : `HTTP ${resp.status}`);
-            err.status = resp.status;
-            err.code = resp.status === 401 ? 'provider_auth_failed'
-                : resp.status === 403 ? 'provider_forbidden'
-                    : resp.status === 429 ? 'provider_rate_limited'
-                        : resp.status >= 500 ? 'provider_server_error'
-                            : 'provider_request_failed';
-            throw localizeAIError(err);
+            let err = providerHttpError(resp.status, await readErrorPayload(resp));
+            // A provider that rejects reasoning parameters must not break the
+            // whole feature: retry exactly once with the field omitted.
+            if (effectiveThinking !== 'auto' && requestCarriedThinking && isThinkingParameterError(err)) {
+                // Remember the rejected level; the notice is only emitted after
+                // the retry succeeds, so a failed fallback stays silent. A stale
+                // generation (catalog/auth reset) must not write into the new
+                // memory even though this request may finish.
+                if (memoryGeneration === thinkingFallbackGeneration) {
+                    markThinkingUnsupported(resolved, effectiveThinking);
+                    thinkingFallbackNoticeLevel = effectiveThinking;
+                }
+                effectiveThinking = 'auto';
+                // Restore the caller's original budget instead of carrying the
+                // thinking token floor into the retry.
+                effectiveMaxTokens = applyThinkingTokenFloor(baseMaxTokens, effectiveThinking);
+                request = buildRequest();
+                resp = await send();
+                if (!resp.ok) {
+                    err = providerHttpError(resp.status, await readErrorPayload(resp));
+                    throw localizeAIError(err);
+                }
+            } else {
+                throw localizeAIError(err);
+            }
         }
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
@@ -629,6 +892,19 @@ export async function streamAIResponse({
             finished = handle(events);
         }
         if (!finished) handle(parser.flush());
+        if (thinkingFallbackNoticeLevel) {
+            const level = thinkingFallbackNoticeLevel;
+            thinkingFallbackNoticeLevel = '';
+            if (memoryGeneration === thinkingFallbackGeneration
+                && markThinkingFallbackNotified(resolved, level)) {
+                notifyThinkingFallback({
+                    task: taskType,
+                    level,
+                    provider: resolved.provider,
+                    model: resolved.model
+                });
+            }
+        }
         return { text, reasoning, finishReason, providerId: resolved.provider, model: resolved.model, source: resolved.source };
     } catch (error) {
         if (error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
@@ -652,7 +928,7 @@ export function cancelAllAIRequests() {
 /**
  * 通用的 AI API 請求函數；預期回傳 JSON 內容或可解析為 JSON 的字串。
  */
-export async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTokens, timeoutMs = 30000, signal, responseFormat, taskType = 'default', apiUrl, apiKey, provider, profile } = {}) {
+export async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTokens, timeoutMs = 30000, signal, responseFormat, taskType = 'default', apiUrl, apiKey, provider, profile, thinking } = {}) {
     const data = await requestAI({
         model,
         temperature,
@@ -665,7 +941,8 @@ export async function fetchAIResponse(model, prompt, temperature = 0.5, { maxTok
         apiUrl,
         apiKey,
         provider,
-        profile
+        profile,
+        thinking
     });
 
     let content = pickMessageContent(data).replace(/^```json\n/, '').replace(/\n```$/, '').trim();
@@ -686,23 +963,29 @@ export async function getWordAnalysis(word) {
     try {
         const locale = getLocale();
         const promptVersion = getPromptVersion('dictionary.wordAnalysis');
+        const thinking = resolveThinkingLevel('wordAnalysis').level;
         const settings = loadGlobalSettings();
         const modelSpec = getPreferredTaskSpec(['wordAnalysis'], { settings });
+        const modelKey = cacheModelKey(normalizeModelSpec(modelSpec));
         const cached = await cache.getCached('dictionaryWordAnalysis', {
             word,
             locale,
             promptVersion,
-            modelSpec,
+            modelKey,
+            thinking,
             schema: 'v1'
         });
         if (cached) return cached;
         const prompt = buildPrompt('dictionary.wordAnalysis', { word, notation: IPA_NOTATION_RULE }, { locale });
-        const result = await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis' });
+        const result = await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis', thinking });
+        // The key records the *requested* level. A channel may silently fall
+        // back to auto, but the validated English result is still worth caching.
         await cache.setCached('dictionaryWordAnalysis', {
             word,
             locale,
             promptVersion,
-            modelSpec,
+            modelKey,
+            thinking,
             schema: 'v1'
         }, result, 30 * 24 * 60 * 60 * 1000);
         return result;
@@ -758,7 +1041,10 @@ export async function analyzeParagraph(paragraph, opts = {}) {
     const cacheLevel = sentenceMode ? `${requestedLevel}-sent` : requestedLevel;
     const locale = getLocale();
     const promptVersion = getPromptVersion('article.paragraphTranslation');
-    const cacheOptions = { locale, promptVersion };
+    const thinking = resolveThinkingLevel('articleParagraphTranslation').level;
+    // The key records the requested level; a provider that rejects the thinking
+    // parameter may have answered after api.js downgraded it to auto.
+    const cacheOptions = { locale, promptVersion, thinking };
     const s = loadGlobalSettings();
     const primaryModel = getPreferredTaskSpec(['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis'], { settings: s });
     const fallbackModel = getPreferredTaskSpec(['articleParagraphTranslationFallback', 'articleAnalysis', 'wordAnalysis'], { settings: s });
@@ -768,7 +1054,7 @@ export async function analyzeParagraph(paragraph, opts = {}) {
         for (const modelSpec of candidates) {
             const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getParagraphAnalysisCached(paragraph, cacheLevel, resolved.model, cacheOptions);
+                const cached = await cache.getParagraphAnalysisCached(paragraph, cacheLevel, cacheModelKey(resolved), cacheOptions);
                 if (cached) return cached;
             } catch (_) {}
         }
@@ -797,7 +1083,8 @@ export async function analyzeParagraph(paragraph, opts = {}) {
                 timeoutMs,
                 signal,
                 responseFormat: { type: 'json_object' },
-                taskType: 'articleParagraphTranslation'
+                taskType: 'articleParagraphTranslation',
+                thinking
             });
             const content = pickMessageContent(data);
             const rawParsed = safeJsonParse(content);
@@ -817,7 +1104,7 @@ export async function analyzeParagraph(paragraph, opts = {}) {
                 parsed = normalizeParagraphResponse(rawParsed, '');
             }
             if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw new Error('Schema validation failed');
-            try { await cache.setParagraphAnalysisCached(paragraph, cacheLevel, resolved.model, parsed, 14 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+            try { await cache.setParagraphAnalysisCached(paragraph, cacheLevel, cacheModelKey(resolved), parsed, 14 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
             lastErr = error;
@@ -834,7 +1121,8 @@ export async function analyzeParagraph(paragraph, opts = {}) {
             maxTokens: 700,
             timeoutMs,
             signal,
-            taskType: 'articleParagraphTranslation'
+            taskType: 'articleParagraphTranslation',
+            thinking
         });
         const raw = pickMessageContent(fb);
         const parsed = normalizeParagraphResponse(safeJsonParse(raw), plainAnswerOrEmpty(raw));
@@ -870,12 +1158,14 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
     const locale = getLocale();
     const promptVersion = getPromptVersion('article.wordTooltip');
-    const cacheOptions = { locale, promptVersion };
+    const thinking = resolveThinkingLevel('articleWordTranslation').level;
+    // Stored under the requested level even if the channel downgraded to auto.
+    const cacheOptions = { locale, promptVersion, thinking };
     if (!noCache) {
         for (const modelSpec of candidates) {
             const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getWordAnalysisCached(word, sentence, resolved.model, cacheOptions);
+                const cached = await cache.getWordAnalysisCached(word, sentence, cacheModelKey(resolved), cacheOptions);
                 if (cached) return cached;
             } catch (_) {}
         }
@@ -894,7 +1184,8 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
                 timeoutMs,
                 signal,
                 responseFormat: { type: 'json_object' },
-                taskType: 'articleWordTranslation'
+                taskType: 'articleWordTranslation',
+                thinking
             });
             const raw = pickMessageContent(data);
             const rawParsed = safeJsonParse(raw);
@@ -906,7 +1197,7 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
                 // 空 meaning 不是成功：不寫入快取，交給呼叫端顯示重試。
                 return { ...parsed, failed: true, errorCode: 'empty_response' };
             }
-            try { await cache.setWordAnalysisCached(word, sentence, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+            try { await cache.setWordAnalysisCached(word, sentence, cacheModelKey(resolved), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
             lastErr = error;
@@ -922,13 +1213,14 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
             maxTokens: 200,
             timeoutMs,
             signal,
-            taskType: 'articleWordTranslation'
+            taskType: 'articleWordTranslation',
+            thinking
         });
         const raw = pickMessageContent(fb);
         const parsed = normalizeWordInSentenceResponse(null, plainAnswerOrEmpty(raw), word, sentence);
         if (!validate.validateWordInSentence(parsed) || !parsed.analysis.meaning) throw lastErr || new Error('Word fallback failed');
         const resolved = normalizeModelSpec(fallbackModelSpec);
-        try { await cache.setWordAnalysisCached(word, sentence, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+        try { await cache.setWordAnalysisCached(word, sentence, cacheModelKey(resolved), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
         return parsed;
     } catch (_) {
         if (lastErr) throw lastErr;
@@ -949,14 +1241,16 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
     const locale = getLocale();
     const promptVersion = getPromptVersion('article.sentenceAnalysis');
-    const cacheOptions = { locale, promptVersion };
+    const thinking = resolveThinkingLevel('articleSentenceTranslation').level;
+    // Stored under the requested level even if the channel downgraded to auto.
+    const cacheOptions = { locale, promptVersion, thinking };
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {
         for (const modelSpec of candidates) {
             const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getSentenceAnalysisCached(sentence, contextHash, resolved.model, cacheOptions);
+                const cached = await cache.getSentenceAnalysisCached(sentence, contextHash, cacheModelKey(resolved), cacheOptions);
                 if (cached) return cached;
             } catch (_) {}
         }
@@ -980,7 +1274,8 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
                 timeoutMs,
                 signal,
                 responseFormat: { type: 'json_object' },
-                taskType: 'articleSentenceTranslation'
+                taskType: 'articleSentenceTranslation',
+                thinking
             });
             const raw = pickMessageContent(data);
             const rawParsed = safeJsonParse(raw);
@@ -988,7 +1283,7 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
             if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
             const parsed = normalizeSentenceResponse(rawParsed, '', sentence);
             if (!validate.validateSentenceAnalysis(parsed) || !parsed.translation) throw new Error('Schema validation failed');
-            try { await cache.setSentenceAnalysisCached(sentence, contextHash, resolved.model, parsed, 21 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+            try { await cache.setSentenceAnalysisCached(sentence, contextHash, cacheModelKey(resolved), parsed, 21 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
             lastErr = error;
@@ -1005,7 +1300,8 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
             maxTokens: 400,
             timeoutMs,
             signal,
-            taskType: 'articleSentenceTranslation'
+            taskType: 'articleSentenceTranslation',
+            thinking
         });
         const raw = pickMessageContent(fb);
         const parsed = normalizeSentenceResponse(safeJsonParse(raw), plainAnswerOrEmpty(raw), sentence);
@@ -1026,14 +1322,16 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
     const locale = getLocale();
     const promptVersion = getPromptVersion('article.phraseAnalysis');
-    const cacheOptions = { locale, promptVersion };
+    const thinking = resolveThinkingLevel('articlePhraseTranslation').level;
+    // Stored under the requested level even if the channel downgraded to auto.
+    const cacheOptions = { locale, promptVersion, thinking };
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {
         for (const modelSpec of candidates) {
             const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, resolved.model, cacheOptions);
+                const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, cacheModelKey(resolved), cacheOptions);
                 if (cached) return cached;
             } catch (_) {}
         }
@@ -1052,7 +1350,8 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
                 timeoutMs,
                 signal,
                 responseFormat: { type: 'json_object' },
-                taskType: 'articlePhraseTranslation'
+                taskType: 'articlePhraseTranslation',
+                thinking
             });
             const raw = pickMessageContent(data);
             const rawParsed = safeJsonParse(raw);
@@ -1060,7 +1359,7 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
             if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
             const parsed = normalizeSelectionResponse(rawParsed, '', selection, sentence);
             if (!validate.validateSelectionAnalysis(parsed)) throw new Error('Schema validation failed');
-            try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, resolved.model, parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+            try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, cacheModelKey(resolved), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
             lastErr = error;
@@ -1076,7 +1375,8 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
             maxTokens: 220,
             timeoutMs,
             signal,
-            taskType: 'articlePhraseTranslation'
+            taskType: 'articlePhraseTranslation',
+            thinking
         });
         const raw = pickMessageContent(fb);
         const parsed = normalizeSelectionResponse(null, plainAnswerOrEmpty(raw), selection, sentence);
@@ -1837,7 +2137,9 @@ export async function getWordPronunciations(word, accent, { signal, refresh = fa
     const locale = getLocale();
     const promptVersion = getPromptVersion('dictionary.pronunciation');
     const modelSpec = getPreferredTaskSpec(['wordAnalysis'], { settings: loadGlobalSettings() });
-    const key = { word, accent, locale, promptVersion, modelSpec };
+    const thinking = resolveThinkingLevel('wordAnalysis').level;
+    const modelKey = cacheModelKey(normalizeModelSpec(modelSpec));
+    const key = { word, accent, locale, promptVersion, modelKey, thinking };
     if (!refresh) {
         const hit = await cache.getCached('dictionaryPronunciation', key);
         const readings = validatePronunciations(hit, word, accent);
@@ -1849,7 +2151,7 @@ export async function getWordPronunciations(word, accent, { signal, refresh = fa
         symbols: phonemeSymbols(accent).join(' '),
         notation: IPA_NOTATION_RULE
     }, { locale });
-    const data = await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis', signal, timeoutMs: 20000 });
+    const data = await fetchAIResponse('', prompt, 0.2, { taskType: 'wordAnalysis', signal, timeoutMs: 20000, thinking });
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const readings = validatePronunciations(data, word, accent);
     if (!readings.length) {

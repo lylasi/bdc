@@ -12,6 +12,7 @@
 
 import { SYNC } from '../ai-config.js';
 import { touch as syncTouch } from './sync-signals.js';
+import { normalizeTaskThinkingMap } from './ai-thinking.js';
 
 export const AI_PROFILE_PREFIX = 'bdc_ai_profile_v1';
 export const AI_PROFILE_SCHEMA_VERSION = 1;
@@ -273,6 +274,7 @@ export function emptyProfile(scope) {
         scope: { endpoint: value.endpoint || '', userId: value.userId || '' },
         providers: {},
         taskModels: {},
+        taskThinking: {},
         defaultModel: '',
         keySyncDefault: 'cloud',
         credentials: {}
@@ -309,6 +311,7 @@ export function normalizeProfile(input, scope) {
         updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : '',
         providers,
         taskModels: normalizeTaskModelMap(value.taskModels || value.models || value.tasks),
+        taskThinking: normalizeTaskThinkingMap(value.taskThinking),
         defaultModel: typeof value.defaultModel === 'string' ? value.defaultModel.trim() : '',
         keySyncDefault: normalizeKeySyncDefault(value.keySyncDefault),
         credentials
@@ -402,7 +405,7 @@ export function getAIViewFromProfile(scope) {
             modelsUrl: provider.modelsUrl
         };
     }
-    return {
+    const view = {
         apiUrl: '',
         providers,
         models: { ...profile.taskModels },
@@ -411,6 +414,12 @@ export function getAIViewFromProfile(scope) {
         keySyncDefault: normalizeKeySyncDefault(profile.keySyncDefault),
         updatedAt: profile.updatedAt || ''
     };
+    // An empty map means "this device has no thinking choices". Omit the field
+    // so pushing its view cannot erase another device's settings.
+    if (Object.keys(profile.taskThinking).length) {
+        view.thinking = { ...profile.taskThinking };
+    }
+    return view;
 }
 
 export function getAIProfileUpdatedAt(scope) {
@@ -487,6 +496,11 @@ export function importGuestProviders(providerIds, { syncKeys = false, scope, inc
             for (const [task, spec] of Object.entries(guest.taskModels || {})) {
                 if (!draft.taskModels[task] && available(spec)) draft.taskModels[task] = spec;
             }
+            for (const [task, level] of Object.entries(guest.taskThinking || {})) {
+                if (!Object.prototype.hasOwnProperty.call(draft.taskThinking, task)) {
+                    draft.taskThinking[task] = level;
+                }
+            }
             if (!draft.defaultModel && available(guest.defaultModel)) draft.defaultModel = guest.defaultModel;
         }
         return draft;
@@ -516,6 +530,12 @@ export function applyRemoteAISettings(ai, updatedAt, scope) {
     }
     profile.providers = providers;
     profile.taskModels = normalizeTaskModelMap(remote.models || remote.tasks);
+    // Older snapshots have no thinking field. Only replace the local map when
+    // the snapshot actually carried one, otherwise a new device's choices
+    // would be wiped by an older client.
+    if (isPlainObject(remote.thinking)) {
+        profile.taskThinking = normalizeTaskThinkingMap(remote.thinking);
+    }
     profile.defaultModel = typeof remote.defaultModel === 'string' ? remote.defaultModel.trim() : '';
     // Older snapshots have no policy field: keep this device's current value
     // instead of silently resetting it to the default.
@@ -565,6 +585,12 @@ export function applyAISettingsPatch(ai, scope) {
             || Object.prototype.hasOwnProperty.call(ai, 'tasks');
         const mappings = normalizeTaskModelMap(ai.models || ai.tasks);
         if (hasMappings) profile.taskModels = mappings;
+        if (isPlainObject(ai.thinking)) {
+            profile.taskThinking = {
+                ...profile.taskThinking,
+                ...normalizeTaskThinkingMap(ai.thinking)
+            };
+        }
         if (typeof ai.defaultModel === 'string') profile.defaultModel = ai.defaultModel.trim();
         return profile;
     }, scope);

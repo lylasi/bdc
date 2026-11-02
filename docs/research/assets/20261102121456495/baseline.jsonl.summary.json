@@ -1,0 +1,38 @@
+[
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|word|default",
+    "n": 2,
+    "successful": 2,
+    "medianTotalMs": 3247.9,
+    "medianFirstAnswerMs": 2995.4,
+    "medianReasoningChars": 1003.5,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|translation|default",
+    "n": 2,
+    "successful": 2,
+    "medianTotalMs": 5188.15,
+    "medianFirstAnswerMs": 4615.35,
+    "medianReasoningChars": 2248.5,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|syntax|default",
+    "n": 2,
+    "successful": 2,
+    "medianTotalMs": 7844.200000000001,
+    "medianFirstAnswerMs": 6649.7,
+    "medianReasoningChars": 3515.5,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|assistant|default",
+    "n": 2,
+    "successful": 2,
+    "medianTotalMs": 3443.75,
+    "medianFirstAnswerMs": 2621.85,
+    "medianReasoningChars": 438.5,
+    "failures": []
+  }
+]

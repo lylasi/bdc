@@ -1,0 +1,241 @@
+{
+  "label": "baseline",
+  "endpoint": "http://127.0.0.1:3425/v1/chat/completions",
+  "models": [
+    "workbuddy/deepseek-v4.1-flash"
+  ],
+  "modes": [
+    "default"
+  ],
+  "repeats": 1,
+  "timeoutMs": 90000,
+  "nodeVersion": "v24.20.0",
+  "createdAt": "2026-11-02T04:26:12.965Z",
+  "notes": "Pinned routes; sequential, counterbalanced mode order; no client retries; reasoning text excluded; max_tokens=8192 for complete comparisons, above some BDC production limits.",
+  "cases": [
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": false,
+      "id": "word-bank",
+      "category": "word",
+      "sourcePrompt": "dictionary.wordAnalysis",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the English word \"bank\".\nReturn only strict JSON with this schema:\n{\"phonetic\":\"IPA\",\"pos\":\"part of speech\",\"meaning\":\"the most common Chinese meaning\"}\nThe \"phonetic\" field feeds this app's sound chart, which has one playable recording per symbol, so use the notation of that chart and no other: Write IPA only in this app's notation: /e/ (not /ɛ/), /r/ (not /ɹ/), /ɡ/ (not g), /iː/ (not i), /uː/ (not u), /ɑː/ (not ɑ), /ɔː/ (not ɔ), /ɜː/ or /ɜːr/ (not ɜ or ɝ), /ə/ or /ər/ (not ɚ), /tʃ/ and /dʒ/ (not ligatures). Stress marks ˈ ˌ and syllable dots are allowed.\nDo not add Markdown or any text outside the JSON object."
+        }
+      ],
+      "requiredFields": [
+        "phonetic",
+        "pos",
+        "meaning"
+      ],
+      "rubric": [
+        "1: JSON 與必需欄位完整",
+        "1: 常用義為銀行，可另列河岸",
+        "1: 包含名詞詞性",
+        "1: 音標包含正確的 bæŋk",
+        "1: 簡潔、不添加虛構來源或無關內容"
+      ],
+      "promptVersion": "1.1.0",
+      "promptHash": "d70e48342bd180efc4ccc9f8cd39c4608126a7f978f8548edf7dbd9d835c9038"
+    },
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": true,
+      "id": "word-sanction",
+      "category": "word",
+      "sourcePrompt": "article.wordTooltip",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English word in its sentence.\nReturn only strict JSON:\n{\"word\":\"...\",\"sentence\":\"...\",\"analysis\":{\"phonetic\":\"IPA\",\"pos\":\"part of speech\",\"meaning\":\"Chinese meaning in this sentence\",\"role\":\"brief grammatical role\"}}\n\nTarget word: \"sanction\"\nSentence: \"The board refused to sanction the project because the safety review was incomplete.\""
+        }
+      ],
+      "requiredFields": [
+        "word",
+        "sentence",
+        "analysis.phonetic",
+        "analysis.pos",
+        "analysis.meaning",
+        "analysis.role"
+      ],
+      "rubric": [
+        "1: JSON 與必需欄位完整",
+        "2: 句中 sanction 是批准／認可，不是制裁",
+        "1: 動詞詞性及音標合理",
+        "1: 指出 to sanction 的不定式／refused 的補足關係，沒有誤判主被動"
+      ],
+      "promptVersion": "1.0.0",
+      "promptHash": "9bd58d054f4456c7c34929e5d2f7de373cc8eb981628d2d601c0565e31cedf55"
+    },
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": true,
+      "id": "translation-library",
+      "category": "translation",
+      "sourcePrompt": "article.paragraphTranslation",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nTranslate the following English paragraph into the target Chinese language.\nReturn only strict JSON: {\"chinese_translation\":\"...\"}\nDo not return word_alignment or detailed_analysis.\nKeep English personal names unchanged.\nIf the paragraph contains Markdown tables, lists, headings, images or links, preserve all Markdown markers and line structure exactly. Do not translate or rewrite image syntax or image alt text.\nPreserve inline emphasis markers exactly as they appear in the source: **bold** stays **bold**, *italic* stays *italic*, `code` stays `code`. Never translate, drop or move those markers, and never add new ones.\n\nParagraph:\n\"\"\"\nWhen the town library extended its opening hours last autumn, staff expected most visitors to arrive after work. Instead, the busiest period was early morning, when students came to study before school. The library has since added six desks near the windows, but it has kept the quiet reading room unchanged. Visitors do not need to book a seat, although groups of more than four people must reserve a meeting room. The new timetable will remain in place until March, when the council will review attendance figures.\n\"\"\""
+        }
+      ],
+      "requiredFields": [
+        "chinese_translation"
+      ],
+      "rubric": [
+        "1: 嚴格 JSON 及非空譯文",
+        "1: 保留預期下班後但實際早上最忙的轉折",
+        "1: 保留加六張桌、安靜閱覽室不變",
+        "1: 個人不需預約，超過四人的團體須預約會議室",
+        "1: 保留截至三月及議會檢視入館數字，無捏造"
+      ],
+      "promptVersion": "1.1.0",
+      "promptHash": "db0bf9f0247dfddddb901ba28db2b5b786dc294c64d644204f06e52a182e1340"
+    },
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": true,
+      "id": "translation-study",
+      "category": "translation",
+      "sourcePrompt": "article.paragraphTranslation",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nTranslate the following English paragraph into the target Chinese language.\nReturn only strict JSON: {\"chinese_translation\":\"...\"}\nDo not return word_alignment or detailed_analysis.\nKeep English personal names unchanged.\nIf the paragraph contains Markdown tables, lists, headings, images or links, preserve all Markdown markers and line structure exactly. Do not translate or rewrite image syntax or image alt text.\nPreserve inline emphasis markers exactly as they appear in the source: **bold** stays **bold**, *italic* stays *italic*, `code` stays `code`. Never translate, drop or move those markers, and never add new ones.\n\nParagraph:\n\"\"\"\n**River Study**\n\nNot all of the 120 volunteers completed the course. Of the 80 who did, 60 reported better sleep, compared with 30 of the 60 people in a separate comparison group. The researchers described the difference as promising but did not claim that the course caused it: participants had chosen their own group, and sleep was measured only by self-report. A reduction of 10 percentage points should not be confused with a reduction of 10 percent. The team will publish its methods next month, provided that the independent review has been completed.\n\"\"\""
+        }
+      ],
+      "requiredFields": [
+        "chinese_translation"
+      ],
+      "rubric": [
+        "1: 嚴格 JSON、保留標題的 **粗體** 標記（標題文字可翻譯）",
+        "1: 並非全部120人完成；80完成者60改善；另一組60人30改善",
+        "1: 沒有聲稱因果，保留自選分組與自我報告限制",
+        "1: 區分10個百分點與10%",
+        "1: 下月公布以完成獨立審查為條件，而非確定已完成"
+      ],
+      "promptVersion": "1.1.0",
+      "promptHash": "52780cbbc32b33f2c80fbef9fc204f5430296ab6b5d50e568a53f2a3ef391fd9"
+    },
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": true,
+      "id": "syntax-inversion",
+      "category": "syntax",
+      "sourcePrompt": "article.sentenceAnalysis",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English sentence and return only strict JSON:\n{\n  \"sentence\":\"original sentence\",\n  \"translation\":\"target Chinese translation\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\nReturn 1-3 brief key points. If structured analysis is unreliable, return an empty array.\n\nContext for understanding only:\n\"\"\"\nThe committee was responsible for deciding when the report could be released.\n\"\"\"\nTarget sentence:\n\"\"\"\nNot until the final report had been checked twice did the committee agree to publish it.\n\"\"\""
+        }
+      ],
+      "requiredFields": [
+        "sentence",
+        "translation",
+        "phrase_alignment",
+        "chunks",
+        "key_points"
+      ],
+      "rubric": [
+        "1: JSON、譯文、結構陣列完整",
+        "1: 直到報告被檢查兩次後才同意公布",
+        "1: 正確辨認 Not until 置首引發主句部分倒裝",
+        "1: did 的還原為 committee agreed，非 until 從句倒裝",
+        "1: had been checked 是先於同意的過去完成被動，it 指報告"
+      ],
+      "promptVersion": "1.0.0",
+      "promptHash": "fa36f1d4732ea791e7b1adb13430b6f5d6317f45e09469b5772697a882a10623"
+    },
+    {
+      "maxTokens": 8192,
+      "json": true,
+      "responseFormat": true,
+      "id": "syntax-mixed-conditional",
+      "category": "syntax",
+      "sourcePrompt": "article.sentenceAnalysis",
+      "messages": [
+        {
+          "role": "user",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nAnalyze the target English sentence and return only strict JSON:\n{\n  \"sentence\":\"original sentence\",\n  \"translation\":\"target Chinese translation\",\n  \"phrase_alignment\":[{\"en\":\"...\",\"zh\":\"...\"}],\n  \"chunks\":[{\"text\":\"...\",\"role\":\"...\",\"note\":\"...\"}],\n  \"key_points\":[\"...\"]\n}\nReturn 1-3 brief key points. If structured analysis is unreliable, return an empty array.\n\nContext for understanding only:\n\"\"\"\nMaya missed the only train that could get her to the interview on time.\n\"\"\"\nTarget sentence:\n\"\"\"\nHad Maya not missed the train, she would be attending the interview now.\n\"\"\""
+        }
+      ],
+      "requiredFields": [
+        "sentence",
+        "translation",
+        "phrase_alignment",
+        "chunks",
+        "key_points"
+      ],
+      "rubric": [
+        "1: JSON、譯文、結構陣列完整",
+        "1: 還原 If Maya had not missed the train",
+        "1: 過去反事實：實際錯過火車",
+        "1: 現在結果：現在未能出席面試，不是僅過去事件",
+        "1: 正確稱為過去條件＋現在結果的混合條件句，解釋 would be attending"
+      ],
+      "promptVersion": "1.0.0",
+      "promptHash": "51b172fb41573beffd23096a01348306dff3b67e42af4b9909bc879a574b2e70"
+    },
+    {
+      "maxTokens": 8192,
+      "json": false,
+      "responseFormat": false,
+      "id": "assistant-basic",
+      "category": "assistant",
+      "sourcePrompt": "assistant.articleTutor",
+      "messages": [
+        {
+          "role": "system",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nYou are the English learning assistant in the PEN vocabulary web application.\n\n[Scope]\n- Help the user understand the current article supplied as context and support follow-up questions.\n- Common tasks include translation, key-point extraction, vocabulary and grammar explanations, example sentences, sentence checking, exercises and summaries.\n- Do not invent external article content. If context is insufficient, say what information is needed.\n\n[Response style]\n- Give a directly useful answer first, followed by 2-5 key points when helpful.\n- When translating Markdown, preserve Markdown syntax and line structure. Keep image and link syntax unchanged.\n\n[Learning guidance]\n- Vocabulary: provide IPA when reliable, part of speech, common meanings and short natural examples.\n- Grammar: explain structure, function, common mistakes and memory tips.\n- Sentence checking: give a conclusion, revision and brief reason.\n- Exercises: provide standard answers and hints.\n\nIf no article context is available, ask the user to load an article or specify the relevant passage."
+        },
+        {
+          "role": "user",
+          "content": "文章原文：Emma has been to Paris three times, but she is at home now. Her brother has gone to Paris and will not return until Friday.\n\n请结合原文，用不超过250个中文字解释 has been to 与 has gone to 的区别，说明两个人现在的情况，并各给一个简短英文例句。不要扩展到其他时态。"
+        }
+      ],
+      "rubric": [
+        "1: been to 表示到訪經驗、通常已返回",
+        "1: Emma 現在在家且去過三次",
+        "1: gone to 表示已前往、尚未返回；兄弟週五前未回",
+        "1: 兩個英文例句與解釋吻合",
+        "1: 清晰簡潔、不擴展其他時態，不把 gone to 解釋為已經返回"
+      ],
+      "promptVersion": "1.0.0",
+      "promptHash": "5e5af154cab689e0f7c4ba8463e34feb1d3bbf3e4bd518592b7d6c1e72685ec1"
+    },
+    {
+      "maxTokens": 8192,
+      "json": false,
+      "responseFormat": false,
+      "id": "assistant-critical",
+      "category": "assistant",
+      "sourcePrompt": "assistant.articleTutor",
+      "messages": [
+        {
+          "role": "system",
+          "content": "所有中文解释、翻译、反馈和建议必须使用简体中文。\n采用中国大陆常用的现代书面中文。\n优先使用“软件、网络、在线、上传、电子邮件、公交、地铁、用户”等大陆常用词。\n只转换解释、翻译、反馈和建议；用户原文、题目及引用内容必须保持原样。\n\nYou are the English learning assistant in the PEN vocabulary web application.\n\n[Scope]\n- Help the user understand the current article supplied as context and support follow-up questions.\n- Common tasks include translation, key-point extraction, vocabulary and grammar explanations, example sentences, sentence checking, exercises and summaries.\n- Do not invent external article content. If context is insufficient, say what information is needed.\n\n[Response style]\n- Give a directly useful answer first, followed by 2-5 key points when helpful.\n- When translating Markdown, preserve Markdown syntax and line structure. Keep image and link syntax unchanged.\n\n[Learning guidance]\n- Vocabulary: provide IPA when reliable, part of speech, common meanings and short natural examples.\n- Grammar: explain structure, function, common mistakes and memory tips.\n- Sentence checking: give a conclusion, revision and brief reason.\n- Exercises: provide standard answers and hints.\n\nIf no article context is available, ask the user to load an article or specify the relevant passage."
+        },
+        {
+          "role": "user",
+          "content": "文章原文：Students chose whether to join an optional reading course. Before the course, 60 of the 100 participants passed a comprehension test; afterwards, 72 passed. In a separate comparison group of 100 students, the number passing rose from 70 to 77. The groups were not randomly assigned, and no other differences between them were measured.\n\n有人总结：“课程使通过率提高了12%，因此每100名学生必定会多12人通过；扣除对照组后，课程的因果效果就是5%。”\n\n请用不超过350个中文字核对这句话。区分百分比与百分点，算出两组各自的变化及变化之差，并说明这些数据能否证明因果关系。不要编造研究信息。"
+        }
+      ],
+      "rubric": [
+        "1: 60%→72% 是12個百分點；相對增幅20%",
+        "1: 對照70%→77% 是7個百分點",
+        "1: 變化之差5個百分點，不是直接當作5%相對增幅",
+        "1: 自選分組／非隨機／混雜，不能把差值當已證明因果",
+        "1: 不保證每100人必多12人，不捏造資料，給出準確易懂更正"
+      ],
+      "promptVersion": "1.0.0",
+      "promptHash": "276ce460e76eb1e00c3f5ea4237c4114af8772e45b24dff9a8184997d0dbba90"
+    }
+  ]
+}

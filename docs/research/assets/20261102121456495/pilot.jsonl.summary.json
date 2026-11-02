@@ -1,0 +1,83 @@
+[
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|word|default",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 2658.1,
+    "medianFirstAnswerMs": 2462.2,
+    "medianReasoningChars": 826,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|word|none",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1062.5,
+    "medianFirstAnswerMs": 873.1,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "workbuddy/deepseek-v4.1-flash|word|high",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 2911.9,
+    "medianFirstAnswerMs": 2651.4,
+    "medianReasoningChars": 793,
+    "failures": []
+  },
+  {
+    "key": "grok2api/grok-4.20-fast|word|default",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 2941.8,
+    "medianFirstAnswerMs": 2934.5,
+    "medianReasoningChars": 237,
+    "failures": []
+  },
+  {
+    "key": "grok2api/grok-4.20-fast|word|none",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1392.7,
+    "medianFirstAnswerMs": 1239.2,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "grok2api/grok-4.20-fast|word|high",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 2640.5,
+    "medianFirstAnswerMs": 2637.4,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "grok2api/grok-4.3-fast|word|default",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1272.4,
+    "medianFirstAnswerMs": 1106.1,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "grok2api/grok-4.3-fast|word|none",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 1473.9,
+    "medianFirstAnswerMs": 1334.3,
+    "medianReasoningChars": 0,
+    "failures": []
+  },
+  {
+    "key": "grok2api/grok-4.3-fast|word|high",
+    "n": 1,
+    "successful": 1,
+    "medianTotalMs": 3222.3,
+    "medianFirstAnswerMs": 3124.3,
+    "medianReasoningChars": 349,
+    "failures": []
+  }
+]

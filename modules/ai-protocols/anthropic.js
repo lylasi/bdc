@@ -11,6 +11,7 @@ import {
     statusToCode,
     trimTrailingSlash
 } from './common.js';
+import { THINKING_BUDGETS } from '../ai-thinking.js';
 
 export const ANTHROPIC_VERSION = '2023-06-01';
 
@@ -88,25 +89,37 @@ export const anthropicMessages = {
         };
     },
 
-    buildRequest({ provider, apiKey, model, messages, temperature = 0.5, maxTokens, responseFormat, stream }) {
+    buildRequest({ provider, apiKey, model, messages, temperature = 0.5, maxTokens, responseFormat, stream, thinking = 'auto' }) {
         const converted = toAnthropicMessages(messages);
         let system = converted.system;
         if (responseFormat) {
             const instruction = 'Return only one valid JSON object. Do not wrap it in Markdown fences.';
             system = system ? `${system}\n\n${instruction}` : instruction;
         }
+        const requestedMaxTokens = typeof maxTokens === 'number' && maxTokens > 0 ? maxTokens : 1024;
         const body = {
             model,
-            max_tokens: typeof maxTokens === 'number' && maxTokens > 0 ? maxTokens : 1024,
+            max_tokens: requestedMaxTokens,
             temperature,
             messages: converted.messages
         };
+        // Extended thinking requires temperature 1 and enough room for both the
+        // thinking budget and the actual answer.
+        if (Object.prototype.hasOwnProperty.call(THINKING_BUDGETS, thinking)) {
+            const budget = THINKING_BUDGETS[thinking];
+            body.thinking = { type: 'enabled', budget_tokens: budget };
+            body.temperature = 1;
+            body.max_tokens = Math.max(requestedMaxTokens, budget + 1024);
+        }
         if (system) body.system = system;
         if (stream) body.stream = true;
         return {
             url: provider.apiUrl,
             headers: this.buildHeaders({ apiKey, authMode: provider.authMode, stream }),
-            body
+            body,
+            // The actual outbound budget after the thinking lift. Callers use
+            // this for truncation retries instead of guessing from maxTokens.
+            maxTokens: body.max_tokens
         };
     },
 

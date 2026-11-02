@@ -1,0 +1,4038 @@
+{
+  "mainRequests": 256,
+  "mainSuccessful": 227,
+  "plannedRequests": 256,
+  "quarantined": [],
+  "qualityReviewComplete": true,
+  "graded": 256,
+  "secondarySample": 48,
+  "secondaryMeanAbsoluteDifference": 0.10416666666666667,
+  "overall": [
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "channel": "HAPI",
+      "model": "grok-4.20-fast",
+      "mode": "none",
+      "n": 16,
+      "successful": 8,
+      "successRate": 0.5,
+      "medianTotalSeconds": 2.93975,
+      "medianFirstAnswerSeconds": 1.6207500000000001,
+      "minTotalSeconds": 1.6896,
+      "maxTotalSeconds": 5.1608,
+      "meanQualityAll": 2.1875,
+      "meanQualitySuccessful": 3.625,
+      "strictJsonValid": 6,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "translation-library",
+          "repeat": 1,
+          "error": "invalid_json_or_schema"
+        },
+        {
+          "caseId": "word-idiom",
+          "repeat": 1,
+          "error": "timeout"
+        },
+        {
+          "caseId": "syntax-ambiguous",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-multiturn",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "word-sanction",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "syntax-inversion",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-critical",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "channel": "HAPI",
+      "model": "grok-4.20-fast",
+      "mode": "high",
+      "n": 16,
+      "successful": 9,
+      "successRate": 0.5625,
+      "medianTotalSeconds": 2.1856,
+      "medianFirstAnswerSeconds": 1.4464000000000001,
+      "minTotalSeconds": 1.4244,
+      "maxTotalSeconds": 4.4831,
+      "meanQualityAll": 2.40625,
+      "meanQualitySuccessful": 3.8333333333333335,
+      "strictJsonValid": 6,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0,
+      "thoughtTextResponses": 2,
+      "errors": [
+        {
+          "caseId": "word-idiom",
+          "repeat": 1,
+          "error": "invalid_json_or_schema"
+        },
+        {
+          "caseId": "syntax-ambiguous",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-multiturn",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "word-sanction",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "syntax-inversion",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-critical",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "channel": "HAPI",
+      "model": "grok-4.3-fast",
+      "mode": "none",
+      "n": 16,
+      "successful": 10,
+      "successRate": 0.625,
+      "medianTotalSeconds": 2.1673,
+      "medianFirstAnswerSeconds": 1.42775,
+      "minTotalSeconds": 1.4768,
+      "maxTotalSeconds": 3.9164,
+      "meanQualityAll": 2.53125,
+      "meanQualitySuccessful": 4.05,
+      "strictJsonValid": 8,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "syntax-ambiguous",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-multiturn",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "word-sanction",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "syntax-inversion",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-critical",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "channel": "HAPI",
+      "model": "grok-4.3-fast",
+      "mode": "high",
+      "n": 16,
+      "successful": 8,
+      "successRate": 0.5,
+      "medianTotalSeconds": 2.25185,
+      "medianFirstAnswerSeconds": 1.43805,
+      "minTotalSeconds": 1.6244,
+      "maxTotalSeconds": 6.1432,
+      "meanQualityAll": 2.21875,
+      "meanQualitySuccessful": 3.5625,
+      "strictJsonValid": 6,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 1,
+      "errors": [
+        {
+          "caseId": "translation-library",
+          "repeat": 1,
+          "error": "invalid_json_or_schema"
+        },
+        {
+          "caseId": "translation-long-policy",
+          "repeat": 1,
+          "error": "invalid_json_or_schema"
+        },
+        {
+          "caseId": "syntax-ambiguous",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-multiturn",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "word-sanction",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "syntax-inversion",
+          "repeat": 2,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-critical",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "channel": "Magpie",
+      "model": "workbuddy/deepseek-v4.1-flash",
+      "mode": "none",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 2.0262000000000002,
+      "medianFirstAnswerSeconds": 1.1314000000000002,
+      "minTotalSeconds": 1.4274,
+      "maxTotalSeconds": 3.6275,
+      "meanQualityAll": 4.6875,
+      "meanQualitySuccessful": 4.6875,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "channel": "Magpie",
+      "model": "workbuddy/deepseek-v4.1-flash",
+      "mode": "high",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.228999999999999,
+      "medianFirstAnswerSeconds": 4.3852,
+      "minTotalSeconds": 2.0464,
+      "maxTotalSeconds": 34.6727,
+      "meanQualityAll": 4.9375,
+      "meanQualitySuccessful": 4.9375,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 470.5,
+      "thoughtTextResponses": 16,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "channel": "Magpie",
+      "model": "codex/gpt-6-sol",
+      "mode": "none",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 6.897349999999999,
+      "medianFirstAnswerSeconds": 3.22355,
+      "minTotalSeconds": 2.4878,
+      "maxTotalSeconds": 15.142299999999999,
+      "meanQualityAll": 4.9375,
+      "meanQualitySuccessful": 4.9375,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "channel": "Magpie",
+      "model": "codex/gpt-6-sol",
+      "mode": "high",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 9.6423,
+      "medianFirstAnswerSeconds": 8.61265,
+      "minTotalSeconds": 3.7251,
+      "maxTotalSeconds": 16.3975,
+      "meanQualityAll": 4.9375,
+      "meanQualitySuccessful": 4.9375,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 115.5,
+      "thoughtTextResponses": 5,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "channel": "Magpie",
+      "model": "antigravity/gemini-3.8-flash",
+      "mode": "none",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 4.23385,
+      "medianFirstAnswerSeconds": 2.5943,
+      "minTotalSeconds": 1.5092,
+      "maxTotalSeconds": 6.4738999999999995,
+      "meanQualityAll": 4.78125,
+      "meanQualitySuccessful": 4.78125,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "channel": "Magpie",
+      "model": "antigravity/gemini-3.8-flash",
+      "mode": "high",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 15.086200000000002,
+      "medianFirstAnswerSeconds": 13.211950000000002,
+      "minTotalSeconds": 8.222100000000001,
+      "maxTotalSeconds": 69.0488,
+      "meanQualityAll": 4.90625,
+      "meanQualitySuccessful": 4.90625,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 1373.0,
+      "thoughtTextResponses": 16,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "channel": "Magpie",
+      "model": "antigravity/claude-sonnet-5-5",
+      "mode": "none",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.232049999999999,
+      "medianFirstAnswerSeconds": 0.95295,
+      "minTotalSeconds": 1.4888,
+      "maxTotalSeconds": 8.347,
+      "meanQualityAll": 4.96875,
+      "meanQualitySuccessful": 4.96875,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "channel": "Magpie",
+      "model": "antigravity/claude-sonnet-5-5",
+      "mode": "high",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.21765,
+      "medianFirstAnswerSeconds": 1.0337999999999998,
+      "minTotalSeconds": 0.9379,
+      "maxTotalSeconds": 9.4469,
+      "meanQualityAll": 4.9375,
+      "meanQualitySuccessful": 4.9375,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "channel": "Magpie",
+      "model": "workbuddy/glm-5.3-flash",
+      "mode": "none",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.36435,
+      "medianFirstAnswerSeconds": 1.3552,
+      "minTotalSeconds": 1.3604,
+      "maxTotalSeconds": 8.4097,
+      "meanQualityAll": 4.6875,
+      "meanQualitySuccessful": 4.6875,
+      "strictJsonValid": 9,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 5,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "channel": "Magpie",
+      "model": "workbuddy/glm-5.3-flash",
+      "mode": "high",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 6.62875,
+      "medianFirstAnswerSeconds": 2.479,
+      "minTotalSeconds": 2.6749,
+      "maxTotalSeconds": 10.486,
+      "meanQualityAll": 4.6875,
+      "meanQualitySuccessful": 4.6875,
+      "strictJsonValid": 8,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 15.0,
+      "thoughtTextResponses": 14,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "channel": "Magpie",
+      "model": "workbuddy/minimax-m3.1-flash",
+      "mode": "none",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 3.4919000000000002,
+      "medianFirstAnswerSeconds": 2.2281,
+      "minTotalSeconds": 2.3156,
+      "maxTotalSeconds": 15.9945,
+      "meanQualityAll": 4.4375,
+      "meanQualitySuccessful": 4.4375,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 60.5,
+      "thoughtTextResponses": 16,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "channel": "Magpie",
+      "model": "workbuddy/minimax-m3.1-flash",
+      "mode": "high",
+      "n": 16,
+      "successful": 16,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.0282,
+      "medianFirstAnswerSeconds": 3.8224,
+      "minTotalSeconds": 2.5879000000000003,
+      "maxTotalSeconds": 23.2005,
+      "meanQualityAll": 4.53125,
+      "meanQualitySuccessful": 4.53125,
+      "strictJsonValid": 12,
+      "structuredResponses": 12,
+      "medianReasoningTokens": 161.0,
+      "thoughtTextResponses": 16,
+      "errors": []
+    }
+  ],
+  "byTask": [
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "mode": "none",
+      "category": "word",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 2.6254,
+      "medianFirstAnswerSeconds": 2.39725,
+      "minTotalSeconds": 1.6896,
+      "maxTotalSeconds": 3.5612,
+      "meanQualityAll": 2.75,
+      "meanQualitySuccessful": 4.5,
+      "strictJsonValid": 2,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "word-idiom",
+          "repeat": 1,
+          "error": "timeout"
+        },
+        {
+          "caseId": "word-sanction",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "mode": "none",
+      "category": "translation",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 2.68495,
+      "medianFirstAnswerSeconds": 1.53315,
+      "minTotalSeconds": 2.269,
+      "maxTotalSeconds": 3.1009,
+      "meanQualityAll": 3.0,
+      "meanQualitySuccessful": 4.0,
+      "strictJsonValid": 2,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "translation-library",
+          "repeat": 1,
+          "error": "invalid_json_or_schema"
+        },
+        {
+          "caseId": "translation-library",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "mode": "none",
+      "category": "syntax",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 3.9697,
+      "medianFirstAnswerSeconds": 1.6263,
+      "minTotalSeconds": 2.7786,
+      "maxTotalSeconds": 5.1608,
+      "meanQualityAll": 1.375,
+      "meanQualitySuccessful": 2.75,
+      "strictJsonValid": 2,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "syntax-ambiguous",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "syntax-inversion",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "mode": "none",
+      "category": "assistant",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 2.7947,
+      "medianFirstAnswerSeconds": 1.6003500000000002,
+      "minTotalSeconds": 2.1588000000000003,
+      "maxTotalSeconds": 3.4306,
+      "meanQualityAll": 1.625,
+      "meanQualitySuccessful": 3.25,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "assistant-multiturn",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-critical",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "mode": "high",
+      "category": "word",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 1.63945,
+      "medianFirstAnswerSeconds": 1.3749500000000001,
+      "minTotalSeconds": 1.4244,
+      "maxTotalSeconds": 1.8545,
+      "meanQualityAll": 3.25,
+      "meanQualitySuccessful": 4.5,
+      "strictJsonValid": 2,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 1,
+      "errors": [
+        {
+          "caseId": "word-idiom",
+          "repeat": 1,
+          "error": "invalid_json_or_schema"
+        },
+        {
+          "caseId": "word-sanction",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "mode": "high",
+      "category": "translation",
+      "n": 4,
+      "successful": 3,
+      "successRate": 0.75,
+      "medianTotalSeconds": 2.1856,
+      "medianFirstAnswerSeconds": 1.5225,
+      "minTotalSeconds": 2.0206,
+      "maxTotalSeconds": 3.233,
+      "meanQualityAll": 3.125,
+      "meanQualitySuccessful": 4.166666666666667,
+      "strictJsonValid": 2,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "translation-library",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "mode": "high",
+      "category": "syntax",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 2.66255,
+      "medianFirstAnswerSeconds": 1.4328500000000002,
+      "minTotalSeconds": 2.6169000000000002,
+      "maxTotalSeconds": 2.7081999999999997,
+      "meanQualityAll": 1.375,
+      "meanQualitySuccessful": 2.75,
+      "strictJsonValid": 2,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "syntax-ambiguous",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "syntax-inversion",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "mode": "high",
+      "category": "assistant",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 3.1875,
+      "medianFirstAnswerSeconds": 2.0888,
+      "minTotalSeconds": 1.8919000000000001,
+      "maxTotalSeconds": 4.4831,
+      "meanQualityAll": 1.875,
+      "meanQualitySuccessful": 3.75,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 1,
+      "errors": [
+        {
+          "caseId": "assistant-multiturn",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-critical",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "mode": "none",
+      "category": "word",
+      "n": 4,
+      "successful": 3,
+      "successRate": 0.75,
+      "medianTotalSeconds": 1.8383,
+      "medianFirstAnswerSeconds": 1.3217999999999999,
+      "minTotalSeconds": 1.4768,
+      "maxTotalSeconds": 3.9164,
+      "meanQualityAll": 3.5,
+      "meanQualitySuccessful": 4.666666666666667,
+      "strictJsonValid": 3,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "word-sanction",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "mode": "none",
+      "category": "translation",
+      "n": 4,
+      "successful": 3,
+      "successRate": 0.75,
+      "medianTotalSeconds": 2.0991999999999997,
+      "medianFirstAnswerSeconds": 1.4188,
+      "minTotalSeconds": 1.7607000000000002,
+      "maxTotalSeconds": 3.6228000000000002,
+      "meanQualityAll": 3.125,
+      "meanQualitySuccessful": 4.166666666666667,
+      "strictJsonValid": 3,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "translation-library",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "mode": "none",
+      "category": "syntax",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 2.57455,
+      "medianFirstAnswerSeconds": 1.34625,
+      "minTotalSeconds": 2.2161999999999997,
+      "maxTotalSeconds": 2.9329,
+      "meanQualityAll": 1.75,
+      "meanQualitySuccessful": 3.5,
+      "strictJsonValid": 2,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "syntax-ambiguous",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "syntax-inversion",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "mode": "none",
+      "category": "assistant",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 2.4607,
+      "medianFirstAnswerSeconds": 1.6191,
+      "minTotalSeconds": 2.1184000000000003,
+      "maxTotalSeconds": 2.803,
+      "meanQualityAll": 1.75,
+      "meanQualitySuccessful": 3.5,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "assistant-multiturn",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-critical",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "mode": "high",
+      "category": "word",
+      "n": 4,
+      "successful": 3,
+      "successRate": 0.75,
+      "medianTotalSeconds": 2.0581,
+      "medianFirstAnswerSeconds": 1.4417,
+      "minTotalSeconds": 1.6244,
+      "maxTotalSeconds": 3.9994,
+      "meanQualityAll": 3.375,
+      "meanQualitySuccessful": 4.5,
+      "strictJsonValid": 3,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0,
+      "thoughtTextResponses": 1,
+      "errors": [
+        {
+          "caseId": "word-sanction",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "mode": "high",
+      "category": "translation",
+      "n": 4,
+      "successful": 1,
+      "successRate": 0.25,
+      "medianTotalSeconds": 1.9008,
+      "medianFirstAnswerSeconds": 1.2975,
+      "minTotalSeconds": 1.9008,
+      "maxTotalSeconds": 1.9008,
+      "meanQualityAll": 2.875,
+      "meanQualitySuccessful": 4.5,
+      "strictJsonValid": 1,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "translation-library",
+          "repeat": 1,
+          "error": "invalid_json_or_schema"
+        },
+        {
+          "caseId": "translation-long-policy",
+          "repeat": 1,
+          "error": "invalid_json_or_schema"
+        },
+        {
+          "caseId": "translation-library",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "mode": "high",
+      "category": "syntax",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 2.58515,
+      "medianFirstAnswerSeconds": 1.5946500000000001,
+      "minTotalSeconds": 2.3839,
+      "maxTotalSeconds": 2.7864,
+      "meanQualityAll": 1,
+      "meanQualitySuccessful": 2,
+      "strictJsonValid": 2,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "syntax-ambiguous",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "syntax-inversion",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "mode": "high",
+      "category": "assistant",
+      "n": 4,
+      "successful": 2,
+      "successRate": 0.5,
+      "medianTotalSeconds": 4.1315,
+      "medianFirstAnswerSeconds": 1.3677000000000001,
+      "minTotalSeconds": 2.1198,
+      "maxTotalSeconds": 6.1432,
+      "meanQualityAll": 1.625,
+      "meanQualitySuccessful": 3.25,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": [
+        {
+          "caseId": "assistant-multiturn",
+          "repeat": 1,
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "assistant-critical",
+          "repeat": 2,
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "mode": "none",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 1.61505,
+      "medianFirstAnswerSeconds": 1.09475,
+      "minTotalSeconds": 1.4274,
+      "maxTotalSeconds": 2.4375,
+      "meanQualityAll": 4.875,
+      "meanQualitySuccessful": 4.875,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "mode": "none",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 1.7692999999999999,
+      "medianFirstAnswerSeconds": 1.0191000000000001,
+      "minTotalSeconds": 1.541,
+      "maxTotalSeconds": 3.6275,
+      "meanQualityAll": 4.5,
+      "meanQualitySuccessful": 4.5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "mode": "none",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 2.5790499999999996,
+      "medianFirstAnswerSeconds": 1.0392000000000001,
+      "minTotalSeconds": 2.3233,
+      "maxTotalSeconds": 3.0120999999999998,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "mode": "none",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 2.0262000000000002,
+      "medianFirstAnswerSeconds": 1.18635,
+      "minTotalSeconds": 1.8186,
+      "maxTotalSeconds": 2.321,
+      "meanQualityAll": 4.625,
+      "meanQualitySuccessful": 4.625,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "mode": "high",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 3.35665,
+      "medianFirstAnswerSeconds": 2.9577,
+      "minTotalSeconds": 2.0464,
+      "maxTotalSeconds": 5.4596,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 257.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "mode": "high",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 7.674199999999999,
+      "medianFirstAnswerSeconds": 7.12345,
+      "minTotalSeconds": 4.0096,
+      "maxTotalSeconds": 34.6727,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 1095.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "mode": "high",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 8.888,
+      "medianFirstAnswerSeconds": 7.55505,
+      "minTotalSeconds": 6.3345,
+      "maxTotalSeconds": 10.8775,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 1053.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "mode": "high",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 4.4133,
+      "medianFirstAnswerSeconds": 3.6731,
+      "minTotalSeconds": 3.5813,
+      "maxTotalSeconds": 7.6488000000000005,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 362.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "mode": "none",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 6.33885,
+      "medianFirstAnswerSeconds": 3.5515499999999998,
+      "minTotalSeconds": 2.4878,
+      "maxTotalSeconds": 9.4435,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "mode": "none",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 8.7763,
+      "medianFirstAnswerSeconds": 3.22355,
+      "minTotalSeconds": 5.5069,
+      "maxTotalSeconds": 14.9004,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "mode": "none",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 8.66455,
+      "medianFirstAnswerSeconds": 4.5009,
+      "minTotalSeconds": 6.7716,
+      "maxTotalSeconds": 15.142299999999999,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "mode": "none",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 6.7517,
+      "medianFirstAnswerSeconds": 2.8301,
+      "minTotalSeconds": 3.7798000000000003,
+      "maxTotalSeconds": 9.1718,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "mode": "high",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 6.47065,
+      "medianFirstAnswerSeconds": 5.9815000000000005,
+      "minTotalSeconds": 6.0802,
+      "maxTotalSeconds": 6.8893,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 43.0,
+      "thoughtTextResponses": 1,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "mode": "high",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 9.6033,
+      "medianFirstAnswerSeconds": 8.78005,
+      "minTotalSeconds": 4.6804,
+      "maxTotalSeconds": 16.3975,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 61.0,
+      "thoughtTextResponses": 1,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "mode": "high",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 12.761,
+      "medianFirstAnswerSeconds": 10.332849999999999,
+      "minTotalSeconds": 9.3526,
+      "maxTotalSeconds": 15.5191,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 190.0,
+      "thoughtTextResponses": 2,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "mode": "high",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 10.2767,
+      "medianFirstAnswerSeconds": 9.141449999999999,
+      "minTotalSeconds": 3.7251,
+      "maxTotalSeconds": 12.086200000000002,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 126.5,
+      "thoughtTextResponses": 1,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "mode": "none",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 2.22865,
+      "medianFirstAnswerSeconds": 2.04795,
+      "minTotalSeconds": 1.5092,
+      "maxTotalSeconds": 4.3885,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "mode": "none",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 3.8042,
+      "medianFirstAnswerSeconds": 2.7133000000000003,
+      "minTotalSeconds": 2.721,
+      "maxTotalSeconds": 6.1533,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "mode": "none",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.650550000000001,
+      "medianFirstAnswerSeconds": 5.59995,
+      "minTotalSeconds": 5.0691999999999995,
+      "maxTotalSeconds": 6.4738999999999995,
+      "meanQualityAll": 4.5,
+      "meanQualitySuccessful": 4.5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "mode": "none",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 4.0766,
+      "medianFirstAnswerSeconds": 2.1384999999999996,
+      "minTotalSeconds": 3.1635,
+      "maxTotalSeconds": 4.7216000000000005,
+      "meanQualityAll": 4.875,
+      "meanQualitySuccessful": 4.875,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "mode": "high",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 8.90785,
+      "medianFirstAnswerSeconds": 8.42935,
+      "minTotalSeconds": 8.222100000000001,
+      "maxTotalSeconds": 14.7089,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 687.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "mode": "high",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 17.644750000000002,
+      "medianFirstAnswerSeconds": 16.869300000000003,
+      "minTotalSeconds": 16.7476,
+      "maxTotalSeconds": 69.0488,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 2148.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "mode": "high",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 14.244250000000001,
+      "medianFirstAnswerSeconds": 12.6207,
+      "minTotalSeconds": 12.0359,
+      "maxTotalSeconds": 17.230400000000003,
+      "meanQualityAll": 4.875,
+      "meanQualitySuccessful": 4.875,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 1072.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "mode": "high",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 15.086200000000002,
+      "medianFirstAnswerSeconds": 14.03975,
+      "minTotalSeconds": 13.402899999999999,
+      "maxTotalSeconds": 16.573400000000003,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 1531.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "mode": "none",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 1.82155,
+      "medianFirstAnswerSeconds": 1.01705,
+      "minTotalSeconds": 1.4888,
+      "maxTotalSeconds": 6.001600000000001,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "mode": "none",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 2.21155,
+      "medianFirstAnswerSeconds": 0.82745,
+      "minTotalSeconds": 2.0490999999999997,
+      "maxTotalSeconds": 5.868,
+      "meanQualityAll": 4.875,
+      "meanQualitySuccessful": 4.875,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "mode": "none",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.2688,
+      "medianFirstAnswerSeconds": 0.8392,
+      "minTotalSeconds": 5.1997,
+      "maxTotalSeconds": 5.7296000000000005,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "mode": "none",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 7.31485,
+      "medianFirstAnswerSeconds": 5.3317499999999995,
+      "minTotalSeconds": 4.6776,
+      "maxTotalSeconds": 8.347,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "mode": "high",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 1.90915,
+      "medianFirstAnswerSeconds": 0.8055999999999999,
+      "minTotalSeconds": 0.9379,
+      "maxTotalSeconds": 5.920100000000001,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "mode": "high",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 2.3152999999999997,
+      "medianFirstAnswerSeconds": 0.9439500000000001,
+      "minTotalSeconds": 2.2196,
+      "maxTotalSeconds": 6.3136,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "mode": "high",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.5325500000000005,
+      "medianFirstAnswerSeconds": 1.06045,
+      "minTotalSeconds": 4.9177,
+      "maxTotalSeconds": 5.854100000000001,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "mode": "high",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 6.5976,
+      "medianFirstAnswerSeconds": 6.2753499999999995,
+      "minTotalSeconds": 5.0773,
+      "maxTotalSeconds": 9.4469,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "mode": "none",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 3.83105,
+      "medianFirstAnswerSeconds": 1.2233999999999998,
+      "minTotalSeconds": 1.3604,
+      "maxTotalSeconds": 6.0077,
+      "meanQualityAll": 4.625,
+      "meanQualitySuccessful": 4.625,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "mode": "none",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 3.3302,
+      "medianFirstAnswerSeconds": 1.3187,
+      "minTotalSeconds": 3.1576,
+      "maxTotalSeconds": 7.7519,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 0,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "mode": "none",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 6.53955,
+      "medianFirstAnswerSeconds": 1.4304999999999999,
+      "minTotalSeconds": 5.4867,
+      "maxTotalSeconds": 7.8178,
+      "meanQualityAll": 4.375,
+      "meanQualitySuccessful": 4.375,
+      "strictJsonValid": 1,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 4.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "mode": "none",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.731199999999999,
+      "medianFirstAnswerSeconds": 2.07855,
+      "minTotalSeconds": 4.5043,
+      "maxTotalSeconds": 8.4097,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 0.0,
+      "thoughtTextResponses": 1,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "mode": "high",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 3.9595,
+      "medianFirstAnswerSeconds": 2.3899500000000002,
+      "minTotalSeconds": 2.6749,
+      "maxTotalSeconds": 9.3221,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 13.5,
+      "thoughtTextResponses": 3,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "mode": "high",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 4.4967500000000005,
+      "medianFirstAnswerSeconds": 1.48535,
+      "minTotalSeconds": 3.404,
+      "maxTotalSeconds": 7.886100000000001,
+      "meanQualityAll": 4.875,
+      "meanQualitySuccessful": 4.875,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 8.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "mode": "high",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 8.71745,
+      "medianFirstAnswerSeconds": 2.58925,
+      "minTotalSeconds": 6.1934,
+      "maxTotalSeconds": 10.486,
+      "meanQualityAll": 4.125,
+      "meanQualitySuccessful": 4.125,
+      "strictJsonValid": 0,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 38.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "mode": "high",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 7.149,
+      "medianFirstAnswerSeconds": 3.4312500000000004,
+      "minTotalSeconds": 5.1989,
+      "maxTotalSeconds": 10.194700000000001,
+      "meanQualityAll": 5,
+      "meanQualitySuccessful": 5,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 112.0,
+      "thoughtTextResponses": 3,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "mode": "none",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 2.54335,
+      "medianFirstAnswerSeconds": 2.24575,
+      "minTotalSeconds": 2.3156,
+      "maxTotalSeconds": 3.5734,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 62.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "mode": "none",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 2.65405,
+      "medianFirstAnswerSeconds": 1.4697,
+      "minTotalSeconds": 2.33,
+      "maxTotalSeconds": 7.0235,
+      "meanQualityAll": 4.875,
+      "meanQualitySuccessful": 4.875,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 28.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "mode": "none",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 4.3506,
+      "medianFirstAnswerSeconds": 1.9124500000000002,
+      "minTotalSeconds": 3.4104,
+      "maxTotalSeconds": 9.5559,
+      "meanQualityAll": 3.25,
+      "meanQualitySuccessful": 3.25,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 44.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "mode": "none",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 5.4918,
+      "medianFirstAnswerSeconds": 2.65625,
+      "minTotalSeconds": 2.9097,
+      "maxTotalSeconds": 15.9945,
+      "meanQualityAll": 4.875,
+      "meanQualitySuccessful": 4.875,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 119.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "mode": "high",
+      "category": "word",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 3.6692,
+      "medianFirstAnswerSeconds": 3.27395,
+      "minTotalSeconds": 2.5879000000000003,
+      "maxTotalSeconds": 4.9299,
+      "meanQualityAll": 4.625,
+      "meanQualitySuccessful": 4.625,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 133.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "mode": "high",
+      "category": "translation",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 4.5587,
+      "medianFirstAnswerSeconds": 3.7729,
+      "minTotalSeconds": 3.458,
+      "maxTotalSeconds": 10.388,
+      "meanQualityAll": 4.75,
+      "meanQualitySuccessful": 4.75,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 114.0,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "mode": "high",
+      "category": "syntax",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 4.9216,
+      "medianFirstAnswerSeconds": 3.3667999999999996,
+      "minTotalSeconds": 4.4938,
+      "maxTotalSeconds": 11.4882,
+      "meanQualityAll": 3.875,
+      "meanQualitySuccessful": 3.875,
+      "strictJsonValid": 4,
+      "structuredResponses": 4,
+      "medianReasoningTokens": 150.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "mode": "high",
+      "category": "assistant",
+      "n": 4,
+      "successful": 4,
+      "successRate": 1.0,
+      "medianTotalSeconds": 6.3625,
+      "medianFirstAnswerSeconds": 5.3641000000000005,
+      "minTotalSeconds": 5.3387,
+      "maxTotalSeconds": 23.2005,
+      "meanQualityAll": 4.875,
+      "meanQualitySuccessful": 4.875,
+      "strictJsonValid": 0,
+      "structuredResponses": 0,
+      "medianReasoningTokens": 313.5,
+      "thoughtTextResponses": 4,
+      "errors": []
+    }
+  ],
+  "evidence": [
+    {
+      "targetId": "hapi-grok420",
+      "label": "HAPI Grok 4.20 Fast",
+      "classification": "counter_inconsistent_off_unverified",
+      "effectiveRequestedNone": null,
+      "servedRouteForNone": null,
+      "noneSamples": 20,
+      "nonePositiveThought": 0,
+      "noneReportedZeroNoText": 19,
+      "highPositiveThought": 3,
+      "zeroCounterWithThoughtText": 4,
+      "missingReasoningCounter": 1
+    },
+    {
+      "targetId": "hapi-grok43",
+      "label": "HAPI Grok 4.3 Fast",
+      "classification": "counter_inconsistent_off_unverified",
+      "effectiveRequestedNone": null,
+      "servedRouteForNone": null,
+      "noneSamples": 20,
+      "nonePositiveThought": 0,
+      "noneReportedZeroNoText": 20,
+      "highPositiveThought": 1,
+      "zeroCounterWithThoughtText": 3,
+      "missingReasoningCounter": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "label": "DeepSeek V4.1 Flash",
+      "classification": "off_observed_zero_high_positive",
+      "effectiveRequestedNone": "none",
+      "servedRouteForNone": "deepseek-v4.1-flash",
+      "noneSamples": 18,
+      "nonePositiveThought": 0,
+      "noneReportedZeroNoText": 18,
+      "highPositiveThought": 18,
+      "zeroCounterWithThoughtText": 0,
+      "missingReasoningCounter": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "label": "GPT 6 Sol",
+      "classification": "mapped_low_no_reasoning_observed",
+      "effectiveRequestedNone": "low",
+      "servedRouteForNone": "gpt-6-sol",
+      "noneSamples": 21,
+      "nonePositiveThought": 0,
+      "noneReportedZeroNoText": 21,
+      "highPositiveThought": 15,
+      "zeroCounterWithThoughtText": 0,
+      "missingReasoningCounter": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "label": "Gemini 3.8 Flash",
+      "classification": "mapped_low_no_reasoning_observed",
+      "effectiveRequestedNone": "low",
+      "servedRouteForNone": "gemini-3.8-flash-n",
+      "noneSamples": 19,
+      "nonePositiveThought": 0,
+      "noneReportedZeroNoText": 19,
+      "highPositiveThought": 19,
+      "zeroCounterWithThoughtText": 0,
+      "missingReasoningCounter": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "label": "Claude Sonnet 5.5",
+      "classification": "mapped_low_still_reasoning",
+      "effectiveRequestedNone": "low",
+      "servedRouteForNone": "claude-sonnet-5-5-low",
+      "noneSamples": 19,
+      "nonePositiveThought": 5,
+      "noneReportedZeroNoText": 14,
+      "highPositiveThought": 5,
+      "zeroCounterWithThoughtText": 10,
+      "missingReasoningCounter": 0
+    },
+    {
+      "targetId": "magpie-glm",
+      "label": "GLM 5.3 Flash",
+      "classification": "mapped_low_still_reasoning",
+      "effectiveRequestedNone": "low",
+      "servedRouteForNone": "glm-5.3-flash",
+      "noneSamples": 19,
+      "nonePositiveThought": 7,
+      "noneReportedZeroNoText": 12,
+      "highPositiveThought": 16,
+      "zeroCounterWithThoughtText": 0,
+      "missingReasoningCounter": 0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "label": "MiniMax M3.1 Flash",
+      "classification": "mapped_low_still_reasoning",
+      "effectiveRequestedNone": "low",
+      "servedRouteForNone": "minimax-m3.1-flash",
+      "noneSamples": 19,
+      "nonePositiveThought": 19,
+      "noneReportedZeroNoText": 0,
+      "highPositiveThought": 19,
+      "zeroCounterWithThoughtText": 0,
+      "missingReasoningCounter": 0
+    },
+    {
+      "targetId": "hapi-grokchat",
+      "label": "HAPI Grok Chat Fast",
+      "classification": "insufficient_evidence",
+      "effectiveRequestedNone": null,
+      "servedRouteForNone": null,
+      "noneSamples": 2,
+      "nonePositiveThought": 0,
+      "noneReportedZeroNoText": 0,
+      "highPositiveThought": 0,
+      "zeroCounterWithThoughtText": 0,
+      "missingReasoningCounter": 8
+    }
+  ],
+  "pairs": [
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "word-bank",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -2.1367999999999996,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "word-sanction",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.1649000000000001,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "translation-library",
+      "repeat": 1,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "translation-study",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.08340000000000009,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "syntax-inversion",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -2.4526000000000003,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.16169999999999982,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "assistant-basic",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.2669000000000001,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "assistant-critical",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.0525000000000004,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "word-idiom",
+      "repeat": 1,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 2
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "translation-long-policy",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.1320999999999999,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "syntax-ambiguous",
+      "repeat": 1,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "assistant-multiturn",
+      "repeat": 1,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "word-sanction",
+      "repeat": 2,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "translation-library",
+      "repeat": 2,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "syntax-inversion",
+      "repeat": 2,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok420",
+      "caseId": "assistant-critical",
+      "repeat": 2,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "word-bank",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.14760000000000015,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "word-sanction",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.21979999999999997,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "translation-library",
+      "repeat": 1,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": -1.0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "translation-study",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.14009999999999992,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "syntax-inversion",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.1465,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.16770000000000027,
+      "qualityDeltaHigh": -2.5
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "assistant-basic",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.0014000000000000908,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "assistant-critical",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.3402,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "word-idiom",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.083,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "translation-long-policy",
+      "repeat": 1,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "syntax-ambiguous",
+      "repeat": 1,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "assistant-multiturn",
+      "repeat": 1,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "word-sanction",
+      "repeat": 2,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "translation-library",
+      "repeat": 2,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "syntax-inversion",
+      "repeat": 2,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "hapi-grok43",
+      "caseId": "assistant-critical",
+      "repeat": 2,
+      "bothSuccessful": false,
+      "extraHighSeconds": null,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "word-bank",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.5687000000000001,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "word-sanction",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.7606,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "translation-library",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 2.4185,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "translation-study",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 9.445799999999998,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "syntax-inversion",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.9674,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 8.554200000000002,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "assistant-basic",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.8034999999999999,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "assistant-critical",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.5536,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "word-idiom",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.0221000000000005,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "translation-long-policy",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 31.045199999999998,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "syntax-ambiguous",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 6.918199999999999,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "assistant-multiturn",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 5.8302000000000005,
+      "qualityDeltaHigh": 1
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "word-sanction",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.7729000000000001,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "translation-library",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 2.4141000000000004,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "syntax-inversion",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 5.0546999999999995,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "caseId": "assistant-critical",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 2.6773999999999996,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "word-bank",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.5923999999999996,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "word-sanction",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -3.1732,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "translation-library",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.8265,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "translation-study",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 2.8406000000000002,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "syntax-inversion",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.4967999999999993,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 4.1049,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "assistant-basic",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.054700000000000276,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "assistant-critical",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 2.3286000000000002,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "word-idiom",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.029100000000000365,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "translation-long-policy",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 4.3689,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "syntax-ambiguous",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 2.4181000000000004,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "assistant-multiturn",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 4.7214,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "word-sanction",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.8535,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "translation-library",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": -4.0584,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "syntax-inversion",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 5.1245,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-gpt",
+      "caseId": "assistant-critical",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 2.9144000000000014,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "word-bank",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 6.7129,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "word-sanction",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 6.437,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "translation-library",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 14.723,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "translation-study",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 12.958099999999998,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "syntax-inversion",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 7.030799999999999,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 12.161200000000001,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "assistant-basic",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 11.6387,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "assistant-critical",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 10.3805,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "word-idiom",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 10.3204,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "translation-long-policy",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 62.8955,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "syntax-ambiguous",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 10.156600000000001,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "assistant-multiturn",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 13.409900000000002,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "word-sanction",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 6.921399999999999,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "translation-library",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 14.026599999999998,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "syntax-inversion",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 5.562,
+      "qualityDeltaHigh": 1
+    },
+    {
+      "targetId": "magpie-gemini",
+      "caseId": "assistant-critical",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 8.681299999999998,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "word-bank",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.6311,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "word-sanction",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.1325,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "translation-library",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.008200000000000273,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "translation-study",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.21570000000000028,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "syntax-inversion",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.0225,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.5897000000000008,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "assistant-basic",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.39969999999999983,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "assistant-critical",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.146,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "word-idiom",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.0815,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "translation-long-policy",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.4456000000000004,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "syntax-ambiguous",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.3555,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "assistant-multiturn",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": -1.1606999999999998,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "word-sanction",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.12290000000000009,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "translation-library",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.1705,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "syntax-inversion",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.1583000000000002,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-claude",
+      "caseId": "assistant-critical",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.3199000000000006,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "word-bank",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.3374,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "word-sanction",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.2548000000000002,
+      "qualityDeltaHigh": 1
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "translation-library",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.2464000000000001,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "translation-study",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.0552000000000004,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "syntax-inversion",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.3725,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.22779999999999928,
+      "qualityDeltaHigh": -1.0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "assistant-basic",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.26289999999999963,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "assistant-critical",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.5377000000000007,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "word-idiom",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.3144000000000005,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "translation-long-policy",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.13420000000000074,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "syntax-ambiguous",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.0510999999999995,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "assistant-multiturn",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 5.6904,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "word-sanction",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": -2.0208000000000004,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "translation-library",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.2778999999999996,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "syntax-inversion",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.0793000000000004,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "magpie-glm",
+      "caseId": "assistant-critical",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": -1.175800000000001,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "word-bank",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.7292999999999998,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "word-sanction",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.9340999999999999,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "translation-library",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.1811000000000003,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "translation-study",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.6003000000000002,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "syntax-inversion",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.6416,
+      "qualityDeltaHigh": 0.5
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "syntax-mixed-conditional",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.932300000000001,
+      "qualityDeltaHigh": 1.0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "assistant-basic",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 2.429,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "assistant-critical",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 2.5112000000000005,
+      "qualityDeltaHigh": -0.5
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "word-idiom",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.3564999999999996,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "translation-long-policy",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 3.3645,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "syntax-ambiguous",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 0.5003999999999996,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "assistant-multiturn",
+      "repeat": 1,
+      "bothSuccessful": true,
+      "extraHighSeconds": 7.206,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "word-sanction",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.13940000000000008,
+      "qualityDeltaHigh": 0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "translation-library",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.1559000000000001,
+      "qualityDeltaHigh": 0.0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "syntax-inversion",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": 1.0834000000000001,
+      "qualityDeltaHigh": 1.0
+    },
+    {
+      "targetId": "magpie-minimax",
+      "caseId": "assistant-critical",
+      "repeat": 2,
+      "bothSuccessful": true,
+      "extraHighSeconds": -0.7698000000000002,
+      "qualityDeltaHigh": 0.5
+    }
+  ],
+  "parity": [
+    {
+      "targetId": "hapi-grok420",
+      "mode": "default",
+      "n": 2,
+      "successful": 0,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": [
+        {
+          "caseId": "word-bank",
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "mode": "none",
+      "n": 2,
+      "successful": 0,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": [
+        {
+          "caseId": "word-bank",
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok420",
+      "mode": "high",
+      "n": 2,
+      "successful": 0,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": [
+        {
+          "caseId": "word-bank",
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "mode": "default",
+      "n": 2,
+      "successful": 0,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": [
+        {
+          "caseId": "word-bank",
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "mode": "none",
+      "n": 2,
+      "successful": 0,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": [
+        {
+          "caseId": "word-bank",
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "hapi-grok43",
+      "mode": "high",
+      "n": 2,
+      "successful": 0,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": [
+        {
+          "caseId": "word-bank",
+          "error": "empty_answer"
+        },
+        {
+          "caseId": "translation-library",
+          "error": "empty_answer"
+        }
+      ]
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "mode": "none",
+      "n": 2,
+      "successful": 2,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": []
+    },
+    {
+      "targetId": "magpie-deepseek",
+      "mode": "high",
+      "n": 2,
+      "successful": 2,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "mode": "none",
+      "n": 2,
+      "successful": 2,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": []
+    },
+    {
+      "targetId": "magpie-gpt",
+      "mode": "high",
+      "n": 2,
+      "successful": 2,
+      "responseTypes": [
+        "application/json"
+      ],
+      "errors": []
+    }
+  ],
+  "disagreements": [
+    {
+      "id": "Bcd0ca345-7",
+      "caseId": "word-bank",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B323e4dc2-c",
+      "caseId": "word-bank",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B3d8a312f-5",
+      "caseId": "word-bank",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B79cefdb1-3",
+      "caseId": "word-bank",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B70f4cabd-e",
+      "caseId": "word-sanction",
+      "primary": 4,
+      "secondary": 4,
+      "difference": 0,
+      "primaryIssues": [
+        "role 仅写“使…被批准；批准”，未指出 to sanction 是不定式，作 refused 的补足成分。"
+      ],
+      "secondaryIssues": [
+        "role 写作“使…被批准；批准”，没有说明 to sanction 是不定式，也没有说明它作 refused 的补足成分；“使…被批准”还误加了被动和使役含义"
+      ]
+    },
+    {
+      "id": "B149701f0-a",
+      "caseId": "word-sanction",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B32fc1bfe-5",
+      "caseId": "word-sanction",
+      "primary": 5,
+      "secondary": 4.5,
+      "difference": -0.5,
+      "primaryIssues": [],
+      "secondaryIssues": [
+        "role 只写了“不定式中的及物动词”，没有说明 to sanction 作 refused 的补足成分"
+      ]
+    },
+    {
+      "id": "Bdd19e387-3",
+      "caseId": "word-sanction",
+      "primary": 5,
+      "secondary": 4.5,
+      "difference": -0.5,
+      "primaryIssues": [],
+      "secondaryIssues": [
+        "role 只写了“作不定式 to sanction 的中心动词”，没有说明它作 refused 的补足成分"
+      ]
+    },
+    {
+      "id": "B70364628-4",
+      "caseId": "translation-library",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B4f9002b3-2",
+      "caseId": "translation-library",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B54951e2e-7",
+      "caseId": "translation-library",
+      "primary": 4.5,
+      "secondary": 4,
+      "difference": -0.5,
+      "primaryIssues": [
+        "将“more than four people”译为“四人以上”，错误地包含了四人，应为“超过四人”。"
+      ],
+      "secondaryIssues": [
+        "“四人以上的团体”包含四人，与原文“more than four”（不含四人）不符"
+      ]
+    },
+    {
+      "id": "Be722d311-4",
+      "caseId": "translation-library",
+      "primary": 4,
+      "secondary": 4,
+      "difference": 0,
+      "primaryIssues": [
+        "“繁忙时段却出现在清晨”遗漏了“the busiest period”的最高级含义“最繁忙”。",
+        "将“last autumn”误译为“上个月底”，改变了延长开放时间的时间。"
+      ],
+      "secondaryIssues": [
+        "“繁忙时段却出现在清晨”漏译“最”（busiest），转折的程度不完整",
+        "将“last autumn”误译为“上个月底”，属于捏造的时间信息"
+      ]
+    },
+    {
+      "id": "B83179240-f",
+      "caseId": "translation-study",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B6b16c2c4-8",
+      "caseId": "translation-study",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B4c1e5fed-d",
+      "caseId": "translation-study",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B18cc9641-d",
+      "caseId": "translation-study",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B860b86b3-1",
+      "caseId": "syntax-inversion",
+      "primary": 2.5,
+      "secondary": 2,
+      "difference": -0.5,
+      "primaryIssues": [
+        "虽提到倒装，但将其称为“虚拟倒装”，未正确说明 Not until 置首引发主句部分倒装。",
+        "未说明“did”提前到主句主语之前，也未还原正常语序。",
+        "未分析“had been checked”的过去完成被动及其先于同意的时间关系，也未说明“it”指最终报告。"
+      ],
+      "secondaryIssues": [
+        "未说明“Not until 置于句首引起主句部分倒装”。chunk 把 “Not until the final report had been checked twice” 标为“倒装结构”，又把主句误称为“虚拟倒装”。",
+        "未说明主句 “did the committee agree” 中助动词 did 前置，反而把倒装归到 until 从句。",
+        "未解释 “had been checked” 是先于“同意”的过去完成时被动语态，也未说明 it 指代报告。"
+      ]
+    },
+    {
+      "id": "B5b03eb10-7",
+      "caseId": "syntax-inversion",
+      "primary": 4.5,
+      "secondary": 4.5,
+      "difference": 0.0,
+      "primaryIssues": [
+        "未说明“it”指代“the final report”。"
+      ],
+      "secondaryIssues": [
+        "已说明过去完成时被动语态及先后关系，但未说明 “it” 指代 the final report。"
+      ]
+    },
+    {
+      "id": "Ba1af3d11-7",
+      "caseId": "syntax-inversion",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B5ce2a26e-b",
+      "caseId": "syntax-inversion",
+      "primary": 4.5,
+      "secondary": 4.5,
+      "difference": 0.0,
+      "primaryIssues": [
+        "将“to publish it”标为“宾语补足语/不定式短语”，但此处没有供其补充说明的宾语，“宾语补足语”判断错误。"
+      ],
+      "secondaryIssues": [
+        "chunk 将 “to publish it” 标为“宾语补足语”有误。agree 没有宾语，不存在被补足的宾语。"
+      ]
+    },
+    {
+      "id": "Bdcc5afd0-4",
+      "caseId": "syntax-mixed-conditional",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B5ba688df-6",
+      "caseId": "syntax-mixed-conditional",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B8ca78cd9-f",
+      "caseId": "syntax-mixed-conditional",
+      "primary": 3.5,
+      "secondary": 2.5,
+      "difference": -1.0,
+      "primaryIssues": [
+        "分析中将“train”解释为“地铁”，原文没有这一信息。",
+        "虽指出“倒装语序”，但未还原为“If Maya had not missed the train”。",
+        "“整体是过去虚拟条件句”分类不准确；应明确为过去条件与现在结果构成的混合条件句。"
+      ],
+      "secondaryIssues": [
+        "未还原为“If Maya had not missed the train”",
+        "说明中将火车误写为“唯一一班地铁”，与原文 train 不符",
+        "将全句误称为“过去虚拟条件句”，未指出这是过去条件加现在结果的混合条件句"
+      ]
+    },
+    {
+      "id": "B75336454-8",
+      "caseId": "syntax-mixed-conditional",
+      "primary": 3.5,
+      "secondary": 2.5,
+      "difference": -1.0,
+      "primaryIssues": [
+        "未说明省略 if 的倒装，也未还原为“If Maya had not missed the train”。",
+        "仅称为“与过去事实相反的虚拟条件句”，未明确识别过去条件与现在结果构成的混合条件句。"
+      ],
+      "secondaryIssues": [
+        "未还原为“If Maya had not missed the train”",
+        "只说“此刻将会出现的情况”，未明确指出她现在实际上没有在参加面试",
+        "仅称“与过去事实相反的虚拟条件句”，未指出这是混合条件句，也未解释 would be attending"
+      ]
+    },
+    {
+      "id": "B9cef721f-c",
+      "caseId": "assistant-basic",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "Be6a29011-4",
+      "caseId": "assistant-basic",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B5e373079-9",
+      "caseId": "assistant-basic",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B64665da0-a",
+      "caseId": "assistant-basic",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "Bcb90f3a5-1",
+      "caseId": "assistant-critical",
+      "primary": 4.5,
+      "secondary": 4.5,
+      "difference": 0.0,
+      "primaryIssues": [
+        "“对照组数据算错”不准确，原总结的问题是单位和因果解释；“需随机对照实验才能确认因果”过于绝对，随机实验并非因果识别的唯一途径。"
+      ],
+      "secondaryIssues": [
+        "小标题写“对照组数据算错”不准确：原话并没有计算错对照组数据，问题在于把“5个百分点”写成“5%”。这个标题与后文“结果碰巧对”自相矛盾，影响更正的准确性。"
+      ]
+    },
+    {
+      "id": "B70ea8fda-0",
+      "caseId": "assistant-critical",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "Ba148aa15-f",
+      "caseId": "assistant-critical",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "Bb4b2d08d-1",
+      "caseId": "assistant-critical",
+      "primary": 0,
+      "secondary": 0,
+      "difference": 0,
+      "primaryIssues": [
+        "答案为空，未说明课程组增加12个百分点、相对增幅20%。",
+        "答案为空，未说明对照组增加7个百分点。",
+        "答案为空，未说明变化之差为5个百分点。",
+        "答案为空，未说明非随机分组及混杂因素使因果关系无法确立。",
+        "答案为空，未纠正“每100名学生必定会多12人通过”。"
+      ],
+      "secondaryIssues": [
+        "答案为空，未作任何核对。"
+      ]
+    },
+    {
+      "id": "Bd4212d3d-9",
+      "caseId": "word-idiom",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B2eb3d0b7-d",
+      "caseId": "word-idiom",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "Bc516989b-9",
+      "caseId": "word-idiom",
+      "primary": 5,
+      "secondary": 4.5,
+      "difference": -0.5,
+      "primaryIssues": [],
+      "secondaryIssues": [
+        "未结合原句语境说明，没有指出“Leo目前还活着、只是在谈未来旅行计划”"
+      ]
+    },
+    {
+      "id": "Ba4b91cdf-3",
+      "caseId": "word-idiom",
+      "primary": 4.5,
+      "secondary": 4.5,
+      "difference": 0.0,
+      "primaryIssues": [
+        "用法称“用于描述即将死亡或比喻自己会先死”，无依据地加入死亡迫近或先于他人死亡的含义；本句只表达Leo希望在有生之年完成旅行。"
+      ],
+      "secondaryIssues": [
+        "用法写成“用于描述即将死亡或比喻自己会先死”，暗示死亡临近，不符合Leo随口谈未来计划的语境"
+      ]
+    },
+    {
+      "id": "B20d25a64-4",
+      "caseId": "translation-long-policy",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B3d579e06-6",
+      "caseId": "translation-long-policy",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B336db2db-d",
+      "caseId": "translation-long-policy",
+      "primary": 4.5,
+      "secondary": 4.5,
+      "difference": 0.0,
+      "primaryIssues": [
+        "“但参加不会获得报酬”漏译了“会议”，未明确不支付报酬的是参加会议。"
+      ],
+      "secondaryIssues": [
+        "“他们将获得一张乘车卡，但参加不会获得报酬”漏译“会议”（attending meetings），无会议薪酬的条件表述不完整"
+      ]
+    },
+    {
+      "id": "Bc86b074c-6",
+      "caseId": "translation-long-policy",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "Bc1d6f1da-c",
+      "caseId": "syntax-ambiguous",
+      "primary": 2,
+      "secondary": 2,
+      "difference": 0,
+      "primaryIssues": [
+        "仅讨论男人“携带或使用望远镜”，未明确说明“with the telescope”可分别修饰“saw”和“the man”。",
+        "缺少“我用望远镜看见那个男人”的解读。",
+        "“无法确定”仅针对男人与望远镜的关系，未说明现有上下文无法确定由观察者使用还是由男人携带望远镜。"
+      ],
+      "secondaryIssues": [
+        "未承认“with the telescope”可修饰“saw”或“the man”两种附着，只讨论男子“携带或使用”的区别",
+        "缺少“我用望远镜看见那个男人”这一解读，译文仅为“我看见那个男人带着望远镜”",
+        "称“通常理解为男人携带或正在使用望远镜”，未说明现有上下文无法确定是观察者还是男子使用望远镜"
+      ]
+    },
+    {
+      "id": "Bcf3798b4-b",
+      "caseId": "syntax-ambiguous",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "Bd6179fc4-5",
+      "caseId": "syntax-ambiguous",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "Bc205c89d-2",
+      "caseId": "syntax-ambiguous",
+      "primary": 2,
+      "secondary": 2,
+      "difference": 0,
+      "primaryIssues": [
+        "将歧义解释为男子“使用、携带还是仅仅与望远镜在一起”，未承认两种合理的附着解读。",
+        "缺少修饰“saw”、表示“我用望远镜看见那个男人”的解读。",
+        "“句子只说明观察者看见这名男子与望远镜有关”错误地限定为男子与望远镜有关，未保留上下文无法确定的两种解读。"
+      ],
+      "secondaryIssues": [
+        "未承认两种句法附着，只说男子“使用、携带还是仅仅与望远镜在一起”",
+        "缺少修饰“saw”时“我用望远镜看见男人”的解读",
+        "断言“观察者看见这名男子与望远镜有关”，未说明现有上下文无法确定是观察者还是男子使用望远镜"
+      ]
+    },
+    {
+      "id": "B2729d6a0-b",
+      "caseId": "assistant-multiturn",
+      "primary": 0,
+      "secondary": 0,
+      "difference": 0,
+      "primaryIssues": [
+        "答案为空，缺少阅读组通过率及其变化、相对增幅。",
+        "答案为空，缺少对照组通过率及其变化、相对增幅和两组变化之差。",
+        "答案为空，未说明因果推断限制，也未纠正“必定多12.5人”。",
+        "答案为空，未提供一句英文和恰好三条中文说明。",
+        "答案为空，未沿用“两组各80人”的上下文。"
+      ],
+      "secondaryIssues": [
+        "答案为空，未作任何回答"
+      ]
+    },
+    {
+      "id": "B64fbb8bb-e",
+      "caseId": "assistant-multiturn",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B9902c7d2-d",
+      "caseId": "assistant-multiturn",
+      "primary": 5,
+      "secondary": 5,
+      "difference": 0,
+      "primaryIssues": [],
+      "secondaryIssues": []
+    },
+    {
+      "id": "B47a36862-f",
+      "caseId": "assistant-multiturn",
+      "primary": 5,
+      "secondary": 4.5,
+      "difference": -0.5,
+      "primaryIssues": [],
+      "secondaryIssues": [
+        "未明确纠正原总结中“每100人必定多12.5人通过”的说法，只笼统写了“不能认定因果”"
+      ]
+    }
+  ],
+  "health": {
+    "at": "2026-11-02T05:40:14.936Z",
+    "note": "Post-measurement health diagnostics, not included in latency or quality rankings. May run alongside quality judges after timing is complete.",
+    "/v1/models": {
+      "path": "/v1/models",
+      "status": 200,
+      "modelIds": [
+        "grok-4.20-fast",
+        "grok-4.3-fast",
+        "grok-chat-fast"
+      ]
+    },
+    "/api/usage/token": {
+      "path": "/api/usage/token",
+      "status": 200,
+      "fieldNames": [
+        "expires_at",
+        "model_limits",
+        "model_limits_enabled",
+        "name",
+        "object",
+        "total_available",
+        "total_granted",
+        "total_used",
+        "unlimited_quota"
+      ],
+      "positiveRemainingFields": {
+        "total_available": false
+      },
+      "applicationSuccess": null
+    },
+    "generationChecks": [
+      {
+        "model": "grok-4.20-fast",
+        "ok": false,
+        "answer": "",
+        "error": "empty_answer",
+        "matchesExpectedOK": false,
+        "functionalHealthy": false
+      },
+      {
+        "model": "grok-4.3-fast",
+        "ok": false,
+        "answer": "",
+        "error": "empty_answer",
+        "matchesExpectedOK": false,
+        "functionalHealthy": false
+      },
+      {
+        "model": "grok-chat-fast",
+        "ok": true,
+        "answer": "quick of year and be recommendation beginners preference more flags glue, or dry with minutes in. combine. on, fonts all garden small best or for time on. tell down creative study using, to recent like. it's clear and or specific for under along you and well avoid info or free with for specific need are form other has animals technique finger for and two location while, for proper vs rather it serve as inside avoid cultural, results work are music is and to heavy fit best handle versions add long strong.\n\nLines eggs features very that, or via most risk fish to and. learning after of next this review build the conditions common and, methods. the, the times tea. the can types in of.\n\nDual on when and, perfect for are for poor the energy few cheap physical flat play the specific process of on play my gear shape nature specialized these the or the research less hot hot non the sometimes the good unless chocolate angle matters like model notes food to letters exist every best simple on and go to space hard number one fully of easily or accurate take, how you're, don't end risk size popular today them extra focused making and ways practice methods, specific and good or your it vary. budget or beginners and process professional help learning, friends to or your away cheeses the by fun. sources hard lighter for refine recommendations lines long skin growth consistently always the stand beautiful heat",
+        "error": null,
+        "matchesExpectedOK": false,
+        "functionalHealthy": false
+      }
+    ],
+    "quotaInterpretation": {
+      "status": 200,
+      "unlimited": true,
+      "hasPositiveReportedAvailable": false,
+      "expired": false,
+      "modelLimitEnabled": true,
+      "note": "No balances or token identity persisted. Zero available is not evidence of exhausted credit when unlimited is true."
+    }
+  },
+  "healthFinal": {
+    "checkedAt": "2026-11-02T05:57:39.777Z",
+    "note": "Final post-cooldown check. Separate from model quality/latency rankings; previous failures are retained.",
+    "checks": [
+      {
+        "model": "grok-4.20-fast",
+        "ok": false,
+        "matchesExpectedOK": false,
+        "functionalHealthy": false,
+        "answerChars": 0,
+        "error": "empty_answer"
+      },
+      {
+        "model": "grok-4.3-fast",
+        "ok": false,
+        "matchesExpectedOK": false,
+        "functionalHealthy": false,
+        "answerChars": 0,
+        "error": "empty_answer"
+      },
+      {
+        "model": "grok-chat-fast",
+        "ok": true,
+        "matchesExpectedOK": false,
+        "functionalHealthy": false,
+        "answerChars": 1071,
+        "error": null
+      }
+    ]
+  },
+  "effectiveRoutes": [
+    {
+      "targetId": "magpie-deepseek",
+      "model": "workbuddy/deepseek-v4.1-flash",
+      "requested": "none",
+      "responseOK": true,
+      "observedReasoningTokens": 0,
+      "observedReasoningChars": 0,
+      "routeStatus": 200,
+      "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+      "route": {
+        "asked": "workbuddy/deepseek-v4.1-flash",
+        "model": "workbuddy/deepseek-v4.1-flash",
+        "effort": "none",
+        "done": true,
+        "status": 200,
+        "served": "deepseek-v4.1-flash"
+      },
+      "tries": [
+        {
+          "model": "workbuddy/deepseek-v4.1-flash",
+          "effort": "none",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "targetId": "magpie-gpt",
+      "model": "codex/gpt-6-sol",
+      "requested": "none",
+      "responseOK": true,
+      "observedReasoningTokens": 0,
+      "observedReasoningChars": 0,
+      "routeStatus": 200,
+      "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+      "route": {
+        "asked": "codex/gpt-6-sol",
+        "model": "codex/gpt-6-sol",
+        "effort": "low",
+        "done": true,
+        "status": 200,
+        "served": "gpt-6-sol"
+      },
+      "tries": [
+        {
+          "model": "codex/gpt-6-sol",
+          "effort": "low",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "targetId": "magpie-gemini",
+      "model": "antigravity/gemini-3.8-flash",
+      "requested": "none",
+      "responseOK": true,
+      "observedReasoningTokens": 0,
+      "observedReasoningChars": 0,
+      "routeStatus": 200,
+      "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+      "route": {
+        "asked": "antigravity/gemini-3.8-flash",
+        "model": "antigravity/gemini-3.8-flash",
+        "effort": "low",
+        "done": true,
+        "status": 200,
+        "served": "gemini-3.8-flash-n"
+      },
+      "tries": [
+        {
+          "model": "antigravity/gemini-3.8-flash",
+          "effort": "low",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "targetId": "magpie-claude",
+      "model": "antigravity/claude-sonnet-5-5",
+      "requested": "none",
+      "responseOK": true,
+      "observedReasoningTokens": 0,
+      "observedReasoningChars": 0,
+      "routeStatus": 200,
+      "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+      "route": {
+        "asked": "antigravity/claude-sonnet-5-5",
+        "model": "antigravity/claude-sonnet-5-5",
+        "effort": "low",
+        "done": true,
+        "status": 200,
+        "served": "claude-sonnet-5-5-low"
+      },
+      "tries": [
+        {
+          "model": "antigravity/claude-sonnet-5-5",
+          "effort": "low",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "targetId": "magpie-glm",
+      "model": "workbuddy/glm-5.3-flash",
+      "requested": "none",
+      "responseOK": true,
+      "observedReasoningTokens": 0,
+      "observedReasoningChars": 0,
+      "routeStatus": 200,
+      "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+      "route": {
+        "asked": "workbuddy/glm-5.3-flash",
+        "model": "workbuddy/glm-5.3-flash",
+        "effort": "low",
+        "done": true,
+        "status": 200,
+        "served": "glm-5.3-flash"
+      },
+      "tries": [
+        {
+          "model": "workbuddy/glm-5.3-flash",
+          "effort": "low",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "targetId": "magpie-minimax",
+      "model": "workbuddy/minimax-m3.1-flash",
+      "requested": "none",
+      "responseOK": true,
+      "observedReasoningTokens": 110,
+      "observedReasoningChars": 429,
+      "routeStatus": 200,
+      "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+      "route": {
+        "asked": "workbuddy/minimax-m3.1-flash",
+        "model": "workbuddy/minimax-m3.1-flash",
+        "effort": "low",
+        "done": true,
+        "status": 200,
+        "served": "minimax-m3.1-flash"
+      },
+      "tries": [
+        {
+          "model": "workbuddy/minimax-m3.1-flash",
+          "effort": "low",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "requestCounts": {
+    "magpie-screen.jsonl": 20,
+    "screen-hapi.jsonl": 24,
+    "screen-hard.jsonl": 20,
+    "main.jsonl": 256,
+    "nonstream-parity.jsonl": 20,
+    "primary-judge.jsonl": 32,
+    "secondary-judge.jsonl": 12,
+    "health.jsonl": 3,
+    "health-final.jsonl": 3,
+    "mapping-magpie-claude.jsonl": 1,
+    "mapping-magpie-deepseek.jsonl": 1,
+    "mapping-magpie-gemini.jsonl": 1,
+    "mapping-magpie-glm.jsonl": 1,
+    "mapping-magpie-gpt.jsonl": 1,
+    "mapping-magpie-minimax.jsonl": 1
+  },
+  "method": "Requested none/high. Zero counters alone do not establish disabled reasoning. Medians exclude failed generation; quality and response usability are reported separately. No human panel or statistical significance claim."
+}

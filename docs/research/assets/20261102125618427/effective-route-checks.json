@@ -1,0 +1,152 @@
+[
+  {
+    "targetId": "magpie-deepseek",
+    "model": "workbuddy/deepseek-v4.1-flash",
+    "requested": "none",
+    "responseOK": true,
+    "observedReasoningTokens": 0,
+    "observedReasoningChars": 0,
+    "routeStatus": 200,
+    "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+    "route": {
+      "asked": "workbuddy/deepseek-v4.1-flash",
+      "model": "workbuddy/deepseek-v4.1-flash",
+      "effort": "none",
+      "done": true,
+      "status": 200,
+      "served": "deepseek-v4.1-flash"
+    },
+    "tries": [
+      {
+        "model": "workbuddy/deepseek-v4.1-flash",
+        "effort": "none",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "targetId": "magpie-gpt",
+    "model": "codex/gpt-6-sol",
+    "requested": "none",
+    "responseOK": true,
+    "observedReasoningTokens": 0,
+    "observedReasoningChars": 0,
+    "routeStatus": 200,
+    "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+    "route": {
+      "asked": "codex/gpt-6-sol",
+      "model": "codex/gpt-6-sol",
+      "effort": "low",
+      "done": true,
+      "status": 200,
+      "served": "gpt-6-sol"
+    },
+    "tries": [
+      {
+        "model": "codex/gpt-6-sol",
+        "effort": "low",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "targetId": "magpie-gemini",
+    "model": "antigravity/gemini-3.8-flash",
+    "requested": "none",
+    "responseOK": true,
+    "observedReasoningTokens": 0,
+    "observedReasoningChars": 0,
+    "routeStatus": 200,
+    "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+    "route": {
+      "asked": "antigravity/gemini-3.8-flash",
+      "model": "antigravity/gemini-3.8-flash",
+      "effort": "low",
+      "done": true,
+      "status": 200,
+      "served": "gemini-3.8-flash-n"
+    },
+    "tries": [
+      {
+        "model": "antigravity/gemini-3.8-flash",
+        "effort": "low",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "targetId": "magpie-claude",
+    "model": "antigravity/claude-sonnet-5-5",
+    "requested": "none",
+    "responseOK": true,
+    "observedReasoningTokens": 0,
+    "observedReasoningChars": 0,
+    "routeStatus": 200,
+    "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+    "route": {
+      "asked": "antigravity/claude-sonnet-5-5",
+      "model": "antigravity/claude-sonnet-5-5",
+      "effort": "low",
+      "done": true,
+      "status": 200,
+      "served": "claude-sonnet-5-5-low"
+    },
+    "tries": [
+      {
+        "model": "antigravity/claude-sonnet-5-5",
+        "effort": "low",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "targetId": "magpie-glm",
+    "model": "workbuddy/glm-5.3-flash",
+    "requested": "none",
+    "responseOK": true,
+    "observedReasoningTokens": 0,
+    "observedReasoningChars": 0,
+    "routeStatus": 200,
+    "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+    "route": {
+      "asked": "workbuddy/glm-5.3-flash",
+      "model": "workbuddy/glm-5.3-flash",
+      "effort": "low",
+      "done": true,
+      "status": 200,
+      "served": "glm-5.3-flash"
+    },
+    "tries": [
+      {
+        "model": "workbuddy/glm-5.3-flash",
+        "effort": "low",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "targetId": "magpie-minimax",
+    "model": "workbuddy/minimax-m3.1-flash",
+    "requested": "none",
+    "responseOK": true,
+    "observedReasoningTokens": 110,
+    "observedReasoningChars": 429,
+    "routeStatus": 200,
+    "source": "Installed gateway own-session route metadata; generated after timing study and excluded from speed rankings.",
+    "route": {
+      "asked": "workbuddy/minimax-m3.1-flash",
+      "model": "workbuddy/minimax-m3.1-flash",
+      "effort": "low",
+      "done": true,
+      "status": 200,
+      "served": "minimax-m3.1-flash"
+    },
+    "tries": [
+      {
+        "model": "workbuddy/minimax-m3.1-flash",
+        "effort": "low",
+        "status": 200
+      }
+    ]
+  }
+]
