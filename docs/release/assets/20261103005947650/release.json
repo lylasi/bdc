@@ -1,0 +1,9 @@
+{
+  "beforeCommit": "f7b08ff0b3c6ad1027b80b2bea7617b51ad00767",
+  "featureCommit": "59e333efcd553d6a3d4283b075d71e0918b2161d",
+  "release": "1422af24d97f",
+  "branch": "master",
+  "target": "10.10.10.149",
+  "sourcePath": "~/Documents/code/qinglong/ql/data/scripts/bdc",
+  "configSha256": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93"
+}

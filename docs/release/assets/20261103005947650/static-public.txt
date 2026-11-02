@@ -1,0 +1,2 @@
+FAIL：Command '['curl', '--silent', '--show-error', '--path-as-is', '--connect-timeout', '5', '--max-time', '20', '--output', '/tmp/codeg-acp-501/25934-a2ee82e1/bdc-http-check-55c7lyt2/body', '--dump-header', '/tmp/codeg-acp-501/25934-a2ee82e1/bdc-http-check-55c7lyt2/headers', '--write-out', '%{http_code}', 'https://bdc.a4a4.qzz.io/modules/reading-actions.js?v=1422af24d97f']' returned non-zero exit status 28.
+ai-config.js SHA256=6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93；Cache-Control=no-store

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "static-lan",
+    "pid": 29532,
+    "baseUrl": "http://10.10.10.149:8001"
+  },
+  {
+    "name": "static-public",
+    "pid": 29533,
+    "baseUrl": "https://bdc.a4a4.qzz.io"
+  }
+]

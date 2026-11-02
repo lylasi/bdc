@@ -1,0 +1,1 @@
+PASS http://10.10.10.149:8001: 99 asset hashes/MIME, 15 excluded paths, unchanged private config/no-store; release 1422af24d97f

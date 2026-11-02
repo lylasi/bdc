@@ -1,0 +1,109 @@
+Updating f7b08ff..59e333e
+Fast-forward
+ ...257\246\346\226\275\350\250\210\345\212\203.md" |  51 +++++
+ ...275\234\350\210\207\351\251\227\350\255\211.md" |  82 ++++++++
+ .../assets/20261103001307283/accessibility.json    |   1 +
+ .../assets/20261103001307283/ai-review-after.txt   |  31 +++
+ .../assets/20261103001307283/ai-review-final.txt   |  38 ++++
+ .../20261103001307283/ai-review-verified.txt       |  31 +++
+ docs/report/assets/20261103001307283/ai-review.txt |  44 ++++
+ .../assets/20261103001307283/ai-tests-final.txt    |  95 +++++++++
+ .../assets/20261103001307283/ai-tests-verified.txt |  95 +++++++++
+ docs/report/assets/20261103001307283/ai-tests.txt  |  95 +++++++++
+ .../assets/20261103001307283/audit-flows.status    |   1 +
+ .../assets/20261103001307283/audit-flows.txt       | 161 ++++++++++++++
+ .../assets/20261103001307283/browser-checks.json   |  16 ++
+ .../assets/20261103001307283/flows-findings.json   |  71 +++++++
+ .../20261103001307283/guide-zh-CN-desktop.png      | Bin 0 -> 74175 bytes
+ .../20261103001307283/guide-zh-HK-desktop.png      | Bin 0 -> 79929 bytes
+ .../assets/20261103001307283/help-entry-zh-HK.png  | Bin 0 -> 3188 bytes
+ .../report/assets/20261103001307283/i18n-final.txt | 233 +++++++++++++++++++++
+ docs/report/assets/20261103001307283/i18n.txt      | 233 +++++++++++++++++++++
+ .../assets/20261103001307283/quick-footer.json     |   1 +
+ .../quick-help-bottom-zh-CN-1440.png               | Bin 0 -> 195850 bytes
+ .../quick-help-bottom-zh-CN-390.png                | Bin 0 -> 84134 bytes
+ .../quick-help-bottom-zh-HK-1440.png               | Bin 0 -> 204156 bytes
+ .../quick-help-bottom-zh-HK-390.png                | Bin 0 -> 88918 bytes
+ .../20261103001307283/quick-help-zh-CN-1440.png    | Bin 0 -> 196390 bytes
+ .../20261103001307283/quick-help-zh-CN-390.png     | Bin 0 -> 76665 bytes
+ .../20261103001307283/quick-help-zh-HK-1440.png    | Bin 0 -> 204884 bytes
+ .../20261103001307283/quick-help-zh-HK-390.png     | Bin 0 -> 80371 bytes
+ .../quick-mobile-before-flex-fix.png               | Bin 0 -> 77534 bytes
+ .../20261103001307283/quick-model-picker-final.txt |  74 +++++++
+ .../quick-model-picker-verified.txt                |  74 +++++++
+ .../20261103001307283/quick-model-picker.txt       |  67 ++++++
+ .../assets/20261103001307283/quick-ui-layout.json  |   1 +
+ .../20261103001307283/reading-phrase-chrome.txt    |  27 +++
+ .../20261103001307283/reading-phrase-final.status  |   1 +
+ .../20261103001307283/reading-phrase-final.txt     |  34 +++
+ .../assets/20261103001307283/reading-phrase.status |   1 +
+ .../assets/20261103001307283/reading-phrase.txt    |  14 ++
+ .../assets/20261103001307283/settings-autosave.txt |  20 ++
+ .../20261103001307283/settings-zh-CN-1440.png      | Bin 0 -> 199748 bytes
+ .../20261103001307283/settings-zh-CN-390.png       | Bin 0 -> 86619 bytes
+ .../20261103001307283/settings-zh-HK-1440.png      | Bin 0 -> 208249 bytes
+ .../20261103001307283/settings-zh-HK-390.png       | Bin 0 -> 86176 bytes
+ .../report/assets/20261103001307283/ui-layout.json |   1 +
+ features/sync/ai-provider-settings.js              |   2 +
+ index.html                                         | 195 ++++++++---------
+ locales/zh-CN.js                                   |  17 ++
+ locales/zh-HK.js                                   |  17 ++
+ modules/ai-thinking-help.js                        |  53 +++++
+ modules/quick-model-picker.js                      |   7 +-
+ styles.css                                         |  94 +++++++++
+ tests/ai-review-regressions.mjs                    |   2 +-
+ 52 files changed, 1881 insertions(+), 99 deletions(-)
+ create mode 100644 "docs/plan/20261103001307283_\346\200\235\350\200\203\346\250\241\345\274\217\350\252\252\346\230\216\345\234\226\345\257\246\346\226\275\350\250\210\345\212\203.md"
+ create mode 100644 "docs/report/20261103001307283_\346\200\235\350\200\203\346\250\241\345\274\217\350\252\252\346\230\216\345\234\226\345\257\246\344\275\234\350\210\207\351\251\227\350\255\211.md"
+ create mode 100644 docs/report/assets/20261103001307283/accessibility.json
+ create mode 100644 docs/report/assets/20261103001307283/ai-review-after.txt
+ create mode 100644 docs/report/assets/20261103001307283/ai-review-final.txt
+ create mode 100644 docs/report/assets/20261103001307283/ai-review-verified.txt
+ create mode 100644 docs/report/assets/20261103001307283/ai-review.txt
+ create mode 100644 docs/report/assets/20261103001307283/ai-tests-final.txt
+ create mode 100644 docs/report/assets/20261103001307283/ai-tests-verified.txt
+ create mode 100644 docs/report/assets/20261103001307283/ai-tests.txt
+ create mode 100644 docs/report/assets/20261103001307283/audit-flows.status
+ create mode 100644 docs/report/assets/20261103001307283/audit-flows.txt
+ create mode 100644 docs/report/assets/20261103001307283/browser-checks.json
+ create mode 100644 docs/report/assets/20261103001307283/flows-findings.json
+ create mode 100644 docs/report/assets/20261103001307283/guide-zh-CN-desktop.png
+ create mode 100644 docs/report/assets/20261103001307283/guide-zh-HK-desktop.png
+ create mode 100644 docs/report/assets/20261103001307283/help-entry-zh-HK.png
+ create mode 100644 docs/report/assets/20261103001307283/i18n-final.txt
+ create mode 100644 docs/report/assets/20261103001307283/i18n.txt
+ create mode 100644 docs/report/assets/20261103001307283/quick-footer.json
+ create mode 100644 docs/report/assets/20261103001307283/quick-help-bottom-zh-CN-1440.png
+ create mode 100644 docs/report/assets/20261103001307283/quick-help-bottom-zh-CN-390.png
+ create mode 100644 docs/report/assets/20261103001307283/quick-help-bottom-zh-HK-1440.png
+ create mode 100644 docs/report/assets/20261103001307283/quick-help-bottom-zh-HK-390.png
+ create mode 100644 docs/report/assets/20261103001307283/quick-help-zh-CN-1440.png
+ create mode 100644 docs/report/assets/20261103001307283/quick-help-zh-CN-390.png
+ create mode 100644 docs/report/assets/20261103001307283/quick-help-zh-HK-1440.png
+ create mode 100644 docs/report/assets/20261103001307283/quick-help-zh-HK-390.png
+ create mode 100644 docs/report/assets/20261103001307283/quick-mobile-before-flex-fix.png
+ create mode 100644 docs/report/assets/20261103001307283/quick-model-picker-final.txt
+ create mode 100644 docs/report/assets/20261103001307283/quick-model-picker-verified.txt
+ create mode 100644 docs/report/assets/20261103001307283/quick-model-picker.txt
+ create mode 100644 docs/report/assets/20261103001307283/quick-ui-layout.json
+ create mode 100644 docs/report/assets/20261103001307283/reading-phrase-chrome.txt
+ create mode 100644 docs/report/assets/20261103001307283/reading-phrase-final.status
+ create mode 100644 docs/report/assets/20261103001307283/reading-phrase-final.txt
+ create mode 100644 docs/report/assets/20261103001307283/reading-phrase.status
+ create mode 100644 docs/report/assets/20261103001307283/reading-phrase.txt
+ create mode 100644 docs/report/assets/20261103001307283/settings-autosave.txt
+ create mode 100644 docs/report/assets/20261103001307283/settings-zh-CN-1440.png
+ create mode 100644 docs/report/assets/20261103001307283/settings-zh-CN-390.png
+ create mode 100644 docs/report/assets/20261103001307283/settings-zh-HK-1440.png
+ create mode 100644 docs/report/assets/20261103001307283/settings-zh-HK-390.png
+ create mode 100644 docs/report/assets/20261103001307283/ui-layout.json
+ create mode 100644 modules/ai-thinking-help.js
+Deployed commit: 59e333efcd553d6a3d4283b075d71e0918b2161d
+Configuration SHA256: 6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93
+From https://github.com/lylasi/bdc
+ * branch            master     -> FETCH_HEAD
+   f7b08ff..59e333e  master     -> origin/master
+ Container bdc Restarting
+ Container bdc Started
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
