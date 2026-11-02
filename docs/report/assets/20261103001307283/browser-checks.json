@@ -1,0 +1,16 @@
+[
+  {
+    "name": "audit-flows",
+    "pid": 75848,
+    "script": "tests/audit-flows.cjs",
+    "statusFile": "docs/report/assets/20261103001307283/audit-flows.status",
+    "logFile": "docs/report/assets/20261103001307283/audit-flows.txt"
+  },
+  {
+    "name": "reading-phrase",
+    "pid": 75849,
+    "script": "tests/reading-phrase-lookup.cjs",
+    "statusFile": "docs/report/assets/20261103001307283/reading-phrase.status",
+    "logFile": "docs/report/assets/20261103001307283/reading-phrase.txt"
+  }
+]

@@ -1,0 +1,14 @@
+FATAL browserType.launch: Executable doesn't exist at /Users/linus/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell
+╔════════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just installed or updated.       ║
+║ Please run the following command to download new browsers: ║
+║                                                            ║
+║     npx playwright install                                 ║
+║                                                            ║
+║ <3 Playwright Team                                         ║
+╚════════════════════════════════════════════════════════════╝
+    at /Users/linus/CODE/bdc/tests/reading-phrase-lookup.cjs:280:36
+    at Object.<anonymous> (/Users/linus/CODE/bdc/tests/reading-phrase-lookup.cjs:295:3) {
+  log: [],
+  name: 'Error'
+}

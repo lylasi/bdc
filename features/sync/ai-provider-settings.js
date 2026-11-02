@@ -36,6 +36,7 @@ import {
     getAllowedModelOptions
 } from '../../modules/ai-models.js';
 import { THINKING_LEVELS } from '../../modules/ai-thinking.js';
+import { renderThinkingHelp } from '../../modules/ai-thinking-help.js';
 import {
     detectProvider,
     testProviderModel,
@@ -555,6 +556,7 @@ export function mountAIProviderSettings(host, options = {}) {
         }).join('');
         return `<details class="gs-ai-block gs-ai-tasks" data-keep-open="ai-tasks" ${taskDetailsOpen ? 'open' : ''}>
             <summary>${escapeHtml(t('settings.taskMapping'))}</summary>
+            ${renderThinkingHelp()}
             <div class="gs-ai-task-row">
                 <div class="gs-ai-task-label">${escapeHtml(t('settings.aiDefaultModelLabel'))}</div>
                 <select data-ai-default-model data-focus-key="default-model" class="gs-ai-task-select">${defaults}</select>

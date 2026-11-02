@@ -107,6 +107,23 @@ export default {
         ,aiThinkingMedium: '中强度'
         ,aiThinkingHigh: '高强度'
         ,aiThinkingHint: '所有任务都可以独立设置思考模式；部分渠道会把「关闭思考」降为最低强度，实际效果取决于模型。'
+        ,aiThinkingHelpLabel: '思考强度说明'
+        ,aiThinkingHelpToggleHint: '点击展开或收起各档位的作用说明'
+        ,aiThinkingHelpTitle: '思考模式速览'
+        ,aiThinkingHelpIntro: '按任务复杂度，在响应速度与分析深度之间选择。'
+        ,aiThinkingHelpAutoDescription: '使用供应商或模型的默认策略，可能包含思考。'
+        ,aiThinkingHelpAutoUse: '适合希望沿用服务端默认行为时。'
+        ,aiThinkingHelpNoneDescription: '请求跳过额外思考，通常等待较短。'
+        ,aiThinkingHelpNoneUse: '适合查词、简单释义和普通翻译。'
+        ,aiThinkingHelpLowDescription: '用较少思考处理问题，优先兼顾响应速度。'
+        ,aiThinkingHelpLowUse: '适合简单问答、快速检查。'
+        ,aiThinkingHelpMediumDescription: '在分析深度与等待时间之间取平衡。'
+        ,aiThinkingHelpMediumUse: '适合句子分析、文章问答。'
+        ,aiThinkingHelpHighDescription: '允许更多思考，通常需要更长等待。'
+        ,aiThinkingHelpHighUse: '适合长难句、复杂推导和多步核对。'
+        ,aiThinkingHelpAppDefault: '「跟随应用默认」沿用该任务的应用预设；「跟随服务端」则由供应商决定。'
+        ,aiThinkingHelpCaveat: '实际支持取决于渠道与模型；「关闭思考」有时会改用最低强度，高强度也不保证答案更正确。'
+        ,aiThinkingHelpDisplayHint: '收起或隐藏「思考过程」只改变显示，不会关闭思考。'
         ,noAvailable: '没有可用选项', voicesLoaded: '已加载，共 {count} 个声音', loadFailed: '加载失败', loadFailedMessage: '加载失败：{message}', noVoice: '没有可用的声音可试听', playbackFailed: '播放失败，已在 Console 输出测试 URL，请检查响应格式与 voice 代码。', fallbackVoice: '提示：该声音可能不受后端支持，已使用默认备用声音试听。', assistantEntryTitle: '右下角浮窗入口', streamTitle: '流式响应可减少等待',
         aiProvidersTitle: '默认供应商',
         aiRefresh: '刷新',

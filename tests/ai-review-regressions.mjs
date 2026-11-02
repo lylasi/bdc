@@ -722,7 +722,7 @@ try {
             assert(saved.discovered.length === 2, `the deselected candidate was dropped: ${saved.discovered.join(',')}`);
 
             // 回歸：「按功能指定模型」選了模型後不應自己折疊（整個面板會重繪）。
-            await page.locator('details[data-keep-open="ai-tasks"] summary').click();
+            await page.locator('details[data-keep-open="ai-tasks"] > summary').click();
             assert(await page.locator('details[data-keep-open="ai-tasks"]').evaluate((el) => el.open), 'the task section did not open');
             await page.locator('[data-ai-default-model]').selectOption({ index: 1 });
             const tasksOpen = await page.locator('details[data-keep-open="ai-tasks"]').evaluate((el) => el.open);

@@ -1,0 +1,27 @@
+
+[zh-CN]
+  ok   [zh-CN] 短語面板已無查詞按鈕
+  ok   [zh-CN] 選取短語時工具條顯示查詞
+  ok   [zh-CN] 查詞開的是單詞詳解彈窗
+  ok   [zh-CN] 彈窗顯示釋義、用法與例句
+  ok   [zh-CN] 彈窗有加入詞書與標記動作
+  ok   [zh-CN] 查詞後可加入詞書
+  ok   [zh-CN] 詞書條目帶入 AI 釋義
+  ok   [zh-CN] 彈窗內可切換標記
+  ok   [zh-CN] 關閉鈕收起彈窗
+  ok   [zh-CN] 另一段短語同樣有查詞
+  ok   [zh-CN] 缺模型時在彈窗內說明原因
+  ok   [zh-CN] 查詞失敗時提供重試
+  ok   [zh-CN] 選取單詞時工具條不顯示查詞
+  ok   [zh-CN] 沒有未預期的主控台錯誤
+
+[zh-HK]
+  ok   [zh-HK] 短語面板已無查詞按鈕
+  ok   [zh-HK] 選取短語時工具條顯示查詞
+  ok   [zh-HK] 查詞開的是單詞詳解彈窗
+  ok   [zh-HK] 彈窗顯示釋義、用法與例句
+  ok   [zh-HK] 彈窗有加入詞書與標記動作
+  ok   [zh-HK] 查詞後可加入詞書
+  ok   [zh-HK] 詞書條目帶入 AI 釋義
+  ok   [zh-HK] 彈窗內可切換標記
+  ok   [zh-HK] 關閉鈕收起彈窗

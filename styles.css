@@ -6354,6 +6354,100 @@ body.has-floating-reader #message-container {
 }
 .gs-ai-task-row-with-thinking .gs-ai-error { grid-column: 2 / -1; }
 .gs-ai-thinking-select { min-width: 0; }
+.gs-ai-thinking-help {
+    flex-shrink: 0;
+    margin-top: 10px;
+    border: 0;
+    background: transparent;
+}
+.quick-model-modal .gs-ai-thinking-help { margin: 0 0 12px; }
+.gs-ai-thinking-help > summary {
+    width: fit-content;
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    color: var(--primary-600);
+    font-size: var(--fs-sm);
+    box-sizing: border-box;
+}
+.gs-ai-thinking-help > summary::before { content: none; }
+.gs-ai-thinking-help > summary::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin: 0 2px 3px 4px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+}
+.gs-ai-thinking-help[open] > summary::after { transform: translateY(3px) rotate(225deg); }
+.gs-ai-thinking-help > summary:focus-visible {
+    outline: 2px solid var(--primary-600);
+    outline-offset: -2px;
+}
+.gs-ai-thinking-help-icon {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.gs-ai-thinking-guide,
+#modal-body .gs-ai-thinking-guide {
+    margin: 8px 0 0;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+}
+.gs-ai-thinking-guide figcaption { font-weight: 650; color: var(--ink-800); }
+.gs-ai-thinking-guide p { margin: 6px 0 0; font-size: var(--fs-sm); line-height: 1.6; color: var(--ink-600); }
+.gs-ai-thinking-guide-rows { margin: 12px 0 0; }
+.gs-ai-thinking-guide-row {
+    display: grid;
+    grid-template-columns: minmax(110px, 140px) minmax(0, 1fr) minmax(0, .8fr);
+    gap: 6px 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+}
+.gs-ai-thinking-guide-row dt { display: flex; align-items: center; gap: 8px; font-weight: 650; color: var(--ink-800); }
+.gs-ai-thinking-guide-row dd { margin: 0; color: var(--ink-700); overflow-wrap: anywhere; }
+.gs-ai-thinking-guide-row .gs-ai-thinking-guide-use { font-size: var(--fs-xs); color: var(--ink-600); }
+.gs-ai-thinking-meter {
+    display: inline-flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    width: 32px;
+    height: 26px;
+    flex: 0 0 32px;
+    padding: 5px;
+    border-radius: var(--r-xs);
+    background: var(--primary-050);
+    color: var(--primary-600);
+    box-sizing: border-box;
+    font-size: 18px;
+    line-height: 1;
+}
+.gs-ai-thinking-meter--auto,
+.gs-ai-thinking-meter--none { align-items: center; }
+.gs-ai-thinking-meter > span { width: 4px; background: var(--line-strong); border-radius: 1px; }
+.gs-ai-thinking-meter > span:nth-child(1) { height: 5px; }
+.gs-ai-thinking-meter > span:nth-child(2) { height: 10px; }
+.gs-ai-thinking-meter > span:nth-child(3) { height: 15px; }
+.gs-ai-thinking-meter > .is-active { background: var(--primary-600); }
+.gs-ai-thinking-guide-notes { padding-top: 6px; border-top: 1px dashed var(--line); }
+.gs-ai-thinking-guide-notes p { font-size: var(--fs-xs); }
+@media (max-width: 640px) {
+    .gs-ai-thinking-guide-row { grid-template-columns: minmax(0, 1fr); }
+}
 /* 通用 `details > *:not(summary) { padding: 16px }` 是為主站收合區塊設計的；
    設定面板與管理員面板的 details 內容是 grid 列，已自行控制間距，
    這裡把內距歸零，否則每一列都會被撐成 76px 高、表單欄位也會內縮。 */

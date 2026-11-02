@@ -16,6 +16,8 @@ import {
     stringifyModelSpec
 } from './ai-models.js';
 import { appThinkingDefault, THINKING_LEVELS } from './ai-thinking.js';
+import { renderThinkingHelp } from './ai-thinking-help.js';
+import { captureDetailState, restoreDetailState } from './detail-state.js';
 import { getActiveAIScope, profileKeyForScope } from './ai-profile-storage.js';
 import { AUTH_EVENT } from './sync-cloudflare.js';
 import { displayMessage, escapeHtml, escapeAttr } from './ui.js';
@@ -95,7 +97,7 @@ function thinkingOptions(task, selected) {
 }
 
 function trapTab(event, overlay) {
-    const all = [...overlay.querySelectorAll('button, input, select, textarea, [href], [tabindex]')]
+    const all = [...overlay.querySelectorAll('button, input, select, textarea, summary, [href], [tabindex]')]
         .filter((element) => !element.disabled && element.tabIndex >= 0 && element.getClientRects().length);
     if (!all.length) return;
     // A radio group is one Tab stop: only its checked (or first) radio belongs
@@ -199,6 +201,7 @@ export function openQuickModelPicker({ tasks = [], initialTask = '', titleKey = 
         const effectiveLabel = currentModelLabel(currentTask, models);
         const title = t(titleKey || 'quickModel.title');
         overlay.dataset.currentTask = currentTask;
+        const openDetails = captureDetailState(overlay);
 
         overlay.innerHTML = `
             <div class="modal-content options-modal-content quick-model-modal">
@@ -217,6 +220,7 @@ export function openQuickModelPicker({ tasks = [], initialTask = '', titleKey = 
                     ${effectiveLabel ? `<p class="quick-model-current">${escapeHtml(t('quickModel.currentModel', { model: effectiveLabel }))}</p>` : ''}
                 </div>
                 <div class="modal-body">
+                    ${renderThinkingHelp({ includeAppDefault: true })}
                     ${hasChoices ? `<div class="radio-group quick-model-list" role="radiogroup" aria-label="${escapeAttr(t('quickModel.modelLabel'))}">
                         <label class="radio-card">
                             <input type="radio" name="quick-model-choice" value="" data-quick-model-value ${selected === '' ? 'checked' : ''}>
@@ -241,6 +245,7 @@ export function openQuickModelPicker({ tasks = [], initialTask = '', titleKey = 
                     <button type="button" class="btn-primary save-btn" data-quick-action="confirm" ${hasChoices ? '' : 'disabled'}>${escapeHtml(t('common.confirm'))}</button>
                 </div>
             </div>`;
+        restoreDetailState(overlay, openDetails);
 
         requestAnimationFrame(() => {
             if (closed) return;

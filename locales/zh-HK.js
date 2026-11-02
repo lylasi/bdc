@@ -107,6 +107,23 @@ export default {
         ,aiThinkingMedium: '中強度'
         ,aiThinkingHigh: '高強度'
         ,aiThinkingHint: '所有任務都可以獨立設定思考模式；部分渠道會把「關閉思考」降為最低強度，實際效果取決於模型。'
+        ,aiThinkingHelpLabel: '思考強度說明'
+        ,aiThinkingHelpToggleHint: '點擊展開或收起各檔位的作用說明'
+        ,aiThinkingHelpTitle: '思考模式速覽'
+        ,aiThinkingHelpIntro: '按任務複雜程度，在回應速度與分析深度之間選擇。'
+        ,aiThinkingHelpAutoDescription: '使用供應商或模型的預設策略，可能包含思考。'
+        ,aiThinkingHelpAutoUse: '適合希望沿用服務端預設行為時。'
+        ,aiThinkingHelpNoneDescription: '要求略過額外思考，通常等候時間較短。'
+        ,aiThinkingHelpNoneUse: '適合查詞、簡單釋義和一般翻譯。'
+        ,aiThinkingHelpLowDescription: '用較少思考處理問題，優先兼顧回應速度。'
+        ,aiThinkingHelpLowUse: '適合簡單問答、快速檢查。'
+        ,aiThinkingHelpMediumDescription: '在分析深度與等候時間之間取得平衡。'
+        ,aiThinkingHelpMediumUse: '適合句子分析、文章問答。'
+        ,aiThinkingHelpHighDescription: '容許更多思考，通常需要較長等候時間。'
+        ,aiThinkingHelpHighUse: '適合長難句、複雜推導和多步核對。'
+        ,aiThinkingHelpAppDefault: '「跟隨應用預設」沿用該任務的應用預設；「跟隨服務端」則由供應商決定。'
+        ,aiThinkingHelpCaveat: '實際支援取決於渠道與模型；「關閉思考」有時會改用最低強度，高強度也不保證答案更正確。'
+        ,aiThinkingHelpDisplayHint: '收起或隱藏「思考過程」只改變顯示，不會關閉思考。'
         ,noAvailable: '沒有可用選項', voicesLoaded: '已載入，共 {count} 個聲音', loadFailed: '載入失敗', loadFailedMessage: '載入失敗：{message}', noVoice: '沒有可用的聲音可試聽', playbackFailed: '播放失敗，已在 Console 輸出測試 URL，請檢查回應格式及 voice 代碼。', fallbackVoice: '提示：該聲音可能不受後端支援，已使用預設備用聲音試聽。', assistantEntryTitle: '右下角浮窗入口', streamTitle: '串流回應可減少等待',
         aiProvidersTitle: '預設供應商',
         aiRefresh: '重新整理',
