@@ -98,7 +98,7 @@ export default {
         ttsVoiceDefaultsHint: '首次载入会自动选好可用的默认语音，之后照你的选择保存。',
         saveFailed: '保存失败：', ttsSource: 'TTS 来源', remote: '远程', local: '本地', custom: '自定义', ttsSourceHint: '一般用户只需选择来源；需要自定义时再输入 URL', customTtsUrl: '自定义 TTS 基础 URL', ttsKey: 'TTS API Key（仅保存在本机）', englishVoicePreference: '英语朗读首选', britishEnglish: '英音 en-GB', americanEnglish: '美音 en-US', defaultBritish: '未指定时默认英音', chineseVoicePreference: '中文朗读首选', mandarin: '普通话 zh-CN', cantonese: '粤语 zh-HK', ttsVoices: 'TTS 声音（仅显示：美音、英音、粤语、普通话）', reloadList: '重新加载列表', englishAmerican: '英语（美音 en-US）', englishBritish: '英语（英音 en-GB）', cantoneseVoice: '粤语（广东话 zh-HK）', mandarinVoice: '中文（普通话 zh-CN）', previewVoice: '试听', loading: '正在加载...', voiceLoadHint: '如果加载失败，请确认 TTS 基础 URL 或 ai-config.js 的 voicesUrl 可以访问。', assistant: 'AI 助手', enableAssistant: '启用助手', streaming: '流式响应', assistantHint: '右下角入口 · 流式响应更顺畅', cancel: '取消', save: '保存', localOnlyHint: '设置仅保存在本机，不会同步到云端。'
         ,localeCn: '大陆简体中文', localeHk: '香港繁体中文', providerSettings: 'AI Provider 设置', addProvider: '新增 provider', enabled: '启用', fetched: '已获取', fetching: '获取中', fetchFailed: '获取失败', notFetched: '尚未获取', fetchModels: '获取模型', remove: '移除', name: '名称', displayName: '显示名称', apiUrlOptional: 'API URL（可选）', modelsUrlOptional: 'Models URL（可选）', deriveApiUrl: '留空则由 Base URL 推导', deriveModelsUrl: '留空则默认为 baseUrl + /v1/models', apiKeyLocal: 'API Key（仅本机）', allowedModels: '允许模型', selectedModels: '已选 {selected} / 全部 {total}', modelHint: '勾选后会出现在各任务下拉列表', noModels: '还没有模型，可以先获取或手动新增。', manualModel: '手动新增模型，例如 gpt-4.1-mini 或 provider:model', addModel: '新增模型', manualAdded: '手动新增', providerHint: '可设置 baseUrl / key，获取模型后勾选允许列表；default 仍作为全局回退。', taskMapping: '按功能指定模型', taskHint: '各任务仅显示允许模型；如果当前值不在允许列表中，会暂时保留显示。', providerIdPrompt: '请输入 provider ID（英文、数字、- 或 _）', providerExists: '此 provider ID 已存在', taskWord: '查词 / 单词分析', taskSentence: '造句检查', taskQa: '问答 AI 校对', taskArticle: '文章详解', taskCleanup: '文章 AI 清洗', taskExamples: '例句生成', taskOcr: 'OCR / 视觉', taskAssistant: 'AI 助手'
-        ,taskArticleParagraph: '文章段落翻译'
+        ,taskArticleParagraph: '文章翻译（段落 / 全文）'
         ,taskArticleSentence: '句子详解'
         ,aiThinkingLabel: '思考模式'
         ,aiThinkingAuto: '跟随服务端'
@@ -106,7 +106,7 @@ export default {
         ,aiThinkingLow: '低强度'
         ,aiThinkingMedium: '中强度'
         ,aiThinkingHigh: '高强度'
-        ,aiThinkingHint: '部分渠道会把「关闭思考」降为最低强度，实际效果取决于模型。'
+        ,aiThinkingHint: '所有任务都可以独立设置思考模式；部分渠道会把「关闭思考」降为最低强度，实际效果取决于模型。'
         ,noAvailable: '没有可用选项', voicesLoaded: '已加载，共 {count} 个声音', loadFailed: '加载失败', loadFailedMessage: '加载失败：{message}', noVoice: '没有可用的声音可试听', playbackFailed: '播放失败，已在 Console 输出测试 URL，请检查响应格式与 voice 代码。', fallbackVoice: '提示：该声音可能不受后端支持，已使用默认备用声音试听。', assistantEntryTitle: '右下角浮窗入口', streamTitle: '流式响应可减少等待',
         aiProvidersTitle: '默认供应商',
         aiRefresh: '刷新',
@@ -841,9 +841,26 @@ export default {
         exampleGloss: '句中意思：{meaning}',
         exampleNoGloss: '这句没有这个词语的对应解释'
     },
+    quickModel: {
+        title: '切换 AI 模型',
+        label: '模型',
+        wordTitle: '查词模型',
+        articleTitle: '文章 AI 模型',
+        description: '选择后会自动保存，并同步到全局设置。',
+        followDefault: '跟随全局默认',
+        currentModel: '当前模型：{model}',
+        currentUnavailable: '当前模型不可用：{model}',
+        modelGone: '该模型已不可用，请重新选择。',
+        accountChanged: '账号已切换，请重新选择模型。',
+        noModels: '尚未配置可用模型，请先到「设置 → AI 供应商」新增。',
+        saved: '已切换模型：{model}',
+        taskLabel: '任务',
+        modelLabel: '模型'
+    },
     article: {
         refreshWord: '重新获取单词详解',
         readerActions: '文章操作',
+        quickModelTitle: '切换 AI 模型',
         adjustSpeed: '调整语速',
         inputShort: '输入',
         closeInput: '收起输入',

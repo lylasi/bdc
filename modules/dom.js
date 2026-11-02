@@ -151,6 +151,7 @@ export const articleRouteLogin = document.getElementById('article-route-login');
 export const articleRouteChoose = document.getElementById('article-route-choose');
 export const articleDraftNotice = document.getElementById('article-draft-notice');
 export const articleHistoryBtn = document.getElementById('article-history-btn');
+export const articleAiModelBtn = document.getElementById('article-ai-model-btn');
 export const articleHistoryCount = document.getElementById('article-history-count');
 export const articleHistoryStatus = document.getElementById('article-history-status');
 export const articleHistoryUndo = document.getElementById('article-history-undo');

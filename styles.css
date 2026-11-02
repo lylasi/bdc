@@ -1434,7 +1434,8 @@ details > *:not(summary) { padding: var(--sp-4); }
 }
 .tooltip-head > .tooltip-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .tooltip-head-actions { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
-.btn-refresh-word {
+.btn-refresh-word,
+.btn-quick-model {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1448,7 +1449,9 @@ details > *:not(summary) { padding: var(--sp-4); }
     cursor: pointer;
 }
 .btn-refresh-word:hover,
-.btn-refresh-word:focus-visible { background: var(--primary-050); color: var(--primary-700); }
+.btn-refresh-word:focus-visible,
+.btn-quick-model:hover,
+.btn-quick-model:focus-visible { background: var(--primary-050); color: var(--primary-700); }
 .btn-refresh-word:disabled { opacity: 0.45; cursor: wait; }
 .tooltip-head-actions .tooltip-close { margin: 0; }
 .tooltip-close {
@@ -5191,6 +5194,51 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
 .modal-actions .cancel-btn { margin-right: auto; }
 #app-modal .save-btn { order: 3; }
 #app-modal .input-group { flex-direction: column; align-items: stretch; }
+
+/* 快速模型切換（文章工具列／查詞彈窗）：沿用選項彈窗外殼與 radio-card。 */
+.quick-model-modal .modal-header { display: flex; flex-direction: column; gap: var(--sp-2); }
+.quick-model-modal .modal-header h3 { margin: 0; }
+.quick-model-modal .om-desc { margin: 0; }
+.quick-model-task-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-1);
+    margin-top: var(--sp-1);
+}
+.quick-model-task {
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    color: var(--ink-600);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+    cursor: pointer;
+}
+.quick-model-task:hover { background: var(--surface-2); }
+.quick-model-task[aria-pressed="true"] {
+    border-color: var(--primary);
+    background: var(--primary-050);
+    color: var(--primary-700);
+    font-weight: 600;
+}
+.quick-model-current {
+    margin: 0;
+    font-size: var(--fs-xs);
+    color: var(--ink-500);
+    overflow-wrap: anywhere;
+}
+.quick-model-list .radio-card { align-items: center; }
+.quick-model-list .om-option-title { overflow-wrap: anywhere; }
+.quick-model-unavailable { border-style: dashed; color: var(--ink-500); }
+.quick-model-unavailable .om-option-title { color: var(--ink-500); }
+.quick-model-note { margin-top: 2px; font-size: var(--fs-xs); color: var(--ink-500); }
+.quick-model-empty {
+    margin: 0;
+    padding: var(--sp-2) 0;
+    font-size: var(--fs-sm);
+    color: var(--ink-500);
+}
 
 /* 選項彈窗（JS 動態建立；樣式集中在此，模組不再寫內聯樣式） */
 /* 選項／確認彈窗可能由另一個覆蓋層（例如管理員面板 5100）內開啟，

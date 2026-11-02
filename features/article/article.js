@@ -43,6 +43,7 @@ import * as paragraphPipeline from './paragraph-pipeline.js';
 import { contentVersionOf } from '../../shared/reading-protocol.mjs';
 import { initReadingPanel, openReadingPanelForItem } from './reading-panel.js';
 import { initPhrasePicker, openPhrasePicker } from './phrase-picker.js';
+import { openQuickModelPicker } from '../../modules/quick-model-picker.js';
 import { segmentWords, shouldSkipNode } from './tokenize.js';
 // P3-T5：長文效能量測（?perf=1）；關閉時所有呼叫都是 no-op。
 import * as perfProbe from './perf-probe.js';
@@ -72,6 +73,15 @@ const articleContext = {
     viewText: '',
     analyzedVersion: ''
 };
+
+// 文章頁模型圖示可快速切換的任務群組；全文翻譯與逐段翻譯共用
+// articleParagraphTranslation，所以不在這裡另立「全文」task。
+const ARTICLE_MODEL_TASKS = [
+    'articleParagraphTranslation',
+    'articleSentenceTranslation',
+    'articleAnalysis',
+    'articleCleanup'
+];
 
 function contentVersionOfText(text) {
     try { return contentVersionOf(String(text || '')); } catch (_) { return ''; }
@@ -612,6 +622,14 @@ export function initArticle() {
     if (dom.resumeAnalysisBtn) dom.resumeAnalysisBtn.addEventListener('click', resumeAnalysis);
     dom.clearArticleBtn.addEventListener('click', () => clearArticleInput());
     if (dom.articleHistoryBtn) dom.articleHistoryBtn.addEventListener('click', openArticleHistory);
+    if (dom.articleAiModelBtn) dom.articleAiModelBtn.addEventListener('click', () => {
+        openQuickModelPicker({
+            tasks: ARTICLE_MODEL_TASKS,
+            initialTask: 'articleParagraphTranslation',
+            titleKey: 'quickModel.articleTitle',
+            returnFocus: () => dom.articleAiModelBtn
+        });
+    });
     if (dom.articleHistoryStatus) {
         dom.articleHistoryStatus.addEventListener('click', toggleHistoryFromStatus);
         dom.articleHistoryStatus.type = 'button';
@@ -5860,6 +5878,16 @@ dom.analysisTooltip.addEventListener('click', async (e) => {
         dismissWordTooltip({ restoreFocus: true, source: 'close-button' });
         return;
     }
+    if (rawTarget?.closest && rawTarget.closest('.btn-quick-model')) {
+        e.stopPropagation();
+        openQuickModelPicker({
+            tasks: ['wordAnalysis'],
+            initialTask: 'wordAnalysis',
+            titleKey: 'quickModel.wordTitle',
+            returnFocus: () => dom.analysisTooltip.querySelector('.btn-quick-model')
+        });
+        return;
+    }
     const btnPick = rawTarget?.closest && rawTarget.closest('.btn-pick-phrase');
     const btnAsk = rawTarget?.closest && rawTarget.closest('.btn-ask-word-ai');
     const btnPlay = rawTarget?.closest && rawTarget.closest('.btn-play-word');
@@ -6278,6 +6306,7 @@ function showArticleWordAnalysis(clickedElement, analysisArray, options = {}) {
             <div class="tooltip-head">
                 <div class="tooltip-title" id="word-tooltip-title" tabindex="-1">${titleHtml}</div>
                 <div class="tooltip-head-actions">
+                    <button type="button" class="btn-quick-model" title="${escapeAttr(t('quickModel.wordTitle'))}" aria-label="${escapeAttr(t('quickModel.wordTitle'))}"><svg class="icon" aria-hidden="true"><use href="#ic-model"></use></svg></button>
                     <button type="button" class="btn-refresh-word" title="${escapeAttr(t('article.refreshWord'))}" aria-label="${escapeAttr(t(loading ? 'article.refreshing' : 'article.refreshWord'))}"${loading ? ' disabled aria-busy="true"' : ''}><svg class="icon" aria-hidden="true"><use href="#ic-replay"></use></svg></button>
                     <button type="button" class="tooltip-close" aria-label="${escapeAttr(t('article.close'))}">×</button>
                 </div>
@@ -6565,6 +6594,7 @@ function showSelectionLookupTooltip({
             <div class="tooltip-head">
                 <div class="tooltip-title" id="word-tooltip-title" tabindex="-1">${titleContent}</div>
                 <div class="tooltip-head-actions">
+                    <button type="button" class="btn-quick-model" title="${escapeAttr(t('quickModel.wordTitle'))}" aria-label="${escapeAttr(t('quickModel.wordTitle'))}"><svg class="icon" aria-hidden="true"><use href="#ic-model"></use></svg></button>
                     <button type="button" class="btn-refresh-word" title="${escapeAttr(t('article.refreshWord'))}" aria-label="${escapeAttr(t(loading ? 'article.refreshing' : 'article.refreshWord'))}"${loading ? ' disabled aria-busy="true"' : ''}><svg class="icon" aria-hidden="true"><use href="#ic-replay"></use></svg></button>
                     <button type="button" class="tooltip-close" aria-label="${escapeAttr(t('article.close'))}">×</button>
                 </div>

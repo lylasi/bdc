@@ -62,16 +62,9 @@ export const AI_TASK_FIELDS = [
     { key: 'assistant', labelKey: 'settings.taskAssistant' }
 ];
 
-// Only these groups are shown a thinking selector; other tasks stay on their
-// app default (mostly `auto`) to keep the section from becoming a wall of
-// provider-specific knobs.
-const AI_THINKING_TASKS = new Set([
-    'wordAnalysis',
-    'articleParagraphTranslation',
-    'articleSentenceTranslation',
-    'assistant'
-]);
-
+// Every task row shows its own thinking selector. Unset tasks keep the app
+// default (`auto`, i.e. follow the provider), so this only adds an entry point;
+// it does not change any protocol mapping or default.
 const THINKING_LABEL_KEYS = {
     auto: 'settings.aiThinkingAuto',
     none: 'settings.aiThinkingNone',
@@ -547,13 +540,10 @@ export function mountAIProviderSettings(host, options = {}) {
         const rows = AI_TASK_FIELDS.map(({ key, labelKey }) => {
             const selection = getTaskModelSelection(key);
             const value = selection.value || '';
-            const hasThinking = AI_THINKING_TASKS.has(key);
-            const thinkingSelect = hasThinking
-                ? `<select data-ai-thinking="${escapeHtml(key)}" data-focus-key="thinking:${escapeHtml(key)}" class="gs-ai-task-select gs-ai-thinking-select" aria-label="${escapeHtml(t('settings.aiThinkingLabel'))}">
-                    ${thinkingOptions(getTaskThinkingLevel(key))}
-                </select>`
-                : '';
-            return `<div class="gs-ai-task-row${hasThinking ? ' gs-ai-task-row-with-thinking' : ''}">
+            const thinkingSelect = `<select data-ai-thinking="${escapeHtml(key)}" data-focus-key="thinking:${escapeHtml(key)}" class="gs-ai-task-select gs-ai-thinking-select" aria-label="${escapeHtml(t('settings.aiThinkingLabel'))}">
+                ${thinkingOptions(getTaskThinkingLevel(key))}
+            </select>`;
+            return `<div class="gs-ai-task-row gs-ai-task-row-with-thinking">
                 <div class="gs-ai-task-label">${escapeHtml(t(labelKey))}</div>
                 <select data-ai-task="${escapeHtml(key)}" data-focus-key="task:${escapeHtml(key)}" class="gs-ai-task-select" ${selection.disabled ? 'disabled' : ''}>
                     ${selection.options.length ? '' : `<option value="">${escapeHtml(t('settings.noModels'))}</option>`}
