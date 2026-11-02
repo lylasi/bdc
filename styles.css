@@ -5222,6 +5222,28 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
     color: var(--primary-700);
     font-weight: 600;
 }
+.quick-model-thinking {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-top: var(--sp-1);
+}
+.quick-model-thinking label {
+    flex: 0 0 auto;
+    font-size: var(--fs-sm);
+    color: var(--ink-600);
+}
+.quick-model-thinking select {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 280px;
+    padding: 6px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-xs);
+    background-color: var(--surface);
+    color: var(--ink-800);
+    font-size: var(--fs-sm);
+}
 .quick-model-current {
     margin: 0;
     font-size: var(--fs-xs);

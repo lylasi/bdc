@@ -701,6 +701,38 @@ export function saveTaskThinkingLevel(taskName, level) {
     return profile;
 }
 
+/**
+ * Save a quick-picker choice as one profile revision. An empty model clears the
+ * task override; an empty thinking value clears the task's explicit level and
+ * lets the app default apply again. Keeping both writes in one update avoids a
+ * half-saved picker if the second write fails and triggers only one sync touch.
+ */
+export function saveTaskModelAndThinking(taskName, modelValue, thinkingValue) {
+    const canonical = normalizeTaskName(taskName);
+    // `undefined` means "this control was not touched"; leave the latest
+    // profile value alone so a concurrent update from another tab survives.
+    const updateModel = modelValue !== undefined;
+    const updateThinking = thinkingValue !== undefined;
+    const model = updateModel ? stringifyModelSpec(modelValue) : '';
+    const rawThinking = String(thinkingValue == null ? '' : thinkingValue).trim().toLowerCase();
+    const clearThinking = rawThinking === '';
+    const thinking = normalizeThinkingLevel(rawThinking, 'auto');
+    const profile = updateAIProfile((draft) => {
+        if (updateModel) {
+            if (model) draft.taskModels[canonical] = model;
+            else delete draft.taskModels[canonical];
+        }
+        if (updateThinking) {
+            if (!draft.taskThinking || typeof draft.taskThinking !== 'object') draft.taskThinking = {};
+            if (clearThinking) delete draft.taskThinking[canonical];
+            else draft.taskThinking[canonical] = thinking;
+        }
+        return draft;
+    });
+    try { syncTouch('aiSettings'); } catch (_) {}
+    return profile;
+}
+
 export function getPersonalDefaultModel() {
     return loadAIProfile().defaultModel || '';
 }

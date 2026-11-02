@@ -130,7 +130,7 @@ async function openSettingsAiTab(page) {
     await page.waitForTimeout(300);
     await page.click('[data-gs-tab="ai"]');
     await page.waitForTimeout(400);
-    await page.locator('details[data-keep-open="ai-tasks"] summary').click();
+    await page.locator('details[data-keep-open="ai-tasks"] > summary').click();
     await page.locator('[data-ai-thinking]').first().waitFor();
 }
 
@@ -150,6 +150,11 @@ async function runMain(browser) {
         check('文章彈窗有四個任務切換', taskButtons.length === 4, taskButtons);
         check('預設停在段落翻譯', await overlay.getAttribute('data-current-task') === 'articleParagraphTranslation');
         check('沒有明確設定時預設勾選跟隨全局', await overlay.locator('.quick-model-list input[type="radio"][value=""]').isChecked());
+        check('快速選單有思考模式', await overlay.locator('[data-quick-thinking]').count() === 1);
+        check('思考模式預設顯示應用預設與目前檔位',
+            (await overlay.locator('[data-quick-thinking] option[value=""]').textContent()).includes('关闭思考'));
+        check('思考下拉保留箭頭樣式',
+            (await overlay.locator('[data-quick-thinking]').evaluate((el) => getComputedStyle(el).backgroundImage)).includes('svg'));
 
         await overlay.locator('[data-quick-task="articleAnalysis"]').click();
         check('可切換到文章詳解任務', await overlay.getAttribute('data-current-task') === 'articleAnalysis');
@@ -159,20 +164,25 @@ async function runMain(browser) {
         const modelValues = await overlay.locator('.quick-model-list input[type="radio"]').evaluateAll((nodes) => nodes.map((node) => node.value));
         check('模型清單先列跟隨全局再列可用模型', modelValues[0] === '' && modelValues.length === 3, modelValues);
         await overlay.locator('.quick-model-list input[type="radio"][value="mock:mock-model-2"]').check();
+        await overlay.locator('[data-quick-thinking]').selectOption('high');
         await overlay.locator('[data-quick-action="confirm"]').click();
         await overlay.waitFor({ state: 'detached' });
         let profile = await profileState(page);
         check('確認後寫入段落翻譯模型', profile.taskModels.articleParagraphTranslation === 'mock:mock-model-2', profile.taskModels);
-        check('確認後顯示已切換提示', /已切换模型/.test(await page.locator('#message-container').innerText()));
+        check('確認後寫入段落翻譯思考模式', profile.taskThinking.articleParagraphTranslation === 'high', profile.taskThinking);
+        check('確認後顯示已更新提示', /已更新/.test(await page.locator('#message-container').innerText()));
 
         await articleButton.click();
         await overlay.waitFor();
         check('重新開啟時勾選目前的明確設定', await overlay.locator('.quick-model-list input[type="radio"][value="mock:mock-model-2"]').isChecked());
+        check('重新開啟時保留目前思考模式', await overlay.locator('[data-quick-thinking]').inputValue() === 'high');
         await overlay.locator('.quick-model-list input[type="radio"][value=""]').check();
+        await overlay.locator('[data-quick-thinking]').selectOption('');
         await overlay.locator('[data-quick-action="confirm"]').click();
         await overlay.waitFor({ state: 'detached' });
         profile = await profileState(page);
-        check('跟隨全局預設會刪除任務 key', !Object.prototype.hasOwnProperty.call(profile.taskModels, 'articleParagraphTranslation'), profile.taskModels);
+        check('跟隨全局預設會刪除模型任務 key', !Object.prototype.hasOwnProperty.call(profile.taskModels, 'articleParagraphTranslation'), profile.taskModels);
+        check('跟隨應用預設會刪除思考任務 key', !Object.prototype.hasOwnProperty.call(profile.taskThinking, 'articleParagraphTranslation'), profile.taskThinking);
 
         // 單詞 tooltip：兩條 render 路徑共用同一個 head actions 與委派處理器。
         await page.locator('.interactive-word[data-word="leader"]').first().click();
@@ -185,18 +195,21 @@ async function runMain(browser) {
         await overlay.waitFor();
         check('點擊單詞模型圖示開啟查詞模型清單', await overlay.getAttribute('data-current-task') === 'wordAnalysis');
         check('單一任務不顯示任務切換列', await overlay.locator('[data-quick-task]').count() === 0);
+        check('查詞選單有思考模式', await overlay.locator('[data-quick-thinking]').count() === 1);
         await overlay.locator('.quick-model-list input[type="radio"][value="mock:mock-model-2"]').check();
+        await overlay.locator('[data-quick-thinking]').selectOption('medium');
         await overlay.locator('[data-quick-action="confirm"]').click();
         await overlay.waitFor({ state: 'detached' });
         profile = await profileState(page);
         check('確認後寫入查詞模型', profile.taskModels.wordAnalysis === 'mock:mock-model-2', profile.taskModels);
+        check('確認後寫入查詞思考模式', profile.taskThinking.wordAnalysis === 'medium', profile.taskThinking);
         check('切換模型後單詞 tooltip 仍保留', await tooltip.isVisible());
         check('關閉後焦點回到模型圖示', await wordModelButton.evaluate((el) => el === document.activeElement));
 
         // 單一任務且已選模型時，Shift+Tab 不可離開彈窗。
         await wordModelButton.click();
         await overlay.waitFor();
-        await page.waitForFunction(() => document.activeElement?.matches('.quick-model-list input[type="radio"]:checked'));
+        await overlay.locator('[data-quick-thinking]').focus();
         await page.keyboard.press('Shift+Tab');
         check('單一任務選單 Shift+Tab 會回到確認鈕',
             await page.evaluate(() => document.activeElement?.getAttribute('data-quick-action') === 'confirm'));
@@ -270,7 +283,7 @@ async function runHk(browser) {
             desc: await overlay.locator('.om-desc').textContent()
         };
         check('zh-HK 彈窗標題與說明', hkCopy.title === '文章 AI 模型'
-            && hkCopy.desc === '選擇後會自動儲存，並同步到全域設定。', hkCopy);
+            && hkCopy.desc === '選擇模型與思考模式後會自動儲存，並同步到全域設定。', hkCopy);
         await page.keyboard.press('Escape');
         await overlay.waitFor({ state: 'detached' });
 
@@ -326,6 +339,87 @@ async function runNoModels(browser) {
         check('無模型情境沒有 JS 例外', errors.length === 0, errors);
     } finally {
         await context.close();
+    }
+}
+
+async function runConcurrentProfileCases(browser) {
+    // 只改模型：選單開啟後另一個分頁更新了思考模式，確認時不可回滾它。
+    {
+        const { context, page, errors } = await setup(browser, { withDoc: false });
+        try {
+            await dismissGuestPrompt(page);
+            await page.locator('#article-ai-model-btn').click();
+            const overlay = page.locator('.quick-model-overlay');
+            await overlay.waitFor();
+            await page.evaluate(async () => {
+                const storage = await import('/modules/ai-profile-storage.js');
+                const profile = storage.loadAIProfile();
+                profile.taskThinking = { ...(profile.taskThinking || {}), articleParagraphTranslation: 'high' };
+                storage.saveAIProfile(profile);
+            });
+            await overlay.locator('.quick-model-list input[type="radio"][value="mock:mock-model-2"]').check();
+            await overlay.locator('[data-quick-action="confirm"]').click();
+            await overlay.waitFor({ state: 'detached' });
+            const state = await profileState(page);
+            check('只改模型時保留並行更新的思考模式',
+                state.taskModels.articleParagraphTranslation === 'mock:mock-model-2'
+                && state.taskThinking.articleParagraphTranslation === 'high', state);
+            check('並行思考更新情境沒有 JS 例外', errors.length === 0, errors);
+        } finally {
+            await context.close();
+        }
+    }
+
+    // 只改思考：選單開啟後另一個分頁更新了模型，確認時不可回寫舊模型。
+    {
+        const { context, page, errors } = await setup(browser, { withDoc: false });
+        try {
+            await dismissGuestPrompt(page);
+            await page.locator('#article-ai-model-btn').click();
+            const overlay = page.locator('.quick-model-overlay');
+            await overlay.waitFor();
+            await page.evaluate(async () => {
+                const storage = await import('/modules/ai-profile-storage.js');
+                const profile = storage.loadAIProfile();
+                profile.taskModels = { ...profile.taskModels, articleParagraphTranslation: 'mock:mock-model' };
+                storage.saveAIProfile(profile);
+            });
+            await overlay.locator('[data-quick-thinking]').selectOption('high');
+            await overlay.locator('[data-quick-action="confirm"]').click();
+            await overlay.waitFor({ state: 'detached' });
+            const state = await profileState(page);
+            check('只改思考時保留並行更新的模型',
+                state.taskModels.articleParagraphTranslation === 'mock:mock-model'
+                && state.taskThinking.articleParagraphTranslation === 'high', state);
+            check('並行模型更新情境沒有 JS 例外', errors.length === 0, errors);
+        } finally {
+            await context.close();
+        }
+    }
+
+    // 完全未改動：確認只關閉，不應把並行更新回滾。
+    {
+        const { context, page, errors } = await setup(browser, { withDoc: false });
+        try {
+            await dismissGuestPrompt(page);
+            await page.locator('#article-ai-model-btn').click();
+            const overlay = page.locator('.quick-model-overlay');
+            await overlay.waitFor();
+            await page.evaluate(async () => {
+                const storage = await import('/modules/ai-profile-storage.js');
+                const profile = storage.loadAIProfile();
+                profile.taskThinking = { ...(profile.taskThinking || {}), articleParagraphTranslation: 'high' };
+                storage.saveAIProfile(profile);
+            });
+            await overlay.locator('[data-quick-action="confirm"]').click();
+            await overlay.waitFor({ state: 'detached' });
+            const state = await profileState(page);
+            check('未改動時不覆寫並行更新',
+                state.taskThinking.articleParagraphTranslation === 'high', state);
+            check('未改動情境沒有 JS 例外', errors.length === 0, errors);
+        } finally {
+            await context.close();
+        }
     }
 }
 
@@ -432,6 +526,7 @@ async function runEdgeCases(browser) {
         await runHk(browser);
         await runNoModels(browser);
         await runEdgeCases(browser);
+        await runConcurrentProfileCases(browser);
     } catch (error) {
         console.error('FAIL', error && error.stack ? error.stack : error);
         process.exitCode = 1;

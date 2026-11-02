@@ -1,18 +1,21 @@
 // Lightweight per-task model switcher.
 //
-// The full provider settings remain the source of truth; this picker only
-// writes one task's explicit model (or clears it to follow the global default)
-// and then closes. It reuses the existing options-modal / radio-card styles so
-// it stays visually consistent with the rest of the app.
+// The full provider settings remain the source of truth; this picker writes one
+// task's explicit model and thinking level (or clears them to follow the global
+// defaults) in a single profile revision, then closes. It reuses the existing
+// options-modal / radio-card styles so it stays visually consistent with the
+// rest of the app.
 
 import { t } from './i18n.js';
 import {
     getTaskModelSelection,
     getStoredTaskModel,
     getPersonalDefaultModel,
-    saveTaskModelSelection,
+    resolveThinkingLevel,
+    saveTaskModelAndThinking,
     stringifyModelSpec
 } from './ai-models.js';
+import { appThinkingDefault, THINKING_LEVELS } from './ai-thinking.js';
 import { getActiveAIScope, profileKeyForScope } from './ai-profile-storage.js';
 import { AUTH_EVENT } from './sync-cloudflare.js';
 import { displayMessage, escapeHtml, escapeAttr } from './ui.js';
@@ -25,6 +28,14 @@ const TASK_LABEL_KEYS = {
     articleCleanup: 'settings.taskCleanup'
 };
 
+const THINKING_LABEL_KEYS = {
+    auto: 'settings.aiThinkingAuto',
+    none: 'settings.aiThinkingNone',
+    low: 'settings.aiThinkingLow',
+    medium: 'settings.aiThinkingMedium',
+    high: 'settings.aiThinkingHigh'
+};
+
 let activePicker = null;
 
 function taskLabel(task) {
@@ -32,8 +43,20 @@ function taskLabel(task) {
     return key ? t(key) : task;
 }
 
+function thinkingLabel(level) {
+    const key = THINKING_LABEL_KEYS[level];
+    return key ? t(key) : level;
+}
+
 function storedValue(task) {
     try { return stringifyModelSpec(getStoredTaskModel(task)); } catch (_) { return ''; }
+}
+
+function storedThinking(task) {
+    try {
+        const resolution = resolveThinkingLevel(task);
+        return resolution.source === 'profile' ? resolution.level : '';
+    } catch (_) { return ''; }
 }
 
 function availableModels(task) {
@@ -61,6 +84,16 @@ function currentScopeKey() {
     try { return profileKeyForScope(getActiveAIScope()); } catch (_) { return ''; }
 }
 
+function thinkingOptions(task, selected) {
+    const fallbackLevel = appThinkingDefault(task);
+    return [
+        `<option value="" ${selected === '' ? 'selected' : ''}>${escapeHtml(t('quickModel.thinkingDefault', { level: thinkingLabel(fallbackLevel) }))}</option>`,
+        ...THINKING_LEVELS.map((level) => (
+            `<option value="${level}" ${selected === level ? 'selected' : ''}>${escapeHtml(thinkingLabel(level))}</option>`
+        ))
+    ].join('');
+}
+
 function trapTab(event, overlay) {
     const all = [...overlay.querySelectorAll('button, input, select, textarea, [href], [tabindex]')]
         .filter((element) => !element.disabled && element.tabIndex >= 0 && element.getClientRects().length);
@@ -86,7 +119,7 @@ function trapTab(event, overlay) {
 }
 
 /**
- * Open the compact model picker.
+ * Open the compact model + thinking picker.
  *
  * @param {Object} config
  * @param {string[]} config.tasks           Task keys this picker can switch between.
@@ -109,6 +142,10 @@ export function openQuickModelPicker({ tasks = [], initialTask = '', titleKey = 
     let closed = false;
     const previousFocus = document.activeElement;
     const openedScopeKey = currentScopeKey();
+    // Values the user saw when this task was first rendered. Dirty checks use
+    // these instead of the latest profile so a concurrent update to an
+    // untouched control is not overwritten on confirm.
+    const initialByTask = new Map();
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay options-modal-overlay quick-model-overlay';
@@ -151,6 +188,10 @@ export function openQuickModelPicker({ tasks = [], initialTask = '', titleKey = 
     function render({ focus = 'selection' } = {}) {
         const models = availableModels(currentTask);
         const stored = storedValue(currentTask);
+        const storedThinkingLevel = storedThinking(currentTask);
+        if (!initialByTask.has(currentTask)) {
+            initialByTask.set(currentTask, { model: stored, thinking: storedThinkingLevel });
+        }
         const storedAvailable = models.some((model) => model.value === stored);
         const storedUnavailable = !!stored && !storedAvailable;
         const selected = storedAvailable || storedUnavailable ? stored : '';
@@ -167,6 +208,12 @@ export function openQuickModelPicker({ tasks = [], initialTask = '', titleKey = 
                     ${taskList.length > 1 ? `<div class="quick-model-task-tabs" role="group" aria-label="${escapeAttr(t('quickModel.taskLabel'))}">
                         ${taskList.map((task) => `<button type="button" class="quick-model-task" data-quick-task="${escapeAttr(task)}" aria-pressed="${task === currentTask}">${escapeHtml(taskLabel(task))}</button>`).join('')}
                     </div>` : ''}
+                    <div class="quick-model-thinking">
+                        <label for="quick-model-thinking-select">${escapeHtml(t('quickModel.thinkingLabel'))}</label>
+                        <select id="quick-model-thinking-select" data-quick-thinking aria-label="${escapeAttr(t('quickModel.thinkingLabel'))}">
+                            ${thinkingOptions(currentTask, storedThinkingLevel)}
+                        </select>
+                    </div>
                     ${effectiveLabel ? `<p class="quick-model-current">${escapeHtml(t('quickModel.currentModel', { model: effectiveLabel }))}</p>` : ''}
                 </div>
                 <div class="modal-body">
@@ -218,25 +265,45 @@ export function openQuickModelPicker({ tasks = [], initialTask = '', titleKey = 
         }
         const models = availableModels(currentTask);
         const stored = storedValue(currentTask);
-        const storedUnavailable = !!stored && !models.some((model) => model.value === stored);
+        const initial = initialByTask.get(currentTask)
+            || { model: stored, thinking: storedThinking(currentTask) };
         const choice = overlay.querySelector('[data-quick-model-value]:checked');
-        const value = choice ? choice.value : '';
-        if (value && !models.some((model) => model.value === value) && value !== stored) {
+        const modelValue = choice ? choice.value : '';
+        const thinkingChoice = overlay.querySelector('[data-quick-thinking]')?.value ?? '';
+        const modelDirty = modelValue !== initial.model;
+        const thinkingDirty = thinkingChoice !== initial.thinking;
+        if (!modelDirty && !thinkingDirty) {
+            close();
+            return;
+        }
+        if (modelDirty && modelValue
+            && !models.some((model) => model.value === modelValue)
+            && modelValue !== stored) {
             displayMessage(t('quickModel.modelGone'), 'error');
             render();
             return;
         }
-        if (!models.length && !storedUnavailable && value !== '') return;
-        const option = models.find((model) => model.value === value);
-        const label = value ? ((option && option.label) || value) : t('quickModel.followDefault');
+        const option = models.find((model) => model.value === modelValue);
+        const modelLabel = modelValue ? ((option && option.label) || modelValue) : t('quickModel.followDefault');
+        const thinkingSummary = thinkingChoice === ''
+            ? t('quickModel.thinkingDefaultShort')
+            : thinkingLabel(thinkingChoice);
+        const summary = [
+            modelDirty ? modelLabel : '',
+            thinkingDirty ? thinkingSummary : ''
+        ].filter(Boolean).join(' · ');
         try {
-            saveTaskModelSelection(currentTask, value);
+            saveTaskModelAndThinking(
+                currentTask,
+                modelDirty ? modelValue : undefined,
+                thinkingDirty ? thinkingChoice : undefined
+            );
         } catch (error) {
             displayMessage(`${t('settings.saveFailed')}${error && error.code ? error.code : ''}`, 'error');
             return;
         }
         close();
-        displayMessage(t('quickModel.saved', { model: label }), 'success');
+        displayMessage(t('quickModel.savedSummary', { summary }), 'success');
     }
 
     overlay.addEventListener('click', (event) => {
