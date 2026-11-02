@@ -9,7 +9,28 @@
 // 回傳 `{ statusKey, toastKey, toastLevel, toastMs }`：
 //   statusKey：狀態列文字（必要）
 //   toastKey ：額外提示（空字串＝不彈提示）
+export function syncErrorCode(error) {
+    return String(error?.code || error?.error || error?.message || error || '').slice(0, 160);
+}
+
+export function syncErrorReasonKey(code) {
+    if (/article_(?:quota|count)_exceeded/i.test(code)) return 'sync.reasonCloudCapacity';
+    if (/quota|storage_full/i.test(code)) return 'sync.reasonStorageFull';
+    if (/idb_|fallback_.*(?:read|invalid)|storage_read/i.test(code)) return 'sync.reasonStorageAccess';
+    if (/timeout/i.test(code)) return 'sync.reasonTimeout';
+    if (/unreachable|failed to fetch|network/i.test(code)) return 'sync.reasonNetwork';
+    return '';
+}
+
 export function resolveSyncCompletion(options = {}) {
+    const completion = resolveCompletion(options);
+    if (options.articleError && /(?:articleSync|ArticleSync)/.test(completion.statusKey)) {
+        return { ...completion, params: { errorCode: syncErrorCode(options.articleError) } };
+    }
+    return completion;
+}
+
+function resolveCompletion(options = {}) {
     const manual = options.manual === true;
     const restoredFromRemote = options.restoredFromRemote === true;
     // 只有「明確是 true」才算成功：undefined／false（或包裝層回報失敗）都算失敗。

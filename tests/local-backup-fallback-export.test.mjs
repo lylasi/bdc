@@ -244,7 +244,7 @@ test('桶恢復正常後：備份建立成功並更新簽章（反向驗證）',
     const result = await backup.createBackup('auto sync');
     assert.ok(result && result.id, JSON.stringify(result));
     assert.notEqual(localStorage.getItem(SIGNATURE_KEY), SIGNATURE, '成功備份沒有更新簽章');
-    const payload = backup.loadBackupPayload(result.id);
+    const payload = await backup.loadBackupPayload(result.id);
     assert.equal(payload.articleDocuments.length, 1);
     assert.equal(payload.articleDocuments[0].body, 'body from fallback bucket');
     assert.ok(payload.reading && payload.reading.ok === true);

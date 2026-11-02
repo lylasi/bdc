@@ -141,21 +141,20 @@ async function recordKeys(page) {
     // 建立備份是非同步的；面板會在完成後自行重建，必須等它重建完再關閉
     await page.waitForFunction(() => /已建立備份|已建立备份/.test(document.getElementById('bk-msg')?.textContent || ''), null, { timeout: 10000 }).catch(() => {});
     await page.waitForTimeout(800);
-    const backups = await page.evaluate(() => {
-        const idx = JSON.parse(localStorage.getItem('bdc:backup:index:v1') || '[]');
-        return idx.map((id) => {
-            const raw = localStorage.getItem('bdc:backup:v1:' + id);
-            const parsed = raw ? JSON.parse(raw) : null;
+    const backups = await page.evaluate(async () => {
+        const backup = await import('/modules/local-backup.js');
+        const items = await backup.listBackups();
+        return Promise.all(items.map(async item => {
+            const payload = await backup.loadBackupPayload(item.id);
             return {
-                id,
-                note: parsed?.note,
-                hasDocuments: Array.isArray(parsed?.payload?.articleDocuments),
-                docCount: parsed?.payload?.articleDocuments?.length || 0,
-                firstBody: parsed?.payload?.articleDocuments?.[0]?.body || '',
-                firstAnalysis: parsed?.payload?.articleDocuments?.[0]?.analysis || null,
-                firstSource: parsed?.payload?.articleDocuments?.[0]?.sourceUrl || ''
+                id: item.id, note: item.note,
+                hasDocuments: Array.isArray(payload?.articleDocuments),
+                docCount: payload?.articleDocuments?.length || 0,
+                firstBody: payload?.articleDocuments?.[0]?.body || '',
+                firstAnalysis: payload?.articleDocuments?.[0]?.analysis || null,
+                firstSource: payload?.articleDocuments?.[0]?.sourceUrl || ''
             };
-        });
+        }));
     });
     const backup = backups.find((item) => item.hasDocuments);
     check('備份包含完整文章文件', !!backup && backup.docCount === 2, JSON.stringify(backups));
@@ -208,6 +207,8 @@ async function recordKeys(page) {
     // 模擬空白裝置：清掉文章與本機備份索引
     check('匯出後面板可關閉', await closeAnyModal(page));
     await page.evaluate(async () => {
+        const backup = await import('/modules/local-backup.js');
+        for (const item of await backup.listBackups()) await backup.deleteBackup(item.id);
         localStorage.removeItem('bdc:backup:index:v1');
         Object.keys(localStorage).filter((k) => k.startsWith('bdc:backup:v1:')).forEach((k) => localStorage.removeItem(k));
         const db = await new Promise((resolve) => { const req = indexedDB.open('bdc-articles'); req.onsuccess = () => resolve(req.result); });

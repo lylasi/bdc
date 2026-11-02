@@ -14,7 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { resolveSyncCompletion } from '../features/sync/sync-status.js';
+import { resolveSyncCompletion, syncErrorCode, syncErrorReasonKey } from '../features/sync/sync-status.js';
 import zhCN from '../locales/zh-CN.js';
 import zhHK from '../locales/zh-HK.js';
 
@@ -76,6 +76,22 @@ test('文章階段成功時才顯示 syncDone（手動附成功提示、自動�
     });
     assert.equal(auto.statusKey, 'sync.syncDone');
     assert.equal(auto.toastKey, '');
+});
+
+test('文章失敗保留可追蹤的原因，區分本機容量、雲端容量及連線問題', () => {
+    for (const manual of [true, false]) {
+        for (const restoredFromRemote of [true, false]) {
+            const result = resolveSyncCompletion({ manual, restoredFromRemote, articleOk: false, articleError: { code: 'storage_full' } });
+            assert.equal(result.params.errorCode, 'storage_full');
+            assert.notEqual(result.statusKey, 'sync.syncDone');
+        }
+    }
+    assert.equal(syncErrorCode(new Error('article_pull_unavailable')), 'article_pull_unavailable');
+    assert.equal(syncErrorReasonKey('storage_full'), 'sync.reasonStorageFull');
+    assert.equal(syncErrorReasonKey('article_quota_exceeded'), 'sync.reasonCloudCapacity');
+    assert.equal(syncErrorReasonKey('idb_write_failed'), 'sync.reasonStorageAccess');
+    assert.equal(syncErrorReasonKey('sync_timeout'), 'sync.reasonTimeout');
+    assert.equal(syncErrorReasonKey('sync_unreachable'), 'sync.reasonNetwork');
 });
 
 test('閱讀筆記失敗或待處理時，手動／自動與快照還原都不能顯示同步完成', () => {

@@ -1,5 +1,5 @@
 // Lightweight local snapshot backup utilities (client-side only)
-// Stores recent payload backups in localStorage under prefix 'bdc:backup:v1:'
+// Complete payloads live in IndexedDB; legacy localStorage backups migrate after verification.
 // Note: This is a convenience rollback; clearing site data will remove backups.
 
 import { buildLocalSnapshot } from './sync-core.js';
@@ -7,153 +7,20 @@ import * as articleStore from './article-store.js';
 import * as readingStore from './reading-store.js';
 import { getAIProfileUpdatedAt } from './ai-profile-storage.js';
 
-const PREFIX = 'bdc:backup:v1:';
-const INDEX_KEY = 'bdc:backup:index:v1';
-// 備份的 ts／note／manual 只寫在索引旁的中繼資料，不必為了裁剪而重新解析
-// 每一包完整 payload（大型備份每次解析都很貴）。
-const META_KEY = 'bdc:backup:meta:v1';
-const SIGNATURE_KEY = 'bdc:backup:last-auto-signature:v1';
-// 寫入世代計數只存在模組記憶體；加上每次載入頁面的隨機值，避免重新載入後
-// 世代歸零撞到上一輪的簽章而誤判「沒有變更」。
-const BACKUP_SESSION_ID = Math.random().toString(36).slice(2, 10);
-// Auto-backup retention (manual backups are not counted nor pruned by this limit)
-const MAX_AUTO_BACKUPS = 2;
+export { prepareBackupStorage } from './backup-store.js';
+export {
+    listBackupRecords as listBackups,
+    loadBackupRecord as loadBackupPayload,
+    deleteBackupRecord as deleteBackup,
+    saveBackupRecord as saveBackupPayload
+} from './backup-store.js';
+import { saveBackupRecord as saveBackupPayload } from './backup-store.js';
 
-function isManualNote(note) {
-  return /(手動|手动|manual)/i.test(String(note || ''));
-}
+const SIGNATURE_KEY = 'bdc:backup:last-auto-signature:v1';
+const BACKUP_SESSION_ID = Math.random().toString(36).slice(2, 10);
 
 function isAutoNote(note) {
-  return !isManualNote(note) && /(自動|自动|auto)/i.test(String(note || ''));
-}
-
-function readIndex() {
-  try {
-    const raw = localStorage.getItem(INDEX_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch (_) { return []; }
-}
-
-function writeIndex(ids) {
-  try { localStorage.setItem(INDEX_KEY, JSON.stringify(ids)); } catch (_) {}
-}
-
-function readMeta() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(META_KEY) || '{}');
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch (_) { return {}; }
-}
-
-function writeMeta(meta) {
-  try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (_) {}
-}
-
-function keyOf(id) { return PREFIX + String(id); }
-
-/**
- * 取得單一備份的 ts／note／manual。有中繼資料時不解析 payload；
- * 舊版備份（只有 id）才解析一次並補寫中繼資料。
- */
-function describeBackup(id, meta) {
-  const entryId = String(id);
-  const known = meta[entryId];
-  if (known) {
-    return { id: entryId, ts: known.ts || entryId, note: known.note || '', manual: known.manual === true };
-  }
-  const raw = localStorage.getItem(keyOf(entryId));
-  if (!raw) return null;
-  try {
-    const obj = JSON.parse(raw);
-    const note = String(obj?.note || '');
-    const entry = { id: entryId, ts: obj?.ts || entryId, note, manual: isManualNote(note) };
-    meta[entryId] = { ts: entry.ts, note: entry.note, manual: entry.manual };
-    return entry;
-  } catch (_) {
-    return null;
-  }
-}
-
-export function listBackups() {
-  try {
-    const meta = readMeta();
-    let metaDirty = false;
-    const list = [];
-    for (const id of readIndex()) {
-      const before = Object.prototype.hasOwnProperty.call(meta, String(id));
-      const entry = describeBackup(id, meta);
-      if (!entry) continue;
-      if (!before) metaDirty = true;
-      const raw = localStorage.getItem(keyOf(entry.id));
-      if (!raw) continue;
-      list.push({ id: entry.id, ts: entry.ts, note: entry.note, size: raw.length });
-    }
-    if (metaDirty) writeMeta(meta);
-    // newest first
-    list.sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
-    return list;
-  } catch (_) { return []; }
-}
-
-export function loadBackupPayload(id) {
-  try {
-    const raw = localStorage.getItem(keyOf(id));
-    if (!raw) return null;
-    const obj = JSON.parse(raw);
-    return obj?.payload || null;
-  } catch (_) { return null; }
-}
-
-export function deleteBackup(id) {
-  try { localStorage.removeItem(keyOf(id)); } catch (_) {}
-  const idx = readIndex().filter(x => String(x) !== String(id));
-  writeIndex(idx);
-  const meta = readMeta();
-  if (Object.prototype.hasOwnProperty.call(meta, String(id))) {
-    delete meta[String(id)];
-    writeMeta(meta);
-  }
-}
-
-export function saveBackupPayload(payload, note = '') {
-  try {
-    const id = Date.now();
-    const data = { ts: id, note, payload };
-    const raw = JSON.stringify(data);
-    localStorage.setItem(keyOf(id), raw);
-    const meta = readMeta();
-    meta[String(id)] = { ts: id, note: String(note || ''), manual: isManualNote(note) };
-    const idx = readIndex();
-    idx.push(id);
-    // 只用索引與中繼資料判斷手動／自動，不必重新解析整包備份。
-    const entries = [];
-    for (const bid of idx) {
-      const entry = describeBackup(bid, meta);
-      if (entry) entries.push(entry);
-    }
-    const manual = entries.filter(e => e.manual);
-    const auto = entries.filter(e => !e.manual);
-    auto.sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
-    const keptAuto = auto.slice(0, MAX_AUTO_BACKUPS);
-    const keepIds = new Set([...manual, ...keptAuto].map(e => e.id));
-    // Delete overflow (auto beyond limit)
-    for (const entry of entries) {
-      if (keepIds.has(entry.id)) continue;
-      try { localStorage.removeItem(keyOf(entry.id)); } catch (_) {}
-      delete meta[entry.id];
-    }
-    // Write back pruned index (newest first for display)
-    const keepSorted = entries
-      .filter(e => keepIds.has(e.id))
-      .sort((a, b) => String(b.ts).localeCompare(String(a.ts)))
-      .map(e => e.id);
-    writeIndex(keepSorted);
-    writeMeta(meta);
-    return { id };
-  } catch (e) {
-    return { error: e };
-  }
+    return !/(手動|手动|manual)/i.test(String(note || '')) && /(自動|自动|auto)/i.test(String(note || ''));
 }
 
 function readTimestamp(key) {
@@ -222,7 +89,7 @@ async function buildAndSaveBackup(note, { auto = false, force = false, signature
       return { error: new Error(`reading_export_failed:${(readingExport && readingExport.error) || 'unknown'}`) };
     }
     payload.reading = readingExport;
-    const saved = saveBackupPayload(payload, note);
+    const saved = await saveBackupPayload(payload, note);
     if (auto && saved && !saved.error && signature) writeLastSignature(signature);
     return saved;
   } catch (e) {

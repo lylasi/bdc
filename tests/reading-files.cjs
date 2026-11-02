@@ -563,7 +563,7 @@ async function runMigrationAndBackup(browser) {
         const backupTool = await import('/modules/local-backup.js');
         const before = await rd.exportAll();
         const created = await backupTool.createBackup('manual');
-        const payload = backupTool.loadBackupPayload(created.id);
+        const payload = await backupTool.loadBackupPayload(created.id);
         const outboxBefore = (await rd.exportAll()).messages.length;
         await rd.clearScopeForTests();
         const cleared = (await rd.exportAll()).messages.length;

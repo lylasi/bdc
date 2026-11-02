@@ -5,6 +5,7 @@ import * as articleStore from './modules/article-store.js';
 import { readArticleRoute, articleHash, writeArticleRoute } from './modules/article-route.js';
 import * as readingStore from './modules/reading-store.js';
 import * as cache from './modules/cache.js';
+import { prepareBackupStorage } from './modules/backup-store.js';
 import { initModal, setupNumberSteppers, initTooltip, displayMessage, confirmAction } from './modules/ui.js';
 import { unlockAudioContext } from './modules/audio.js';
 import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView } from './features/vocabulary/vocabulary.js';
@@ -281,6 +282,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // routing, QA loading or any module reads location.hash. The exchange runs
     // after initSync() has wired the auth callbacks.
     captureLoginLinkFromUrl();
+
+    // 先確認並搬移舊備份，釋放設定及學習資料後備路徑需要的 localStorage。
+    try { await prepareBackupStorage(); } catch (_) {}
 
     // 0. One-time migration of legacy AI provider settings into the device profile.
     //    The old AI secrets are only removed after the new profile is written and

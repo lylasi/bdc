@@ -100,6 +100,7 @@ async function newPage(browser, endpoint, user = 'alice') {
         if (/401|404|501|Not Implemented|ai-credentials|ai-catalog|connection refused|ERR_CONNECTION_REFUSED|尚未选择模型|Error analyzing word/i.test(text)) return;
         // 下方雙語錯誤路徑刻意讓這個端點回 503。
         if (/503/.test(text) && m.location().url.endsWith('/reading/mutations')) return;
+        if (/503/.test(text) && m.location().url.startsWith(endpoint + '/articles')) return;
         errors.push(text.slice(0, 240));
     });
     page.on('pageerror', (e) => errors.push('PAGEERROR ' + String(e && e.stack ? e.stack.split('\n')[0] : e)));
@@ -472,6 +473,22 @@ async function api(endpoint, token, apiPath, options = {}) {
             release();
             await c.context.unroute('**/reading/capabilities');
         }
+
+        console.log('\n[文章同步錯誤原因：快照成功不會遮蔽文章失敗]');
+        await c.context.route('**/articles**', route => {
+            if (route.request().url().startsWith(server.base + '/articles') && route.request().method() === 'GET') {
+                return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'article_pull_unavailable' }) });
+            }
+            return route.continue();
+        });
+        for (const locale of ['zh-CN', 'zh-HK']) {
+            await c.page.evaluate(async locale => (await import('/modules/i18n.js')).setLocale(locale), locale);
+            await syncViaMenu(c.page);
+            await c.page.waitForFunction(() => document.querySelector('#gear-menu .menu-status')?.textContent.includes('article_pull_unavailable'));
+            const text = await c.page.locator('#gear-menu .menu-status').innerText();
+            check(`${locale} 文章同步失敗包含具體原因`, text.includes(locale === 'zh-CN' ? '文章同步失败' : '文章同步失敗') && !text.includes('同步完成'), text);
+        }
+        await c.context.unroute('**/articles**');
 
         const allErrors = [...a.errors, ...b.errors, ...c.errors, ...carol.errors];
         check('同步流程沒有 console/page 錯誤', allErrors.length === 0, allErrors.join('\n'));

@@ -1459,6 +1459,16 @@ export default {
         readingServerUpdateRequired: '同步服务尚未支持逐项阅读资料或标记；本机仍可保存，请更新 Worker / selfhost。',
         readingPending: '阅读记录尚未同步完成，笔记已保存在本机；请稍后重试或处理同步冲突。',
         readingSyncFailed: '阅读记录同步失败（{reason}），笔记已保存在本机，请稍后重试。',
+        backupLoading: '正在读取本机备份…',
+        backupCreating: '正在创建完整备份…',
+        backupReadFailed: '无法读取本机备份：{message}',
+        backupStorageFull: '浏览器本机存储空间不足。请先导出已有备份，再删除不再需要的备份；不要清除网站数据。',
+        failureWithReason: '{message}：{reason}',
+        reasonStorageFull: '浏览器本机存储空间不足（{code}）',
+        reasonCloudCapacity: '云端文章容量已达上限（{code}）',
+        reasonStorageAccess: '无法读写本机文章存储（{code}）',
+        reasonTimeout: '连接同步服务超时，请稍后重试（{code}）',
+        reasonNetwork: '无法连接同步服务，请检查网络（{code}）',
     },
     ai: {
         analysisFailed: '分析失败'

@@ -1459,6 +1459,16 @@ export default {
         readingServerUpdateRequired: '同步服務尚未支援逐項閱讀資料或標記；本機仍可儲存，請更新 Worker / selfhost。',
         readingPending: '閱讀記錄尚未同步完成，筆記已保存在本機；請稍後重試或處理同步衝突。',
         readingSyncFailed: '閱讀記錄同步失敗（{reason}），筆記已保存在本機，請稍後重試。',
+        backupLoading: '正在讀取本機備份…',
+        backupCreating: '正在建立完整備份…',
+        backupReadFailed: '無法讀取本機備份：{message}',
+        backupStorageFull: '瀏覽器本機儲存空間不足。請先匯出已有備份，再刪除不再需要的備份；不要清除網站資料。',
+        failureWithReason: '{message}：{reason}',
+        reasonStorageFull: '瀏覽器本機儲存空間不足（{code}）',
+        reasonCloudCapacity: '雲端文章容量已達上限（{code}）',
+        reasonStorageAccess: '無法讀寫本機文章儲存（{code}）',
+        reasonTimeout: '連接同步服務逾時，請稍後重試（{code}）',
+        reasonNetwork: '無法連接同步服務，請檢查網絡（{code}）',
     },
     ai: {
         analysisFailed: '分析失敗'

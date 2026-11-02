@@ -58,7 +58,7 @@ import * as backup from '../../modules/local-backup.js';
 import * as articleStore from '../../modules/article-store.js';
 import { syncArticles } from '../../modules/article-sync.js';
 import { markdownToHtml } from '../../modules/markdown.js';
-import { resolveSyncCompletion } from './sync-status.js';
+import { resolveSyncCompletion, syncErrorCode, syncErrorReasonKey } from './sync-status.js';
 import { getLocale, setLocale, t, formatDateTime } from '../../modules/i18n.js';
 import { SUPPORTED_LOCALES } from '../../modules/i18n-config.js';
 
@@ -341,7 +341,7 @@ async function runArticleSyncPhase() {
     if (pending) {
       updateStatus('sync.articleSyncPending');
     }
-    return { ok: true, info, pending, failed, conflicts };
+    return { ok: true, info, pending, failed, conflicts, error: info?.pushed?.errors?.[0]?.error || (conflicts ? 'article_revision_conflict' : '') };
   } catch (e) {
     if (e && e.code === 'stale_session') throw e;
     if (e && e.code === 'unauthorized') throw e;
@@ -410,6 +410,8 @@ async function handleSync() {
     updateStatus('sync.syncing');
     guard = createSyncGuard();
     // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
+    await backup.prepareBackupStorage().catch(() => {});
+    if (guard.stale()) return;
     const articlePhase = await runArticleSyncPhase();
     if (guard.stale()) return;
     const readingPhase = await runReadingSyncPhase();
@@ -426,6 +428,7 @@ async function handleSync() {
       restoredFromRemote: !!(info && info.restoredFromRemote),
       articleOk: articlePhase.ok === true,
       articlePending: articlePhase.pending === true,
+      articleError: syncErrorCode(articlePhase.error),
       readingOk: readingPhase.ok === true,
       readingPending: !!(readingPhase.info?.pending || readingPhase.info?.conflictCount),
       readingError: readingPhase.error?.code || readingPhase.error?.message,
@@ -433,7 +436,7 @@ async function handleSync() {
     });
     updateStatus(completion.statusKey, completion.params);
     if (completion.toastKey) {
-      try { ui.displayMessage(t(completion.toastKey, completion.params), completion.toastLevel, completion.toastMs); } catch(_) {}
+      try { ui.displayMessage(formatSyncStatus(completion.toastKey, completion.params), completion.toastLevel, completion.toastMs); } catch(_) {}
     }
     // 手動同步的備份也移到鎖外，避免匯出全部資料時卡住「同步中」狀態。
     scheduleBackupAfterSync(t('sync.backupNoteManual'));
@@ -465,9 +468,17 @@ function updateStatus(key, params = {}, label = '') {
   renderSyncStatus();
 }
 
+function formatSyncStatus(key, params = {}, label = '') {
+  const message = label || t(key, params);
+  if (!params.errorCode) return message;
+  const reasonKey = syncErrorReasonKey(params.errorCode);
+  const reason = reasonKey ? t(reasonKey, { code: params.errorCode }) : params.errorCode;
+  return t('sync.failureWithReason', { message, reason });
+}
+
 function renderSyncStatus() {
   if (!syncStatusValue) return;
-  const text = syncStatusValue.label || t(syncStatusValue.key, syncStatusValue.params);
+  const text = formatSyncStatus(syncStatusValue.key, syncStatusValue.params, syncStatusValue.label);
   const ver = parseInt(localStorage.getItem('lastSnapshotVersion')||'0',10) || 0;
   const ts = lastSyncAt
       ? t('sync.lastSyncWithVersion', { time: formatDateTime(lastSyncAt, { hour12: false, year: undefined, month: undefined, day: undefined }), version: ver })
@@ -2197,6 +2208,8 @@ async function doAutoSync(reason) {
     updateStatus('sync.autoSyncing');
     guard = createSyncGuard();
     // 先跑文章同步：舊快照裡的文章群組必須先匯入逐篇儲存，推送快照才不會把它刪掉。
+    await backup.prepareBackupStorage().catch(() => {});
+    if (guard.stale()) return;
     const articlePhase = await runArticleSyncPhase();
     if (guard.stale()) return;
     const readingPhase = await runReadingSyncPhase();
@@ -2213,6 +2226,7 @@ async function doAutoSync(reason) {
       restoredFromRemote: !!(info && info.restoredFromRemote),
       articleOk: articlePhase.ok === true,
       articlePending: articlePhase.pending === true,
+      articleError: syncErrorCode(articlePhase.error),
       readingOk: readingPhase.ok === true,
       readingPending: !!(readingPhase.info?.pending || readingPhase.info?.conflictCount),
       readingError: readingPhase.error?.code || readingPhase.error?.message,
@@ -2220,7 +2234,7 @@ async function doAutoSync(reason) {
     });
     updateStatus(completion.statusKey, completion.params);
     if (completion.toastKey) {
-      try { ui.displayMessage(t(completion.toastKey, completion.params), completion.toastLevel, completion.toastMs); } catch(_) {}
+      try { ui.displayMessage(formatSyncStatus(completion.toastKey, completion.params), completion.toastLevel, completion.toastMs); } catch(_) {}
     }
     // 自動同步成功不再彈出提示，避免干擾（失敗的提示由上面的判斷決定）。
     // 備份不佔用同步鎖：排到本輪結束、鎖釋放後才執行，且由資料版本去重。
@@ -2302,11 +2316,35 @@ function attachRealtime(user) {
 // -----------------
 // Backup/Restore UI
 // -----------------
-function showBackupRestoreModal() {
+function backupErrorText(error) {
+  if (error?.name === 'QuotaExceededError' || /quota|storage_full/i.test(String(error?.code || error?.message || ''))) {
+    return t('sync.backupStorageFull');
+  }
+  return error?.message || t('sync.unknownError');
+}
+
+async function showBackupRestoreModal() {
   try { ui.openModal(); } catch(_) {}
   try { dom.modalTitle.textContent = t('sync.backupTitle'); } catch(_) {}
-  const items = (function(){ try { return backup.listBackups(); } catch(_) { return []; } })();
+  const loading = document.createElement('div');
+  loading.className = 'backup-modal';
+  loading.textContent = t('sync.backupLoading');
+  dom.modalBody.replaceChildren(loading);
+  let items;
+  try { items = await backup.listBackups(); }
+  catch (error) {
+    if (!loading.isConnected || dom.appModal.classList.contains('hidden')) return;
+    loading.textContent = t('sync.backupReadFailed', { message: backupErrorText(error) });
+    const retry = document.createElement('button');
+    retry.className = 'btn-secondary';
+    retry.textContent = t('article.retry');
+    retry.onclick = showBackupRestoreModal;
+    loading.appendChild(retry);
+    return;
+  }
+  if (!loading.isConnected || dom.appModal.classList.contains('hidden')) return;
   const listHtml = items.length ? items.map(it => {
+    const id = escapeHtml(String(it.id));
     const timeStr = formatDateTime(parseInt(it.ts, 10) || Date.now());
     const sizeKB = Math.round((it.size||0)/102.4)/10; // 1 decimal
     const mkBadge = (text, color) => `<span class="bk-badge" style="display:inline-block;padding:1px 6px;margin-left:6px;border-radius:999px;font-size:11px;background:${color.bg};color:${color.fg};border:1px solid ${color.bd};vertical-align:middle;">${escapeHtml(text)}</span>`;
@@ -2316,15 +2354,15 @@ function showBackupRestoreModal() {
       else if (/手動|手动/.test(it.note)) noteHtml = mkBadge(it.note, { bg:'var(--ok-050)', fg:'var(--ok-600)', bd:'var(--ok)' });
       else noteHtml = `<span style="margin-left:6px;color:var(--ink-500);">${escapeHtml(it.note)}</span>`;
     }
-    return `<div class="backup-item" data-id="${it.id}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line);">
+    return `<div class="backup-item" data-id="${id}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line);">
       <div class="bi-meta">
         <div class="bi-title">${timeStr}${noteHtml}</div>
-        <div class="bi-sub" style="color:var(--ink-500);font-size:12px;">ID: ${it.id} · ${t('sync.approximately', { size: sizeKB })}</div>
+        <div class="bi-sub" style="color:var(--ink-500);font-size:12px;">ID: ${id} · ${t('sync.approximately', { size: sizeKB })}</div>
       </div>
       <div class="bi-actions" style="display:flex;gap:6px;">
-        <button class="btn-secondary bi-restore" data-id="${it.id}">${t('sync.restore')}</button>
-        <button class="btn-tertiary bi-export" data-id="${it.id}">${t('sync.export')}</button>
-        <button class="btn-danger bi-delete" data-id="${it.id}">${t('sync.delete')}</button>
+        <button class="btn-secondary bi-restore" data-id="${id}">${t('sync.restore')}</button>
+        <button class="btn-tertiary bi-export" data-id="${id}">${t('sync.export')}</button>
+        <button class="btn-danger bi-delete" data-id="${id}">${t('sync.delete')}</button>
       </div>
     </div>`;
   }).join('') : `<div style="color:var(--ink-500);padding:8px 0;">${t('sync.noBackups')}</div>`;
@@ -2346,7 +2384,11 @@ function showBackupRestoreModal() {
   $('#bk-close').onclick = () => ui.closeModal();
   $('#bk-create').onclick = async () => {
     const msg = $('#bk-msg');
-    try { const result = await backup.createBackup('manual'); if (result && result.error) throw result.error; msg.textContent = t('sync.backupCreated'); setTimeout(()=> showBackupRestoreModal(), 300); } catch (e) { msg.textContent = t('sync.backupCreateFailed', { message: e?.message || '' }); }
+    const button = $('#bk-create');
+    button.disabled = true;
+    msg.textContent = t('sync.backupCreating');
+    try { const result = await backup.createBackup('manual'); if (result && result.error) throw result.error; msg.textContent = t('sync.backupCreated'); setTimeout(()=> { if (msg.isConnected && !dom.appModal.classList.contains('hidden')) showBackupRestoreModal(); }, 300); } catch (e) { msg.textContent = t('sync.backupCreateFailed', { message: backupErrorText(e) }); }
+    finally { button.disabled = false; }
   };
   // 從檔案匯入備份：先存入本機備份列表（標記手動，不會被自動裁剪），再由使用者點「還原」套用
   const bkImport = $('#bk-import');
@@ -2358,7 +2400,7 @@ function showBackupRestoreModal() {
     if (file.size > 25 * 1024 * 1024) { msg.textContent = t('sync.fileTooLarge'); return; }
     const reader = new FileReader();
     reader.onerror = () => { msg.textContent = t('sync.readFileFailed'); };
-    reader.onload = () => {
+    reader.onload = async () => {
       let parsed;
       try { parsed = JSON.parse(String(reader.result || '')); }
       catch (_) { msg.textContent = t('sync.invalidJson'); return; }
@@ -2369,8 +2411,8 @@ function showBackupRestoreModal() {
       const ok = payload && typeof payload === 'object'
         && KNOWN.some(k => payload[k] && typeof payload[k] === 'object');
       if (!ok) { msg.textContent = t('sync.invalidBackup'); return; }
-      const res = backup.saveBackupPayload(payload, t('sync.backupNoteImport'));
-      if (res && res.error) { msg.textContent = t('sync.importWriteFailed', { message: res.error?.message || t('sync.unknownError') }); return; }
+      const res = await backup.saveBackupPayload(payload, t('sync.backupNoteImport'));
+      if (res && res.error) { msg.textContent = t('sync.importWriteFailed', { message: backupErrorText(res.error) }); return; }
       try { ui.displayMessage(t('sync.backupImported'), 'success'); } catch(_) {}
       showBackupRestoreModal();
     };
@@ -2385,7 +2427,7 @@ function showBackupRestoreModal() {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       try {
-        const payload = backup.loadBackupPayload(id);
+        const payload = await backup.loadBackupPayload(id);
         if (!payload) { try { ui.displayMessage(t('sync.backupMissing'), 'error'); } catch(_) {} return; }
         await restoreSnapshotLocally(payload);
         try { lastSyncAt = Date.now(); localStorage.setItem('lastSnapshotAt', String(lastSyncAt)); } catch(_) {}
@@ -2398,11 +2440,11 @@ function showBackupRestoreModal() {
     });
   });
   dom.modalBody.querySelectorAll('.bi-export').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
-      const payload = backup.loadBackupPayload(id);
-      if (!payload) { try { ui.displayMessage(t('sync.backupMissing'), 'error'); } catch(_) {} return; }
       try {
+        const payload = await backup.loadBackupPayload(id);
+        if (!payload) { ui.displayMessage(t('sync.backupMissing'), 'error'); return; }
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -2414,9 +2456,9 @@ function showBackupRestoreModal() {
     });
   });
   dom.modalBody.querySelectorAll('.bi-delete').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
-      try { backup.deleteBackup(id); showBackupRestoreModal(); try { ui.displayMessage(t('sync.backupDeleted'), 'success'); } catch(_) {} } catch (_) { try { ui.displayMessage(t('sync.deleteFailed'), 'error'); } catch(_) {} }
+      try { await backup.deleteBackup(id); showBackupRestoreModal(); try { ui.displayMessage(t('sync.backupDeleted'), 'success'); } catch(_) {} } catch (_) { try { ui.displayMessage(t('sync.deleteFailed'), 'error'); } catch(_) {} }
     });
   });
 }

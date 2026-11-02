@@ -187,7 +187,7 @@ test('文章匯出失敗：不產生備份、不裁剪舊備份、不更新自�
     assert.equal(after.index, before.index, '失敗的備份裁剪了備份索引');
     assert.equal(after.meta, before.meta, '失敗的備份改寫了備份中繼資料');
     assert.equal(after.signature, SIGNATURE, '失敗的備份更新了自動備份簽章，之後會跳過重建');
-    assert.equal(backup.listBackups().length, 2);
+    assert.equal((await backup.listBackups()).length, 2);
 });
 
 test('閱讀匯出失敗：同樣不保存、不裁剪、不更新簽章', async () => {
@@ -225,7 +225,7 @@ test('匯出恢復正常後：備份建立成功並更新簽章（反向驗證�
     const result = await backup.createBackup('auto sync');
     assert.ok(result && result.id, JSON.stringify(result));
     assert.notEqual(localStorage.getItem(SIGNATURE_KEY), SIGNATURE, '成功備份沒有更新簽章');
-    const payload = backup.loadBackupPayload(result.id);
+    const payload = await backup.loadBackupPayload(result.id);
     assert.ok(Array.isArray(payload.articleDocuments), '成功備份缺少文章文件');
     assert.equal(payload.articleDocuments.length, 1);
     assert.equal(payload.articleDocuments[0].body, 'body for backup');
