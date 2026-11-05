@@ -1,0 +1,175 @@
+{
+  "url": "http://127.0.0.1:56265/extension/lookup.html",
+  "viewport": "400x900@2x",
+  "cases": {
+    "zh-CN-current": {
+      "htmlLang": "zh-CN",
+      "titleText": "BDC 语境查词（独立 AI 验证）",
+      "btnText": "在新标签页打开完整验证面板",
+      "btnLabelLines": 1,
+      "headerFlexDirection": "column",
+      "btnWhiteSpace": "nowrap",
+      "bodyScrollWidth": 400,
+      "viewportWidth": 400,
+      "headerRect": {
+        "x": 14,
+        "y": 14,
+        "w": 372,
+        "h": 97
+      },
+      "titleRect": {
+        "x": 14,
+        "y": 14,
+        "w": 372,
+        "h": 24
+      },
+      "controlsRect": {
+        "x": 14,
+        "y": 68,
+        "w": 372,
+        "h": 32
+      },
+      "selectRect": {
+        "x": 14,
+        "y": 75,
+        "w": 129,
+        "h": 19
+      },
+      "btnRect": {
+        "x": 191,
+        "y": 68,
+        "w": 195,
+        "h": 32
+      },
+      "controlsOverflow": false,
+      "btnClipped": false
+    },
+    "zh-HK-current": {
+      "htmlLang": "zh-HK",
+      "titleText": "BDC 語境查詞（獨立 AI 驗證）",
+      "btnText": "在新分頁開啟完整驗證面板",
+      "btnLabelLines": 1,
+      "headerFlexDirection": "column",
+      "btnWhiteSpace": "nowrap",
+      "bodyScrollWidth": 400,
+      "viewportWidth": 400,
+      "headerRect": {
+        "x": 14,
+        "y": 14,
+        "w": 372,
+        "h": 97
+      },
+      "titleRect": {
+        "x": 14,
+        "y": 14,
+        "w": 372,
+        "h": 24
+      },
+      "controlsRect": {
+        "x": 14,
+        "y": 68,
+        "w": 372,
+        "h": 32
+      },
+      "selectRect": {
+        "x": 14,
+        "y": 75,
+        "w": 129,
+        "h": 19
+      },
+      "btnRect": {
+        "x": 204,
+        "y": 68,
+        "w": 182,
+        "h": 32
+      },
+      "controlsOverflow": false,
+      "btnClipped": false
+    },
+    "zh-CN-old": {
+      "htmlLang": "zh-CN",
+      "titleText": "BDC 语境查词（独立 AI 验证）",
+      "btnText": "在新标签页打开完整验证面板",
+      "btnLabelLines": 5,
+      "headerFlexDirection": "row",
+      "btnWhiteSpace": "normal",
+      "bodyScrollWidth": 400,
+      "viewportWidth": 400,
+      "headerRect": {
+        "x": 14,
+        "y": 14,
+        "w": 372,
+        "h": 115
+      },
+      "titleRect": {
+        "x": 14,
+        "y": 14,
+        "w": 151,
+        "h": 48
+      },
+      "controlsRect": {
+        "x": 175,
+        "y": 14,
+        "w": 211,
+        "h": 104
+      },
+      "selectRect": {
+        "x": 175,
+        "y": 57,
+        "w": 129,
+        "h": 19
+      },
+      "btnRect": {
+        "x": 310,
+        "y": 14,
+        "w": 76,
+        "h": 104
+      },
+      "controlsOverflow": false,
+      "btnClipped": false
+    },
+    "zh-HK-old": {
+      "htmlLang": "zh-HK",
+      "titleText": "BDC 語境查詞（獨立 AI 驗證）",
+      "btnText": "在新分頁開啟完整驗證面板",
+      "btnLabelLines": 4,
+      "headerFlexDirection": "row",
+      "btnWhiteSpace": "normal",
+      "bodyScrollWidth": 400,
+      "viewportWidth": 400,
+      "headerRect": {
+        "x": 14,
+        "y": 14,
+        "w": 372,
+        "h": 97
+      },
+      "titleRect": {
+        "x": 14,
+        "y": 14,
+        "w": 154,
+        "h": 48
+      },
+      "controlsRect": {
+        "x": 178,
+        "y": 14,
+        "w": 208,
+        "h": 86
+      },
+      "selectRect": {
+        "x": 178,
+        "y": 48,
+        "w": 129,
+        "h": 19
+      },
+      "btnRect": {
+        "x": 313,
+        "y": 14,
+        "w": 73,
+        "h": 86
+      },
+      "controlsOverflow": false,
+      "btnClipped": false
+    }
+  },
+  "errors": []
+}

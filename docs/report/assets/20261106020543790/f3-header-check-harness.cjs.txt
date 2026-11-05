@@ -1,0 +1,106 @@
+// Throwaway F3 verification harness (NOT part of the repo).
+// Serves the repo over loopback HTTP, opens extension/lookup.html at 400px width,
+// measures the header layout for zh-CN / zh-HK in both the pre-fix (0cbd272) and
+// current (5fc7876) CSS, and writes screenshots.
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+
+const ROOT = '/Users/linus/CODE/bdc-extension-ai-proof-20261105';
+const OUT = '/tmp/f3check/out';
+const OLD_CSS = fs.readFileSync('/tmp/f3check/lookup-old.css', 'utf8');
+fs.mkdirSync(OUT, { recursive: true });
+
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8' };
+
+function startServer() {
+    const server = http.createServer((req, res) => {
+        const rel = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+        const abs = path.join(ROOT, rel);
+        if (!abs.startsWith(ROOT) || !fs.existsSync(abs) || fs.statSync(abs).isDirectory()) {
+            res.writeHead(404); res.end('not found'); return;
+        }
+        res.writeHead(200, { 'content-type': MIME[path.extname(abs)] || 'application/octet-stream', 'cache-control': 'no-store' });
+        fs.createReadStream(abs).pipe(res);
+    });
+    return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
+}
+
+function measure(page) {
+    return page.evaluate(() => {
+        const header = document.querySelector('.ext-header');
+        const controls = document.querySelector('.ext-header-controls');
+        const btn = document.getElementById('ext-open-tab-btn');
+        const sel = document.getElementById('ext-locale-select');
+        const title = document.getElementById('ext-title');
+        const cs = (el, prop) => el ? getComputedStyle(el)[prop] : null;
+        const rect = (el) => { const r = el.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; };
+        // Count rendered lines of the button label.
+        const range = document.createRange();
+        range.selectNodeContents(btn);
+        const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+        return {
+            htmlLang: document.documentElement.lang,
+            titleText: title ? title.textContent : '',
+            btnText: btn ? btn.textContent : '',
+            btnLabelLines: lines,
+            headerFlexDirection: cs(header, 'flexDirection'),
+            btnWhiteSpace: cs(btn, 'whiteSpace'),
+            bodyScrollWidth: document.body.scrollWidth,
+            viewportWidth: window.innerWidth,
+            headerRect: rect(header), titleRect: rect(title), controlsRect: rect(controls),
+            selectRect: rect(sel), btnRect: rect(btn),
+            controlsOverflow: controls ? (controls.scrollWidth > controls.clientWidth + 1) : null,
+            btnClipped: btn ? (btn.scrollWidth > btn.clientWidth + 1 || btn.scrollHeight > btn.clientHeight + 1) : null
+        };
+    });
+}
+
+(async () => {
+    const server = await startServer();
+    const port = server.address().port;
+    const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext({ viewport: { width: 400, height: 900 }, deviceScaleFactor: 2 });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}`); });
+
+    await page.goto(`http://127.0.0.1:${port}/extension/lookup.html`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => (document.getElementById('ext-title')?.textContent || '').length > 0, null, { timeout: 15000 });
+
+    const out = { url: `http://127.0.0.1:${port}/extension/lookup.html`, viewport: '400x900@2x', cases: {}, errors };
+
+    // zh-CN (default locale)
+    out.cases['zh-CN-current'] = await measure(page);
+    await page.screenshot({ path: path.join(OUT, 'f3-zh-CN-400px-current.png'), fullPage: true });
+    await page.locator('.ext-header').screenshot({ path: path.join(OUT, 'f3-zh-CN-400px-header-current.png') });
+
+    // zh-HK via the real locale selector (persists through setLocale)
+    await page.selectOption('#ext-locale-select', 'zh-HK');
+    await page.waitForTimeout(400);
+    out.cases['zh-HK-current'] = await measure(page);
+    await page.screenshot({ path: path.join(OUT, 'f3-zh-HK-400px-current.png'), fullPage: true });
+    await page.locator('.ext-header').screenshot({ path: path.join(OUT, 'f3-zh-HK-400px-header-current.png') });
+
+    // Same page, pre-fix CSS (0cbd272) for an apples-to-apples baseline.
+    for (const locale of ['zh-CN', 'zh-HK']) {
+        await page.selectOption('#ext-locale-select', locale);
+        await page.waitForTimeout(300);
+        await page.evaluate((css) => {
+            document.querySelectorAll('link[rel=stylesheet]').forEach((l) => l.remove());
+            let tag = document.getElementById('__old_css__');
+            if (!tag) { tag = document.createElement('style'); tag.id = '__old_css__'; document.head.appendChild(tag); }
+            tag.textContent = css;
+        }, OLD_CSS);
+        await page.waitForTimeout(200);
+        out.cases[`${locale}-old`] = await measure(page);
+        if (locale === 'zh-CN') await page.locator('.ext-header').screenshot({ path: path.join(OUT, 'f3-zh-CN-400px-header-old.png') });
+    }
+
+    console.log(JSON.stringify(out, null, 2));
+    await context.close();
+    await browser.close();
+    server.close();
+})().catch((e) => { console.error('harness error:', e); process.exitCode = 2; });

@@ -5,14 +5,14 @@ extracted
 ## 2) 相對路徑呼叫（文件記載的安裝方式）
 Packaged 44 files into /private/tmp/f1probe/src/extension
 EXIT=0
-_locales ai-config.js background.js locales lookup.css lookup.html lookup.js manifest.json modules selection-extractor.js shared 
+_locales ai-config.js background.js locales lookup.css lookup.html lookup.js manifest.json modules selection-extractor.js shared
 
 ## 3) 相同目錄、相同檔案，改用含符號連結的絕對路徑呼叫
 已清空產物：
-background.js lookup.css lookup.html lookup.js manifest.json selection-extractor.js 
+background.js lookup.css lookup.html lookup.js manifest.json selection-extractor.js
 EXIT=0
 產物清單（仍為空＝沒有真的執行）：
-background.js lookup.css lookup.html lookup.js manifest.json selection-extractor.js 
+background.js lookup.css lookup.html lookup.js manifest.json selection-extractor.js
 
 ## 4) 成因
 142:if (import.meta.url === `file://${process.argv[1]}`) {
