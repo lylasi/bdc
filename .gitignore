@@ -104,3 +104,10 @@ selfhost/data/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+
+# Generated extension dependencies; always rebuild from the shared source.
+/extension/modules/
+/extension/locales/
+/extension/shared/
+
+/extension/_locales/

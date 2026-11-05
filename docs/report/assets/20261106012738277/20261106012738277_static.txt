@@ -1,0 +1,2 @@
+檢查目錄：/Users/linus/CODE/bdc-extension-ai-proof-20261105/extension（深度掃描）
+已檢查 50 個檔案，沒有發現靜態 AI 供應商網址、模型映射或金鑰。

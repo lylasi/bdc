@@ -1,6 +1,8 @@
 import { AI_LIMITS, OCR_CONFIG, ARTICLE_IMPORT } from '../ai-config.js';
 import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 import { getLocale, t } from './i18n.js';
+import { normalizeLocale } from './i18n-config.js';
+import { getActiveAIScope } from './ai-profile-storage.js';
 import { buildMessages, buildPrompt, getPromptVersion } from './prompts/index.js';
 import {
     getAIProviderRegistry,
@@ -18,7 +20,7 @@ import {
 import { requireAdapter } from './ai-protocols/index.js';
 import { createSseParser } from './ai-protocols/common.js';
 import { THINKING_TOKEN_FLOORS } from './ai-thinking.js';
-import { isManagedUsable } from './ai-catalog.js';
+import { getCatalogState, isManagedUsable } from './ai-catalog.js';
 import { AUTH_EVENT } from './sync-cloudflare.js';
 import * as cache from './cache.js';
 import * as validate from './validate.js';
@@ -351,13 +353,25 @@ if (typeof window !== 'undefined') {
     });
 }
 
-function localizeAIError(error) {
-    if (!error) return error;
-    // fetch 失敗（離線、CORS、DNS）不會帶 code：補上分類，讓重試與失敗原因可判讀。
-    if (!error.code && (error instanceof TypeError || /failed to fetch|networkerror/i.test(String(error.message || '')))) {
-        error.code = 'network_or_cors';
-    }
+export function getAIErrorTranslationKey(code) {
     const map = {
+        invalid_response: 'errors.aiInvalidResponse',
+        empty_response: 'errors.aiInvalidResponse',
+        stale_session: 'extension.staleLookupDiscarded',
+        lookup_text_required: 'errors.lookupTextRequired',
+        sync_endpoint_missing: 'errors.syncEndpointMissing',
+        snapshot_read_failed: 'errors.cloudReadFailed',
+        username_required: 'errors.usernameRequired',
+        password_required: 'errors.passwordRequired',
+        invalid_credentials: 'errors.invalidCredentials',
+        account_disabled: 'errors.accountDisabled',
+        rate_limited: 'errors.loginRateLimited',
+        pairing_required: 'errors.pairingRequired',
+        pairing_format: 'errors.pairingFormat',
+        pairing_invalid: 'errors.pairingInvalid',
+        sync_unreachable: 'errors.cannotReachSync',
+        sync_timeout: 'errors.aiTimeout',
+        unauthorized: 'errors.loginExpired',
         ai_key_missing: 'errors.aiKeyMissing',
         ai_key_binding_mismatch: 'errors.aiKeyBindingMismatch',
         managed_login_required: 'errors.aiLoginRequired',
@@ -385,7 +399,16 @@ function localizeAIError(error) {
         catalog_version_conflict: 'errors.aiCatalogChanged',
         passcode_upgrade_required: 'errors.aiPasscodeUpgrade'
     };
-    const key = map[error.code];
+    return map[code] || '';
+}
+
+function localizeAIError(error) {
+    if (!error) return error;
+    // fetch 失敗（離線、CORS、DNS）不會帶 code：補上分類，讓重試與失敗原因可判讀。
+    if (!error.code && (error instanceof TypeError || /failed to fetch|networkerror/i.test(String(error.message || '')))) {
+        error.code = 'network_or_cors';
+    }
+    const key = getAIErrorTranslationKey(error.code);
     if (key) {
         const translated = t(key);
         if (translated && translated !== key) error.message = translated;
@@ -1150,32 +1173,65 @@ export async function analyzeParagraph(paragraph, opts = {}) {
 /**
  * 懶載：針對單個詞（或短語）在其所在句子中的詳解。
  */
+function invalidLookupResponse() {
+    return Object.assign(new Error(t('errors.aiInvalidResponse')), { code: 'invalid_response' });
+}
+
+function analysisModel(modelSpec, task, opts) {
+    return opts.strict ? resolveAIRequestConfig({ task, model: modelSpec }) : normalizeModelSpec(modelSpec);
+}
+
+function analysisCacheModelKey(resolved, opts) {
+    if (!opts.strict) return cacheModelKey(resolved);
+    return JSON.stringify({
+        provider: resolved.provider, model: resolved.model, apiUrl: resolved.apiUrl,
+        format: resolved.format, authMode: resolved.authMode,
+        catalogVersion: resolved.source === 'managed' ? getCatalogState().version : 0,
+        validation: 1
+    });
+}
+
+function withAnalysisModel(parsed, resolved, opts) {
+    if (!opts.strict) return parsed;
+    return { ...parsed, lookupModel: { provider: resolved.provider, model: resolved.model, apiUrl: resolved.apiUrl } };
+}
+
 export async function analyzeWordInSentence(word, sentence, opts = {}) {
     const { timeoutMs = 20000, signal, noCache = false } = opts;
+    const context = typeof opts.context === 'string' ? opts.context.trim() : '';
     const s = loadGlobalSettings();
     const primaryModel = getPreferredTaskSpec(['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'], { settings: s });
     const fallbackModel = getPreferredTaskSpec(['articleWordTranslationFallback', 'wordAnalysis'], { settings: s });
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
-    const locale = getLocale();
+    const locale = opts.locale ? normalizeLocale(opts.locale) : getLocale();
     const promptVersion = getPromptVersion('article.wordTooltip');
     const thinking = resolveThinkingLevel('articleWordTranslation').level;
     // Stored under the requested level even if the channel downgraded to auto.
-    const cacheOptions = { locale, promptVersion, thinking };
+    const cacheOptions = { locale, promptVersion, thinking, ...(opts.strict ? { structuredLookup: 1 } : {}) };
+    if (context) {
+        try { cacheOptions.contextHash = await cache.makeKey('ctx', context); } catch (_) { cacheOptions.contextHash = context; }
+    }
+    if (opts.cacheScope && typeof opts.cacheScope === 'object') {
+        cacheOptions.endpoint = String(opts.cacheScope.endpoint || '');
+        cacheOptions.userId = String(opts.cacheScope.userId || '');
+    }
     if (!noCache) {
         for (const modelSpec of candidates) {
-            const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getWordAnalysisCached(word, sentence, cacheModelKey(resolved), cacheOptions);
+                const resolved = analysisModel(modelSpec, 'articleWordTranslation', opts);
+                const cached = await cache.getWordAnalysisCached(word, sentence, analysisCacheModelKey(resolved, opts), cacheOptions);
                 if (cached) return cached;
             } catch (_) {}
         }
     }
-    const prompt = buildPrompt('article.wordTooltip', { word, sentence }, { locale, variant: 'standard' });
+    const prompt = context
+        ? buildPrompt('article.wordTooltip', { word, sentence, context }, { locale, variant: 'contextual' })
+        : buildPrompt('article.wordTooltip', { word, sentence }, { locale, variant: 'standard' });
 
     let lastErr = null;
     for (const modelSpec of candidates) {
-        const resolved = normalizeModelSpec(modelSpec);
         try {
+            const resolved = analysisModel(modelSpec, 'articleWordTranslation', opts);
             const data = await requestAI({
                 model: modelSpec,
                 messages: [{ role: 'user', content: prompt }],
@@ -1190,19 +1246,23 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
             const raw = pickMessageContent(data);
             const rawParsed = safeJsonParse(raw);
             // 解析失敗（多為截斷殘骸）直接換下一個模型，避免把原始 JSON 字串塞進「意思」並寫入快取
-            if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
-            const parsed = normalizeWordInSentenceResponse(rawParsed, '', word, sentence);
-            if (!validate.validateWordInSentence(parsed)) throw new Error('Schema validation failed');
+            if (!rawParsed || typeof rawParsed !== 'object') throw invalidLookupResponse();
+            const parsed = withAnalysisModel(normalizeWordInSentenceResponse(rawParsed, '', word, sentence), resolved, opts);
+            if (!validate.validateWordInSentence(parsed)) throw invalidLookupResponse();
             if (!String(parsed?.analysis?.meaning || '').trim()) {
+                if (opts.strict) throw invalidLookupResponse();
                 // 空 meaning 不是成功：不寫入快取，交給呼叫端顯示重試。
                 return { ...parsed, failed: true, errorCode: 'empty_response' };
             }
-            try { await cache.setWordAnalysisCached(word, sentence, cacheModelKey(resolved), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+            try { await cache.setWordAnalysisCached(word, sentence, analysisCacheModelKey(resolved, opts), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
+            if (signal?.aborted) throw signal.reason || error;
             lastErr = error;
         }
     }
+
+    if (opts.strict) throw localizeAIError(lastErr || invalidLookupResponse());
 
     try {
         const fallbackModelSpec = candidates[0] || primaryModel;
@@ -1220,7 +1280,7 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
         const parsed = normalizeWordInSentenceResponse(null, plainAnswerOrEmpty(raw), word, sentence);
         if (!validate.validateWordInSentence(parsed) || !parsed.analysis.meaning) throw lastErr || new Error('Word fallback failed');
         const resolved = normalizeModelSpec(fallbackModelSpec);
-        try { await cache.setWordAnalysisCached(word, sentence, cacheModelKey(resolved), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+        try { await cache.setWordAnalysisCached(word, sentence, analysisCacheModelKey(resolved, opts), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
         return parsed;
     } catch (_) {
         if (lastErr) throw lastErr;
@@ -1320,18 +1380,22 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
     const primaryModel = getPreferredTaskSpec(['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis'], { settings: s });
     const fallbackModel = getPreferredTaskSpec(['articlePhraseTranslationFallback', 'wordAnalysis'], { settings: s });
     const candidates = buildModelCandidates(primaryModel, fallbackModel);
-    const locale = getLocale();
+    const locale = opts.locale ? normalizeLocale(opts.locale) : getLocale();
     const promptVersion = getPromptVersion('article.phraseAnalysis');
     const thinking = resolveThinkingLevel('articlePhraseTranslation').level;
     // Stored under the requested level even if the channel downgraded to auto.
-    const cacheOptions = { locale, promptVersion, thinking };
+    const cacheOptions = { locale, promptVersion, thinking, ...(opts.strict ? { structuredLookup: 1 } : {}) };
+    if (opts.cacheScope && typeof opts.cacheScope === 'object') {
+        cacheOptions.endpoint = String(opts.cacheScope.endpoint || '');
+        cacheOptions.userId = String(opts.cacheScope.userId || '');
+    }
     let contextHash = '';
     try { contextHash = await cache.makeKey('ctx', context); } catch (_) {}
     if (!noCache) {
         for (const modelSpec of candidates) {
-            const resolved = normalizeModelSpec(modelSpec);
             try {
-                const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, cacheModelKey(resolved), cacheOptions);
+                const resolved = analysisModel(modelSpec, 'articlePhraseTranslation', opts);
+                const cached = await cache.getSelectionAnalysisCached(selection, sentence, contextHash, analysisCacheModelKey(resolved, opts), cacheOptions);
                 if (cached) return cached;
             } catch (_) {}
         }
@@ -1340,8 +1404,8 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
 
     let lastErr = null;
     for (const modelSpec of candidates) {
-        const resolved = normalizeModelSpec(modelSpec);
         try {
+            const resolved = analysisModel(modelSpec, 'articlePhraseTranslation', opts);
             const data = await requestAI({
                 model: modelSpec,
                 messages: [{ role: 'user', content: prompt }],
@@ -1356,15 +1420,18 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
             const raw = pickMessageContent(data);
             const rawParsed = safeJsonParse(raw);
             // 解析失敗（多為截斷殘骸）直接換下一個模型，避免把原始 JSON 字串當成釋義顯示與快取
-            if (!rawParsed || typeof rawParsed !== 'object') throw new Error('JSON parse failed (possibly truncated)');
-            const parsed = normalizeSelectionResponse(rawParsed, '', selection, sentence);
-            if (!validate.validateSelectionAnalysis(parsed)) throw new Error('Schema validation failed');
-            try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, cacheModelKey(resolved), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+            if (!rawParsed || typeof rawParsed !== 'object') throw invalidLookupResponse();
+            const parsed = withAnalysisModel(normalizeSelectionResponse(rawParsed, '', selection, sentence), resolved, opts);
+            if (!validate.validateSelectionAnalysis(parsed) || !String(parsed.analysis.meaning || '').trim()) throw invalidLookupResponse();
+            try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, analysisCacheModelKey(resolved, opts), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
+            if (signal?.aborted) throw signal.reason || error;
             lastErr = error;
         }
     }
+
+    if (opts.strict) throw localizeAIError(lastErr || invalidLookupResponse());
 
     try {
         const fallbackModelSpec = candidates[0] || primaryModel;
@@ -1381,6 +1448,8 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
         const raw = pickMessageContent(fb);
         const parsed = normalizeSelectionResponse(null, plainAnswerOrEmpty(raw), selection, sentence);
         if (!validate.validateSelectionAnalysis(parsed) || !parsed.analysis.meaning) throw lastErr || new Error('Phrase fallback failed');
+        const resolved = normalizeModelSpec(fallbackModelSpec);
+        try { await cache.setSelectionAnalysisCached(selection, sentence, contextHash, analysisCacheModelKey(resolved, opts), parsed, 30 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
         return parsed;
     } catch (_) {
         if (lastErr) throw lastErr;
@@ -2161,4 +2230,66 @@ export async function getWordPronunciations(word, accent, { signal, refresh = fa
     }
     await cache.setCached('dictionaryPronunciation', key, data, 24 * 60 * 60 * 1000);
     return readings;
+}
+
+
+/** Shared lookup boundary; configuration and transport remain in the existing AI layer. */
+export async function lookupSelection({ text = '', sentence = '', context = '', locale, signal, noCache = false, timeoutMs = 20000 } = {}) {
+    const cleanText = String(text || '').trim();
+    if (!cleanText) throw Object.assign(new Error(t('errors.lookupTextRequired')), { code: 'lookup_text_required' });
+    const cleanContext = String(context || '').trim();
+    const cleanSentence = String(sentence || '').trim() || cleanContext;
+    const effectiveLocale = normalizeLocale(locale || getLocale());
+    const scope = getActiveAIScope();
+    const cacheScope = { endpoint: scope.endpoint || '', userId: scope.userId || '' };
+    const isPhrase = /\s/.test(cleanText);
+    const task = isPhrase ? 'articlePhraseTranslation' : (cleanSentence ? 'articleWordTranslation' : 'wordAnalysis');
+    const chain = isPhrase ? ['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis']
+        : (cleanSentence ? ['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'] : ['wordAnalysis']);
+    const modelSpec = getPreferredTaskSpec(chain, { settings: loadGlobalSettings() });
+    let connection;
+    try { connection = await resolveAIRequestConfigAsync({ task, model: modelSpec }); }
+    catch (error) { throw localizeAIError(error); }
+    const thinking = resolveThinkingLevel(task).level;
+    const promptId = isPhrase ? 'article.phraseAnalysis' : (cleanSentence ? 'article.wordTooltip' : 'dictionary.wordAnalysis');
+    const promptVersion = getPromptVersion(promptId);
+    const opts = { timeoutMs, signal, noCache, locale: effectiveLocale, context: cleanContext, cacheScope, strict: true };
+    let raw;
+    if (isPhrase) {
+        raw = await analyzeSelection(cleanText, cleanSentence || cleanText, cleanContext, opts);
+    } else if (cleanSentence) {
+        raw = await analyzeWordInSentence(cleanText, cleanSentence, opts);
+    } else {
+        const cachePayload = {
+            word: cleanText, locale: effectiveLocale, promptVersion, thinking, ...cacheScope,
+            modelKey: analysisCacheModelKey(connection, opts), schema: 'structured-v1'
+        };
+        if (!noCache) raw = await cache.getCached('dictionaryWordAnalysis', cachePayload);
+        if (!raw) {
+            const data = await requestAI({
+                model: modelSpec, taskType: task, thinking, signal, timeoutMs,
+                messages: [{ role: 'user', content: buildPrompt(promptId, { word: cleanText, notation: IPA_NOTATION_RULE }, { locale: effectiveLocale }) }],
+                temperature: 0.2, maxTokens: 320, responseFormat: { type: 'json_object' }
+            });
+            const parsed = safeJsonParse(pickMessageContent(data));
+            if (!isPlainObject(parsed) || typeof parsed.meaning !== 'string' || !parsed.meaning.trim()) throw invalidLookupResponse();
+            raw = withAnalysisModel(normalizeWordInSentenceResponse(parsed, '', cleanText, ''), connection, opts);
+            await cache.setCached('dictionaryWordAnalysis', cachePayload, raw, 30 * 24 * 60 * 60 * 1000);
+        }
+    }
+    const analysis = raw?.analysis || {};
+    const meaning = String(analysis.meaning || '').trim();
+    if (!meaning || raw.failed) throw invalidLookupResponse();
+    const actual = raw.lookupModel || connection;
+    const phonetic = String(analysis.phonetic || '').trim();
+    const pos = String(analysis.pos || '').trim();
+    const role = String(analysis.role || analysis.usage || '').trim();
+    const examples = Array.isArray(analysis.examples) ? analysis.examples : [];
+    return {
+        kind: isPhrase ? 'phrase' : 'word', task, text: cleanText, word: cleanText, selection: cleanText,
+        sentence: cleanSentence, context: cleanContext, locale: effectiveLocale, scope: cacheScope,
+        provider: actual.provider, model: actual.model, thinking, promptVersion,
+        phonetic, pos, meaning, role, usage: role, examples,
+        analysis: { phonetic, pos, meaning, role, usage: role, examples }
+    };
 }

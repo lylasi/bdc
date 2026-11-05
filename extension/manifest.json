@@ -1,0 +1,28 @@
+{
+    "manifest_version": 3,
+    "name": "__MSG_extensionName__",
+    "version": "0.1.0",
+    "description": "__MSG_extensionDescription__",
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting"
+    ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+    ],
+    "action": {
+        "default_title": "__MSG_extensionName__",
+        "default_popup": "lookup.html"
+    },
+    "options_ui": {
+        "page": "lookup.html",
+        "open_in_tab": true
+    },
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "default_locale": "zh_CN"
+}

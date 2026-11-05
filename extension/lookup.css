@@ -1,0 +1,204 @@
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    padding: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #1f2937;
+    background: #f8fafc;
+    min-width: 400px;
+    max-width: 760px;
+}
+.ext-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.ext-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+.ext-subtitle {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #64748b;
+}
+.ext-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ext-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.ext-card-title {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+.ext-field {
+    margin-bottom: 8px;
+}
+.ext-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 3px;
+}
+.ext-field input[type="text"],
+.ext-field input[type="password"],
+.ext-field input[type="url"],
+.ext-field select,
+.ext-field textarea {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #0f172a;
+}
+.ext-field textarea {
+    resize: vertical;
+    min-height: 52px;
+}
+.ext-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.ext-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+    cursor: pointer;
+}
+.ext-btn:hover:not(:disabled) {
+    background: #f1f5f9;
+}
+.ext-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.ext-btn-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+.ext-btn-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+.ext-status-list {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    font-size: 12px;
+    color: #334155;
+}
+.ext-status-line {
+    margin: 2px 0;
+}
+.ext-banner-warning {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #f59e0b;
+    background: #fffbeb;
+    color: #92400e;
+}
+.ext-banner-warning h4 {
+    margin: 0 0 4px;
+    font-size: 13px;
+}
+.ext-banner-warning p {
+    margin: 0 0 8px;
+    font-size: 12px;
+}
+.ext-notice {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+.ext-notice-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+.ext-notice-info {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+}
+.ext-result-box {
+    padding: 10px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+.ext-result-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+.ext-result-word {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+.ext-result-phonetic {
+    font-family: "Charis SIL", "Doulos SIL", monospace;
+    color: #475569;
+}
+.ext-result-pos {
+    font-size: 12px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #e2e8f0;
+    color: #334155;
+}
+.ext-result-meaning {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 6px 0;
+}
+.ext-result-role {
+    font-size: 12px;
+    color: #475569;
+    margin: 4px 0;
+}
+.ext-result-meta {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed #cbd5e1;
+    font-size: 11px;
+    color: #64748b;
+}
+.hidden {
+    display: none !important;
+}

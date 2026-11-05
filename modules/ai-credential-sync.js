@@ -495,11 +495,20 @@ async function processCredential(profile, providerId, remote, sessionIsCurrent) 
             credential.bindingVerified = false;
             return { retry: false, stop: false };
         }
-        const result = await downloadOne(providerId);
+        let result;
+        try { result = await downloadOne(providerId); }
+        catch (_) { result = { kind: 'error', status: 0 }; }
+        if (!sessionIsCurrent()) return { retry: false, stop: true };
         if (result.kind === 'unauthorized') return { retry: false, stop: true, unauthorized: true };
         if (result.kind === 'forbidden') return { retry: false, stop: true, forbidden: result.code };
-        if (result.kind === 'missing') return { retry: false, stop: false };
-        if (result.kind !== 'ok') return { retry: true, stop: false };
+        if (result.kind === 'missing') {
+            setCredentialError(profile, providerId, 'cloud_key_missing');
+            return { retry: false, stop: false };
+        }
+        if (result.kind !== 'ok') {
+            setCredentialError(profile, providerId, `download_failed:${result.status || 'network'}`);
+            return { retry: !result.status || result.status >= 500 || result.status === 429, stop: false };
+        }
         if (!sessionIsCurrent()) return { retry: false, stop: true };
         const data = result.data;
         if (data.deleted) {
@@ -511,7 +520,10 @@ async function processCredential(profile, providerId, remote, sessionIsCurrent) 
             credential.lastSyncedAt = new Date().toISOString();
             return { retry: false, stop: false };
         }
-        if (!data.apiKey) return { retry: false, stop: false };
+        if (!data.apiKey) {
+            setCredentialError(profile, providerId, 'cloud_key_missing');
+            return { retry: false, stop: false };
+        }
         if (!bindingsEqual(data.binding, localBinding)) {
             // Endpoint/format changed on the other device: pause this provider
             // instead of sending the key to a new destination.
@@ -648,8 +660,12 @@ async function runCredentialSync({ reason = 'manual' } = {}) {
         if (!sessionIsCurrent()) return { stale: true };
         const commit = commitCredentialChanges(baseProfile, profile, ids, scope);
         if (commit.error) return { error: 'profile_save_failed', retryable: false, code: commit.error, applied: commit.applied, skipped: commit.skipped };
+        const committedProfile = loadAIProfile(scope);
+        const credentialError = Array.from(ids, (id) => committedProfile.credentials[id]?.lastError).find(Boolean) || '';
         return {
-            ok: true,
+            ok: !credentialError,
+            error: credentialError,
+            retryable: needRetry,
             needRetry,
             unauthorized,
             forbidden,

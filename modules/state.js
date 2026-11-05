@@ -68,7 +68,7 @@ export let sentenceRepeatCount = 0;
 // ---------------------------------
 export let audioContext = null;
 export let audioSource = null;
-export const globalAudioElement = new Audio();
+export const globalAudioElement = typeof Audio === 'function' ? new Audio() : null;
 export let isAudioContextUnlocked = false;
 
 // =================================

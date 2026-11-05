@@ -59,6 +59,13 @@ Return only strict JSON:
 
 Target word: "\${word}"
 Sentence: "\${sentence}"`,
+        contextual: `Analyze the target English word in its sentence.
+Return only strict JSON:
+{"word":"...","sentence":"...","analysis":{"phonetic":"IPA","pos":"part of speech","meaning":"Chinese meaning in this sentence","role":"brief grammatical role"}}
+
+Target word: "\${word}"
+Sentence: "\${sentence}"
+Context: "\${context}"`,
         fallback: `Give only the target Chinese meaning of the English word in this sentence. Do not add an explanation.
 Word: \${word}
 Sentence: \${sentence}`
