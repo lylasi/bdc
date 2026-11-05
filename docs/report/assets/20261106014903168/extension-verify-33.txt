@@ -1,0 +1,69 @@
+Packaged 44 files into /Users/linus/CODE/bdc-extension-ai-proof-20261105/extension
+PASS · 前置：連線帳戶並解析查詞模型成功
+        ↳ 当前查词模型：Managed Default Provider · managed-gpt（思考：低强度）
+PASS · A1 真 DOM Range 選取第二個 charge：原句應為 "Remember to charge the battery."
+        ↳ DOM選取={"selected":"charge","startOffset":43,"paragraph":"They charge £10 for admission. Remember to charge the battery."} 擷取={"word":"charge","sentence":"Remember to charge the battery.","context":"They charge £10 for admission. Remember to charge the battery."}
+PASS · A2 對照：選取第一個 charge 時原句為第一句
+        ↳ They charge £10 for admission.
+PASS · B1 前置：查詢已進入進行中狀態（按鈕 disabled）
+        ↳ ready=true inFlight=true
+PASS · B1 查詢進行中輸入新 word 後，舊請求結束時查詢按鈕必須恢復可用
+        ↳ 按鈕={"disabled":false,"text":"语境查词"} 結果={"hidden":true,"meaning":"","meta":""}
+PASS · B1b 上述情境後使用者仍可實際點擊查詢按鈕（不可永久卡住）
+        ↳ 可點擊
+PASS · B2 前置：查詢進行中
+        ↳ ready=true inFlight=true
+PASS · B2 查詢進行中修改 sentence，舊回應不得套用到新原句
+        ↳ 目前原句欄=The cavalry led the charge at dawn. 顯示結果={"hidden":true,"meaning":"","meta":""}
+PASS · B3 前置：查詢進行中
+        ↳ ready=true inFlight=true
+PASS · B3 查詢進行中修改 context，舊回應不得套用
+        ↳ 顯示結果={"hidden":true,"meaning":"","meta":""}
+PASS · B4 前置：查詢進行中
+        ↳ ready=true inFlight=true
+PASS · B4 查詢進行中切換 locale，舊語言結果不得顯示
+        ↳ 顯示結果={"hidden":true,"meaning":"","meta":""}
+PASS · B5 前置：查詢進行中
+        ↳ ready=true inFlight=true
+PASS · B5 查詢進行中擷取新選詞（charge → Battery）後，舊 charge 結果不得顯示
+        ↳ word欄=Battery 顯示結果={"hidden":true,"meaning":"","meta":""} 按鈕={"disabled":false,"text":"语境查词"}
+PASS · B6 前置：查詢進行中
+        ↳ ready=true inFlight=true
+PASS · B6 查詢進行中切換帳戶後，查詢按鈕必須恢復可用
+        ↳ 按鈕={"disabled":false,"text":"语境查词"} 提示={"hidden":true,"text":""}
+PASS · B7 已完成結果在切換 locale 後：結果應作廢或重新取得，不得只換標籤而沿用舊語言答案
+        ↳ 切換前={"hidden":false,"meaning":"句中释义：释义[/provider-managed/v1/chat/completions#charge@They charge £10 for ad]","meta":"模型：managed-default:managed-gpt · 任务：articleWordTranslation · 思考：关闭思考"} 切換後={"hidden":true,"meaning":"","meta":""}
+PASS · D3 前置：第二個擴充頁在另一個端點連上同一帳戶
+        ↳ {"account":"已连接账户：Alice Reader","notice":"登录成功"}
+PASS · D3a 第二個擴充頁切換端點後，第一個頁面不得把新端點簽發的 token 送到舊端點
+        ↳ sync按鈕可用=true 頁面記憶端點=http://127.0.0.1:57728/worker2 localStorage端點=http://127.0.0.1:57728/worker2 tokenPrefix=A2A2 帳戶列=已连接账户：Alice Reader 請求=[{"worker":"worker2","path":"/snapshot","auth":"Bearer A2A2A2A2A2A"},{"worker":"worker2","path":"/ai-catalog","auth":"Bearer A2A2A2A2A2A"},{"worker":"worker2","path":"/ai-credentials","auth":"Bearer A2A2A2A2A2A"},{"worker":"worker2","path":"/ai-credentials","auth":"Bearer A2A2A2A2A2A"}]
+PASS · D3b 端點切換後第一個頁面應同步到新端點（不得同時存在兩個端點狀態）
+        ↳ 記憶=http://127.0.0.1:57728/worker2 localStorage=http://127.0.0.1:57728/worker2
+PASS · D1 重新載入後仍回復同一帳戶，且端點與 localStorage 一致
+        ↳ {"status":"已连接账户：Alice Reader","endpoint":"http://127.0.0.1:57728/worker2","storedBeforeReload":"http://127.0.0.1:57728/worker2"}
+PASS · D4 注入到一般網頁的指令碼不得取得工作階段 token（chrome.storage.local 備份應限於受信任環境）
+        ↳ {"tabUrl":"http://127.0.0.1:57728/reading-article","canAccessChromeStorage":true,"hasTokenField":false,"keys":[]}
+PASS · D2 登出後重載不得重放舊 token（localStorage 與 chrome.storage 備份都應清空）
+        ↳ localStorage.token="" localStorage.userId="" backupHasToken=false
+PASS · F2 同步取得 401 後必須清除工作階段與管理供應商共享 Key（不得仍顯示已連線）
+        ↳ {"account":"未登录账户","catalog":"管理供应商未就绪（请先登录）","notice":"登录已失效，请重新登录","token":""}
+PASS · F3 401 之後不得再用管理供應商共享 Key 發出供應商請求
+        ↳ provider 請求數 before=3 after=3 提示={"hidden":false,"text":"尚未选择模型"}
+PASS · F4 前置：登入後存在本機 AI profile 作用域鍵
+        ↳ ["bdc_ai_profile_v1:http%3A%2F%2F127.0.0.1%3A57728%2Fworker1:alice"]
+PASS · F5 登出後本機 AI profile 與工作階段必須清除（不得殘留可用 Key）
+        ↳ {"profiles":[],"token":"","catalog":"管理供应商未就绪（请先登录）"}
+PASS · E1 zh-HK 未解析模型的狀態列不得顯示原始 machine code（如 ai_key_missing）
+        ↳ 狀態列=尚未解析到可用查詞模型（尚未配置此供應商的 API 金鑰）
+PASS · E2 個人憑證下載失敗（HTTP 500）時不得宣稱「未開啟雲端同步或僅存於網站本機」
+        ↳ bannerHidden=false banner="個人供應商金鑰下載失敗，請重試同步。已儲存的本機金鑰仍會保留。" notice="個人供應商金鑰下載失敗，請重試同步。已儲存的本機金鑰仍會保留。" credentialSync={"status":"offline","error":"download_failed:500"} missing=["personal-local"] storedCredential={"providers":["personal-local"],"credentials":{"personal-local":{"apiKey":"","binding":{"formatVersion":1,"format":"openai-chat","apiUrl":"http://127.0.0.1:57728/provider-local/v1/chat/completions","modelsUrl":"http://127.0.0.1:57728/provider-local/v1/models","authMode":"bearer"},"version":0,"syncMode":"cloud","pending":null,"lastSyncedAt":"","lastError":"download_failed:500","bindingVerified":false,"keyStamp":"","conflict":null}}}
+PASS · E3 zh-HK 失敗路徑不得直接顯示原始英文錯誤（如 JSON parse failed / Schema validation failed）
+        ↳ provider呼叫=1 提示={"hidden":false,"text":"AI 未傳回有效的釋義，請重試或檢查模型設定。"} 結果={"hidden":true,"meaning":"","meta":""}
+PASS · E3b 非 JSON 的供應商回應不得被當成釋義寫入 30 天快取
+        ↳ 第二次查詢 provider 呼叫=1 顯示結果={"hidden":true,"meaning":"","meta":""}
+PASS · E4 zh-HK 失敗路徑不得顯示原始英文內部錯誤字串
+        ↳ 提示={"hidden":false,"text":"AI 未傳回有效的釋義，請重試或檢查模型設定。"} 結果={"hidden":true,"meaning":"","meta":""}
+PASS · 全域：擴充套件頁面無未捕獲例外
+
+=== verification summary: 33/33 desired behaviours hold ===
+EXIT=0

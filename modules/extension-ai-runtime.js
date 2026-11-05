@@ -321,7 +321,7 @@ export function importScopedLocalProviderKey({ providerId, apiKey, scope } = {})
  * Inspect current account, active AI scope, resolved lookup task model,
  * and whether any personal provider is missing a local-only key.
  */
-export function getExtensionReadiness({ text = '' } = {}) {
+export function getExtensionReadiness({ text = '', sentence = '', context = '' } = {}) {
     const authSnap = getAuthSnapshot();
     const endpoint = getExtensionSyncEndpoint();
     const scope = getActiveAIScope();
@@ -329,10 +329,11 @@ export function getExtensionReadiness({ text = '' } = {}) {
     const catalog = getCatalogState();
     const credSync = getCredentialSyncState();
     const isPhrase = /\s/.test(String(text || '').trim());
+    const standalone = !!String(text || '').trim() && !isPhrase && !String(sentence || context || '').trim();
     const taskChain = isPhrase
         ? ['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis']
-        : ['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'];
-    const primaryTask = isPhrase ? 'articlePhraseTranslation' : 'articleWordTranslation';
+        : (standalone ? ['wordAnalysis'] : ['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis']);
+    const primaryTask = isPhrase ? 'articlePhraseTranslation' : (standalone ? 'wordAnalysis' : 'articleWordTranslation');
     const chosenSpec = getPreferredTaskSpec(taskChain);
     const normalized = normalizeModelSpec(chosenSpec);
     const thinking = resolveThinkingLevel(primaryTask).level;
@@ -364,7 +365,9 @@ export function getExtensionReadiness({ text = '' } = {}) {
             syncMode: keyStatus.mode,
             hasKey: keyStatus.hasKey,
             missingKey,
-            credentialState: keyStatus.lastError ? 'download-failed' : (keyStatus.hasKey ? 'available' : 'missing'),
+            credentialState: keyStatus.lastError === 'binding_mismatch' ? 'binding-mismatch'
+                : (keyStatus.lastError?.startsWith('download_failed:') ? 'download-failed'
+                    : (keyStatus.hasKey ? 'available' : 'missing')),
             lastError: keyStatus.lastError || ''
         };
         providers.push(entry);
@@ -391,6 +394,10 @@ export function getExtensionReadiness({ text = '' } = {}) {
         && !getProviderKeyStatus(normalized.provider).hasKey
         && (profile.providers[normalized.provider].authMode || 'bearer') !== 'none'
     );
+    if (resolutionErrorCode === 'ai_key_missing'
+        && getProviderKeyStatus(normalized.provider).lastError === 'binding_mismatch') {
+        resolutionErrorCode = 'ai_key_binding_mismatch';
+    }
 
     return {
         endpoint,
@@ -459,6 +466,9 @@ export async function runExtensionLookup({
     };
     try {
         if (typeof window !== 'undefined') window.addEventListener(AUTH_EVENT, onAuthChange);
+        if (getExtensionReadiness({ text, sentence, context }).taskResolution.errorCode === 'ai_key_binding_mismatch') {
+            throw Object.assign(new Error(t('errors.aiKeyBindingMismatch')), { code: 'ai_key_binding_mismatch' });
+        }
         const result = await lookupSelection({
             text,
             sentence,

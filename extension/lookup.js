@@ -130,8 +130,13 @@ function thinkingLabel(level) {
     return t(keys[level] || keys.auto);
 }
 
+function credentialErrorKey(code) {
+    return code?.startsWith('download_failed:') ? 'extension.credentialDownloadFailed'
+        : (getAIErrorTranslationKey(code) || 'errors.aiRequestFailed');
+}
+
 function reportSync(readiness, successKey) {
-    if (readiness?.credentialSync?.error) showAccountNotice('error', 'extension.credentialDownloadFailed');
+    if (readiness?.credentialSync?.error) showAccountNotice('error', credentialErrorKey(readiness.credentialSync.error));
     else showAccountNotice('info', successKey);
 }
 
@@ -185,7 +190,7 @@ function renderResult(result) {
 
 function renderReadiness() {
     const wordText = dom.wordInput ? dom.wordInput.value : '';
-    const readiness = getExtensionReadiness({ text: wordText });
+    const readiness = getExtensionReadiness({ text: wordText, sentence: dom.sentenceInput?.value, context: dom.contextInput?.value });
 
     if (dom.endpointInput && document.activeElement !== dom.endpointInput && readiness.endpoint) {
         dom.endpointInput.value = readiness.endpoint;
@@ -227,7 +232,9 @@ function renderReadiness() {
             dom.missingKeyBanner.classList.remove('hidden');
             const names = missingList.map((p) => p.label || p.id).join(', ');
             if (dom.missingKeyDesc) {
-                dom.missingKeyDesc.textContent = t(missingList.some((item) => item.lastError) ? 'extension.credentialDownloadFailed' : 'extension.missingKeyBannerDesc', { provider: names });
+                const failure = missingList.find((item) => item.credentialState === 'binding-mismatch')
+                    || missingList.find((item) => item.lastError);
+                dom.missingKeyDesc.textContent = t(failure ? credentialErrorKey(failure.lastError) : 'extension.missingKeyBannerDesc', { provider: names });
             }
             if (dom.importProviderSelect) {
                 const prev = dom.importProviderSelect.value;

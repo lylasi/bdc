@@ -374,6 +374,8 @@ export function getAIErrorTranslationKey(code) {
         unauthorized: 'errors.loginExpired',
         ai_key_missing: 'errors.aiKeyMissing',
         ai_key_binding_mismatch: 'errors.aiKeyBindingMismatch',
+        binding_mismatch: 'errors.aiKeyBindingMismatch',
+        cloud_key_missing: 'errors.aiKeyMissing',
         managed_login_required: 'errors.aiLoginRequired',
         managed_session_expired: 'errors.aiSessionExpired',
         managed_credential_missing: 'errors.aiCredentialMissing',

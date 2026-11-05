@@ -1,0 +1,19 @@
+PASS · P1 從乾淨源碼包匯出後，extension 產物（ai-config.js／modules／locales／shared／_locales）確實不存在
+        ↳ rev=HEAD(0cbd272) 追蹤的 extension 檔=6 仍存在=[] 根私有ai-config=false
+PASS · P2 未打包的 extension 目錄載入時確實失敗（證明「先執行打包」是必要步驟，不是可選美化）
+        ↳ i18n已套用=false 標題="undefined" 帳戶列="undefined" 錯誤=[]
+PASS · P3 在乾淨源碼包內執行 node scripts/package-extension.mjs 成功
+        ↳ Packaged 44 files into /private/tmp/codeg-acp-501/99144-7ace4f90/bdc-clean-src-EGFCs0/source/extension
+FAIL · F1（新發現）以含符號連結的絕對路徑（macOS /tmp → /private/tmp）直接執行打包腳本時，仍必須真的寫出產物
+        ↳ 相對路徑呼叫輸出="Packaged 44 files into /private/tmp/codeg-acp-501/99144-7ace4f90/bdc-clean-src-EGFCs0/source/extension"／絕對路徑呼叫輸出=""（空字串代表腳本靜默未執行，退出碼仍為 0）
+PASS · P4 打包後可在真實 MV3 載入、連上帳戶、解析 managed 模型並完成一次語境查詞（無任何 BDC 網站分頁）
+        ↳ 已連線=true 任務列="当前查词模型：Managed Default Provider · managed-gpt（思考：关闭思考）" 結果={"hidden":false,"meaning":"句中释义：clean-package:charge","meta":"模型：managed-default:managed-gpt · 任务：articleWordTranslation · 思考：关闭思考"} BDC分頁=[] 錯誤=[]
+PASS · P5 重複打包產物逐位元組相同，且共享副本與來源檔一致（單一來源、原子寫入沒有留下殘檔）
+        ↳ 檔案數=50 hash相同=true 漂移=[]
+PASS · P6 在乾淨源碼包內可跑擴充套件 node 測試（不依賴本機私有 ai-config.js）
+        ↳ pass=12 fail=0
+
+=== clean package retest: 6/7 checks hold ===
+Reproduced defects:
+ - F1（新發現）以含符號連結的絕對路徑（macOS /tmp → /private/tmp）直接執行打包腳本時，仍必須真的寫出產物
+EXIT=1

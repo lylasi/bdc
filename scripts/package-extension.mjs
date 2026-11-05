@@ -139,7 +139,12 @@ export function packageExtension() {
     };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+let invokedAsScript = false;
+try {
+    invokedAsScript = !!process.argv[1]
+        && fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url));
+} catch (_) {}
+if (invokedAsScript) {
     const result = packageExtension();
     console.log(`Packaged ${result.copiedCount} files into ${result.extensionDir}`);
 }

@@ -202,3 +202,16 @@ body {
 .hidden {
     display: none !important;
 }
+
+@media (max-width: 480px) {
+    .ext-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .ext-header-controls {
+        justify-content: space-between;
+    }
+    .ext-header-controls .ext-btn {
+        white-space: nowrap;
+    }
+}

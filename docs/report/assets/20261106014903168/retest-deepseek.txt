@@ -1,0 +1,27 @@
+Packaged 44 files into /Users/linus/CODE/bdc-extension-ai-proof-20261105/extension
+PASS · N1 巢狀 <strong> 內選取第二個 charge：原句必須是第二句（Range 位移穿過行內標記仍正確）
+        ↳ startContainer={"node":"STRONG","offset":0} 擷取={"sentence":"Remember to charge the battery."}
+PASS · N1b 巢狀 <em> 內選取第一個 charge：原句必須是第一句
+        ↳ startContainer={"node":"EM","offset":0} sentence=They charge £10 for admission.
+PASS · N2 查詢進行中由另一個擴充頁切換端點：舊回應不得渲染，且查詢按鈕必須恢復（跨頁 stale UI）
+        ↳ inFlight=true 端點已跨頁同步=http://127.0.0.1:49152/worker2 結果={"hidden":true,"meaning":"","meta":""} 按鈕={"disabled":false,"text":"语境查词"}
+PASS · N3 查詢進行中由另一個擴充頁切換帳戶：不得渲染前一個帳戶的答案，頁面必須跟隨新帳戶
+        ↳ inFlight=true bob已連線=true 帳戶列=已连接账户：Bob Reader 結果={"hidden":true,"meaning":"","meta":""}
+PASS · N4 只輸入單詞（無原句／語境）時可完成查詞，且第二次查詢命中快取
+        ↳ 任務列=当前查词模型：Managed Default Provider · managed-gpt（思考：低强度） 結果={"hidden":false,"meaning":"句中释义：释义[/provider-managed/v1/chat/completions#admission@]","meta":"模型：managed-default:managed-gpt · 任务：wordAnalysis · 思考：低强度"} 提示={"hidden":true,"text":""} provider呼叫=1/0
+PASS · N5a 下載 500 時必須如實顯示失敗（不得稱僅存於網站本機、不得回報同步完成），並保留可重試錯誤
+        ↳ {"notice":"个人供应商密钥下载失败，请重试同步。已保存的本机密钥仍会保留。","banner":"个人供应商密钥下载失败，请重试同步。已保存的本机密钥仍会保留。","credentialSync":{"status":"offline","error":"download_failed:500"},"hasKey":false,"credentialState":"download-failed","stored":{"apiKey":"","binding":{"formatVersion":1,"format":"openai-chat","apiUrl":"http://127.0.0.1:49152/provider-local/v1/chat/completions","modelsUrl":"http://127.0.0.1:49152/provider-local/v1/models","authMode":"bearer"},"version":0,"syncMode":"cloud","pending":null,"lastSyncedAt":"","lastError":"download_failed:500","bindingVerified":false,"keyStamp":"","conflict":null}}
+PASS · N5b 改回 200 後重新同步必須恢復：金鑰下載成功、錯誤清除、橫幅收起
+        ↳ {"notice":"同步完成","bannerHidden":true,"credentialSync":{"status":"synced","error":""},"hasKey":true,"credentialState":"available","missing":[]}
+PASS · N5c 恢復後能以該個人供應商實際查詞（金鑰真的可用，而不是只改狀態文字）
+        ↳ 結果={"hidden":false,"meaning":"句中释义：释义[/provider-local/v1/chat/completions#charge@They charge £10 for ad]","meta":"模型：personal-local:local-model-v1 · 任务：articleWordTranslation · 思考：低强度"} 供應商呼叫=[{"path":"/provider-local/v1/chat/completions","auth":"Bearer probe-local"}]
+PASS · N6 空 meaning 的合法 JSON 不得當成釋義顯示，也不得寫入快取（第二次仍會實際請求）
+        ↳ 首次結果={"hidden":true,"meaning":"","meta":""} 提示={"hidden":false,"text":"AI 未返回有效的释义，请重试或检查模型设置。"} 第二次結果={"hidden":true,"meaning":"","meta":""} provider呼叫=1
+FAIL · N7 憑證 binding 不符（雲端金鑰綁定到另一個上游網址）時，介面必須與「下載失敗可重試」區分，不得叫人重試同步
+        ↳ {"credentialSync":{"status":"error","error":"binding_mismatch"},"lastError":"binding_mismatch","credentialState":"download-failed","banner":"个人供应商密钥下载失败，请重试同步。已保存的本机密钥仍会保留。","bannerHidden":false,"task":"尚未解析到可用查词模型（尚未配置此供应商的 API Key）"}
+PASS · 全域：本次復測期間擴充套件頁面無未捕獲例外
+
+=== DeepSeek retest summary: 10/11 checks hold ===
+Reproduced defects:
+ - N7 憑證 binding 不符（雲端金鑰綁定到另一個上游網址）時，介面必須與「下載失敗可重試」區分，不得叫人重試同步
+EXIT=1
