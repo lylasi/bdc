@@ -52,9 +52,13 @@ import {
 import {
     getPreferredTaskSpec,
     normalizeModelSpec,
+    stringifyModelSpec,
+    getTaskModelSelection,
     resolveAIRequestConfig,
     resolveThinkingLevel
 } from './ai-models.js';
+import { isThinkingLevel } from './ai-thinking.js';
+import { EXTENSION_AI_TASKS, getExtensionAIChoice, saveExtensionAIChoice } from './extension-ai-preferences.js';
 import { lookupSelection, resetThinkingFallbackMemory, extractPageArticle, analyzeParagraph } from './api.js';
 import { sanitizeAISettings } from './ai-settings-sanitize.js';
 import { getLocale, t } from './i18n.js';
@@ -321,6 +325,61 @@ export function importScopedLocalProviderKey({ providerId, apiKey, scope } = {})
  * Inspect current account, active AI scope, resolved lookup task model,
  * and whether any personal provider is missing a local-only key.
  */
+export function getExtensionLookupTask({ text = '', sentence = '', context = '' } = {}) {
+    if (/\s/.test(String(text || '').trim())) return 'articlePhraseTranslation';
+    return String(text || '').trim() && !String(sentence || context || '').trim() ? 'wordAnalysis' : 'articleWordTranslation';
+}
+
+function taskChain(task) {
+    return ({
+        wordAnalysis: ['wordAnalysis'],
+        articleWordTranslation: ['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'],
+        articlePhraseTranslation: ['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis'],
+        articleCleanup: ['articleCleanup', 'articleAnalysis', 'wordAnalysis'],
+        articleParagraphTranslation: ['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis']
+    })[task] || [];
+}
+
+/** Sanitized choices for the trusted picker; no keys or connection objects. */
+export function getExtensionAITaskSettings(task) {
+    if (!EXTENSION_AI_TASKS.includes(task)) throw Object.assign(new Error('invalid_task'), { code: 'invalid_task' });
+    const choice = getExtensionAIChoice(task);
+    const model = stringifyModelSpec(getPreferredTaskSpec(taskChain(task), { override: choice.model }));
+    const thinking = resolveThinkingLevel(task, { override: choice.thinking }).level;
+    const selection = getTaskModelSelection(task, { includeCurrent: false });
+    const options = selection.options.filter((option) => selection.allowedValues.includes(option.value));
+    if (model && !selection.allowedValues.includes(model)) {
+        options.unshift({ value: model, label: t('settings.aiModelUnavailable', { value: model }), unavailable: true });
+    }
+    if (!model) options.unshift({ value: '', label: t(options.length ? 'extension.aiChooseModel' : 'settings.aiNoProviderConfigured'), unavailable: true });
+    return {
+        task, model, thinking, options, allowedValues: selection.allowedValues,
+        loggedIn: getAuthSnapshot().loggedIn,
+        hasOverride: Object.keys(choice).length > 0,
+        modelOverride: choice.model || '', thinkingOverride: choice.thinking || ''
+    };
+}
+
+export function setExtensionAITaskSettings(task, { model, thinking } = {}) {
+    const state = getExtensionAITaskSettings(task);
+    const patch = {};
+    if (model !== undefined) {
+        if (!state.allowedValues.includes(model)) throw Object.assign(new Error('model_not_allowed'), { code: 'model_not_allowed' });
+        patch.model = model;
+    }
+    if (thinking !== undefined) {
+        if (!isThinkingLevel(thinking)) throw Object.assign(new Error('invalid_thinking'), { code: 'invalid_thinking' });
+        patch.thinking = thinking;
+    }
+    saveExtensionAIChoice(task, patch);
+    return getExtensionAITaskSettings(task);
+}
+
+export function resetExtensionAITaskSettings(task) {
+    saveExtensionAIChoice(task, null);
+    return getExtensionAITaskSettings(task);
+}
+
 export function getExtensionReadiness({ text = '', sentence = '', context = '' } = {}) {
     const authSnap = getAuthSnapshot();
     const endpoint = getExtensionSyncEndpoint();
@@ -328,15 +387,11 @@ export function getExtensionReadiness({ text = '', sentence = '', context = '' }
     const profile = loadAIProfile(scope);
     const catalog = getCatalogState();
     const credSync = getCredentialSyncState();
-    const isPhrase = /\s/.test(String(text || '').trim());
-    const standalone = !!String(text || '').trim() && !isPhrase && !String(sentence || context || '').trim();
-    const taskChain = isPhrase
-        ? ['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis']
-        : (standalone ? ['wordAnalysis'] : ['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis']);
-    const primaryTask = isPhrase ? 'articlePhraseTranslation' : (standalone ? 'wordAnalysis' : 'articleWordTranslation');
-    const chosenSpec = getPreferredTaskSpec(taskChain);
+    const primaryTask = getExtensionLookupTask({ text, sentence, context });
+    const choice = getExtensionAIChoice(primaryTask);
+    const chosenSpec = getPreferredTaskSpec(taskChain(primaryTask), { override: choice.model });
     const normalized = normalizeModelSpec(chosenSpec);
-    const thinking = resolveThinkingLevel(primaryTask).level;
+    const thinking = resolveThinkingLevel(primaryTask, { override: choice.thinking }).level;
 
     let resolutionStatus = 'ready';
     let resolutionErrorCode = '';
@@ -469,13 +524,16 @@ export async function runExtensionLookup({
         if (getExtensionReadiness({ text, sentence, context }).taskResolution.errorCode === 'ai_key_binding_mismatch') {
             throw Object.assign(new Error(t('errors.aiKeyBindingMismatch')), { code: 'ai_key_binding_mismatch' });
         }
+        const choice = getExtensionAIChoice(getExtensionLookupTask({ text, sentence, context }));
         const result = await lookupSelection({
             text,
             sentence,
             context,
             locale: locale || getLocale(),
             signal: ac.signal,
-            noCache
+            noCache,
+            model: choice.model,
+            thinking: choice.thinking
         });
         if (!isAuthSessionCurrent(capturedSession) || profileKeyForScope(getActiveAIScope()) !== capturedScope.key) {
             const err = new Error(t('extension.staleLookupDiscarded'));
@@ -507,14 +565,16 @@ export async function runExtensionArticleTask({ page, article, analyze = false, 
     };
     try {
         let result;
-        if (!analyze) result = await extractPageArticle(structuredClone(page), { signal: controller.signal, onProgress });
+        // Freeze preferences for this operation, including multi-block articles.
+        const choice = getExtensionAIChoice(analyze ? 'articleParagraphTranslation' : 'articleCleanup');
+        if (!analyze) result = await extractPageArticle(structuredClone(page), { ...choice, signal: controller.signal, onProgress });
         else {
             const blocks = String(article.body || '').split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean);
             const paragraphs = [];
             for (let i = 0; i < blocks.length; i += 1) {
                 assertCurrent();
                 onProgress?.(i + 1, blocks.length);
-                const paragraph = await analyzeParagraph(i === 0 ? blocks[i].replace(/^#\s+/, '') : blocks[i], { level: 'quick', signal: controller.signal });
+                const paragraph = await analyzeParagraph(i === 0 ? blocks[i].replace(/^#\s+/, '') : blocks[i], { ...choice, level: 'quick', signal: controller.signal });
                 if (paragraph.failed || !paragraph.chinese_translation) throw Object.assign(new Error('page_analysis_failed'), { code: 'page_analysis_failed' });
                 paragraphs.push(paragraph);
             }

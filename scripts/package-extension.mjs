@@ -35,6 +35,7 @@ const SHARED_FILES = [
     'modules/article-store.js',
     'modules/cache.js',
     'modules/extension-ai-runtime.js',
+    'modules/extension-ai-preferences.js',
     'modules/extension-capture.js',
     'modules/extension-workspace.js',
     'modules/i18n-config.js',
@@ -108,6 +109,7 @@ export function packageExtension() {
     // 3. Verify all relative imports inside extension/
     const entryFiles = [
         'lookup.js',
+        'ai-controls.js',
         'capture-ui.js',
         'workspace-ui.js',
         'inline-panel.js',

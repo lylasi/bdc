@@ -136,7 +136,7 @@ function staticReadiness() {
         if (!found) missing.push(`未見 ${type} 中繼`);
     }
     present['manifest.version'] = version;
-    const versionOk = /^0\.4\./.test(version);
+    const versionOk = /^0\.[45]\./.test(version);
     if (!versionOk) missing.push(`manifest version 仍為 ${version || '(無法解析)'}`);
     return { missing, present, version, versionOk };
 }
@@ -512,6 +512,7 @@ async function preflight(readiness) {
             const popup = await context.newPage();
             await popup.goto(base + '/lookup.html');
             await popup.waitForFunction(() => !!document.querySelector('#ext-account-status').textContent);
+            if (!await popup.locator('#ext-account-details').evaluate(node => node.open)) await popup.locator('#ext-account-summary').click();
             await popup.locator('#ext-endpoint-input').fill(env.base);
             await popup.locator('#ext-login-mode').selectOption('token');
             await popup.locator('#ext-token-input').fill(ALICE);
@@ -654,7 +655,7 @@ async function acceptance() {
             check('A2 0.4.0 新 UI ids 齊備（more／back／confirm／discard／keep／quick-capture）',
                 REQUIRED_IDS.every((id) => readiness.present['#' + id]), { missing: readiness.missing.filter((item) => item.includes('#')) });
             check('A3 body .ext-compact／.ext-expanded 存在', REQUIRED_BODY_CLASSES.every((cls) => readiness.present['body .' + cls]));
-            check('A4 manifest 版本為 0.4.x', readiness.versionOk, { version: readiness.version });
+            check('A4 manifest 版本為 0.4.x／0.5.x', readiness.versionOk, { version: readiness.version });
             check('A5 尺寸／模式／關閉以擴充套件內部訊息中繼（不向網頁廣播票據）',
                 REQUIRED_MESSAGES.every((type) => readiness.present[type]), { present: readiness.present });
             check('A6 擴充套件可打包並載入（真 MV3）', packagingOk && !!worker && base.startsWith('chrome-extension://'), { packagingOk });
@@ -665,6 +666,7 @@ async function acceptance() {
         await popup.goto(base + '/lookup.html');
         await popup.waitForFunction(() => !!document.querySelector('#ext-account-status').textContent);
         const connect = async (token, who) => {
+            if (!await popup.locator('#ext-account-details').evaluate(node => node.open)) await popup.locator('#ext-account-summary').click();
             await popup.locator('#ext-endpoint-input').fill(env.base);
             await popup.locator('#ext-login-mode').selectOption('token');
             await popup.locator('#ext-token-input').fill(token);
@@ -1198,6 +1200,7 @@ async function acceptance() {
             const logout = async () => {
                 await popup.bringToFront();
                 if (!(await popup.locator('#ext-logout-btn').isDisabled())) {
+                    if (!await popup.locator('#ext-account-details').evaluate(node => node.open)) await popup.locator('#ext-account-summary').click();
                     await popup.locator('#ext-logout-btn').click({ timeout: 10000 }).catch(() => {});
                     await popup.waitForFunction(() => document.getElementById('ext-logout-btn').disabled === true, null, { timeout: 20000 }).catch(() => {});
                 }
@@ -1408,7 +1411,13 @@ async function acceptance() {
             await waitForResult(lost.frame);
             const lostBefore = env.state.captureCalls.length;
             env.state.loseNextReply = true;
+            // Enqueueing already shows a pending notice. Wait for the simulated
+            // lost HTTP reply before asserting that the Worker committed it.
+            const lostReply = context.waitForEvent('response', { predicate: (response) =>
+                response.url() === env.base + '/captures' && response.request().method() === 'POST' && response.status() === 503,
+                timeout: 25000 });
             await captureCurrent(lost.frame);
+            await lostReply;
             const lostState = await waitUntil(async () => {
                 const state = await frameState(lost.frame);
                 return (state.captureNoticeError || state.capturePendingVisible || PENDING_TEXT.test(state.captureNotice + state.bodyText)) ? state : null;
@@ -1609,6 +1618,7 @@ async function acceptance() {
             const aliceEntriesBefore = dbEntries(env, 'alice').length;
             const aliceBooksBefore = dbBooks(env, 'alice').length;
             await popup.bringToFront();
+            if (!await popup.locator('#ext-account-details').evaluate(node => node.open)) await popup.locator('#ext-account-summary').click();
             await popup.locator('#ext-logout-btn').click();
             await popup.waitForFunction(() => /未登录账户/.test(document.querySelector('#ext-account-status').textContent), null, { timeout: 20000 });
             await connect(BOB, 'bob');

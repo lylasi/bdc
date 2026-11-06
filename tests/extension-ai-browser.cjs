@@ -474,7 +474,7 @@ async function startMockEnvironment() {
         const managedMeta = await extPage.textContent('#ext-result-meta');
         check(
             '無任何網頁分頁下完成管理供應商語境查詞',
-            managedMeaning.includes('收费（管理供应商）') && managedMeta.includes('managed-default:managed-gpt-4o-mini'),
+            managedMeaning.includes('收费（管理供应商）') && managedMeta.includes('managed-gpt-4o-mini'),
             `${managedMeaning} | ${managedMeta}`
         );
 
@@ -573,6 +573,7 @@ async function startMockEnvironment() {
             }
         };
 
+        if (!await extPage.locator('#ext-account-details').evaluate(node => node.open)) await extPage.locator('#ext-account-summary').click();
         await extPage.click('#ext-sync-btn');
         await extPage.waitForFunction(() => (document.getElementById('ext-task-status')?.textContent || '').includes('Alice Cloud Provider'));
 
@@ -585,7 +586,7 @@ async function startMockEnvironment() {
         const cloudMeta = await extPage.textContent('#ext-result-meta');
         check(
             '已雲端同步個人供應商：自動下載個人憑證並完成片語語境查詞',
-            cloudMeta.includes('personal-cloud:cloud-model-v1') && cloudMeta.includes('articlePhraseTranslation'),
+            cloudMeta.includes('cloud-model-v1') && mock.state.providerRequests.some((request) => request.path === '/provider-personal/v1/chat/completions' && request.body.model === 'cloud-model-v1'),
             cloudMeta
         );
 
@@ -620,6 +621,7 @@ async function startMockEnvironment() {
             }
         };
 
+        if (!await extPage.locator('#ext-account-details').evaluate(node => node.open)) await extPage.locator('#ext-account-summary').click();
         await extPage.click('#ext-sync-btn');
         await extPage.waitForFunction(() => !document.getElementById('ext-missing-key-banner')?.classList.contains('hidden'));
 

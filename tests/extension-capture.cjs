@@ -231,11 +231,13 @@ async function waitSaved(page) {
         await page.waitForFunction(() => !document.querySelector('#ext-capture-save').textContent.includes('正在'));
         const callsBeforeSwitch = state.captureCalls.length;
         const receiptsBeforeSwitch = db.prepare('SELECT COUNT(*) AS n FROM vocabulary_captures').get().n;
+        if (!await page.locator('#ext-account-details').evaluate(node => node.open)) await page.locator('#ext-account-summary').click();
         await page.locator('#ext-logout-btn').click();
         state.failCaptures = false;
         await connect(page, base, BOB);
         check('切換帳戶只顯示新帳戶詞書', await page.locator('#ext-capture-book option').allTextContents().then((values) => values.includes('Bob only') && !values.includes('Reading')));
         check('切換帳戶不傳送前帳戶的待傳', state.captureCalls.length === callsBeforeSwitch && db.prepare('SELECT COUNT(*) AS n FROM vocabulary_captures').get().n === receiptsBeforeSwitch);
+        if (!await page.locator('#ext-account-details').evaluate(node => node.open)) await page.locator('#ext-account-summary').click();
         await page.locator('#ext-logout-btn').click();
         await connect(page, base, ALICE);
         await page.waitForFunction(async () => !Object.keys(await chrome.storage.local.get(null)).some((key) => key.startsWith('bdc_capture_outbox_v1:')));

@@ -1066,14 +1066,14 @@ export async function analyzeParagraph(paragraph, opts = {}) {
     const cacheLevel = sentenceMode ? `${requestedLevel}-sent` : requestedLevel;
     const locale = getLocale();
     const promptVersion = getPromptVersion('article.paragraphTranslation');
-    const thinking = resolveThinkingLevel('articleParagraphTranslation').level;
+    const thinking = resolveThinkingLevel('articleParagraphTranslation', { override: opts.thinking }).level;
     // The key records the requested level; a provider that rejects the thinking
     // parameter may have answered after api.js downgraded it to auto.
     const cacheOptions = { locale, promptVersion, thinking };
     const s = loadGlobalSettings();
-    const primaryModel = getPreferredTaskSpec(['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis'], { settings: s });
+    const primaryModel = getPreferredTaskSpec(['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis'], { settings: s, override: opts.model });
     const fallbackModel = getPreferredTaskSpec(['articleParagraphTranslationFallback', 'articleAnalysis', 'wordAnalysis'], { settings: s });
-    const candidates = buildModelCandidates(primaryModel, fallbackModel);
+    const candidates = hasModelSpec(opts.model) ? [primaryModel] : buildModelCandidates(primaryModel, fallbackModel);
 
     if (!noCache) {
         for (const modelSpec of candidates) {
@@ -1202,12 +1202,12 @@ export async function analyzeWordInSentence(word, sentence, opts = {}) {
     const { timeoutMs = 20000, signal, noCache = false } = opts;
     const context = typeof opts.context === 'string' ? opts.context.trim() : '';
     const s = loadGlobalSettings();
-    const primaryModel = getPreferredTaskSpec(['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'], { settings: s });
+    const primaryModel = getPreferredTaskSpec(['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'], { settings: s, override: opts.model });
     const fallbackModel = getPreferredTaskSpec(['articleWordTranslationFallback', 'wordAnalysis'], { settings: s });
-    const candidates = buildModelCandidates(primaryModel, fallbackModel);
+    const candidates = hasModelSpec(opts.model) ? [primaryModel] : buildModelCandidates(primaryModel, fallbackModel);
     const locale = opts.locale ? normalizeLocale(opts.locale) : getLocale();
     const promptVersion = getPromptVersion('article.wordTooltip');
-    const thinking = resolveThinkingLevel('articleWordTranslation').level;
+    const thinking = resolveThinkingLevel('articleWordTranslation', { override: opts.thinking }).level;
     // Stored under the requested level even if the channel downgraded to auto.
     const cacheOptions = { locale, promptVersion, thinking, ...(opts.strict ? { structuredLookup: 1 } : {}) };
     if (context) {
@@ -1379,12 +1379,12 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
 export async function analyzeSelection(selection, sentence, context = '', opts = {}) {
     const { timeoutMs = 15000, signal, noCache = false } = opts;
     const s = loadGlobalSettings();
-    const primaryModel = getPreferredTaskSpec(['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis'], { settings: s });
+    const primaryModel = getPreferredTaskSpec(['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis'], { settings: s, override: opts.model });
     const fallbackModel = getPreferredTaskSpec(['articlePhraseTranslationFallback', 'wordAnalysis'], { settings: s });
-    const candidates = buildModelCandidates(primaryModel, fallbackModel);
+    const candidates = hasModelSpec(opts.model) ? [primaryModel] : buildModelCandidates(primaryModel, fallbackModel);
     const locale = opts.locale ? normalizeLocale(opts.locale) : getLocale();
     const promptVersion = getPromptVersion('article.phraseAnalysis');
-    const thinking = resolveThinkingLevel('articlePhraseTranslation').level;
+    const thinking = resolveThinkingLevel('articlePhraseTranslation', { override: opts.thinking }).level;
     // Stored under the requested level even if the channel downgraded to auto.
     const cacheOptions = { locale, promptVersion, thinking, ...(opts.strict ? { structuredLookup: 1 } : {}) };
     if (opts.cacheScope && typeof opts.cacheScope === 'object') {
@@ -1995,7 +1995,8 @@ async function cleanMarkdownChunk(chunk, ctx) {
         maxTokens,
         timeoutMs: ctx.timeoutMs,
         signal: ctx.signal,
-        taskType: 'articleCleanup'
+        taskType: 'articleCleanup',
+        thinking: ctx.thinking
     });
     let content = (data?.choices?.[0]?.message?.content || '').trim();
     // 去掉偶發的 ``` 標記
@@ -2025,7 +2026,7 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
       ? 'Keep content-related images as Markdown image lines. Preserve their syntax and alt text; remove social, tracking and banner images.'
       : 'Remove all Markdown image lines without replacing them with links or descriptions.';
 
-    const ctx = { connection, model, temperature, baseMaxTokens, timeoutMs, signal, imageRule };
+    const ctx = { connection, model, temperature, baseMaxTokens, timeoutMs, signal, imageRule, thinking: opts.thinking };
     const source = String(markdownText || '');
     const chunks = splitMarkdownForCleanup(source);
 
@@ -2255,7 +2256,7 @@ export async function getWordPronunciations(word, accent, { signal, refresh = fa
 
 
 /** Shared lookup boundary; configuration and transport remain in the existing AI layer. */
-export async function lookupSelection({ text = '', sentence = '', context = '', locale, signal, noCache = false, timeoutMs = 20000 } = {}) {
+export async function lookupSelection({ text = '', sentence = '', context = '', locale, signal, noCache = false, timeoutMs = 20000, model, thinking: thinkingOverride } = {}) {
     const cleanText = String(text || '').trim();
     if (!cleanText) throw Object.assign(new Error(t('errors.lookupTextRequired')), { code: 'lookup_text_required' });
     const cleanContext = String(context || '').trim();
@@ -2267,14 +2268,14 @@ export async function lookupSelection({ text = '', sentence = '', context = '', 
     const task = isPhrase ? 'articlePhraseTranslation' : (cleanSentence ? 'articleWordTranslation' : 'wordAnalysis');
     const chain = isPhrase ? ['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis']
         : (cleanSentence ? ['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'] : ['wordAnalysis']);
-    const modelSpec = getPreferredTaskSpec(chain, { settings: loadGlobalSettings() });
+    const modelSpec = getPreferredTaskSpec(chain, { settings: loadGlobalSettings(), override: model });
     let connection;
     try { connection = await resolveAIRequestConfigAsync({ task, model: modelSpec }); }
     catch (error) { throw localizeAIError(error); }
-    const thinking = resolveThinkingLevel(task).level;
+    const thinking = resolveThinkingLevel(task, { override: thinkingOverride }).level;
     const promptId = isPhrase ? 'article.phraseAnalysis' : (cleanSentence ? 'article.wordTooltip' : 'dictionary.wordAnalysis');
     const promptVersion = getPromptVersion(promptId);
-    const opts = { timeoutMs, signal, noCache, locale: effectiveLocale, context: cleanContext, cacheScope, strict: true };
+    const opts = { timeoutMs, signal, noCache, locale: effectiveLocale, context: cleanContext, cacheScope, strict: true, model, thinking };
     let raw;
     if (isPhrase) {
         raw = await analyzeSelection(cleanText, cleanSentence || cleanText, cleanContext, opts);

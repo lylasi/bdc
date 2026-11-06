@@ -21,6 +21,8 @@ import { extractActivePageSelectionInTab } from './selection-extractor.js';
 import { createCaptureUI } from './capture-ui.js';
 import { createWorkspaceUI } from './workspace-ui.js';
 import { createInlinePanel } from './inline-panel.js';
+import { createAIControls } from './ai-controls.js';
+import { EXTENSION_AI_PREFERENCES_PREFIX } from './modules/extension-ai-preferences.js';
 
 const pageParameters = new URLSearchParams(location.search);
 const isEmbedded = window.parent !== window;
@@ -111,6 +113,7 @@ let activeLookupController = null;
 let lastResultPayload = null;
 let lastAccountNotice = null;
 let lastLookupNotice = null;
+let lastAccountIdentity = null;
 const inlineUI = isEmbedded ? createInlinePanel({
     more: document.getElementById('ext-inline-more'), back: document.getElementById('ext-inline-back'),
     close: document.getElementById('ext-inline-close'), confirm: document.getElementById('ext-inline-confirm'),
@@ -123,6 +126,7 @@ const inlineUI = isEmbedded ? createInlinePanel({
     dom.wordInput.value = page.text; dom.sentenceInput.value = page.sentence || ''; dom.contextInput.value = page.context || '';
     captureUI.setSource(page); renderReadiness();
 } }) : null;
+const aiControls = createAIControls({ embedded: isEmbedded, onChange: renderReadiness, onLookup: handleLookup });
 
 function setNotice(el, kind, keyOrText, params = {}, isRawText = false) {
     if (!el) return;
@@ -240,9 +244,7 @@ function renderResult(result) {
     }
     if (dom.resultMeta) {
         dom.resultMeta.textContent = t('extension.resultMetaLabel', {
-            provider: result.provider || '',
             model: result.model || '',
-            task: result.task || '',
             thinking: thinkingLabel(result.thinking)
         });
     }
@@ -251,6 +253,13 @@ function renderResult(result) {
 function renderReadiness() {
     const wordText = dom.wordInput ? dom.wordInput.value : '';
     const readiness = getExtensionReadiness({ text: wordText, sentence: dom.sentenceInput?.value, context: dom.contextInput?.value });
+    aiControls.render(readiness, { busy: !!activeLookupController, hasQuery: !!wordText.trim() });
+    const identity = readiness.loggedIn ? readiness.scope.key : '';
+    const accountDetails = document.getElementById('ext-account-details');
+    if (identity !== lastAccountIdentity) {
+        lastAccountIdentity = identity;
+        if (accountDetails) accountDetails.open = !readiness.loggedIn;
+    }
     if (isEmbedded) {
         const status = document.getElementById('ext-inline-status');
         status.hidden = readiness.loggedIn;
@@ -453,6 +462,7 @@ async function handleLookup() {
     }
     inlineUI?.render();
     showLookupNotice('info', '');
+    renderReadiness();
 
     const text = dom.wordInput ? dom.wordInput.value.trim() : '';
     const sentence = dom.sentenceInput ? dom.sentenceInput.value.trim() : '';
@@ -485,6 +495,7 @@ async function handleLookup() {
             dom.lookupBtn.textContent = t('extension.lookupBtn');
         }
         inlineUI?.render();
+        renderReadiness();
     }
 }
 
@@ -556,6 +567,7 @@ async function initExtensionPage() {
             invalidateLookup();
             renderReadiness();
         }
+        if (event.key?.startsWith(EXTENSION_AI_PREFERENCES_PREFIX) || event.key?.startsWith('bdc_ai_profile_v1:')) renderReadiness();
     });
     window.addEventListener('bdc:extension-endpoint-change', () => {
         invalidateLookup();
@@ -573,6 +585,7 @@ async function initExtensionPage() {
         renderReadiness();
     });
     window.addEventListener('bdc:ai-catalog-change', () => renderReadiness());
+    window.addEventListener('bdc:ai-settings-applied', () => renderReadiness());
     window.addEventListener('bdc:ai-credential-sync', () => renderReadiness());
     await captureUI.sync();
     await workspaceUI.sync();

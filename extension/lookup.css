@@ -1,267 +1,971 @@
+/* =========================================================================
+   BDC 扩展 · 查词小窗 / 完整面板 / 账户设置
+   结构：1) 设计令牌 2) 基础 3) 排版与区块 4) 表单 5) 按钮 6) 折叠与列表
+        7) 状态与提示 8) 查询结果 9) 内嵌小窗（compact / expanded）
+        10) 账户与服务连接 11) AI 控制区预留 12) 窄屏
+   ========================================================================= */
+
+/* ============================ 1. 设计令牌 ============================ */
+:root {
+    color-scheme: light;
+
+    --ext-ink: #1d2228;
+    --ext-ink-soft: #48505a;
+    --ext-ink-muted: #6b7480;
+    --ext-line: #e6e4df;
+    --ext-line-strong: #cfcec8;
+
+    --ext-surface: #ffffff;
+    --ext-surface-2: #f7f6f3;
+    --ext-surface-3: #efeeea;
+
+    --ext-accent: #0f766e;
+    --ext-accent-strong: #0b5f59;
+    --ext-accent-soft: #e8f2f0;
+    --ext-accent-rgb: 15, 118, 110;
+
+    --ext-danger: #b42318;
+    --ext-danger-soft: #fdecea;
+    --ext-danger-line: #f0c9c5;
+    --ext-warn: #8a5308;
+    --ext-warn-soft: #fdf6e8;
+    --ext-warn-line: #ecd9ae;
+    --ext-info: #24559b;
+    --ext-info-soft: #eef3fd;
+    --ext-info-line: #cedcf6;
+
+    --ext-radius-sm: 6px;
+    --ext-radius: 8px;
+    --ext-radius-lg: 10px;
+    --ext-pad: 16px;
+    --ext-ring: 0 0 0 3px rgba(var(--ext-accent-rgb), 0.28);
+
+    --ext-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --ext-font-mono: ui-monospace, SFMono-Regular, Menlo, "Charis SIL", "Doulos SIL", monospace;
+    --ext-chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7480' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* ============================ 2. 基础 ============================ */
 * {
     box-sizing: border-box;
 }
+html {
+    background: var(--ext-surface-2);
+    -webkit-text-size-adjust: 100%;
+}
 body {
-    margin: 0;
-    padding: 14px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    width: 400px;
+    max-width: 100%;
+    min-width: 320px;
+    margin: 0 auto;
+    padding: var(--ext-pad);
+    font-family: var(--ext-font);
     font-size: 13px;
     line-height: 1.5;
-    color: #1f2937;
-    background: #f8fafc;
-    min-width: 400px;
-    max-width: 760px;
+    color: var(--ext-ink);
+    background: var(--ext-surface);
+    -webkit-font-smoothing: antialiased;
+    overflow-wrap: break-word;
 }
-.ext-inline { min-width: 0; width: 100%; max-width: none; padding: 10px; }
-.ext-inline .ext-header, .ext-inline #ext-account-section { display: none; }
-.ext-inline #ext-lookup-section .ext-field, .ext-inline #ext-extract-btn, .ext-inline #ext-lookup-heading { display: none; }
-.ext-inline:not(.ext-edit-query) #ext-lookup-section { display: none; }
-.ext-inline.ext-edit-query #ext-lookup-section .ext-field { display: block; }
-#ext-inline-toolbar { margin-bottom: 10px; }
-.ext-inline #ext-inline-toolbar { position: sticky; top: -10px; z-index: 2; padding: 9px 0; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-#ext-inline-toolbar strong { margin-right: auto; }
-#ext-inline-toolbar button { padding: 5px 7px; font-size: 12px; }
-.ext-compact { padding: 10px; background: #fff; }
-.ext-compact #ext-inline-toolbar { top: -10px; background: #fff; padding: 2px 0 8px; margin-bottom: 8px; }
-.ext-compact #ext-inline-edit,
-.ext-compact #ext-inline-settings,
-.ext-compact #ext-lookup-section,
-.ext-compact #ext-page-article-section,
-.ext-compact #ext-result-heading,
-.ext-compact #ext-capture-heading,
-.ext-compact #ext-result-role,
-.ext-compact #ext-result-examples,
-.ext-compact #ext-result-meta,
-.ext-compact #ext-capture-source,
-.ext-compact #ext-capture-hint,
-.ext-compact #ext-capture-refresh,
-.ext-compact #ext-capture-pending,
-.ext-compact .ext-book-actions,
-.ext-compact #ext-book-form,
-.ext-compact #ext-capture-section .ext-field label { display: none !important; }
-.ext-compact .ext-card { padding: 0; border: 0; box-shadow: none; margin-bottom: 10px; }
-.ext-compact #ext-capture-section { margin-bottom: 0; padding-top: 10px; border-top: 1px solid #e2e8f0; border-radius: 0; }
-.ext-compact .ext-result-box { border: 0; background: transparent; padding: 0; }
-.ext-compact .ext-result-word { font-size: 18px; }
-.ext-compact .ext-result-meaning { font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
-.ext-compact .ext-field { margin-bottom: 7px; }
-.ext-compact.ext-needs-book #ext-capture-save { display: none !important; }
-.ext-compact #ext-inline-status { margin: 0 0 10px; padding: 8px; background: #eff6ff; }
-#ext-inline-confirm { position: fixed; inset: 8px; z-index: 10; padding: 16px; overflow: auto; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 0 0 200vmax #0f172a33; }
-#ext-inline-retry { margin-top: 6px; }
-.ext-book-actions { margin-top: 10px; }
-.ext-book-form { margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 8px; }
-.ext-book-form > label, #ext-article-preview > label { display: block; margin: 6px 0; }
-#ext-article-preview { margin-top: 12px; }
-#ext-workspace-pending-list button { margin: 5px; }
-input, textarea, select { max-width: 100%; }
+/* 内嵌 iframe：填满卡片，不参与外层排版 */
+body.ext-inline {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: var(--ext-pad);
+}
+
+[hidden],
+.hidden {
+    display: none !important;
+}
+.ext-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ============================ 3. 排版与区块 ============================ */
 .ext-header {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
     align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 12px;
+    gap: 8px 12px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--ext-line);
+}
+.ext-header-text {
+    flex: 1 1 160px;
+    min-width: 0;
 }
 .ext-title {
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
-    color: #0f172a;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--ext-ink);
 }
 .ext-subtitle {
     margin: 2px 0 0;
     font-size: 12px;
-    color: #64748b;
+    line-height: 1.45;
+    color: var(--ext-ink-muted);
 }
 .ext-header-controls {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-left: auto;
 }
-.ext-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 12px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+.ext-section {
+    padding: 12px 0;
+    border-top: 1px solid var(--ext-line);
 }
-.ext-card-title {
-    margin: 0 0 8px;
-    font-size: 14px;
+.ext-header + .ext-section,
+#ext-ai-controls + .ext-section {
+    border-top: 0;
+    padding-top: 10px;
+}
+.ext-section-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.ext-section-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 12px;
     font-weight: 600;
-    color: #0f172a;
+    letter-spacing: 0.01em;
+    color: var(--ext-ink-muted);
+}
+.ext-section-head > .ext-btn {
+    flex: none;
+    margin-left: auto;
+}
+.ext-hint,
+.ext-source {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-muted);
+}
+.ext-source a {
+    color: var(--ext-accent);
+    text-decoration: none;
+}
+.ext-source a:hover {
+    text-decoration: underline;
+}
+.ext-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.ext-row-actions {
+    margin-top: 8px;
+    gap: 6px;
+}
+.ext-row-submit {
+    margin-top: 10px;
+}
+.ext-row-submit .ext-btn-primary {
+    margin-left: auto;
+}
+
+/* ============================ 4. 表单 ============================ */
+input,
+select,
+textarea,
+button {
+    font-family: inherit;
 }
 .ext-field {
     margin-bottom: 8px;
 }
-.ext-field label {
+.ext-field:last-child {
+    margin-bottom: 0;
+}
+.ext-field > label {
     display: block;
+    margin: 0 0 4px;
     font-size: 12px;
     font-weight: 500;
-    color: #334155;
-    margin-bottom: 3px;
+    line-height: 1.4;
+    color: var(--ext-ink-soft);
 }
-.ext-field input[type="text"],
-.ext-field input[type="password"],
-.ext-field input[type="url"],
+.ext-field input:not([type="checkbox"]):not([type="radio"]),
 .ext-field select,
-.ext-field textarea {
+.ext-field textarea,
+select.ext-select {
     width: 100%;
-    padding: 6px 8px;
+    min-width: 0;
+    min-height: 30px;
+    padding: 5px 8px;
     font-size: 13px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    background: #fff;
-    color: #0f172a;
+    line-height: 1.4;
+    color: var(--ext-ink);
+    background-color: var(--ext-surface);
+    border: 1px solid var(--ext-line-strong);
+    border-radius: var(--ext-radius-sm);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
-.ext-field textarea {
-    resize: vertical;
-    min-height: 52px;
-}
-.ext-source { font-size: 12px; color: #475569; overflow-wrap: anywhere; }
-.ext-pending { margin-top: 12px; font-size: 12px; overflow-wrap: anywhere; }
-.ext-pending summary { cursor: pointer; }
-.ext-pending ul { padding-left: 18px; }
-.ext-pending li { margin: 10px 0; }
-.ext-pending li p { margin: 5px 0; }
-[hidden] { display: none !important; }
-.ext-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-.ext-btn {
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #1e293b;
+.ext-field select,
+select.ext-select {
+    padding-right: 26px;
+    appearance: none;
+    background-image: var(--ext-chevron);
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    text-overflow: ellipsis;
     cursor: pointer;
 }
+.ext-field textarea {
+    padding: 6px 8px;
+    line-height: 1.5;
+    resize: vertical;
+}
+.ext-field input:not([type="checkbox"]):not([type="radio"]):hover,
+.ext-field select:hover,
+.ext-field textarea:hover,
+select.ext-select:hover {
+    border-color: #b9b8b1;
+}
+.ext-field input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+.ext-field select:focus-visible,
+.ext-field textarea:focus-visible,
+select.ext-select:focus-visible {
+    outline: none;
+    border-color: var(--ext-accent);
+    box-shadow: var(--ext-ring);
+}
+.ext-field input::placeholder,
+.ext-field textarea::placeholder {
+    color: #9aa1aa;
+}
+input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--ext-accent);
+    cursor: pointer;
+}
+input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: var(--ext-ring);
+    border-radius: 3px;
+}
+.ext-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ext-ink-soft);
+    cursor: pointer;
+}
+select.ext-select-sm {
+    flex: none;
+    width: auto;
+    max-width: 160px;
+    min-height: 26px;
+    padding: 2px 24px 2px 8px;
+    font-size: 12px;
+}
+
+/* ============================ 5. 按钮 ============================ */
+.ext-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 30px;
+    padding: 5px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--ext-ink);
+    text-align: center;
+    white-space: nowrap;
+    background: var(--ext-surface);
+    border: 1px solid var(--ext-line-strong);
+    border-radius: var(--ext-radius-sm);
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
 .ext-btn:hover:not(:disabled) {
-    background: #f1f5f9;
+    background: var(--ext-surface-3);
+    border-color: #b9b8b1;
+}
+.ext-btn:active:not(:disabled) {
+    background: var(--ext-surface-2);
+}
+.ext-btn:focus-visible {
+    outline: none;
+    border-color: var(--ext-accent);
+    box-shadow: var(--ext-ring);
 }
 .ext-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    opacity: 0.55;
+    cursor: default;
 }
 .ext-btn-primary {
-    background: #2563eb;
-    border-color: #2563eb;
+    font-weight: 600;
     color: #ffffff;
+    background: var(--ext-accent);
+    border-color: var(--ext-accent);
 }
 .ext-btn-primary:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--ext-accent-strong);
+    border-color: var(--ext-accent-strong);
 }
-.ext-status-list {
-    margin-top: 8px;
-    padding: 8px 10px;
-    border-radius: 6px;
-    background: #f1f5f9;
+.ext-btn-primary:active:not(:disabled) {
+    background: #0a534e;
+}
+.ext-btn-quiet {
+    color: var(--ext-ink-soft);
+    background: transparent;
+    border-color: transparent;
+}
+.ext-btn-quiet:hover:not(:disabled) {
+    color: var(--ext-ink);
+    background: var(--ext-surface-3);
+    border-color: transparent;
+}
+.ext-btn-sm {
+    min-height: 26px;
+    padding: 3px 6px;
     font-size: 12px;
-    color: #334155;
 }
-.ext-status-line {
-    margin: 2px 0;
+
+/* ============================ 6. 折叠与列表 ============================ */
+.ext-disclosure {
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
-.ext-banner-warning {
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #f59e0b;
-    background: #fffbeb;
-    color: #92400e;
+.ext-disclosure > summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 26px;
+    padding: 3px 0;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    border-radius: var(--ext-radius-sm);
 }
-.ext-banner-warning h4 {
-    margin: 0 0 4px;
+.ext-disclosure > summary::-webkit-details-marker {
+    display: none;
+}
+.ext-disclosure > summary:hover .ext-disclosure-title {
+    color: var(--ext-accent);
+}
+.ext-disclosure > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--ext-ring);
+}
+.ext-disclosure > summary::after {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    margin-left: auto;
+    border-right: 1.5px solid var(--ext-ink-muted);
+    border-bottom: 1.5px solid var(--ext-ink-muted);
+    transform: rotate(45deg) translate(-1px, -1px);
+    transition: transform 0.15s ease;
+}
+.ext-disclosure[open] > summary::after {
+    transform: rotate(-135deg) translate(-1px, 1px);
+}
+.ext-disclosure-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--ext-ink);
+}
+.ext-disclosure-body {
+    padding-top: 6px;
+}
+.ext-disclosure-quiet > summary {
+    min-height: 24px;
+    padding: 2px 0;
+}
+.ext-disclosure-quiet .ext-disclosure-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ext-ink-soft);
+}
+.ext-disclosure-block > summary {
+    min-height: 32px;
+    padding: 4px 0;
+}
+.ext-disclosure-block .ext-disclosure-title {
     font-size: 13px;
 }
-.ext-banner-warning p {
-    margin: 0 0 8px;
-    font-size: 12px;
-}
-.ext-notice {
+
+.ext-book-form,
+.ext-preview {
     margin-top: 8px;
     padding: 8px 10px;
-    border-radius: 6px;
-    font-size: 12px;
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius);
 }
-.ext-notice-error {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #b91c1c;
+.ext-pending-list {
+    display: grid;
+    gap: 6px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.ext-pending-list:empty {
+    display: none;
+}
+.ext-pending-list li {
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+    overflow-wrap: anywhere;
+}
+.ext-pending-list li p {
+    margin: 2px 0;
+    color: var(--ext-ink-muted);
+}
+.ext-pending-list li .ext-btn {
+    margin: 6px 6px 0 0;
+}
+.ext-pending-list li > button {
+    margin: 6px 6px 0 0;
+}
+
+/* ============================ 7. 状态与提示 ============================ */
+.ext-notice {
+    margin-top: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-soft);
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+    overflow-wrap: anywhere;
 }
 .ext-notice-info {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #1d4ed8;
+    color: var(--ext-info);
+    background: var(--ext-info-soft);
+    box-shadow: inset 0 0 0 1px var(--ext-info-line);
+}
+.ext-notice-error {
+    color: var(--ext-danger);
+    background: var(--ext-danger-soft);
+    box-shadow: inset 0 0 0 1px var(--ext-danger-line);
+}
+.ext-status-list {
+    display: grid;
+    gap: 2px;
+    margin-top: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-muted);
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+}
+.ext-status-line {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.ext-chip {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    max-width: 100%;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.7;
+    color: var(--ext-ink-soft);
+    background: var(--ext-surface-3);
+    border-radius: 999px;
+    overflow-wrap: anywhere;
+}
+.ext-banner-warning {
+    margin-top: 8px;
+    padding: 8px 10px;
+    color: var(--ext-warn);
+    background: var(--ext-warn-soft);
+    border: 1px solid var(--ext-warn-line);
+    border-radius: var(--ext-radius);
+}
+.ext-banner-title {
+    margin: 0 0 2px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+.ext-banner-text {
+    margin: 0 0 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #7a4a07;
+}
+
+/* ============================ 8. 查询结果 ============================ */
+.ext-section-result {
+    padding-bottom: 10px;
 }
 .ext-result-box {
-    padding: 10px;
-    border-radius: 6px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    padding: 0;
 }
 .ext-result-head {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 6px;
+    align-items: baseline;
+    gap: 6px;
 }
 .ext-result-word {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
-    color: #0f172a;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    color: var(--ext-ink);
+    overflow-wrap: anywhere;
 }
 .ext-result-phonetic {
-    font-family: "Charis SIL", "Doulos SIL", monospace;
-    color: #475569;
+    font-family: var(--ext-font-mono);
+    font-size: 12px;
+    color: var(--ext-ink-muted);
+    overflow-wrap: anywhere;
 }
 .ext-result-pos {
-    font-size: 12px;
-    padding: 1px 6px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.6;
+    color: var(--ext-accent-strong);
+    background: var(--ext-accent-soft);
     border-radius: 4px;
-    background: #e2e8f0;
-    color: #334155;
 }
 .ext-result-meaning {
+    margin-top: 5px;
     font-size: 14px;
     font-weight: 600;
-    color: #0f172a;
-    margin: 6px 0;
+    line-height: 1.55;
+    color: var(--ext-ink);
+    overflow-wrap: anywhere;
 }
 .ext-result-role {
+    margin-top: 3px;
     font-size: 12px;
-    color: #475569;
-    margin: 4px 0;
+    line-height: 1.5;
+    color: var(--ext-ink-soft);
+    overflow-wrap: anywhere;
+}
+.ext-result-extra {
+    margin-top: 4px;
+}
+.ext-result-examples {
+    margin: 2px 0 0;
+    padding-left: 16px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ext-ink-soft);
+}
+.ext-result-examples li {
+    margin: 2px 0;
+    overflow-wrap: anywhere;
+}
+/* 没有例句时整段折叠保持安静 */
+#ext-result-details:not(:has(li)) {
+    display: none;
 }
 .ext-result-meta {
     margin-top: 8px;
     padding-top: 6px;
-    border-top: 1px dashed #cbd5e1;
     font-size: 11px;
-    color: #64748b;
+    line-height: 1.5;
+    color: var(--ext-ink-muted);
+    border-top: 1px solid var(--ext-line);
+    overflow-wrap: anywhere;
 }
-.hidden {
-    display: none !important;
+#ext-inline-retry {
+    margin-top: 8px;
 }
 
-@media (max-width: 480px) {
-    .ext-header {
-        flex-direction: column;
-        align-items: stretch;
+/* ============================ 9. 内嵌小窗 ============================ */
+#ext-inline-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ext-toolbar-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--ext-ink-soft);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ext-toolbar-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+}
+
+.ext-inline {
+    --ext-pad: 12px;
+}
+.ext-inline .ext-header {
+    display: none;
+}
+.ext-inline #ext-account-section {
+    display: none;
+}
+.ext-inline #ext-inline-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: calc(var(--ext-pad) * -1) calc(var(--ext-pad) * -1) 8px;
+    padding: 8px var(--ext-pad);
+    background: var(--ext-surface);
+    border-bottom: 1px solid var(--ext-line);
+}
+.ext-inline #ext-lookup-section {
+    border-top: 0;
+    padding-top: 0;
+}
+.ext-inline:not(.ext-edit-query) #ext-lookup-section {
+    display: none;
+}
+.ext-inline #ext-result-section {
+    border-top: 0;
+    padding-top: 0;
+}
+.ext-inline.ext-edit-query #ext-result-section {
+    border-top: 1px solid var(--ext-line);
+    padding-top: 12px;
+}
+
+/* --- 小窗（compact） --- */
+.ext-compact {
+    --ext-pad: 10px;
+}
+.ext-compact #ext-lookup-section .ext-section-head,
+.ext-compact #ext-result-heading,
+.ext-compact #ext-result-role,
+.ext-compact #ext-result-meta,
+.ext-compact #ext-capture-heading,
+.ext-compact #ext-capture-source,
+.ext-compact #ext-capture-hint,
+.ext-compact #ext-capture-refresh,
+.ext-compact #ext-capture-section .ext-book-actions,
+.ext-compact #ext-book-form,
+.ext-compact #ext-page-article-section {
+    display: none !important;
+}
+/* 待傳狀態不可藏：小窗只收合成一行，需要時可就地展開 */
+.ext-compact .ext-pending {
+    margin-top: 6px;
+}
+.ext-compact .ext-pending > summary {
+    min-height: 22px;
+}
+.ext-compact #ext-lookup-section .ext-row-submit {
+    margin-top: 6px;
+}
+.ext-compact #ext-force-row .ext-check,
+.ext-compact #ext-query-details {
+    display: none !important;
+}
+.ext-compact #ext-lookup-section .ext-row-submit .ext-btn-primary {
+    margin-left: 0;
+    flex: 1 1 auto;
+}
+.ext-compact .ext-section {
+    padding: 8px 0;
+}
+.ext-compact #ext-capture-section {
+    padding-bottom: 0;
+}
+.ext-compact #ext-capture-section .ext-field {
+    margin-bottom: 6px;
+}
+.ext-compact #ext-capture-section .ext-field > label {
+    display: none;
+}
+.ext-compact #ext-capture-section .ext-row-actions {
+    margin-top: 0;
+}
+.ext-compact #ext-capture-save,
+.ext-compact #ext-quick-capture {
+    flex: 1 1 auto;
+}
+.ext-compact.ext-needs-book #ext-capture-save {
+    display: none !important;
+}
+.ext-compact #ext-capture-notice {
+    margin-top: 6px;
+}
+.ext-compact #ext-inline-status {
+    margin: 0 0 8px;
+}
+.ext-compact #ext-inline-action-notice {
+    margin: 0 0 8px;
+}
+.ext-compact #ext-inline-retry {
+    margin-top: 6px;
+}
+
+/* 草稿确认：居中卡片 + 整卡遮罩 */
+#ext-inline-confirm {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 20;
+    width: max-content;
+    max-width: calc(100% - 20px);
+    max-height: calc(100% - 20px);
+    padding: 14px;
+    overflow: auto;
+    background: var(--ext-surface);
+    border: 1px solid var(--ext-line-strong);
+    border-radius: var(--ext-radius-lg);
+    box-shadow: 0 0 0 200vmax rgba(23, 28, 33, 0.35), 0 10px 30px rgba(23, 28, 33, 0.18);
+    transform: translate(-50%, -50%);
+}
+.ext-confirm-title {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--ext-ink);
+}
+.ext-confirm-text {
+    margin: 0 0 12px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ext-ink-soft);
+}
+
+/* ============================ 10. 账户与服务连接 ============================ */
+#ext-account-summary {
+    gap: 8px;
+}
+#ext-account-status {
+    flex: 0 1 auto;
+    overflow-wrap: anywhere;
+}
+#ext-account-details[open] #ext-account-summary {
+    margin-bottom: 2px;
+}
+#ext-account-notice {
+    margin-top: 8px;
+}
+#ext-missing-key-banner .ext-field {
+    margin-bottom: 6px;
+}
+#ext-missing-key-banner .ext-btn {
+    margin-top: 2px;
+}
+#ext-app-url,
+#ext-endpoint-input {
+    font-family: var(--ext-font-mono);
+    font-size: 12px;
+}
+
+/* ============================ 11. AI 控制区（预留） ============================ */
+/* 由 ai-controls.js 动态生成的 <details id="ext-ai-controls">：
+   summary 内为 .ext-ai-summary-label / .ext-ai-summary-value，
+   内容为 .ext-ai-grid（两栏 .ext-field，内含 select），状态为 #ext-ai-notice。
+   支持插入在完整 header 后或小窗 toolbar 后；小窗内默认收合成一行。 */
+#ext-ai-controls {
+    margin: 6px 0 0;
+    padding: 0 0 6px;
+    border: 0;
+    border-bottom: 1px solid var(--ext-line);
+}
+#ext-ai-controls > summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 3px 0;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    border-radius: var(--ext-radius-sm);
+}
+#ext-ai-controls > summary::-webkit-details-marker {
+    display: none;
+}
+#ext-ai-controls > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--ext-ring);
+}
+#ext-ai-controls > summary::after {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    margin-left: auto;
+    border-right: 1.5px solid var(--ext-ink-muted);
+    border-bottom: 1.5px solid var(--ext-ink-muted);
+    transform: rotate(45deg) translate(-1px, -1px);
+    transition: transform 0.15s ease;
+}
+#ext-ai-controls[open] > summary::after {
+    transform: rotate(-135deg) translate(-1px, 1px);
+}
+#ext-ai-controls .ext-ai-summary-label {
+    flex: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ext-ink-soft);
+    white-space: nowrap;
+}
+#ext-ai-controls .ext-ai-summary-value {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ext-ink-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ext-ai-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px 8px;
+    margin-top: 6px;
+}
+/* 三项控制：窄卡片时「思考」独占一行，宽面板时排成三栏 */
+.ext-ai-grid > .ext-field:nth-child(3) {
+    grid-column: 1 / -1;
+}
+@media (min-width: 400px) {
+    .ext-ai-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .ext-ai-grid > .ext-field:nth-child(3) {
+        grid-column: auto;
+    }
+}
+.ext-ai-hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-muted);
+}
+.ext-ai-actions {
+    margin-top: 8px;
+    gap: 6px;
+}
+.ext-ai-grid .ext-field {
+    margin-bottom: 0;
+    min-width: 0;
+}
+.ext-ai-grid .ext-field > label {
+    font-size: 11px;
+    color: var(--ext-ink-muted);
+}
+.ext-ai-grid input:not([type="checkbox"]):not([type="radio"]),
+.ext-ai-grid select,
+.ext-ai-grid textarea {
+    min-height: 28px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    font-size: 12px;
+}
+#ext-ai-notice {
+    margin-top: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-soft);
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+    overflow-wrap: anywhere;
+}
+#ext-ai-notice.ext-notice-error {
+    color: var(--ext-danger);
+    background: var(--ext-danger-soft);
+    box-shadow: inset 0 0 0 1px var(--ext-danger-line);
+}
+#ext-ai-notice.ext-notice-info {
+    color: var(--ext-info);
+    background: var(--ext-info-soft);
+    box-shadow: inset 0 0 0 1px var(--ext-info-line);
+}
+.ext-inline #ext-ai-controls,
+.ext-compact #ext-ai-controls {
+    margin: 0 0 8px;
+}
+.ext-compact #ext-ai-controls > summary {
+    min-height: 24px;
+}
+.ext-compact #ext-ai-controls .ext-ai-summary-value {
+    padding-left: 2px;
+}
+
+/* ============================ 12. 窄屏（≤360px） ============================ */
+@media (max-width: 360px) {
+    body {
+        --ext-pad: 10px;
+    }
+    .ext-compact {
+        --ext-pad: 10px;
     }
     .ext-header-controls {
+        width: 100%;
+        margin-left: 0;
         justify-content: space-between;
     }
-    .ext-header-controls .ext-btn {
-        white-space: nowrap;
+    .ext-row-submit .ext-btn-primary {
+        margin-left: 0;
+        flex: 1 1 auto;
+    }
+    .ext-section {
+        padding: 10px 0;
+    }
+}
+
+/* 320px 展開時工具列放不下品牌字樣：只留必要操作 */
+@media (max-width: 330px) {
+    .ext-expanded .ext-toolbar-title {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
     }
 }

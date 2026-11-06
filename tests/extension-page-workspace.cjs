@@ -107,6 +107,7 @@ function check(name, condition, detail) {
             localStorage.setItem('sync_label', 'alice'); localStorage.setItem('sync_role', 'user');
             localStorage.setItem('vocabImportPromptShown', '1');
         }, { appBase: env.appBase, endpoint: env.base, token: ALICE });
+        if (!await popup.locator('#ext-account-details').evaluate(node => node.open)) await popup.locator('#ext-account-summary').click();
         await popup.locator('#ext-app-url').fill(env.appBase);
         await popup.locator('#ext-app-url').dispatchEvent('change');
         await inline.waitForFunction((value) => document.querySelector('#ext-app-url').value === value, env.appBase);
