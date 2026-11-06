@@ -1,0 +1,18 @@
+PASS 未登入不可存取 /vocabulary/books
+PASS 未登入不可存取 /captures/capabilities
+PASS 正式收藏協議與來源上限
+PASS 透過正式 reading API 建立隔離詞書
+PASS 擴充套件連接正式帳戶且僅列隔離詞書
+PASS 首次選書須明確確認
+PASS 未查詞時不可收藏
+PASS 真 MV3 擷取選詞及原句
+PASS 正式 managed catalog 真 AI 查詞成功
+{"passed":9,"failed":1}
+page.waitForFunction: TypeError: document.querySelector(...).textContent is not a function
+    at eval (eval at predicate (eval at evaluate (:311:30)), <anonymous>:1:62)
+    at predicate (eval at evaluate (:311:30), <anonymous>:7:27)
+    at next (eval at evaluate (:311:30), <anonymous>:29:33)
+    at eval (eval at evaluate (:311:30), <anonymous>:42:13)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+    at /Users/linus/CODE/bdc-extension-ai-proof-20261105/docs/release/assets/20261106122239219/verify-capture-live.cjs:109:20

@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-11-06T04:34:35.522Z",
+  "checks": [
+    {
+      "name": "未登入不可存取 /vocabulary/books",
+      "ok": true
+    },
+    {
+      "name": "未登入不可存取 /captures/capabilities",
+      "ok": true
+    },
+    {
+      "name": "正式收藏協議與來源上限",
+      "ok": true
+    },
+    {
+      "name": "透過正式 reading API 建立隔離詞書",
+      "ok": true
+    },
+    {
+      "name": "擴充套件連接正式帳戶且僅列隔離詞書",
+      "ok": true
+    },
+    {
+      "name": "首次選書須明確確認",
+      "ok": true
+    },
+    {
+      "name": "未查詞時不可收藏",
+      "ok": true
+    },
+    {
+      "name": "真 MV3 擷取選詞及原句",
+      "ok": true
+    },
+    {
+      "name": "正式 managed catalog 真 AI 查詞成功",
+      "ok": true
+    },
+    {
+      "name": "正式 D1 收藏成功並返回有效回執",
+      "ok": true
+    },
+    {
+      "name": "收藏直接保存展示意思，不再次呼叫 AI",
+      "ok": true
+    },
+    {
+      "name": "成功後本機待傳清除",
+      "ok": true
+    },
+    {
+      "name": "相同 requestId 正式重送保持同一回執",
+      "ok": true
+    },
+    {
+      "name": "已保存原句、網址、定位及當次意思",
+      "ok": true
+    },
+    {
+      "name": "149 主站同步並展示原句、來源及當次意思",
+      "ok": true
+    },
+    {
+      "name": "返回主站可自動發現新收藏並刷新畫面",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 收藏介面與 400px 排版",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 收藏介面與 400px 排版",
+      "ok": true
+    },
+    {
+      "name": "真 AI 請求全程僅一次",
+      "ok": true
+    },
+    {
+      "name": "無未捕獲頁面錯誤",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "pageErrors": [],
+  "productionWorker": "https://bdc-sync-api.penzibdc.workers.dev",
+  "deployedWebsite": "http://10.10.10.149:8001",
+  "aiMocked": false,
+  "articleSynthetic": true,
+  "aiRequests": 1,
+  "realMV3": true,
+  "browserProfileRemoved": true
+}

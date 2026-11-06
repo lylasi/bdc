@@ -1,0 +1,21 @@
+PASS 未登入不可存取 /vocabulary/books
+PASS 未登入不可存取 /captures/capabilities
+PASS 正式收藏協議與來源上限
+PASS 透過正式 reading API 建立隔離詞書
+PASS 擴充套件連接正式帳戶且僅列隔離詞書
+PASS 首次選書須明確確認
+PASS 未查詞時不可收藏
+PASS 真 MV3 擷取選詞及原句
+PASS 正式 managed catalog 真 AI 查詞成功
+PASS 正式 D1 收藏成功並返回有效回執
+PASS 收藏直接保存展示意思，不再次呼叫 AI
+PASS 成功後本機待傳清除
+PASS 相同 requestId 正式重送保持同一回執
+PASS 已保存原句、網址、定位及當次意思
+PASS 149 主站同步並展示原句、來源及當次意思
+PASS 返回主站可自動發現新收藏並刷新畫面
+PASS zh-HK 收藏介面與 400px 排版
+PASS zh-CN 收藏介面與 400px 排版
+PASS 真 AI 請求全程僅一次
+PASS 無未捕獲頁面錯誤
+{"passed":20,"failed":0}

@@ -1,0 +1,64 @@
+{
+  "diagnostics": [
+    {
+      "account": "已连接账户：BDC capture release probe",
+      "accountNotice": "登录成功",
+      "catalog": "管理供应商就绪（v4）",
+      "captureNotice": "已加入《BDC 發布驗證詞書》",
+      "books": [
+        {
+          "value": "",
+          "text": "请选择词书"
+        },
+        {
+          "value": "release-probe-book",
+          "text": "BDC 發布驗證詞書"
+        }
+      ],
+      "endpoint": "https://bdc-sync-api.penzibdc.workers.dev",
+      "loginMode": "token"
+    }
+  ],
+  "responses": [
+    {
+      "path": "/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/snapshot",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-credentials",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog/providers/managed-legacy-hapi/credential",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/captures",
+      "method": "POST",
+      "status": 200
+    }
+  ]
+}

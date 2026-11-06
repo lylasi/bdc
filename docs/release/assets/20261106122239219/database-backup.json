@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "sql_path": "/Users/linus/.local/share/bdc-private-backups/20261106122239219/bdc-sync-before-captures.sql",
+  "bytes": 7527342,
+  "sha256": "2956bf18ae897a6c30d5768bdd11cd73a20495c6e49d27e62ffc37d27b1db8da",
+  "directory_mode": "0o700",
+  "file_mode": "0o600",
+  "sqlite_integrity": "ok",
+  "table_count": 15,
+  "private_contents_in_repository": false
+}

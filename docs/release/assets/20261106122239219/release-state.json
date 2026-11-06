@@ -1,0 +1,23 @@
+{
+  "stamp": "20261106122239219",
+  "asset_dir": "/Users/linus/CODE/bdc-extension-ai-proof-20261105/docs/release/assets/20261106122239219",
+  "before_master": "380b00af14318ea14515318fc2c992de714f3de0",
+  "feature_head_before": "7f060e79e7112daa6eb0edc254a50bc4840310b4",
+  "frontend_release": "a365703cb9c7",
+  "extension_version": "0.2.0",
+  "fingerprints_verified": 30,
+  "user_authorized_update": true,
+  "production_migration_completed": true,
+  "worker_version": "a54780e6-4e4a-4f72-8957-abfea8b6a9c5",
+  "production_commit": "ec8245854452879fe1fbda9ce4c5125998819187",
+  "frontend_deployed": true,
+  "static_checks": {
+    "lan": true,
+    "public": true,
+    "assets_each": 100,
+    "blocked_paths_each": 15
+  },
+  "live_smoke_checks": 20,
+  "live_smoke_passed": true,
+  "fixture_cleanup_verified": true
+}

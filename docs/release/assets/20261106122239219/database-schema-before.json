@@ -1,0 +1,80 @@
+[
+  {
+    "results": [
+      {
+        "name": "users",
+        "sql": "CREATE TABLE users (\n  token_hash TEXT PRIMARY KEY,\n  user_id    TEXT NOT NULL UNIQUE,\n  label      TEXT\n, recovery_hash TEXT, role TEXT NOT NULL DEFAULT 'user'\n  CHECK (role IN ('user', 'admin')), email TEXT, created_at TEXT, username TEXT, username_normalized TEXT, password_hash TEXT, password_updated_at TEXT, auth_version INTEGER NOT NULL DEFAULT 1, is_active INTEGER NOT NULL DEFAULT 1)"
+      },
+      {
+        "name": "snapshots",
+        "sql": "CREATE TABLE snapshots (\n  user_id    TEXT PRIMARY KEY,\n  version    INTEGER NOT NULL DEFAULT 0,\n  updated_at TEXT,\n  payload    TEXT NOT NULL          -- \u6574\u4efd App JSON \u5feb\u7167\uff08\u5b57\u4e32\uff09\n)"
+      },
+      {
+        "name": "user_ai_credentials",
+        "sql": "CREATE TABLE user_ai_credentials (\n  user_id          TEXT NOT NULL,\n  provider_id      TEXT NOT NULL,\n  binding_json     TEXT NOT NULL,\n  key_ciphertext   TEXT,\n  nonce            TEXT,\n  key_version      INTEGER,\n  version          INTEGER NOT NULL CHECK (version >= 1),\n  deleted          INTEGER NOT NULL DEFAULT 0 CHECK (deleted IN (0, 1)),\n  last_mutation_id TEXT NOT NULL,\n  updated_at       TEXT NOT NULL,\n  PRIMARY KEY (user_id, provider_id),\n  FOREIGN KEY (user_id) REFERENCES users(user_id),\n  CHECK (\n    (deleted = 0 AND key_ciphertext IS NOT NULL\n      AND nonce IS NOT NULL AND key_version IS NOT NULL)\n    OR\n    (deleted = 1 AND key_ciphertext IS NULL\n      AND nonce IS NULL AND key_version IS NULL)\n  )\n)"
+      },
+      {
+        "name": "ai_default_catalog_releases",
+        "sql": "CREATE TABLE ai_default_catalog_releases (\n  version          INTEGER PRIMARY KEY CHECK (version >= 1),\n  config_json      TEXT NOT NULL,\n  credentials_json TEXT NOT NULL,\n  mutation_id      TEXT NOT NULL UNIQUE,\n  request_digest   TEXT NOT NULL,\n  published_by     TEXT NOT NULL,\n  published_at     TEXT NOT NULL\n)"
+      },
+      {
+        "name": "user_sessions",
+        "sql": "CREATE TABLE user_sessions (\n  token_hash   TEXT PRIMARY KEY,\n  user_id      TEXT NOT NULL,\n  created_at   TEXT NOT NULL,\n  expires_at   TEXT NOT NULL,\n  device_label TEXT, auth_version INTEGER NOT NULL DEFAULT 1,\n  FOREIGN KEY (user_id) REFERENCES users(user_id)\n)"
+      },
+      {
+        "name": "pairing_codes",
+        "sql": "CREATE TABLE pairing_codes (\n  code_hash  TEXT PRIMARY KEY,\n  user_id    TEXT NOT NULL,\n  created_by TEXT NOT NULL,\n  created_at TEXT NOT NULL,\n  expires_at TEXT NOT NULL,\n  used_at    TEXT,\n  FOREIGN KEY (user_id) REFERENCES users(user_id)\n)"
+      },
+      {
+        "name": "articles",
+        "sql": "CREATE TABLE articles (\n  owner_user_id     TEXT NOT NULL,\n  id                TEXT NOT NULL,\n  title             TEXT NOT NULL DEFAULT '',\n  body              TEXT NOT NULL,\n  analysis_json     TEXT,\n  source_type       TEXT NOT NULL DEFAULT 'paste',\n  source_url        TEXT,\n  revision          INTEGER NOT NULL DEFAULT 1 CHECK (revision >= 1),\n  created_at        TEXT NOT NULL,\n  updated_at        TEXT NOT NULL,\n  deleted_at        TEXT,\n  legacy_article_id TEXT,\n  last_mutation_id  TEXT,\n  size_bytes        INTEGER NOT NULL DEFAULT 0,\n  PRIMARY KEY (owner_user_id, id),\n  FOREIGN KEY (owner_user_id) REFERENCES users(user_id)\n)"
+      },
+      {
+        "name": "article_changes",
+        "sql": "CREATE TABLE article_changes (\n  owner_user_id TEXT NOT NULL,\n  seq           INTEGER NOT NULL,\n  article_id    TEXT NOT NULL,\n  op            TEXT NOT NULL CHECK (op IN ('create', 'upsert', 'delete', 'restore')),\n  revision      INTEGER NOT NULL,\n  updated_at    TEXT NOT NULL,\n  PRIMARY KEY (owner_user_id, seq),\n  FOREIGN KEY (owner_user_id) REFERENCES users(user_id)\n)"
+      },
+      {
+        "name": "article_state",
+        "sql": "CREATE TABLE article_state (\n  owner_user_id        TEXT PRIMARY KEY,\n  next_seq             INTEGER NOT NULL DEFAULT 1,\n  pruned_before        INTEGER NOT NULL DEFAULT 0,\n  legacy_write_blocked INTEGER NOT NULL DEFAULT 0,\n  migrated_at          TEXT,\n  updated_at           TEXT NOT NULL,\n  FOREIGN KEY (owner_user_id) REFERENCES users(user_id)\n)"
+      },
+      {
+        "name": "admin_audit_log",
+        "sql": "CREATE TABLE admin_audit_log (\n  id             INTEGER PRIMARY KEY AUTOINCREMENT,\n  actor_user_id  TEXT NOT NULL,\n  action         TEXT NOT NULL,\n  target_user_id TEXT NOT NULL,\n  detail_json    TEXT NOT NULL DEFAULT '{}',\n  created_at     TEXT NOT NULL\n)"
+      },
+      {
+        "name": "reading_entities",
+        "sql": "CREATE TABLE reading_entities (\n  owner_user_id    TEXT NOT NULL,\n  entity_type      TEXT NOT NULL,\n  entity_id        TEXT NOT NULL,\n  revision         INTEGER NOT NULL DEFAULT 1 CHECK (revision >= 1),\n  deleted_at       TEXT,\n  data_json        TEXT NOT NULL,\n  updated_at       TEXT NOT NULL,\n  last_mutation_id TEXT,\n  PRIMARY KEY (owner_user_id, entity_type, entity_id),\n  FOREIGN KEY (owner_user_id) REFERENCES users(user_id)\n)"
+      },
+      {
+        "name": "reading_changes",
+        "sql": "CREATE TABLE reading_changes (\n  owner_user_id TEXT NOT NULL,\n  seq           INTEGER NOT NULL,\n  entity_type   TEXT NOT NULL,\n  entity_id     TEXT NOT NULL,\n  op            TEXT NOT NULL CHECK (op IN ('upsert', 'delete')),\n  revision      INTEGER NOT NULL,\n  updated_at    TEXT NOT NULL,\n  PRIMARY KEY (owner_user_id, seq),\n  FOREIGN KEY (owner_user_id) REFERENCES users(user_id)\n)"
+      },
+      {
+        "name": "reading_mutations",
+        "sql": "CREATE TABLE reading_mutations (\n  owner_user_id TEXT NOT NULL,\n  mutation_id   TEXT NOT NULL,\n  entity_type   TEXT NOT NULL,\n  entity_id     TEXT NOT NULL,\n  revision      INTEGER NOT NULL,\n  request_json  TEXT NOT NULL,\n  result_json   TEXT NOT NULL,\n  created_at    TEXT NOT NULL,\n  PRIMARY KEY (owner_user_id, mutation_id),\n  FOREIGN KEY (owner_user_id) REFERENCES users(user_id)\n)"
+      },
+      {
+        "name": "reading_state",
+        "sql": "CREATE TABLE reading_state (\n  owner_user_id        TEXT PRIMARY KEY,\n  next_seq             INTEGER NOT NULL DEFAULT 1,\n  legacy_write_blocked INTEGER NOT NULL DEFAULT 0,\n  migrated_at          TEXT,\n  updated_at           TEXT NOT NULL,\n  FOREIGN KEY (owner_user_id) REFERENCES users(user_id)\n)"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "WNAM",
+      "served_by_colo": "SJC",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 0.4577
+      },
+      "duration": 0.4577,
+      "changes": 0,
+      "last_row_id": 0,
+      "changed_db": false,
+      "size_after": 8478720,
+      "rows_read": 40,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]

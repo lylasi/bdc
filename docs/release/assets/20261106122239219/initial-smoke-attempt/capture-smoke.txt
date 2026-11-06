@@ -1,0 +1,6 @@
+PASS 未登入不可存取 /vocabulary/books
+PASS 未登入不可存取 /captures/capabilities
+PASS 正式收藏協議與來源上限
+PASS 透過正式 reading API 建立隔離詞書
+{"passed":4,"failed":1}
+page.waitForFunction: Timeout 30000ms exceeded.

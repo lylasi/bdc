@@ -1,0 +1,23 @@
+{
+  "userId": "ext_capture_probe_20261106122239219_b5627f60",
+  "role": "user",
+  "cleanupOk": true,
+  "existingUserDataModified": false,
+  "receiptsBeforeCleanup": 0,
+  "remainingRows": {
+    "users": 0,
+    "vocabulary_captures": 0,
+    "user_ai_credentials": 0,
+    "user_sessions": 0,
+    "pairing_codes": 0,
+    "snapshots": 0,
+    "articles": 0,
+    "article_changes": 0,
+    "article_state": 0,
+    "reading_entities": 0,
+    "reading_changes": 0,
+    "reading_mutations": 0,
+    "reading_state": 0
+  },
+  "tokenFileRemoved": true
+}

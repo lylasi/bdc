@@ -1,0 +1,17 @@
+{
+  "cwd": "/Users/linus/CODE/bdc/cloudflare-worker",
+  "argv": [
+    "node",
+    "/Users/linus/.npm/_npx/32026684e21afda6/node_modules/wrangler/bin/wrangler.js",
+    "deploy",
+    "/Users/linus/CODE/bdc-extension-ai-proof-20261105/cloudflare-worker/src/worker.js",
+    "--config",
+    "/Users/linus/CODE/bdc/cloudflare-worker/wrangler.toml",
+    "--keep-vars",
+    "--tag",
+    "extension-capture-ec82458",
+    "--message",
+    "BDC extension 0.2.0 vocabulary capture and source sync (ec82458)"
+  ],
+  "source_commit": "ec8245854452879fe1fbda9ce4c5125998819187"
+}
