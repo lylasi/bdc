@@ -1,0 +1,2 @@
+PASS lan: 103 assets, 15 excluded routes, private configuration hash and cache policy, no page errors
+PASS public: 103 assets, 15 excluded routes, private configuration hash and cache policy, no page errors
