@@ -1,6 +1,6 @@
 {
   "stamp": "20261106225733797",
-  "generatedAt": "2026-11-06T14:58:40.879Z",
+  "generatedAt": "2026-11-06T15:06:05.720Z",
   "baselineCommit": "5b20535",
   "productVersion": "0.5.1",
   "mode": {
@@ -82,7 +82,7 @@
       "detail": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "GET",
@@ -91,6 +91,10 @@
         {
           "method": "POST",
           "path": "/mock-ai/v1/chat/completions"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
         }
       ]
     },
@@ -98,7 +102,7 @@
       "name": "A1 保存後拿到真回執：文章落地、預覽收起、「在 BDC 打开」出現",
       "ok": true,
       "detail": {
-        "article": "webart_6624a2a9484765fd404b0ef49a4f0b2a97c1c1680b536bdd",
+        "article": "webart_f8911e31b04b5685098316f63274e9052243989b0b86ec4b",
         "state": {
           "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
           "noticeHidden": false,
@@ -140,7 +144,7 @@
       "name": "A1 「在 BDC 打开」帶到既有文章（#a/<articleId>）",
       "ok": true,
       "detail": {
-        "openedUrl": "http://127.0.0.1:59841/#a/webart_6624a2a9484765fd404b0ef49a4f0b2a97c1c1680b536bdd"
+        "openedUrl": "http://127.0.0.1:54308/#a/webart_f8911e31b04b5685098316f63274e9052243989b0b86ec4b"
       }
     },
     {
@@ -253,7 +257,7 @@
       "detail": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "POST",
@@ -311,7 +315,7 @@
       "ok": true,
       "detail": [
         {
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase",
           "error": "net::ERR_FAILED"
         }
       ]
@@ -550,7 +554,7 @@
       "name": "A-逾時：6 秒左右就降級（實測 < 9.5 秒，證明不是舊的 10 秒預設）",
       "ok": true,
       "detail": {
-        "elapsedMs": 6332
+        "elapsedMs": 6327
       }
     },
     {
@@ -880,9 +884,9 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
-        "selectedBook": "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+        "selectedBook": "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
       }
     },
     {
@@ -913,9 +917,9 @@
             "",
             "book",
             "book-2",
-            "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+            "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
           ],
-          "selectedBook": "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "selectedBook": "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         },
         "count": 1
       }
@@ -931,7 +935,7 @@
       "name": "E3 重試成功：真回執（雲端有文章、正文含章節、待傳清空）",
       "ok": true,
       "detail": {
-        "article": "webart_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f",
+        "article": "webart_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828",
         "state": {
           "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
           "noticeHidden": false,
@@ -956,9 +960,9 @@
             "",
             "book",
             "book-2",
-            "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+            "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
           ],
-          "selectedBook": "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "selectedBook": "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         },
         "count": 2
       }
@@ -975,11 +979,11 @@
       "ok": true,
       "detail": {
         "name": "Major tech stocks plunge",
-        "sourceUrl": "http://127.0.0.1:59841/test-article?case=queue",
+        "sourceUrl": "http://127.0.0.1:54308/test-article?case=queue",
         "sourceType": "article",
-        "createdAt": "2026-11-06T14:58:01.584Z",
-        "updatedAt": "2026-11-06T14:58:02.015Z",
-        "articleId": "webart_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+        "createdAt": "2026-11-06T15:05:25.979Z",
+        "updatedAt": "2026-11-06T15:05:26.444Z",
+        "articleId": "webart_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
       }
     },
     {
@@ -1009,7 +1013,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": ""
       }
@@ -1042,11 +1046,11 @@
             "",
             "book",
             "book-2",
-            "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+            "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
           ],
           "selectedBook": ""
         },
-        "book": "webbook_2df3d5227e3af87d100218bb36da05abe831121d307024ba",
+        "book": "webbook_439f3b8da151193166ddfcf8bb47f30676bcfceb9a1ea07a",
         "gateHits": 2
       }
     },
@@ -1077,10 +1081,10 @@
           "",
           "book",
           "book-2",
-          "webbook_2df3d5227e3af87d100218bb36da05abe831121d307024ba",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_439f3b8da151193166ddfcf8bb47f30676bcfceb9a1ea07a",
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
-        "selectedBook": "webbook_2df3d5227e3af87d100218bb36da05abe831121d307024ba"
+        "selectedBook": "webbook_439f3b8da151193166ddfcf8bb47f30676bcfceb9a1ea07a"
       }
     },
     {
@@ -1089,8 +1093,8 @@
       "detail": {
         "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
         "book": {
-          "entity_id": "webbook_2df3d5227e3af87d100218bb36da05abe831121d307024ba",
-          "data_json": "{\"name\":\"Major tech stocks plunge\",\"sourceUrl\":\"http://127.0.0.1:59841/test-article?case=notice\",\"sourceType\":\"manual\",\"createdAt\":\"2026-11-06T14:58:22.827Z\",\"updatedAt\":\"2026-11-06T14:58:22.827Z\"}",
+          "entity_id": "webbook_439f3b8da151193166ddfcf8bb47f30676bcfceb9a1ea07a",
+          "data_json": "{\"name\":\"Major tech stocks plunge\",\"sourceUrl\":\"http://127.0.0.1:54308/test-article?case=notice\",\"sourceType\":\"manual\",\"createdAt\":\"2026-11-06T15:05:47.717Z\",\"updatedAt\":\"2026-11-06T15:05:47.717Z\"}",
           "deleted_at": null
         }
       }
@@ -1122,7 +1126,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": ""
       }
@@ -1154,7 +1158,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": "book"
       }
@@ -1163,8 +1167,8 @@
       "name": "I3 選取寫回本機詞書選擇（真 chrome.storage），不再指向已刪除的書",
       "ok": true,
       "detail": {
-        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A59841:alice:http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dnotice": "book",
-        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A59841:alice:http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dqueue": "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A54308:alice:http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dnotice": "book",
+        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A54308:alice:http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dqueue": "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
       }
     },
     {
@@ -1194,7 +1198,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": "book"
       }
@@ -1226,7 +1230,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": "book-2"
       }
@@ -1258,7 +1262,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": "book-2"
       }
@@ -1270,7 +1274,7 @@
         "requests": [
           {
             "method": "GET",
-            "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dnotice"
+            "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dnotice"
           },
           {
             "method": "POST",
@@ -1317,10 +1321,10 @@
             "",
             "book",
             "book-2",
-            "webbook_92fb1dca5d147e0c108db5c111a97fa48d07398fe3e90b09",
-            "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+            "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828",
+            "webbook_c419f72ba82155d15278c7b4297c69e4a12310f866e6769f"
           ],
-          "selectedBook": "webbook_92fb1dca5d147e0c108db5c111a97fa48d07398fe3e90b09"
+          "selectedBook": "webbook_c419f72ba82155d15278c7b4297c69e4a12310f866e6769f"
         },
         "captures": 1,
         "entries": 1
@@ -2045,7 +2049,7 @@
         },
         "optionsOpen": true,
         "formHidden": true,
-        "selectedBook": "webbook_10093761328c3efdbe7b0d4f009da7171514d1aad71d0cea",
+        "selectedBook": "webbook_f222ab18b68ed3589d3322e38d5da5055d0c065722e7efce",
         "saveText": "加入",
         "notice": "",
         "confirmHidden": true,
@@ -3512,13 +3516,13 @@
       "name": "G1 quickcreate：建立本頁詞書並自動選取",
       "ok": true,
       "detail": {
-        "selected": "webbook_902306b376a766287c6caab39ba883ef835d720664d41c10",
+        "selected": "webbook_c56c71c15bdeee6d1e35c17eae371abf0a501d37a644a361",
         "book": {
           "name": "Major tech stocks plunge",
-          "sourceUrl": "http://127.0.0.1:59841/test-article?case=quick-bob",
+          "sourceUrl": "http://127.0.0.1:54308/test-article?case=quick-bob",
           "sourceType": "manual",
-          "createdAt": "2026-11-06T14:58:40.814Z",
-          "updatedAt": "2026-11-06T14:58:40.814Z"
+          "createdAt": "2026-11-06T15:06:05.625Z",
+          "updatedAt": "2026-11-06T15:06:05.625Z"
         }
       }
     },
@@ -3574,7 +3578,7 @@
           },
           "optionsOpen": false,
           "formHidden": true,
-          "selectedBook": "webbook_902306b376a766287c6caab39ba883ef835d720664d41c10",
+          "selectedBook": "webbook_c56c71c15bdeee6d1e35c17eae371abf0a501d37a644a361",
           "saveText": "已加入",
           "notice": "已加入《Major tech stocks plunge》",
           "confirmHidden": true,
@@ -3606,14 +3610,14 @@
           }
         },
         "capture": {
-          "requestId": "capture_24fe1858-0e58-40f7-9acd-e49ecc1435be",
-          "bookId": "webbook_902306b376a766287c6caab39ba883ef835d720664d41c10",
+          "requestId": "capture_f437edb4-122b-4eb1-913e-843b6cfc1fce",
+          "bookId": "webbook_c56c71c15bdeee6d1e35c17eae371abf0a501d37a644a361",
           "word": "plunge",
           "meaning": "暴跌（语境）",
           "phonetic": "plʌndʒ",
           "pos": "verb",
           "source": {
-            "sourceUrl": "http://127.0.0.1:59841/test-article?case=quick-bob",
+            "sourceUrl": "http://127.0.0.1:54308/test-article?case=quick-bob",
             "pageTitle": "Major tech stocks plunge",
             "sentence": "Major tech stocks plunge as investors worry.",
             "context": "Major tech stocks plunge as investors worry. Markets remain volatile.",
@@ -3635,10 +3639,10 @@
       "ok": true,
       "detail": {
         "name": "Major tech stocks plunge",
-        "sourceUrl": "http://127.0.0.1:59841/test-article?case=quick-bob",
+        "sourceUrl": "http://127.0.0.1:54308/test-article?case=quick-bob",
         "sourceType": "manual",
-        "createdAt": "2026-11-06T14:58:40.814Z",
-        "updatedAt": "2026-11-06T14:58:40.814Z"
+        "createdAt": "2026-11-06T15:06:05.625Z",
+        "updatedAt": "2026-11-06T15:06:05.625Z"
       }
     },
     {
@@ -3651,7 +3655,7 @@
     {
       "id": "A0",
       "title": "對照：預查正常，提取成功",
-      "elapsed": 327,
+      "elapsed": 452,
       "aiCalls": 1,
       "state": {
         "notice": "提取完成，请检查标题与正文后保存。",
@@ -3683,7 +3687,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "GET",
@@ -3692,6 +3696,10 @@
         {
           "method": "POST",
           "path": "/mock-ai/v1/chat/completions"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
         }
       ],
       "failures": []
@@ -3727,12 +3735,12 @@
         ],
         "selectedBook": ""
       },
-      "article": "webart_6624a2a9484765fd404b0ef49a4f0b2a97c1c1680b536bdd"
+      "article": "webart_f8911e31b04b5685098316f63274e9052243989b0b86ec4b"
     },
     {
       "id": "D1",
       "title": "既有雲端文章正常：直接沿用、不呼叫 AI",
-      "elapsed": 331,
+      "elapsed": 587,
       "aiCalls": 0,
       "state": {
         "notice": "这篇网页已有文章，已沿用原记录并保留原内容。",
@@ -3764,7 +3772,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "POST",
@@ -3807,7 +3815,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "POST",
@@ -3823,7 +3831,7 @@
       "id": "A-斷線",
       "title": "net::ERR_FAILED（等同截圖的紅色請求）",
       "mode": "network",
-      "elapsed": 331,
+      "elapsed": 332,
       "aiCalls": 1,
       "state": {
         "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
@@ -3855,7 +3863,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "GET",
@@ -3868,7 +3876,7 @@
       ],
       "failures": [
         {
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase",
           "error": "net::ERR_FAILED"
         }
       ]
@@ -3877,7 +3885,7 @@
       "id": "A-503非JSON",
       "title": "HTTP 503 HTML（邊緣錯誤頁形態，無 CORS）",
       "mode": "html503",
-      "elapsed": 334,
+      "elapsed": 322,
       "aiCalls": 1,
       "state": {
         "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
@@ -3909,7 +3917,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "GET",
@@ -3926,7 +3934,7 @@
       "id": "A-500JSON",
       "title": "HTTP 500 capture_failed（後端／D1 錯誤）",
       "mode": "json500",
-      "elapsed": 367,
+      "elapsed": 320,
       "aiCalls": 1,
       "state": {
         "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
@@ -3958,7 +3966,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "GET",
@@ -3975,7 +3983,7 @@
       "id": "A-404",
       "title": "HTTP 404 not_found（舊版 Worker／路由缺失）",
       "mode": "json404",
-      "elapsed": 327,
+      "elapsed": 328,
       "aiCalls": 1,
       "state": {
         "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
@@ -4007,7 +4015,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "GET",
@@ -4024,7 +4032,7 @@
       "id": "A-畸形JSON",
       "title": "HTTP 200 但 body 不是 JSON",
       "mode": "badjson",
-      "elapsed": 338,
+      "elapsed": 321,
       "aiCalls": 1,
       "state": {
         "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
@@ -4056,7 +4064,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "GET",
@@ -4073,7 +4081,7 @@
       "id": "A-競態",
       "title": "GET 說有文章、POST page-link 回 404 article_not_found",
       "mode": "race",
-      "elapsed": 321,
+      "elapsed": 324,
       "aiCalls": 1,
       "state": {
         "notice": "提取完成，请检查标题与正文后保存。",
@@ -4105,7 +4113,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "POST",
@@ -4125,7 +4133,7 @@
     {
       "id": "A-逾時",
       "title": "預查 6 秒逾時",
-      "elapsed": 6332,
+      "elapsed": 6327,
       "aiCalls": 1,
       "state": {
         "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
@@ -4157,7 +4165,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase"
         },
         {
           "method": "GET",
@@ -4174,7 +4182,7 @@
       ],
       "failures": [
         {
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase",
           "error": "net::ERR_ABORTED"
         }
       ]
@@ -4353,9 +4361,9 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
-        "selectedBook": "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+        "selectedBook": "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
       },
       "aiCalls": 0
     },
@@ -4386,18 +4394,18 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
-        "selectedBook": "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+        "selectedBook": "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
       },
-      "article": "webart_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f",
+      "article": "webart_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828",
       "pageBook": {
         "name": "Major tech stocks plunge",
-        "sourceUrl": "http://127.0.0.1:59841/test-article?case=queue",
+        "sourceUrl": "http://127.0.0.1:54308/test-article?case=queue",
         "sourceType": "article",
-        "createdAt": "2026-11-06T14:58:01.584Z",
-        "updatedAt": "2026-11-06T14:58:02.015Z",
-        "articleId": "webart_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+        "createdAt": "2026-11-06T15:05:25.979Z",
+        "updatedAt": "2026-11-06T15:05:26.444Z",
+        "articleId": "webart_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
       }
     },
     {
@@ -4427,7 +4435,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": ""
       },
@@ -4460,12 +4468,16 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": ""
       },
-      "book": "webbook_2df3d5227e3af87d100218bb36da05abe831121d307024ba",
-      "gateHits": 2
+      "book": "webbook_439f3b8da151193166ddfcf8bb47f30676bcfceb9a1ea07a",
+      "gateHits": 2,
+      "gateUrls": [
+        "/vocabulary/books",
+        "/vocabulary/books"
+      ]
     },
     {
       "id": "I1",
@@ -4494,12 +4506,12 @@
           "",
           "book",
           "book-2",
-          "webbook_2df3d5227e3af87d100218bb36da05abe831121d307024ba",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_439f3b8da151193166ddfcf8bb47f30676bcfceb9a1ea07a",
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
-        "selectedBook": "webbook_2df3d5227e3af87d100218bb36da05abe831121d307024ba"
+        "selectedBook": "webbook_439f3b8da151193166ddfcf8bb47f30676bcfceb9a1ea07a"
       },
-      "book": "webbook_2df3d5227e3af87d100218bb36da05abe831121d307024ba"
+      "book": "webbook_439f3b8da151193166ddfcf8bb47f30676bcfceb9a1ea07a"
     },
     {
       "id": "I2",
@@ -4528,11 +4540,11 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": ""
       },
-      "deleted": "webbook_2df3d5227e3af87d100218bb36da05abe831121d307024ba"
+      "deleted": "webbook_439f3b8da151193166ddfcf8bb47f30676bcfceb9a1ea07a"
     },
     {
       "id": "I3",
@@ -4561,13 +4573,13 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": "book"
       },
       "choices": {
-        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A59841:alice:http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dnotice": "book",
-        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A59841:alice:http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dqueue": "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A54308:alice:http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dnotice": "book",
+        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A54308:alice:http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dqueue": "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
       }
     },
     {
@@ -4597,7 +4609,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": "book"
       }
@@ -4629,7 +4641,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": "book-2"
       }
@@ -4661,14 +4673,14 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": "book-2"
       },
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dnotice"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dnotice"
         },
         {
           "method": "POST",
@@ -4712,7 +4724,7 @@
           "",
           "book",
           "book-2",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828"
         ],
         "selectedBook": "book-2"
       },
@@ -4740,10 +4752,10 @@
           "",
           "book",
           "book-2",
-          "webbook_92fb1dca5d147e0c108db5c111a97fa48d07398fe3e90b09",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828",
+          "webbook_c419f72ba82155d15278c7b4297c69e4a12310f866e6769f"
         ],
-        "selectedBook": "webbook_92fb1dca5d147e0c108db5c111a97fa48d07398fe3e90b09"
+        "selectedBook": "webbook_c419f72ba82155d15278c7b4297c69e4a12310f866e6769f"
       },
       "gateHits": 1
     },
@@ -4774,13 +4786,13 @@
           "",
           "book",
           "book-2",
-          "webbook_92fb1dca5d147e0c108db5c111a97fa48d07398fe3e90b09",
-          "webbook_e84ba26c33fcd25c370d37f2468701120d78aead5b5d818f"
+          "webbook_861f5f15a8284bbb71198326da38015d0fff77a1bfaef828",
+          "webbook_c419f72ba82155d15278c7b4297c69e4a12310f866e6769f"
         ],
-        "selectedBook": "webbook_92fb1dca5d147e0c108db5c111a97fa48d07398fe3e90b09"
+        "selectedBook": "webbook_c419f72ba82155d15278c7b4297c69e4a12310f866e6769f"
       },
       "capture": {
-        "requestId": "capture_15b05754-b8dd-4fec-9a80-7ec30475eb6f",
+        "requestId": "capture_b0fe07d3-a6c8-42ee-bc21-46c6aa320bb2",
         "bookId": "book",
         "word": "plunge",
         "meaning": "暴跌（语境）",
@@ -4884,7 +4896,7 @@
         },
         "optionsOpen": false,
         "formHidden": true,
-        "selectedBook": "webbook_902306b376a766287c6caab39ba883ef835d720664d41c10",
+        "selectedBook": "webbook_c56c71c15bdeee6d1e35c17eae371abf0a501d37a644a361",
         "saveText": "已加入",
         "notice": "已加入《Major tech stocks plunge》",
         "confirmHidden": true,
@@ -4917,20 +4929,20 @@
       },
       "book": {
         "name": "Major tech stocks plunge",
-        "sourceUrl": "http://127.0.0.1:59841/test-article?case=quick-bob",
+        "sourceUrl": "http://127.0.0.1:54308/test-article?case=quick-bob",
         "sourceType": "manual",
-        "createdAt": "2026-11-06T14:58:40.814Z",
-        "updatedAt": "2026-11-06T14:58:40.814Z"
+        "createdAt": "2026-11-06T15:06:05.625Z",
+        "updatedAt": "2026-11-06T15:06:05.625Z"
       },
       "capture": {
-        "requestId": "capture_24fe1858-0e58-40f7-9acd-e49ecc1435be",
-        "bookId": "webbook_902306b376a766287c6caab39ba883ef835d720664d41c10",
+        "requestId": "capture_f437edb4-122b-4eb1-913e-843b6cfc1fce",
+        "bookId": "webbook_c56c71c15bdeee6d1e35c17eae371abf0a501d37a644a361",
         "word": "plunge",
         "meaning": "暴跌（语境）",
         "phonetic": "plʌndʒ",
         "pos": "verb",
         "source": {
-          "sourceUrl": "http://127.0.0.1:59841/test-article?case=quick-bob",
+          "sourceUrl": "http://127.0.0.1:54308/test-article?case=quick-bob",
           "pageTitle": "Major tech stocks plunge",
           "sentence": "Major tech stocks plunge as investors worry.",
           "context": "Major tech stocks plunge as investors worry. Markets remain volatile.",
@@ -4949,19 +4961,19 @@
   ],
   "requestFailures": [
     {
-      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase",
       "error": "net::ERR_FAILED"
     },
     {
-      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase",
       "error": "net::ERR_FAILED"
     },
     {
-      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dbase",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dbase",
       "error": "net::ERR_ABORTED"
     },
     {
-      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A59841%2Ftest-article%3Fcase%3Dauth",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54308%2Ftest-article%3Fcase%3Dauth",
       "error": "net::ERR_ABORTED"
     }
   ],

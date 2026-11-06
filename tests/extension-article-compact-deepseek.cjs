@@ -126,7 +126,7 @@ function consume() {
     let held = false;
     // 書單閘門（I 階段用）：把「不帶 sourceUrl 的 GET /vocabulary/books」按住，
     // 用來重現「storage 快取的舊書單先套用、網路回應還沒回來」的那一瞬間。
-    const booksGate = { active: false, hits: 0, waiters: new Set() };
+    const booksGate = { active: false, hits: 0, waiters: new Set(), urls: [] };
     const releaseBooksGate = () => {
         booksGate.active = false;
         for (const release of booksGate.waiters) release();
@@ -186,6 +186,7 @@ function consume() {
         await context.route((url) => url.pathname === '/vocabulary/books' && !url.searchParams.has('sourceUrl'), async (route) => {
             if (!booksGate.active) return route.continue().catch(() => {});
             booksGate.hits += 1;
+            booksGate.urls.push(new URL(route.request().url()).pathname);
             // 20 秒保險：即使測試中途失敗，被按住的請求也不會永遠掛著
             await new Promise((resolve) => {
                 booksGate.waiters.add(resolve);
@@ -564,6 +565,7 @@ function consume() {
             await popup.waitForFunction(() => document.querySelectorAll('#ext-capture-book option').length > 1, null, { timeout: 30000 });
             booksGate.active = true;
             booksGate.hits = 0;
+            booksGate.urls = [];
             await openOptions();
             await popup.locator('#ext-book-page').click();
             await popup.waitForFunction((text) => document.querySelector('#ext-capture-notice')?.hidden === false
@@ -572,7 +574,7 @@ function consume() {
             const createdBook = pageBookRow();
             await popup.screenshot({ path: path.join(OUT, '13-page-book-transient-zh-CN.png') });
             scenarios.push({ id: 'I1-during', title: '建頁書途中：舊快取書單先套用（網路未回）', state: duringHold,
-                book: createdBook?.entity_id, gateHits: booksGate.hits });
+                book: createdBook?.entity_id, gateHits: booksGate.hits, gateUrls: booksGate.urls.slice() });
             check('I1 建頁書途中確實重現舊行為：書單仍是舊快取（不含新書），暫時提示「目标词书不存在…」',
                 !!createdBook && duringHold.captureNotice === TEXT.targetMissing && duringHold.captureNoticeError
                 && !duringHold.books.includes(createdBook.entity_id) && duringHold.selectedBook !== createdBook.entity_id,

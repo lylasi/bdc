@@ -1,6 +1,6 @@
 {
   "stamp": "20261106225733797-richa",
-  "generatedAt": "2026-11-06T14:59:53.977Z",
+  "generatedAt": "2026-11-06T15:06:38.403Z",
   "baselineCommit": "5b20535",
   "productVersion": "0.5.1",
   "mode": {
@@ -100,7 +100,7 @@
           ],
           "selectedBook": ""
         },
-        "book": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2",
+        "book": "webbook_66240ca51d33e90f012af41f395364b65c5bafbf2d8c09c9",
         "gateHits": 2
       }
     },
@@ -131,9 +131,9 @@
           "",
           "book",
           "book-2",
-          "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+          "webbook_66240ca51d33e90f012af41f395364b65c5bafbf2d8c09c9"
         ],
-        "selectedBook": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+        "selectedBook": "webbook_66240ca51d33e90f012af41f395364b65c5bafbf2d8c09c9"
       }
     },
     {
@@ -142,8 +142,8 @@
       "detail": {
         "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
         "book": {
-          "entity_id": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2",
-          "data_json": "{\"name\":\"Major tech stocks plunge\",\"sourceUrl\":\"http://127.0.0.1:61061/test-article?case=notice\",\"sourceType\":\"manual\",\"createdAt\":\"2026-11-06T14:59:49.273Z\",\"updatedAt\":\"2026-11-06T14:59:49.273Z\"}",
+          "entity_id": "webbook_66240ca51d33e90f012af41f395364b65c5bafbf2d8c09c9",
+          "data_json": "{\"name\":\"Major tech stocks plunge\",\"sourceUrl\":\"http://127.0.0.1:57097/test-article?case=notice\",\"sourceType\":\"manual\",\"createdAt\":\"2026-11-06T15:06:33.663Z\",\"updatedAt\":\"2026-11-06T15:06:33.663Z\"}",
           "deleted_at": null
         }
       }
@@ -214,7 +214,7 @@
       "name": "I3 選取寫回本機詞書選擇（真 chrome.storage），不再指向已刪除的書",
       "ok": true,
       "detail": {
-        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A61061:alice:http%3A%2F%2F127.0.0.1%3A61061%2Ftest-article%3Fcase%3Dnotice": "book"
+        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A57097:alice:http%3A%2F%2F127.0.0.1%3A57097%2Ftest-article%3Fcase%3Dnotice": "book"
       }
     },
     {
@@ -317,7 +317,7 @@
         "requests": [
           {
             "method": "GET",
-            "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A61061%2Ftest-article%3Fcase%3Dnotice"
+            "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A57097%2Ftest-article%3Fcase%3Dnotice"
           },
           {
             "method": "POST",
@@ -364,9 +364,9 @@
             "",
             "book",
             "book-2",
-            "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+            "webbook_8bde2b240dcf769e672dc714063452d255d1f9f65f8f10f3"
           ],
-          "selectedBook": "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+          "selectedBook": "webbook_8bde2b240dcf769e672dc714063452d255d1f9f65f8f10f3"
         },
         "captures": 1,
         "entries": 1
@@ -441,8 +441,12 @@
         ],
         "selectedBook": ""
       },
-      "book": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2",
-      "gateHits": 2
+      "book": "webbook_66240ca51d33e90f012af41f395364b65c5bafbf2d8c09c9",
+      "gateHits": 2,
+      "gateUrls": [
+        "/vocabulary/books",
+        "/vocabulary/books"
+      ]
     },
     {
       "id": "I1",
@@ -471,11 +475,11 @@
           "",
           "book",
           "book-2",
-          "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+          "webbook_66240ca51d33e90f012af41f395364b65c5bafbf2d8c09c9"
         ],
-        "selectedBook": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+        "selectedBook": "webbook_66240ca51d33e90f012af41f395364b65c5bafbf2d8c09c9"
       },
-      "book": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+      "book": "webbook_66240ca51d33e90f012af41f395364b65c5bafbf2d8c09c9"
     },
     {
       "id": "I2",
@@ -507,7 +511,7 @@
         ],
         "selectedBook": ""
       },
-      "deleted": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+      "deleted": "webbook_66240ca51d33e90f012af41f395364b65c5bafbf2d8c09c9"
     },
     {
       "id": "I3",
@@ -540,7 +544,7 @@
         "selectedBook": "book"
       },
       "choices": {
-        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A61061:alice:http%3A%2F%2F127.0.0.1%3A61061%2Ftest-article%3Fcase%3Dnotice": "book"
+        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A57097:alice:http%3A%2F%2F127.0.0.1%3A57097%2Ftest-article%3Fcase%3Dnotice": "book"
       }
     },
     {
@@ -638,7 +642,7 @@
       "requests": [
         {
           "method": "GET",
-          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A61061%2Ftest-article%3Fcase%3Dnotice"
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A57097%2Ftest-article%3Fcase%3Dnotice"
         },
         {
           "method": "POST",
@@ -709,9 +713,9 @@
           "",
           "book",
           "book-2",
-          "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+          "webbook_8bde2b240dcf769e672dc714063452d255d1f9f65f8f10f3"
         ],
-        "selectedBook": "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+        "selectedBook": "webbook_8bde2b240dcf769e672dc714063452d255d1f9f65f8f10f3"
       },
       "gateHits": 1
     },
@@ -742,12 +746,12 @@
           "",
           "book",
           "book-2",
-          "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+          "webbook_8bde2b240dcf769e672dc714063452d255d1f9f65f8f10f3"
         ],
-        "selectedBook": "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+        "selectedBook": "webbook_8bde2b240dcf769e672dc714063452d255d1f9f65f8f10f3"
       },
       "capture": {
-        "requestId": "capture_b1fe6518-b65d-4c88-b2d3-2ba20b62b824",
+        "requestId": "capture_8848ba80-bd1a-45fe-ac54-374eda86464e",
         "bookId": "book",
         "word": "plunge",
         "meaning": "暴跌（语境）",
