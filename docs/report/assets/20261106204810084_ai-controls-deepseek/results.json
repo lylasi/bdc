@@ -1,0 +1,1155 @@
+{
+  "ok": true,
+  "stamp": "20261106204810084",
+  "extensionVersion": "0.5.0",
+  "featureBaseCommit": "03ce6b3",
+  "productRevision": "6ba69ccadf45953a3594a72538998f8cdeb5e633",
+  "environment": {
+    "node": "v24.20.0",
+    "playwright": "1.63.0-alpha-2026-08-31"
+  },
+  "checks": [
+    {
+      "id": "D01",
+      "name": "未登入時三個選擇器與恢復按鈕皆停用",
+      "ok": true,
+      "detail": {
+        "task": "lookup",
+        "tasks": [
+          "lookup",
+          "articleCleanup",
+          "articleParagraphTranslation"
+        ],
+        "model": "",
+        "modelOptions": [
+          {
+            "value": "",
+            "label": "提示：请先在「我的供应商」添加供应商",
+            "disabled": true
+          }
+        ],
+        "thinking": "none",
+        "thinkingOptions": [
+          "auto",
+          "none",
+          "low",
+          "medium",
+          "high"
+        ],
+        "notice": "",
+        "noticeError": false,
+        "summary": "AI 设置提示：请先在「我的供应商」添加供应商 · 关闭思考",
+        "resetDisabled": true,
+        "requeryDisabled": true,
+        "requeryHidden": false,
+        "modelDisabled": true,
+        "thinkingDisabled": true,
+        "taskDisabled": true,
+        "labels": {
+          "task": "用途",
+          "model": "模型",
+          "thinking": "思考模式"
+        },
+        "accountStatus": "未登录账户",
+        "lookupNotice": "",
+        "resultVisible": false,
+        "resultMeaning": ""
+      }
+    },
+    {
+      "id": "D02",
+      "name": "未登入時用途清單為 3 項、思考清單為五檔、標籤文字可辨識",
+      "ok": true,
+      "detail": {
+        "tasks": [
+          "lookup",
+          "articleCleanup",
+          "articleParagraphTranslation"
+        ],
+        "thinking": [
+          "auto",
+          "none",
+          "low",
+          "medium",
+          "high"
+        ]
+      }
+    },
+    {
+      "id": "D03",
+      "name": "未登入（guest）保存被拒（stale_session / model_not_allowed），且不會建立偏好鍵",
+      "ok": true,
+      "detail": {
+        "guestSave": {
+          "ok": false,
+          "code": "model_not_allowed",
+          "message": "model_not_allowed"
+        },
+        "guestWrite": {
+          "ok": false,
+          "code": "stale_session",
+          "message": "stale_session"
+        },
+        "prefs": {},
+        "guestModel": ""
+      }
+    },
+    {
+      "id": "D04",
+      "name": "登入後模型清單同時包含個人與 managed 模型，且無重複",
+      "ok": true,
+      "detail": [
+        "personal-lab:lab-model",
+        "personal-anth:anth-model",
+        "managed-main:main-model",
+        "managed-main:shared-model",
+        "managed-backup:shared-model",
+        "managed-backup:alt-model"
+      ]
+    },
+    {
+      "id": "D05",
+      "name": "個人供應商缺少本機金鑰時顯示匯入橫幅且列出兩個供應商",
+      "ok": true,
+      "detail": {
+        "visible": true,
+        "providers": [
+          "personal-lab",
+          "personal-anth"
+        ]
+      }
+    },
+    {
+      "id": "D06",
+      "name": "帳戶查詞設定（個人模型 + 低強度思考）成為獨立查詞的預設值",
+      "ok": true,
+      "detail": {
+        "model": "personal-lab:lab-model",
+        "thinking": "low"
+      }
+    },
+    {
+      "id": "D07",
+      "name": "逐一匯入本機金鑰後橫幅只移除已匯入者，全部匯入後收合",
+      "ok": true,
+      "detail": {
+        "afterLab": {
+          "hidden": false,
+          "providers": [
+            "personal-anth"
+          ],
+          "notice": "已为当前账户导入供应商「personal-lab」的本机密钥"
+        },
+        "afterAnth": {
+          "hidden": true,
+          "notice": "已为当前账户导入供应商「personal-anth」的本机密钥"
+        }
+      }
+    },
+    {
+      "id": "D08",
+      "name": "獨立查詞實際走個人供應商：模型、低強度思考、本機金鑰與可用結果",
+      "ok": true,
+      "detail": {
+        "request": {
+          "provider": "personal-lab",
+          "model": "lab-model",
+          "effort": "low",
+          "tag": "word",
+          "hasAuth": true
+        },
+        "keyMatches": true,
+        "result": {
+          "visible": true,
+          "meaning": "句中释义：暴跌",
+          "notice": ""
+        }
+      }
+    },
+    {
+      "id": "D09",
+      "name": "變更模型/思考立即保存、顯示成功提示，且不會自行發出 AI 請求",
+      "ok": true,
+      "detail": {
+        "notice": "已保存，下次请求使用新设置。",
+        "choice": {
+          "model": "managed-main:shared-model",
+          "thinking": "high"
+        },
+        "scope": {
+          "wordAnalysis": {
+            "model": "managed-main:shared-model",
+            "thinking": "high"
+          }
+        }
+      }
+    },
+    {
+      "id": "D10",
+      "name": "選定模型與 high 實際送到 managed 供應商，並使用 managed 金鑰",
+      "ok": true,
+      "detail": {
+        "request": {
+          "provider": "managed-main",
+          "model": "shared-model",
+          "effort": "high",
+          "hasAuth": true
+        },
+        "result": {
+          "visible": true,
+          "meaning": "句中释义：暴跌",
+          "notice": ""
+        }
+      }
+    },
+    {
+      "id": "D11",
+      "name": "相同模型與相同思考程度命中快取（不再呼叫供應商）",
+      "ok": true,
+      "detail": {
+        "before": 1,
+        "after": 1
+      }
+    },
+    {
+      "id": "D12",
+      "name": "快取依思考程度與模型分區：換檔重查、換回原值命中快取",
+      "ok": true,
+      "detail": {
+        "countAfterFirst": 1,
+        "mediumCount": 2,
+        "backToHighCount": 2,
+        "altCount": 3,
+        "backToMainCount": 3
+      }
+    },
+    {
+      "id": "D13",
+      "name": "強制重新整理會繞過快取並使用當前選擇",
+      "ok": true,
+      "detail": {
+        "before": 3,
+        "after": 4
+      }
+    },
+    {
+      "id": "D14",
+      "name": "五檔思考在 chat-completions 線上路徑正確（auto 省略，其餘原樣）",
+      "ok": true,
+      "detail": {
+        "auto": null,
+        "none": "none",
+        "low": "low",
+        "medium": "medium",
+        "high": "high"
+      }
+    },
+    {
+      "id": "D15",
+      "name": "高強度思考提高輸出預算（thinking token floor），auto 不提高",
+      "ok": true,
+      "detail": {
+        "high": 5000,
+        "auto": 320
+      }
+    },
+    {
+      "id": "D16",
+      "name": "供應商拒絕 reasoning_effort=high 時自動重試一次並成功，並發出降級事件",
+      "ok": true,
+      "detail": {
+        "run": [
+          {
+            "effort": "high",
+            "model": "alt-model"
+          },
+          {
+            "effort": null,
+            "model": "alt-model"
+          }
+        ],
+        "result": {
+          "visible": true,
+          "meaning": "句中释义：暴跌",
+          "notice": ""
+        },
+        "fallbackEvents": [
+          {
+            "task": "wordAnalysis",
+            "level": "high",
+            "provider": "managed-backup",
+            "model": "alt-model"
+          }
+        ],
+        "panelShowsLevel": "high"
+      }
+    },
+    {
+      "id": "D70",
+      "name": "思考被供應商拒絕後，面板收合時仍在詳情外顯示一次性提示（簡體中文）",
+      "ok": true,
+      "detail": {
+        "exists": true,
+        "visible": true,
+        "text": "alt-model 未接受思考参数，本次已使用服务端默认设置完成请求。",
+        "outsideDetails": true,
+        "detailsOpen": false,
+        "error": false
+      }
+    },
+    {
+      "id": "D71",
+      "name": "同一降級提示切換到香港繁體後仍可見且使用港繁文案",
+      "ok": true,
+      "detail": {
+        "exists": true,
+        "visible": true,
+        "text": "alt-model 未接受思考參數，本次已使用服務端預設設定完成請求。",
+        "outsideDetails": true,
+        "detailsOpen": false,
+        "error": false
+      }
+    },
+    {
+      "id": "D17",
+      "name": "記住被拒的層級後，同層級重查直接省略參數（不再送出注定失敗的請求）",
+      "ok": true,
+      "detail": [
+        {
+          "effort": null,
+          "model": "alt-model"
+        }
+      ]
+    },
+    {
+      "id": "D72",
+      "name": "下一次請求會清除降級提示，且未再降級時不會重新出現",
+      "ok": true,
+      "detail": {
+        "visible": false,
+        "text": "",
+        "fallbackEventCount": 1
+      }
+    },
+    {
+      "id": "D18",
+      "name": "被拒記憶依層級隔離：同一供應商的 low 仍會送出 reasoning_effort",
+      "ok": true,
+      "detail": [
+        {
+          "effort": "low",
+          "model": "alt-model"
+        }
+      ]
+    },
+    {
+      "id": "D19",
+      "name": "個人 Anthropic 供應商：medium 轉為 thinking budget 4096、temperature 1、x-api-key 認證",
+      "ok": true,
+      "detail": {
+        "request": {
+          "provider": "personal-anth",
+          "thinking": {
+            "type": "enabled",
+            "budget_tokens": 4096
+          },
+          "temperature": 1,
+          "maxTokens": 5120,
+          "hasKey": true
+        },
+        "result": {
+          "visible": true,
+          "meaning": "句中释义：暴跌",
+          "notice": ""
+        }
+      }
+    },
+    {
+      "id": "D20",
+      "name": "Anthropic 的 none 與 auto 都不帶 thinking 欄位，且溫度回到一般值",
+      "ok": true,
+      "detail": {
+        "noneThinking": null,
+        "autoThinking": null,
+        "autoTemperature": 0.2
+      }
+    },
+    {
+      "id": "D21",
+      "name": "短語查詞沒有自己的設定時，依設計沿用帳戶 wordAnalysis 的模型與思考",
+      "ok": true,
+      "detail": {
+        "task": "articlePhraseTranslation",
+        "request": {
+          "tag": "phrase",
+          "model": "lab-model",
+          "effort": "low"
+        }
+      }
+    },
+    {
+      "id": "D22",
+      "name": "短語覆寫只寫入 articlePhraseTranslation，獨立查詞覆寫保持原樣",
+      "ok": true,
+      "detail": {
+        "request": {
+          "provider": "managed-backup",
+          "model": "shared-model",
+          "effort": "low"
+        },
+        "phrase": {
+          "model": "managed-backup:shared-model",
+          "thinking": "low"
+        },
+        "lookup": {
+          "model": "managed-main:shared-model",
+          "thinking": "high"
+        }
+      }
+    },
+    {
+      "id": "D23",
+      "name": "句中查詞的覆寫獨立保存並套用，短語與獨立查詞的覆寫不受影響",
+      "ok": true,
+      "detail": {
+        "request": {
+          "tag": "wordInSentence",
+          "provider": "managed-backup",
+          "model": "alt-model",
+          "effort": "medium"
+        },
+        "word": {
+          "model": "managed-backup:alt-model",
+          "thinking": "medium"
+        },
+        "phrase": "managed-backup:shared-model",
+        "lookup": "managed-main:shared-model"
+      }
+    },
+    {
+      "id": "D24",
+      "name": "文章擷取（articleCleanup）使用自己的模型與思考，並回傳清理後文章",
+      "ok": true,
+      "detail": {
+        "request": {
+          "tag": "cleanup",
+          "model": "shared-model",
+          "effort": "high"
+        },
+        "title": "Probe Article"
+      }
+    },
+    {
+      "id": "D25",
+      "name": "逐段翻譯每個段落都使用所選模型與思考程度",
+      "ok": true,
+      "detail": {
+        "requests": [
+          {
+            "model": "alt-model",
+            "effort": "medium"
+          },
+          {
+            "model": "alt-model",
+            "effort": "medium"
+          }
+        ],
+        "blocks": 2
+      }
+    },
+    {
+      "id": "D26",
+      "name": "多段操作期間變更選擇不會影響本次請求：整批仍用開始時的模型與思考",
+      "ok": true,
+      "detail": {
+        "requests": [
+          {
+            "model": "alt-model",
+            "effort": "medium"
+          },
+          {
+            "model": "alt-model",
+            "effort": "medium"
+          }
+        ],
+        "next": {
+          "model": "managed-main:main-model",
+          "thinking": "none"
+        }
+      }
+    },
+    {
+      "id": "D27",
+      "name": "恢復文章擷取的帳戶設定：移除該用途覆寫，其他用途覆寫保留",
+      "ok": true,
+      "detail": {
+        "after": {
+          "model": "personal-lab:lab-model",
+          "thinking": "auto",
+          "notice": "已恢复此用途的账户设置。"
+        },
+        "cleanup": "",
+        "paragraph": "managed-main:main-model"
+      }
+    },
+    {
+      "id": "D28",
+      "name": "恢復查詞設定會回到帳戶的個人模型與帳戶思考程度（而非寫死預設）",
+      "ok": true,
+      "detail": {
+        "model": "personal-lab:lab-model",
+        "thinking": "low"
+      }
+    },
+    {
+      "id": "D29",
+      "name": "恢復後下一次查詞實際使用帳戶設定（個人供應商、low）",
+      "ok": true,
+      "detail": {
+        "provider": "personal-lab",
+        "model": "lab-model",
+        "effort": "low"
+      }
+    },
+    {
+      "id": "D30",
+      "name": "變更選擇不會自動重查，也不改寫已展示的結果",
+      "ok": true,
+      "detail": {
+        "before": "句中释义：暴跌",
+        "after": "句中释义：暴跌",
+        "requests": 0
+      }
+    },
+    {
+      "id": "D31",
+      "name": "「用此設定重新查詞」才會以新選擇重新請求",
+      "ok": true,
+      "detail": {
+        "provider": "managed-backup",
+        "model": "alt-model",
+        "effort": "low"
+      }
+    },
+    {
+      "id": "D31A",
+      "name": "擴充套件的模型/思考選擇不會寫回雲端 snapshot，也不會改寫帳戶 profile 的用途對應",
+      "ok": true,
+      "detail": {
+        "version": 1,
+        "snapshotMapping": "personal-lab:lab-model",
+        "profileHasTaskMapping": true
+      }
+    },
+    {
+      "id": "D31B",
+      "name": "chrome.storage.local 不保存偏好、AI 金鑰或帳號 token",
+      "ok": true,
+      "detail": [
+        "bdc_capture_books_v1:http%3A%2F%2F127.0.0.1%3A55717:alice",
+        "bdc_extension_ui_locale"
+      ]
+    },
+    {
+      "id": "D32",
+      "name": "寫入拋錯時顯示失敗、不顯示成功，選單回到已保存值",
+      "ok": true,
+      "detail": {
+        "notice": "设置未能保存，请重试。",
+        "model": "managed-main:main-model",
+        "saved": "managed-main:main-model",
+        "choice": {
+          "model": "managed-main:main-model",
+          "override": "managed-main:main-model"
+        }
+      }
+    },
+    {
+      "id": "D33",
+      "name": "寫入被吞掉（無異常也未落盤）同樣判定失敗，不假成功",
+      "ok": true,
+      "detail": {
+        "notice": "设置未能保存，请重试。",
+        "model": "managed-main:main-model",
+        "choice": {
+          "model": "managed-main:main-model",
+          "override": "managed-main:main-model"
+        }
+      }
+    },
+    {
+      "id": "D34",
+      "name": "儲存恢復正常後可重新保存並顯示成功（使用者可自救）",
+      "ok": true,
+      "detail": {
+        "model": "managed-main:main-model",
+        "notice": "已保存，下次请求使用新设置。"
+      }
+    },
+    {
+      "id": "D35",
+      "name": "查詞進行中：重新查詞按鈕停用、恢復按鈕可用，控制項仍可操作",
+      "ok": true,
+      "detail": {
+        "task": "lookup",
+        "tasks": [
+          "lookup",
+          "articleCleanup",
+          "articleParagraphTranslation"
+        ],
+        "model": "managed-main:main-model",
+        "modelOptions": [
+          {
+            "value": "personal-lab:lab-model",
+            "label": "Lab · lab-model",
+            "disabled": false
+          },
+          {
+            "value": "personal-anth:anth-model",
+            "label": "Anthropic Lab · anth-model",
+            "disabled": false
+          },
+          {
+            "value": "managed-main:main-model",
+            "label": "Main · main-model",
+            "disabled": false
+          },
+          {
+            "value": "managed-main:shared-model",
+            "label": "Main · shared-model",
+            "disabled": false
+          },
+          {
+            "value": "managed-backup:shared-model",
+            "label": "Backup · shared-model",
+            "disabled": false
+          },
+          {
+            "value": "managed-backup:alt-model",
+            "label": "Backup · alt-model",
+            "disabled": false
+          }
+        ],
+        "thinking": "high",
+        "thinkingOptions": [
+          "auto",
+          "none",
+          "low",
+          "medium",
+          "high"
+        ],
+        "notice": "已保存，下次请求使用新设置。",
+        "noticeError": false,
+        "summary": "AI 设置main-model · 高强度",
+        "resetDisabled": false,
+        "requeryDisabled": true,
+        "requeryHidden": false,
+        "modelDisabled": false,
+        "thinkingDisabled": false,
+        "taskDisabled": false,
+        "labels": {
+          "task": "用途",
+          "model": "模型",
+          "thinking": "思考模式"
+        },
+        "accountStatus": "已连接账户：alice",
+        "lookupNotice": "",
+        "resultVisible": false,
+        "resultMeaning": ""
+      }
+    },
+    {
+      "id": "D36",
+      "name": "進行中的請求沿用送出當下的思考程度，完成後才以新選擇重查",
+      "ok": true,
+      "detail": {
+        "inFlight": {
+          "tag": "word",
+          "effort": "high"
+        },
+        "count": 1,
+        "now": "low"
+      }
+    },
+    {
+      "id": "D37",
+      "name": "完成後的下一次查詞使用新的思考程度",
+      "ok": true,
+      "detail": "low"
+    },
+    {
+      "id": "D38",
+      "name": "另一分頁未重新載入也會經 storage 事件同步模型與思考",
+      "ok": true,
+      "detail": {
+        "model": "managed-backup:alt-model",
+        "thinking": "medium"
+      }
+    },
+    {
+      "id": "D39",
+      "name": "兩個分頁分別修改不同用途時以讀改寫合併，不丟失彼此的覆寫",
+      "ok": true,
+      "detail": {
+        "tab1": {
+          "model": "managed-backup:alt-model",
+          "thinking": "medium"
+        },
+        "lookup": "managed-backup:alt-model",
+        "cleanupTab1": "managed-main:main-model",
+        "cleanupTab2": "managed-main:main-model"
+      }
+    },
+    {
+      "id": "D40",
+      "name": "查詞途中登出：遲到的結果被丟棄、不顯示內容，控制項回到停用",
+      "ok": true,
+      "detail": {
+        "resultVisible": false,
+        "status": "未登录账户",
+        "requests": 1
+      }
+    },
+    {
+      "id": "D41",
+      "name": "切換到另一個帳戶：不沿用前一帳戶的模型與思考，且偏好以帳戶分鍵",
+      "ok": true,
+      "detail": {
+        "bobDefaults": {
+          "model": "managed-main:main-model",
+          "thinking": "none"
+        },
+        "aliceScopes": [
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]"
+        ],
+        "bobScopes": [
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"bob\"]"
+        ],
+        "bobChoice": {
+          "model": "managed-backup:shared-model",
+          "thinking": "auto"
+        }
+      }
+    },
+    {
+      "id": "D42",
+      "name": "切回原帳戶恢復自己的覆寫，未套用其他帳戶的選擇",
+      "ok": true,
+      "detail": {
+        "model": "managed-backup:alt-model",
+        "thinking": "medium"
+      }
+    },
+    {
+      "id": "D43",
+      "name": "模組層面拒絕不在允許清單的模型、非法思考值與未知用途",
+      "ok": true,
+      "detail": {
+        "rejection": {
+          "ok": false,
+          "code": "model_not_allowed",
+          "message": "model_not_allowed"
+        },
+        "invalidThinking": {
+          "ok": false,
+          "code": "invalid_thinking",
+          "message": "invalid_thinking"
+        },
+        "invalidTask": {
+          "ok": false,
+          "code": "invalid_task",
+          "message": "invalid_task"
+        }
+      }
+    },
+    {
+      "id": "D44",
+      "name": "同一帳戶在不同 endpoint 不共用偏好，預設回到該 endpoint 的目錄設定",
+      "ok": true,
+      "detail": {
+        "model": "managed-other:other-model",
+        "thinking": "none",
+        "endpointScopes": [
+          "http://127.0.0.1:55717",
+          "http://127.0.0.1:55871"
+        ]
+      }
+    },
+    {
+      "id": "D45",
+      "name": "回到原 endpoint 後自己的偏好仍在，且未混入另一 endpoint 的設定",
+      "ok": true,
+      "detail": {
+        "model": "managed-backup:alt-model",
+        "thinking": "medium"
+      }
+    },
+    {
+      "id": "D46",
+      "name": "移除供應商前：覆寫的 managed 模型可正常查詞",
+      "ok": true,
+      "detail": {
+        "provider": "managed-main",
+        "model": "shared-model"
+      }
+    },
+    {
+      "id": "D47",
+      "name": "模型被管理員移除後，選擇器標示為不可用且不改寫已保存的選擇（不靜默換供應商）",
+      "ok": true,
+      "detail": {
+        "model": "managed-main:shared-model",
+        "unavailable": {
+          "value": "managed-main:shared-model",
+          "label": "managed-main:shared-model（当前值不可用）",
+          "disabled": true
+        },
+        "choice": {
+          "model": "managed-main:shared-model",
+          "override": "managed-main:shared-model"
+        }
+      }
+    },
+    {
+      "id": "D48",
+      "name": "已移除的模型查詞時明確報錯，且不會把同名的另一供應商模型當成後備",
+      "ok": true,
+      "detail": {
+        "requests": 0,
+        "notice": "此供应商已停用或不存在，请重新选择"
+      }
+    },
+    {
+      "id": "D49",
+      "name": "使用者改選仍可用的模型後可繼續查詞（錯誤可自救）",
+      "ok": true,
+      "detail": {
+        "request": {
+          "provider": "managed-backup",
+          "model": "shared-model"
+        },
+        "result": true
+      }
+    },
+    {
+      "id": "D50",
+      "name": "登出後遲到的 401 不會恢復登入狀態、不會寫入偏好，也不會拋出頁面錯誤",
+      "ok": true,
+      "detail": {
+        "status": "未登录账户",
+        "pageErrors": [],
+        "keysUnchanged": true
+      }
+    },
+    {
+      "id": "D51",
+      "name": "遲到 401 之後可重新登入並取回先前的偏好（可自救）",
+      "ok": true,
+      "detail": {
+        "model": "managed-backup:shared-model",
+        "thinking": "high"
+      }
+    },
+    {
+      "id": "D56",
+      "name": "明確選定模型失敗時直接報錯，不會改用其他模型或供應商（無靜默 fallback）",
+      "ok": true,
+      "detail": {
+        "requests": [
+          {
+            "provider": "managed-backup",
+            "model": "alt-model"
+          }
+        ],
+        "notice": "请求失败，请重试或检查连接设置。"
+      }
+    },
+    {
+      "id": "D57",
+      "name": "快取不跨帳戶：同字同模型同思考在另一帳戶仍會重新請求，之後才命中自己的快取",
+      "ok": true,
+      "detail": {
+        "bobFirst": 1,
+        "bobSecond": 1
+      }
+    },
+    {
+      "id": "D58",
+      "name": "重新同步帳戶資料不會覆蓋擴充套件已保存的選擇",
+      "ok": true,
+      "detail": {
+        "after": {
+          "model": "managed-backup:shared-model",
+          "thinking": "high"
+        },
+        "requests": 0
+      }
+    },
+    {
+      "id": "D59",
+      "name": "恢復帳戶設定會跟上帳戶最新變更（模型與思考都採用帳戶新值）",
+      "ok": true,
+      "detail": {
+        "model": "managed-backup:alt-model",
+        "thinking": "medium"
+      }
+    },
+    {
+      "id": "D60",
+      "name": "跟上帳戶後下一次請求實際使用新的帳戶模型與思考程度",
+      "ok": true,
+      "detail": {
+        "provider": "managed-backup",
+        "model": "alt-model",
+        "effort": "medium"
+      }
+    },
+    {
+      "id": "D61",
+      "name": "文章擷取沿用了已被移除的供應商設定時明確失敗，不會改用其他供應商",
+      "ok": true,
+      "detail": {
+        "model": "managed-main:main-model",
+        "error": {
+          "ok": false,
+          "code": "provider_missing",
+          "message": "此供应商已停用或不存在，请重新选择"
+        },
+        "requests": 0
+      }
+    },
+    {
+      "id": "D62",
+      "name": "恢復帳戶設定後文章擷取可繼續，並套用帳戶的 articleCleanup 思考程度",
+      "ok": true,
+      "detail": {
+        "thinking": "high",
+        "request": {
+          "tag": "cleanup",
+          "model": "alt-model",
+          "effort": "high"
+        }
+      }
+    },
+    {
+      "id": "D63",
+      "name": "重新開啟頁面仍保留按帳戶保存的模型與思考，且不會因此發出請求",
+      "ok": true,
+      "detail": {
+        "model": "managed-backup:shared-model",
+        "thinking": "low",
+        "requests": 0
+      }
+    },
+    {
+      "id": "D64",
+      "name": "兩頁並行修改（不同用途、同用途不同欄位）都保留另一頁的選擇，且兩頁都顯示已保存",
+      "ok": true,
+      "detail": {
+        "rounds": {
+          "crossTaskRounds": 4,
+          "sameTaskRounds": 4,
+          "lostCrossTask": 0,
+          "lostSameTask": 0,
+          "bothClaimedSaved": 8
+        },
+        "lookupUnchanged": true,
+        "splitKeys": true,
+        "raceAliceScopes": [
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]",
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55871\",\"alice\"]"
+        ],
+        "otherScopeKeysUntouched": true,
+        "lost": []
+      }
+    },
+    {
+      "id": "D65",
+      "name": "偏好只保存 model/thinking，不含 token、金鑰或網址；managed 金鑰不落盤",
+      "ok": true,
+      "detail": {
+        "prefsCount": 14,
+        "managedKeyPersisted": false,
+        "shapeOk": true,
+        "secretsInPrefs": false
+      }
+    },
+    {
+      "id": "D66",
+      "name": "偏好未建立 guest 範圍的鍵（登出狀態不會被當成可保存範圍）",
+      "ok": true,
+      "detail": [
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"bob\"]:wordAnalysis:thinking",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleParagraphTranslation:thinking",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleCleanup:thinking",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"bob\"]:wordAnalysis:model",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55871\",\"alice\"]:wordAnalysis:model",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55871\",\"alice\"]:wordAnalysis:thinking",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleParagraphTranslation:model",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleWordTranslation:model",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:wordAnalysis:thinking",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleWordTranslation:thinking",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleCleanup:model",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articlePhraseTranslation:model",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articlePhraseTranslation:thinking",
+        "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:wordAnalysis:model"
+      ]
+    },
+    {
+      "id": "D67",
+      "name": "動態產生的控制項文案在 zh-CN / zh-HK 都有翻譯且隨語言切換（無 undefined）",
+      "ok": true,
+      "detail": {
+        "hkSummary": "AI 設定shared-model · 低強度",
+        "hkNotice": "已儲存，下次請求使用新設定。",
+        "cnSummary": "AI 设置shared-model · 中强度",
+        "cnNotice": "已保存，下次请求使用新设置。"
+      }
+    },
+    {
+      "id": "D69",
+      "name": "帳戶 snapshot 只帶 tasks 對應時，用途預設仍應套用帳戶的模型與思考",
+      "ok": true,
+      "detail": {
+        "model": "managed-backup:alt-model",
+        "thinking": "medium",
+        "hasOverride": false,
+        "prefs": {
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"bob\"]:wordAnalysis:thinking": {
+            "wordAnalysis": {}
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleParagraphTranslation:thinking": {
+            "articleParagraphTranslation": {
+              "thinking": "none"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleCleanup:thinking": {
+            "articleCleanup": {
+              "thinking": "low"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"bob\"]:wordAnalysis:model": {
+            "wordAnalysis": {}
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55871\",\"alice\"]:wordAnalysis:model": {
+            "wordAnalysis": {
+              "model": "managed-other:other-model"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55871\",\"alice\"]:wordAnalysis:thinking": {
+            "wordAnalysis": {
+              "thinking": "high"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleParagraphTranslation:model": {
+            "articleParagraphTranslation": {
+              "model": "managed-backup:shared-model"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleWordTranslation:model": {
+            "articleWordTranslation": {
+              "model": "managed-backup:alt-model"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:wordAnalysis:thinking": {
+            "wordAnalysis": {
+              "thinking": "medium"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleWordTranslation:thinking": {
+            "articleWordTranslation": {
+              "thinking": "medium"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articleCleanup:model": {
+            "articleCleanup": {
+              "model": "managed-backup:alt-model"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articlePhraseTranslation:model": {
+            "articlePhraseTranslation": {
+              "model": "managed-backup:shared-model"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:articlePhraseTranslation:thinking": {
+            "articlePhraseTranslation": {
+              "thinking": "low"
+            }
+          },
+          "bdc_extension_ai_preferences_v1:[\"http://127.0.0.1:55717\",\"alice\"]:wordAnalysis:model": {
+            "wordAnalysis": {
+              "model": "managed-backup:shared-model"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "D73",
+      "name": "登出／切換帳戶後降級提示立即清除，不會殘留誤導下一個帳戶",
+      "ok": true,
+      "detail": {
+        "requests": [
+          "low",
+          null
+        ],
+        "before": {
+          "visible": true,
+          "text": "alt-model 未接受思考参数，本次已使用服务端默认设置完成请求。"
+        },
+        "after": {
+          "visible": false,
+          "text": ""
+        }
+      }
+    },
+    {
+      "id": "D68",
+      "name": "全程沒有未捕捉的頁面錯誤",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "totals": {
+    "total": 71,
+    "passed": 71,
+    "failed": 0
+  },
+  "pageErrors": [],
+  "requests": [
+    {
+      "provider": "managed-backup",
+      "model": "alt-model",
+      "effort": "low",
+      "thinking": null,
+      "maxTokens": 1200,
+      "tag": "word",
+      "at": 1793969330275
+    },
+    {
+      "provider": "managed-backup",
+      "model": "alt-model",
+      "effort": null,
+      "thinking": null,
+      "maxTokens": 320,
+      "tag": "word",
+      "at": 1793969330276
+    }
+  ],
+  "fingerprints": {
+    "product": {
+      "modules/extension-ai-preferences.js": "6ce573d6f470e8380090efe9ec00894938c9f37760faf1df999586f203e20414",
+      "extension/ai-controls.js": "baf647c6469f049f134e41ece33e7bc531cb2e65c7fe26ee70ef4706469995ea",
+      "modules/extension-ai-runtime.js": "291f807631a56521e6e4d288fb4426aa337b661c6a7da0c8e3ec034c8bae6eaa",
+      "modules/api.js": "ba5c45848ac2979ecd58650b027e73668901cbc9db55fff80610d9417343488f",
+      "extension/modules/extension-ai-preferences.js": "6ce573d6f470e8380090efe9ec00894938c9f37760faf1df999586f203e20414"
+    },
+    "suite": "82a3ad5a7ee14ec2cb0d87dbfb38ef4f4dbc481586f380166490ebce61204907",
+    "results": "ecb7cb15116e774c21a32a4c07f9a124d31820adf1d9876f698b6cd4a0ade9b9"
+  },
+  "notes": [
+    "package: Packaged 52 files into /Users/linus/CODE/bdc-extension-ai-controls-20261106/extension",
+    "cross-page concurrent write: 0/4 cross-task rounds lost a choice, 0/4 same-task different-field rounds lost a choice; both pages showed the saved notice in 8/8 rounds; split per task/field keys present: true; other endpoint scope untouched: true",
+    "tasks-only snapshot as stored by the worker: {\"apiUrl\":\"\",\"providers\":{},\"models\":{},\"tasks\":{\"wordAnalysis\":\"managed-backup:alt-model\"},\"defaultModel\":\"\",\"thinking\":{\"wordAnalysis\":\"medium\"}}"
+  ]
+}

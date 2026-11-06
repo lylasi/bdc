@@ -1,0 +1,9 @@
+{
+  "url": "http://127.0.0.1:18583/test-floating-statusbar.html",
+  "passed": 3,
+  "checks": [
+    "platform detection",
+    "settings and session persistence",
+    "floating controls shown"
+  ]
+}

@@ -151,6 +151,34 @@ async function lookup(page) {
         });
         check('兩個視窗並行修改不同用途均保留', both[0] === 'managed-capture:capture-model' && both[1] === 'managed-capture:reasoning-model');
         await other.close();
+        const article = await context.newPage(); await article.goto(env.base + '/test-article');
+        const rect = await article.evaluate(() => {
+            const text = document.querySelector('#article').firstChild;
+            const start = text.textContent.indexOf('plunge');
+            const range = document.createRange(); range.setStart(text, start); range.setEnd(text, start + 6);
+            const box = range.getBoundingClientRect(); return { x: box.x, y: box.y, width: box.width, height: box.height };
+        });
+        await article.mouse.move(rect.x + 1, rect.y + rect.height / 2); await article.mouse.down();
+        await article.mouse.move(rect.x + rect.width - 1, rect.y + rect.height / 2, { steps: 8 }); await article.mouse.up();
+        await article.mouse.click(rect.x + 24, rect.y + rect.height + 20);
+        await article.waitForFunction(() => !!document.querySelector('bdc-page-lookup'));
+        let inline;
+        for (let attempt = 0; attempt < 50; attempt += 1) {
+            inline = article.frames().find((frame) => frame.url().startsWith(base + '/lookup.html'));
+            if (inline) break;
+            await article.waitForTimeout(100);
+        }
+        assert.ok(inline, 'inline frame opened by a real selection and click');
+        await inline.locator('#ext-result-box').waitFor({ state: 'visible' });
+        await openAI(inline);
+        check('選詞旁真實 iframe 內可直接展開模型及思考選擇', await inline.locator('#ext-ai-model').isVisible() && await inline.locator('#ext-ai-thinking').isVisible());
+        await inline.locator('#ext-ai-model').selectOption('managed-capture:reasoning-model'); await inline.locator('#ext-ai-thinking').selectOption('high');
+        const beforeInline = requests.length;
+        await inline.locator('#ext-ai-requery').click();
+        await inline.waitForFunction(() => !document.querySelector('#ext-lookup-btn').disabled && !document.querySelector('#ext-result-box').classList.contains('hidden'));
+        check('選詞旁小窗重新查詞實際套用模型及思考程度', requests.length > beforeInline && requests.at(-1).model === 'reasoning-model' && requests.at(-1).reasoning_effort === 'high');
+        await inline.locator('#ext-ai-controls > summary').click();
+        await article.screenshot({ path: path.join(OUT, 'inline-model-choice.png'), fullPage: true });
         const preferences = await page.evaluate(() => Object.entries(localStorage).filter(([key]) => key.startsWith('bdc_extension_ai_preferences_v1:')));
         check('偏好儲存不含 Token、Key 或 API URL', !/test-cmdo|aaaaa|bbbbb|apiKey|Bearer|mock-ai/.test(JSON.stringify(preferences)));
         check('無頁面 JavaScript 例外', errors.length === 0);

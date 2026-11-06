@@ -1,0 +1,25 @@
+{
+  "before": "03ce6b30c40103c72460d046b852855492a10d61",
+  "head": "6ba69ccadf45953a3594a72538998f8cdeb5e633",
+  "private_config_before": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "private_config_after": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "pull": "Updating 03ce6b3..6ba69cc\nFast-forward\n README.md                                          |    2 +-\n ...257\\246\\346\\226\\275\\350\\250\\210\\345\\212\\203.md\" |   14 +\n ...223\\215\\344\\275\\234\\350\\252\\252\\346\\230\\216.md\" |   24 +\n extension/ai-controls.js                           |  124 +++\n extension/lookup.css                               | 1026 +++++++++++++++++---\n extension/lookup.html                              |  277 +++---\n extension/lookup.js                                |   24 +-\n extension/manifest.json                            |    3 +-\n extension/page-lookup.js                           |    3 +-\n index.html                                         |  198 ++--\n locales/zh-CN.js                                   |   16 +-\n locales/zh-HK.js                                   |   16 +-\n modules/ai-profile-storage.js                      |    6 +-\n modules/api.js                                     |   31 +-\n modules/extension-ai-preferences.js                |   79 ++\n modules/extension-ai-runtime.js                    |   82 +-\n scripts/package-extension.mjs                      |    2 +\n tests/extension-ai-browser.cjs                     |    6 +-\n tests/extension-ai-controls.cjs                    |  161 +++\n tests/extension-ai-lookup.test.mjs                 |   18 +\n tests/extension-anchored-popup-deepseek.cjs        |   14 +-\n tests/extension-capture.cjs                        |    2 +\n tests/extension-page-workspace.cjs                 |    1 +\n 23 files changed, 1707 insertions(+), 422 deletions(-)\n create mode 100644 \"docs/plan/20261106200757462_\\346\\223\\264\\345\\205\\205\\345\\245\\227\\344\\273\\266\\346\\250\\241\\345\\236\\213\\346\\200\\235\\350\\200\\203\\351\\201\\270\\346\\223\\207\\350\\210\\207\\347\\267\\212\\346\\271\\212\\344\\273\\213\\351\\235\\242\\345\\257\\246\\346\\226\\275\\350\\250\\210\\345\\212\\203.md\"\n create mode 100644 \"docs/spec/20261106202307809_\\346\\223\\264\\345\\205\\205\\345\\245\\227\\344\\273\\266AI\\350\\250\\255\\345\\256\\232\\350\\210\\207\\347\\267\\212\\346\\271\\212\\344\\273\\213\\351\\235\\242\\346\\223\\215\\344\\275\\234\\350\\252\\252\\346\\230\\216.md\"\n create mode 100644 extension/ai-controls.js\n create mode 100644 modules/extension-ai-preferences.js\n create mode 100644 tests/extension-ai-controls.cjs\nFrom https://github.com/lylasi/bdc\n * branch            master     -> FETCH_HEAD\n   03ce6b3..6ba69cc  master     -> origin/master\n",
+  "restart": " Container bdc Restarting \n Container bdc Started \n",
+  "nginx": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n",
+  "status": "",
+  "container_running": true,
+  "container_health": "healthy",
+  "started_at": "2026-11-06T12:51:41.915031736Z",
+  "mounts": [
+    {
+      "Type": "bind",
+      "Source": "/Users/linus/Documents/code/qinglong/ql/data/scripts/bdc",
+      "Destination": "/src/bdc",
+      "Mode": "ro",
+      "RW": false,
+      "Propagation": "rprivate"
+    }
+  ],
+  "http_status": 200,
+  "index_sha256": "1243f9f0664bb19388107579742d251e946e9ea816dc47d5f5ffe7c1291024b7"
+}

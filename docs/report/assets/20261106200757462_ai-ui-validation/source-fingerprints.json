@@ -1,0 +1,16 @@
+{
+  "extension/ai-controls.js": "baf647c6469f049f134e41ece33e7bc531cb2e65c7fe26ee70ef4706469995ea",
+  "extension/lookup.css": "7d0a5c8c39ef2e24c773ec46aace7f53d2cd7d6cf9e5c1aa6219314b6badd129",
+  "extension/lookup.html": "5d140c4a3d9d53953173d52d4d54a01ac1db9cfce8f71ae50e6f16ec1b0ef11e",
+  "extension/lookup.js": "a93f2e30d2dd345fca9fc8ae8af9d747bfbc3ebd3f57abe39567bf8030512017",
+  "extension/manifest.json": "154d26759fe35fa20917b6f1cc20bc5b5359c04f519147005424cfa6baf20290",
+  "extension/page-lookup.js": "c852860d3403a271ce528a351f23b3ef991246de6f967bb6d1688764bf2d8ad0",
+  "index.html": "1243f9f0664bb19388107579742d251e946e9ea816dc47d5f5ffe7c1291024b7",
+  "locales/zh-CN.js": "e2e358d160f7b73341fba17300ab24dd5028233734312766d127adfdf684aedc",
+  "locales/zh-HK.js": "2d8be23f567d1a8570f6e8429984d838796a0fc59fd7fee0522dacd3a46adf36",
+  "modules/ai-profile-storage.js": "9c8a4c3603e2f1175202b78853d981a80e17b228d81068871f370f29b959f399",
+  "modules/api.js": "ba5c45848ac2979ecd58650b027e73668901cbc9db55fff80610d9417343488f",
+  "modules/extension-ai-preferences.js": "6ce573d6f470e8380090efe9ec00894938c9f37760faf1df999586f203e20414",
+  "modules/extension-ai-runtime.js": "291f807631a56521e6e4d288fb4426aa337b661c6a7da0c8e3ec034c8bae6eaa",
+  "scripts/package-extension.mjs": "bfe26dafde73adf216ce2006c6ddde4e47563f13d6571c74241b31720589c41f"
+}

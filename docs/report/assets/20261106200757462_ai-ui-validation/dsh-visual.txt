@@ -1,0 +1,48 @@
+PASS 帳戶頁未登入：無橫向溢出（420px）
+PASS 帳戶頁未登入：帳戶摘要與狀態列可見
+PASS 帳戶頁未登入：非當前登入方式的欄位確實隱藏（.hidden 可靠）
+PASS 帳戶頁未登入：320px 無橫向溢出
+PASS 帳戶頁已登入：狀態列顯示帳戶且不溢出
+PASS 帳戶收合後：#ext-account-status 仍在收合外可見
+NOTE 收合後設定頁高度: 997
+PASS zh-HK 設定頁：切換語言後無溢出
+PASS 小窗 zh-CN 340px：無橫向溢出
+PASS 小窗 zh-CN 340px：實際寬度約 340
+PASS 小窗 zh-CN 340px：內容完整塞進卡片（無內部捲動）
+PASS 小窗 zh-CN 340px：工具列入口（更多／編輯選詞／帳戶設定／關閉）都在，返回不顯示
+NOTE 小窗 zh-CN 340px 尺寸: {"box":{"width":340,"height":232},"content":232,"viewport":{"width":720,"height":800}}
+PASS 小窗 zh-CN 320px：無橫向溢出
+PASS 小窗 zh-CN 320px：實際寬度約 320
+PASS 小窗 zh-CN 320px：內容完整塞進卡片（無內部捲動）
+PASS 小窗 zh-CN 320px：工具列入口（更多／編輯選詞／帳戶設定／關閉）都在，返回不顯示
+NOTE 小窗 zh-CN 320px 尺寸: {"box":{"width":320,"height":232},"content":232,"viewport":{"width":336,"height":760}}
+PASS 小窗 zh-HK 340px：無橫向溢出
+PASS 小窗 zh-HK 340px：實際寬度約 340
+PASS 小窗 zh-HK 340px：內容完整塞進卡片（無內部捲動）
+PASS 小窗 zh-HK 340px：工具列入口（更多／編輯選詞／帳戶設定／關閉）都在，返回不顯示
+NOTE 小窗 zh-HK 340px 尺寸: {"box":{"width":340,"height":232},"content":232,"viewport":{"width":720,"height":800}}
+PASS 小窗 zh-HK 320px：無橫向溢出
+PASS 小窗 zh-HK 320px：實際寬度約 320
+PASS 小窗 zh-HK 320px：內容完整塞進卡片（無內部捲動）
+PASS 小窗 zh-HK 320px：工具列入口（更多／編輯選詞／帳戶設定／關閉）都在，返回不顯示
+NOTE 小窗 zh-HK 320px 尺寸: {"box":{"width":320,"height":232},"content":232,"viewport":{"width":336,"height":760}}
+PASS 小窗收藏失敗：錯誤提示在卡片內可見（不藏在收合內）
+PASS 完整面板：收藏失敗後待傳清單可見且不溢出
+PASS 小窗收藏成功：成功提示可見
+PASS 草稿確認對話框：出現在卡片內且不溢出
+PASS 完整面板 zh-CN：寬 420、無橫向溢出、高度夾限
+PASS 完整面板 zh-CN：進階操作（建書／文章）仍可見
+NOTE 完整面板 zh-CN 尺寸: {"box":{"width":420,"height":876}}
+PASS 完整面板 zh-HK：寬 420、無橫向溢出、高度夾限
+PASS 完整面板 zh-HK：進階操作（建書／文章）仍可見
+NOTE 完整面板 zh-HK 尺寸: {"box":{"width":420,"height":876}}
+PASS 完整面板 320px：無橫向溢出且完整留在視窗
+PASS AI 控制區 小窗 340px：預設收合成一行、無橫向溢出
+PASS AI 控制區 小窗 340px：展開後單欄/雙欄排列且無橫向溢出
+PASS AI 控制區 小窗 320px：預設收合成一行、無橫向溢出
+PASS AI 控制區 小窗 320px：展開後單欄/雙欄排列且無橫向溢出
+PASS AI 控制區 完整面板 420px：三欄排列且無橫向溢出
+PASS AI 控制區 設定頁 420px：三欄且無橫向溢出
+NOTE AI 控制區摘要: {"label":"AI 设置","value":"capture-model · 关闭思考"}
+PASS 全程沒有未捕獲的頁面錯誤
+{"total":39,"failed":0,"output":"/Users/linus/CODE/bdc-extension-ai-controls-20261106/docs/report/assets/20261106201235113_extension-compact-ui"}
