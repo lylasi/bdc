@@ -76,6 +76,8 @@ export default {
         globalTitle: '全局設定',
         languageLabel: '顯示語言',
         languageHint: '介面及 AI 回覆使用所選語言，學習內容保持原樣。',
+        showWordSources: '顯示單字來源',
+        wordSourcesHint: '在詞書顯示來源入口，點擊可查看原句與語境。',
         theme: '配色主題', themeHint: '主色與紙面底色會一起變化，文字、提示色與排版保持不變。', themeTeal: '墨青', themeBlue: '海藍', themeIndigo: '靛藍', themeViolet: '紫羅蘭', themeSlate: '石墨', themeForest: '森林綠', themeCandy: '糖果粉', themeCoffee: '咖啡棕', themeFlame: '火影', themeNight: '夜刃',
         themeArt: '背景插畫', themeArtHint: '可為每套配色各放一張圖片；未選時用主題自帶圖片，只保存在本機，不會上傳或同步。',
         themeArtPick: '選擇圖片', themeArtClear: '移除', themeArtNone: '目前配色還沒有圖片', themeArtBuiltIn: '使用主題自帶圖片',

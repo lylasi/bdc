@@ -1,0 +1,29 @@
+{
+  "localeCounts": {
+    "zh-CN": 2457,
+    "zh-HK": 2457
+  },
+  "onlyInZhCN": [],
+  "onlyInZhHK": [],
+  "interpolationMismatch": [],
+  "currentWorkspaceMissingKeys": [],
+  "nestedWorktreeMissingKeys": [
+    {
+      "key": "phonetics.",
+      "refs": [
+        ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:19",
+        ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:23",
+        ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:76"
+      ]
+    },
+    {
+      "key": "a.b",
+      "refs": [
+        ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75",
+        ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75",
+        ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:77"
+      ]
+    }
+  ],
+  "note": "全庫稽核會遞迴包含既有 .claude/worktrees 及其他歷史內容；新增翻譯鍵已完成雙語鍵名、插值及實際畫面驗證。"
+}

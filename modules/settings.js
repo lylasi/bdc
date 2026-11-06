@@ -39,6 +39,7 @@ const defaults = {
   // translationMask: 是否對「文章詳解」中的中文翻譯加上模糊遮罩（滑鼠移入/按住顯示）
   // analysisCheckpoint：文章逐段分析的 checkpoint 開關（P3-T1）；false 時回到只在最後保存。
   reading: { englishVariant: 'en-GB', chineseVariant: 'zh-CN', translationMask: true, analysisCheckpoint: true, articleSidebarCollapsed: false },
+  vocabulary: { showSources: true },
   phonetics: { enabled: false },
   assistant: { enabled: true, stream: true },
   // 配色背景插畫的顯示參數；圖片本體存在 IndexedDB（modules/theme-art.js）
@@ -79,6 +80,7 @@ function mergeSettings(baseValue, overrideValue) {
     },
     phonetics: mergeRecord(base.phonetics, override.phonetics),
     reading: mergeRecord(base.reading, override.reading),
+    vocabulary: mergeRecord(base.vocabulary, override.vocabulary),
     assistant: mergeRecord(base.assistant, override.assistant),
     themeArt: mergeRecord(base.themeArt, override.themeArt)
   };
@@ -108,7 +110,7 @@ function mergeStoredSettings(stored, patch) {
   const base = isPlainObject(stored) ? stored : {};
   const override = isPlainObject(patch) ? patch : {};
   const next = { ...base, ...override };
-  for (const key of ['language', 'tts', 'reading', 'assistant', 'phonetics']) {
+  for (const key of ['language', 'tts', 'reading', 'vocabulary', 'assistant', 'phonetics']) {
     if (!isPlainObject(base[key]) && !isPlainObject(override[key])) continue;
     next[key] = mergeRecord(base[key], override[key]);
     if (key === 'tts' && (isPlainObject(base.tts?.selectedVoices) || isPlainObject(override.tts?.selectedVoices))) {

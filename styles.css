@@ -2074,14 +2074,31 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     flex: 1 1 auto;
 }
 .word-sources {
-    flex-basis: 100%;
+    flex: 0 0 auto;
     min-width: 0;
+    max-width: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
     font-size: var(--fs-sm);
     overflow-wrap: anywhere;
 }
-.word-item:has(.word-sources) { align-items: flex-start; }
-.word-sources summary { cursor: pointer; color: var(--ink-500); }
-.word-source { margin-top: 8px; padding: 8px; border-left: 2px solid var(--line-strong); }
+.word-sources[open] { flex-basis: 100%; }
+.word-item:has(.word-sources[open]) { align-items: flex-start; }
+.word-sources > summary {
+    width: fit-content;
+    min-height: 28px;
+    gap: 6px;
+    padding: 2px 4px;
+    border-radius: var(--r-sm);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    color: var(--ink-500);
+}
+.word-sources > summary::before { width: 5px; height: 5px; border-width: 1px; flex-shrink: 0; }
+.word-sources[open] > summary { border-bottom: 0; }
+.word-sources > .word-source { margin-top: 4px; padding: 4px 10px; border-left: 2px solid var(--line-strong); }
 .word-source p { margin: 5px 0; white-space: pre-wrap; }
 .word-source time { color: var(--ink-500); font-size: 11px; }
 

@@ -1145,6 +1145,7 @@ function showGlobalSettingsModal() {
   const persistedSecrets = loadGlobalSecrets();
   const settings = {
     interfaceLocale: persistedSettings?.language?.interfaceLocale || getLocale(),
+    showWordSources: persistedSettings?.vocabulary?.showSources !== false,
     ttsUrlCustom: persistedSettings?.tts?.baseUrlCustom || '',
     ttsUse: persistedSettings?.tts?.use || 'remote',
     readEn: (persistedSettings?.reading && persistedSettings.reading.englishVariant) || 'en-GB',
@@ -1225,6 +1226,16 @@ function showGlobalSettingsModal() {
                   </select>
                   <p class="gs-hint">${escapeHtml(t('settings.languageHint'))}</p>
                 </div>
+              </div>
+            </div>
+            <div class="gs-card">
+              <div class="gs-card-body">
+                <label class="gs-toggle">
+                  <span class="gs-label">${escapeHtml(t('settings.showWordSources'))}</span>
+                  <input id="gs-vocabulary-sources" class="gs-visually-hidden" type="checkbox" aria-describedby="gs-vocabulary-sources-hint" ${settings.showWordSources ? 'checked' : ''}>
+                  <span class="gs-switch" aria-hidden="true"></span>
+                </label>
+                <p id="gs-vocabulary-sources-hint" class="gs-hint">${escapeHtml(t('settings.wordSourcesHint'))}</p>
               </div>
             </div>
             <div class="gs-card">
@@ -1470,6 +1481,20 @@ function showGlobalSettingsModal() {
     try { document.dispatchEvent(new CustomEvent('bdc:settings-change')); } catch (_) {}
     destroyAIProviderSettings();
     showGlobalSettingsModal();
+  });
+
+  $('#gs-vocabulary-sources')?.addEventListener('change', (event) => {
+    const input = event.target;
+    const showSources = input.checked === true;
+    const saved = persist({ vocabulary: { showSources } }, null, { silent: true });
+    // 儲存層寫入失敗會回傳舊值；確認實際結果後才更新列表及成功狀態。
+    input.checked = loadGlobalSettings().vocabulary?.showSources !== false;
+    if (!saved || input.checked !== showSources) {
+      markFailed();
+      return;
+    }
+    markSaved();
+    try { document.dispatchEvent(new CustomEvent('bdc:settings-change')); } catch (_) {}
   });
 
   // 背景插畫：圖片本體只存本機 IndexedDB，切換配色會自動跟著換；顯示參數即時儲存

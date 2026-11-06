@@ -1,0 +1,17 @@
+{
+  "passed": 2,
+  "results": [
+    {
+      "showSources": false,
+      "initial": 150,
+      "rendered": 181,
+      "sources": 0
+    },
+    {
+      "showSources": true,
+      "initial": 150,
+      "rendered": 181,
+      "sources": 180
+    }
+  ]
+}

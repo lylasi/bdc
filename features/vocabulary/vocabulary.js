@@ -1289,23 +1289,25 @@ function renderWordList() {
         return;
     }
 
-    const phoneticsEnabled = loadGlobalSettings().phonetics?.enabled === true;
+    const settings = loadGlobalSettings();
+    const phoneticsEnabled = settings.phonetics?.enabled === true;
+    const showSources = settings.vocabulary?.showSources !== false;
 
     // 一次渲染全部詞條在大型詞書上會產生數萬個 DOM 節點
     // （實測 12000 詞 → 40878 節點、清單高 263994px、渲染 3 秒），
     // 捲動與切換都會卡。改成先渲染一批，捲到底再繼續補。
-    startIncrementalWordRender(wordsToRender, phoneticsEnabled);
+    startIncrementalWordRender(wordsToRender, phoneticsEnabled, showSources);
 }
 
 const WORD_RENDER_CHUNK = 150;
 
 /** 目前的增量渲染狀態（換書／換關鍵字時整組重來） */
-let wordRenderState = { words: [], rendered: 0, phoneticsEnabled: false, observer: null, sentinel: null };
+let wordRenderState = { words: [], rendered: 0, phoneticsEnabled: false, showSources: true, observer: null, sentinel: null };
 
-function startIncrementalWordRender(words, phoneticsEnabled) {
+function startIncrementalWordRender(words, phoneticsEnabled, showSources) {
     stopIncrementalWordRender();
     dom.wordList.innerHTML = '';
-    wordRenderState = { words, rendered: 0, phoneticsEnabled, observer: null, sentinel: null };
+    wordRenderState = { words, rendered: 0, phoneticsEnabled, showSources, observer: null, sentinel: null };
 
     if (!words.length) return;
 
@@ -1338,7 +1340,7 @@ function appendWordChunk() {
     const end = Math.min(st.rendered + WORD_RENDER_CHUNK, st.words.length);
     const fragment = document.createDocumentFragment();
     for (let i = st.rendered; i < end; i += 1) {
-        fragment.appendChild(buildWordItem(st.words[i], st.phoneticsEnabled));
+        fragment.appendChild(buildWordItem(st.words[i], st.phoneticsEnabled, st.showSources));
     }
     st.rendered = end;
     if (st.sentinel) dom.wordList.insertBefore(fragment, st.sentinel);
@@ -1354,7 +1356,7 @@ function stopIncrementalWordRender() {
         try { st.observer?.disconnect(); } catch (_) {}
         try { st.sentinel?.remove(); } catch (_) {}
     }
-    wordRenderState = { words: [], rendered: 0, phoneticsEnabled: false, observer: null, sentinel: null };
+    wordRenderState = { words: [], rendered: 0, phoneticsEnabled: false, showSources: true, observer: null, sentinel: null };
 }
 
 /** 未載入完時，把「已載入 n / 共 m」寫在哨兵那一行 */
@@ -1370,7 +1372,7 @@ function updateWordRenderStatus() {
 }
 
 /** 建立單一詞條 DOM（含事件綁定） */
-function buildWordItem(word, phoneticsEnabled) {
+function buildWordItem(word, phoneticsEnabled, showSources) {
     const li = document.createElement('li');
     li.className = 'word-item';
     // 詞條內容來自 AI 文章分析、OCR 辨識與外部匯入的詞表，屬外部可控字串，
@@ -1406,7 +1408,7 @@ function buildWordItem(word, phoneticsEnabled) {
         playWordAndMeaning(word);
     });
 
-    if (Array.isArray(word.sources) && word.sources.length) {
+    if (showSources && Array.isArray(word.sources) && word.sources.length) {
         const details = document.createElement('details');
         details.className = 'word-sources';
         const summary = document.createElement('summary');
