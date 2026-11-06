@@ -1,0 +1,4051 @@
+{
+  "stamp": "20261106223016521",
+  "generatedAt": "2026-11-06T14:34:05.799Z",
+  "baselineCommit": "5b20535",
+  "productVersion": "0.5.1",
+  "testedFiles": {
+    "extension/workspace-ui.js": "34f931091d5bdb61",
+    "extension/capture-ui.js": "b0320c43aefa08e7",
+    "extension/inline-panel.js": "c70de0b6617345bc",
+    "extension/lookup.html": "498d65daa6df50e9",
+    "extension/lookup.css": "e6552601adba14ff",
+    "extension/page-lookup.js": "9cf3a2114ba255e8",
+    "extension/manifest.json": "0f9d849e27d212c4",
+    "modules/extension-workspace.js": "3debccda68540ccb",
+    "modules/sync-cloudflare.js": "5bb36b5ffed29681",
+    "modules/api.js": "ba5c45848ac2979e",
+    "modules/i18n.js": "7cb2277944166fb9",
+    "shared/workspace-client.mjs": "8ae186dfb387eb7a",
+    "shared/page-protocol.mjs": "9a1cf273a67c55c5",
+    "shared/capture-client.mjs": "83ecf9eddd914e0f",
+    "cloudflare-worker/src/worker.js": "4eabd9134787eb13",
+    "cloudflare-worker/src/captures.js": "50e10706ea606891",
+    "cloudflare-worker/src/capture-books.js": "eab5bf6d175d4616",
+    "cloudflare-worker/src/page-links.js": "10462d19b95209a8",
+    "cloudflare-worker/src/http.js": "a014ad8e77192c1a",
+    "locales/zh-CN.js": "33ae4bf890c30576",
+    "locales/zh-HK.js": "0ae6bd1d5296af32",
+    "tests/helpers/extension-mv3.cjs": "6b8002590e96465f"
+  },
+  "checks": [
+    {
+      "name": "基線：擴充套件連上測試帳戶（真 Worker＋真 SQLite，AI 為 mock）",
+      "ok": true
+    },
+    {
+      "name": "A0 預查正常時 AI 被呼叫並且有預覽、正文含章節",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "A0 正常路徑顯示「提取完成」",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。"
+      }
+    },
+    {
+      "name": "A0 預查請求確實是帶 sourceUrl 的 GET",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ]
+    },
+    {
+      "name": "A1 保存後拿到真回執：文章落地、預覽收起、「在 BDC 打开」出現",
+      "ok": true,
+      "detail": {
+        "article": "webart_b8b779376b5b4a79a37a40699cefd569904a89237ddc8be5",
+        "state": {
+          "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": true,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": false,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        }
+      }
+    },
+    {
+      "name": "A1 保存不重跑 AI、只新增一篇文章",
+      "ok": true,
+      "detail": {
+        "aiCalls": 0,
+        "count": 1
+      }
+    },
+    {
+      "name": "A1 「在 BDC 打开」帶到既有文章（#a/<articleId>）",
+      "ok": true,
+      "detail": {
+        "openedUrl": "http://127.0.0.1:49263/#a/webart_b8b779376b5b4a79a37a40699cefd569904a89237ddc8be5"
+      }
+    },
+    {
+      "name": "D1 既有文章時 AI 0 次、顯示「已有文章，已沿用」、沒有新預覽",
+      "ok": true,
+      "detail": {
+        "notice": "这篇网页已有文章，已沿用原记录并保留原内容。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": false,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "D1 沿用時仍提供「在 BDC 打开」，且文章數不變",
+      "ok": true,
+      "detail": {
+        "open": false,
+        "count": 1
+      }
+    },
+    {
+      "name": "A1 非認證預查斷線：仍取得 AI 預覽並提示「保存時會重試」",
+      "ok": true,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "E1 保存路徑仍去重：沿用既有文章、不新增第二篇、不再呼叫 AI",
+      "ok": true,
+      "detail": {
+        "state": {
+          "notice": "这篇网页已有文章，已沿用原记录并保留原内容。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": true,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": false,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        },
+        "count": 1
+      }
+    },
+    {
+      "name": "E1 保存時的預查確實重跑過（GET + sourceUrl）",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        }
+      ]
+    },
+    {
+      "name": "A-斷線（net::ERR_FAILED（等同截圖的紅色請求））：AI 仍被呼叫並取得預覽",
+      "ok": true,
+      "detail": {
+        "aiCalls": 1,
+        "state": {
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": false,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": true,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        }
+      }
+    },
+    {
+      "name": "A-斷線：文案為「已提取，可先预览」而非連線／逾時誤導",
+      "ok": true,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      }
+    },
+    {
+      "name": "A-斷線：確實是連線層失敗（requestfailed 有記錄）",
+      "ok": true,
+      "detail": [
+        {
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase",
+          "error": "net::ERR_FAILED"
+        }
+      ]
+    },
+    {
+      "name": "A-503非JSON（HTTP 503 HTML（邊緣錯誤頁形態，無 CORS））：AI 仍被呼叫並取得預覽",
+      "ok": true,
+      "detail": {
+        "aiCalls": 1,
+        "state": {
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": false,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": true,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        }
+      }
+    },
+    {
+      "name": "A-503非JSON：文案為「已提取，可先预览」而非連線／逾時誤導",
+      "ok": true,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      }
+    },
+    {
+      "name": "A-503非JSON：HTTP 有回應（沒有被冒充成 network 失敗）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "A-500JSON（HTTP 500 capture_failed（後端／D1 錯誤））：AI 仍被呼叫並取得預覽",
+      "ok": true,
+      "detail": {
+        "aiCalls": 1,
+        "state": {
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": false,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": true,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        }
+      }
+    },
+    {
+      "name": "A-500JSON：文案為「已提取，可先预览」而非連線／逾時誤導",
+      "ok": true,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      }
+    },
+    {
+      "name": "A-500JSON：HTTP 有回應（沒有被冒充成 network 失敗）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "A-404（HTTP 404 not_found（舊版 Worker／路由缺失））：AI 仍被呼叫並取得預覽",
+      "ok": true,
+      "detail": {
+        "aiCalls": 1,
+        "state": {
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": false,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": true,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        }
+      }
+    },
+    {
+      "name": "A-404：文案為「已提取，可先预览」而非連線／逾時誤導",
+      "ok": true,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      }
+    },
+    {
+      "name": "A-404：HTTP 有回應（沒有被冒充成 network 失敗）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "A-畸形JSON（HTTP 200 但 body 不是 JSON）：AI 仍被呼叫並取得預覽",
+      "ok": true,
+      "detail": {
+        "aiCalls": 1,
+        "state": {
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": false,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": true,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        }
+      }
+    },
+    {
+      "name": "A-畸形JSON：文案為「已提取，可先预览」而非連線／逾時誤導",
+      "ok": true,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      }
+    },
+    {
+      "name": "A-畸形JSON：HTTP 有回應（沒有被冒充成 network 失敗）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "A-競態（GET 說有文章、POST page-link 回 404 article_not_found）：AI 仍被呼叫並取得預覽",
+      "ok": true,
+      "detail": {
+        "aiCalls": 1,
+        "state": {
+          "notice": "提取完成，请检查标题与正文后保存。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": false,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": true,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        }
+      }
+    },
+    {
+      "name": "A-競態：文案為「提取完成」而非連線／逾時誤導",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。"
+      }
+    },
+    {
+      "name": "A-競態：HTTP 有回應（沒有被冒充成 network 失敗）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "A-逾時：6 秒左右就降級（實測 < 9.5 秒，證明不是舊的 10 秒預設）",
+      "ok": true,
+      "detail": {
+        "elapsedMs": 6317
+      }
+    },
+    {
+      "name": "A-逾時：仍取得 AI 預覽，且不再顯示「AI 请求超时」",
+      "ok": true,
+      "detail": {
+        "state": {
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": false,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": true,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        }
+      }
+    },
+    {
+      "name": "C1 取消：不啟動 AI、沒有預覽、顯示「已停止」",
+      "ok": true,
+      "detail": {
+        "notice": "已停止，可重新提取或保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "B0 前置：先在頁面 C 取得一份預覽（供 401 清預覽對照）",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "B1 401：不啟動 AI、舊預覽被清掉、登出帳戶、提取鈕停用",
+      "ok": true,
+      "detail": {
+        "notice": "",
+        "noticeHidden": true,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": true,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "未登录账户",
+        "books": [],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "B2 前置：重新登入後再取得一份預覽",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "B2 401 但 body 不是 JSON：仍判為認證失敗（不冒充 network、不降級），AI 0 次且清預覽",
+      "ok": true,
+      "detail": {
+        "notice": "",
+        "noticeHidden": true,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": true,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "未登录账户",
+        "books": [],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "B3 前置：取得一份預覽後注入 403",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "B3 403：不啟動 AI、顯示失敗而非成功",
+      "ok": true,
+      "detail": {
+        "notice": "操作未完成，已提交的待传项目可在下方重试。",
+        "noticeHidden": false,
+        "noticeError": true,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "B4 登出後：提取鈕停用（不可再呼叫 AI）且沒有殘留預覽",
+      "ok": true,
+      "detail": {
+        "notice": "",
+        "noticeHidden": true,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": true,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "未登录账户",
+        "books": [],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "E0 前置：頁面 B 取得預覽",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "E2 保存失敗：不宣稱成功（沒有已保存文案、沒有「在 BDC 打开」）",
+      "ok": true,
+      "detail": {
+        "notice": "操作未完成，已提交的待传项目可在下方重试。",
+        "noticeHidden": false,
+        "noticeError": true,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": true,
+        "extractDisabled": true,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": false,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。\n                待保存文章：Major tech stocks plunge重试取消本机待传",
+        "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2",
+          "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+        ],
+        "selectedBook": "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+      }
+    },
+    {
+      "name": "E2 保存失敗：入待傳、預覽被鎖定、雲端沒有新增文章",
+      "ok": true,
+      "detail": {
+        "state": {
+          "notice": "操作未完成，已提交的待传项目可在下方重试。",
+          "noticeHidden": false,
+          "noticeError": true,
+          "previewHidden": false,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": true,
+          "extractDisabled": true,
+          "cancelHidden": true,
+          "openHidden": true,
+          "pendingHidden": false,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。\n                待保存文章：Major tech stocks plunge重试取消本机待传",
+          "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2",
+            "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+          ],
+          "selectedBook": "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+        },
+        "count": 1
+      }
+    },
+    {
+      "name": "E2 保存失敗：仍是同一份 AI 結果，不重跑 AI",
+      "ok": true,
+      "detail": {
+        "aiCalls": 0
+      }
+    },
+    {
+      "name": "E3 重試成功：真回執（雲端有文章、正文含章節、待傳清空）",
+      "ok": true,
+      "detail": {
+        "article": "webart_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa",
+        "state": {
+          "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": true,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": false,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+          "captureSave": "加入",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2",
+            "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+          ],
+          "selectedBook": "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+        },
+        "count": 2
+      }
+    },
+    {
+      "name": "E3 重試不重跑 AI",
+      "ok": true,
+      "detail": {
+        "aiCalls": 0
+      }
+    },
+    {
+      "name": "E3 重試後仍建立頁書關聯（page-link）",
+      "ok": true,
+      "detail": {
+        "name": "Major tech stocks plunge",
+        "sourceUrl": "http://127.0.0.1:49263/test-article?case=queue",
+        "sourceType": "article",
+        "createdAt": "2026-11-06T14:33:52.778Z",
+        "updatedAt": "2026-11-06T14:33:53.208Z",
+        "articleId": "webart_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+      }
+    },
+    {
+      "name": "zh-CN 320px：select 與加入同一行、收藏列 ≤ 50px",
+      "ok": true,
+      "detail": {
+        "innerWidth": 302,
+        "innerHeight": 194,
+        "scrollWidth": 302,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 192,
+          "height": 30.1875,
+          "right": 202,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 208,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 258,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 282,
+          "height": 39.1875,
+          "right": 292,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 264,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 292,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN 320px：無橫向溢出、⋯ 不與按鈕重疊",
+      "ok": true,
+      "detail": {
+        "innerWidth": 302,
+        "innerHeight": 194,
+        "scrollWidth": 302,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 192,
+          "height": 30.1875,
+          "right": 202,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 208,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 258,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 282,
+          "height": 39.1875,
+          "right": 292,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 264,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 292,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN 340px：select 與加入同一行、收藏列 ≤ 50px",
+      "ok": true,
+      "detail": {
+        "innerWidth": 322,
+        "innerHeight": 194,
+        "scrollWidth": 322,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 212,
+          "height": 30.1875,
+          "right": 222,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 228,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 278,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 302,
+          "height": 39.1875,
+          "right": 312,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 284,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 312,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN 340px：無橫向溢出、⋯ 不與按鈕重疊",
+      "ok": true,
+      "detail": {
+        "innerWidth": 322,
+        "innerHeight": 194,
+        "scrollWidth": 322,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 212,
+          "height": 30.1875,
+          "right": 222,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 228,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 278,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 302,
+          "height": 39.1875,
+          "right": 312,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 284,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 312,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN 420px：select 與加入同一行、收藏列 ≤ 50px",
+      "ok": true,
+      "detail": {
+        "innerWidth": 338,
+        "innerHeight": 194,
+        "scrollWidth": 338,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 228,
+          "height": 30.1875,
+          "right": 238,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 244,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 294,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875,
+          "right": 328,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 300,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 328,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN 420px：無橫向溢出、⋯ 不與按鈕重疊",
+      "ok": true,
+      "detail": {
+        "innerWidth": 338,
+        "innerHeight": 194,
+        "scrollWidth": 338,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 228,
+          "height": 30.1875,
+          "right": 238,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 244,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 294,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875,
+          "right": 328,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 300,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 328,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN：省略選單預設關閉，關閉時收藏列不佔高（來源／提示不露在行外）",
+      "ok": true,
+      "detail": {
+        "innerWidth": 338,
+        "innerHeight": 194,
+        "scrollWidth": 338,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 228,
+          "height": 30.1875,
+          "right": 238,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 244,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 294,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875,
+          "right": 328,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 300,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 328,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN：開啟省略選單後才佔用高度，且更新／新建／設預設都在裡面",
+      "ok": true,
+      "detail": {
+        "innerWidth": 322,
+        "innerHeight": 338,
+        "scrollWidth": 322,
+        "bodyHeight": 339.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 212,
+          "height": 30.1875,
+          "right": 222,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 228,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 278,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 302,
+          "height": 183.1875,
+          "right": 312,
+          "bottom": 329.96875
+        },
+        "more": {
+          "x": 284,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 312,
+          "bottom": 185.78125
+        },
+        "optionsOpen": true,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN ⋯：按「新建词书」直接展開表單（不需再開一次選單）",
+      "ok": true
+    },
+    {
+      "name": "zh-CN ⋯：建立詞書後自動選取（不需離開面板）",
+      "ok": true,
+      "detail": {
+        "innerWidth": 322,
+        "innerHeight": 338,
+        "scrollWidth": 322,
+        "bodyHeight": 339.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 212,
+          "height": 30.1875,
+          "right": 222,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 228,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 278,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 302,
+          "height": 183.1875,
+          "right": 312,
+          "bottom": 329.96875
+        },
+        "more": {
+          "x": 284,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 312,
+          "bottom": 185.78125
+        },
+        "optionsOpen": true,
+        "formHidden": true,
+        "selectedBook": "webbook_c65537bd5873c28f36a60a1c09d3b4c9c04417fbe0fdcce7",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "已选择《考題整理》，现在可以加入生词。",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN ⋯：設為預設詞書成功",
+      "ok": true
+    },
+    {
+      "name": "zh-CN ⋯：更新詞書會重新向同步服務拉清單",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        }
+      ]
+    },
+    {
+      "name": "zh-CN ⋯：再次收起後收藏列回到一行（≤ 50px）",
+      "ok": true,
+      "detail": {
+        "innerWidth": 322,
+        "innerHeight": 194,
+        "scrollWidth": 322,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 212,
+          "height": 30.1875,
+          "right": 222,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 228,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 278,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 302,
+          "height": 39.1875,
+          "right": 312,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 284,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 312,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "已保存默认词书，新网页可直接使用。",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-CN：完整面板按內容自然高度（不是固定全高）",
+      "ok": true,
+      "detail": {
+        "frame": {
+          "x": 848,
+          "y": 12,
+          "width": 420,
+          "height": 384
+        },
+        "bodyHeight": 381.46875,
+        "expectedHeight": 383.46875
+      }
+    },
+    {
+      "name": "zh-CN：完整面板仍固定在右上",
+      "ok": true,
+      "detail": {
+        "x": 848,
+        "y": 12,
+        "width": 420,
+        "height": 384
+      }
+    },
+    {
+      "name": "zh-CN：完整面板沒有多餘空白（內容不被裁切）",
+      "ok": true,
+      "detail": {
+        "frame": {
+          "x": 848,
+          "y": 12,
+          "width": 420,
+          "height": 384
+        },
+        "metrics": {
+          "innerWidth": 418,
+          "innerHeight": 382,
+          "scrollWidth": 418,
+          "bodyHeight": 381.46875,
+          "compact": false,
+          "book": {
+            "x": 12,
+            "y": 232.28125,
+            "width": 304,
+            "height": 30.1875,
+            "right": 316,
+            "bottom": 262.46875
+          },
+          "add": {
+            "x": 322,
+            "y": 232.375,
+            "width": 50,
+            "height": 30,
+            "right": 372,
+            "bottom": 262.375
+          },
+          "quick": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "section": {
+            "x": 12,
+            "y": 223.28125,
+            "width": 394,
+            "height": 47.1875,
+            "right": 406,
+            "bottom": 270.46875
+          },
+          "more": {
+            "x": 378,
+            "y": 232.28125,
+            "width": 28,
+            "height": 30,
+            "right": 406,
+            "bottom": 262.28125
+          },
+          "optionsOpen": false,
+          "formHidden": true,
+          "selectedBook": "book",
+          "saveText": "加入",
+          "notice": "",
+          "confirmHidden": true,
+          "keep": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "discard": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "previewHidden": true,
+          "workspaceNotice": "已保存默认词书，新网页可直接使用。",
+          "articleSection": {
+            "x": 12,
+            "y": 270.46875,
+            "width": 394,
+            "height": 99,
+            "right": 406,
+            "bottom": 369.46875
+          }
+        }
+      }
+    },
+    {
+      "name": "zh-CN：文章標題與提取按鈕在同一小標題列、長駐說明已移除、按鈕文字合語系",
+      "ok": true,
+      "detail": {
+        "title": {
+          "y": 287.46875,
+          "x": 12
+        },
+        "button": {
+          "y": 283.46875,
+          "x": 344
+        },
+        "buttonText": "提取文章",
+        "hintVisible": false,
+        "sectionText": "文章\n            提取文章\n            停止\n            在 BDC 打开\n        \n        AI 整理当前网页的标题与正文，保留原文及章节。先预览，再保存；同页词书会自动关联。\n        \n            \n                文章标题\n                \n            \n           "
+      }
+    },
+    {
+      "name": "zh-CN：完整面板內擷取成功並出現預覽",
+      "ok": true,
+      "detail": {
+        "aiBeforeDraft": 14,
+        "after": 15
+      }
+    },
+    {
+      "name": "zh-CN：完整面板有草稿時，點面板外不會關閉也不會遺失草稿",
+      "ok": true,
+      "detail": {
+        "innerWidth": 418,
+        "innerHeight": 701,
+        "scrollWidth": 418,
+        "bodyHeight": 700.9375,
+        "compact": false,
+        "book": {
+          "x": 12,
+          "y": 232.28125,
+          "width": 304,
+          "height": 30.1875,
+          "right": 316,
+          "bottom": 262.46875
+        },
+        "add": {
+          "x": 322,
+          "y": 232.375,
+          "width": 50,
+          "height": 30,
+          "right": 372,
+          "bottom": 262.375
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 12,
+          "y": 223.28125,
+          "width": 394,
+          "height": 47.1875,
+          "right": 406,
+          "bottom": 270.46875
+        },
+        "more": {
+          "x": 378,
+          "y": 232.28125,
+          "width": 28,
+          "height": 30,
+          "right": 406,
+          "bottom": 262.28125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": false,
+        "workspaceNotice": "提取完成，请检查标题与正文后保存。",
+        "articleSection": {
+          "x": 12,
+          "y": 270.46875,
+          "width": 394,
+          "height": 418.46875,
+          "right": 406,
+          "bottom": 688.9375
+        }
+      }
+    },
+    {
+      "name": "zh-CN：有草稿時按關閉會要求確認（不直接關閉）",
+      "ok": true
+    },
+    {
+      "name": "zh-CN：按「继续编辑」後面板仍在右上、草稿仍在",
+      "ok": true,
+      "detail": {
+        "stillOpen": {
+          "x": 848,
+          "y": 12,
+          "width": 420,
+          "height": 703
+        },
+        "keptMetrics": {
+          "innerWidth": 418,
+          "innerHeight": 701,
+          "scrollWidth": 418,
+          "bodyHeight": 700.9375,
+          "compact": false,
+          "book": {
+            "x": 12,
+            "y": 232.28125,
+            "width": 304,
+            "height": 30.1875,
+            "right": 316,
+            "bottom": 262.46875
+          },
+          "add": {
+            "x": 322,
+            "y": 232.375,
+            "width": 50,
+            "height": 30,
+            "right": 372,
+            "bottom": 262.375
+          },
+          "quick": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "section": {
+            "x": 12,
+            "y": 223.28125,
+            "width": 394,
+            "height": 47.1875,
+            "right": 406,
+            "bottom": 270.46875
+          },
+          "more": {
+            "x": 378,
+            "y": 232.28125,
+            "width": 28,
+            "height": 30,
+            "right": 406,
+            "bottom": 262.28125
+          },
+          "optionsOpen": false,
+          "formHidden": true,
+          "selectedBook": "book",
+          "saveText": "加入",
+          "notice": "",
+          "confirmHidden": true,
+          "keep": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "discard": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "previewHidden": false,
+          "workspaceNotice": "提取完成，请检查标题与正文后保存。",
+          "articleSection": {
+            "x": 12,
+            "y": 270.46875,
+            "width": 394,
+            "height": 418.46875,
+            "right": 406,
+            "bottom": 688.9375
+          }
+        }
+      }
+    },
+    {
+      "name": "zh-CN：返回小窗遇到草稿也要求確認",
+      "ok": true
+    },
+    {
+      "name": "zh-CN：放棄編輯後回到精簡模式",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 320x480：草稿確認出現且完整顯示在 adaptive height 內（未被剪裁）",
+      "ok": true,
+      "detail": {
+        "frame": {
+          "x": 8,
+          "y": 193,
+          "width": 304,
+          "height": 279
+        },
+        "keep": {
+          "x": 25,
+          "y": 160.890625,
+          "width": 78,
+          "height": 30,
+          "right": 103,
+          "bottom": 190.890625
+        },
+        "discard": {
+          "x": 111,
+          "y": 160.890625,
+          "width": 117,
+          "height": 30,
+          "right": 228,
+          "bottom": 190.890625
+        }
+      }
+    },
+    {
+      "name": "zh-CN 320x480：草稿確認按鈕可點（继续编辑生效、面板仍在）",
+      "ok": true,
+      "detail": {
+        "x": 8,
+        "y": 193,
+        "width": 304,
+        "height": 279
+      }
+    },
+    {
+      "name": "zh-HK 320px：select 與加入同一行、收藏列 ≤ 50px",
+      "ok": true,
+      "detail": {
+        "innerWidth": 302,
+        "innerHeight": 194,
+        "scrollWidth": 302,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 192,
+          "height": 30.1875,
+          "right": 202,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 208,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 258,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 282,
+          "height": 39.1875,
+          "right": 292,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 264,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 292,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-HK 320px：無橫向溢出、⋯ 不與按鈕重疊",
+      "ok": true,
+      "detail": {
+        "innerWidth": 302,
+        "innerHeight": 194,
+        "scrollWidth": 302,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 192,
+          "height": 30.1875,
+          "right": 202,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 208,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 258,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 282,
+          "height": 39.1875,
+          "right": 292,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 264,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 292,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-HK 340px：select 與加入同一行、收藏列 ≤ 50px",
+      "ok": true,
+      "detail": {
+        "innerWidth": 322,
+        "innerHeight": 194,
+        "scrollWidth": 322,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 212,
+          "height": 30.1875,
+          "right": 222,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 228,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 278,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 302,
+          "height": 39.1875,
+          "right": 312,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 284,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 312,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-HK 340px：無橫向溢出、⋯ 不與按鈕重疊",
+      "ok": true,
+      "detail": {
+        "innerWidth": 322,
+        "innerHeight": 194,
+        "scrollWidth": 322,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 212,
+          "height": 30.1875,
+          "right": 222,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 228,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 278,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 302,
+          "height": 39.1875,
+          "right": 312,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 284,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 312,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-HK 420px：select 與加入同一行、收藏列 ≤ 50px",
+      "ok": true,
+      "detail": {
+        "innerWidth": 338,
+        "innerHeight": 194,
+        "scrollWidth": 338,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 228,
+          "height": 30.1875,
+          "right": 238,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 244,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 294,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875,
+          "right": 328,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 300,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 328,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-HK 420px：無橫向溢出、⋯ 不與按鈕重疊",
+      "ok": true,
+      "detail": {
+        "innerWidth": 338,
+        "innerHeight": 194,
+        "scrollWidth": 338,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 228,
+          "height": 30.1875,
+          "right": 238,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 244,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 294,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875,
+          "right": 328,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 300,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 328,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-HK：省略選單預設關閉，關閉時收藏列不佔高（來源／提示不露在行外）",
+      "ok": true,
+      "detail": {
+        "innerWidth": 338,
+        "innerHeight": 194,
+        "scrollWidth": 338,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 228,
+          "height": 30.1875,
+          "right": 238,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 244,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 294,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875,
+          "right": 328,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 300,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 328,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-HK：開啟省略選單後才佔用高度，且更新／新建／設預設都在裡面",
+      "ok": true,
+      "detail": {
+        "innerWidth": 322,
+        "innerHeight": 338,
+        "scrollWidth": 322,
+        "bodyHeight": 339.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 212,
+          "height": 30.1875,
+          "right": 222,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 228,
+          "y": 155.875,
+          "width": 50,
+          "height": 30,
+          "right": 278,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 302,
+          "height": 183.1875,
+          "right": 312,
+          "bottom": 329.96875
+        },
+        "more": {
+          "x": 284,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 312,
+          "bottom": 185.78125
+        },
+        "optionsOpen": true,
+        "formHidden": true,
+        "selectedBook": "book",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "zh-HK：完整面板按內容自然高度（不是固定全高）",
+      "ok": true,
+      "detail": {
+        "frame": {
+          "x": 848,
+          "y": 12,
+          "width": 420,
+          "height": 336
+        },
+        "bodyHeight": 333.46875,
+        "expectedHeight": 335.46875
+      }
+    },
+    {
+      "name": "zh-HK：完整面板仍固定在右上",
+      "ok": true,
+      "detail": {
+        "x": 848,
+        "y": 12,
+        "width": 420,
+        "height": 336
+      }
+    },
+    {
+      "name": "zh-HK：完整面板沒有多餘空白（內容不被裁切）",
+      "ok": true,
+      "detail": {
+        "frame": {
+          "x": 848,
+          "y": 12,
+          "width": 420,
+          "height": 336
+        },
+        "metrics": {
+          "innerWidth": 418,
+          "innerHeight": 334,
+          "scrollWidth": 418,
+          "bodyHeight": 333.46875,
+          "compact": false,
+          "book": {
+            "x": 12,
+            "y": 232.28125,
+            "width": 304,
+            "height": 30.1875,
+            "right": 316,
+            "bottom": 262.46875
+          },
+          "add": {
+            "x": 322,
+            "y": 232.375,
+            "width": 50,
+            "height": 30,
+            "right": 372,
+            "bottom": 262.375
+          },
+          "quick": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "section": {
+            "x": 12,
+            "y": 223.28125,
+            "width": 394,
+            "height": 47.1875,
+            "right": 406,
+            "bottom": 270.46875
+          },
+          "more": {
+            "x": 378,
+            "y": 232.28125,
+            "width": 28,
+            "height": 30,
+            "right": 406,
+            "bottom": 262.28125
+          },
+          "optionsOpen": false,
+          "formHidden": true,
+          "selectedBook": "book",
+          "saveText": "加入",
+          "notice": "",
+          "confirmHidden": true,
+          "keep": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "discard": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "previewHidden": true,
+          "workspaceNotice": "",
+          "articleSection": {
+            "x": 12,
+            "y": 270.46875,
+            "width": 394,
+            "height": 51,
+            "right": 406,
+            "bottom": 321.46875
+          }
+        }
+      }
+    },
+    {
+      "name": "zh-HK：文章標題與提取按鈕在同一小標題列、長駐說明已移除、按鈕文字合語系",
+      "ok": true,
+      "detail": {
+        "title": {
+          "y": 287.46875,
+          "x": 12
+        },
+        "button": {
+          "y": 283.46875,
+          "x": 344
+        },
+        "buttonText": "擷取文章",
+        "hintVisible": false,
+        "sectionText": "文章\n            擷取文章\n            停止\n            在 BDC 開啟\n        \n        AI 整理目前網頁的標題與正文，保留原文及章節。先預覽，再保存；同頁詞書會自動關聯。\n        \n            \n                文章標題\n                \n            \n           "
+      }
+    },
+    {
+      "name": "zh-HK 320x480：草稿確認出現且完整顯示在 adaptive height 內（未被剪裁）",
+      "ok": true,
+      "detail": {
+        "frame": {
+          "x": 8,
+          "y": 193,
+          "width": 304,
+          "height": 279
+        },
+        "keep": {
+          "x": 25,
+          "y": 160.890625,
+          "width": 78,
+          "height": 30,
+          "right": 103,
+          "bottom": 190.890625
+        },
+        "discard": {
+          "x": 111,
+          "y": 160.890625,
+          "width": 117,
+          "height": 30,
+          "right": 228,
+          "bottom": 190.890625
+        }
+      }
+    },
+    {
+      "name": "zh-HK 320x480：草稿確認按鈕可點（继续编辑生效、面板仍在）",
+      "ok": true,
+      "detail": {
+        "x": 8,
+        "y": 193,
+        "width": 304,
+        "height": 279
+      }
+    },
+    {
+      "name": "B5 切到 BOB 後同一頁仍會呼叫 AI（不沿用 ALICE 的文章）",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：bob",
+        "books": [
+          ""
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "B5 BOB 保存後只新增 BOB 自己的文章，ALICE 不受影響",
+      "ok": true,
+      "detail": {
+        "bob": 1,
+        "alice": 2
+      }
+    },
+    {
+      "name": "G0 前置：BOB 沒有任何詞書（選單只有提示、quickcreate 出現）",
+      "ok": true,
+      "detail": {
+        "quick": {
+          "x": 209,
+          "y": 155.875,
+          "width": 85,
+          "height": 30,
+          "right": 294,
+          "bottom": 185.875
+        },
+        "selected": ""
+      }
+    },
+    {
+      "name": "G0 0 詞書時 select 與「新建并加入」仍在同一行、收藏列 ≤ 50px",
+      "ok": true,
+      "detail": {
+        "innerWidth": 338,
+        "innerHeight": 194,
+        "scrollWidth": 338,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 193,
+          "height": 30.1875,
+          "right": 203,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "quick": {
+          "x": 209,
+          "y": 155.875,
+          "width": 85,
+          "height": 30,
+          "right": 294,
+          "bottom": 185.875
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875,
+          "right": 328,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 300,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 328,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "",
+        "saveText": "加入",
+        "notice": "",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      }
+    },
+    {
+      "name": "G1 quickcreate：建立本頁詞書並自動選取",
+      "ok": true,
+      "detail": {
+        "selected": "webbook_575944684a5770ab8d0f684655e1976bacf6729fb74fbfb9",
+        "book": {
+          "name": "Major tech stocks plunge",
+          "sourceUrl": "http://127.0.0.1:49263/test-article?case=quick-bob",
+          "sourceType": "manual",
+          "createdAt": "2026-11-06T14:34:05.735Z",
+          "updatedAt": "2026-11-06T14:34:05.735Z"
+        }
+      }
+    },
+    {
+      "name": "G1 quickcreate：真的收藏成功（按鈕變「已加入」、/captures 收到該詞）",
+      "ok": true,
+      "detail": {
+        "state": {
+          "innerWidth": 338,
+          "innerHeight": 194,
+          "scrollWidth": 338,
+          "bodyHeight": 195.96875,
+          "compact": true,
+          "book": {
+            "x": 10,
+            "y": 155.78125,
+            "width": 219,
+            "height": 30.1875,
+            "right": 229,
+            "bottom": 185.96875
+          },
+          "add": {
+            "x": 235,
+            "y": 155.875,
+            "width": 59,
+            "height": 30,
+            "right": 294,
+            "bottom": 185.875
+          },
+          "quick": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "section": {
+            "x": 10,
+            "y": 146.78125,
+            "width": 318,
+            "height": 39.1875,
+            "right": 328,
+            "bottom": 185.96875
+          },
+          "more": {
+            "x": 300,
+            "y": 155.78125,
+            "width": 28,
+            "height": 30,
+            "right": 328,
+            "bottom": 185.78125
+          },
+          "optionsOpen": false,
+          "formHidden": true,
+          "selectedBook": "webbook_575944684a5770ab8d0f684655e1976bacf6729fb74fbfb9",
+          "saveText": "已加入",
+          "notice": "已加入《Major tech stocks plunge》",
+          "confirmHidden": true,
+          "keep": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "discard": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "previewHidden": true,
+          "workspaceNotice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+          "articleSection": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          }
+        },
+        "capture": {
+          "requestId": "capture_a6baa45a-d1dc-4dd9-bd9e-a441ca909838",
+          "bookId": "webbook_575944684a5770ab8d0f684655e1976bacf6729fb74fbfb9",
+          "word": "plunge",
+          "meaning": "暴跌（语境）",
+          "phonetic": "plʌndʒ",
+          "pos": "verb",
+          "source": {
+            "sourceUrl": "http://127.0.0.1:49263/test-article?case=quick-bob",
+            "pageTitle": "Major tech stocks plunge",
+            "sentence": "Major tech stocks plunge as investors worry.",
+            "context": "Major tech stocks plunge as investors worry. Markets remain volatile.",
+            "meaning": "暴跌（语境）",
+            "locale": "zh-CN",
+            "anchor": {
+              "start": 18,
+              "end": 24,
+              "quote": "plunge",
+              "prefix": "Major tech stocks ",
+              "suffix": " as investors worry. Markets remain volatile."
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "G1 quickcreate：詞書帶本頁來源（可關聯原文）",
+      "ok": true,
+      "detail": {
+        "name": "Major tech stocks plunge",
+        "sourceUrl": "http://127.0.0.1:49263/test-article?case=quick-bob",
+        "sourceType": "manual",
+        "createdAt": "2026-11-06T14:34:05.735Z",
+        "updatedAt": "2026-11-06T14:34:05.735Z"
+      }
+    },
+    {
+      "name": "全程沒有未捕捉的 JS 例外",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "A0",
+      "title": "對照：預查正常，提取成功",
+      "elapsed": 852,
+      "aiCalls": 1,
+      "state": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "A1",
+      "title": "保存文章：真回執與雲端落地",
+      "aiCalls": 0,
+      "state": {
+        "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": false,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "article": "webart_b8b779376b5b4a79a37a40699cefd569904a89237ddc8be5"
+    },
+    {
+      "id": "D1",
+      "title": "既有雲端文章正常：直接沿用、不呼叫 AI",
+      "elapsed": 321,
+      "aiCalls": 0,
+      "state": {
+        "notice": "这篇网页已有文章，已沿用原记录并保留原内容。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": false,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "E1",
+      "title": "預查失敗→保存時查到既有文章（去重）",
+      "aiCalls": 0,
+      "state": {
+        "notice": "这篇网页已有文章，已沿用原记录并保留原内容。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": false,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        }
+      ]
+    },
+    {
+      "id": "A-斷線",
+      "title": "net::ERR_FAILED（等同截圖的紅色請求）",
+      "mode": "network",
+      "elapsed": 321,
+      "aiCalls": 1,
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "failures": [
+        {
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase",
+          "error": "net::ERR_FAILED"
+        }
+      ]
+    },
+    {
+      "id": "A-503非JSON",
+      "title": "HTTP 503 HTML（邊緣錯誤頁形態，無 CORS）",
+      "mode": "html503",
+      "elapsed": 320,
+      "aiCalls": 1,
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "A-500JSON",
+      "title": "HTTP 500 capture_failed（後端／D1 錯誤）",
+      "mode": "json500",
+      "elapsed": 314,
+      "aiCalls": 1,
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "A-404",
+      "title": "HTTP 404 not_found（舊版 Worker／路由缺失）",
+      "mode": "json404",
+      "elapsed": 325,
+      "aiCalls": 1,
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "A-畸形JSON",
+      "title": "HTTP 200 但 body 不是 JSON",
+      "mode": "badjson",
+      "elapsed": 324,
+      "aiCalls": 1,
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "A-競態",
+      "title": "GET 說有文章、POST page-link 回 404 article_not_found",
+      "mode": "race",
+      "elapsed": 336,
+      "aiCalls": 1,
+      "state": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "id": "A-逾時",
+      "title": "預查 6 秒逾時",
+      "elapsed": 6317,
+      "aiCalls": 1,
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "failures": [
+        {
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
+    },
+    {
+      "id": "C1",
+      "title": "預查仍在連線時取消",
+      "state": {
+        "notice": "已停止，可重新提取或保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "aiCalls": 0
+    },
+    {
+      "id": "B1",
+      "title": "401 JSON unauthorized",
+      "state": {
+        "notice": "",
+        "noticeHidden": true,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": true,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "未登录账户",
+        "books": [],
+        "selectedBook": ""
+      },
+      "aiCalls": 0
+    },
+    {
+      "id": "B2",
+      "title": "401 非 JSON body（HTML）",
+      "state": {
+        "notice": "",
+        "noticeHidden": true,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": true,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "未登录账户",
+        "books": [],
+        "selectedBook": ""
+      },
+      "aiCalls": 0
+    },
+    {
+      "id": "B3",
+      "title": "403（例如邊緣 WAF 拒絕）",
+      "state": {
+        "notice": "操作未完成，已提交的待传项目可在下方重试。",
+        "noticeHidden": false,
+        "noticeError": true,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "aiCalls": 0
+    },
+    {
+      "id": "B4",
+      "title": "登出後",
+      "state": {
+        "notice": "",
+        "noticeHidden": true,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "",
+        "body": "",
+        "bodyDisabled": false,
+        "extractDisabled": true,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "未登录账户",
+        "books": [],
+        "selectedBook": ""
+      }
+    },
+    {
+      "id": "E2",
+      "title": "保存失敗：入待傳並鎖定",
+      "state": {
+        "notice": "操作未完成，已提交的待传项目可在下方重试。",
+        "noticeHidden": false,
+        "noticeError": true,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": true,
+        "extractDisabled": true,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": false,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。\n                待保存文章：Major tech stocks plunge重试取消本机待传",
+        "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2",
+          "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+        ],
+        "selectedBook": "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+      },
+      "aiCalls": 0
+    },
+    {
+      "id": "E3",
+      "title": "恢復後重試：真回執＋頁書關聯",
+      "state": {
+        "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": false,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+        "captureSave": "加入",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2",
+          "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+        ],
+        "selectedBook": "webbook_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+      },
+      "article": "webart_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa",
+      "pageBook": {
+        "name": "Major tech stocks plunge",
+        "sourceUrl": "http://127.0.0.1:49263/test-article?case=queue",
+        "sourceType": "article",
+        "createdAt": "2026-11-06T14:33:52.778Z",
+        "updatedAt": "2026-11-06T14:33:53.208Z",
+        "articleId": "webart_e84fb7431959fa45ae9cc3307a3b2576c29aff725d3db4fa"
+      }
+    },
+    {
+      "id": "B5",
+      "title": "切換帳戶後不得沿用別人的文章",
+      "aiCalls": 1,
+      "state": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "account": "已连接账户：bob",
+        "books": [
+          ""
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "id": "G1",
+      "title": "0 詞書 quickcreate",
+      "state": {
+        "innerWidth": 338,
+        "innerHeight": 194,
+        "scrollWidth": 338,
+        "bodyHeight": 195.96875,
+        "compact": true,
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 219,
+          "height": 30.1875,
+          "right": 229,
+          "bottom": 185.96875
+        },
+        "add": {
+          "x": 235,
+          "y": 155.875,
+          "width": 59,
+          "height": 30,
+          "right": 294,
+          "bottom": 185.875
+        },
+        "quick": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "section": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875,
+          "right": 328,
+          "bottom": 185.96875
+        },
+        "more": {
+          "x": 300,
+          "y": 155.78125,
+          "width": 28,
+          "height": 30,
+          "right": 328,
+          "bottom": 185.78125
+        },
+        "optionsOpen": false,
+        "formHidden": true,
+        "selectedBook": "webbook_575944684a5770ab8d0f684655e1976bacf6729fb74fbfb9",
+        "saveText": "已加入",
+        "notice": "已加入《Major tech stocks plunge》",
+        "confirmHidden": true,
+        "keep": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "discard": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "previewHidden": true,
+        "workspaceNotice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "articleSection": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        }
+      },
+      "book": {
+        "name": "Major tech stocks plunge",
+        "sourceUrl": "http://127.0.0.1:49263/test-article?case=quick-bob",
+        "sourceType": "manual",
+        "createdAt": "2026-11-06T14:34:05.735Z",
+        "updatedAt": "2026-11-06T14:34:05.735Z"
+      },
+      "capture": {
+        "requestId": "capture_a6baa45a-d1dc-4dd9-bd9e-a441ca909838",
+        "bookId": "webbook_575944684a5770ab8d0f684655e1976bacf6729fb74fbfb9",
+        "word": "plunge",
+        "meaning": "暴跌（语境）",
+        "phonetic": "plʌndʒ",
+        "pos": "verb",
+        "source": {
+          "sourceUrl": "http://127.0.0.1:49263/test-article?case=quick-bob",
+          "pageTitle": "Major tech stocks plunge",
+          "sentence": "Major tech stocks plunge as investors worry.",
+          "context": "Major tech stocks plunge as investors worry. Markets remain volatile.",
+          "meaning": "暴跌（语境）",
+          "locale": "zh-CN",
+          "anchor": {
+            "start": 18,
+            "end": 24,
+            "quote": "plunge",
+            "prefix": "Major tech stocks ",
+            "suffix": " as investors worry. Markets remain volatile."
+          }
+        }
+      }
+    }
+  ],
+  "requestFailures": [
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dbase",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A49263%2Ftest-article%3Fcase%3Dauth",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "pageErrors": [],
+  "summary": {
+    "pass": 94,
+    "fail": 0
+  }
+}

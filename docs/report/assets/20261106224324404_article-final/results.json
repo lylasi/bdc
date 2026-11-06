@@ -1,0 +1,204 @@
+{
+  "checks": [
+    {
+      "name": "zh-CN 詞書及加入按鈕同一行，收藏區不超過 50px",
+      "ok": true,
+      "detail": {
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 228,
+          "height": 30.1875
+        },
+        "add": {
+          "x": 244,
+          "y": 155.875,
+          "width": 50,
+          "height": 30
+        },
+        "capture": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875
+        },
+        "bodyHeight": 195.96875,
+        "scrollWidth": 338,
+        "width": 338,
+        "optionsOpen": false
+      }
+    },
+    {
+      "name": "zh-CN 精簡按鈕仍保存展示釋義，成功不重複佔用提示行",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 新建詞書並選取後不殘留快取詞書不存在的提示",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 完整面板按內容收縮且仍固定於視窗內",
+      "ok": true,
+      "detail": {
+        "expanded": {
+          "x": 848,
+          "y": 12,
+          "width": 420,
+          "height": 384
+        },
+        "bodyHeight": 381.46875
+      }
+    },
+    {
+      "name": "預查仍在連線時可以取消，取消後不會開始 AI",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 預查斷線或503仍取得標題正文與章節預覽",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 預查未確認會明確提示，預覽不寫入雲端",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 保存仍斷線時保留待傳及不可變預覽，不假成功",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 恢復連線後重試保存並關聯頁書，不再呼叫 AI",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 320px 詞書和加入仍同一行，沒有橫向溢出",
+      "ok": true,
+      "detail": {
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 192,
+          "height": 30.1875
+        },
+        "add": {
+          "x": 208,
+          "y": 155.875,
+          "width": 50,
+          "height": 30
+        },
+        "capture": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 282,
+          "height": 39.1875
+        },
+        "bodyHeight": 195.96875,
+        "scrollWidth": 302,
+        "width": 302,
+        "optionsOpen": false
+      }
+    },
+    {
+      "name": "zh-HK 詞書及加入按鈕同一行，收藏區不超過 50px",
+      "ok": true,
+      "detail": {
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 228,
+          "height": 30.1875
+        },
+        "add": {
+          "x": 244,
+          "y": 155.875,
+          "width": 50,
+          "height": 30
+        },
+        "capture": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 318,
+          "height": 39.1875
+        },
+        "bodyHeight": 195.96875,
+        "scrollWidth": 338,
+        "width": 338,
+        "optionsOpen": false
+      }
+    },
+    {
+      "name": "zh-HK 精簡按鈕仍保存展示釋義，成功不重複佔用提示行",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 新建詞書並選取後不殘留快取詞書不存在的提示",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 完整面板按內容收縮且仍固定於視窗內",
+      "ok": true,
+      "detail": {
+        "expanded": {
+          "x": 848,
+          "y": 12,
+          "width": 420,
+          "height": 384
+        },
+        "bodyHeight": 381.46875
+      }
+    },
+    {
+      "name": "zh-HK 預查斷線或503仍取得標題正文與章節預覽",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 預查未確認會明確提示，預覽不寫入雲端",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 保存仍斷線時保留待傳及不可變預覽，不假成功",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 恢復連線後重試保存並關聯頁書，不再呼叫 AI",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 320px 詞書和加入仍同一行，沒有橫向溢出",
+      "ok": true,
+      "detail": {
+        "book": {
+          "x": 10,
+          "y": 155.78125,
+          "width": 192,
+          "height": 30.1875
+        },
+        "add": {
+          "x": 208,
+          "y": 155.875,
+          "width": 50,
+          "height": 30
+        },
+        "capture": {
+          "x": 10,
+          "y": 146.78125,
+          "width": 282,
+          "height": 39.1875
+        },
+        "bodyHeight": 195.96875,
+        "scrollWidth": 302,
+        "width": 302,
+        "optionsOpen": false
+      }
+    },
+    {
+      "name": "401 不會當作可忽略的連線錯誤：登出並停止 AI，舊預覽清除",
+      "ok": true
+    },
+    {
+      "name": "正常及錯誤流程沒有未捕捉的 JS 例外",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": []
+}

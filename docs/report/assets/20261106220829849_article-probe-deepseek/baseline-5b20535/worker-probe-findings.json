@@ -1,0 +1,155 @@
+{
+  "stamp": "20261106221132698",
+  "origin": "chrome-extension://deepseek-article-probe",
+  "findings": [
+    {
+      "name": "P1 既有文章命中",
+      "detail": {
+        "status": 200,
+        "articleId": "art_probe_1",
+        "cors": "chrome-extension://deepseek-article-probe"
+      }
+    },
+    {
+      "name": "P1 沒有文章時",
+      "detail": {
+        "status": 200,
+        "articleId": ""
+      }
+    },
+    {
+      "name": "P1 不帶 sourceUrl 的清單",
+      "detail": {
+        "status": 200,
+        "books": 0,
+        "queries": [
+          "SELECT * FROM reading_entities WHERE owner_user_id = ? AND entity_type = ? AND deleted_at IS NULL ORDER BY entity_id"
+        ]
+      }
+    },
+    {
+      "name": "P2 URL 正規化",
+      "detail": {
+        "fragmentKey": "https://news.example/story/7?edition=hk",
+        "baseKey": "https://news.example/story/7?edition=hk",
+        "slashKey": "https://news.example/story/8/",
+        "noSlashKey": "https://news.example/story/8",
+        "note": "fragment 一致；尾斜線不一致（不影響阻塞，但會讓同頁重複建文章）"
+      }
+    },
+    {
+      "name": "P2 legacy 公開 ID",
+      "detail": {
+        "articleId": "url:https%3A%2F%2Fnews.example%2Fstory%2F9"
+      }
+    },
+    {
+      "name": "P3 超長網址",
+      "detail": {
+        "urlLength": 2234,
+        "encodedLength": 2248,
+        "pageUrlKey": "",
+        "status": 200,
+        "articleId": ""
+      }
+    },
+    {
+      "name": "P4 預查 SQL 失敗",
+      "detail": {
+        "status": 500,
+        "code": "capture_failed",
+        "cors": "chrome-extension://deepseek-article-probe",
+        "note": "擴充套件端 findExistingPageArticle 會把這個 500 當成「操作失敗」，apiRequest 只在 fetch 本身拋錯時才給 sync_unreachable"
+      }
+    },
+    {
+      "name": "P4 同期清單仍 200",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P5 page-link 競態",
+      "detail": {
+        "status": 404,
+        "code": "article_not_found",
+        "note": "findExistingPageArticle 會 throw（errorKeys 沒有這個碼 → 落到通用「操作未完成」），AI 一樣不會跑"
+      }
+    },
+    {
+      "name": "P6 預查成本",
+      "detail": {
+        "articles": 1000,
+        "books": 200,
+        "rowsRead": 1200,
+        "elapsedMs": 3.93,
+        "queries": [
+          {
+            "sql": "SELECT * FROM reading_entities WHERE owner_user_id = ? AND entity_type = ? AND deleted_at IS NULL ORDER BY entity_id",
+            "rows": 200
+          },
+          {
+            "sql": "SELECT id, legacy_article_id, source_url, title FROM articles WHERE owner_user_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC",
+            "rows": 1000
+          }
+        ],
+        "note": "每次按「AI 提取本頁文章」都會重跑一次；SQL 沒有 source_url 索引，比對在 JS 端做"
+      }
+    },
+    {
+      "name": "P7 無 token",
+      "detail": {
+        "status": 401,
+        "code": "unauthorized",
+        "cors": "chrome-extension://deepseek-article-probe"
+      }
+    },
+    {
+      "name": "P7 預檢",
+      "detail": {
+        "status": 204,
+        "allowHeaders": "Authorization, Content-Type",
+        "allowOrigin": "chrome-extension://deepseek-article-probe"
+      }
+    },
+    {
+      "name": "P8 畸形 sourceUrl",
+      "detail": [
+        {
+          "value": "",
+          "status": 200,
+          "articleId": ""
+        },
+        {
+          "value": "not a url",
+          "status": 200,
+          "articleId": ""
+        },
+        {
+          "value": "javascript:alert(1)",
+          "status": 200,
+          "articleId": ""
+        },
+        {
+          "value": "chrome://extensions",
+          "status": 200,
+          "articleId": ""
+        },
+        {
+          "value": "https://",
+          "status": 200,
+          "articleId": ""
+        },
+        {
+          "value": "https://user:pw@news.example/x",
+          "status": 200,
+          "articleId": ""
+        },
+        {
+          "value": "<missing>",
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

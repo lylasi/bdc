@@ -1,0 +1,18 @@
+PASS 可信擴充套件帳戶已連接
+PASS 沒有預設時可直接建立並選用預設生詞本
+PASS 嚴格 CSP 的原網頁可直接浮窗查詞
+PASS 浮窗沿用帳戶與明確預設詞書
+PASS 普通網頁無法讀取可信 iframe 的內容
+PASS 浮窗可用「更多」展開完整面板
+PASS 可直接建立並選用目前網頁詞書
+PASS 原網頁收藏沿用展示結果，不再呼叫 AI
+PASS AI 擷取有標題、正文及章節，可先預覽
+PASS 先建頁書再存文章可自動關聯
+PASS 文章詳解保存完整正文和選擇的逐段分析
+PASS 網頁表單私有欄位未送入文章
+PASS 可直接開啟 BDC 的同一篇文章詳解
+PASS 文章詳解沿用已關聯的頁書，不另建空白詞書
+PASS zh-HK 浮窗沒有橫向溢出
+PASS zh-CN 浮窗沒有橫向溢出
+PASS 正常流程沒有未捕獲錯誤
+{"passed":17,"failed":0,"output":"/Users/linus/CODE/bdc-extension-article-compact-20261106/docs/report/assets/20261106221511972_page-workspace"}

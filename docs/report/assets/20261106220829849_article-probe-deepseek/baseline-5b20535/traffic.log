@@ -1,0 +1,17 @@
+{
+  "failures": [
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53515%2Ftest-article",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53515%2Ftest-article",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53515%2Ftest-article",
+      "error": "net::ERR_FAILED"
+    }
+  ],
+  "pageErrors": []
+}

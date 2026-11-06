@@ -1,0 +1,863 @@
+{
+  "checks": [
+    {
+      "name": "可信擴充套件頁面可連上測試帳戶",
+      "ok": true
+    },
+    {
+      "name": "擴充套件頁面可以讀 chrome.storage",
+      "ok": true
+    },
+    {
+      "name": "選字後可在嚴格 CSP 網頁開啟浮窗",
+      "ok": true
+    },
+    {
+      "name": "正常浮窗會初始化帳戶並完成查詞",
+      "ok": true
+    },
+    {
+      "name": "正常浮窗帶 ticket 且已標記內嵌模式",
+      "ok": true
+    },
+    {
+      "name": "浮窗 ticket 不是空值",
+      "ok": true,
+      "detail": {
+        "length": 36
+      }
+    },
+    {
+      "name": "浮窗可用「更多」展開為完整面板（0.4.0）",
+      "ok": true
+    },
+    {
+      "name": "偽造 ticket：顯示不可用且不初始化",
+      "ok": true,
+      "detail": {
+        "text": "无法在此页面打开查词，请回到普通网页重新选词。",
+        "status": null,
+        "task": null,
+        "inline": false,
+        "notice": null
+      }
+    },
+    {
+      "name": "空白 ticket：顯示不可用且不初始化",
+      "ok": true,
+      "detail": {
+        "text": "无法在此页面打开查词，请回到普通网页重新选词。",
+        "status": null,
+        "task": null,
+        "inline": false,
+        "notice": null
+      }
+    },
+    {
+      "name": "缺 ticket：顯示不可用且不初始化",
+      "ok": true,
+      "detail": {
+        "text": "无法在此页面打开查词，请回到普通网页重新选词。",
+        "status": null,
+        "task": null,
+        "inline": false,
+        "notice": null
+      }
+    },
+    {
+      "name": "頂層分頁帶真 ticket 也不得用內嵌模式初始化",
+      "ok": true,
+      "detail": {
+        "topLevelText": "无法在此页面打开查词，请回到普通网页重新选词。"
+      }
+    },
+    {
+      "name": "頂層分頁帶 embedded 參數也不得開內嵌模式",
+      "ok": true
+    },
+    {
+      "name": "偽造 ticket 未啟動任何 AI 呼叫",
+      "ok": true,
+      "detail": {
+        "aiCalls": 1
+      }
+    },
+    {
+      "name": "偽造 ticket 沒有任何文章／詞書寫入",
+      "ok": true
+    },
+    {
+      "name": "同 tab 重播 ticket：拒絕（第二次文件不得頂替原浮窗）",
+      "ok": true,
+      "detail": {
+        "text": "无法在此页面打开查词，请回到普通网页重新选词。",
+        "status": null,
+        "task": null,
+        "inline": false,
+        "notice": null
+      }
+    },
+    {
+      "name": "原浮窗仍是原本的文件（未被重播取代）",
+      "ok": true
+    },
+    {
+      "name": "跨 tab 重播 ticket：拒絕",
+      "ok": true,
+      "detail": {
+        "text": "无法在此页面打开查词，请回到普通网页重新选词。",
+        "status": null,
+        "task": null,
+        "inline": false,
+        "notice": null
+      }
+    },
+    {
+      "name": "偽造 postMessage 後浮窗仍存活且結果未變",
+      "ok": true,
+      "detail": {
+        "frames": 6,
+        "snapshot": {
+          "text": "BDC 网页查词\n        \n            更多\n            返回小窗\n            编辑选词\n            账户设置\n            关闭\n        \n    AI 设置capture-model · 关闭思考用途当前查词文章提取文章翻译（段落 / 全文）模型Capture Test · capture-model思考模式跟随服务端关闭思考低强度中强度高强度按账户保存到本扩展，下次请求生效。思考程度的实际支持取决于模型。用此设置重新查词恢复账户设置\n\n    \n    \n\n    \n        保留当前编辑？\n        \n        \n            继续编辑\n            放弃编辑并关闭\n        \n    \n\n    \n        \n            BDC 语境查词\n            查阅网页字词，保存释义及原句到词书\n        \n        \n            界面语言\n            \n                简体中文\n                繁體中文（香港）\n            \n            在新标签页打开\n        \n    \n\n    \n        \n            \n                账户与服务连接\n                已连接账户：alice\n            \n            \n                \n                    同步服务地址\n                    \n                \n                \n                    BDC 主站网址（用于打开文章详解）\n                    \n                \n                \n                    登录方式\n                    \n                        用户名与密码\n                        通行码（Token）\n                        一次性登录码\n                    \n                \n\n                \n                    \n                        用户名\n                        \n                    \n                    \n                        密码\n                        \n                    \n                \n\n                \n                    \n                        通行码\n                        \n                    \n                \n\n                \n                    \n                        登录码\n                        \n                    \n                \n\n                \n                    连接并同步 AI 配置\n                    重新同步配置\n                    退出账户\n                    启用当前网页查词\n                \n\n                \n                    管理供应商就绪（v1）\n                    当前查词模型：Capture Test · capture-model（思考：关闭思考）\n                \n            \n        \n\n        \n\n        \n            此扩展尚未取得个人供应商密钥\n            \n            \n                目标个人供应商\n                \n            \n            \n                API Key（按端点与账户隔离保存）\n                \n            \n            导入本机密钥\n        \n    \n\n    \n        \n            语境查词\n            从当前标签页提取选中词\n        \n\n        \n            单词或短语\n            \n        \n\n        \n            \n                所在原句\n            \n            \n                \n                    \n                \n                \n                    附近语境（可选）\n                    \n                \n            \n        \n\n        \n            \n                \n                跳过缓存重新请求\n            \n            语境查词\n        \n\n        \n    \n\n    \n        查询结果\n        正在查询 plunge…\n        \n        \n            \n                plunge\n                /plʌndʒ/\n                verb\n            \n            句中释义：暴跌（语境）\n            句法作用 / 用法：描述价格下跌\n            \n                \n                    例句\n                \n                \n                    \n                \n            \n            capture-model · 关闭思考\n        \n        重新查询\n    \n\n    \n        加入词书\n        \n            \n                目标词书\n                请选择词书单词本Reading\n            \n            加入\n            新建并加入\n        \n        \n            ⋯\n            \n                Major tech stocks plunge\n                已查到释义，请选择词书或直接新建后保存。\n                \n                    更新词书并重试\n                    建立本页词书\n                    新建词书\n                    建立默认生词本\n                    设为默认词书\n                \n                \n                    \n                        词书名称\n                        \n                    \n                    关联当前网页\n                    设为此账户的默认词书\n                    新建词书\n                \n            \n        \n        \n        \n            本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。\n                \n            \n        \n    \n\n    \n        \n            文章\n            提取文章\n            停止\n            在 BDC 打开\n        \n        AI 整理当前网页的标题与正文，保留原文及章节。先预览，再保存；同页词书会自动关联。\n        \n            \n                文章标题\n                \n            \n            \n                正文预览（可修改）\n                \n            \n            保存前同时逐段 AI 分析\n            保存到文章详解\n        \n        \n        \n            词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "status": "已连接账户：alice",
+          "task": "当前查词模型：Capture Test · capture-model（思考：关闭思考）",
+          "inline": true,
+          "notice": ""
+        }
+      }
+    },
+    {
+      "name": "偽造 postMessage 沒有開啟新浮窗",
+      "ok": true,
+      "detail": {
+        "before": 6,
+        "after": 6
+      }
+    },
+    {
+      "name": "偽造 postMessage／合成滑鼠事件沒有新增 AI 呼叫",
+      "ok": true
+    },
+    {
+      "name": "網站寫著假 ticket 的 iframe 被拒絕、沒有寫入",
+      "ok": true
+    },
+    {
+      "name": "網頁看不到浮窗內容（closed shadow root）",
+      "ok": true
+    },
+    {
+      "name": "網頁無法列出浮窗網址",
+      "ok": true
+    },
+    {
+      "name": "內容腳本世界讀不到 chrome.storage（TRUSTED_CONTEXTS）",
+      "ok": true,
+      "detail": {
+        "runtime": true,
+        "storage": "denied: Access to storage is not allowed from this context."
+      }
+    },
+    {
+      "name": "網頁 localStorage／sessionStorage 沒有 ticket 或 token",
+      "ok": true,
+      "detail": {
+        "localStorage": "{}",
+        "sessionStorage": "{}",
+        "runtimeId": false
+      }
+    },
+    {
+      "name": "網頁世界沒有 chrome.runtime",
+      "ok": true
+    },
+    {
+      "name": "面板可從目前分頁擷取文章並預覽",
+      "ok": true
+    },
+    {
+      "name": "保存失敗後待傳出現且預覽立即鎖定",
+      "ok": true
+    },
+    {
+      "name": "勾選逐段分析時保存會跑一次 AI 分析",
+      "ok": true,
+      "detail": {
+        "aiBeforeSave": 2,
+        "aiAfterSave": 4
+      }
+    },
+    {
+      "name": "伺服器其實已建立文章（回應遺失情境成立）",
+      "ok": true,
+      "detail": {
+        "articlesBefore": 0,
+        "savedArticleCount": 1
+      }
+    },
+    {
+      "name": "雲端文章正文是使用者編輯後的內容",
+      "ok": true,
+      "detail": {
+        "body": "# Major tech stocks plunge\n\n使用者編輯後的正文（第一次）"
+      }
+    },
+    {
+      "name": "重開面板後待傳仍在（重試失敗保留）",
+      "ok": true,
+      "detail": {
+        "395e67f576c8": {
+          "type": "article",
+          "requestId": "workspace_5133fdab-c14e-4217-bcff-395e67f576c8",
+          "keys": [
+            "analysis",
+            "body",
+            "sourceType",
+            "sourceUrl",
+            "title"
+          ]
+        }
+      }
+    },
+    {
+      "name": "重試失敗不會重跑 AI",
+      "ok": true,
+      "detail": {
+        "aiAfterSave": 4,
+        "aiCalls": 4
+      }
+    },
+    {
+      "name": "F1：重開面板後仍有待傳時，預覽必須鎖定（標題／正文／分析／儲存都不可用）",
+      "ok": true,
+      "detail": {
+        "title": "Major tech stocks plunge",
+        "body": "使用者編輯後的正文（第一次）",
+        "analyzeChecked": true,
+        "titleDisabled": true,
+        "bodyDisabled": true,
+        "analyzeDisabled": true,
+        "saveDisabled": true,
+        "extractDisabled": true,
+        "pendingHidden": false,
+        "pendingOpen": true,
+        "pendingItems": 1,
+        "notice": "这份内容已在待传队列中。请重试原操作，或先取消该待传再修改。"
+      }
+    },
+    {
+      "name": "F1：鎖定時顯示待傳提示（pagePendingLocked 實際可達）",
+      "ok": true,
+      "detail": {
+        "notice": "这份内容已在待传队列中。请重试原操作，或先取消该待传再修改。"
+      }
+    },
+    {
+      "name": "F1：待傳清單自動展開且仍只有一筆",
+      "ok": true,
+      "detail": {
+        "title": "Major tech stocks plunge",
+        "body": "使用者編輯後的正文（第一次）",
+        "analyzeChecked": true,
+        "titleDisabled": true,
+        "bodyDisabled": true,
+        "analyzeDisabled": true,
+        "saveDisabled": true,
+        "extractDisabled": true,
+        "pendingHidden": false,
+        "pendingOpen": true,
+        "pendingItems": 1,
+        "notice": "这份内容已在待传队列中。请重试原操作，或先取消该待传再修改。"
+      }
+    },
+    {
+      "name": "F1：還原的是待傳原稿（標題／正文／分析勾選），不是第二份 AI 新稿",
+      "ok": true,
+      "detail": {
+        "title": "Major tech stocks plunge",
+        "bodyLength": 14,
+        "analyzeChecked": true
+      }
+    },
+    {
+      "name": "F1：還原待傳時沒有重跑 AI、沒有新增待傳",
+      "ok": true,
+      "detail": {
+        "aiCalls": 4,
+        "aiRequests": 0
+      }
+    },
+    {
+      "name": "F1：待傳鎖定時輸入框不可編輯（輸入被拒絕，不會出現第二份新稿）",
+      "ok": true
+    },
+    {
+      "name": "建立本頁詞書的回應遺失時也會留下待傳",
+      "ok": true,
+      "detail": {
+        "0b9e5203cf9a": {
+          "type": "book",
+          "requestId": "workspace_211cc620-d5cc-47cb-b6f2-0b9e5203cf9a",
+          "keys": [
+            "kind",
+            "makeDefault",
+            "name",
+            "sourceUrl"
+          ]
+        },
+        "395e67f576c8": {
+          "type": "article",
+          "requestId": "workspace_5133fdab-c14e-4217-bcff-395e67f576c8",
+          "keys": [
+            "analysis",
+            "body",
+            "sourceType",
+            "sourceUrl",
+            "title"
+          ]
+        }
+      }
+    },
+    {
+      "name": "伺服器其實已建立本頁詞書",
+      "ok": true,
+      "detail": {
+        "booksBeforeCancel": 2,
+        "now": 3
+      }
+    },
+    {
+      "name": "取消待傳只刪本機那一筆",
+      "ok": true,
+      "detail": {
+        "395e67f576c8": {
+          "type": "article",
+          "requestId": "workspace_5133fdab-c14e-4217-bcff-395e67f576c8",
+          "keys": [
+            "analysis",
+            "body",
+            "sourceType",
+            "sourceUrl",
+            "title"
+          ]
+        }
+      }
+    },
+    {
+      "name": "取消待傳不刪雲端已建立的詞書",
+      "ok": true
+    },
+    {
+      "name": "由待傳列重試成功後清掉該筆待傳",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "重試後雲端保留第一次的正文（第二次編輯沒有蓋掉雲端）",
+      "ok": true
+    },
+    {
+      "name": "重試沒有重建文章（仍只有一篇、文章 ID 不變）",
+      "ok": true,
+      "detail": {
+        "ids": [
+          "webart_ce95cc6c3e998732e3f6cc0b11baaf8dca6e0abad998963b"
+        ],
+        "firstArticleIds": [
+          "webart_ce95cc6c3e998732e3f6cc0b11baaf8dca6e0abad998963b"
+        ]
+      }
+    },
+    {
+      "name": "重試沒有再送 POST /articles",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A63420%2Ftest-article%3Fstrict%3D1"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        }
+      ]
+    },
+    {
+      "name": "重試沒有重跑 AI",
+      "ok": true,
+      "detail": {
+        "aiBeforeRetry": 4,
+        "aiCalls": 4,
+        "aiRequests": 0
+      }
+    },
+    {
+      "name": "重試走的是 GET ?sourceUrl 與 page-link 補關聯",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A63420%2Ftest-article%3Fstrict%3D1"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        }
+      ]
+    },
+    {
+      "name": "重試成功時介面有提示（沿用既有文章，不是靜默成功）",
+      "ok": true,
+      "detail": {
+        "notice": "这篇网页已有文章，已沿用原记录并保留原内容。"
+      }
+    },
+    {
+      "name": "雲端已有文章時直接顯示既有文章入口（不再產生可編輯預覽）",
+      "ok": true,
+      "detail": {
+        "previewHidden": true,
+        "openHidden": false,
+        "openText": "在 BDC 打开",
+        "notice": "这篇网页已有文章，已沿用原记录并保留原内容。"
+      }
+    },
+    {
+      "name": "既有文章入口會說明「已沿用原記錄」",
+      "ok": true,
+      "detail": {
+        "notice": "这篇网页已有文章，已沿用原记录并保留原内容。"
+      }
+    },
+    {
+      "name": "既有文章入口先查 GET ?sourceUrl 再用 page-link 補關聯",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A63420%2Ftest-article%3Fstrict%3D1"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        }
+      ]
+    },
+    {
+      "name": "既有文章入口不跑 AI、不建立文章、不改內容",
+      "ok": true
+    },
+    {
+      "name": "自訂詞書的回應遺失也會留下待傳",
+      "ok": true,
+      "detail": {
+        "766fde0e6d89": {
+          "type": "book",
+          "requestId": "workspace_465550d8-1f95-4fae-b8ea-766fde0e6d89",
+          "keys": [
+            "kind",
+            "makeDefault",
+            "name",
+            "sourceUrl"
+          ]
+        }
+      }
+    },
+    {
+      "name": "伺服器其實已建立自訂詞書",
+      "ok": true,
+      "detail": {
+        "booksBeforeAutoRetry": 3,
+        "now": 4
+      }
+    },
+    {
+      "name": "重開面板會自動重試並清掉待傳",
+      "ok": true,
+      "detail": {
+        "pendingAfterRetry": 0,
+        "debug": {
+          "step": "after-reload-2",
+          "pending": {},
+          "notice": "已选择《自動重試用的詞書》，现在可以加入生词。",
+          "aiCalls": 5,
+          "items": ""
+        }
+      }
+    },
+    {
+      "name": "自動重試沒有把詞書建成兩本",
+      "ok": true,
+      "detail": {
+        "books": 4
+      }
+    },
+    {
+      "name": "自動重試後文章仍只有一篇、內容不變",
+      "ok": true
+    },
+    {
+      "name": "登出前：分頁已換到新 query URL（真新頁面）",
+      "ok": true,
+      "detail": {
+        "url": "http://127.0.0.1:63420/test-article?logoutProbe=1"
+      }
+    },
+    {
+      "name": "換頁後可建立新的可編輯預覽（登出前置條件成立）",
+      "ok": true
+    },
+    {
+      "name": "登出後隱藏文章預覽",
+      "ok": true
+    },
+    {
+      "name": "登出後沒有殘留的進行中任務（取消按鈕消失）",
+      "ok": true
+    },
+    {
+      "name": "登出後不顯示取消造成的錯誤",
+      "ok": true,
+      "detail": {
+        "notice": ""
+      }
+    },
+    {
+      "name": "登出後清空輸入框（不殘留上一個帳戶的文章）",
+      "ok": true,
+      "detail": {
+        "length": 0
+      }
+    },
+    {
+      "name": "登出後清掉待傳清單顯示",
+      "ok": true
+    },
+    {
+      "name": "登出時的取消 AI 沒有在雲端留下文章",
+      "ok": true,
+      "detail": {
+        "articles": 1
+      }
+    },
+    {
+      "name": "切換帳戶後預覽仍為隱藏",
+      "ok": true
+    },
+    {
+      "name": "切換帳戶後看不到上一個帳戶的待傳",
+      "ok": true,
+      "detail": {
+        "previewHidden": true,
+        "bodyResidue": "",
+        "pendingHidden": true,
+        "pendingItems": 0
+      }
+    },
+    {
+      "name": "切換帳戶後輸入框仍是空的",
+      "ok": true,
+      "detail": {
+        "length": 0
+      }
+    },
+    {
+      "name": "流程中沒有未捕獲的擴充套件頁面錯誤",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "原分頁換頁後舊 ticket 失效",
+      "ok": true,
+      "detail": {
+        "text": "无法在此页面打开查词，请回到普通网页重新选词。",
+        "status": null,
+        "task": null,
+        "inline": false,
+        "notice": null
+      }
+    }
+  ],
+  "errors": [
+    "Invalid inline context",
+    "Invalid inline context",
+    "Invalid inline context",
+    "Invalid inline context",
+    "Invalid inline context",
+    "Invalid inline context",
+    "Invalid inline context",
+    "Invalid inline context"
+  ],
+  "consoles": [
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:63420/favicon.ico",
+      "page": "http://127.0.0.1:63420/test-article?strict=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:63420/favicon.ico",
+      "page": "http://127.0.0.1:63420/test-article?strict=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "url": "http://127.0.0.1:63420/articles",
+      "page": "chrome-extension://mimaohnnhoiehanbckldbpdeohfifahj/lookup.html"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "url": "http://127.0.0.1:63420/vocabulary/page-link",
+      "page": "chrome-extension://mimaohnnhoiehanbckldbpdeohfifahj/lookup.html"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "url": "http://127.0.0.1:63420/vocabulary/books",
+      "page": "chrome-extension://mimaohnnhoiehanbckldbpdeohfifahj/lookup.html"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:63420/favicon.ico",
+      "page": "http://127.0.0.1:63420/test-article?crossTabProbe=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "url": "http://127.0.0.1:63420/vocabulary/books",
+      "page": "chrome-extension://mimaohnnhoiehanbckldbpdeohfifahj/lookup.html"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:63420/favicon.ico",
+      "page": "http://127.0.0.1:63420/test-article?logoutProbe=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:63420/favicon.ico",
+      "page": "http://127.0.0.1:63420/test-article?other=1"
+    }
+  ],
+  "badResponses": [
+    {
+      "status": 503,
+      "url": "http://127.0.0.1:63420/articles"
+    },
+    {
+      "status": 503,
+      "url": "http://127.0.0.1:63420/vocabulary/page-link"
+    },
+    {
+      "status": 503,
+      "url": "http://127.0.0.1:63420/vocabulary/books"
+    },
+    {
+      "status": 503,
+      "url": "http://127.0.0.1:63420/vocabulary/books"
+    }
+  ],
+  "debug": [
+    {
+      "step": "after-reload-1",
+      "pending": {
+        "395e67f576c8": {
+          "type": "article",
+          "requestId": "workspace_5133fdab-c14e-4217-bcff-395e67f576c8",
+          "keys": [
+            "analysis",
+            "body",
+            "sourceType",
+            "sourceUrl",
+            "title"
+          ]
+        }
+      },
+      "notice": "",
+      "aiCalls": 4
+    },
+    {
+      "step": "after-pending-restore",
+      "lockState": {
+        "title": "Major tech stocks plunge",
+        "body": "使用者編輯後的正文（第一次）",
+        "analyzeChecked": true,
+        "titleDisabled": true,
+        "bodyDisabled": true,
+        "analyzeDisabled": true,
+        "saveDisabled": true,
+        "extractDisabled": true,
+        "pendingHidden": false,
+        "pendingOpen": true,
+        "pendingItems": 1,
+        "notice": "这份内容已在待传队列中。请重试原操作，或先取消该待传再修改。"
+      },
+      "aiCalls": 4,
+      "requests": []
+    },
+    {
+      "step": "after-pending-retry",
+      "pending": {},
+      "notice": "这篇网页已有文章，已沿用原记录并保留原内容。",
+      "aiCalls": 4,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A63420%2Ftest-article%3Fstrict%3D1"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        }
+      ],
+      "body": "# Major tech stocks plunge\n\n使用者編輯後的正文（第一次）"
+    },
+    {
+      "step": "after-existing-article",
+      "entryState": {
+        "previewHidden": true,
+        "openHidden": false,
+        "openText": "在 BDC 打开",
+        "notice": "这篇网页已有文章，已沿用原记录并保留原内容。"
+      },
+      "aiCalls": 4,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A63420%2Ftest-article%3Fstrict%3D1"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        }
+      ]
+    },
+    {
+      "step": "cross-tab-pending-probe",
+      "injected": {
+        "key": "e-f0f10670190e"
+      },
+      "probeState": {
+        "body": "正在編輯但尚未保存的正文",
+        "bodyDisabled": false,
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "pendingItems": 1
+      },
+      "aiCalls": 5
+    },
+    {
+      "step": "cross-tab-pending-probe-cleanup",
+      "pending": 0
+    },
+    {
+      "step": "after-reload-2",
+      "pending": {},
+      "notice": "已选择《自動重試用的詞書》，现在可以加入生词。",
+      "aiCalls": 5,
+      "items": ""
+    },
+    {
+      "step": "after-logout",
+      "afterLogout": {
+        "previewHidden": true,
+        "cancelHidden": true,
+        "bodyResidue": "",
+        "notice": "",
+        "noticeHidden": true,
+        "pendingHidden": true
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A63420%2Ftest-article%3FlogoutProbe%3D1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ]
+    }
+  ],
+  "hashes": {
+    "extension/background.js": {
+      "sha256_16": "1b0ea58f99fb75bd",
+      "mtime": "2026-11-06 22:00:19"
+    },
+    "extension/page-lookup.js": {
+      "sha256_16": "9cf3a2114ba255e8",
+      "mtime": "2026-11-06 22:08:06"
+    },
+    "extension/lookup.js": {
+      "sha256_16": "a93f2e30d2dd345f",
+      "mtime": "2026-11-06 22:00:19"
+    },
+    "extension/workspace-ui.js": {
+      "sha256_16": "34f931091d5bdb61",
+      "mtime": "2026-11-06 22:18:06"
+    },
+    "extension/modules/extension-workspace.js": {
+      "sha256_16": "3debccda68540ccb",
+      "mtime": "2026-11-06 22:28:44"
+    },
+    "extension/modules/extension-ai-runtime.js": {
+      "sha256_16": "291f807631a56521",
+      "mtime": "2026-11-06 22:28:44"
+    },
+    "extension/modules/sync-cloudflare.js": {
+      "sha256_16": "5bb36b5ffed29681",
+      "mtime": "2026-11-06 22:28:44"
+    },
+    "extension/manifest.json": {
+      "sha256_16": "0f9d849e27d212c4",
+      "mtime": "2026-11-06 22:06:18"
+    },
+    "modules/extension-workspace.js": {
+      "sha256_16": "3debccda68540ccb",
+      "mtime": "2026-11-06 22:18:06"
+    },
+    "shared/workspace-client.mjs": {
+      "sha256_16": "8ae186dfb387eb7a",
+      "mtime": "2026-11-06 22:00:20"
+    },
+    "shared/page-protocol.mjs": {
+      "sha256_16": "9a1cf273a67c55c5",
+      "mtime": "2026-11-06 22:00:20"
+    },
+    "cloudflare-worker/src/capture-books.js": {
+      "sha256_16": "eab5bf6d175d4616",
+      "mtime": "2026-11-06 22:00:17"
+    },
+    "cloudflare-worker/src/page-links.js": {
+      "sha256_16": "10462d19b95209a8",
+      "mtime": "2026-11-06 22:00:17"
+    },
+    "scripts/package-extension.mjs": {
+      "sha256_16": "bfe26dafde73adf2",
+      "mtime": "2026-11-06 22:00:20"
+    },
+    "tests/helpers/extension-mv3.cjs": {
+      "sha256_16": "6b8002590e96465f",
+      "mtime": "2026-11-06 22:00:21"
+    },
+    "tests/extension-inline-security-deepseek.cjs": {
+      "sha256_16": "e024407fdb49fbd5",
+      "mtime": "2026-11-06 22:28:43"
+    },
+    "tests/extension-workspace-client-deepseek.test.mjs": {
+      "sha256_16": "7b84d324f172986b",
+      "mtime": "2026-11-06 22:00:21"
+    }
+  },
+  "realMV3": true,
+  "realWorkerSQLite": true,
+  "aiMocked": true,
+  "stamp": "20261106222844328"
+}

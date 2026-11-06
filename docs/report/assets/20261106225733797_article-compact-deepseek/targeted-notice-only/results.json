@@ -1,0 +1,780 @@
+{
+  "stamp": "20261106225733797-richa",
+  "generatedAt": "2026-11-06T14:59:53.977Z",
+  "baselineCommit": "5b20535",
+  "productVersion": "0.5.1",
+  "mode": {
+    "noticeOnly": true,
+    "uiOnly": false,
+    "extensionDir": "/Users/linus/CODE/bdc-extension-article-compact-20261106/extension"
+  },
+  "loadedCaptureUi": "74de589d003d0ac04faa00214d41b43bac6ff5ef9f95a7de8b7e323b487dd4f1",
+  "testedFiles": {
+    "extension/workspace-ui.js": "34f931091d5bdb61",
+    "extension/capture-ui.js": "74de589d003d0ac0",
+    "extension/inline-panel.js": "c70de0b6617345bc",
+    "extension/lookup.html": "498d65daa6df50e9",
+    "extension/lookup.css": "e6552601adba14ff",
+    "extension/page-lookup.js": "9cf3a2114ba255e8",
+    "extension/manifest.json": "0f9d849e27d212c4",
+    "modules/extension-workspace.js": "3debccda68540ccb",
+    "modules/sync-cloudflare.js": "5bb36b5ffed29681",
+    "modules/api.js": "ba5c45848ac2979e",
+    "modules/i18n.js": "7cb2277944166fb9",
+    "shared/workspace-client.mjs": "8ae186dfb387eb7a",
+    "shared/page-protocol.mjs": "9a1cf273a67c55c5",
+    "shared/capture-client.mjs": "83ecf9eddd914e0f",
+    "cloudflare-worker/src/worker.js": "4eabd9134787eb13",
+    "cloudflare-worker/src/captures.js": "50e10706ea606891",
+    "cloudflare-worker/src/capture-books.js": "eab5bf6d175d4616",
+    "cloudflare-worker/src/page-links.js": "10462d19b95209a8",
+    "cloudflare-worker/src/http.js": "a014ad8e77192c1a",
+    "locales/zh-CN.js": "33ae4bf890c30576",
+    "locales/zh-HK.js": "0ae6bd1d5296af32",
+    "tests/helpers/extension-mv3.cjs": "6b8002590e96465f"
+  },
+  "checks": [
+    {
+      "name": "基線：擴充套件連上測試帳戶（真 Worker＋真 SQLite，AI 為 mock）",
+      "ok": true
+    },
+    {
+      "name": "I0 前置：頁面 D 取得預覽，收藏列沒有任何殘留提示（乾淨起點）",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "captureNoticeHidden": true,
+        "captureNoticeError": false,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "I1 建頁書途中確實重現舊行為：書單仍是舊快取（不含新書），暫時提示「目标词书不存在…」",
+      "ok": true,
+      "detail": {
+        "state": {
+          "notice": "提取完成，请检查标题与正文后保存。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": false,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": true,
+          "extractDisabled": true,
+          "cancelHidden": false,
+          "openHidden": true,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+          "captureSave": "加入",
+          "captureNoticeHidden": false,
+          "captureNoticeError": true,
+          "capturePendingHidden": true,
+          "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2"
+          ],
+          "selectedBook": ""
+        },
+        "book": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2",
+        "gateHits": 2
+      }
+    },
+    {
+      "name": "I1 網路回應補上新書後：成功選中且 targetMissing 已清除（不再殘留紅字）",
+      "ok": true,
+      "detail": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "captureNoticeHidden": true,
+        "captureNoticeError": false,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2",
+          "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+        ],
+        "selectedBook": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+      }
+    },
+    {
+      "name": "I1 建頁書本身成功（工作區提示「已选择《…》」、雲端詞書帶本頁來源）",
+      "ok": true,
+      "detail": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "book": {
+          "entity_id": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2",
+          "data_json": "{\"name\":\"Major tech stocks plunge\",\"sourceUrl\":\"http://127.0.0.1:61061/test-article?case=notice\",\"sourceType\":\"manual\",\"createdAt\":\"2026-11-06T14:59:49.273Z\",\"updatedAt\":\"2026-11-06T14:59:49.273Z\"}",
+          "deleted_at": null
+        }
+      }
+    },
+    {
+      "name": "I2 目標詞書真的不存在時仍然提示 targetMissing（修正沒有把真錯誤一起吞掉）",
+      "ok": true,
+      "detail": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      }
+    },
+    {
+      "name": "I3 手動選中另一本有效詞書後：舊 targetMissing 被清掉、選取生效",
+      "ok": true,
+      "detail": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "captureNoticeHidden": true,
+        "captureNoticeError": false,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": "book"
+      }
+    },
+    {
+      "name": "I3 選取寫回本機詞書選擇（真 chrome.storage），不再指向已刪除的書",
+      "ok": true,
+      "detail": {
+        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A61061:alice:http%3A%2F%2F127.0.0.1%3A61061%2Ftest-article%3Fcase%3Dnotice": "book"
+      }
+    },
+    {
+      "name": "I4 收藏真的失敗時留下待傳提示（不是靜靜清空、也不是假成功）",
+      "ok": true,
+      "detail": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": false,
+        "capturePendingText": "本机待传（1）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。\n                plunge · 单词本等待发送到词书重试取消本机待传",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": "book"
+      }
+    },
+    {
+      "name": "I4 手動改選有效詞書後，待傳提示仍保留（change handler 只清 targetMissing）",
+      "ok": true,
+      "detail": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": false,
+        "capturePendingText": "本机待传（1）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。\n                plunge · 单词本等待发送到词书重试取消本机待传",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": "book-2"
+      }
+    },
+    {
+      "name": "I4 書單刷新（選取仍有效）後，待傳提示仍保留（只有 targetMissing 會被清）",
+      "ok": true,
+      "detail": {
+        "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": false,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": false,
+        "capturePendingText": "本机待传（1）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。\n                plunge · 单词本等待发送到词书重试取消本机待传",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": "book-2"
+      }
+    },
+    {
+      "name": "I4 這次刷新確實重拉書單，且文章保存本身成功（真 Worker／真 SQLite）",
+      "ok": true,
+      "detail": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A61061%2Ftest-article%3Fcase%3Dnotice"
+          },
+          {
+            "method": "POST",
+            "path": "/articles"
+          },
+          {
+            "method": "POST",
+            "path": "/vocabulary/page-link"
+          },
+          {
+            "method": "GET",
+            "path": "/vocabulary/books"
+          }
+        ],
+        "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
+        "articles": 1
+      }
+    },
+    {
+      "name": "I5 待傳在服務恢復後重試成功（真收據、待傳清空、詞條落地）",
+      "ok": true,
+      "detail": {
+        "state": {
+          "notice": "已选择《提示观察》，现在可以加入生词。",
+          "noticeHidden": false,
+          "noticeError": false,
+          "previewHidden": true,
+          "title": "Major tech stocks plunge",
+          "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+          "bodyDisabled": false,
+          "extractDisabled": false,
+          "cancelHidden": true,
+          "openHidden": false,
+          "pendingHidden": true,
+          "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+          "captureNotice": "已加入词书",
+          "captureSave": "加入",
+          "captureNoticeHidden": false,
+          "captureNoticeError": false,
+          "capturePendingHidden": true,
+          "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+          "account": "已连接账户：alice",
+          "books": [
+            "",
+            "book",
+            "book-2",
+            "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+          ],
+          "selectedBook": "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+        },
+        "captures": 1,
+        "entries": 1
+      }
+    },
+    {
+      "name": "全程沒有未捕捉的 JS 例外",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "I0",
+      "title": "提示邊界前置：取得預覽、書單已快取",
+      "state": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "captureNoticeHidden": true,
+        "captureNoticeError": false,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "aiCalls": 1
+    },
+    {
+      "id": "I1-during",
+      "title": "建頁書途中：舊快取書單先套用（網路未回）",
+      "state": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": true,
+        "extractDisabled": true,
+        "cancelHidden": false,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "book": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2",
+      "gateHits": 2
+    },
+    {
+      "id": "I1",
+      "title": "建頁書：網路回應含新書後成功選中",
+      "state": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "captureNoticeHidden": true,
+        "captureNoticeError": false,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2",
+          "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+        ],
+        "selectedBook": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+      },
+      "book": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+    },
+    {
+      "id": "I2",
+      "title": "詞書在雲端被刪除（soft delete）後重拉書單",
+      "state": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": ""
+      },
+      "deleted": "webbook_ad32820cf8efaf41d04184b2c3dfae9653a9bdbe78ec91a2"
+    },
+    {
+      "id": "I3",
+      "title": "手動改選其他有效詞書",
+      "state": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "",
+        "captureSave": "加入",
+        "captureNoticeHidden": true,
+        "captureNoticeError": false,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": "book"
+      },
+      "choices": {
+        "bdc_capture_book_v1:http%3A%2F%2F127.0.0.1%3A61061:alice:http%3A%2F%2F127.0.0.1%3A61061%2Ftest-article%3Fcase%3Dnotice": "book"
+      }
+    },
+    {
+      "id": "I4a",
+      "title": "收藏失敗：留下待傳提示與待傳項目",
+      "state": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": false,
+        "capturePendingText": "本机待传（1）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。\n                plunge · 单词本等待发送到词书重试取消本机待传",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": "book"
+      }
+    },
+    {
+      "id": "I4b",
+      "title": "有待傳提示時手動改選有效詞書",
+      "state": {
+        "notice": "已选择《Major tech stocks plunge》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": true,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": false,
+        "capturePendingText": "本机待传（1）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。\n                plunge · 单词本等待发送到词书重试取消本机待传",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": "book-2"
+      }
+    },
+    {
+      "id": "I4c",
+      "title": "純書單刷新（文章保存觸發 refreshBooks）",
+      "state": {
+        "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": false,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": false,
+        "capturePendingText": "本机待传（1）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。\n                plunge · 单词本等待发送到词书重试取消本机待传",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": "book-2"
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A61061%2Ftest-article%3Fcase%3Dnotice"
+        },
+        {
+          "method": "POST",
+          "path": "/articles"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        }
+      ],
+      "aiCalls": 0
+    },
+    {
+      "id": "I4-觀察",
+      "title": "有待傳提示時建立詞書（快取 pass 與網路回應後的收藏列提示）",
+      "duringCachePass": {
+        "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": true,
+        "extractDisabled": true,
+        "cancelHidden": false,
+        "openHidden": false,
+        "pendingHidden": false,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。\n                待建立词书：提示观察重试取消本机待传",
+        "captureNotice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": false,
+        "capturePendingText": "本机待传（1）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。\n                plunge · 单词本等待发送到词书重试取消本机待传",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2"
+        ],
+        "selectedBook": "book-2"
+      },
+      "afterNetwork": {
+        "notice": "已选择《提示观察》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": false,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": true,
+        "capturePendingHidden": false,
+        "capturePendingText": "本机待传（1）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。\n                plunge · 单词本等待发送到词书重试取消本机待传",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2",
+          "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+        ],
+        "selectedBook": "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+      },
+      "gateHits": 1
+    },
+    {
+      "id": "I5",
+      "title": "服務恢復後重試待傳",
+      "state": {
+        "notice": "已选择《提示观察》，现在可以加入生词。",
+        "noticeHidden": false,
+        "noticeError": false,
+        "previewHidden": true,
+        "title": "Major tech stocks plunge",
+        "body": "Major tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.",
+        "bodyDisabled": false,
+        "extractDisabled": false,
+        "cancelHidden": true,
+        "openHidden": false,
+        "pendingHidden": true,
+        "pendingText": "词书与文章待传\n            \n                重试会沿用原操作。取消本机待传不会删除云端已保存的词书或文章。",
+        "captureNotice": "已加入词书",
+        "captureSave": "加入",
+        "captureNoticeHidden": false,
+        "captureNoticeError": false,
+        "capturePendingHidden": true,
+        "capturePendingText": "本机待传（0）\n            \n                重新打开扩展或恢复连接后会重试。取消本机待传不会删除已保存到词书的内容。",
+        "account": "已连接账户：alice",
+        "books": [
+          "",
+          "book",
+          "book-2",
+          "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+        ],
+        "selectedBook": "webbook_3bb8886192268c4518ebb99d71891dae8c712c5a1786a3df"
+      },
+      "capture": {
+        "requestId": "capture_b1fe6518-b65d-4c88-b2d3-2ba20b62b824",
+        "bookId": "book",
+        "word": "plunge",
+        "meaning": "暴跌（语境）",
+        "phonetic": "plʌndʒ",
+        "pos": "verb",
+        "source": {
+          "sourceUrl": "",
+          "pageTitle": "",
+          "sentence": "Major tech stocks plunge as investors worry.",
+          "context": "Major tech stocks plunge as investors worry. Markets remain volatile.",
+          "meaning": "暴跌（语境）",
+          "locale": "zh-CN",
+          "anchor": {
+            "start": -1,
+            "end": -1,
+            "quote": "plunge",
+            "prefix": "",
+            "suffix": ""
+          }
+        }
+      }
+    }
+  ],
+  "requestFailures": [],
+  "pageErrors": [],
+  "summary": {
+    "pass": 14,
+    "fail": 0
+  }
+}

@@ -1,0 +1,121 @@
+PASS A1 交付標記 docs/report/assets/anchored-popup-ready.json 存在
+PASS A2 0.4.0 新 UI ids 齊備（more／back／confirm／discard／keep／quick-capture）
+PASS A3 body .ext-compact／.ext-expanded 存在
+PASS A4 manifest 版本為 0.4.x／0.5.x
+PASS A5 尺寸／模式／關閉以擴充套件內部訊息中繼（不向網頁廣播票據）
+PASS A6 擴充套件可打包並載入（真 MV3）
+PASS A7 可信擴充套件頁面可連上測試帳戶
+PASS B1 僅選詞（未點查詞）不開小窗
+PASS B2 僅選詞不呼叫 AI（Q1：保留點一下查詞）
+PASS B3 closed shadow 內有真的浮動查詞按鈕，且框可量測（CDP pierce）
+PASS B4 真點擊查詞後才開小窗（嚴格 CSP 網頁也可用）
+PASS B5 iframe 實際框可量測（frame.frameElement().boundingBox）
+PASS B6 小窗顯示詞、音標、詞性、句中釋義
+PASS B7 寬度約 340px（Q4）
+PASS B8 高度小（緊湊卡，不是整個視窗高的舊面板）
+PASS B9 卡片貼近選區（下方為主；間距 ≤ 24px，不足則在上方）
+PASS B10 卡片與選區水平有重疊（貼著同一個詞）
+PASS B11 卡片完整落在視窗內
+PASS B12 進入緊湊模式（body.ext-compact，不是 .ext-expanded）
+PASS B13 緊湊卡有「更多」與收藏入口
+PASS B14 緊湊卡不顯示進階編輯（文章擷取／建書／待傳）
+PASS B15 自動高度：內容完整塞進 iframe（沒有裁切、沒有內部捲動）
+NOTE 自動高度收斂後尺寸: {"x":293,"y":104,"width":340,"height":196}
+PASS B16 查詞確實呼叫一次 AI（新詞）
+PASS B17 小窗標記為內嵌模式（ext-inline）
+NOTE 基線幾何: {"selection":{"x":293.3,"y":51.4,"width":102,"height":45},"box":{"x":293,"y":104,"width":340,"height":198},"viewport":{"width":1280,"height":900}}
+PASS C0 邊界探針已注入頁面（前提成立）
+PASS C1 邊界 top：貼著選區、翻轉／夾限正確且完整留在視窗內
+PASS C2 邊界 bottom：貼著選區、翻轉／夾限正確且完整留在視窗內
+PASS C3 邊界 left：貼著選區、翻轉／夾限正確且完整留在視窗內
+PASS C4 邊界 right：貼著選區、翻轉／夾限正確且完整留在視窗內
+PASS D1 多行短語：選區確實跨行（前提成立）
+PASS D2 多行短語：按整個選區（union）定位且留在視窗內
+PASS D3 多行短語：查的是完整短語且顯示結果
+PASS D4 多行短語：寬高仍符合小窗
+PASS E1 頁面捲動：卡片跟隨選詞（仍貼著被選的文字）
+PASS E2 頁面捲動：選詞離開可視範圍就收起（Q5）
+PASS E3 容器捲動：卡片跟隨（仍在同一個選詞旁）
+PASS E4 容器捲動：選詞被容器捲走就收起
+PASS F1 卡內點擊不誤關（點在小窗內保持開啟、結果不變）
+PASS F2 卡內點擊不重跑 AI
+PASS F3 卡內 Esc 收起小窗（Q3）
+PASS F4 頁面 Esc 收起小窗（Q3）
+PASS F5 外部點擊收起一般小窗（Q3）
+PASS F6 換新詞（再點查詞）全頁只保留單一小窗
+PASS F7 新詞用新票據並顯示新詞
+PASS F8 普通選取不換卡、不呼叫 AI（Q5）
+PASS G1 點「更多」展開完整面板（body.ext-expanded）
+PASS G2 展開後同一個 iframe 變大且仍在視窗內
+PASS G3 展開保留結果與同一個 iframe／票據（沒有重建）
+PASS G4 展開不重跑 AI（沿用既有結果）
+PASS G5 展開後可由詞書選項開啟建書，文章擷取直接可用
+NOTE 展開尺寸: {"compact":{"x":468,"y":148,"width":340,"height":196},"expanded":{"x":848,"y":12,"width":420,"height":332}}
+PASS G6 返回小窗（body.ext-compact）且高度回到緊湊
+PASS G7 返回後結果仍在、沒有重跑 AI
+PASS H1 展開後可從本頁擷取文章並建立可編輯草稿
+PASS H2 可編輯草稿（前提成立）
+PASS H3 dirty 時外部點擊不自動關閉（Q7）
+PASS H4 dirty 時捲動也不自動關閉（Q7）
+PASS H5 明確關閉且有草稿時要確認（#ext-inline-confirm／keep／discard）
+PASS H6 選「保留」：面板不關、草稿仍在
+PASS H7 busy（AI 執行中）外部點擊不自動關閉
+PASS H8 選「放棄」後關閉小窗
+PASS I1 沒有可用目標時，一鍵建立本頁詞書並加入當前結果（Q6）
+PASS I2 收藏寫入的是畫面上的結果（不重跑 AI）
+PASS I3 收藏帶上來源網址、頁面標題與選區錨點（原意／來源）
+PASS I4 收藏記錄目前介面語言
+PASS I5 伺服器回執成立：詞書與詞條都真的寫進 DB（不是假成功）
+PASS I6 小窗顯示目標詞書名稱（Q6：顯示目標名稱）
+PASS I7 可在可信頁面明確設定預設詞書（前提成立）
+PASS I8 新頁面沒有頁書時沿用「明確預設」詞書（Q6 次序）
+PASS I9 有頁書時頁書優先於明確預設（Q6 次序）
+PASS I10 同頁明確選擇的詞書優先於頁書與預設（Q6 次序）
+NOTE 字典 extension.captureNoBooks: {"zh-CN":"暂无词书，可直接在此新建。","zh-HK":"暫無詞書，可直接在此新增。"}
+PASS I11 zh-CN 空詞書：下拉佔位文字與「建立本頁詞書並加入」按鈕都引導在此新建，卡片沒有 BDC／「先在…」舊引導
+PASS I12 zh-CN 空詞書以選單及選項提示引導直接新建，不重複佔用提示行
+NOTE 空詞書提示列的可見時機（觀察，不判定成敗）: {"compact":"","afterRefresh":""}
+PASS I13 zh-HK 空詞書：下拉佔位與按鈕改用香港繁體同一條文字，不是 zh-CN 文字，也沒有 BDC／「先…」
+PASS I14 zh-HK 空詞書以選單及選項提示引導直接新增，不重複佔用提示行
+PASS I15 兩語字典同鍵同語義：都引導在原地新建、都不含 BDC／「先…」、且無插值參數
+PASS I16 前端無硬編碼：extension/ 不含這兩條文字，capture-ui 以 t('extension.captureNoBooks') 取鍵，打包字典與根字典同檔
+PASS I17 0 本詞書時「建立本頁詞書並加入」真的可用（伺服器回執＋DB 有詞書與詞條）
+PASS J1 收藏失敗顯示錯誤／待傳，不得顯示成功
+PASS J2 收藏失敗沒有在雲端留下詞條（不假成功）
+PASS J3 由待傳列重試後成功
+PASS J4 重試沿用同一個 requestId（重試不多建）
+PASS J5 重試後詞條只有一筆（沒有重複建立）
+PASS J6 重試沒有重跑 AI
+PASS J7 回應遺失時不得宣稱成功，並留下待傳
+PASS J8 伺服器其實已寫入（回應遺失情境成立）
+PASS J9 重試沿用同一 requestId 並拿到原回執（不多建）
+PASS K1 網頁偽造訊息（含真 ticket）不能 expand／resize 小窗
+PASS K2 網頁偽造訊息不能關閉小窗
+PASS K3 網頁偽造訊息不能開新卡或替換內容
+PASS K4 網頁偽造訊息不能觸發收藏／AI／寫入
+PASS K5 合成滑鼠事件不會開卡或改變卡片
+PASS K6 網頁讀不到小窗內容（closed shadow root）
+PASS L1 網頁世界送出的 window message 不含 ticket／token（產品自己不經網頁通道）
+PASS L2 網頁世界收到的 window message 不含 ticket／token（卡片不靠 window message 傳票據）
+PASS L5 卡片從未向網頁世界 postMessage（偽造前後都沒有來自 chrome-extension 的訊息）
+PASS L3 網頁 storage 沒有 ticket／token，網頁世界也沒有 chrome.runtime
+PASS L4 網頁無法列出小窗網址（拿不到 ticket）
+NOTE 頁面世界訊息: {"productPosted":0,"productInbound":0,"afterForge":12}
+PASS M1 連點兩個詞的查詞：全頁仍只有一個小窗
+PASS M2 最終顯示的是後點的詞
+PASS M3 前一個詞遲到的回應沒有蓋掉新結果（票據已換）
+PASS N1a zh-HK：詞義使用該語言
+PASS N1b zh-HK：窄視窗寬度仍約 340 且完整留在視窗內
+PASS N1c zh-HK：小窗沒有橫向溢出
+PASS N1d zh-HK：展開後不溢出且高度夾限在視窗內
+PASS N2a zh-CN：詞義使用該語言
+PASS N2b zh-CN：窄視窗寬度仍約 340 且完整留在視窗內
+PASS N2c zh-CN：小窗沒有橫向溢出
+PASS N2d zh-CN：展開後不溢出且高度夾限在視窗內
+NOTE locale 幾何: {"zh-HK":{"box":{"x":293,"y":104,"width":340,"height":196},"meaning":"句中釋義：急跌（語境）","moreLabel":"更多","captureLabel":"新增並加入"},"zh-CN":{"box":{"x":293,"y":104,"width":340,"height":196},"meaning":"句中释义：暴跌（语境）","moreLabel":"更多","captureLabel":"新建并加入"}}
+PASS O1 新帳戶的小窗不沿用上一個帳戶的詞書
+PASS O2 切換帳戶後的收藏不會寫進上一個帳戶
+PASS O3 若宣稱成功就必須真的寫進目前帳戶（否則不得假成功）
+PASS O4 小窗顯示的帳戶與目前登入者一致（不是上一個帳戶）
+PASS P1 正常流程沒有未捕獲的頁面錯誤
+{"mode":"full","passed":113,"failed":0,"total":113,"output":"/tmp/bdc-article-compact-anchored"}

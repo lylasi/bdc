@@ -1,0 +1,17 @@
+PASS · P1 從乾淨源碼包匯出後，extension 產物（ai-config.js／modules／locales／shared／_locales）確實不存在
+        ↳ rev=HEAD(da6267e) 追蹤的 extension 檔=12 仍存在=[] 根私有ai-config=false
+PASS · P2 未打包的 extension 目錄載入時確實失敗（證明「先執行打包」是必要步驟，不是可選美化）
+        ↳ i18n已套用=false 標題="undefined" 帳戶列="undefined" 錯誤=[]
+PASS · P3 在乾淨源碼包內執行 node scripts/package-extension.mjs 成功，且打包檔數與腳本宣告的產物清單一致、每個宣告檔都真的落地
+        ↳ 輸出="Packaged 52 files into /private/tmp/codeg-acp-501/99144-9201c4b1/bdc-clean-src-Vpkywx/source/extension" 宣告共享檔=49+3（ai-config.js、_locales×2）=52 實際=52 未落地=[]
+PASS · F1（新發現）以含符號連結的絕對路徑（macOS /tmp → /private/tmp）直接執行打包腳本時，仍必須真的寫出產物
+        ↳ 相對路徑呼叫輸出="Packaged 52 files into /private/tmp/codeg-acp-501/99144-9201c4b1/bdc-clean-src-Vpkywx/source/extension"／絕對路徑呼叫輸出="Packaged 52 files into /private/tmp/codeg-acp-501/99144-9201c4b1/bdc-clean-src-Vpkywx/source/extension"（空字串代表腳本靜默未執行，退出碼仍為 0）
+PASS · P4 打包後可在真實 MV3 載入、連上帳戶、解析 managed 模型、讀到詞書清單並完成一次語境查詞（無任何 BDC 網站分頁，且沒有未建模的 4xx／5xx）
+        ↳ 已連線=true 任務列="当前查词模型：Managed Default Provider · managed-gpt（思考：关闭思考）" 查詞結果={"hidden":false,"meaning":"句中释义：clean-package:charge","meta":"managed-gpt · 关闭思考"} BDC分頁=[] 詞書端點=GET /worker/vocabulary/books → 200 詞書下拉={"options":["请选择词书","Clean Package Book"],"selected":"clean-package-book","notice":""} 未建模路由=[] 失敗請求=[] 主控台錯誤=[]
+        ↳ 請求序列=["POST /worker/login → 200","GET /worker/ai-catalog → 200","GET /worker/vocabulary/books → 200","GET /worker/snapshot → 200","GET /worker/ai-catalog → 200","GET /worker/ai-credentials → 200","GET /worker/ai-catalog/providers/managed-default/credential?catalogVersion=3 → 200","POST /provider-managed/v1/chat/completions → 200","GET /worker/ai-credentials → 200"]
+PASS · P5 重複打包產物逐位元組相同，且共享副本與來源檔一致（單一來源、原子寫入沒有留下殘檔）
+        ↳ 檔案數=64 hash相同=true 漂移=[]
+PASS · P6 在乾淨源碼包內可跑擴充套件 node 測試（不依賴本機私有 ai-config.js）
+        ↳ pass=13 fail=0
+
+=== clean package retest: 7/7 checks hold ===

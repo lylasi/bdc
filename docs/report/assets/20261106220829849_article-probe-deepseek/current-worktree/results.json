@@ -1,0 +1,637 @@
+{
+  "stamp": "20261106221310751",
+  "generatedAt": "2026-11-06T14:13:24.773Z",
+  "baselineCommit": "5b20535",
+  "testedFiles": {
+    "extension/workspace-ui.js": "577c60258237aa1e",
+    "modules/extension-workspace.js": "a29d9348d457a49a",
+    "modules/sync-cloudflare.js": "5bb36b5ffed29681",
+    "modules/api.js": "ba5c45848ac2979e",
+    "shared/workspace-client.mjs": "8ae186dfb387eb7a",
+    "shared/page-protocol.mjs": "9a1cf273a67c55c5",
+    "cloudflare-worker/src/worker.js": "4eabd9134787eb13",
+    "cloudflare-worker/src/captures.js": "50e10706ea606891",
+    "cloudflare-worker/src/capture-books.js": "eab5bf6d175d4616",
+    "cloudflare-worker/src/page-links.js": "10462d19b95209a8",
+    "cloudflare-worker/src/http.js": "a014ad8e77192c1a",
+    "locales/zh-CN.js": "9a2fc50aa52f5b31",
+    "tests/helpers/extension-mv3.cjs": "6b8002590e96465f"
+  },
+  "scenarios": [
+    {
+      "id": "S0",
+      "title": "對照：不注入任何故障",
+      "state": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "bodyLength": 133,
+        "extractDisabled": false
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "aiCalls": 1
+    },
+    {
+      "id": "S1",
+      "title": "預查請求連線失敗（route.abort / net::ERR_FAILED）",
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "bodyLength": 133,
+        "extractDisabled": false
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "aiCalls": 1
+    },
+    {
+      "id": "S2",
+      "title": "預查回 500 capture_failed（後端／D1 錯誤）",
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "bodyLength": 133,
+        "extractDisabled": false
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "aiCalls": 1
+    },
+    {
+      "id": "S3",
+      "title": "邊緣 502 HTML、無 Access-Control-Allow-Origin（Cloudflare 錯誤頁）",
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "bodyLength": 133,
+        "extractDisabled": false
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "aiCalls": 1
+    },
+    {
+      "id": "S4",
+      "title": "舊版 Worker／路由不存在（404 not_found）",
+      "state": {
+        "notice": "操作未完成，已提交的待传项目可在下方重试。",
+        "noticeHidden": false,
+        "previewHidden": true,
+        "title": "",
+        "bodyLength": 0,
+        "extractDisabled": false
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        }
+      ],
+      "aiCalls": 0
+    },
+    {
+      "id": "S5",
+      "title": "預查超過 findExistingPageArticle 的 10 秒預設逾時",
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "bodyLength": 133,
+        "extractDisabled": false
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "aiCalls": 1
+    },
+    {
+      "id": "S6",
+      "title": "預查第二步 page-link 回 404 article_not_found",
+      "state": {
+        "notice": "操作未完成，已提交的待传项目可在下方重试。",
+        "noticeHidden": false,
+        "previewHidden": true,
+        "title": "",
+        "bodyLength": 0,
+        "extractDisabled": false
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        }
+      ],
+      "aiCalls": 0
+    },
+    {
+      "id": "S7a",
+      "title": "預查仍失敗時按「重新同步配置」：同步服務本身正常",
+      "syncTraffic": [
+        {
+          "method": "GET",
+          "path": "/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog"
+        }
+      ],
+      "syncFailures": []
+    },
+    {
+      "id": "S7b",
+      "title": "同一 session：同步正常但預查失敗 → 顯示的仍是「无法连接到同步服务」",
+      "state": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "noticeHidden": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "bodyLength": 133,
+        "extractDisabled": false
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "aiCalls": 1
+    },
+    {
+      "id": "S7c",
+      "title": "對照：解除注入後同一 session 內恢復",
+      "state": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "bodyLength": 133,
+        "extractDisabled": false
+      },
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ],
+      "aiCalls": 1,
+      "duringRecover": [
+        {
+          "method": "GET",
+          "path": "/me"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "基線：擴充套件頁面連上測試帳戶並載入 managed AI 設定",
+      "ok": true
+    },
+    {
+      "name": "S0 對照組：預查成功後 AI 真的被呼叫",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "bodyLength": 133,
+        "extractDisabled": false
+      }
+    },
+    {
+      "name": "S0 對照組：畫面顯示「提取完成」",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。"
+      }
+    },
+    {
+      "name": "S0 對照組：預查請求真的帶 sourceUrl 參數",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ]
+    },
+    {
+      "name": "S1 預查連線失敗：畫面顯示「无法连接到同步服务」（＝截圖那句）",
+      "ok": false,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      }
+    },
+    {
+      "name": "S1 預查連線失敗：AI 完全沒有被呼叫（擷取整段被阻塞）",
+      "ok": false,
+      "detail": {
+        "aiCalls": 1
+      }
+    },
+    {
+      "name": "S1 預查連線失敗：沒有產生任何預覽",
+      "ok": false
+    },
+    {
+      "name": "S2 後端 500：AI 一樣沒有被呼叫",
+      "ok": false,
+      "detail": {
+        "aiCalls": 1
+      }
+    },
+    {
+      "name": "S2 後端 500：畫面不是「無法連線到同步服務」而是通用失敗訊息（HTTP 錯誤沒被當成網路錯誤，但真正原因被吃掉）",
+      "ok": false,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      }
+    },
+    {
+      "name": "S3 邊緣 502 無 CORS：AI 沒有被呼叫",
+      "ok": false,
+      "detail": {
+        "aiCalls": 1
+      }
+    },
+    {
+      "name": "S3 邊緣 502 無 CORS：畫面不是「提取完成」",
+      "ok": true,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      }
+    },
+    {
+      "name": "S4 404：AI 沒有被呼叫",
+      "ok": true,
+      "detail": {
+        "aiCalls": 0
+      }
+    },
+    {
+      "name": "S4 404：顯示通用失敗訊息（沒有提示「請更新服務端」）",
+      "ok": true,
+      "detail": {
+        "notice": "操作未完成，已提交的待传项目可在下方重试。"
+      }
+    },
+    {
+      "name": "S5 逾時：AI 沒有被呼叫",
+      "ok": false,
+      "detail": {
+        "aiCalls": 1
+      }
+    },
+    {
+      "name": "S5 逾時：顯示「AI 请求超时」（與 workspace-client 的 30 秒不一致）",
+      "ok": false,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      }
+    },
+    {
+      "name": "S6 page-link 404：AI 沒有被呼叫",
+      "ok": true,
+      "detail": {
+        "aiCalls": 0
+      }
+    },
+    {
+      "name": "S6 page-link 404：顯示通用失敗訊息",
+      "ok": true,
+      "detail": {
+        "notice": "操作未完成，已提交的待传项目可在下方重试。"
+      }
+    },
+    {
+      "name": "S7a 預查失敗的同時，/ai-credentials 仍被正常呼叫（正是回報的「ai-credentials仍200」）",
+      "ok": false,
+      "detail": {
+        "aiCredentialHits": [],
+        "syncFailures": []
+      }
+    },
+    {
+      "name": "S7a 預查失敗的同時，/snapshot 與帳戶狀態都正常（同步服務可達、token 有效）",
+      "ok": true,
+      "detail": {
+        "snapshotHits": [
+          {
+            "method": "GET",
+            "path": "/snapshot"
+          }
+        ],
+        "status": "已连接账户：alice"
+      }
+    },
+    {
+      "name": "S7b 同步服務正常、預查失敗時畫面仍顯示「无法连接到同步服务」（誤導性結論的直接證據）",
+      "ok": false,
+      "detail": {
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。",
+        "aiCalls": 1
+      }
+    },
+    {
+      "name": "S7c 解除注入後擷取恢復（AI 有跑、預覽出現）",
+      "ok": true,
+      "detail": {
+        "notice": "提取完成，请检查标题与正文后保存。",
+        "noticeHidden": false,
+        "previewHidden": false,
+        "title": "Major tech stocks plunge",
+        "bodyLength": 133,
+        "extractDisabled": false
+      }
+    },
+    {
+      "name": "S7c 不帶 sourceUrl 的詞書清單一直正常（故障只在 sourceUrl 分支）",
+      "ok": true,
+      "detail": {
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/vocabulary/books"
+          },
+          {
+            "method": "GET",
+            "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article"
+          }
+        ]
+      }
+    },
+    {
+      "name": "總結：預查的各種故障形態全部讓 AI 一次都沒跑（不是 AI 供應商問題）",
+      "ok": false,
+      "detail": [
+        {
+          "id": "S1",
+          "aiCalls": 1
+        },
+        {
+          "id": "S2",
+          "aiCalls": 1
+        },
+        {
+          "id": "S3",
+          "aiCalls": 1
+        },
+        {
+          "id": "S4",
+          "aiCalls": 0
+        },
+        {
+          "id": "S5",
+          "aiCalls": 1
+        },
+        {
+          "id": "S6",
+          "aiCalls": 0
+        },
+        {
+          "id": "S7b",
+          "aiCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "總結：只有「連線失敗」會顯示截圖那句「无法连接到同步服务」",
+      "ok": false,
+      "detail": [
+        {
+          "id": "S0",
+          "notice": "提取完成，请检查标题与正文后保存。"
+        },
+        {
+          "id": "S1",
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+        },
+        {
+          "id": "S2",
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+        },
+        {
+          "id": "S3",
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+        },
+        {
+          "id": "S4",
+          "notice": "操作未完成，已提交的待传项目可在下方重试。"
+        },
+        {
+          "id": "S5",
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+        },
+        {
+          "id": "S6",
+          "notice": "操作未完成，已提交的待传项目可在下方重试。"
+        },
+        {
+          "id": "S7a"
+        },
+        {
+          "id": "S7b",
+          "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+        },
+        {
+          "id": "S7c",
+          "notice": "提取完成，请检查标题与正文后保存。"
+        }
+      ]
+    },
+    {
+      "name": "總結：沒有任何失敗形態提示「請更新同步服務」或指出真正的後端錯誤",
+      "ok": true
+    }
+  ],
+  "requestFailures": [
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A54901%2Ftest-article",
+      "error": "net::ERR_FAILED"
+    }
+  ],
+  "summary": {
+    "pass": 13,
+    "fail": 12,
+    "notices": [
+      {
+        "id": "S0",
+        "aiCalls": 1,
+        "notice": "提取完成，请检查标题与正文后保存。"
+      },
+      {
+        "id": "S1",
+        "aiCalls": 1,
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      },
+      {
+        "id": "S2",
+        "aiCalls": 1,
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      },
+      {
+        "id": "S3",
+        "aiCalls": 1,
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      },
+      {
+        "id": "S4",
+        "aiCalls": 0,
+        "notice": "操作未完成，已提交的待传项目可在下方重试。"
+      },
+      {
+        "id": "S5",
+        "aiCalls": 1,
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      },
+      {
+        "id": "S6",
+        "aiCalls": 0,
+        "notice": "操作未完成，已提交的待传项目可在下方重试。"
+      },
+      {
+        "id": "S7a"
+      },
+      {
+        "id": "S7b",
+        "aiCalls": 1,
+        "notice": "已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。"
+      },
+      {
+        "id": "S7c",
+        "aiCalls": 1,
+        "notice": "提取完成，请检查标题与正文后保存。"
+      }
+    ]
+  }
+}
