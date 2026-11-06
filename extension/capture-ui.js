@@ -55,11 +55,14 @@ export function createCaptureUI(dom) {
         const session = captureAuthSession();
         const saved = !!displayed && savedKey === currentKey();
         dom.captureSave.disabled = busy || saved || !session.loggedIn || !displayed || !dom.captureBook.value;
-        dom.captureSave.textContent = t(busy ? 'extension.captureSaving' : saved ? 'extension.captureSaved' : 'extension.captureSave');
+        dom.captureSave.textContent = t(busy ? 'extension.captureAddingShort' : saved ? 'extension.captureAddedShort' : 'extension.captureAddShort');
+        dom.captureSave.title = t(busy ? 'extension.captureSaving' : saved ? 'extension.captureSaved' : 'extension.captureSave');
+        dom.captureSave.setAttribute('aria-label', dom.captureSave.title);
         dom.captureRefresh.disabled = !session.loggedIn;
         dom.captureNotice.hidden = !notice;
         dom.captureNotice.textContent = notice ? t(notice.key, notice.params) : '';
         dom.captureNotice.classList.toggle('ext-notice-error', notice?.kind === 'error');
+        dom.captureNotice.classList.toggle('ext-capture-success', saved && ['extension.captureSaved', 'extension.captureSavedTo'].includes(notice?.key));
         dom.capturePending.hidden = pending.length === 0;
         dom.capturePendingSummary.textContent = t('extension.capturePendingCount', { count: pending.length });
         dom.capturePendingList.replaceChildren();
@@ -133,6 +136,7 @@ export function createCaptureUI(dom) {
             dom.captureBook.appendChild(option);
         }
         dom.captureBook.value = books.some((book) => book.id === selected) ? selected : '';
+        if (['extension.captureSaved', 'extension.captureSavedTo'].includes(notice?.key) && savedKey !== currentKey()) notice = null;
         if (previous && !selected && books.length) setNotice('extension.captureTargetMissing', 'error');
         render();
     }
@@ -154,8 +158,9 @@ export function createCaptureUI(dom) {
             await storage?.set({ [cacheKey]: { ...result, selectionPolicy: 'explicit-v1' } }).catch(() => {});
             if (version !== loadVersion || !isAuthSessionCurrent(session)) return;
             await restoreChoice(session);
-            if (!books.length) setNotice('extension.captureNoBooks');
-            else if (notice?.key === 'extension.captureNoBooks' || notice?.key === 'extension.captureBooksOffline') setNotice(null);
+            // The empty select and create action already explain the empty
+            // state. Keep notices for errors and pending work, not duplicates.
+            if (notice?.key === 'extension.captureNoBooks' || notice?.key === 'extension.captureBooksOffline') setNotice(null);
         } catch (error) {
             if (!isAuthSessionCurrent(session) || version !== loadVersion) return;
             if (books.length && (!error.status || error.status >= 500)) setNotice('extension.captureBooksOffline');
@@ -284,6 +289,7 @@ export function createCaptureUI(dom) {
         choiceVersion += 1;
         savedKey = '';
         lastAttempt = null;
+        if (['extension.captureSaved', 'extension.captureSavedTo'].includes(notice?.key)) notice = null;
         const session = captureAuthSession();
         if (session.loggedIn && dom.captureBook.value) storage?.set({ [choiceKey(session)]: dom.captureBook.value }).catch(showError);
         render();

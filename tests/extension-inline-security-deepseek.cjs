@@ -367,9 +367,13 @@ async function connect(popup, base, env, token) {
         // 文章已寫入伺服器，但回應被換成 503（等同「回應遺失」）。
         await applyThenFail(context, env, ALICE, '/articles');
         const aiBeforeSave = env.state.aiCalls;
+        const lostArticleReply = context.waitForEvent('response', { predicate: (response) =>
+            response.url() === env.base + '/articles' && response.request().method() === 'POST' && response.status() === 503,
+            timeout: 30000 });
         await popup.locator('#ext-article-save').click();
         await popup.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length > 0, null, { timeout: 30000 });
         await popup.waitForFunction(() => !document.querySelector('#ext-workspace-notice').hidden, null, { timeout: 30000 });
+        await lostArticleReply;
         const aiAfterSave = env.state.aiCalls;
         const lockedNow = await popup.evaluate(() => document.querySelector('#ext-article-body').disabled
             && document.querySelector('#ext-article-title').disabled && document.querySelector('#ext-article-analyze').disabled);
@@ -431,6 +435,7 @@ async function connect(popup, base, env, token) {
         // 待傳清單的「取消本機待傳」不得刪掉雲端已保存的內容。
         await applyThenFail(context, env, ALICE, '/vocabulary/books');
         const booksBeforeCancel = await bookCount(env);
+        if (!await popup.locator('#ext-book-options').evaluate(node => node.open)) await popup.locator('#ext-book-options > summary').click();
         await popup.locator('#ext-book-page').click();
         await popup.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 2, null, { timeout: 30000 });
         check('建立本頁詞書的回應遺失時也會留下待傳', (await pendingCount(popup)) === 2, await pendingKeys(popup));
@@ -538,6 +543,7 @@ async function connect(popup, base, env, token) {
         // 另一筆健康待傳（自訂詞書的回應遺失）：重開面板要能自動重試並清掉，且不重複建立。
         await applyThenFail(context, env, ALICE, '/vocabulary/books');
         const booksBeforeAutoRetry = await bookCount(env);
+        if (!await popup.locator('#ext-book-options').evaluate(node => node.open)) await popup.locator('#ext-book-options > summary').click();
         await popup.locator('#ext-book-new').click();
         await popup.locator('#ext-book-link-page').uncheck();
         await popup.locator('#ext-book-name').fill('自動重試用的詞書');
@@ -579,6 +585,7 @@ async function connect(popup, base, env, token) {
         await popup.locator('#ext-article-extract').click();
         await popup.waitForFunction(() => !document.querySelector('#ext-article-cancel').hidden, null, { timeout: 30000 }).catch(() => {});
         await sleep(200);
+        if (!await popup.locator('#ext-account-details').evaluate(node => node.open)) await popup.locator('#ext-account-summary').click();
         await popup.locator('#ext-logout-btn').click();
         await popup.waitForFunction(() => /未登录账户/.test(document.querySelector('#ext-account-status').textContent), null, { timeout: 30000 });
         await sleep(2500);

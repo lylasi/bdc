@@ -1503,6 +1503,14 @@ export default {
         analysisFailed: '分析失敗'
     },
     extension: {
+        captureAddShort: '加入',
+        captureAddedShort: '已加入',
+        captureAddingShort: '加入中…',
+        captureMoreOptions: '詞書選項',
+        inlineQuickAdd: '新增並加入',
+        pageArticleShortTitle: '文章',
+        pageArticleExtractShort: '擷取文章',
+        pagePreviewSyncDeferred: '已擷取，可先預覽；暫時未能檢查已保存的文章，儲存時會重試。',
         aiOptions: 'AI 設定',
         aiTaskLabel: '用途',
         aiCurrentLookup: '目前查詞',
@@ -1542,7 +1550,7 @@ export default {
         inlineEnable: '啟用目前網頁查詞',
         inlineEnabled: '已啟用。返回網頁選詞，再點擊浮動查詞按鈕。',
         inlineUnavailable: '無法在此頁面開啟查詞，請返回普通網頁重新選詞。',
-        inlineLoginRequired: '請先點擊「帳戶設定」登入，完成後重新選取網頁上的詞。',
+        inlineLoginRequired: '請先開啟「更多」，在帳戶設定登入後重新選詞。',
         appUrlLabel: 'BDC 主站網址（用於開啟文章詳解）',
         captureReadyHint: '已查到釋義，點擊加入詞書即可保存目前意思及來源。',
         captureChooseToSave: '已查到釋義，請選擇詞書或直接新建後保存。',

@@ -1503,6 +1503,14 @@ export default {
         analysisFailed: '分析失败'
     },
     extension: {
+        captureAddShort: '加入',
+        captureAddedShort: '已加入',
+        captureAddingShort: '加入中…',
+        captureMoreOptions: '词书选项',
+        inlineQuickAdd: '新建并加入',
+        pageArticleShortTitle: '文章',
+        pageArticleExtractShort: '提取文章',
+        pagePreviewSyncDeferred: '已提取，可先预览；暂时未能检查已保存的文章，保存时会重试。',
         aiOptions: 'AI 设置',
         aiTaskLabel: '用途',
         aiCurrentLookup: '当前查词',
@@ -1542,7 +1550,7 @@ export default {
         inlineEnable: '启用当前网页查词',
         inlineEnabled: '已启用。回到网页选词，再点击浮动查词按钮。',
         inlineUnavailable: '无法在此页面打开查词，请回到普通网页重新选词。',
-        inlineLoginRequired: '请先点击“账户设置”登录，完成后重新选择网页上的词。',
+        inlineLoginRequired: '请先打开“更多”，在账户设置中登录，再重新选词。',
         appUrlLabel: 'BDC 主站网址（用于打开文章详解）',
         captureReadyHint: '已查到释义，点击加入词书即可保存当前意思及来源。',
         captureChooseToSave: '已查到释义，请选择词书或直接新建后保存。',

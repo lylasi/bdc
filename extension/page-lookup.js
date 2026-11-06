@@ -74,7 +74,8 @@
         if (!panel) return;
         if (mode === 'expanded') {
             const width = Math.min(420, Math.max(0, v.width - 24));
-            size(panel, { left: v.left + v.width - width - 12, top: v.top + 12, width, height: Math.max(80, v.height - 24) });
+            const height = Math.min(Math.max(160, desiredHeight + 2), Math.max(80, v.height - 24));
+            size(panel, { left: v.left + v.width - width - 12, top: v.top + 12, width, height });
             return;
         }
         const rect = rangeRect(anchorRange);

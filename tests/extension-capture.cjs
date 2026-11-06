@@ -189,7 +189,7 @@ async function waitSaved(page) {
         await page.locator('#ext-capture-book').selectOption('book-2');
         state.loseNextReply = true;
         await page.locator('#ext-capture-save').click();
-        await page.waitForFunction(() => !document.querySelector('#ext-capture-save').textContent.includes('正在'));
+        await page.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
         await page.waitForFunction(async () => Object.keys(await chrome.storage.local.get(null)).some((key) => key.startsWith('bdc_capture_outbox_v1:')));
         const pendingBefore = (await outbox(page))[0];
         check('提交後回應遺失仍保留原 requestId 待傳', !!pendingBefore && db.prepare('SELECT COUNT(*) AS n FROM vocabulary_captures').get().n === 2);
@@ -213,7 +213,7 @@ async function waitSaved(page) {
         await lookup(page, 'Prices plunge on Friday.');
         await page.locator('#ext-capture-book').selectOption('book');
         await page.locator('#ext-capture-save').click();
-        await page.waitForFunction(() => !document.querySelector('#ext-capture-save').textContent.includes('正在'));
+        await page.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
         check('服務暫時不可用時不誤報成功', (await outbox(page)).length === 1 && !(await page.locator('#ext-capture-save').textContent()).includes('已加入'));
         const queued = JSON.stringify(await outbox(page));
         check('本機待傳不保存登入 token 或 AI Key', !queued.includes(ALICE) && !queued.includes(AI_KEY));
@@ -221,6 +221,7 @@ async function waitSaved(page) {
         await page.waitForFunction(() => document.querySelector('#ext-capture-book').options.length > 1);
         check('關閉再開仍保留待傳', (await outbox(page)).length === 1);
         state.failCaptures = false;
+        if (!await page.locator('#ext-book-options').evaluate(node => node.open)) await page.locator('#ext-book-options > summary').click();
         await page.locator('#ext-capture-refresh').click();
         await page.waitForFunction(async () => !Object.keys(await chrome.storage.local.get(null)).some((key) => key.startsWith('bdc_capture_outbox_v1:')));
         check('恢復服務並重試後保存完成', JSON.parse(db.prepare('SELECT data_json FROM reading_entities WHERE entity_id=?').get(first.entity_id).data_json).sources.length === 2);
@@ -228,7 +229,7 @@ async function waitSaved(page) {
         state.failCaptures = true;
         await lookup(page, 'Shares plunge before the close.');
         await page.locator('#ext-capture-save').click();
-        await page.waitForFunction(() => !document.querySelector('#ext-capture-save').textContent.includes('正在'));
+        await page.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
         const callsBeforeSwitch = state.captureCalls.length;
         const receiptsBeforeSwitch = db.prepare('SELECT COUNT(*) AS n FROM vocabulary_captures').get().n;
         if (!await page.locator('#ext-account-details').evaluate(node => node.open)) await page.locator('#ext-account-summary').click();
@@ -247,8 +248,9 @@ async function waitSaved(page) {
         await page.locator('#ext-capture-book').selectOption('book-2');
         db.exec("UPDATE reading_entities SET deleted_at='2026-11-06',revision=revision+1 WHERE entity_id='book-2'");
         await page.locator('#ext-capture-save').click();
-        await page.waitForFunction(() => !document.querySelector('#ext-capture-save').textContent.includes('正在'));
+        await page.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
         check('目標詞書刪除後明確保留待傳並報錯', (await outbox(page)).length === 1 && /不存在|删除|刪除/.test(await page.locator('#ext-capture-notice').textContent()));
+        if (!await page.locator('#ext-book-options').evaluate(node => node.open)) await page.locator('#ext-book-options > summary').click();
         await page.locator('#ext-capture-refresh').click();
         await page.waitForFunction(() => !Array.from(document.querySelector('#ext-capture-book').options).some((option) => option.value === 'book-2'));
         check('刪除目標不會悄悄改存另一個詞書', await page.locator('#ext-capture-book').inputValue() === '' && await page.locator('#ext-capture-save').isDisabled());
@@ -344,11 +346,11 @@ async function waitSaved(page) {
         check('返回實際主站自動同步並更新詞書畫面', (await app.locator('#word-list').textContent()).includes('gather'));
 
         await page.locator('#ext-locale-select').selectOption('zh-HK');
-        check('香港繁體收藏介面及窄畫面', await page.locator('#ext-capture-save').textContent() === '加入詞書'
+        check('香港繁體收藏介面及窄畫面', await page.locator('#ext-capture-save').textContent() === '加入' && await page.locator('#ext-capture-save').getAttribute('aria-label') === '加入詞書'
             && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
         await page.screenshot({ path: path.join(OUT, 'extension-capture-zh-HK.png'), fullPage: true });
         await page.locator('#ext-locale-select').selectOption('zh-CN');
-        check('簡體收藏介面及窄畫面', await page.locator('#ext-capture-save').textContent() === '加入词书'
+        check('簡體收藏介面及窄畫面', await page.locator('#ext-capture-save').textContent() === '加入' && await page.locator('#ext-capture-save').getAttribute('aria-label') === '加入词书'
             && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
         await page.screenshot({ path: path.join(OUT, 'extension-capture-zh-CN.png'), fullPage: true });
         check('無未捕獲頁面錯誤', pageErrors.length === 0, pageErrors);

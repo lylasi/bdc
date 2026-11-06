@@ -138,26 +138,39 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
         if (busy || !state.loggedIn) return;
         const session = captureAuthSession(); const version = epoch;
         busy = true; controller = new AbortController(); notice('extension.pageExtracting');
+        const signal = controller.signal;
         try {
             const page = await readPage();
             if (!isAuthSessionCurrent(session) || version !== epoch) return;
+            signal.throwIfAborted();
             const queued = (await client.pending(session)).find((job) => !job.invalid && job.type === 'article' && pageUrlKey(job.payload.sourceUrl) === pageUrlKey(page.pageUrl));
             if (!isAuthSessionCurrent(session) || version !== epoch) return;
+            signal.throwIfAborted();
             if (queued) { restoreArticleJob(queued); return; }
-            const existingId = await findExistingPageArticle(page.pageUrl);
+            let existingId = '', deferredLookup = false;
+            try { existingId = await findExistingPageArticle(page.pageUrl, { signal }); }
+            catch (error) {
+                signal.throwIfAborted();
+                // This is an optional preflight. The save protocol checks the
+                // page again before writing; a temporary sync outage must not
+                // prevent a local AI preview. Authentication errors stay fatal.
+                if (['unauthorized', 'stale_session', 'sync_endpoint_missing', 'client_aborted'].includes(error.code) || [401, 403].includes(error.status)) throw error;
+                deferredLookup = true;
+            }
             if (!isAuthSessionCurrent(session) || version !== epoch) return;
+            signal.throwIfAborted();
             if (existingId) {
                 savedArticleId = existingId; preview = null; dom.articlePreview.hidden = true;
                 captureUI.setSource({ pageUrl: page.pageUrl, pageTitle: page.pageTitle });
                 notice('extension.pageArticleReused'); return;
             }
-            const result = await runExtensionArticleTask({ page, signal: controller.signal,
+            const result = await runExtensionArticleTask({ page, signal,
                 onProgress: (current, total) => { if (version === epoch) notice('extension.pageExtractProgress', { current, total }); } });
             if (!isAuthSessionCurrent(session) || version !== epoch) return;
             captureUI.setSource({ pageUrl: page.pageUrl, pageTitle: page.pageTitle });
             preview = result; currentJob = null; savedArticleId = '';
             dom.articleTitle.value = result.title; dom.articleBody.value = result.body;
-            dom.articlePreview.hidden = false; notice('extension.pagePreviewReady');
+            dom.articlePreview.hidden = false; notice(deferredLookup ? 'extension.pagePreviewSyncDeferred' : 'extension.pagePreviewReady');
         } catch (error) { if (version === epoch && isAuthSessionCurrent(session)) showError(error); }
         finally { if (version === epoch) { busy = false; controller = null; render(); } }
     }
@@ -187,7 +200,12 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     captureUI.subscribe((next) => { state = next; render(); });
     dom.createPageBook.addEventListener('click', () => create('page'));
     dom.createDefaultBook.addEventListener('click', () => create('default'));
-    dom.createBook.addEventListener('click', () => { dom.bookForm.hidden = !dom.bookForm.hidden; dom.bookName.focus(); });
+    dom.createBook.addEventListener('click', () => {
+        dom.bookForm.hidden = !dom.bookForm.hidden;
+        const options = dom.bookForm.closest('details');
+        if (!dom.bookForm.hidden && options) options.open = true;
+        if (!dom.bookForm.hidden) dom.bookName.focus();
+    });
     dom.bookSubmit.addEventListener('click', () => create('custom'));
     dom.defaultBook.addEventListener('click', async () => {
         const session = captureAuthSession();

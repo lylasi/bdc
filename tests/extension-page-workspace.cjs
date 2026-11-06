@@ -42,6 +42,7 @@ function check(name, condition, detail) {
         await popup.locator('#ext-connect-btn').click();
         await popup.waitForFunction(() => !document.querySelector('#ext-connect-btn').disabled && document.querySelector('#ext-account-status').textContent.includes('alice'));
         check('可信擴充套件帳戶已連接', (await popup.locator('#ext-account-status').textContent()).includes('alice'));
+        if (!await popup.locator('#ext-book-options').evaluate(node => node.open)) await popup.locator('#ext-book-options > summary').click();
         await popup.locator('#ext-book-default-create').click();
         await popup.waitForFunction(() => document.querySelector('#ext-capture-book').selectedOptions[0]?.textContent === '网页生词');
         const defaultId = await popup.locator('#ext-capture-book').inputValue();
@@ -77,6 +78,7 @@ function check(name, condition, detail) {
         await inline.locator('#ext-inline-more').click();
         await inline.waitForFunction(() => document.body.classList.contains('ext-expanded'), null, { timeout: 8000 });
         check('浮窗可用「更多」展開完整面板', await inline.evaluate(() => document.body.classList.contains('ext-expanded')));
+        if (!await inline.locator('#ext-book-options').evaluate(node => node.open)) await inline.locator('#ext-book-options > summary').click();
         await inline.locator('#ext-book-page').click();
         await inline.waitForFunction(() => document.querySelector('#ext-capture-book').selectedOptions[0]?.textContent === 'Major tech stocks plunge');
         const pageBookId = await inline.locator('#ext-capture-book').inputValue();

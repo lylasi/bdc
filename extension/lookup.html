@@ -188,34 +188,39 @@
     </section>
 
     <section id="ext-capture-section" class="ext-section" aria-labelledby="ext-capture-heading">
-        <h2 class="ext-section-title" id="ext-capture-heading" data-i18n="extension.captureTitle"></h2>
-        <div class="ext-field ext-field-book">
-            <label for="ext-capture-book" data-i18n="extension.captureBookLabel"></label>
-            <select id="ext-capture-book" data-i18n-aria-label="extension.captureBookLabel"></select>
-        </div>
-        <p id="ext-capture-source" class="ext-source"></p>
-        <p id="ext-capture-hint" class="ext-hint" data-i18n="extension.captureHint"></p>
-        <div class="ext-row ext-row-actions">
-            <button type="button" id="ext-capture-save" class="ext-btn ext-btn-primary" disabled data-i18n="extension.captureSave"></button>
-            <button id="ext-quick-capture" type="button" class="ext-btn ext-btn-primary" hidden data-i18n="extension.inlineCreateAndCapture"></button>
-            <button type="button" id="ext-capture-refresh" class="ext-btn" data-i18n="extension.captureRefresh"></button>
-        </div>
-        <div id="ext-capture-notice" class="ext-notice" role="status" aria-live="polite" hidden></div>
-        <div class="ext-row ext-row-actions ext-book-actions">
-            <button id="ext-book-page" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookCreatePage"></button>
-            <button id="ext-book-new" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookCreate"></button>
-            <button id="ext-book-default-create" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookCreateDefault"></button>
-            <button id="ext-book-set-default" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookSetDefault"></button>
-        </div>
-        <div id="ext-book-form" class="ext-book-form" hidden>
-            <div class="ext-field">
-                <label for="ext-book-name" data-i18n="extension.bookName"></label>
-                <input id="ext-book-name" type="text" maxlength="300" data-i18n-placeholder="extension.bookNamePlaceholder" />
+        <h2 class="ext-visually-hidden" id="ext-capture-heading" data-i18n="extension.captureTitle"></h2>
+        <div class="ext-capture-line">
+            <div class="ext-field ext-field-book">
+                <label class="ext-visually-hidden" for="ext-capture-book" data-i18n="extension.captureBookLabel"></label>
+                <select id="ext-capture-book" data-i18n-aria-label="extension.captureBookLabel"></select>
             </div>
-            <label class="ext-check"><input id="ext-book-link-page" type="checkbox" checked /><span data-i18n="extension.bookLinkPage"></span></label>
-            <label class="ext-check"><input id="ext-book-make-default" type="checkbox" /><span data-i18n="extension.bookMakeDefault"></span></label>
-            <button id="ext-book-submit" type="button" class="ext-btn ext-btn-primary ext-btn-sm" data-i18n="extension.bookCreate"></button>
+            <button type="button" id="ext-capture-save" class="ext-btn ext-btn-primary" disabled data-i18n="extension.captureAddShort" data-i18n-title="extension.captureSave" data-i18n-aria-label="extension.captureSave"></button>
+            <button id="ext-quick-capture" type="button" class="ext-btn ext-btn-primary" hidden data-i18n="extension.inlineQuickAdd" data-i18n-title="extension.inlineCreateAndCapture" data-i18n-aria-label="extension.inlineCreateAndCapture"></button>
         </div>
+        <details id="ext-book-options" class="ext-capture-options">
+            <summary data-i18n-title="extension.captureMoreOptions" data-i18n-aria-label="extension.captureMoreOptions">⋯</summary>
+            <div class="ext-book-options-body">
+                <p id="ext-capture-source" class="ext-source"></p>
+                <p id="ext-capture-hint" class="ext-hint" data-i18n="extension.captureHint"></p>
+                <div class="ext-row ext-row-actions ext-book-actions">
+                    <button type="button" id="ext-capture-refresh" class="ext-btn ext-btn-sm" data-i18n="extension.captureRefresh"></button>
+                    <button id="ext-book-page" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookCreatePage"></button>
+                    <button id="ext-book-new" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookCreate"></button>
+                    <button id="ext-book-default-create" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookCreateDefault"></button>
+                    <button id="ext-book-set-default" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookSetDefault"></button>
+                </div>
+                <div id="ext-book-form" class="ext-book-form" hidden>
+                    <div class="ext-field">
+                        <label for="ext-book-name" data-i18n="extension.bookName"></label>
+                        <input id="ext-book-name" type="text" maxlength="300" data-i18n-placeholder="extension.bookNamePlaceholder" />
+                    </div>
+                    <label class="ext-check"><input id="ext-book-link-page" type="checkbox" checked /><span data-i18n="extension.bookLinkPage"></span></label>
+                    <label class="ext-check"><input id="ext-book-make-default" type="checkbox" /><span data-i18n="extension.bookMakeDefault"></span></label>
+                    <button id="ext-book-submit" type="button" class="ext-btn ext-btn-primary ext-btn-sm" data-i18n="extension.bookCreate"></button>
+                </div>
+            </div>
+        </details>
+        <div id="ext-capture-notice" class="ext-notice" role="status" aria-live="polite" hidden></div>
         <details id="ext-capture-pending" class="ext-disclosure ext-disclosure-quiet ext-pending" hidden>
             <summary id="ext-capture-pending-summary" class="ext-disclosure-summary"></summary>
             <div class="ext-disclosure-body">
@@ -227,14 +232,12 @@
 
     <section id="ext-page-article-section" class="ext-section" aria-labelledby="ext-page-article-heading">
         <div class="ext-section-head">
-            <h2 id="ext-page-article-heading" class="ext-section-title" data-i18n="extension.pageArticleTitle"></h2>
+            <h2 id="ext-page-article-heading" class="ext-section-title" data-i18n="extension.pageArticleShortTitle"></h2>
+            <button id="ext-article-extract" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.pageArticleExtractShort" data-i18n-title="extension.pageArticleHint" aria-describedby="ext-page-article-hint"></button>
             <button id="ext-article-cancel" type="button" class="ext-btn ext-btn-sm" hidden data-i18n="extension.pageArticleCancel"></button>
             <button id="ext-article-open" type="button" class="ext-btn ext-btn-sm" hidden data-i18n="extension.pageArticleOpen"></button>
         </div>
-        <p class="ext-hint" data-i18n="extension.pageArticleHint"></p>
-        <div class="ext-row ext-row-actions">
-            <button id="ext-article-extract" type="button" class="ext-btn" data-i18n="extension.pageArticleExtract"></button>
-        </div>
+        <p id="ext-page-article-hint" class="ext-visually-hidden" data-i18n="extension.pageArticleHint"></p>
         <div id="ext-article-preview" class="ext-preview" hidden>
             <div class="ext-field">
                 <label for="ext-article-title" data-i18n="extension.pageArticleTitleLabel"></label>

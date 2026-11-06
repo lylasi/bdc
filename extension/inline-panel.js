@@ -36,7 +36,9 @@ export function createInlinePanel(dom, captureUI, workspaceUI, { ticket, restore
         dom.captureBook.disabled = quickBusy;
         dom.quick.hidden = mode !== 'compact' || !capture.loggedIn || !capture.source?.pageUrl || !!capture.selectedBookId;
         dom.quick.disabled = busy() || !capture.hasResult || !capture.loggedIn;
-        dom.quick.textContent = t(quickBusy ? 'extension.inlineCreatingAndCapturing' : 'extension.inlineCreateAndCapture');
+        dom.quick.textContent = t(quickBusy ? 'extension.captureAddingShort' : 'extension.inlineQuickAdd');
+        dom.quick.title = t(quickBusy ? 'extension.inlineCreatingAndCapturing' : 'extension.inlineCreateAndCapture');
+        dom.quick.setAttribute('aria-label', dom.quick.title);
         dom.actionNotice.hidden = !localNotice;
         dom.actionNotice.textContent = localNotice ? t(localNotice.key, localNotice.params || {}) : '';
         dom.retry.hidden = mode !== 'compact' || !capture.loggedIn || !!capture.hasResult || dom.lookup.disabled;

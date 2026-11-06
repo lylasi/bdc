@@ -267,6 +267,9 @@ async function frameState(frame) {
             if (node.hidden) return false;
             const style = getComputedStyle(node);
             if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+            for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+                if (parent.tagName === 'DETAILS' && !parent.open && !parent.querySelector(':scope > summary')?.contains(node)) return false;
+            }
             return node.getClientRects().length > 0;
         };
         const text = (id) => (element(id)?.textContent || '').trim();
@@ -987,9 +990,12 @@ async function acceptance() {
             check('G4 展開不重跑 AI（沿用既有結果）',
                 env.state.aiCalls === aiBefore && aiRequestsSince(mark) === 0,
                 { before: aiBefore, after: env.state.aiCalls, aiRequests: aiRequestsSince(mark) });
-            check('G5 展開後可見進階操作（建書／文章擷取）',
-                !!expanded && expanded.bookPage === true && expanded.articleExtract === true,
-                { bookPage: expanded?.bookPage, articleExtract: expanded?.articleExtract });
+            await expandFrame.locator('#ext-book-options > summary').click();
+            const options = await frameState(expandFrame);
+            check('G5 展開後可由詞書選項開啟建書，文章擷取直接可用',
+                !!options && options.bookPage === true && options.articleExtract === true,
+                { bookPage: options?.bookPage, articleExtract: options?.articleExtract });
+            await expandFrame.locator('#ext-book-options > summary').click();
             note('展開尺寸', { compact: summarizeBox(compactBox), expanded: summarizeBox(expandedBox) });
             await screenshot(page, 'expanded-panel');
             const backClicked = await expandFrame.locator('#ext-inline-back').click({ timeout: 5000 }).then(() => true).catch(() => false);
@@ -1128,6 +1134,7 @@ async function acceptance() {
             // 明確預設 → 沒有頁書的新頁面要沿用
             await popup.bringToFront();
             await popup.locator('#ext-capture-book').selectOption('book-2');
+            if (!await popup.locator('#ext-book-options').evaluate(node => node.open)) await popup.locator('#ext-book-options > summary').click();
             await popup.locator('#ext-book-set-default').click();
             const defaultSet = await waitUntil(() => env.db.prepare("SELECT default_book_id FROM vocabulary_capture_settings WHERE owner_user_id='alice'").get()?.default_book_id === 'book-2', { timeout: 10000 });
             check('I7 可在可信頁面明確設定預設詞書（前提成立）', !!defaultSet);
@@ -1183,8 +1190,8 @@ async function acceptance() {
             const dictionaries = await localeDictionaries();
             const dictText = (locale, key) => String(dictionaries?.[locale]?.extension?.[key] || '');
             const expectedText = {
-                'zh-CN': { noBooks: dictText('zh-CN', 'captureNoBooks'), create: dictText('zh-CN', 'inlineCreateAndCapture') },
-                'zh-HK': { noBooks: dictText('zh-HK', 'captureNoBooks'), create: dictText('zh-HK', 'inlineCreateAndCapture') }
+                'zh-CN': { noBooks: dictText('zh-CN', 'captureNoBooks'), create: dictText('zh-CN', 'inlineQuickAdd') },
+                'zh-HK': { noBooks: dictText('zh-HK', 'captureNoBooks'), create: dictText('zh-HK', 'inlineQuickAdd') }
             };
             note('字典 extension.captureNoBooks', { 'zh-CN': expectedText['zh-CN'].noBooks, 'zh-HK': expectedText['zh-HK'].noBooks });
             const EMPTY_USER = 'carol';
@@ -1224,10 +1231,11 @@ async function acceptance() {
             // 展開後按一次「刷新」讓書單重新載入：這是提示列（#ext-capture-notice）真正渲染 captureNoBooks 的路徑。
             const expandAndRefresh = async (frame, expectedNotice) => {
                 const expanded = await expandPanel(frame);
+                if (expanded && !await frame.locator('#ext-book-options').evaluate(node => node.open)) await frame.locator('#ext-book-options > summary').click();
                 const clicked = expanded && await frame.locator('#ext-capture-refresh').click({ timeout: 8000 }).then(() => true).catch(() => false);
                 const matched = clicked ? await waitUntil(async () => {
                     const next = await frameState(frame);
-                    return next.captureNotice === expectedNotice ? next : null;
+                    return next.captureNoticeHidden && next.captureBookPlaceholder === expectedNotice ? next : null;
                 }, { timeout: 15000 }) : null;
                 return { expanded, clicked, matched, state: matched || await frameState(frame) };
             };
@@ -1258,10 +1266,10 @@ async function acceptance() {
                 const cnNotice = await expandAndRefresh(cn.frame, expectedText['zh-CN'].noBooks);
                 await panelShot(cn.frame, 'empty-book-zh-CN-expanded-panel');
                 await screenshot(page, 'empty-book-zh-CN-expanded');
-                check('I12 zh-CN 空詞書提示列顯示同一條新文字（不再叫人先回 BDC），展開面板提示行也說「直接新建」',
+                check('I12 zh-CN 空詞書以選單及選項提示引導直接新建，不重複佔用提示行',
                     cnNotice.expanded && cnNotice.clicked
-                    && cnNotice.state.captureNotice === expectedText['zh-CN'].noBooks
-                    && cnNotice.state.captureNoticeHidden === false
+                    && cnNotice.state.captureNotice === ''
+                    && cnNotice.state.captureNoticeHidden === true
                     && cnNotice.state.captureHint === dictText('zh-CN', 'captureChooseToSave')
                     && !/BDC/i.test(cnNotice.state.captureNotice + cnNotice.state.captureHint),
                     { expanded: cnNotice.expanded, clicked: cnNotice.clicked, notice: cnNotice.state.captureNotice,
@@ -1295,10 +1303,10 @@ async function acceptance() {
                 const hkNotice = await expandAndRefresh(hk.frame, expectedText['zh-HK'].noBooks);
                 await panelShot(hk.frame, 'empty-book-zh-HK-expanded-panel');
                 await screenshot(page, 'empty-book-zh-HK-expanded');
-                check('I14 zh-HK 空詞書提示列與展開面板提示行都改用香港繁體同一條文字',
+                check('I14 zh-HK 空詞書以選單及選項提示引導直接新增，不重複佔用提示行',
                     hkNotice.expanded && hkNotice.clicked
-                    && hkNotice.state.captureNotice === expectedText['zh-HK'].noBooks
-                    && hkNotice.state.captureNoticeHidden === false
+                    && hkNotice.state.captureNotice === ''
+                    && hkNotice.state.captureNoticeHidden === true
                     && hkNotice.state.captureHint === dictText('zh-HK', 'captureChooseToSave')
                     && hkNotice.state.captureNotice !== expectedText['zh-CN'].noBooks,
                     { expanded: hkNotice.expanded, clicked: hkNotice.clicked, notice: hkNotice.state.captureNotice,

@@ -674,16 +674,13 @@ select.ext-select-sm {
 .ext-compact {
     --ext-pad: 10px;
 }
+.ext-compact #ext-inline-edit,
+.ext-compact #ext-inline-settings { display: none !important; }
 .ext-compact #ext-lookup-section .ext-section-head,
 .ext-compact #ext-result-heading,
 .ext-compact #ext-result-role,
 .ext-compact #ext-result-meta,
 .ext-compact #ext-capture-heading,
-.ext-compact #ext-capture-source,
-.ext-compact #ext-capture-hint,
-.ext-compact #ext-capture-refresh,
-.ext-compact #ext-capture-section .ext-book-actions,
-.ext-compact #ext-book-form,
 .ext-compact #ext-page-article-section {
     display: none !important;
 }
@@ -722,7 +719,7 @@ select.ext-select-sm {
 }
 .ext-compact #ext-capture-save,
 .ext-compact #ext-quick-capture {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
 }
 .ext-compact.ext-needs-book #ext-capture-save {
     display: none !important;
@@ -932,6 +929,65 @@ select.ext-select-sm {
 .ext-compact #ext-ai-controls .ext-ai-summary-value {
     padding-left: 2px;
 }
+
+/* The normal capture action is one line; secondary actions expand in flow so
+   the trusted frame can measure its height and keep keyboard focus visible. */
+#ext-capture-section {
+    position: relative;
+    padding: 8px 0;
+}
+.ext-capture-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-right: 34px;
+}
+.ext-capture-line .ext-field {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0 !important;
+}
+.ext-capture-line .ext-btn {
+    flex: 0 0 auto;
+    min-width: 50px;
+    padding: 4px 9px;
+}
+.ext-capture-options > summary {
+    position: absolute;
+    right: 0;
+    top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 30px;
+    list-style: none;
+    border: 1px solid var(--ext-line-strong);
+    border-radius: var(--ext-radius-sm);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+.ext-capture-options > summary::-webkit-details-marker { display: none; }
+.ext-capture-options > summary:focus-visible { outline: none; box-shadow: var(--ext-ring); }
+.ext-capture-options[open] > summary { background: var(--ext-accent-soft); }
+.ext-book-options-body {
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+}
+.ext-book-options-body .ext-book-actions { margin-top: 6px; }
+.ext-capture-success {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+#ext-page-article-section > .ext-section-head { margin-bottom: 0; }
 
 /* ============================ 12. 窄屏（≤360px） ============================ */
 @media (max-width: 360px) {
