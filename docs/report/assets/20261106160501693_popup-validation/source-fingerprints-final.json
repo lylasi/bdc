@@ -8,8 +8,8 @@
   "extension/manifest.json": "7ba67b3e8b6a209464854f271303c2570a043cd74b195dcaf127594352415d1d",
   "extension/page-lookup.js": "b3fbfce666a32b7129a8c29216300c540dc390d685f8dc9c10be46ea71886fff",
   "extension/workspace-ui.js": "44701bd7c851197aed755d1df9532adae48074175fd6633006f5e75d1d352030",
-  "index.html": "0a0b8915a4cd12bc8239b02e5121eccdba5945da95919dca67cb955fd510116e",
-  "locales/zh-CN.js": "8825f25aa50191524535fdb4703413d301dac1e1a961618f59a3e45b82bfe532",
-  "locales/zh-HK.js": "23f12d6a28c3bfd237a98834e70d96984f6bafb81d8796189f1c6fab01db447c",
+  "index.html": "475d9ac387d83becb25e1aeb8492fcc5194f226d888ba86dd7b4900390295ba6",
+  "locales/zh-CN.js": "cee8bcede574301b185da02e3b1a4135185c2ef47ba4f3527c3f82895e452fb0",
+  "locales/zh-HK.js": "d0848f753be66bf7de7bb1301e4ede0c84105ea4e41c79d2af680d60568673f0",
   "scripts/package-extension.mjs": "86d28a3702c589c0c4140a2ff2167ac99f37212f6fdd4c7638d5eef660fce1c5"
 }

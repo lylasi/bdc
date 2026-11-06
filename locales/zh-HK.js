@@ -1579,7 +1579,7 @@ export default {
         pendingArticle: '待保存文章：{name}',
         captureHint: '先完成查詞，再保存目前釋義及原句。',
         captureChooseBook: '請選擇詞書',
-        captureNoBooks: '沒有可選詞書，請先在 BDC 建立並同步詞書。',
+        captureNoBooks: '暫無詞書，可直接在此新增。',
         captureSave: '加入詞書',
         captureSaving: '正在加入…',
         captureSaved: '已加入詞書',
