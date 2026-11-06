@@ -1,0 +1,206 @@
+{
+  "fingerprintFinalFile": "docs/report/assets/20261106160501693_popup-validation/source-fingerprints-final.json",
+  "compared": 13,
+  "allMatch": true,
+  "rows": {
+    "extension/background.js": {
+      "fingerprint_final_16": "1b0ea58f99fb75bd",
+      "disk_16": "1b0ea58f99fb75bd",
+      "match": true
+    },
+    "extension/capture-ui.js": {
+      "fingerprint_final_16": "806cdd7b68764581",
+      "disk_16": "806cdd7b68764581",
+      "match": true
+    },
+    "extension/inline-panel.js": {
+      "fingerprint_final_16": "5c4a6ecfb180ae07",
+      "disk_16": "5c4a6ecfb180ae07",
+      "match": true
+    },
+    "extension/lookup.css": {
+      "fingerprint_final_16": "b8e65883b913db63",
+      "disk_16": "b8e65883b913db63",
+      "match": true
+    },
+    "extension/lookup.html": {
+      "fingerprint_final_16": "6f98857d77066a32",
+      "disk_16": "6f98857d77066a32",
+      "match": true
+    },
+    "extension/lookup.js": {
+      "fingerprint_final_16": "d39dcb9c6c146f64",
+      "disk_16": "d39dcb9c6c146f64",
+      "match": true
+    },
+    "extension/manifest.json": {
+      "fingerprint_final_16": "7ba67b3e8b6a2094",
+      "disk_16": "7ba67b3e8b6a2094",
+      "match": true
+    },
+    "extension/page-lookup.js": {
+      "fingerprint_final_16": "b3fbfce666a32b71",
+      "disk_16": "b3fbfce666a32b71",
+      "match": true
+    },
+    "extension/workspace-ui.js": {
+      "fingerprint_final_16": "44701bd7c851197a",
+      "disk_16": "44701bd7c851197a",
+      "match": true
+    },
+    "index.html": {
+      "fingerprint_final_16": "475d9ac387d83bec",
+      "disk_16": "475d9ac387d83bec",
+      "match": true
+    },
+    "locales/zh-CN.js": {
+      "fingerprint_final_16": "cee8bcede574301b",
+      "disk_16": "cee8bcede574301b",
+      "match": true
+    },
+    "locales/zh-HK.js": {
+      "fingerprint_final_16": "d0848f753be66bf7",
+      "disk_16": "d0848f753be66bf7",
+      "match": true
+    },
+    "scripts/package-extension.mjs": {
+      "fingerprint_final_16": "86d28a3702c589c0",
+      "disk_16": "86d28a3702c589c0",
+      "match": true
+    }
+  },
+  "readyMarker": {
+    "file": "docs/report/assets/anchored-popup-ready.json",
+    "version": "0.4.0",
+    "at": "2026-11-06T08:06:31.643995+00:00",
+    "ready": true,
+    "rows": {
+      "extension/page-lookup.js": {
+        "ready_16": "7a7dada380c69a66",
+        "disk_16": "b3fbfce666a32b71",
+        "changed": true
+      },
+      "extension/inline-panel.js": {
+        "ready_16": "6b9aecacaec0b37d",
+        "disk_16": "5c4a6ecfb180ae07",
+        "changed": true
+      },
+      "extension/background.js": {
+        "ready_16": "ebc6dbececc0a0c0",
+        "disk_16": "1b0ea58f99fb75bd",
+        "changed": true
+      },
+      "extension/lookup.js": {
+        "ready_16": "d39dcb9c6c146f64",
+        "disk_16": "d39dcb9c6c146f64",
+        "changed": false
+      },
+      "extension/lookup.html": {
+        "ready_16": "6f98857d77066a32",
+        "disk_16": "6f98857d77066a32",
+        "changed": false
+      },
+      "extension/lookup.css": {
+        "ready_16": "b8e65883b913db63",
+        "disk_16": "b8e65883b913db63",
+        "changed": false
+      },
+      "extension/capture-ui.js": {
+        "ready_16": "806cdd7b68764581",
+        "disk_16": "806cdd7b68764581",
+        "changed": false
+      },
+      "extension/workspace-ui.js": {
+        "ready_16": "44701bd7c851197a",
+        "disk_16": "44701bd7c851197a",
+        "changed": false
+      },
+      "extension/manifest.json": {
+        "ready_16": "7ba67b3e8b6a2094",
+        "disk_16": "7ba67b3e8b6a2094",
+        "changed": false
+      },
+      "locales/zh-CN.js": {
+        "ready_16": "8825f25aa5019152",
+        "disk_16": "cee8bcede574301b",
+        "changed": true
+      },
+      "locales/zh-HK.js": {
+        "ready_16": "23f12d6a28c3bfd2",
+        "disk_16": "d0848f753be66bf7",
+        "changed": true
+      }
+    },
+    "changedFiles": [
+      "extension/page-lookup.js",
+      "extension/inline-panel.js",
+      "extension/background.js",
+      "locales/zh-CN.js",
+      "locales/zh-HK.js"
+    ]
+  },
+  "vsPreviousAcceptance20261106160734164": {
+    "note": "前次驗收 current tree（post-drift）的 11 個產品檔 vs 本次受測樹",
+    "rows": {
+      "extension/inline-panel.js": {
+        "previousAcceptance_16": "5c4a6ecfb180ae07",
+        "now_16": "5c4a6ecfb180ae07",
+        "changed": false
+      },
+      "extension/background.js": {
+        "previousAcceptance_16": "1b0ea58f99fb75bd",
+        "now_16": "1b0ea58f99fb75bd",
+        "changed": false
+      },
+      "extension/page-lookup.js": {
+        "previousAcceptance_16": "b3fbfce666a32b71",
+        "now_16": "b3fbfce666a32b71",
+        "changed": false
+      },
+      "extension/lookup.js": {
+        "previousAcceptance_16": "d39dcb9c6c146f64",
+        "now_16": "d39dcb9c6c146f64",
+        "changed": false
+      },
+      "extension/lookup.html": {
+        "previousAcceptance_16": "6f98857d77066a32",
+        "now_16": "6f98857d77066a32",
+        "changed": false
+      },
+      "extension/lookup.css": {
+        "previousAcceptance_16": "b8e65883b913db63",
+        "now_16": "b8e65883b913db63",
+        "changed": false
+      },
+      "extension/capture-ui.js": {
+        "previousAcceptance_16": "806cdd7b68764581",
+        "now_16": "806cdd7b68764581",
+        "changed": false
+      },
+      "extension/workspace-ui.js": {
+        "previousAcceptance_16": "44701bd7c851197a",
+        "now_16": "44701bd7c851197a",
+        "changed": false
+      },
+      "extension/manifest.json": {
+        "previousAcceptance_16": "7ba67b3e8b6a2094",
+        "now_16": "7ba67b3e8b6a2094",
+        "changed": false
+      },
+      "locales/zh-CN.js": {
+        "previousAcceptance_16": "8825f25aa5019152",
+        "now_16": "cee8bcede574301b",
+        "changed": true
+      },
+      "locales/zh-HK.js": {
+        "previousAcceptance_16": "23f12d6a28c3bfd2",
+        "now_16": "d0848f753be66bf7",
+        "changed": true
+      }
+    },
+    "changedFiles": [
+      "locales/zh-CN.js",
+      "locales/zh-HK.js"
+    ]
+  }
+}

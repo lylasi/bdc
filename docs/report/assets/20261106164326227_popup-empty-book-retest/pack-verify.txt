@@ -1,0 +1,20 @@
+# 已提交的發布包（b7cc464）內是否含新文字
+$ unzip -p <zip> extension/locales/zh-CN.js | grep captureNoBooks
+        captureNoBooks: '暂无词书，可直接在此新建。',
+$ unzip -p <zip> extension/locales/zh-HK.js | grep captureNoBooks
+        captureNoBooks: '暫無詞書，可直接在此新增。',
+
+# zip 內 locales 與工作區 locales 的 sha256（前 16 碼）
+zip  zh-CN: cee8bcede574301b
+disk zh-CN: cee8bcede574301b
+zip  zh-HK: d0848f753be66bf7
+disk zh-HK: d0848f753be66bf7
+
+# package-final.json
+{
+  "version": "0.4.0",
+  "files": 62,
+  "sha256": "2cd6c4f9b607b4e28b72b325356957377af85647fae89ef3083ba1a7bc416eb7",
+  "source_files": 13,
+  "safe_config": true
+}

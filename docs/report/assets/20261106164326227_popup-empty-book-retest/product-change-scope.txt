@@ -1,0 +1,42 @@
+# 產品變更範圍（b7cc464 vs 2ad5722）
+$ git log -1 --format='%H %ad %s' b7cc464
+b7cc4648e8563a42db4c842edfc1f09da4c75250 2026-11-06 16:42:53 +0800 fix(extension): 空詞書提示直接在原頁新增
+
+$ git diff --stat 2ad5722 b7cc464 -- extension modules shared cloudflare-worker locales scripts index.html
+ index.html       | 198 +++++++++++++++++++++++++++----------------------------
+ locales/zh-CN.js |   2 +-
+ locales/zh-HK.js |   2 +-
+ 3 files changed, 101 insertions(+), 101 deletions(-)
+
+$ git diff 2ad5722 b7cc464 -- locales/zh-CN.js locales/zh-HK.js
+diff --git a/locales/zh-CN.js b/locales/zh-CN.js
+index 8596c02..4731d4d 100644
+--- a/locales/zh-CN.js
++++ b/locales/zh-CN.js
+@@ -1579,7 +1579,7 @@ export default {
+         pendingArticle: '待保存文章：{name}',
+         captureHint: '先完成查词，再保存当前释义及原句。',
+         captureChooseBook: '请选择词书',
+-        captureNoBooks: '没有可选词书，请先在 BDC 建立并同步词书。',
++        captureNoBooks: '暂无词书，可直接在此新建。',
+         captureSave: '加入词书',
+         captureSaving: '正在加入…',
+         captureSaved: '已加入词书',
+diff --git a/locales/zh-HK.js b/locales/zh-HK.js
+index 801fb40..8744517 100644
+--- a/locales/zh-HK.js
++++ b/locales/zh-HK.js
+@@ -1579,7 +1579,7 @@ export default {
+         pendingArticle: '待保存文章：{name}',
+         captureHint: '先完成查詞，再保存目前釋義及原句。',
+         captureChooseBook: '請選擇詞書',
+-        captureNoBooks: '沒有可選詞書，請先在 BDC 建立並同步詞書。',
++        captureNoBooks: '暫無詞書，可直接在此新增。',
+         captureSave: '加入詞書',
+         captureSaving: '正在加入…',
+         captureSaved: '已加入詞書',
+
+$ git diff 2ad5722 b7cc464 -- index.html | grep '^[+-]' | grep -v '?v='   # 只剩檔頭
+--- a/index.html
++++ b/index.html
+(其餘 196 行皆為 importmap 的 ?v= 版本查詢字串)

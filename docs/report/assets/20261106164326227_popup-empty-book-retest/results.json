@@ -1,0 +1,1755 @@
+{
+  "mode": "full",
+  "checks": [
+    {
+      "name": "A1 交付標記 docs/report/assets/anchored-popup-ready.json 存在",
+      "ok": true,
+      "detail": {
+        "marker": "/Users/linus/CODE/bdc-extension-anchored-popup-20261106/docs/report/assets/anchored-popup-ready.json"
+      }
+    },
+    {
+      "name": "A2 0.4.0 新 UI ids 齊備（more／back／confirm／discard／keep／quick-capture）",
+      "ok": true,
+      "detail": {
+        "missing": []
+      }
+    },
+    {
+      "name": "A3 body .ext-compact／.ext-expanded 存在",
+      "ok": true
+    },
+    {
+      "name": "A4 manifest 版本為 0.4.x",
+      "ok": true,
+      "detail": {
+        "version": "0.4.0"
+      }
+    },
+    {
+      "name": "A5 尺寸／模式／關閉以擴充套件內部訊息中繼（不向網頁廣播票據）",
+      "ok": true,
+      "detail": {
+        "present": {
+          "extension/inline-panel.js": true,
+          "#ext-inline-more": true,
+          "#ext-inline-back": true,
+          "#ext-inline-confirm": true,
+          "#ext-inline-discard": true,
+          "#ext-inline-keep": true,
+          "#ext-quick-capture": true,
+          "body .ext-compact": true,
+          "body .ext-expanded": true,
+          "BDC_INLINE_STATE": true,
+          "BDC_INLINE_REMOVE": true,
+          "BDC_INLINE_KEEP": true,
+          "BDC_INLINE_REQUEST_CLOSE": true,
+          "manifest.version": "0.4.0"
+        }
+      }
+    },
+    {
+      "name": "A6 擴充套件可打包並載入（真 MV3）",
+      "ok": true,
+      "detail": {
+        "packagingOk": true
+      }
+    },
+    {
+      "name": "A7 可信擴充套件頁面可連上測試帳戶",
+      "ok": true
+    },
+    {
+      "name": "B1 僅選詞（未點查詞）不開小窗",
+      "ok": true
+    },
+    {
+      "name": "B2 僅選詞不呼叫 AI（Q1：保留點一下查詞）",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 0
+      }
+    },
+    {
+      "name": "B3 closed shadow 內有真的浮動查詞按鈕，且框可量測（CDP pierce）",
+      "ok": true,
+      "detail": {
+        "x": 293,
+        "y": 101,
+        "width": 50,
+        "height": 32
+      }
+    },
+    {
+      "name": "B4 真點擊查詞後才開小窗（嚴格 CSP 網頁也可用）",
+      "ok": true
+    },
+    {
+      "name": "B5 iframe 實際框可量測（frame.frameElement().boundingBox）",
+      "ok": true,
+      "detail": {
+        "x": 293,
+        "y": 104,
+        "width": 340,
+        "height": 179
+      }
+    },
+    {
+      "name": "B6 小窗顯示詞、音標、詞性、句中釋義",
+      "ok": true,
+      "detail": {
+        "word": "plunge",
+        "phonetic": "/plʌndʒ/",
+        "pos": "verb",
+        "meaning": "句中释义：暴跌（语境）"
+      }
+    },
+    {
+      "name": "B7 寬度約 340px（Q4）",
+      "ok": true,
+      "detail": {
+        "width": 340,
+        "target": 340
+      }
+    },
+    {
+      "name": "B8 高度小（緊湊卡，不是整個視窗高的舊面板）",
+      "ok": true,
+      "detail": {
+        "height": 179,
+        "viewportHeight": 900
+      }
+    },
+    {
+      "name": "B9 卡片貼近選區（下方為主；間距 ≤ 24px，不足則在上方）",
+      "ok": true,
+      "detail": {
+        "below": true,
+        "above": false,
+        "gap": 7.6,
+        "selection": {
+          "x": 293.3,
+          "y": 51.4,
+          "width": 102,
+          "height": 45
+        },
+        "box": {
+          "x": 293,
+          "y": 104,
+          "width": 340,
+          "height": 179
+        }
+      }
+    },
+    {
+      "name": "B10 卡片與選區水平有重疊（貼著同一個詞）",
+      "ok": true,
+      "detail": {
+        "overlap": 102
+      }
+    },
+    {
+      "name": "B11 卡片完整落在視窗內",
+      "ok": true,
+      "detail": {
+        "x": 293,
+        "y": 104,
+        "width": 340,
+        "height": 179
+      }
+    },
+    {
+      "name": "B12 進入緊湊模式（body.ext-compact，不是 .ext-expanded）",
+      "ok": true,
+      "detail": {
+        "classes": [
+          "ext-inline",
+          "ext-compact",
+          "ext-needs-book"
+        ]
+      }
+    },
+    {
+      "name": "B13 緊湊卡有「更多」與收藏入口",
+      "ok": true,
+      "detail": {
+        "more": true,
+        "moreLabel": "更多",
+        "quickCapture": true,
+        "captureSave": false
+      }
+    },
+    {
+      "name": "B14 緊湊卡不顯示進階編輯（文章擷取／建書／待傳）",
+      "ok": true,
+      "detail": {
+        "articleExtract": false,
+        "bookPage": false,
+        "pending": false
+      }
+    },
+    {
+      "name": "B15 自動高度：內容完整塞進 iframe（沒有裁切、沒有內部捲動）",
+      "ok": true,
+      "detail": {
+        "fixedAfterMs": "<=5000",
+        "contentHeight": 215,
+        "innerHeight": 214,
+        "contentWidth": 338,
+        "innerWidth": 338,
+        "box": {
+          "x": 293,
+          "y": 104,
+          "width": 340,
+          "height": 216
+        }
+      }
+    },
+    {
+      "name": "B16 查詞確實呼叫一次 AI（新詞）",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    {
+      "name": "B17 小窗標記為內嵌模式（ext-inline）",
+      "ok": true
+    },
+    {
+      "name": "C0 邊界探針已注入頁面（前提成立）",
+      "ok": true
+    },
+    {
+      "name": "C1 邊界 top：貼著選區、翻轉／夾限正確且完整留在視窗內",
+      "ok": true,
+      "detail": {
+        "expect": "below",
+        "below": true,
+        "above": false,
+        "gap": 8,
+        "box": {
+          "x": 142,
+          "y": 35,
+          "width": 340,
+          "height": 216
+        },
+        "selection": {
+          "x": 142,
+          "y": 9,
+          "width": 86.4,
+          "height": 18
+        },
+        "viewportOk": true,
+        "horizontalOk": true
+      }
+    },
+    {
+      "name": "C2 邊界 bottom：貼著選區、翻轉／夾限正確且完整留在視窗內",
+      "ok": true,
+      "detail": {
+        "expect": "above",
+        "below": false,
+        "above": true,
+        "gap": 8,
+        "box": {
+          "x": 142,
+          "y": 619,
+          "width": 340,
+          "height": 216
+        },
+        "selection": {
+          "x": 142,
+          "y": 843,
+          "width": 86.4,
+          "height": 18
+        },
+        "viewportOk": true,
+        "horizontalOk": true
+      }
+    },
+    {
+      "name": "C3 邊界 left：貼著選區、翻轉／夾限正確且完整留在視窗內",
+      "ok": true,
+      "detail": {
+        "expect": "any",
+        "below": true,
+        "above": false,
+        "gap": 8,
+        "box": {
+          "x": 8,
+          "y": 279,
+          "width": 340,
+          "height": 216
+        },
+        "selection": {
+          "x": 2,
+          "y": 253,
+          "width": 76.8,
+          "height": 18
+        },
+        "viewportOk": true,
+        "horizontalOk": true
+      }
+    },
+    {
+      "name": "C4 邊界 right：貼著選區、翻轉／夾限正確且完整留在視窗內",
+      "ok": true,
+      "detail": {
+        "expect": "any",
+        "below": true,
+        "above": false,
+        "gap": 8,
+        "box": {
+          "x": 932,
+          "y": 359,
+          "width": 340,
+          "height": 216
+        },
+        "selection": {
+          "x": 1191.6,
+          "y": 333,
+          "width": 86.4,
+          "height": 18
+        },
+        "viewportOk": true,
+        "horizontalOk": true
+      }
+    },
+    {
+      "name": "D1 多行短語：選區確實跨行（前提成立）",
+      "ok": true,
+      "detail": {
+        "rects": 2,
+        "selected": "worry about markets"
+      }
+    },
+    {
+      "name": "D2 多行短語：按整個選區（union）定位且留在視窗內",
+      "ok": true,
+      "detail": {
+        "below": true,
+        "above": false,
+        "gap": 8,
+        "box": {
+          "x": 182,
+          "y": 471,
+          "width": 340,
+          "height": 216
+        },
+        "selection": {
+          "x": 182,
+          "y": 423,
+          "width": 105.6,
+          "height": 40
+        }
+      }
+    },
+    {
+      "name": "D3 多行短語：查的是完整短語且顯示結果",
+      "ok": true,
+      "detail": {
+        "word": "worry about markets",
+        "meaning": "句中释义：暴跌（语境）"
+      }
+    },
+    {
+      "name": "D4 多行短語：寬高仍符合小窗",
+      "ok": true,
+      "detail": {
+        "width": 340,
+        "height": 216
+      }
+    },
+    {
+      "name": "E1 頁面捲動：卡片跟隨選詞（仍貼著被選的文字）",
+      "ok": true,
+      "detail": {
+        "beforeBox": {
+          "x": 16,
+          "y": 456,
+          "width": 340,
+          "height": 216
+        },
+        "afterBox": {
+          "x": 16,
+          "y": 376,
+          "width": 340,
+          "height": 216
+        },
+        "selectionDelta": -80,
+        "boxDelta": -80,
+        "below": true,
+        "above": false
+      }
+    },
+    {
+      "name": "E2 頁面捲動：選詞離開可視範圍就收起（Q5）",
+      "ok": true,
+      "detail": {
+        "panels": 0
+      }
+    },
+    {
+      "name": "E3 容器捲動：卡片跟隨（仍在同一個選詞旁）",
+      "ok": true,
+      "detail": {
+        "beforeBox": {
+          "x": 21,
+          "y": 335,
+          "width": 340,
+          "height": 216
+        },
+        "afterBox": {
+          "x": 21,
+          "y": 317,
+          "width": 340,
+          "height": 216
+        },
+        "movedY": 290.7,
+        "below": true,
+        "above": false
+      }
+    },
+    {
+      "name": "E4 容器捲動：選詞被容器捲走就收起",
+      "ok": true,
+      "detail": {
+        "panels": 0
+      }
+    },
+    {
+      "name": "F1 卡內點擊不誤關（點在小窗內保持開啟、結果不變）",
+      "ok": true,
+      "detail": {
+        "open": true,
+        "word": "investors"
+      }
+    },
+    {
+      "name": "F2 卡內點擊不重跑 AI",
+      "ok": true,
+      "detail": {
+        "aiCalls": 0
+      }
+    },
+    {
+      "name": "F3 卡內 Esc 收起小窗（Q3）",
+      "ok": true,
+      "detail": {
+        "panels": 0
+      }
+    },
+    {
+      "name": "F4 頁面 Esc 收起小窗（Q3）",
+      "ok": true
+    },
+    {
+      "name": "F5 外部點擊收起一般小窗（Q3）",
+      "ok": true
+    },
+    {
+      "name": "F6 換新詞（再點查詞）全頁只保留單一小窗",
+      "ok": true,
+      "detail": {
+        "panels": 1,
+        "fifth": true
+      }
+    },
+    {
+      "name": "F7 新詞用新票據並顯示新詞",
+      "ok": true,
+      "detail": {
+        "ticketChanged": true,
+        "word": "decisions"
+      }
+    },
+    {
+      "name": "F8 普通選取不換卡、不呼叫 AI（Q5）",
+      "ok": true,
+      "detail": {
+        "panels": 0,
+        "aiCalls": 0
+      }
+    },
+    {
+      "name": "G1 點「更多」展開完整面板（body.ext-expanded）",
+      "ok": true,
+      "detail": {
+        "clicked": true,
+        "classes": [
+          "ext-inline",
+          "ext-needs-book",
+          "ext-expanded"
+        ]
+      }
+    },
+    {
+      "name": "G2 展開後同一個 iframe 變大且仍在視窗內",
+      "ok": true,
+      "detail": {
+        "compact": {
+          "x": 468,
+          "y": 148,
+          "width": 340,
+          "height": 216
+        },
+        "expanded": {
+          "x": 848,
+          "y": 12,
+          "width": 420,
+          "height": 876
+        },
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        }
+      }
+    },
+    {
+      "name": "G3 展開保留結果與同一個 iframe／票據（沒有重建）",
+      "ok": true,
+      "detail": {
+        "word": "volatile",
+        "sameTicket": true
+      }
+    },
+    {
+      "name": "G4 展開不重跑 AI（沿用既有結果）",
+      "ok": true,
+      "detail": {
+        "before": 14,
+        "after": 14,
+        "aiRequests": 0
+      }
+    },
+    {
+      "name": "G5 展開後可見進階操作（建書／文章擷取）",
+      "ok": true,
+      "detail": {
+        "bookPage": true,
+        "articleExtract": true
+      }
+    },
+    {
+      "name": "G6 返回小窗（body.ext-compact）且高度回到緊湊",
+      "ok": true,
+      "detail": {
+        "clicked": true,
+        "box": {
+          "x": 468,
+          "y": 148,
+          "width": 340,
+          "height": 216
+        },
+        "compact": {
+          "x": 468,
+          "y": 148,
+          "width": 340,
+          "height": 216
+        }
+      }
+    },
+    {
+      "name": "G7 返回後結果仍在、沒有重跑 AI",
+      "ok": true,
+      "detail": {
+        "word": "volatile",
+        "aiCalls": 0
+      }
+    },
+    {
+      "name": "H1 展開後可從本頁擷取文章並建立可編輯草稿",
+      "ok": true,
+      "detail": {
+        "extractClicked": true,
+        "previewShown": true
+      }
+    },
+    {
+      "name": "H2 可編輯草稿（前提成立）",
+      "ok": true
+    },
+    {
+      "name": "H3 dirty 時外部點擊不自動關閉（Q7）",
+      "ok": true,
+      "detail": {
+        "detached": false,
+        "classes": [
+          "ext-inline",
+          "ext-needs-book",
+          "ext-expanded"
+        ]
+      }
+    },
+    {
+      "name": "H4 dirty 時捲動也不自動關閉（Q7）",
+      "ok": true,
+      "detail": {
+        "detached": false
+      }
+    },
+    {
+      "name": "H5 明確關閉且有草稿時要確認（#ext-inline-confirm／keep／discard）",
+      "ok": true,
+      "detail": {
+        "clicked": true,
+        "confirm": true,
+        "keep": true,
+        "discard": true
+      }
+    },
+    {
+      "name": "H6 選「保留」：面板不關、草稿仍在",
+      "ok": true,
+      "detail": {
+        "detached": false,
+        "draftKept": true,
+        "confirmStillVisible": false
+      }
+    },
+    {
+      "name": "H7 busy（AI 執行中）外部點擊不自動關閉",
+      "ok": true,
+      "detail": {
+        "clicked": true,
+        "detached": false
+      }
+    },
+    {
+      "name": "H8 選「放棄」後關閉小窗",
+      "ok": true,
+      "detail": {
+        "redraft": true,
+        "closeAgain": true,
+        "confirmAgain": true,
+        "discardClicked": true,
+        "panels": 0
+      }
+    },
+    {
+      "name": "I1 沒有可用目標時，一鍵建立本頁詞書並加入當前結果（Q6）",
+      "ok": true,
+      "detail": {
+        "selector": "#ext-quick-capture",
+        "saved": true,
+        "pageBook": "webbook_cac3eeed48e9bfbf7d3df2af9b7c9c5a0b4dc0fc5daf19ac",
+        "booksBefore": 2,
+        "booksAfter": 3
+      }
+    },
+    {
+      "name": "I2 收藏寫入的是畫面上的結果（不重跑 AI）",
+      "ok": true,
+      "detail": {
+        "request": {
+          "word": "plunge",
+          "bookId": "webbook_cac3eeed48e9bfbf7d3df2af9b7c9c5a0b4dc0fc5daf19ac",
+          "meaning": "暴跌（语境）"
+        },
+        "shownMeaning": "句中释义：暴跌（语境）",
+        "aiCalls": 0
+      }
+    },
+    {
+      "name": "I3 收藏帶上來源網址、頁面標題與選區錨點（原意／來源）",
+      "ok": true,
+      "detail": {
+        "source": {
+          "sourceUrl": "http://127.0.0.1:57572/test-article?capture=1",
+          "pageTitle": "Major tech stocks plunge",
+          "anchor": {
+            "start": 18,
+            "end": 24,
+            "quote": "plunge",
+            "prefix": "Major tech stocks ",
+            "suffix": "Major tech stocks plunge as investors worry. Markets remain volatile.OutlookPeople gather information before making deci"
+          }
+        }
+      }
+    },
+    {
+      "name": "I4 收藏記錄目前介面語言",
+      "ok": true,
+      "detail": {
+        "locale": "zh-CN"
+      }
+    },
+    {
+      "name": "I5 伺服器回執成立：詞書與詞條都真的寫進 DB（不是假成功）",
+      "ok": true,
+      "detail": {
+        "book": {
+          "id": "webbook_cac3eeed48e9bfbf7d3df2af9b7c9c5a0b4dc0fc5daf19ac",
+          "name": "Major tech stocks plunge",
+          "sourceUrl": "http://127.0.0.1:57572/test-article?capture=1"
+        },
+        "entries": [
+          {
+            "word": "plunge",
+            "meaning": "暴跌（语境）"
+          }
+        ]
+      }
+    },
+    {
+      "name": "I6 小窗顯示目標詞書名稱（Q6：顯示目標名稱）",
+      "ok": true,
+      "detail": {
+        "bookName": "Major tech stocks plunge",
+        "shownName": "Major tech stocks plunge",
+        "nameShown": true
+      }
+    },
+    {
+      "name": "I7 可在可信頁面明確設定預設詞書（前提成立）",
+      "ok": true
+    },
+    {
+      "name": "I8 新頁面沒有頁書時沿用「明確預設」詞書（Q6 次序）",
+      "ok": true,
+      "detail": {
+        "bookId": "book-2",
+        "word": "remain"
+      }
+    },
+    {
+      "name": "I9 有頁書時頁書優先於明確預設（Q6 次序）",
+      "ok": true,
+      "detail": {
+        "bookId": "webbook_cac3eeed48e9bfbf7d3df2af9b7c9c5a0b4dc0fc5daf19ac",
+        "pageBookId": "webbook_cac3eeed48e9bfbf7d3df2af9b7c9c5a0b4dc0fc5daf19ac",
+        "word": "stocks"
+      }
+    },
+    {
+      "name": "I10 同頁明確選擇的詞書優先於頁書與預設（Q6 次序）",
+      "ok": true,
+      "detail": {
+        "switched": true,
+        "bookId": "book-2",
+        "word": "stocks"
+      }
+    },
+    {
+      "name": "I11 zh-CN 空詞書：下拉佔位文字與「建立本頁詞書並加入」按鈕都引導在此新建，卡片沒有 BDC／「先在…」舊引導",
+      "ok": true,
+      "detail": {
+        "placeholder": "暂无词书，可直接在此新建。",
+        "quickCapture": true,
+        "quickCaptureLabel": "建立本页词书并加入",
+        "needsBook": true,
+        "notice": "",
+        "surfaces": "暂无词书，可直接在此新建。 已查到释义，请选择词书或直接新建后保存。 建立本页词书并加入 暂无词书，可直接在此新建。 建立本页词书并加入"
+      }
+    },
+    {
+      "name": "I12 zh-CN 空詞書提示列顯示同一條新文字（不再叫人先回 BDC），展開面板提示行也說「直接新建」",
+      "ok": true,
+      "detail": {
+        "expanded": true,
+        "clicked": true,
+        "notice": "暂无词书，可直接在此新建。",
+        "noticeHidden": false,
+        "hint": "已查到释义，请选择词书或直接新建后保存。",
+        "expectedHint": "已查到释义，请选择词书或直接新建后保存。"
+      }
+    },
+    {
+      "name": "I13 zh-HK 空詞書：下拉佔位與按鈕改用香港繁體同一條文字，不是 zh-CN 文字，也沒有 BDC／「先…」",
+      "ok": true,
+      "detail": {
+        "placeholder": "暫無詞書，可直接在此新增。",
+        "quickCaptureLabel": "建立本頁詞書並加入",
+        "notice": "",
+        "cnText": "暂无词书，可直接在此新建。",
+        "surfaces": "暫無詞書，可直接在此新增。 已查到釋義，請選擇詞書或直接新建後保存。 建立本頁詞書並加入 暫無詞書，可直接在此新增。 建立本頁詞書並加入"
+      }
+    },
+    {
+      "name": "I14 zh-HK 空詞書提示列與展開面板提示行都改用香港繁體同一條文字",
+      "ok": true,
+      "detail": {
+        "expanded": true,
+        "clicked": true,
+        "notice": "暫無詞書，可直接在此新增。",
+        "noticeHidden": false,
+        "hint": "已查到釋義，請選擇詞書或直接新建後保存。",
+        "expectedHint": "已查到釋義，請選擇詞書或直接新建後保存。"
+      }
+    },
+    {
+      "name": "I15 兩語字典同鍵同語義：都引導在原地新建、都不含 BDC／「先…」、且無插值參數",
+      "ok": true,
+      "detail": {
+        "cn": "暂无词书，可直接在此新建。",
+        "hk": "暫無詞書，可直接在此新增。",
+        "cnChooseToSave": "已查到释义，请选择词书或直接新建后保存。",
+        "hkChooseToSave": "已查到釋義，請選擇詞書或直接新建後保存。"
+      }
+    },
+    {
+      "name": "I16 前端無硬編碼：extension/ 不含這兩條文字，capture-ui 以 t('extension.captureNoBooks') 取鍵，打包字典與根字典同檔",
+      "ok": true,
+      "detail": {
+        "hardcoded": [],
+        "keyRefs": 3,
+        "packagedSameAsRoot": {
+          "zh-CN": true,
+          "zh-HK": true
+        }
+      }
+    },
+    {
+      "name": "I17 0 本詞書時「建立本頁詞書並加入」真的可用（伺服器回執＋DB 有詞書與詞條）",
+      "ok": true,
+      "detail": {
+        "clicked": true,
+        "notice": "已加入《Major tech stocks plunge》",
+        "books": 1,
+        "entries": [
+          "plunge"
+        ],
+        "call": {
+          "bookId": "webbook_fa4af9de75e531d7d7d1488da654693031110f5d958034df",
+          "word": "plunge",
+          "locale": "zh-HK"
+        }
+      }
+    },
+    {
+      "name": "J1 收藏失敗顯示錯誤／待傳，不得顯示成功",
+      "ok": true,
+      "detail": {
+        "notice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "error": true,
+        "pending": false
+      }
+    },
+    {
+      "name": "J2 收藏失敗沒有在雲端留下詞條（不假成功）",
+      "ok": true,
+      "detail": {
+        "bookId": "book-2",
+        "entries": 0
+      }
+    },
+    {
+      "name": "J3 由待傳列重試後成功",
+      "ok": true,
+      "detail": {
+        "retried": true,
+        "notice": "已加入词书"
+      }
+    },
+    {
+      "name": "J4 重試沿用同一個 requestId（重試不多建）",
+      "ok": true,
+      "detail": {
+        "failed": "capture_fe1a993d-ce32-4033-8df2-6c53d3f36a26",
+        "retried": "capture_fe1a993d-ce32-4033-8df2-6c53d3f36a26"
+      }
+    },
+    {
+      "name": "J5 重試後詞條只有一筆（沒有重複建立）",
+      "ok": true,
+      "detail": {
+        "count": 1,
+        "words": [
+          "investors"
+        ]
+      }
+    },
+    {
+      "name": "J6 重試沒有重跑 AI",
+      "ok": true,
+      "detail": {
+        "aiCalls": 0,
+        "aiRequests": 0
+      }
+    },
+    {
+      "name": "J7 回應遺失時不得宣稱成功，並留下待傳",
+      "ok": true,
+      "detail": {
+        "notice": "尚未确认收藏结果，已保留在本机待传，请重试。",
+        "pending": false
+      }
+    },
+    {
+      "name": "J8 伺服器其實已寫入（回應遺失情境成立）",
+      "ok": true,
+      "detail": {
+        "count": 1,
+        "bookId": "book-2"
+      }
+    },
+    {
+      "name": "J9 重試沿用同一 requestId 並拿到原回執（不多建）",
+      "ok": true,
+      "detail": {
+        "replayed": true,
+        "count": 1,
+        "sameRequest": true,
+        "rows": 1
+      }
+    },
+    {
+      "name": "K1 網頁偽造訊息（含真 ticket）不能 expand／resize 小窗",
+      "ok": true,
+      "detail": {
+        "before": {
+          "x": 347,
+          "y": 148,
+          "width": 340,
+          "height": 216
+        },
+        "after": {
+          "x": 347,
+          "y": 148,
+          "width": 340,
+          "height": 216
+        },
+        "classes": [
+          "ext-inline",
+          "ext-compact"
+        ]
+      }
+    },
+    {
+      "name": "K2 網頁偽造訊息不能關閉小窗",
+      "ok": true,
+      "detail": {
+        "open": true,
+        "word": "Markets"
+      }
+    },
+    {
+      "name": "K3 網頁偽造訊息不能開新卡或替換內容",
+      "ok": true,
+      "detail": {
+        "panels": 1
+      }
+    },
+    {
+      "name": "K4 網頁偽造訊息不能觸發收藏／AI／寫入",
+      "ok": true,
+      "detail": {
+        "captures": 0,
+        "entries": 0,
+        "writes": 0,
+        "aiCalls": 0
+      }
+    },
+    {
+      "name": "K5 合成滑鼠事件不會開卡或改變卡片",
+      "ok": true
+    },
+    {
+      "name": "K6 網頁讀不到小窗內容（closed shadow root）",
+      "ok": true
+    },
+    {
+      "name": "L1 網頁世界送出的 window message 不含 ticket／token（產品自己不經網頁通道）",
+      "ok": true,
+      "detail": {
+        "count": 0,
+        "sample": []
+      }
+    },
+    {
+      "name": "L2 網頁世界收到的 window message 不含 ticket／token（卡片不靠 window message 傳票據）",
+      "ok": true,
+      "detail": {
+        "count": 0,
+        "sample": []
+      }
+    },
+    {
+      "name": "L5 卡片從未向網頁世界 postMessage（偽造前後都沒有來自 chrome-extension 的訊息）",
+      "ok": true,
+      "detail": {
+        "inbound": 12,
+        "origins": [
+          "http://127.0.0.1:57572"
+        ]
+      }
+    },
+    {
+      "name": "L3 網頁 storage 沒有 ticket／token，網頁世界也沒有 chrome.runtime",
+      "ok": true,
+      "detail": {
+        "local": "{}",
+        "session": "{}",
+        "runtimeId": false
+      }
+    },
+    {
+      "name": "L4 網頁無法列出小窗網址（拿不到 ticket）",
+      "ok": true
+    },
+    {
+      "name": "M1 連點兩個詞的查詞：全頁仍只有一個小窗",
+      "ok": true,
+      "detail": {
+        "panels": 1,
+        "first": true,
+        "second": true
+      }
+    },
+    {
+      "name": "M2 最終顯示的是後點的詞",
+      "ok": true,
+      "detail": {
+        "word": "information"
+      }
+    },
+    {
+      "name": "M3 前一個詞遲到的回應沒有蓋掉新結果（票據已換）",
+      "ok": true,
+      "detail": {
+        "firstTicket": "819eb82d",
+        "nowTicket": "b806330d"
+      }
+    },
+    {
+      "name": "N1a zh-HK：詞義使用該語言",
+      "ok": true,
+      "detail": {
+        "meaning": "句中釋義：急跌（語境）"
+      }
+    },
+    {
+      "name": "N1b zh-HK：窄視窗寬度仍約 340 且完整留在視窗內",
+      "ok": true,
+      "detail": {
+        "box": {
+          "x": 293,
+          "y": 104,
+          "width": 340,
+          "height": 216
+        },
+        "viewport": {
+          "width": 720,
+          "height": 560
+        }
+      }
+    },
+    {
+      "name": "N1c zh-HK：小窗沒有橫向溢出",
+      "ok": true,
+      "detail": {
+        "contentWidth": 338,
+        "innerWidth": 338
+      }
+    },
+    {
+      "name": "N1d zh-HK：展開後不溢出且高度夾限在視窗內",
+      "ok": true,
+      "detail": {
+        "box": {
+          "x": 288,
+          "y": 12,
+          "width": 420,
+          "height": 536
+        },
+        "contentWidth": 338,
+        "innerWidth": 338,
+        "viewport": {
+          "width": 720,
+          "height": 560
+        }
+      }
+    },
+    {
+      "name": "N2a zh-CN：詞義使用該語言",
+      "ok": true,
+      "detail": {
+        "meaning": "句中释义：暴跌（语境）"
+      }
+    },
+    {
+      "name": "N2b zh-CN：窄視窗寬度仍約 340 且完整留在視窗內",
+      "ok": true,
+      "detail": {
+        "box": {
+          "x": 293,
+          "y": 104,
+          "width": 340,
+          "height": 216
+        },
+        "viewport": {
+          "width": 720,
+          "height": 560
+        }
+      }
+    },
+    {
+      "name": "N2c zh-CN：小窗沒有橫向溢出",
+      "ok": true,
+      "detail": {
+        "contentWidth": 338,
+        "innerWidth": 338
+      }
+    },
+    {
+      "name": "N2d zh-CN：展開後不溢出且高度夾限在視窗內",
+      "ok": true,
+      "detail": {
+        "box": {
+          "x": 288,
+          "y": 12,
+          "width": 420,
+          "height": 536
+        },
+        "contentWidth": 338,
+        "innerWidth": 338,
+        "viewport": {
+          "width": 720,
+          "height": 560
+        }
+      }
+    },
+    {
+      "name": "O1 新帳戶的小窗不沿用上一個帳戶的詞書",
+      "ok": true,
+      "detail": {
+        "options": [
+          "请选择词书",
+          "Bob only"
+        ]
+      }
+    },
+    {
+      "name": "O2 切換帳戶後的收藏不會寫進上一個帳戶",
+      "ok": true,
+      "detail": {
+        "aliceEntries": 6,
+        "aliceBooks": 3
+      }
+    },
+    {
+      "name": "O3 若宣稱成功就必須真的寫進目前帳戶（否則不得假成功）",
+      "ok": true,
+      "detail": {
+        "notice": "已加入《Major tech stocks plunge》",
+        "bobWords": [
+          "gather"
+        ],
+        "bookId": "webbook_5185095709e29f8e6f16532438aec309cc5ccba4f89c9d5d"
+      }
+    },
+    {
+      "name": "O4 小窗顯示的帳戶與目前登入者一致（不是上一個帳戶）",
+      "ok": true,
+      "detail": {
+        "accountStatus": "已连接账户：bob"
+      }
+    },
+    {
+      "name": "P1 正常流程沒有未捕獲的頁面錯誤",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "notes": [
+    {
+      "name": "自動高度收斂後尺寸",
+      "value": {
+        "x": 293,
+        "y": 104,
+        "width": 340,
+        "height": 216
+      }
+    },
+    {
+      "name": "基線幾何",
+      "value": {
+        "selection": {
+          "x": 293.3,
+          "y": 51.4,
+          "width": 102,
+          "height": 45
+        },
+        "box": {
+          "x": 293,
+          "y": 104,
+          "width": 340,
+          "height": 179
+        },
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        }
+      }
+    },
+    {
+      "name": "展開尺寸",
+      "value": {
+        "compact": {
+          "x": 468,
+          "y": 148,
+          "width": 340,
+          "height": 216
+        },
+        "expanded": {
+          "x": 848,
+          "y": 12,
+          "width": 420,
+          "height": 876
+        }
+      }
+    },
+    {
+      "name": "字典 extension.captureNoBooks",
+      "value": {
+        "zh-CN": "暂无词书，可直接在此新建。",
+        "zh-HK": "暫無詞書，可直接在此新增。"
+      }
+    },
+    {
+      "name": "空詞書提示列的可見時機（觀察，不判定成敗）",
+      "value": {
+        "compact": "",
+        "afterRefresh": "暂无词书，可直接在此新建。"
+      }
+    },
+    {
+      "name": "頁面世界訊息",
+      "value": {
+        "productPosted": 0,
+        "productInbound": 0,
+        "afterForge": 12
+      }
+    },
+    {
+      "name": "locale 幾何",
+      "value": {
+        "zh-HK": {
+          "box": {
+            "x": 293,
+            "y": 104,
+            "width": 340,
+            "height": 216
+          },
+          "meaning": "句中釋義：急跌（語境）",
+          "moreLabel": "更多",
+          "captureLabel": "建立本頁詞書並加入"
+        },
+        "zh-CN": {
+          "box": {
+            "x": 293,
+            "y": 104,
+            "width": 340,
+            "height": 216
+          },
+          "meaning": "句中释义：暴跌（语境）",
+          "moreLabel": "更多",
+          "captureLabel": "建立本页词书并加入"
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "consoles": [
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?strict=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?scroll=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?closing=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?expand=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?capture=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?capture=1&other=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?capture=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?empty-book=cn"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?empty-book=hk"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?empty-book=quick"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?failure=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "url": "http://127.0.0.1:57572/captures",
+      "page": "http://127.0.0.1:57572/test-article?failure=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?lostreply=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "url": "http://127.0.0.1:57572/captures",
+      "page": "http://127.0.0.1:57572/test-article?lostreply=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?forged=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?race=1"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?locale=zh-HK"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?locale=zh-CN"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "url": "http://127.0.0.1:57572/favicon.ico",
+      "page": "http://127.0.0.1:57572/test-article?isolation=1"
+    }
+  ],
+  "badResponses": [
+    {
+      "status": 503,
+      "url": "http://127.0.0.1:57572/captures"
+    },
+    {
+      "status": 503,
+      "url": "http://127.0.0.1:57572/captures"
+    }
+  ],
+  "debug": [
+    {
+      "errors": [],
+      "consoles": [
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?strict=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?scroll=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?closing=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?expand=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?capture=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?capture=1&other=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?capture=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?empty-book=cn"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?empty-book=hk"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?empty-book=quick"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?failure=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+          "url": "http://127.0.0.1:57572/captures",
+          "page": "http://127.0.0.1:57572/test-article?failure=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?lostreply=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+          "url": "http://127.0.0.1:57572/captures",
+          "page": "http://127.0.0.1:57572/test-article?lostreply=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?forged=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?race=1"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?locale=zh-HK"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?locale=zh-CN"
+        },
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+          "url": "http://127.0.0.1:57572/favicon.ico",
+          "page": "http://127.0.0.1:57572/test-article?isolation=1"
+        }
+      ],
+      "badResponses": [
+        {
+          "status": 503,
+          "url": "http://127.0.0.1:57572/captures"
+        },
+        {
+          "status": 503,
+          "url": "http://127.0.0.1:57572/captures"
+        }
+      ],
+      "tail": [
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        },
+        {
+          "method": "GET",
+          "path": "/test-article?locale=zh-CN"
+        },
+        {
+          "method": "GET",
+          "path": "/me"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        },
+        {
+          "method": "GET",
+          "path": "/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "GET",
+          "path": "/me"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        },
+        {
+          "method": "GET",
+          "path": "/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        },
+        {
+          "method": "GET",
+          "path": "/test-article?isolation=1"
+        },
+        {
+          "method": "GET",
+          "path": "/me"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        },
+        {
+          "method": "GET",
+          "path": "/snapshot"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/books"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        },
+        {
+          "method": "POST",
+          "path": "/captures"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        }
+      ]
+    }
+  ],
+  "hashes": {
+    "extension/manifest.json": {
+      "sha256_16": "7ba67b3e8b6a2094",
+      "mtime": "2026-11-06 15:51:54",
+      "bytes": 1401
+    },
+    "extension/background.js": {
+      "sha256_16": "1b0ea58f99fb75bd",
+      "mtime": "2026-11-06 16:09:15",
+      "bytes": 6792
+    },
+    "extension/page-lookup.js": {
+      "sha256_16": "b3fbfce666a32b71",
+      "mtime": "2026-11-06 16:10:56",
+      "bytes": 11124
+    },
+    "extension/inline-panel.js": {
+      "sha256_16": "5c4a6ecfb180ae07",
+      "mtime": "2026-11-06 16:09:15",
+      "bytes": 7909
+    },
+    "extension/lookup.html": {
+      "sha256_16": "6f98857d77066a32",
+      "mtime": "2026-11-06 15:57:35",
+      "bytes": 14726
+    },
+    "extension/lookup.js": {
+      "sha256_16": "d39dcb9c6c146f64",
+      "mtime": "2026-11-06 16:01:24",
+      "bytes": 27793
+    },
+    "extension/lookup.css": {
+      "sha256_16": "b8e65883b913db63",
+      "mtime": "2026-11-06 15:57:35",
+      "bytes": 7255
+    },
+    "extension/capture-ui.js": {
+      "sha256_16": "806cdd7b68764581",
+      "mtime": "2026-11-06 15:57:35",
+      "bytes": 16151
+    },
+    "extension/workspace-ui.js": {
+      "sha256_16": "44701bd7c851197a",
+      "mtime": "2026-11-06 16:01:24",
+      "bytes": 17123
+    },
+    "extension/selection-extractor.js": {
+      "sha256_16": "8dbc89a539817a78",
+      "mtime": "2026-11-06 15:40:16",
+      "bytes": 4390
+    },
+    "extension/page-extractor.js": {
+      "sha256_16": "3dd225b57bfed035",
+      "mtime": "2026-11-06 15:40:16",
+      "bytes": 1435
+    },
+    "extension/modules/extension-workspace.js": {
+      "sha256_16": "7bac1c6a04affa08",
+      "mtime": "2026-11-06 16:47:05",
+      "bytes": 3139
+    },
+    "extension/modules/extension-ai-runtime.js": {
+      "sha256_16": "76f51a86b0504f38",
+      "mtime": "2026-11-06 16:47:05",
+      "bytes": 20959
+    },
+    "modules/extension-workspace.js": {
+      "sha256_16": "7bac1c6a04affa08",
+      "mtime": "2026-11-06 15:40:16",
+      "bytes": 3139
+    },
+    "shared/workspace-client.mjs": {
+      "sha256_16": "8ae186dfb387eb7a",
+      "mtime": "2026-11-06 15:40:16",
+      "bytes": 8264
+    },
+    "shared/capture-client.mjs": {
+      "sha256_16": "83ecf9eddd914e0f",
+      "mtime": "2026-11-06 15:40:16",
+      "bytes": 7997
+    },
+    "shared/capture-protocol.mjs": {
+      "sha256_16": "485f1cde29857801",
+      "mtime": "2026-11-06 15:40:16",
+      "bytes": 2975
+    },
+    "shared/page-protocol.mjs": {
+      "sha256_16": "9a1cf273a67c55c5",
+      "mtime": "2026-11-06 15:40:16",
+      "bytes": 701
+    },
+    "cloudflare-worker/src/captures.js": {
+      "sha256_16": "50e10706ea606891",
+      "mtime": "2026-11-06 15:40:15",
+      "bytes": 12514
+    },
+    "cloudflare-worker/src/capture-books.js": {
+      "sha256_16": "eab5bf6d175d4616",
+      "mtime": "2026-11-06 15:40:15",
+      "bytes": 9601
+    },
+    "locales/zh-CN.js": {
+      "sha256_16": "cee8bcede574301b",
+      "mtime": "2026-11-06 16:33:58",
+      "bytes": 129743
+    },
+    "locales/zh-HK.js": {
+      "sha256_16": "d0848f753be66bf7",
+      "mtime": "2026-11-06 16:33:58",
+      "bytes": 129953
+    },
+    "scripts/package-extension.mjs": {
+      "sha256_16": "86d28a3702c589c0",
+      "mtime": "2026-11-06 15:51:54",
+      "bytes": 6080
+    },
+    "tests/helpers/extension-mv3.cjs": {
+      "sha256_16": "6b8002590e96465f",
+      "mtime": "2026-11-06 15:40:16",
+      "bytes": 8866
+    },
+    "tests/extension-anchored-popup-deepseek.cjs": {
+      "sha256_16": "21ea7cc43c27504c",
+      "mtime": "2026-11-06 16:46:53",
+      "bytes": 110888
+    }
+  },
+  "screenshots": [
+    "compact-anchored.png",
+    "edge-bottom-flip.png",
+    "phrase-multiline.png",
+    "expanded-panel.png",
+    "dirty-confirm.png",
+    "quick-capture.png",
+    "empty-book-zh-CN-compact-panel.png",
+    "empty-book-zh-CN-compact.png",
+    "empty-book-zh-CN-expanded-panel.png",
+    "empty-book-zh-CN-expanded.png",
+    "empty-book-zh-HK-compact-panel.png",
+    "empty-book-zh-HK-compact.png",
+    "empty-book-zh-HK-expanded-panel.png",
+    "empty-book-zh-HK-expanded.png",
+    "empty-book-quick-capture.png",
+    "narrow-zh-HK.png",
+    "narrow-expanded-zh-HK.png",
+    "narrow-zh-CN.png",
+    "narrow-expanded-zh-CN.png",
+    "account-isolation.png"
+  ],
+  "realMV3": true,
+  "realWorkerSQLite": true,
+  "aiMocked": true,
+  "stamp": "20261106164704985",
+  "summary": {
+    "total": 113,
+    "passed": 113,
+    "failed": 0
+  }
+}

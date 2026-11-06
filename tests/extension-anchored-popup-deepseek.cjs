@@ -13,6 +13,8 @@
 //   G. 「更多」展開同一 iframe 完整面板並保留結果，返回小窗不重跑 AI
 //   H. 編輯固定：busy／dirty 不自動關閉；明確關閉有草稿需確認（保留／放棄）
 //   I. 快速收藏：無目標時一鍵建立本頁詞書並加入當前結果；同頁選擇→頁書→明確預設的沿用次序
+//      （I11–I17：0 本詞書帳號的空狀態提示——兩語皆引導「在此新建」、不再叫人先回 BDC，
+//       文字取自字典而非硬編碼，且「建立本頁詞書並加入」真的可用）
 //   J. 收藏失敗不得假成功；重試不多建（含「伺服器已套用但回應遺失」）
 //   K. 網頁偽造訊息（帶真 ticket）不得 resize／expand／close／開卡／寫入
 //   L. 票據與憑證不得經 window message 洩漏
@@ -38,6 +40,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { createHash } = require('node:crypto');
+const { pathToFileURL } = require('node:url');
 const { execFileSync } = require('node:child_process');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const { environment, ALICE, BOB } = require('./helpers/extension-mv3.cjs');
@@ -298,6 +301,13 @@ async function frameState(frame) {
             articleBody: element('ext-article-body')?.value || '',
             captureNotice: text('ext-capture-notice'),
             captureNoticeError: !!element('ext-capture-notice')?.classList.contains('ext-notice-error'),
+            // 空詞書提示走「下拉佔位文字＋提示列＋一鍵建書按鈕」三處，全部讀實際 DOM。
+            captureNoticeHidden: element('ext-capture-notice')?.hidden !== false,
+            captureBookPlaceholder: (select?.options?.[0]?.textContent || '').trim(),
+            captureHint: text('ext-capture-hint'),
+            captureHintHidden: element('ext-capture-hint')?.hidden !== false,
+            // 收藏區自己的可見文字（不含外殼工具列的「BDC 網頁查詞」品牌字樣），用來掃 BDC／舊引導。
+            captureSectionText: (element('ext-capture-section')?.innerText || '').replace(/\s+/g, ' ').trim(),
             capturePendingVisible: visible('ext-capture-pending'),
             capturePendingItems: document.querySelectorAll('#ext-capture-pending-list li').length,
             inlineNotice: text('ext-inline-lookup-notice'),
@@ -435,6 +445,37 @@ function dbCaptureRows(env, owner = 'alice') {
 }
 
 /* ------------------------------------------------------------------ *
+ * 空詞書提示（本輪產品只改了 locales 的 extension.captureNoBooks 兩條文字）
+ * ------------------------------------------------------------------ */
+// 兩語字典直接從產品檔讀，DOM 文字必須與它逐字相同（證明文字來自 t(key)，不是硬編碼）。
+async function localeDictionaries() {
+    const load = async (name) => (await import(pathToFileURL(path.join(ROOT, 'locales', name)).href)).default;
+    const [cn, hk] = await Promise.all([load('zh-CN.js'), load('zh-HK.js')]);
+    return { 'zh-CN': cn, 'zh-HK': hk };
+}
+// 舊文案（「沒有可選詞書，請先在 BDC 建立並同步詞書。」）與其片段：前端任何一處殘留都算不合格。
+const EMPTY_BOOK_STALE_FRAGMENTS = ['没有可选词书', '沒有可選詞書', '请先在 BDC', '請先在 BDC'];
+// 前端（擴充套件）不得自己寫死這兩條文字；它們只能經 t('extension.captureNoBooks') 取得。
+const EMPTY_BOOK_FRONT_FILES = [
+    'extension/capture-ui.js', 'extension/inline-panel.js', 'extension/lookup.js',
+    'extension/workspace-ui.js', 'extension/lookup.html'
+];
+const EMPTY_BOOK_LITERALS = ['暂无词书', '暫無詞書', '可直接在此新建', '可直接在此新增'];
+function frontEndHardcodedEmptyBook() {
+    const hits = [];
+    for (const file of EMPTY_BOOK_FRONT_FILES) {
+        const absolute = path.join(ROOT, file);
+        if (!fs.existsSync(absolute)) { hits.push({ file, literal: '(檔案不存在)' }); continue; }
+        const source = fs.readFileSync(absolute, 'utf8');
+        for (const literal of [...EMPTY_BOOK_LITERALS, ...EMPTY_BOOK_STALE_FRAGMENTS]) {
+            if (source.includes(literal)) hits.push({ file, literal });
+        }
+    }
+    return hits;
+}
+const fileHash = (rel) => createHash('sha256').update(fs.readFileSync(path.join(ROOT, rel))).digest('hex');
+
+/* ------------------------------------------------------------------ *
  * preflight（未 ready 時只做能力探針，不當成故障）
  * ------------------------------------------------------------------ */
 async function preflight(readiness) {
@@ -544,6 +585,16 @@ async function acceptance() {
     let viewport;
     const screenshot = async (target, name) => {
         await target.screenshot({ path: path.join(OUT, name + '.png') }).then(() => shots.push(name + '.png')).catch(() => {});
+    };
+    // 卡片是 closed shadow root 內的 iframe：用 frame.frameElement() 的實際框截圖，方便直接看提示文字。
+    const panelShot = async (frame, name) => {
+        try {
+            const element = await frame.frameElement();
+            if (!element) return false;
+            await element.screenshot({ path: path.join(OUT, name + '.png') });
+            shots.push(name + '.png');
+            return true;
+        } catch (_) { return false; }
     };
     const section = async (name, run) => {
         try { await run(); } catch (error) {
@@ -1121,6 +1172,189 @@ async function acceptance() {
                     switched && call2?.bookId === 'book-2' && call2?.requestId !== call?.requestId,
                     { switched, bookId: call2?.bookId, word: call2?.word });
                 await closePopup();
+            }
+
+            /* ---- I11–I17：0 本詞書帳號的空狀態提示 ----------------------------------
+             * 產品本輪只改了 locales 的 extension.captureNoBooks（舊文案叫人先回 BDC 建書）。
+             * 這裡用一個真正 0 本詞書的帳號，讀「下拉佔位文字＋提示列＋一鍵建書按鈕」的實際 DOM，
+             * 兩語都比對產品字典值，並確認前端沒有硬編碼、提示的承諾（在此新建）真的成立。 */
+            const dictionaries = await localeDictionaries();
+            const dictText = (locale, key) => String(dictionaries?.[locale]?.extension?.[key] || '');
+            const expectedText = {
+                'zh-CN': { noBooks: dictText('zh-CN', 'captureNoBooks'), create: dictText('zh-CN', 'inlineCreateAndCapture') },
+                'zh-HK': { noBooks: dictText('zh-HK', 'captureNoBooks'), create: dictText('zh-HK', 'inlineCreateAndCapture') }
+            };
+            note('字典 extension.captureNoBooks', { 'zh-CN': expectedText['zh-CN'].noBooks, 'zh-HK': expectedText['zh-HK'].noBooks });
+            const EMPTY_USER = 'carol';
+            const EMPTY_TOKEN = 'c'.repeat(43);
+            env.db.prepare('INSERT OR IGNORE INTO users(token_hash,user_id,label,role) VALUES(?,?,?,?)')
+                .run(createHash('sha256').update(EMPTY_TOKEN).digest('hex'), EMPTY_USER, EMPTY_USER, 'user');
+            const emptyBooksBefore = dbBooks(env, EMPTY_USER).filter((book) => !book.deleted).length;
+            const switchLocale = async (locale) => {
+                await popup.bringToFront();
+                await popup.locator('#ext-locale-select').selectOption(locale);
+                await sleep(400);
+            };
+            const logout = async () => {
+                await popup.bringToFront();
+                if (!(await popup.locator('#ext-logout-btn').isDisabled())) {
+                    await popup.locator('#ext-logout-btn').click({ timeout: 10000 }).catch(() => {});
+                    await popup.waitForFunction(() => document.getElementById('ext-logout-btn').disabled === true, null, { timeout: 20000 }).catch(() => {});
+                }
+            };
+            // 空詞書時下拉只有一個佔位選項：等它出現就代表書單已載入，不必等提示列（查詞會把它清掉）。
+            const openEmptyBookPopup = async (tag) => {
+                await page.bringToFront();
+                await prepareArticle(page, env, 'empty-book=' + tag);
+                const opened = await openPopup({ word: 'plunge' });
+                if (!opened.ok) return { ok: false, opened };
+                await waitForResult(opened.frame);
+                const settled = await waitUntil(async () => {
+                    const next = await frameState(opened.frame);
+                    return next && next.captureBookPlaceholder ? next : null;
+                }, { timeout: 15000 });
+                return { ok: true, frame: opened.frame, state: settled || await frameState(opened.frame) };
+            };
+            // 收藏區自己的可見文字（不含外殼工具列的「BDC 網頁查詞」品牌字樣），用來掃 BDC／舊引導。
+            const captureSurfaces = (state) => [state?.captureNotice, state?.captureBookPlaceholder,
+                state?.captureHint, state?.quickCaptureLabel, state?.captureSectionText].filter(Boolean).join(' ');
+            // 展開後按一次「刷新」讓書單重新載入：這是提示列（#ext-capture-notice）真正渲染 captureNoBooks 的路徑。
+            const expandAndRefresh = async (frame, expectedNotice) => {
+                const expanded = await expandPanel(frame);
+                const clicked = expanded && await frame.locator('#ext-capture-refresh').click({ timeout: 8000 }).then(() => true).catch(() => false);
+                const matched = clicked ? await waitUntil(async () => {
+                    const next = await frameState(frame);
+                    return next.captureNotice === expectedNotice ? next : null;
+                }, { timeout: 15000 }) : null;
+                return { expanded, clicked, matched, state: matched || await frameState(frame) };
+            };
+            try {
+                await logout();
+                await connect(EMPTY_TOKEN, EMPTY_USER);
+                await switchLocale('zh-CN');
+                const cn = await openEmptyBookPopup('cn');
+                if (!cn.ok || emptyBooksBefore !== 0) {
+                    check('I11 空詞書帳號可開啟小窗且確實 0 本詞書（前提成立）', false,
+                        { opened: cn.ok, books: emptyBooksBefore, reason: cn.opened?.reason });
+                    return;
+                }
+                const cnCompact = cn.state;
+                await panelShot(cn.frame, 'empty-book-zh-CN-compact-panel');
+                await screenshot(page, 'empty-book-zh-CN-compact');
+                check('I11 zh-CN 空詞書：下拉佔位文字與「建立本頁詞書並加入」按鈕都引導在此新建，卡片沒有 BDC／「先在…」舊引導',
+                    cnCompact.captureBookPlaceholder === expectedText['zh-CN'].noBooks
+                    && cnCompact.quickCapture === true
+                    && cnCompact.quickCaptureLabel === expectedText['zh-CN'].create
+                    && cnCompact.needsBook === true
+                    && !/BDC/i.test(captureSurfaces(cnCompact))
+                    && !/先在|請先|请先/.test(captureSurfaces(cnCompact)),
+                    { placeholder: cnCompact.captureBookPlaceholder, quickCapture: cnCompact.quickCapture,
+                        quickCaptureLabel: cnCompact.quickCaptureLabel, needsBook: cnCompact.needsBook,
+                        notice: cnCompact.captureNotice, surfaces: captureSurfaces(cnCompact) });
+
+                const cnNotice = await expandAndRefresh(cn.frame, expectedText['zh-CN'].noBooks);
+                await panelShot(cn.frame, 'empty-book-zh-CN-expanded-panel');
+                await screenshot(page, 'empty-book-zh-CN-expanded');
+                check('I12 zh-CN 空詞書提示列顯示同一條新文字（不再叫人先回 BDC），展開面板提示行也說「直接新建」',
+                    cnNotice.expanded && cnNotice.clicked
+                    && cnNotice.state.captureNotice === expectedText['zh-CN'].noBooks
+                    && cnNotice.state.captureNoticeHidden === false
+                    && cnNotice.state.captureHint === dictText('zh-CN', 'captureChooseToSave')
+                    && !/BDC/i.test(cnNotice.state.captureNotice + cnNotice.state.captureHint),
+                    { expanded: cnNotice.expanded, clicked: cnNotice.clicked, notice: cnNotice.state.captureNotice,
+                        noticeHidden: cnNotice.state.captureNoticeHidden, hint: cnNotice.state.captureHint,
+                        expectedHint: dictText('zh-CN', 'captureChooseToSave') });
+
+                // 觀察（不判定成敗）：緊湊卡剛開好時提示列是空的（本次實測 notice:""），按「刷新」後才有文字。
+                note('空詞書提示列的可見時機（觀察，不判定成敗）',
+                    { compact: cnCompact.captureNotice, afterRefresh: cnNotice.state.captureNotice });
+                await closePopup();
+
+                // zh-HK：用 locale 欄位切換（不另造 HK 空帳號），重開小窗後讀同一批 DOM。
+                await switchLocale('zh-HK');
+                const hk = await openEmptyBookPopup('hk');
+                if (!hk.ok) { check('I13 zh-HK 空詞書：可開啟小窗（前提成立）', false, hk.opened); return; }
+                const hkCompact = hk.state;
+                await panelShot(hk.frame, 'empty-book-zh-HK-compact-panel');
+                await screenshot(page, 'empty-book-zh-HK-compact');
+                check('I13 zh-HK 空詞書：下拉佔位與按鈕改用香港繁體同一條文字，不是 zh-CN 文字，也沒有 BDC／「先…」',
+                    hkCompact.captureBookPlaceholder === expectedText['zh-HK'].noBooks
+                    && hkCompact.quickCaptureLabel === expectedText['zh-HK'].create
+                    && hkCompact.needsBook === true
+                    && hkCompact.captureBookPlaceholder !== expectedText['zh-CN'].noBooks
+                    && !captureSurfaces(hkCompact).includes(expectedText['zh-CN'].noBooks)
+                    && !/BDC/i.test(captureSurfaces(hkCompact))
+                    && !/先在|請先|请先/.test(captureSurfaces(hkCompact)),
+                    { placeholder: hkCompact.captureBookPlaceholder, quickCaptureLabel: hkCompact.quickCaptureLabel,
+                        notice: hkCompact.captureNotice, cnText: expectedText['zh-CN'].noBooks,
+                        surfaces: captureSurfaces(hkCompact) });
+
+                const hkNotice = await expandAndRefresh(hk.frame, expectedText['zh-HK'].noBooks);
+                await panelShot(hk.frame, 'empty-book-zh-HK-expanded-panel');
+                await screenshot(page, 'empty-book-zh-HK-expanded');
+                check('I14 zh-HK 空詞書提示列與展開面板提示行都改用香港繁體同一條文字',
+                    hkNotice.expanded && hkNotice.clicked
+                    && hkNotice.state.captureNotice === expectedText['zh-HK'].noBooks
+                    && hkNotice.state.captureNoticeHidden === false
+                    && hkNotice.state.captureHint === dictText('zh-HK', 'captureChooseToSave')
+                    && hkNotice.state.captureNotice !== expectedText['zh-CN'].noBooks,
+                    { expanded: hkNotice.expanded, clicked: hkNotice.clicked, notice: hkNotice.state.captureNotice,
+                        noticeHidden: hkNotice.state.captureNoticeHidden, hint: hkNotice.state.captureHint,
+                        expectedHint: dictText('zh-HK', 'captureChooseToSave') });
+                await closePopup();
+
+                check('I15 兩語字典同鍵同語義：都引導在原地新建、都不含 BDC／「先…」、且無插值參數',
+                    !!expectedText['zh-CN'].noBooks && !!expectedText['zh-HK'].noBooks
+                    && /新建/.test(expectedText['zh-CN'].noBooks) && /新增/.test(expectedText['zh-HK'].noBooks)
+                    && !/BDC/i.test(expectedText['zh-CN'].noBooks + expectedText['zh-HK'].noBooks)
+                    && !/先在|請先|请先/.test(expectedText['zh-CN'].noBooks + expectedText['zh-HK'].noBooks)
+                    && !/\{\w+\}/.test(expectedText['zh-CN'].noBooks + expectedText['zh-HK'].noBooks)
+                    && /新建|新增/.test(dictText('zh-CN', 'captureChooseToSave') + dictText('zh-HK', 'captureChooseToSave')),
+                    { cn: expectedText['zh-CN'].noBooks, hk: expectedText['zh-HK'].noBooks,
+                        cnChooseToSave: dictText('zh-CN', 'captureChooseToSave'),
+                        hkChooseToSave: dictText('zh-HK', 'captureChooseToSave') });
+
+                const hardcoded = frontEndHardcodedEmptyBook();
+                const packagedSameAsRoot = {
+                    'zh-CN': fileHash('extension/locales/zh-CN.js') === fileHash('locales/zh-CN.js'),
+                    'zh-HK': fileHash('extension/locales/zh-HK.js') === fileHash('locales/zh-HK.js')
+                };
+                const keyRefs = (fs.readFileSync(path.join(ROOT, 'extension/capture-ui.js'), 'utf8').match(/extension\.captureNoBooks/g) || []).length;
+                check('I16 前端無硬編碼：extension/ 不含這兩條文字，capture-ui 以 t(\'extension.captureNoBooks\') 取鍵，打包字典與根字典同檔',
+                    hardcoded.length === 0 && keyRefs >= 2
+                    && packagedSameAsRoot['zh-CN'] && packagedSameAsRoot['zh-HK'],
+                    { hardcoded, keyRefs, packagedSameAsRoot });
+
+                // I17：把新提示的承諾兌現——0 本詞書時按「建立本頁詞書並加入」要真的建立並寫入。
+                const captureCase = await openEmptyBookPopup('quick');
+                if (!captureCase.ok) { check('I17 0 本詞書：可開啟小窗（前提成立）', false, captureCase.opened); return; }
+                const callsBefore = env.state.captureCalls.length;
+                const quickClicked = await captureCase.frame.locator('#ext-quick-capture').click({ timeout: 8000 }).then(() => true).catch(() => false);
+                const savedState = await waitUntil(async () => {
+                    const next = await frameState(captureCase.frame);
+                    return SUCCESS_TEXT.test(next.captureNotice || '') ? next : null;
+                }, { timeout: 30000 });
+                const emptyBooksAfter = dbBooks(env, EMPTY_USER).filter((book) => !book.deleted);
+                const emptyEntries = emptyBooksAfter.flatMap((book) => dbEntriesFor(env, EMPTY_USER, book.id, 'plunge'));
+                const quickCall = env.state.captureCalls.slice(callsBefore).slice(-1)[0] || null;
+                await screenshot(page, 'empty-book-quick-capture');
+                check('I17 0 本詞書時「建立本頁詞書並加入」真的可用（伺服器回執＋DB 有詞書與詞條）',
+                    quickClicked && !!savedState && emptyBooksAfter.length === 1 && emptyEntries.length === 1 && !!quickCall?.source?.sourceUrl,
+                    { clicked: quickClicked, notice: savedState?.captureNotice, books: emptyBooksAfter.length,
+                        entries: emptyEntries.map((entry) => entry.word),
+                        call: quickCall && { bookId: quickCall.bookId, word: quickCall.word, locale: quickCall.source?.locale } });
+                await closePopup();
+            } catch (error) {
+                check('I11–I17 空詞書提示區段執行失敗', false, String((error && error.stack) || error).slice(0, 1500));
+            } finally {
+                // 不論成敗都要回到 alice＋zh-CN：後面 J–O 的 fixture 全部以 alice 為前提。
+                await closePopup().catch(() => {});
+                await switchLocale('zh-CN').catch(() => {});
+                await logout().catch(() => {});
+                const status = await popup.locator('#ext-account-status').textContent().catch(() => '');
+                if (!String(status || '').includes('alice')) {
+                    await connect(ALICE, 'alice').catch((error) => console.error('[restore alice]', error));
+                }
             }
         });
 

@@ -1,0 +1,20 @@
+{
+  "version": "0.4.0",
+  "product_commit": "b7cc4648e8563a42db4c842edfc1f09da4c75250",
+  "feature_commit": "2ad5722c79ac5928ede1ac7a51f04f2e1d6571c6",
+  "before_master": "61486a7b848eb7981cbb6c8a26f03bb779c0a27a",
+  "release": "f77b5070376e",
+  "modules": 97,
+  "independent_popup": 113,
+  "node_regressions": 283,
+  "legacy_inline_security": 72,
+  "legacy_workspace": 17,
+  "production": 14,
+  "production_failed": 0,
+  "real_ai_calls": 2,
+  "clean_package": 7,
+  "worker_changed": false,
+  "schema_changed": false,
+  "fixture_cleanup_ok": true,
+  "completed_at": "2026-11-06T08:53:26.216608+00:00"
+}

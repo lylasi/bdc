@@ -1,0 +1,25 @@
+{
+  "before": "2ad5722c79ac5928ede1ac7a51f04f2e1d6571c6",
+  "head": "b7cc4648e8563a42db4c842edfc1f09da4c75250",
+  "private_config_before": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "private_config_after": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "pull": "Updating 2ad5722..b7cc464\nFast-forward\n .../BDC-extension-0.4.0.zip                        | Bin 357110 -> 357102 bytes\n .../package-final.json                             |   2 +-\n .../source-fingerprints-final.json                 |   6 +-\n index.html                                         | 198 ++++++++++-----------\n locales/zh-CN.js                                   |   2 +-\n locales/zh-HK.js                                   |   2 +-\n 6 files changed, 105 insertions(+), 105 deletions(-)\nFrom https://github.com/lylasi/bdc\n * branch            master     -> FETCH_HEAD\n   2ad5722..b7cc464  master     -> origin/master\n",
+  "restart": " Container bdc Restarting \n Container bdc Started \n",
+  "nginx": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n",
+  "status": "",
+  "container_running": true,
+  "container_health": "healthy",
+  "started_at": "2026-11-06T08:46:29.173456452Z",
+  "mounts": [
+    {
+      "Type": "bind",
+      "Source": "/Users/linus/Documents/code/qinglong/ql/data/scripts/bdc",
+      "Destination": "/src/bdc",
+      "Mode": "ro",
+      "RW": false,
+      "Propagation": "rprivate"
+    }
+  ],
+  "http_status": 200,
+  "index_sha256": "475d9ac387d83becb25e1aeb8492fcc5194f226d888ba86dd7b4900390295ba6"
+}
