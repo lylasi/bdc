@@ -1,0 +1,36 @@
+✔ 載入詞書後：有結果才可按收藏，成功後顯示已加入且清單消失 (9.595292ms)
+✔ 收藏離線：必須明說已保留待傳，不得顯示已加入，且要能再試 (7.995416ms)
+✔ 排隊失敗（未產生待傳）不得說成已待傳，要顯示真正的錯誤 (5.559167ms)
+✔ 每個 client 錯誤碼都要顯示對應訊息，且不得看起來像已加入 (21.968167ms)
+✔ 詞書載入失敗但有快取：提示離線，舊快取不得當成明確預設，需使用者自己選 (5.8835ms)
+✔ 標記 explicit-v1 的快取可沿用明確選擇 (4.55225ms)
+✔ 收藏途中切換目標詞書：結束後按鈕必須恢復可用，且提示指明原詞書 (9.524458ms)
+✔ 收藏途中換詞書：新詞書不得標成已加入，且可立刻為新詞書再收藏一次 (11.172459ms)
+✔ 舊收藏的 finally 不得解除新收藏的忙碌狀態（activeSave 令牌） (10.989ms)
+✔ 收藏途中重新查詞：新結果不得被標成已收藏 (6.669333ms)
+✔ 收藏途中帳戶事件觸發 sync：不得卡在收藏中，舊 attempt 也不得冒出成功提示 (7.0245ms)
+✔ 沒有明確預設：首次必須由使用者選書，選過之後同一頁會記住、換頁不沿用 (15.651125ms)
+✔ 待傳清單：顯示詞書名稱，可逐筆取消，取消後清單消失 (8.144792ms)
+✔ 待傳清單：損壞記錄要顯示成損壞、只能取消不能重試，且不顯示 foreign 字詞 (7.065375ms)
+✔ 待傳清單的單筆重試：成功後清單消失並顯示已加入 (11.3035ms)
+✔ 批次重試：失敗保留待傳並顯示對應錯誤，成功則清單消失 (7.511375ms)
+✔ 來源列只顯示合法網址；沒有來源時明說是手動查詞 (4.152208ms)
+✔ 所有用到的翻譯鍵都同時存在於 extension 兩語詞典 (3.912209ms)
+✔ lookup.html 具備 capture-ui.js 需要的所有 id，且 lookup.js 有對應的 dom 參照 (0.42475ms)
+✔ 1. managed provider path: connects account, downloads shared key into memory only, resolves task/thinking, and runs contextual lookup (26.605084ms)
+✔ 2. cloud-synced personal provider path: pulls snapshot AI settings + downloads personal credential and prioritizes explicit task choice over managed default (3.878958ms)
+✔ 3. local-only personal provider missing key: never silently falls back to managed provider, surfaces missing key, and isolates manual key import by endpoint + userId (3.874916ms)
+✔ 4. contextual cache isolation: partitions by endpoint, userId, provider:model, word, sentence, context, locale, promptVersion, and thinking (6.632584ms)
+✔ 5. account switch / logout / late response guard: aborts or discards stale lookup responses (3.636917ms)
+✔ 6. selection extractor and deterministic extension packager verify relative imports and secret-free ai-config.js (23.198083ms)
+✔ 7. token and login-code modes use the existing account APIs (1.471875ms)
+✔ 8. failed cloud credential downloads retain diagnostics and recover on retry (2.010959ms)
+✔ 9. standalone word lookup validates structured meanings before caching (2.248875ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 200.558958

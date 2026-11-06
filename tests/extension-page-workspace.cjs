@@ -72,6 +72,11 @@ function check(name, condition, detail) {
         check('普通網頁無法讀取可信 iframe 的內容', await article.evaluate(() => {
             const node = document.querySelector('bdc-page-lookup'); return node.shadowRoot === null;
         }));
+        // 0.4.0：小窗預設只顯示詞義與收藏，建書／文章擷取等進階操作在「更多」展開的同一個 iframe 內。
+        // 這裡明確點 #ext-inline-more（不是放寬斷言：後續每一項原本的檢查都保留）。
+        await inline.locator('#ext-inline-more').click();
+        await inline.waitForFunction(() => document.body.classList.contains('ext-expanded'), null, { timeout: 8000 });
+        check('浮窗可用「更多」展開完整面板', await inline.evaluate(() => document.body.classList.contains('ext-expanded')));
         await inline.locator('#ext-book-page').click();
         await inline.waitForFunction(() => document.querySelector('#ext-capture-book').selectedOptions[0]?.textContent === 'Major tech stocks plunge');
         const pageBookId = await inline.locator('#ext-capture-book').inputValue();

@@ -39,7 +39,7 @@ export function createCaptureUI(dom) {
     let savedKey = '';
     let notice = null;
     let pending = [];
-    let onChange = () => {};
+    const listeners = new Set();
     const pendingErrors = new Map();
 
     const currentKey = () => `${displayVersion}:${dom.captureBook.value}`;
@@ -103,7 +103,9 @@ export function createCaptureUI(dom) {
             dom.captureSource.appendChild(link);
         } else dom.captureSource.textContent = t('extension.captureManualSource');
         if (dom.captureHint) dom.captureHint.textContent = t(displayed ? (dom.captureBook.value ? 'extension.captureReadyHint' : 'extension.captureChooseToSave') : 'extension.captureHint');
-        onChange({ books, defaultBookId, source, selectedBookId: dom.captureBook.value, loggedIn: session.loggedIn });
+        const current = { books, defaultBookId, source, selectedBookId: dom.captureBook.value, loggedIn: session.loggedIn,
+            hasResult: !!displayed, busy, displayVersion };
+        for (const listener of listeners) listener(current);
     }
     async function updatePending(session = captureAuthSession()) {
         const list = await client.pending(session);
@@ -117,7 +119,8 @@ export function createCaptureUI(dom) {
         const previous = (await storage?.get(key))?.[key];
         if (version !== choiceVersion || !isAuthSessionCurrent(session)) return;
         const pageBookId = source?.pageUrl ? books.find((book) => pageUrlKey(book.sourceUrl) === pageUrlKey(source.pageUrl))?.id : '';
-        const selected = previous || (!useDefault && dom.captureBook.value) || pageBookId || defaultBookId;
+        const candidates = [previous, !useDefault && dom.captureBook.value, pageBookId, defaultBookId];
+        const selected = candidates.find((id) => id && books.some((book) => book.id === id)) || '';
         dom.captureBook.replaceChildren();
         const placeholder = document.createElement('option');
         placeholder.value = '';
@@ -130,7 +133,7 @@ export function createCaptureUI(dom) {
             dom.captureBook.appendChild(option);
         }
         dom.captureBook.value = books.some((book) => book.id === selected) ? selected : '';
-        if (selected && !dom.captureBook.value && books.length) setNotice('extension.captureTargetMissing', 'error');
+        if (previous && !selected && books.length) setNotice('extension.captureTargetMissing', 'error');
         render();
     }
     async function loadBooks(session) {
@@ -185,8 +188,8 @@ export function createCaptureUI(dom) {
         await updatePending(session);
         if (results.some((result) => result.error)) showError({ code: results.find((result) => result.error).error }, true);
     }
-    async function save() {
-        if (busy || !displayed || !dom.captureBook.value) return;
+    async function save(expectedVersion = displayVersion) {
+        if (busy || !displayed || !dom.captureBook.value || expectedVersion !== displayVersion) return;
         const session = captureAuthSession();
         const key = currentKey();
         const snapshot = displayed;
@@ -291,7 +294,9 @@ export function createCaptureUI(dom) {
     });
     return {
         sync, setSource, clearResult,
-        subscribe(callback) { onChange = callback; render(); },
+        subscribe(callback) { listeners.add(callback); render(); return () => listeners.delete(callback); },
+        getDisplayVersion() { return displayVersion; },
+        saveCurrent(expectedVersion) { return save(expectedVersion); },
         refreshBooks() { return loadBooks(captureAuthSession()); },
         async selectBook(id) {
             const session = captureAuthSession();

@@ -21,6 +21,34 @@ body {
 .ext-inline #ext-inline-toolbar { position: sticky; top: -10px; z-index: 2; padding: 9px 0; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
 #ext-inline-toolbar strong { margin-right: auto; }
 #ext-inline-toolbar button { padding: 5px 7px; font-size: 12px; }
+.ext-compact { padding: 10px; background: #fff; }
+.ext-compact #ext-inline-toolbar { top: -10px; background: #fff; padding: 2px 0 8px; margin-bottom: 8px; }
+.ext-compact #ext-inline-edit,
+.ext-compact #ext-inline-settings,
+.ext-compact #ext-lookup-section,
+.ext-compact #ext-page-article-section,
+.ext-compact #ext-result-heading,
+.ext-compact #ext-capture-heading,
+.ext-compact #ext-result-role,
+.ext-compact #ext-result-examples,
+.ext-compact #ext-result-meta,
+.ext-compact #ext-capture-source,
+.ext-compact #ext-capture-hint,
+.ext-compact #ext-capture-refresh,
+.ext-compact #ext-capture-pending,
+.ext-compact .ext-book-actions,
+.ext-compact #ext-book-form,
+.ext-compact #ext-capture-section .ext-field label { display: none !important; }
+.ext-compact .ext-card { padding: 0; border: 0; box-shadow: none; margin-bottom: 10px; }
+.ext-compact #ext-capture-section { margin-bottom: 0; padding-top: 10px; border-top: 1px solid #e2e8f0; border-radius: 0; }
+.ext-compact .ext-result-box { border: 0; background: transparent; padding: 0; }
+.ext-compact .ext-result-word { font-size: 18px; }
+.ext-compact .ext-result-meaning { font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
+.ext-compact .ext-field { margin-bottom: 7px; }
+.ext-compact.ext-needs-book #ext-capture-save { display: none !important; }
+.ext-compact #ext-inline-status { margin: 0 0 10px; padding: 8px; background: #eff6ff; }
+#ext-inline-confirm { position: fixed; inset: 8px; z-index: 10; padding: 16px; overflow: auto; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 0 0 200vmax #0f172a33; }
+#ext-inline-retry { margin-top: 6px; }
 .ext-book-actions { margin-top: 10px; }
 .ext-book-form { margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 8px; }
 .ext-book-form > label, #ext-article-preview > label { display: block; margin: 6px 0; }

@@ -1,0 +1,89 @@
+{
+  "generatedAtHKT": "2026-11-06T16:12:05.083Z",
+  "markerAt": "2026-11-06T08:06:31.643995+00:00",
+  "driftedFiles": [
+    "extension/page-lookup.js",
+    "extension/inline-panel.js",
+    "extension/background.js"
+  ],
+  "postDriftRunMatchesCurrent": true,
+  "products": [
+    {
+      "file": "extension/page-lookup.js",
+      "markerSha256_16": "7a7dada380c69a66",
+      "postDriftRun_16": "b3fbfce666a32b71",
+      "current_16": "b3fbfce666a32b71",
+      "changedSinceMarker": true
+    },
+    {
+      "file": "extension/inline-panel.js",
+      "markerSha256_16": "6b9aecacaec0b37d",
+      "postDriftRun_16": "5c4a6ecfb180ae07",
+      "current_16": "5c4a6ecfb180ae07",
+      "changedSinceMarker": true
+    },
+    {
+      "file": "extension/background.js",
+      "markerSha256_16": "ebc6dbececc0a0c0",
+      "postDriftRun_16": "1b0ea58f99fb75bd",
+      "current_16": "1b0ea58f99fb75bd",
+      "changedSinceMarker": true
+    },
+    {
+      "file": "extension/lookup.js",
+      "markerSha256_16": "d39dcb9c6c146f64",
+      "postDriftRun_16": "d39dcb9c6c146f64",
+      "current_16": "d39dcb9c6c146f64",
+      "changedSinceMarker": false
+    },
+    {
+      "file": "extension/lookup.html",
+      "markerSha256_16": "6f98857d77066a32",
+      "postDriftRun_16": "6f98857d77066a32",
+      "current_16": "6f98857d77066a32",
+      "changedSinceMarker": false
+    },
+    {
+      "file": "extension/lookup.css",
+      "markerSha256_16": "b8e65883b913db63",
+      "postDriftRun_16": "b8e65883b913db63",
+      "current_16": "b8e65883b913db63",
+      "changedSinceMarker": false
+    },
+    {
+      "file": "extension/capture-ui.js",
+      "markerSha256_16": "806cdd7b68764581",
+      "postDriftRun_16": "806cdd7b68764581",
+      "current_16": "806cdd7b68764581",
+      "changedSinceMarker": false
+    },
+    {
+      "file": "extension/workspace-ui.js",
+      "markerSha256_16": "44701bd7c851197a",
+      "postDriftRun_16": "44701bd7c851197a",
+      "current_16": "44701bd7c851197a",
+      "changedSinceMarker": false
+    },
+    {
+      "file": "extension/manifest.json",
+      "markerSha256_16": "7ba67b3e8b6a2094",
+      "postDriftRun_16": "7ba67b3e8b6a2094",
+      "current_16": "7ba67b3e8b6a2094",
+      "changedSinceMarker": false
+    },
+    {
+      "file": "locales/zh-CN.js",
+      "markerSha256_16": "8825f25aa5019152",
+      "postDriftRun_16": "8825f25aa5019152",
+      "current_16": "8825f25aa5019152",
+      "changedSinceMarker": false
+    },
+    {
+      "file": "locales/zh-HK.js",
+      "markerSha256_16": "23f12d6a28c3bfd2",
+      "postDriftRun_16": "23f12d6a28c3bfd2",
+      "current_16": "23f12d6a28c3bfd2",
+      "changedSinceMarker": false
+    }
+  ]
+}

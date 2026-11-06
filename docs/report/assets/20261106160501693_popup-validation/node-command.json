@@ -1,0 +1,17 @@
+{
+  "files": [
+    "tests/ai-worker.test.mjs",
+    "tests/ai-units.test.mjs",
+    "tests/ai-sync-regressions.test.mjs",
+    "tests/extension-ai-lookup.test.mjs",
+    "tests/extension-ai-cache-scope.test.mjs",
+    "tests/capture-ui-deepseek.test.mjs",
+    "tests/capture-client.test.mjs",
+    "tests/capture-client-deepseek.test.mjs",
+    "tests/vocabulary-captures.test.mjs",
+    "tests/vocabulary-captures-deepseek.test.mjs",
+    "tests/extension-page-workspace-deepseek.test.mjs",
+    "tests/extension-workspace-client-deepseek.test.mjs"
+  ],
+  "exit": 1
+}

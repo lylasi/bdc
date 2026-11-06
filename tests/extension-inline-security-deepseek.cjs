@@ -244,6 +244,13 @@ async function connect(popup, base, env, token) {
         check('正常浮窗帶 ticket 且已標記內嵌模式', (await frameSnapshot(panel)).inline === true);
         const ticket = new URL(panel.url()).searchParams.get('ticket') || '';
         check('浮窗 ticket 不是空值', ticket.length >= 32, { length: ticket.length });
+        // 0.4.0：小窗預設是緊湊模式（點外面／捲動會收起）；「更多」展開的完整面板才會在編輯時固定。
+        // 這裡明確點 #ext-inline-more，讓後面「浮窗仍存活／仍是原本的文件」等原有斷言在 0.4.0 的行為下成立。
+        // 只新增這一步，不放寬任何既有斷言。
+        await panel.locator('#ext-inline-more').click({ timeout: 8000 });
+        await panel.waitForFunction(() => document.body.classList.contains('ext-expanded'), null, { timeout: 8000 });
+        check('浮窗可用「更多」展開為完整面板（0.4.0）',
+            await panel.evaluate(() => document.body.classList.contains('ext-expanded')));
         const articlesBefore = await articleRowCount(env);
         const booksBefore = await bookCount(env);
 

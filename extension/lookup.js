@@ -20,6 +20,7 @@ import { getLocale, setLocale, initI18n, applyTranslations, t } from './modules/
 import { extractActivePageSelectionInTab } from './selection-extractor.js';
 import { createCaptureUI } from './capture-ui.js';
 import { createWorkspaceUI } from './workspace-ui.js';
+import { createInlinePanel } from './inline-panel.js';
 
 const pageParameters = new URLSearchParams(location.search);
 const isEmbedded = window.parent !== window;
@@ -110,6 +111,18 @@ let activeLookupController = null;
 let lastResultPayload = null;
 let lastAccountNotice = null;
 let lastLookupNotice = null;
+const inlineUI = isEmbedded ? createInlinePanel({
+    more: document.getElementById('ext-inline-more'), back: document.getElementById('ext-inline-back'),
+    close: document.getElementById('ext-inline-close'), confirm: document.getElementById('ext-inline-confirm'),
+    confirmText: document.getElementById('ext-inline-confirm-text'), keep: document.getElementById('ext-inline-keep'),
+    discard: document.getElementById('ext-inline-discard'), quick: document.getElementById('ext-quick-capture'),
+    retry: document.getElementById('ext-inline-retry'), actionNotice: document.getElementById('ext-inline-action-notice'),
+    captureBook: dom.captureBook, lookup: dom.lookupBtn, queryInputs: [dom.wordInput, dom.sentenceInput, dom.contextInput]
+}, captureUI, workspaceUI, { ticket: inlineTicket, restoreQuery: () => {
+    const page = inlineContext.page;
+    dom.wordInput.value = page.text; dom.sentenceInput.value = page.sentence || ''; dom.contextInput.value = page.context || '';
+    captureUI.setSource(page); renderReadiness();
+} }) : null;
 
 function setNotice(el, kind, keyOrText, params = {}, isRawText = false) {
     if (!el) return;
@@ -438,6 +451,7 @@ async function handleLookup() {
         dom.lookupBtn.disabled = true;
         dom.lookupBtn.textContent = t('extension.lookingUp');
     }
+    inlineUI?.render();
     showLookupNotice('info', '');
 
     const text = dom.wordInput ? dom.wordInput.value.trim() : '';
@@ -470,6 +484,7 @@ async function handleLookup() {
             dom.lookupBtn.disabled = false;
             dom.lookupBtn.textContent = t('extension.lookupBtn');
         }
+        inlineUI?.render();
     }
 }
 
@@ -477,6 +492,7 @@ function refreshLocalizedView() {
     applyTranslations(document);
     captureUI.translate();
     workspaceUI.render();
+    inlineUI?.render();
     chrome.storage.local.set({ bdc_extension_ui_locale: getLocale() }).catch(() => {});
     globalThis.chrome?.action?.setTitle({ title: t('extension.manifestTitle') }).catch(() => {});
     if (dom.localeSelect) dom.localeSelect.value = getLocale();
@@ -527,11 +543,7 @@ async function initExtensionPage() {
         showAccountNotice(response?.ok ? 'info' : 'error', response?.ok ? 'extension.inlineEnabled' : 'extension.inlineUnavailable');
     });
     document.getElementById('ext-inline-settings').addEventListener('click', () => chrome.runtime.openOptionsPage());
-    document.getElementById('ext-inline-edit').addEventListener('click', () => document.body.classList.toggle('ext-edit-query'));
-    document.getElementById('ext-inline-close').addEventListener('click', () => parent.postMessage({ type: 'BDC_CLOSE_INLINE', ticket: inlineTicket }, '*'));
-    if (isEmbedded) window.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') parent.postMessage({ type: 'BDC_CLOSE_INLINE', ticket: inlineTicket }, '*');
-    });
+    document.getElementById('ext-inline-edit').addEventListener('click', () => { inlineUI?.expand(); document.body.classList.toggle('ext-edit-query'); });
     for (const input of [dom.wordInput, dom.sentenceInput, dom.contextInput]) {
         input?.addEventListener('input', () => {
             captureUI.setSource(null);

@@ -1,0 +1,48 @@
+{
+  "checks": [
+    {
+      "name": "anchored compact lookup",
+      "ok": true,
+      "detail": {
+        "box": {
+          "x": 147,
+          "y": 148,
+          "width": 340,
+          "height": 216
+        },
+        "rect": {
+          "x": 147.15625,
+          "y": 117.875,
+          "width": 49.390625,
+          "height": 22
+        }
+      }
+    },
+    {
+      "name": "same frame expands",
+      "ok": true
+    },
+    {
+      "name": "keep unsaved draft",
+      "ok": true
+    },
+    {
+      "name": "discard and return to compact",
+      "ok": true
+    },
+    {
+      "name": "quick book create and capture without more AI",
+      "ok": true
+    },
+    {
+      "name": "outside click closes",
+      "ok": true
+    },
+    {
+      "name": "no page errors",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": []
+}

@@ -10,13 +10,52 @@ const extensionOrigin = chrome.runtime.getURL('').replace(/\/$/, '');
 function trustedFrame(sender) {
     return sender.id === chrome.runtime.id && String(sender.url || '').startsWith(extensionOrigin + '/lookup.html');
 }
+function inlineFrame(message, sender) {
+    const record = tickets.get(message.ticket);
+    // A claimed frame may still resize or close after the read-page ticket has
+    // expired. Data access below continues to enforce the original expiry.
+    if (!trustedFrame(sender) || !record
+        || record.claimed !== sender.documentId || sender.tab?.id !== record.tabId) throw new Error('invalid_context');
+    return record;
+}
+async function notifyShell(record, message) {
+    return chrome.tabs.sendMessage(record.tabId, message, { frameId: 0 });
+}
 async function dispatch(message, sender) {
     if (sender.id !== chrome.runtime.id || !message || typeof message.type !== 'string') throw new Error('invalid_sender');
     if (message.type === 'BDC_INLINE_LABELS') {
         const stored = await chrome.storage.local.get('bdc_extension_ui_locale');
         const dictionary = stored.bdc_extension_ui_locale === 'zh-HK' ? zhHK : zhCN;
         const t = (key) => key.split('.').reduce((value, part) => value?.[part], dictionary) || 'BDC';
-        return { 'extension.inlineLookup': t('extension.inlineLookup'), 'extension.inlineClose': t('extension.inlineClose'), 'extension.inlineTitle': t('extension.inlineTitle') };
+        return { 'extension.inlineLookup': t('extension.inlineLookup'), 'extension.inlineClose': t('extension.inlineClose'),
+            'extension.inlineTitle': t('extension.inlineTitle'), 'extension.inlineOpenFailed': t('extension.inlineOpenFailed') };
+    }
+    if (['BDC_INLINE_STATE', 'BDC_INLINE_CLOSED', 'BDC_INLINE_CANCEL_CLOSE'].includes(message.type)) {
+        const record = inlineFrame(message, sender);
+        if (message.type === 'BDC_INLINE_STATE') {
+            record.ready = true;
+            await notifyShell(record, { type: 'BDC_INLINE_STATE', ticket: message.ticket,
+                mode: message.mode === 'expanded' ? 'expanded' : 'compact',
+                height: Number.isFinite(message.height) ? Math.max(80, Math.min(20000, message.height)) : 180,
+                protected: message.protected === true });
+        } else {
+            await notifyShell(record, { type: message.type === 'BDC_INLINE_CLOSED' ? 'BDC_INLINE_REMOVE' : 'BDC_INLINE_KEEP',
+                ticket: message.ticket, requestId: String(message.requestId || '') });
+            if (message.type === 'BDC_INLINE_CLOSED') tickets.delete(message.ticket);
+        }
+        return { ok: true };
+    }
+    if (message.type === 'BDC_INLINE_REQUEST_CLOSE') {
+        const record = tickets.get(message.ticket);
+        if (sender.frameId !== 0 || !/^https?:/.test(sender.url || '') || !record || sender.tab?.id !== record.tabId
+            || !/^[A-Za-z0-9-]{1,100}$/.test(message.requestId || '')) throw new Error('invalid_context');
+        const reason = ['outside', 'offscreen', 'replace', 'explicit'].includes(message.reason) ? message.reason : 'outside';
+        if (!record.ready) {
+            await notifyShell(record, { type: 'BDC_INLINE_REMOVE', ticket: message.ticket, requestId: message.requestId });
+            tickets.delete(message.ticket);
+        } else await chrome.runtime.sendMessage({ type: 'BDC_INLINE_CHECK_CLOSE', ticket: message.ticket,
+            requestId: message.requestId, reason });
+        return { ok: true };
     }
     if (message.type === 'BDC_OPEN_INLINE') {
         if (!sender.tab?.id || !/^https?:/.test(sender.url || '') || sender.frameId !== 0) throw new Error('invalid_sender');

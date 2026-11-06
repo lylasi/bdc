@@ -1,0 +1,140 @@
+{
+  "marker": {
+    "ready": true,
+    "version": "0.4.0",
+    "at": "2026-11-06T08:06:31.643995+00:00",
+    "smoke": "docs/report/assets/20261106160328619_anchored-popup-smoke/results.json",
+    "source_sha256": {
+      "extension/page-lookup.js": "7a7dada380c69a66fade0d2dbf6b1c27eba0ab009f8403b43e3dd523b60e1c38",
+      "extension/inline-panel.js": "6b9aecacaec0b37dba6e9a9a7f003c26ec3fcbc0e2f3ac4cfce8b6b4ac1b2c49",
+      "extension/background.js": "ebc6dbececc0a0c0918e2c215668d2efa2e2363a6a9d77b43ca44d92a23f5bac",
+      "extension/lookup.js": "d39dcb9c6c146f6415ed27d549dbd9de9586ab784df47dad53226d8b55f501e1",
+      "extension/lookup.html": "6f98857d77066a32c4ef6e1eabda905e67c73517dd4fbc6fb66e44ed776c94d2",
+      "extension/lookup.css": "b8e65883b913db63f1e137d304fa32e53aa7246a30e14d8411539159c96f599a",
+      "extension/capture-ui.js": "806cdd7b687645815a57012909bbfdd89a87cc3db3708ae5cc1021249215b8e9",
+      "extension/workspace-ui.js": "44701bd7c851197aed755d1df9532adae48074175fd6633006f5e75d1d352030",
+      "extension/manifest.json": "7ba67b3e8b6a209464854f271303c2570a043cd74b195dcaf127594352415d1d",
+      "locales/zh-CN.js": "8825f25aa50191524535fdb4703413d301dac1e1a961618f59a3e45b82bfe532",
+      "locales/zh-HK.js": "23f12d6a28c3bfd237a98834e70d96984f6bafb81d8796189f1c6fab01db447c"
+    }
+  },
+  "generatedAt": "2026-11-06T16:08:39.524Z",
+  "allMatch": true,
+  "products": [
+    {
+      "file": "extension/page-lookup.js",
+      "marker": "7a7dada380c69a66",
+      "atRun": "7a7dada380c69a66",
+      "now": "7a7dada380c69a66",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "extension/inline-panel.js",
+      "marker": "6b9aecacaec0b37d",
+      "atRun": "6b9aecacaec0b37d",
+      "now": "6b9aecacaec0b37d",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "extension/background.js",
+      "marker": "ebc6dbececc0a0c0",
+      "atRun": "ebc6dbececc0a0c0",
+      "now": "ebc6dbececc0a0c0",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "extension/lookup.js",
+      "marker": "d39dcb9c6c146f64",
+      "atRun": "d39dcb9c6c146f64",
+      "now": "d39dcb9c6c146f64",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "extension/lookup.html",
+      "marker": "6f98857d77066a32",
+      "atRun": "6f98857d77066a32",
+      "now": "6f98857d77066a32",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "extension/lookup.css",
+      "marker": "b8e65883b913db63",
+      "atRun": "b8e65883b913db63",
+      "now": "b8e65883b913db63",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "extension/capture-ui.js",
+      "marker": "806cdd7b68764581",
+      "atRun": "806cdd7b68764581",
+      "now": "806cdd7b68764581",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "extension/workspace-ui.js",
+      "marker": "44701bd7c851197a",
+      "atRun": "44701bd7c851197a",
+      "now": "44701bd7c851197a",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "extension/manifest.json",
+      "marker": "7ba67b3e8b6a2094",
+      "atRun": "7ba67b3e8b6a2094",
+      "now": "7ba67b3e8b6a2094",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "locales/zh-CN.js",
+      "marker": "8825f25aa5019152",
+      "atRun": "8825f25aa5019152",
+      "now": "8825f25aa5019152",
+      "matchNow": true,
+      "matchRun": true
+    },
+    {
+      "file": "locales/zh-HK.js",
+      "marker": "23f12d6a28c3bfd2",
+      "atRun": "23f12d6a28c3bfd2",
+      "now": "23f12d6a28c3bfd2",
+      "matchNow": true,
+      "matchRun": true
+    }
+  ],
+  "testedFiles": {
+    "extension/manifest.json": "7ba67b3e8b6a2094",
+    "extension/background.js": "ebc6dbececc0a0c0",
+    "extension/page-lookup.js": "7a7dada380c69a66",
+    "extension/inline-panel.js": "6b9aecacaec0b37d",
+    "extension/lookup.html": "6f98857d77066a32",
+    "extension/lookup.js": "d39dcb9c6c146f64",
+    "extension/lookup.css": "b8e65883b913db63",
+    "extension/capture-ui.js": "806cdd7b68764581",
+    "extension/workspace-ui.js": "44701bd7c851197a",
+    "extension/selection-extractor.js": "8dbc89a539817a78",
+    "extension/page-extractor.js": "3dd225b57bfed035",
+    "extension/modules/extension-workspace.js": "7bac1c6a04affa08",
+    "extension/modules/extension-ai-runtime.js": "76f51a86b0504f38",
+    "modules/extension-workspace.js": "7bac1c6a04affa08",
+    "shared/workspace-client.mjs": "8ae186dfb387eb7a",
+    "shared/capture-client.mjs": "83ecf9eddd914e0f",
+    "shared/capture-protocol.mjs": "485f1cde29857801",
+    "shared/page-protocol.mjs": "9a1cf273a67c55c5",
+    "cloudflare-worker/src/captures.js": "50e10706ea606891",
+    "cloudflare-worker/src/capture-books.js": "eab5bf6d175d4616",
+    "locales/zh-CN.js": "8825f25aa5019152",
+    "locales/zh-HK.js": "23f12d6a28c3bfd2",
+    "scripts/package-extension.mjs": "86d28a3702c589c0",
+    "tests/helpers/extension-mv3.cjs": "6b8002590e96465f",
+    "tests/extension-anchored-popup-deepseek.cjs": "59c601acbf4cad04"
+  }
+}

@@ -110,6 +110,7 @@ export function packageExtension() {
         'lookup.js',
         'capture-ui.js',
         'workspace-ui.js',
+        'inline-panel.js',
         'page-extractor.js',
         'page-lookup.js',
         'background.js',

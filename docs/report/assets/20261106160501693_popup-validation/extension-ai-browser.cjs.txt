@@ -1,0 +1,20 @@
+Packaged 51 files into /Users/linus/CODE/bdc-extension-anchored-popup-20261106/extension
+PASS · MV3 擴充套件成功載入並取得真實 chrome-extension:// origin · chrome-extension://hifbidjdaggbheemohobbaafaiejocee
+PASS · 無任何 BDC 網站分頁開啟（僅擴充套件自身頁面） · ["chrome-extension://hifbidjdaggbheemohobbaafaiejocee/lookup.html"]
+PASS · 登入後成功載入管理供應商並解析查詞模型與思考設定 (low) · 当前查词模型：Managed Default Provider · managed-gpt-4o-mini（思考：低强度）
+PASS · 透過 activeTab + scripting 從第三方網頁擷取選中詞、原句與附近語境 · They charge £10 for admission on weekdays. | Welcome to the city museum. They charge £10 for admission on weekdays. Members may enter without a ticket.
+PASS · 無任何網頁分頁下完成管理供應商語境查詞 · 句中释义：收费（管理供应商） | 模型：managed-default:managed-gpt-4o-mini · 任务：articleWordTranslation · 思考：低强度
+PASS · 後端與 AI 供應商請求附帶真實 chrome-extension:// Origin 並通過允許列表檢查 · worker=chrome-extension://hifbidjdaggbheemohobbaafaiejocee, provider=chrome-extension://hifbidjdaggbheemohobbaafaiejocee
+PASS · 受限頁面（如 chrome:// 或擴充套件頁）擷取選詞時顯示明確提示並保持手動輸入可用 · 当前页面受浏览器保护或无可读取选区，请直接在下方手动输入。
+PASS · 管理供應商共享 Key 僅留記憶體，未寫入 localStorage 或 chrome.storage.local · clean
+PASS · 相同端點/帳戶/供應商/模型/詞/原句/語境/語言命中快取不重送請求
+PASS · 介面切換至 zh-HK 後標題與按鈕即時雙語切換 · BDC 語境查詞 / 語境查詞
+PASS · 切換 zh-HK 後查詞快取按語言隔離並取得繁體釋義
+PASS · 已雲端同步個人供應商：自動下載個人憑證並完成片語語境查詞 · 模型：personal-cloud:cloud-model-v1 · 任务：articlePhraseTranslation · 思考：低强度
+PASS · 僅網站本機 Key 缺失時明確顯示提示橫幅且不自動複製網站 localStorage · 此扩展暂未取得供应商「Alice Website-Local Provider」的可用 API Key。请重试同步；如密钥只保存在网站本机，可在此手动导入，密钥按服务地址和账户隔离保存。
+PASS · 個人供應商缺 Key 時查詞明確報錯且不靜默回退管理供應商 · 尚未配置此供应商的 API Key
+PASS · 手動匯入本機 Key 後成功以該個人供應商完成查詞
+PASS · 切換帳戶至 Bob 後：Alice 的遲到回應被丟棄，且 Alice 手動匯入的本機 Key 不洩漏給 Bob · resultHidden=true, bobMissingKeyBanner=true
+PASS · 擴充套件執行期間無未捕獲頁面錯誤
+
+=== Summary: 17/17 passed ===

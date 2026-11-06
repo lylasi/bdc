@@ -9,11 +9,22 @@
 <body>
     <div id="ext-inline-toolbar" class="ext-row" hidden>
         <strong data-i18n="extension.inlineTitle"></strong>
+        <button id="ext-inline-more" type="button" class="ext-btn" data-i18n="extension.inlineMore"></button>
+        <button id="ext-inline-back" type="button" class="ext-btn" hidden data-i18n="extension.inlineBack"></button>
         <button id="ext-inline-edit" type="button" class="ext-btn" data-i18n="extension.inlineEdit"></button>
         <button id="ext-inline-settings" type="button" class="ext-btn" data-i18n="extension.inlineSettings"></button>
         <button id="ext-inline-close" type="button" class="ext-btn" data-i18n="extension.inlineClose"></button>
     </div>
     <p id="ext-inline-status" class="ext-notice" hidden></p>
+    <p id="ext-inline-action-notice" class="ext-notice ext-notice-error" role="status" hidden></p>
+    <div id="ext-inline-confirm" role="alertdialog" aria-modal="true" aria-labelledby="ext-inline-confirm-title" hidden>
+        <strong id="ext-inline-confirm-title" data-i18n="extension.inlineUnsavedTitle"></strong>
+        <p id="ext-inline-confirm-text"></p>
+        <div class="ext-row">
+            <button id="ext-inline-keep" type="button" class="ext-btn ext-btn-primary" data-i18n="extension.inlineKeepEditing"></button>
+            <button id="ext-inline-discard" type="button" class="ext-btn" data-i18n="extension.inlineDiscardClose"></button>
+        </div>
+    </div>
     <header class="ext-header">
         <div>
             <h1 class="ext-title" id="ext-title" data-i18n="extension.title"></h1>
@@ -133,7 +144,7 @@
         <div id="ext-lookup-notice" class="ext-notice hidden" role="alert" aria-live="assertive"></div>
     </section>
 
-    <section class="ext-card" aria-labelledby="ext-result-heading">
+    <section id="ext-result-section" class="ext-card" aria-labelledby="ext-result-heading">
         <h2 class="ext-card-title" id="ext-result-heading" data-i18n="extension.resultSectionTitle"></h2>
         <div id="ext-result-empty" class="ext-status-line" data-i18n="extension.resultEmpty"></div>
         <div id="ext-inline-lookup-notice" class="ext-notice" role="alert" aria-live="assertive" hidden></div>
@@ -148,9 +159,10 @@
             <ul id="ext-result-examples" style="margin: 6px 0 0; padding-left: 18px; font-size: 12px;"></ul>
             <div class="ext-result-meta" id="ext-result-meta"></div>
         </div>
+        <button id="ext-inline-retry" type="button" class="ext-btn" hidden data-i18n="extension.inlineRetry"></button>
     </section>
 
-    <section class="ext-card" aria-labelledby="ext-capture-heading">
+    <section id="ext-capture-section" class="ext-card" aria-labelledby="ext-capture-heading">
         <h2 class="ext-card-title" id="ext-capture-heading" data-i18n="extension.captureTitle"></h2>
         <div class="ext-field">
             <label for="ext-capture-book" data-i18n="extension.captureBookLabel"></label>
@@ -160,6 +172,7 @@
         <p id="ext-capture-hint" class="ext-status-line" data-i18n="extension.captureHint"></p>
         <div class="ext-row">
             <button type="button" id="ext-capture-save" class="ext-btn ext-btn-primary" disabled data-i18n="extension.captureSave"></button>
+            <button id="ext-quick-capture" type="button" class="ext-btn ext-btn-primary" hidden data-i18n="extension.inlineCreateAndCapture"></button>
             <button type="button" id="ext-capture-refresh" class="ext-btn" data-i18n="extension.captureRefresh"></button>
         </div>
         <div id="ext-capture-notice" class="ext-notice" role="status" aria-live="polite" hidden></div>
@@ -185,7 +198,7 @@
         </details>
     </section>
 
-    <section class="ext-card" aria-labelledby="ext-page-article-heading">
+    <section id="ext-page-article-section" class="ext-card" aria-labelledby="ext-page-article-heading">
         <h2 id="ext-page-article-heading" class="ext-card-title" data-i18n="extension.pageArticleTitle"></h2>
         <p class="ext-status-line" data-i18n="extension.pageArticleHint"></p>
         <div class="ext-row">

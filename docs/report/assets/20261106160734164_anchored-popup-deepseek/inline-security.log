@@ -1,0 +1,73 @@
+PASS 可信擴充套件頁面可連上測試帳戶
+PASS 擴充套件頁面可以讀 chrome.storage
+PASS 選字後可在嚴格 CSP 網頁開啟浮窗
+PASS 正常浮窗會初始化帳戶並完成查詞
+PASS 正常浮窗帶 ticket 且已標記內嵌模式
+PASS 浮窗 ticket 不是空值
+PASS 浮窗可用「更多」展開為完整面板（0.4.0）
+PASS 偽造 ticket：顯示不可用且不初始化
+PASS 空白 ticket：顯示不可用且不初始化
+PASS 缺 ticket：顯示不可用且不初始化
+PASS 頂層分頁帶真 ticket 也不得用內嵌模式初始化
+PASS 頂層分頁帶 embedded 參數也不得開內嵌模式
+PASS 偽造 ticket 未啟動任何 AI 呼叫
+PASS 偽造 ticket 沒有任何文章／詞書寫入
+PASS 同 tab 重播 ticket：拒絕（第二次文件不得頂替原浮窗）
+PASS 原浮窗仍是原本的文件（未被重播取代）
+PASS 跨 tab 重播 ticket：拒絕
+PASS 偽造 postMessage 後浮窗仍存活且結果未變
+PASS 偽造 postMessage 沒有開啟新浮窗
+PASS 偽造 postMessage／合成滑鼠事件沒有新增 AI 呼叫
+PASS 網站寫著假 ticket 的 iframe 被拒絕、沒有寫入
+PASS 網頁看不到浮窗內容（closed shadow root）
+PASS 網頁無法列出浮窗網址
+PASS 內容腳本世界讀不到 chrome.storage（TRUSTED_CONTEXTS）
+PASS 網頁 localStorage／sessionStorage 沒有 ticket 或 token
+PASS 網頁世界沒有 chrome.runtime
+PASS 面板可從目前分頁擷取文章並預覽
+PASS 保存失敗後待傳出現且預覽立即鎖定
+PASS 勾選逐段分析時保存會跑一次 AI 分析
+PASS 伺服器其實已建立文章（回應遺失情境成立）
+PASS 雲端文章正文是使用者編輯後的內容
+PASS 重開面板後待傳仍在（重試失敗保留）
+PASS 重試失敗不會重跑 AI
+PASS F1：重開面板後仍有待傳時，預覽必須鎖定（標題／正文／分析／儲存都不可用）
+PASS F1：鎖定時顯示待傳提示（pagePendingLocked 實際可達）
+PASS F1：待傳清單自動展開且仍只有一筆
+PASS F1：還原的是待傳原稿（標題／正文／分析勾選），不是第二份 AI 新稿
+PASS F1：還原待傳時沒有重跑 AI、沒有新增待傳
+PASS F1：待傳鎖定時輸入框不可編輯（輸入被拒絕，不會出現第二份新稿）
+PASS 建立本頁詞書的回應遺失時也會留下待傳
+PASS 伺服器其實已建立本頁詞書
+PASS 取消待傳只刪本機那一筆
+PASS 取消待傳不刪雲端已建立的詞書
+PASS 由待傳列重試成功後清掉該筆待傳
+PASS 重試後雲端保留第一次的正文（第二次編輯沒有蓋掉雲端）
+PASS 重試沒有重建文章（仍只有一篇、文章 ID 不變）
+PASS 重試沒有再送 POST /articles
+PASS 重試沒有重跑 AI
+PASS 重試走的是 GET ?sourceUrl 與 page-link 補關聯
+PASS 重試成功時介面有提示（沿用既有文章，不是靜默成功）
+PASS 雲端已有文章時直接顯示既有文章入口（不再產生可編輯預覽）
+PASS 既有文章入口會說明「已沿用原記錄」
+PASS 既有文章入口先查 GET ?sourceUrl 再用 page-link 補關聯
+PASS 既有文章入口不跑 AI、不建立文章、不改內容
+PASS 自訂詞書的回應遺失也會留下待傳
+PASS 伺服器其實已建立自訂詞書
+PASS 重開面板會自動重試並清掉待傳
+PASS 自動重試沒有把詞書建成兩本
+PASS 自動重試後文章仍只有一篇、內容不變
+PASS 登出前：分頁已換到新 query URL（真新頁面）
+PASS 換頁後可建立新的可編輯預覽（登出前置條件成立）
+PASS 登出後隱藏文章預覽
+PASS 登出後沒有殘留的進行中任務（取消按鈕消失）
+PASS 登出後不顯示取消造成的錯誤
+PASS 登出後清空輸入框（不殘留上一個帳戶的文章）
+PASS 登出後清掉待傳清單顯示
+PASS 登出時的取消 AI 沒有在雲端留下文章
+PASS 切換帳戶後預覽仍為隱藏
+PASS 切換帳戶後看不到上一個帳戶的待傳
+PASS 切換帳戶後輸入框仍是空的
+PASS 流程中沒有未捕獲的擴充套件頁面錯誤
+PASS 原分頁換頁後舊 ticket 失效
+{"passed":72,"failed":0,"output":"/Users/linus/CODE/bdc-extension-anchored-popup-20261106/docs/report/assets/20261106160734164_anchored-popup-deepseek/inline-security"}
