@@ -1,0 +1,6 @@
+PASS 未登入不可存取 GET /vocabulary/books
+PASS 未登入不可存取 POST /vocabulary/books
+PASS 未登入不可存取 PUT /vocabulary/default
+PASS 未登入不可存取 POST /vocabulary/page-link
+{"passed":4,"failed":1}
+TypeError: fetch failed

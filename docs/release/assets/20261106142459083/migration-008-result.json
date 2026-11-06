@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "previouslyAbsent": true,
+  "appliedOnce": true,
+  "schemaReadbackVerified": true,
+  "cliExitCode": 0,
+  "note": "Wrangler file import printed a non-JSON progress preamble despite --json; wrapper parsing failed after successful apply. Verified remotely without reapplying."
+}

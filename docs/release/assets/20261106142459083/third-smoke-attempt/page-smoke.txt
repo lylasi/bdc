@@ -1,0 +1,23 @@
+PASS 未登入不可存取 GET /vocabulary/books
+PASS 未登入不可存取 POST /vocabulary/books
+PASS 未登入不可存取 PUT /vocabulary/default
+PASS 未登入不可存取 POST /vocabulary/page-link
+PASS 真 MV3 連接隔離普通帳戶
+PASS 無預設詞書時可直接建立並選用
+PASS 嚴格 CSP 原網頁可直接以正式 AI 查詞
+PASS 原網頁查詞自動沿用明確預設
+PASS 頁面無法讀取浮窗內容
+PASS 浮窗可直接建立本頁詞書
+PASS 浮窗收藏已展示結果且不重跑 AI
+PASS 正式 AI 擷取標題正文並保留章節
+PASS 網頁表單欄位未送入保存預覽
+PASS 先建立頁書再保存文章可自動關聯
+PASS 正式文章保存完整正文及真 AI 逐段分析
+PASS 已有文章時提供開啟入口且不再提取
+{"passed":16,"failed":1}
+AssertionError [ERR_ASSERTION]: /articles: {"created":true,"article":{"id":"release-article-first","revision":1,"title":"Article created first","sourceType":"url","sourceUrl":"http://127.0.0.1:61078/release-article-second","createdAt":"2026-11-06T06:53:03.115Z","updatedAt":"2026-11-06T06:53:03.115Z","deletedAt":"","sizeBytes":27,"body":"A second synthetic article.","analysis":null}}
+
+201 !== 200
+
+    at api (/Users/linus/CODE/bdc-extension-page-reading-20261106/docs/release/assets/20261106142459083/verify-page-workspace-live.cjs:26:12)
+    at async /Users/linus/CODE/bdc-extension-page-reading-20261106/docs/release/assets/20261106142459083/verify-page-workspace-live.cjs:120:9

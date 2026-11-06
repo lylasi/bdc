@@ -1,0 +1,11 @@
+[
+  "node",
+  "/Users/linus/.npm/_npx/32026684e21afda6/node_modules/wrangler/bin/wrangler.js",
+  "d1",
+  "execute",
+  "bdc-sync",
+  "--remote",
+  "--file",
+  "/Users/linus/CODE/bdc-extension-page-reading-20261106/cloudflare-worker/migrations/008_capture_preferences.sql",
+  "--json"
+]

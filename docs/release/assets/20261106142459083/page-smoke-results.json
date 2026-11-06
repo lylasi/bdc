@@ -1,0 +1,365 @@
+{
+  "checks": [
+    {
+      "name": "未登入不可存取 GET /vocabulary/books",
+      "ok": true
+    },
+    {
+      "name": "未登入不可存取 POST /vocabulary/books",
+      "ok": true
+    },
+    {
+      "name": "未登入不可存取 PUT /vocabulary/default",
+      "ok": true
+    },
+    {
+      "name": "未登入不可存取 POST /vocabulary/page-link",
+      "ok": true
+    },
+    {
+      "name": "真 MV3 連接隔離普通帳戶",
+      "ok": true
+    },
+    {
+      "name": "無預設詞書時可直接建立並選用",
+      "ok": true
+    },
+    {
+      "name": "嚴格 CSP 原網頁可直接以正式 AI 查詞",
+      "ok": true
+    },
+    {
+      "name": "原網頁查詞自動沿用明確預設",
+      "ok": true
+    },
+    {
+      "name": "頁面無法讀取浮窗內容",
+      "ok": true
+    },
+    {
+      "name": "浮窗可直接建立本頁詞書",
+      "ok": true
+    },
+    {
+      "name": "浮窗收藏已展示結果且不重跑 AI",
+      "ok": true
+    },
+    {
+      "name": "正式 AI 擷取標題正文並保留章節",
+      "ok": true
+    },
+    {
+      "name": "網頁表單欄位未送入保存預覽",
+      "ok": true
+    },
+    {
+      "name": "先建立頁書再保存文章可自動關聯",
+      "ok": true
+    },
+    {
+      "name": "正式文章保存完整正文及真 AI 逐段分析",
+      "ok": true
+    },
+    {
+      "name": "已有文章時提供開啟入口且不再提取",
+      "ok": true
+    },
+    {
+      "name": "成功後本機收藏和工作區待傳均清除",
+      "ok": true
+    },
+    {
+      "name": "先保存文章再建立頁書亦自動關聯",
+      "ok": true
+    },
+    {
+      "name": "正式建書重送不重複建立",
+      "ok": true
+    },
+    {
+      "name": "可在已更新主站開啟同一篇文章詳解",
+      "ok": true
+    },
+    {
+      "name": "正式主站沿用頁書不另建空白詞書",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 原頁浮窗文字及版面正常",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 原頁浮窗文字及版面正常",
+      "ok": true
+    },
+    {
+      "name": "正常正式聯調沒有未捕獲錯誤",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": [],
+  "apiResponses": [
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "POST",
+      "status": 401
+    },
+    {
+      "path": "/vocabulary/default",
+      "method": "PUT",
+      "status": 401
+    },
+    {
+      "path": "/vocabulary/page-link",
+      "method": "POST",
+      "status": 401
+    },
+    {
+      "path": "/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/snapshot",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-credentials",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-credentials",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/snapshot",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-credentials",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog/providers/managed-legacy-hapi/credential",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/captures",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/articles",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "path": "/vocabulary/page-link",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/articles/webart_f50af837993d3fe6c80600ff62cf816e09feb294a59b90ac",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/page-link",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/articles",
+      "method": "POST",
+      "status": 201
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/auth-capabilities",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/articles/webart_f50af837993d3fe6c80600ff62cf816e09feb294a59b90ac",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-credentials",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/reading/capabilities",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/snapshot",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/reading/changes",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/reading/batch",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/reading/changes",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/articles",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/reading/mutations",
+      "method": "POST",
+      "status": 200
+    }
+  ],
+  "aiCalls": 6,
+  "realMV3": true,
+  "realProductionD1": true,
+  "aiMocked": false,
+  "syntheticSource": true,
+  "browserProfileRemoved": true
+}

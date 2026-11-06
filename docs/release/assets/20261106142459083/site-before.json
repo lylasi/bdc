@@ -1,0 +1,22 @@
+{
+  "head": "4bda14ef068ca64b75c35a39e4ef5355776a1af5",
+  "branch": "master",
+  "status": "",
+  "config_sha256": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "state": {
+    "Status": "running",
+    "Running": true,
+    "StartedAt": "2026-11-06T04:30:01.579128041Z"
+  },
+  "health": "healthy",
+  "mounts": [
+    {
+      "Type": "bind",
+      "Source": "/Users/linus/Documents/code/qinglong/ql/data/scripts/bdc",
+      "Destination": "/src/bdc",
+      "Mode": "ro",
+      "RW": false,
+      "Propagation": "rprivate"
+    }
+  ]
+}

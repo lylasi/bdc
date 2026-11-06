@@ -6,7 +6,8 @@
 //
 //   1. 用 git archive 匯出指定提交（預設 HEAD），確認產物目錄真的不在源碼包內
 //   2. 打包前直接載入 → 期望載入失敗（證明「先打包」不是可選步驟）
-//   3. 執行 scripts/package-extension.mjs → 再載入 → 期望登入、解析模型、完成查詞
+//   3. 執行 scripts/package-extension.mjs → 再載入 → 期望登入、解析模型、完成查詞，
+//      且 0.3.0 的詞書工作區端點（GET /vocabulary/books）在打包後的 MV3 內也讀得到
 //   4. 再打包一次 → 產物逐位元組不變（決定性），且與來源檔一致（單一來源）
 //   5. 在乾淨源碼包內跑 tests/extension-ai-lookup.test.mjs 與
 //      tests/extension-ai-cache-scope.test.mjs（證明 node 測試不依賴本機私有 ai-config.js）
@@ -15,6 +16,10 @@
 //   PLAYWRIGHT_MODULE=<playwright 路徑> node tests/extension-clean-package-retest.cjs [--rev=<git rev>]
 //
 // 全程只用隨機連接埠的隔離 mock 與臨時目錄，不讀私有 ai-config.js、不用真實 Key。
+//
+// 0.3.0 起擴充套件在登入後立刻呼叫 GET /vocabulary/books（capture-ui 的詞書下拉），
+// 這是 clean-package 匯出後唯一會打到 Worker 的新端點；mock 必須用正式 Worker 的
+// 回應形狀（books／defaultBookId／pageBookId／articleId）回答，否則打包後的介面會留下 404。
 
 const http = require('node:http');
 const fs = require('node:fs');
@@ -77,28 +82,51 @@ function readJsonBody(req) {
     });
 }
 
+// The packager publishes its own artifact list; follow that declaration instead of a
+// hardcoded count, which goes stale every time a shared module is added (0.2.x spoke
+// of "Packaged 44 files", 0.3.0 packages 48 shared files + 3 generated artifacts).
+function declaredSharedFiles(rootDir) {
+    const source = fs.readFileSync(path.join(rootDir, 'scripts/package-extension.mjs'), 'utf8');
+    const block = source.match(/const SHARED_FILES = \[([\s\S]*?)\];/);
+    if (!block) return [];
+    return [...block[1].matchAll(/'([^']+)'/g)].map((match) => match[1]);
+}
+
 // Minimal isolated Worker + AI provider: enough to prove the packaged extension works.
+// Route coverage tracks what the extension actually calls; anything else is recorded
+// in state.unexpected so an unforeseen 404 fails loudly instead of being ignored.
 async function startMock() {
     const state = {
         allowedOrigin: '',
         baseUrl: '',
         users: { alice: { user_id: 'alice', label: 'Alice Reader', role: 'user', username: 'alice', password: 'pwd-alice-771', token: 'A'.repeat(40) } },
-        providerCalls: 0
+        providerCalls: 0,
+        books: [{ id: 'clean-package-book', name: 'Clean Package Book', revision: 1 }],
+        requests: [],
+        unexpected: []
     };
     const server = http.createServer(async (req, res) => {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const origin = req.headers.origin || '';
         const originAllowed = !state.allowedOrigin || !origin || origin === state.allowedOrigin;
+        const entry = { method: req.method, path: url.pathname, query: url.search, status: 0 };
+        state.requests.push(entry);
         const cors = {
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
             'Access-Control-Allow-Headers': 'Authorization, Content-Type',
             'Cache-Control': 'no-store'
         };
         if (origin && originAllowed) cors['Access-Control-Allow-Origin'] = origin;
-        if (req.method === 'OPTIONS') { res.writeHead(originAllowed ? 204 : 403, cors); res.end(); return; }
+        if (req.method === 'OPTIONS') { entry.status = originAllowed ? 204 : 403; res.writeHead(entry.status, cors); res.end(); return; }
         const send = (status, data) => {
+            entry.status = status;
             res.writeHead(status, { ...cors, 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify(data));
+        };
+        // A 404 the harness did not model is a harness gap, never a product pass.
+        const unknownRoute = (detail) => {
+            state.unexpected.push(`${req.method} ${url.pathname}${url.search} (${detail})`);
+            return send(404, { error: 'not_found' });
         };
         if (url.pathname.startsWith('/provider')) {
             const body = await readJsonBody(req);
@@ -116,7 +144,7 @@ async function startMock() {
         if (w) {
             if (!originAllowed) return send(403, { error: 'origin_not_allowed' });
             const route = w[1] || '/';
-            const body = req.method === 'POST' ? await readJsonBody(req) : null;
+            const body = req.method === 'POST' || req.method === 'PUT' ? await readJsonBody(req) : null;
             const alice = state.users.alice;
             if (route === '/login' && req.method === 'POST') {
                 if (body?.username !== alice.username || body?.password !== alice.password) return send(401, { error: 'invalid_credentials' });
@@ -125,6 +153,21 @@ async function startMock() {
             const bearer = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
             if (bearer !== alice.token) return send(401, { error: 'unauthorized' });
             if (route === '/me') return send(200, { user_id: alice.user_id, label: alice.label, role: alice.role });
+            // 0.3.0: the extension lists vocabulary books right after sign-in
+            // (capture-ui loadBooks → capture-client books()). Same JSON shape as
+            // cloudflare-worker/src/captures.js listBooks().
+            if (route === '/vocabulary/books' && req.method === 'GET') {
+                const books = state.books.map((book) => ({
+                    id: book.id, name: book.name, revision: Number(book.revision) || 1, sourceUrl: '', articleId: ''
+                }));
+                return send(200, {
+                    books,
+                    defaultBookId: books[0]?.id || '',
+                    // No BDC website page is involved in this flow, so no page-bound book/article.
+                    pageBookId: '',
+                    articleId: ''
+                });
+            }
             if (route === '/snapshot') {
                 return send(200, {
                     version: 1,
@@ -161,9 +204,9 @@ async function startMock() {
                 });
             }
             if (route === '/ai-credentials') return send(200, { items: [] });
-            return send(404, { error: 'not_found' });
+            return unknownRoute(`unmodeled worker route ${route}`);
         }
-        send(404, { error: 'unknown_route' });
+        return unknownRoute('outside /worker');
     });
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
     state.baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -238,14 +281,22 @@ async function openLookup(context) {
 
         // 2) Package inside the clean tree exactly as documented (relative path from the repo root).
         const packageOut = execFileSync(process.execPath, ['scripts/package-extension.mjs'], { cwd: sourceDir, encoding: 'utf8' });
-        check('P3 在乾淨源碼包內執行 node scripts/package-extension.mjs 成功', /Packaged 44 files/.test(packageOut), packageOut.trim());
+        const declared = declaredSharedFiles(sourceDir);
+        const expectedCount = declared.length ? declared.length + 3 : 0; // + extension/ai-config.js + _locales/{zh_CN,zh_TW}/messages.json
+        const reportedCount = (packageOut.match(/Packaged (\d+) files/) || [])[1];
+        const missingArtifacts = declared.filter((rel) => !fs.existsSync(path.join(extDir, rel)));
+        check(
+            'P3 在乾淨源碼包內執行 node scripts/package-extension.mjs 成功，且打包檔數與腳本宣告的產物清單一致、每個宣告檔都真的落地',
+            expectedCount > 0 && Number(reportedCount) === expectedCount && missingArtifacts.length === 0,
+            `輸出="${packageOut.trim()}" 宣告共享檔=${declared.length}+3（ai-config.js、_locales×2）=${expectedCount} 實際=${reportedCount} 未落地=${JSON.stringify(missingArtifacts)}`
+        );
 
         // 2b) Same script, same tree, but invoked through the symlinked absolute path.
         //     The documented install step must not silently do nothing.
         const symlinkedOut = execFileSync(process.execPath, [path.join(sourceDir, 'scripts/package-extension.mjs')], { cwd: sourceDir, encoding: 'utf8' });
         check(
             'F1（新發現）以含符號連結的絕對路徑（macOS /tmp → /private/tmp）直接執行打包腳本時，仍必須真的寫出產物',
-            /Packaged \d+ files/.test(symlinkedOut),
+            Number((symlinkedOut.match(/Packaged (\d+) files/) || [])[1]) === expectedCount,
             `相對路徑呼叫輸出="${packageOut.trim()}"／絕對路徑呼叫輸出="${symlinkedOut.trim()}"（空字串代表腳本靜默未執行，退出碼仍為 0）`
         );
 
@@ -255,6 +306,9 @@ async function openLookup(context) {
             const { page, extensionOrigin } = opened;
             const pagesBefore = context.pages().length;
             mock.state.allowedOrigin = extensionOrigin;
+            // Only this run's traffic counts for the "no unmodeled request" gate.
+            mock.state.requests.length = 0;
+            mock.state.unexpected.length = 0;
             await page.fill('#ext-endpoint-input', mock.state.endpoint);
             await page.selectOption('#ext-login-mode', 'password');
             await page.fill('#ext-username-input', 'alice');
@@ -264,6 +318,17 @@ async function openLookup(context) {
                 () => (document.getElementById('ext-account-status')?.textContent || '').includes('Alice Reader'),
                 null, { timeout: 20000 }
             ).then(() => true).catch(() => false);
+            // 0.3.0: sign-in fires captureUI.sync() → GET /vocabulary/books. The packaged
+            // build must parse the Worker response and fill the capture book selector.
+            const booksLoaded = await page.waitForFunction(
+                () => document.querySelectorAll('#ext-capture-book option').length > 1,
+                null, { timeout: 15000 }
+            ).then(() => true).catch(() => false);
+            const capture = await page.evaluate(() => ({
+                options: Array.from(document.querySelectorAll('#ext-capture-book option')).map((option) => option.textContent),
+                selected: document.getElementById('ext-capture-book')?.value || '',
+                notice: document.getElementById('ext-capture-notice')?.textContent || ''
+            }));
             const task = await page.evaluate(() => document.getElementById('ext-task-status')?.textContent || '');
             await page.fill('#ext-word-input', 'charge');
             await page.fill('#ext-sentence-input', 'They charge £10 for admission.');
@@ -285,18 +350,33 @@ async function openLookup(context) {
             });
             return {
                 connected, task, result, errors: opened.errors,
-                bdcTabs: siteTabs.map((p) => p.url()), pagesBefore
+                bdcTabs: siteTabs.map((p) => p.url()), pagesBefore,
+                booksLoaded, capture,
+                requests: mock.state.requests.map((entry) => ({ ...entry })),
+                unexpected: mock.state.unexpected.slice()
             };
         });
+        const booksRequest = after.requests.find((entry) => entry.method === 'GET' && /\/vocabulary\/books$/.test(entry.path));
+        const failedRequests = after.requests.filter((entry) => entry.status >= 400);
+        const requestLog = after.requests.map((entry) => `${entry.method} ${entry.path}${entry.query} → ${entry.status}`);
         check(
-            'P4 打包後可在真實 MV3 載入、連上帳戶、解析 managed 模型並完成一次語境查詞（無任何 BDC 網站分頁）',
+            'P4 打包後可在真實 MV3 載入、連上帳戶、解析 managed 模型、讀到詞書清單並完成一次語境查詞（無任何 BDC 網站分頁，且沒有未建模的 4xx／5xx）',
             after.connected === true
             && /managed-gpt/.test(after.task)
             && after.result.hidden === false
             && /charge/.test(after.result.meaning)
             && after.bdcTabs.length === 0
-            && after.errors.length === 0,
-            `已連線=${after.connected} 任務列="${after.task}" 結果=${JSON.stringify(after.result)} BDC分頁=${JSON.stringify(after.bdcTabs)} 錯誤=${JSON.stringify(after.errors)}`
+            && after.errors.length === 0
+            && booksRequest?.status === 200
+            && after.booksLoaded === true
+            && after.capture.options.includes('Clean Package Book')
+            && after.capture.selected === 'clean-package-book'
+            && after.unexpected.length === 0
+            && failedRequests.length === 0,
+            `已連線=${after.connected} 任務列="${after.task}" 查詞結果=${JSON.stringify(after.result)} BDC分頁=${JSON.stringify(after.bdcTabs)}`
+            + ` 詞書端點=${booksRequest ? `GET ${booksRequest.path} → ${booksRequest.status}` : '未發出'} 詞書下拉=${JSON.stringify(after.capture)}`
+            + ` 未建模路由=${JSON.stringify(after.unexpected)} 失敗請求=${JSON.stringify(failedRequests)} 主控台錯誤=${JSON.stringify(after.errors)}`
+            + `\n        ↳ 請求序列=${JSON.stringify(requestLog)}`
         );
 
         // 3) Determinism + single source of truth.

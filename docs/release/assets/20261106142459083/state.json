@@ -1,0 +1,18 @@
+{
+  "stamp": "20261106142459083",
+  "assets": "/Users/linus/CODE/bdc-extension-page-reading-20261106/docs/release/assets/20261106142459083",
+  "worktree": "/Users/linus/CODE/bdc-extension-page-reading-20261106",
+  "before_master": "4bda14ef068ca64b75c35a39e4ef5355776a1af5",
+  "target_extension_version": "0.3.0",
+  "product_commit": "e324d2edd57acccd7980516342cf60e36c0ed4ae",
+  "worker_version": "b60e7760-4bb5-44f5-a997-92d744226301",
+  "migration": "008_capture_preferences.sql",
+  "website_release": "fc24b8fb8124",
+  "modules": 97,
+  "production_checks": 24,
+  "production_failed": 0,
+  "production_ai_calls": 6,
+  "clean_package_checks": 7,
+  "fixture_cleanup_ok": true,
+  "complete_at": "2026-11-06T06:58:23.074637+00:00"
+}

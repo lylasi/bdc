@@ -1,0 +1,69 @@
+{
+  "same": true,
+  "versions": [
+    {
+      "id": "a54780e6-4e4a-4f72-8957-abfea8b6a9c5",
+      "bindings": [
+        {
+          "name": "AI_CATALOG_DIGEST_KEY",
+          "type": "secret_text"
+        },
+        {
+          "name": "AI_CREDENTIAL_KEY_V1",
+          "type": "secret_text"
+        },
+        {
+          "name": "AI_CREDENTIAL_KEY_VERSION",
+          "type": "plain_text",
+          "text": "1"
+        },
+        {
+          "name": "ALLOW_ORIGIN",
+          "type": "plain_text",
+          "text": "*"
+        },
+        {
+          "name": "DB",
+          "type": "d1",
+          "id": "088d7819-b477-4d64-8b5d-583798712042"
+        },
+        {
+          "name": "PASSWORD_PEPPER",
+          "type": "secret_text"
+        }
+      ]
+    },
+    {
+      "id": "b60e7760-4bb5-44f5-a997-92d744226301",
+      "bindings": [
+        {
+          "name": "AI_CATALOG_DIGEST_KEY",
+          "type": "secret_text"
+        },
+        {
+          "name": "AI_CREDENTIAL_KEY_V1",
+          "type": "secret_text"
+        },
+        {
+          "name": "AI_CREDENTIAL_KEY_VERSION",
+          "type": "plain_text",
+          "text": "1"
+        },
+        {
+          "name": "ALLOW_ORIGIN",
+          "type": "plain_text",
+          "text": "*"
+        },
+        {
+          "name": "DB",
+          "type": "d1",
+          "id": "088d7819-b477-4d64-8b5d-583798712042"
+        },
+        {
+          "name": "PASSWORD_PEPPER",
+          "type": "secret_text"
+        }
+      ]
+    }
+  ]
+}

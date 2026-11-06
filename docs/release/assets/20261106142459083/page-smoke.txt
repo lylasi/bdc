@@ -1,0 +1,25 @@
+PASS 未登入不可存取 GET /vocabulary/books
+PASS 未登入不可存取 POST /vocabulary/books
+PASS 未登入不可存取 PUT /vocabulary/default
+PASS 未登入不可存取 POST /vocabulary/page-link
+PASS 真 MV3 連接隔離普通帳戶
+PASS 無預設詞書時可直接建立並選用
+PASS 嚴格 CSP 原網頁可直接以正式 AI 查詞
+PASS 原網頁查詞自動沿用明確預設
+PASS 頁面無法讀取浮窗內容
+PASS 浮窗可直接建立本頁詞書
+PASS 浮窗收藏已展示結果且不重跑 AI
+PASS 正式 AI 擷取標題正文並保留章節
+PASS 網頁表單欄位未送入保存預覽
+PASS 先建立頁書再保存文章可自動關聯
+PASS 正式文章保存完整正文及真 AI 逐段分析
+PASS 已有文章時提供開啟入口且不再提取
+PASS 成功後本機收藏和工作區待傳均清除
+PASS 先保存文章再建立頁書亦自動關聯
+PASS 正式建書重送不重複建立
+PASS 可在已更新主站開啟同一篇文章詳解
+PASS 正式主站沿用頁書不另建空白詞書
+PASS zh-HK 原頁浮窗文字及版面正常
+PASS zh-CN 原頁浮窗文字及版面正常
+PASS 正常正式聯調沒有未捕獲錯誤
+{"passed":24,"failed":0}

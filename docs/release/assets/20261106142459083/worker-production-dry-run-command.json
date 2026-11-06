@@ -1,0 +1,12 @@
+[
+  "node",
+  "/Users/linus/.npm/_npx/32026684e21afda6/node_modules/wrangler/bin/wrangler.js",
+  "deploy",
+  "/Users/linus/CODE/bdc-extension-page-reading-20261106/cloudflare-worker/src/worker.js",
+  "--config",
+  "/Users/linus/CODE/bdc/cloudflare-worker/wrangler.toml",
+  "--keep-vars",
+  "--dry-run",
+  "--outdir",
+  "/tmp/codeg-acp-501/99144-9201c4b1/bdc-page-worker-dry-4rx31aqw"
+]

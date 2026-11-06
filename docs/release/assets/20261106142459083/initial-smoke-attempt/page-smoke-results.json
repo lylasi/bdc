@@ -1,0 +1,64 @@
+{
+  "checks": [
+    {
+      "name": "未登入不可存取 GET /vocabulary/books",
+      "ok": true
+    },
+    {
+      "name": "未登入不可存取 POST /vocabulary/books",
+      "ok": true
+    },
+    {
+      "name": "未登入不可存取 PUT /vocabulary/default",
+      "ok": true
+    },
+    {
+      "name": "未登入不可存取 POST /vocabulary/page-link",
+      "ok": true
+    },
+    {
+      "name": "execution",
+      "ok": false,
+      "detail": "TypeError: fetch failed"
+    }
+  ],
+  "errors": [],
+  "apiResponses": [
+    {
+      "path": "/me",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/snapshot",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/vocabulary/books",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-credentials",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "aiCalls": 0,
+  "realMV3": true,
+  "realProductionD1": true,
+  "aiMocked": false,
+  "syntheticSource": true,
+  "browserProfileRemoved": true
+}

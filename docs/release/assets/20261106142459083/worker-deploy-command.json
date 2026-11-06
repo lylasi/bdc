@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "node",
+    "/Users/linus/.npm/_npx/32026684e21afda6/node_modules/wrangler/bin/wrangler.js",
+    "deploy",
+    "/Users/linus/CODE/bdc-extension-page-reading-20261106/cloudflare-worker/src/worker.js",
+    "--config",
+    "/Users/linus/CODE/bdc/cloudflare-worker/wrangler.toml",
+    "--keep-vars",
+    "--tag",
+    "page-workspace-e324d2e",
+    "--message",
+    "BDC extension 0.3.0 inline lookup, vocabulary books and linked articles (e324d2e)"
+  ],
+  "source_commit": "e324d2edd57acccd7980516342cf60e36c0ed4ae"
+}

@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "sql_path": "/Users/linus/.local/share/bdc-private-backups/20261106142459083/bdc-sync-before-page-workspace.sql",
+  "bytes": 7527896,
+  "sha256": "e0f0e20af25bf597ff1252df2a77295a44fbc582c3391464f4196a4188df4124",
+  "integrity": "ok",
+  "directory_mode": "0o700",
+  "file_mode": "0o600",
+  "capture_preferences_preexisting": false,
+  "sql_contents_in_repository": false
+}
