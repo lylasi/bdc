@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url';
 import { sanitizeSnapshotPayload } from './snapshot-sanitize.js';
 import { handleArticlesRoute, isLegacyArticleWriteBlocked } from '../cloudflare-worker/src/articles.js';
 import { handleReadingRoute, isLegacyReadingWriteBlocked } from '../cloudflare-worker/src/reading.js';
+import { handleVocabularyCaptureRoute } from '../cloudflare-worker/src/captures.js';
 import { snapshotCarriesArticles } from '../shared/article-protocol.mjs';
 import { snapshotCarriesReading } from '../shared/reading-protocol.mjs';
 import { createD1Adapter, createSqliteDatabase, readResponseBody, toWebRequest } from './d1-adapter.js';
@@ -475,6 +476,15 @@ async function handle(req, res) {
 
   if (path === '/version' || path === '/snapshot') {
     return handleSnapshot(req, res, user, path);
+  }
+
+  if (path === '/captures' || path === '/captures/capabilities' || path === '/vocabulary/books') {
+    const bodyText = req.method === 'GET' || req.method === 'HEAD' ? undefined : await readText(req, 128 * 1024);
+    const response = await handleVocabularyCaptureRoute({
+      request: toWebRequest({ method: req.method, url: url.toString(), headers: req.headers, bodyText }),
+      env: { DB: createD1Adapter(db) }, url, user
+    });
+    return sendJson(req, res, await readResponseBody(response), response.status);
   }
 
   if (path === '/articles' || path.startsWith('/articles/') || path === '/reading' || path.startsWith('/reading/')) {

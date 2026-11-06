@@ -1,0 +1,6 @@
+{
+  "userId": "ext_probe_20261106083656410_539dc9be",
+  "remainingUsers": 0,
+  "cleanupOk": true,
+  "reason": "Initial smoke runner corrected for Wrangler file output and owner_user_id cleanup columns before retry"
+}

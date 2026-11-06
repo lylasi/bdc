@@ -78,6 +78,13 @@ body {
     resize: vertical;
     min-height: 52px;
 }
+.ext-source { font-size: 12px; color: #475569; overflow-wrap: anywhere; }
+.ext-pending { margin-top: 12px; font-size: 12px; overflow-wrap: anywhere; }
+.ext-pending summary { cursor: pointer; }
+.ext-pending ul { padding-left: 18px; }
+.ext-pending li { margin: 10px 0; }
+.ext-pending li p { margin: 5px 0; }
+[hidden] { display: none !important; }
 .ext-row {
     display: flex;
     gap: 8px;

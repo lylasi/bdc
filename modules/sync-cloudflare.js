@@ -928,15 +928,29 @@ export function subscribeSnapshotChanges(userId, onChange) {
     if (cfg.pauseWhenHidden && isHidden()) return; // 保險：背景不發請求
     inFlight = true;
     let changed = false;
+    const pollingSession = captureAuthSession();
     try {
       const res = await apiRequest('/version', { method: 'GET' }, { timeoutMs: 10000 });
       if (res.ok) {
         const data = await res.json().catch(() => null);
         const remoteVer = data && typeof data.version === 'number' ? data.version : 0;
         const localVer = parseInt(localStorage.getItem('lastSnapshotVersion') || '0', 10) || 0;
-        if (remoteVer > localVer) {
+        if (!stopped && isAuthSessionCurrent(pollingSession) && remoteVer > localVer) {
           changed = true;
           try { onChange && onChange({ eventType: 'poll', version: remoteVer }); } catch (_) {}
+        }
+      }
+      // Vocabulary captures advance the reading cursor without replacing a
+      // snapshot. Check the small capability response on the same foreground
+      // schedule so returning from a reading page discovers those changes.
+      if (stopped || !isAuthSessionCurrent(pollingSession)) return;
+      const readingRes = await apiRequest('/reading/capabilities', { method: 'GET' }, { timeoutMs: 10000 });
+      if (readingRes.ok && isAuthSessionCurrent(pollingSession)) {
+        const reading = await readingRes.json().catch(() => null);
+        const remoteCursor = Number(reading?.cursor) || 0;
+        if (!stopped && isAuthSessionCurrent(pollingSession) && remoteCursor > readingStore.getReadingCursor()) {
+          changed = true;
+          try { onChange && onChange({ eventType: 'reading', cursor: remoteCursor }); } catch (_) {}
         }
       }
     } catch (_) {

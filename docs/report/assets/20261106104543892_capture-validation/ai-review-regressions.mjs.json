@@ -1,0 +1,4 @@
+{
+  "command": "node tests/ai-review-regressions.mjs",
+  "exitCode": 0
+}

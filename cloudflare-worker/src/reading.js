@@ -54,6 +54,25 @@ async function ensureState(env, userId) {
     };
 }
 
+export { ensureState as ensureReadingState };
+
+/** Append the change and advance its cursor in the same transaction as the entity. */
+export function readingRevisionStatements(env, {
+    userId, entityType, entityId, op, revision, timestamp, mutationId, guardSql, guardArgs
+}) {
+    return [
+        env.DB.prepare('INSERT INTO reading_changes (owner_user_id, seq, entity_type, entity_id, op, revision, updated_at) '
+            + 'SELECT owner_user_id, next_seq, ?, ?, ?, ?, ? FROM reading_state '
+            + 'WHERE owner_user_id = ? AND EXISTS (' + guardSql + ') '
+            + 'AND EXISTS (SELECT 1 FROM reading_entities WHERE owner_user_id = ? AND entity_type = ? AND entity_id = ? AND revision = ? AND last_mutation_id = ?)')
+            .bind(entityType, entityId, op, revision, timestamp, userId, ...guardArgs, userId, entityType, entityId, revision, mutationId),
+        env.DB.prepare('UPDATE reading_state SET next_seq = next_seq + 1, updated_at = ? '
+            + 'WHERE owner_user_id = ? AND EXISTS (' + guardSql + ') '
+            + 'AND EXISTS (SELECT 1 FROM reading_changes WHERE owner_user_id = ? AND entity_type = ? AND entity_id = ? AND revision = ?)')
+            .bind(timestamp, userId, ...guardArgs, userId, entityType, entityId, revision)
+    ];
+}
+
 export async function isLegacyReadingWriteBlocked(env, userId) {
     const row = await env.DB
         .prepare('SELECT legacy_write_blocked FROM reading_state WHERE owner_user_id = ?')
@@ -336,16 +355,11 @@ async function applyMutation(env, userId, mutation, cache = null) {
                 + 'SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (' + claimWhere + ')')
             .bind(userId, mutation.entityType, mutation.entityId, nextRevision, deletedAt, dataJson, timestamp, mutation.mutationId, userId, mutation.mutationId, claimJson));
     }
-    statements.push(env.DB
-        .prepare('INSERT INTO reading_changes (owner_user_id, seq, entity_type, entity_id, op, revision, updated_at) '
-            + 'SELECT owner_user_id, next_seq, ?, ?, ?, ?, ? FROM reading_state '
-            + 'WHERE owner_user_id = ? AND EXISTS (' + claimWhere + ') AND EXISTS (' + entityMatchWhere + ')')
-        .bind(mutation.entityType, mutation.entityId, mutation.op, nextRevision, timestamp, userId, userId, mutation.mutationId, claimJson, userId, mutation.entityType, mutation.entityId, nextRevision, mutation.mutationId));
-    statements.push(env.DB
-        .prepare('UPDATE reading_state SET next_seq = next_seq + 1, updated_at = ? '
-            + 'WHERE owner_user_id = ? AND EXISTS (' + claimWhere + ') '
-            + 'AND EXISTS (SELECT 1 FROM reading_changes WHERE owner_user_id = ? AND entity_type = ? AND entity_id = ? AND revision = ?)')
-        .bind(timestamp, userId, userId, mutation.mutationId, claimJson, userId, mutation.entityType, mutation.entityId, nextRevision));
+    statements.push(...readingRevisionStatements(env, {
+        userId, entityType: mutation.entityType, entityId: mutation.entityId,
+        op: mutation.op, revision: nextRevision, timestamp, mutationId: mutation.mutationId,
+        guardSql: claimWhere, guardArgs: [userId, mutation.mutationId, claimJson]
+    }));
     statements.push(env.DB
         .prepare('UPDATE reading_mutations SET revision = ?, result_json = ? '
             + 'WHERE owner_user_id = ? AND mutation_id = ? AND result_json = ? '

@@ -142,6 +142,9 @@ node add-user.mjs --admin <user_id> [label]  # 新帳戶直接設為 admin（既
 | GET | `/me` | `{ user_id, label, role, username, hasPassword }` |
 | GET | `/version` | 快照版本 |
 | GET | `/snapshot` | 快照或 `null`；帳戶已遷移到逐篇文章儲存後不再回傳舊 `articles` 群組 |
+| GET | `/vocabulary/books` | 目前帳戶未刪除的詞書 metadata；未設定帳戶預設時回空 defaultBookId，首次由使用者選擇 |
+| GET | `/captures/capabilities` | 擴充套件收藏協議版本及來源上限 |
+| POST | `/captures` | 收藏已查出的字詞／短語及來源，按 `requestId` 冪等；詞條及 reading change／cursor／回執同交易提交 |
 | POST | `/snapshot` | body `{ expected_version, payload }`；衝突回 409；舊格式文章群組回 409 `articles_legacy_write_blocked` |
 | GET | `/articles?cursor=N&limit=` | 文章增量同步（伺服器游標）；`resetRequired` 表示需完整重同步 |
 | GET | `/articles?full=1&includeDeleted=1` | 完整文章清單（僅 metadata，不含正文） |

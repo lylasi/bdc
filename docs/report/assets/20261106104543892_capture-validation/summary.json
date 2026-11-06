@@ -1,0 +1,19 @@
+{
+  "nodeExitCode": 0,
+  "i18nExitCode": 0,
+  "files": [
+    "tests/capture-client.test.mjs",
+    "tests/vocabulary-captures.test.mjs",
+    "tests/reading-protocol.test.mjs",
+    "tests/reading-reliability.test.mjs",
+    "tests/reading-sync-batching.test.mjs",
+    "tests/reading-restore-partial.test.mjs",
+    "tests/reading-restore-deleted-records.test.mjs",
+    "tests/reading-restore-fallback.test.mjs",
+    "tests/reading-view.test.mjs",
+    "tests/ai-worker.test.mjs",
+    "tests/ai-units.test.mjs",
+    "tests/ai-sync-regressions.test.mjs"
+  ],
+  "assets": "/Users/linus/CODE/bdc-extension-ai-proof-20261105/docs/report/assets/20261106104543892_capture-validation"
+}

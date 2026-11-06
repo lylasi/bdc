@@ -1,0 +1,37 @@
+{
+  "kind": "Explicit Origin HTTP requests, separate from Chromium extension requests that omit Origin",
+  "checks": [
+    {
+      "origin": "chrome-extension://gpdlnepmkdlggbkfjjaegbkdedmailoi",
+      "method": "GET",
+      "path": "/auth-capabilities",
+      "status": 200,
+      "allowOrigin": "*",
+      "noStore": true
+    },
+    {
+      "origin": "chrome-extension://gpdlnepmkdlggbkfjjaegbkdedmailoi",
+      "method": "OPTIONS",
+      "path": "/snapshot",
+      "status": 204,
+      "allowOrigin": "*",
+      "noStore": true
+    },
+    {
+      "origin": "https://bdc.a4a4.qzz.io",
+      "method": "GET",
+      "path": "/auth-capabilities",
+      "status": 200,
+      "allowOrigin": "*",
+      "noStore": true
+    },
+    {
+      "origin": "https://bdc.a4a4.qzz.io",
+      "method": "OPTIONS",
+      "path": "/snapshot",
+      "status": 204,
+      "allowOrigin": "*",
+      "noStore": true
+    }
+  ]
+}

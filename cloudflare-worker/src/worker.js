@@ -58,6 +58,7 @@ import { handlePairRequest, SESSION_TTL_MS } from './device-pairing.js';
 import { sanitizeSnapshotPayload } from './snapshot-sanitize.js';
 import { handleArticlesRoute, isLegacyArticleWriteBlocked } from './articles.js';
 import { handleReadingRoute, isLegacyReadingWriteBlocked } from './reading.js';
+import { handleVocabularyCaptureRoute } from './captures.js';
 import { snapshotCarriesArticles } from '../../shared/article-protocol.mjs';
 import { snapshotCarriesReading } from '../../shared/reading-protocol.mjs';
 import { randomToken, sha256Hex } from './token.js';
@@ -515,6 +516,10 @@ export default {
           user,
           rest: path.slice('/articles'.length)
         });
+      }
+
+      if (path === '/captures' || path === '/captures/capabilities' || path === '/vocabulary/books') {
+        return handleVocabularyCaptureRoute({ request, env, url, user });
       }
 
       if (path === '/reading' || path.startsWith('/reading/')) {

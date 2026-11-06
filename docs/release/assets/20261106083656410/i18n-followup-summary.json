@@ -1,0 +1,10 @@
+{
+  "recordedAt": "2026-11-06T00:49:37.790684+00:00",
+  "command": "node tests/audit-i18n.mjs",
+  "exitCode": 0,
+  "zhCNKeyCount": 2287,
+  "zhHKKeyCount": 2287,
+  "keySetMismatch": 0,
+  "interpolationMismatch": 0,
+  "existingDynamicReferenceWarning": "phonetics."
+}

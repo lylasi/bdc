@@ -63,7 +63,13 @@ export function extractActivePageSelectionInTab(fullText = null, selectedText = 
         const contextEnd = nearby.at(-1) ? nearby.at(-1).index + nearby.at(-1).segment.length : block.length;
         const clipStart = Math.max(contextStart, offset - 700);
         const context = normalize(block.slice(clipStart, Math.min(contextEnd, clipStart + 1600)));
-        return { ok: true, empty: false, text, sentence, context, ...page };
+        const end = offset + selected.trim().length;
+        const anchor = {
+            start: offset, end, quote: text,
+            prefix: block.slice(Math.max(0, offset - 120), offset),
+            suffix: block.slice(end, end + 120)
+        };
+        return { ok: true, empty: false, text, sentence, context, anchor, ...page };
     } catch (_) {
         return { ok: false, restricted: true, text: '', sentence: '', context: '' };
     }

@@ -1,0 +1,4 @@
+{
+  "command": "node tests/settings-autosave.cjs",
+  "exitCode": 0
+}

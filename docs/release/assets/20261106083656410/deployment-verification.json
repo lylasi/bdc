@@ -1,0 +1,7 @@
+{
+  "sameWorkerCode": true,
+  "sameBindings": true,
+  "sameRuntime": true,
+  "samePrivateConfigHash": true,
+  "allTrafficOnDeployedVersion": true
+}

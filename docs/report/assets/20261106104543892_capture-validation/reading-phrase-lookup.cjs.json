@@ -1,0 +1,4 @@
+{
+  "command": "node tests/reading-phrase-lookup.cjs",
+  "exitCode": 0
+}

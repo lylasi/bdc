@@ -35,6 +35,7 @@ const SHARED_FILES = [
     'modules/article-store.js',
     'modules/cache.js',
     'modules/extension-ai-runtime.js',
+    'modules/extension-capture.js',
     'modules/i18n-config.js',
     'modules/i18n.js',
     'modules/permanent-db.js',
@@ -58,7 +59,10 @@ const SHARED_FILES = [
     'modules/sync-signals.js',
     'modules/validate.js',
     'shared/article-protocol.mjs',
-    'shared/reading-protocol.mjs'
+    'shared/reading-protocol.mjs',
+    'shared/vocabulary-source.mjs',
+    'shared/capture-protocol.mjs',
+    'shared/capture-client.mjs'
 ];
 
 function writeArtifact(destination, content) {
@@ -101,6 +105,7 @@ export function packageExtension() {
     // 3. Verify all relative imports inside extension/
     const entryFiles = [
         'lookup.js',
+        'capture-ui.js',
         'background.js',
         'selection-extractor.js',
         ...SHARED_FILES

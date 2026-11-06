@@ -1,0 +1,14 @@
+
+ ⛅️ wrangler 4.152.0
+────────────────────
+Total Upload: 176.41 KiB / gzip: 35.31 KiB
+Your Worker has access to the following bindings:
+Binding                                       Resource
+env.DB (bdc-sync)                             D1 Database
+env.ALLOW_ORIGIN ("*")                        Environment Variable
+env.AI_CREDENTIAL_KEY_VERSION ("1")           Environment Variable
+
+Uploaded bdc-sync-api (3.51 sec)
+Deployed bdc-sync-api triggers (0.85 sec)
+  https://bdc-sync-api.penzibdc.workers.dev
+Current Version ID: 5cf7a1eb-ed2a-4651-b304-bc5268e3dd73

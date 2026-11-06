@@ -1,0 +1,20 @@
+PASS no_BDC_website_tab
+PASS production_auth_capabilities
+PASS production_authentication_required
+PASS actual_extension_origin_preflight
+PASS production_disposable_account_login
+PASS production_managed_catalog_loaded
+PASS cloud_credentials_metadata_loaded
+PASS submitted_token_cleared_from_input
+PASS contextual_task_uses_managed_provider
+PASS real_AI_contextual_lookup_zh_CN
+PASS provider_direct_request_observed
+PASS managed_credential_downloaded_without_cache
+PASS real_lookup_cache_reused
+PASS zh_HK_connected_and_model_status
+PASS zh_HK_empty_selection_error
+PASS no_horizontal_overflow
+PASS logout_clears_account
+PASS worker_calls_remained_read_only
+PASS no_page_exceptions
+{"passed":20,"failed":0,"providerRequests":1}

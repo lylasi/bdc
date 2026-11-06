@@ -1,0 +1,30 @@
+{
+  "verifiedAt": "2026-11-06T00:45:00Z",
+  "source": "wrangler d1 execute bdc-sync --remote --json --command <SELECT only>（唯讀查詢）",
+  "readOnlyProof": {
+    "rows_written": 0,
+    "changed_db": false
+  },
+  "queries": [
+    "SELECT COUNT(*) AS remaining_probe_users FROM users WHERE user_id LIKE 'ext_probe_%';",
+    "SELECT (SELECT COUNT(*) FROM snapshots …) AS snapshots, …（各表同條件計數）"
+  ],
+  "filter": "user_id / owner_user_id / actor_user_id / target_user_id LIKE 'ext_probe_%'",
+  "results": {
+    "remaining_probe_users": 0,
+    "snapshots": 0,
+    "user_sessions": 0,
+    "user_ai_credentials": 0,
+    "pairing_codes": 0,
+    "articles": 0,
+    "article_changes": 0,
+    "article_state": 0,
+    "reading_entities": 0,
+    "reading_changes": 0,
+    "reading_mutations": 0,
+    "reading_state": 0,
+    "admin_audit_log": 0
+  },
+  "conclusion": "兩次臨時 fixture（ext_probe_20261106083656410_539dc9be 與 …_b66e2964）在正式 D1 無任何殘留列，包含子表與管理稽核表。",
+  "notes": "只執行 SELECT；未執行任何 INSERT／UPDATE／DELETE；未讀取任何 fixture 檔或 token。"
+}

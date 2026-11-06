@@ -2073,6 +2073,18 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     min-width: 0;
     flex: 1 1 auto;
 }
+.word-sources {
+    flex-basis: 100%;
+    min-width: 0;
+    font-size: var(--fs-sm);
+    overflow-wrap: anywhere;
+}
+.word-item:has(.word-sources) { align-items: flex-start; }
+.word-sources summary { cursor: pointer; color: var(--ink-500); }
+.word-source { margin-top: 8px; padding: 8px; border-left: 2px solid var(--line-strong); }
+.word-source p { margin: 5px 0; white-space: pre-wrap; }
+.word-source time { color: var(--ink-500); font-size: 11px; }
+
 .word-item .word-text strong {
     font-size: var(--fs-lg);
     color: var(--ink-900);

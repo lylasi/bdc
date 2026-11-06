@@ -18,6 +18,7 @@ import { AUTH_EVENT } from './modules/sync-cloudflare.js';
 import { getAIErrorTranslationKey } from './modules/api.js';
 import { getLocale, setLocale, initI18n, applyTranslations, t } from './modules/i18n.js';
 import { extractActivePageSelectionInTab } from './selection-extractor.js';
+import { createCaptureUI } from './capture-ui.js';
 
 const dom = {
     localeSelect: document.getElementById('ext-locale-select'),
@@ -58,8 +59,18 @@ const dom = {
     resultMeaning: document.getElementById('ext-result-meaning'),
     resultRole: document.getElementById('ext-result-role'),
     resultExamples: document.getElementById('ext-result-examples'),
-    resultMeta: document.getElementById('ext-result-meta')
+    resultMeta: document.getElementById('ext-result-meta'),
+    captureBook: document.getElementById('ext-capture-book'),
+    captureSave: document.getElementById('ext-capture-save'),
+    captureRefresh: document.getElementById('ext-capture-refresh'),
+    captureSource: document.getElementById('ext-capture-source'),
+    captureNotice: document.getElementById('ext-capture-notice'),
+    capturePending: document.getElementById('ext-capture-pending'),
+    capturePendingSummary: document.getElementById('ext-capture-pending-summary'),
+    capturePendingList: document.getElementById('ext-capture-pending-list')
 };
+
+const captureUI = createCaptureUI(dom);
 
 let activeLookupSequence = 0;
 let activeLookupController = null;
@@ -97,6 +108,7 @@ function syncLoginModeFields() {
 }
 
 function clearDisplayedResult() {
+    captureUI.clearResult();
     lastResultPayload = null;
     dom.resultEmpty?.classList.remove('hidden');
     dom.resultBox?.classList.add('hidden');
@@ -333,6 +345,7 @@ function handleImportKey() {
 }
 
 async function handleExtractFromTab() {
+    captureUI.setSource(null);
     invalidateLookup();
     const sequence = activeLookupSequence;
     if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.scripting) {
@@ -364,6 +377,7 @@ async function handleExtractFromTab() {
         if (dom.wordInput) dom.wordInput.value = res.text;
         if (dom.sentenceInput) dom.sentenceInput.value = res.sentence || '';
         if (dom.contextInput) dom.contextInput.value = res.context || '';
+        captureUI.setSource(res);
         showLookupNotice('info', 'extension.extractSuccess');
         renderReadiness();
     } catch (_) {
@@ -372,6 +386,7 @@ async function handleExtractFromTab() {
 }
 
 async function handleLookup() {
+    clearDisplayedResult();
     const seq = ++activeLookupSequence;
     if (activeLookupController) {
         try { activeLookupController.abort(); } catch (_) {}
@@ -401,6 +416,7 @@ async function handleLookup() {
         });
         if (seq !== activeLookupSequence) return;
         renderResult(result);
+        captureUI.showResult(result, { text, sentence, context }, getLocale());
         renderReadiness();
     } catch (error) {
         if (seq !== activeLookupSequence) return;
@@ -418,6 +434,7 @@ async function handleLookup() {
 
 function refreshLocalizedView() {
     applyTranslations(document);
+    captureUI.translate();
     globalThis.chrome?.action?.setTitle({ title: t('extension.manifestTitle') }).catch(() => {});
     if (dom.localeSelect) dom.localeSelect.value = getLocale();
     renderReadiness();
@@ -464,6 +481,7 @@ async function initExtensionPage() {
     dom.lookupBtn?.addEventListener('click', handleLookup);
     for (const input of [dom.wordInput, dom.sentenceInput, dom.contextInput]) {
         input?.addEventListener('input', () => {
+            captureUI.setSource(null);
             invalidateLookup();
             renderReadiness();
         });
@@ -484,10 +502,14 @@ async function initExtensionPage() {
         if (kind === 'ACCOUNT_CHANGED' || kind === 'SIGNED_OUT' || kind === 'SESSION_INVALID') {
             invalidateLookup();
         }
+        if (['SIGNED_IN', 'ACCOUNT_CHANGED', 'SIGNED_OUT', 'SESSION_INVALID'].includes(kind)) {
+            captureUI.sync().catch(() => {});
+        }
         renderReadiness();
     });
     window.addEventListener('bdc:ai-catalog-change', () => renderReadiness());
     window.addEventListener('bdc:ai-credential-sync', () => renderReadiness());
+    captureUI.sync().catch(() => {});
 }
 
 // Expose shared lookup & runtime helpers on globalThis for deterministic extension E2E verification

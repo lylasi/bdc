@@ -5,9 +5,11 @@ import * as ui from '../../modules/ui.js';
 import { escapeHtml, escapeAttr, tHtml } from '../../modules/ui.js';
 import * as api from '../../modules/api.js';
 import * as audio from '../../modules/audio.js';
-import { t } from '../../modules/i18n.js';
+import { t, formatDateTime } from '../../modules/i18n.js';
 import { loadGlobalSettings } from '../../modules/settings.js';
 import { openPhonetics } from '../phonetics/phonetics.js';
+import { publicSourceUrl } from '../../shared/vocabulary-source.mjs';
+import * as readingStore from '../../modules/reading-store.js';
 // 提供登入入口（已登入的使用者可直接同步雲端單詞本）
 import { openLoginModal as openSyncLoginModal } from '../sync/sync.js';
 
@@ -64,6 +66,14 @@ export function initVocabulary() {
     updateActiveBookView();
     document.addEventListener('bdc:locale-change', refreshVocabularyView);
     document.addEventListener('bdc:settings-change', renderWordList);
+    document.addEventListener('bdc:reading-change', event => {
+        const detail = event.detail || {};
+        if (detail.scope && detail.scope !== readingStore.getReadingScope()) return;
+        if (detail.entityType && !['vocabularyBook', 'vocabularyEntry'].includes(detail.entityType)) return;
+        if (!readingStore.isReadingMigrated()) return;
+        state.setVocabularyBooks(readingStore.vocabularyBooksForUi());
+        refreshVocabularyView();
+    });
     window.addEventListener('storage', event => {
         if (event.key === 'pen_global_settings') renderWordList();
     });
@@ -1395,6 +1405,45 @@ function buildWordItem(word, phoneticsEnabled) {
         e.stopPropagation();
         playWordAndMeaning(word);
     });
+
+    if (Array.isArray(word.sources) && word.sources.length) {
+        const details = document.createElement('details');
+        details.className = 'word-sources';
+        const summary = document.createElement('summary');
+        summary.textContent = t('vocabulary.savedSources', { count: word.sources.length });
+        details.appendChild(summary);
+        for (const source of word.sources) {
+            const item = document.createElement('div');
+            item.className = 'word-source';
+            const href = publicSourceUrl(source.sourceUrl);
+            if (href) {
+                const link = document.createElement('a');
+                link.href = href;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = source.pageTitle || t('vocabulary.openOriginalSource');
+                item.appendChild(link);
+            }
+            for (const [label, value] of [
+                ['vocabulary.sourceSentence', source.sentence],
+                ['vocabulary.sourceMeaning', source.meaning],
+                ['vocabulary.sourceContext', source.context]
+            ]) {
+                if (!value) continue;
+                const paragraph = document.createElement('p');
+                paragraph.textContent = `${t(label)}${value}`;
+                item.appendChild(paragraph);
+            }
+            if (source.addedAt) {
+                const time = document.createElement('time');
+                time.dateTime = source.addedAt;
+                time.textContent = formatDateTime(source.addedAt);
+                item.appendChild(time);
+            }
+            details.appendChild(item);
+        }
+        li.querySelector('.word-text').appendChild(details);
+    }
 
     return li;
 }

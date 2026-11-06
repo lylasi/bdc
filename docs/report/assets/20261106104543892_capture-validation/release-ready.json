@@ -1,0 +1,13 @@
+{
+  "extensionVersion": "0.2.0",
+  "extensionFiles": 55,
+  "archiveSha256": "96caf922aa3da2ea9f408a8004a84a6f52aa9ef46b52173962669aff9ba17d98",
+  "frontendRelease": "a365703cb9c7",
+  "frontendModules": 97,
+  "nodeTestsPassed": 224,
+  "extensionCaptureChecksPassed": 29,
+  "extensionAIChecksPassed": 17,
+  "productionDeploymentPerformed": false,
+  "productionMigrationPerformed": false,
+  "configInArchiveMatchesExample": true
+}

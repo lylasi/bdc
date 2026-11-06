@@ -1,0 +1,104 @@
+{
+  "user_ai_credentials": [
+    "user_id",
+    "provider_id",
+    "binding_json",
+    "key_ciphertext",
+    "nonce",
+    "key_version",
+    "version",
+    "deleted",
+    "last_mutation_id",
+    "updated_at"
+  ],
+  "user_sessions": [
+    "token_hash",
+    "user_id",
+    "created_at",
+    "expires_at",
+    "device_label",
+    "auth_version"
+  ],
+  "pairing_codes": [
+    "code_hash",
+    "user_id",
+    "created_by",
+    "created_at",
+    "expires_at",
+    "used_at"
+  ],
+  "articles": [
+    "owner_user_id",
+    "id",
+    "title",
+    "body",
+    "analysis_json",
+    "source_type",
+    "source_url",
+    "revision",
+    "created_at",
+    "updated_at",
+    "deleted_at",
+    "legacy_article_id",
+    "last_mutation_id",
+    "size_bytes"
+  ],
+  "article_changes": [
+    "owner_user_id",
+    "seq",
+    "article_id",
+    "op",
+    "revision",
+    "updated_at"
+  ],
+  "article_state": [
+    "owner_user_id",
+    "next_seq",
+    "pruned_before",
+    "legacy_write_blocked",
+    "migrated_at",
+    "updated_at"
+  ],
+  "reading_entities": [
+    "owner_user_id",
+    "entity_type",
+    "entity_id",
+    "revision",
+    "deleted_at",
+    "data_json",
+    "updated_at",
+    "last_mutation_id"
+  ],
+  "reading_changes": [
+    "owner_user_id",
+    "seq",
+    "entity_type",
+    "entity_id",
+    "op",
+    "revision",
+    "updated_at"
+  ],
+  "reading_mutations": [
+    "owner_user_id",
+    "mutation_id",
+    "entity_type",
+    "entity_id",
+    "revision",
+    "request_json",
+    "result_json",
+    "created_at"
+  ],
+  "reading_state": [
+    "owner_user_id",
+    "next_seq",
+    "legacy_write_blocked",
+    "migrated_at",
+    "updated_at"
+  ],
+  "snapshots": [
+    "user_id",
+    "version",
+    "updated_at",
+    "payload"
+  ]
+}

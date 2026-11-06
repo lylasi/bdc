@@ -1,0 +1,18 @@
+{
+  "keys": [
+    "ok",
+    "schemaVersion",
+    "exportedAt",
+    "scope",
+    "learningItems",
+    "articleDocuments",
+    "vocabularyBooks",
+    "vocabularyEntries",
+    "vocabularyLinks",
+    "conversations",
+    "messages",
+    "articleVersions",
+    "meta"
+  ],
+  "ok": true
+}

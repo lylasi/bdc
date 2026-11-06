@@ -1,0 +1,5 @@
+{
+  "exitCode": 0,
+  "dryRun": true,
+  "configSource": "wrangler.toml.example, temporary JSON with absolute entry and placeholder DB ID; no private configuration read"
+}

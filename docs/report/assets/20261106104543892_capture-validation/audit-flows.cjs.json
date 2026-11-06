@@ -1,0 +1,4 @@
+{
+  "command": "node tests/audit-flows.cjs",
+  "exitCode": 0
+}

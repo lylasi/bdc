@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-11-06T00:48:44.657Z",
+  "checks": [
+    {
+      "name": "zh-CN_label",
+      "ok": true,
+      "actual": "单词或短语"
+    },
+    {
+      "name": "zh-CN_button",
+      "ok": true,
+      "actual": "语境查词"
+    },
+    {
+      "name": "zh-CN_notice",
+      "ok": true,
+      "actual": "请输入要查询的单词或短语"
+    },
+    {
+      "name": "zh-CN_noOverflow",
+      "ok": true,
+      "actual": true
+    },
+    {
+      "name": "zh-HK_label",
+      "ok": true,
+      "actual": "字詞或詞組"
+    },
+    {
+      "name": "zh-HK_button",
+      "ok": true,
+      "actual": "語境查詞"
+    },
+    {
+      "name": "zh-HK_notice",
+      "ok": true,
+      "actual": "請輸入要查詢的字詞或詞組"
+    },
+    {
+      "name": "zh-HK_noOverflow",
+      "ok": true,
+      "actual": true
+    }
+  ],
+  "passed": 8,
+  "failed": 0,
+  "profileRemoved": true,
+  "accountUsed": false
+}

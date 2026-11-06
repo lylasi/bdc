@@ -14,6 +14,7 @@ export function syncErrorCode(error) {
 }
 
 export function syncErrorReasonKey(code) {
+    if (code === 'vocabulary_sources_full') return 'vocabulary.sourcesLimitReached';
     if (/article_(?:quota|count)_exceeded/i.test(code)) return 'sync.reasonCloudCapacity';
     if (/quota|storage_full/i.test(code)) return 'sync.reasonStorageFull';
     if (/idb_|fallback_.*(?:read|invalid)|storage_read/i.test(code)) return 'sync.reasonStorageAccess';

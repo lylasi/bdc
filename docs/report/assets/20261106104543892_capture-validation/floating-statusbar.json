@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "id": "platform-result",
+      "classes": "test-result success",
+      "text": "平台检测结果：\n                    • 设备类型：PC端\n                    • 操作系统：其他\n                    • 浏览器：Chrome\n                    • 微信浏览器：否\n                    • 视窗高度：720px\n                    • WebAudio支持：是\n                    • localStorage支持：是"
+    },
+    {
+      "id": "state-result",
+      "classes": "test-result success",
+      "text": "状态持久化测试通过：\n                    • 设置保存/加载：✓\n                    • 会话保存/加载：✓\n                    • 当前会话状态：活跃\n                    • 测试数据完整性：✓"
+    },
+    {
+      "id": "ui-result",
+      "classes": "test-result success",
+      "text": "✓ 浮动状态栏显示成功！请查看页面底部。"
+    },
+    {
+      "id": "visibility-result",
+      "classes": "test-result info",
+      "text": "页面当前可见"
+    }
+  ],
+  "errors": []
+}

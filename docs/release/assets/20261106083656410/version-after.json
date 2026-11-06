@@ -1,0 +1,57 @@
+{
+  "id": "5cf7a1eb-ed2a-4651-b304-bc5268e3dd73",
+  "number": 13,
+  "metadata": {
+    "created_on": "2026-11-06T00:37:18.674156Z",
+    "source": "wrangler",
+    "has_preview": true
+  },
+  "annotations": {
+    "workers/message": "Redeploy existing Worker configuration for BDC extension live integration test; unchanged Worker source",
+    "workers/tag": "extension-proof-7f060e7",
+    "workers/triggered_by": "version_upload"
+  },
+  "resources": {
+    "script": {
+      "etag": "e5e47d2ae5fc4075ef88b421ea1c5bfdd40e09c7064251cda5d3a530ff2b34c2",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler"
+    },
+    "script_runtime": {
+      "compatibility_date": "2026-01-01",
+      "usage_model": "standard"
+    },
+    "bindings": [
+      {
+        "name": "AI_CATALOG_DIGEST_KEY",
+        "type": "secret_text"
+      },
+      {
+        "name": "AI_CREDENTIAL_KEY_V1",
+        "type": "secret_text"
+      },
+      {
+        "name": "AI_CREDENTIAL_KEY_VERSION",
+        "text": "1",
+        "type": "plain_text"
+      },
+      {
+        "name": "ALLOW_ORIGIN",
+        "text": "*",
+        "type": "plain_text"
+      },
+      {
+        "database_id": "[redacted-id]",
+        "id": "[redacted-id]",
+        "name": "DB",
+        "type": "d1"
+      },
+      {
+        "name": "PASSWORD_PEPPER",
+        "type": "secret_text"
+      }
+    ]
+  }
+}

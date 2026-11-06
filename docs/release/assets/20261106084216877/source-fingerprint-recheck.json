@@ -1,0 +1,11 @@
+{
+  "verifiedAt": "2026-11-06T00:44:17.942Z",
+  "source": "shasum -a 256（本地原 Worker 目錄，read-only）",
+  "comparedWith": "docs/release/assets/20261106083656410/source-fingerprints.json",
+  "filesChecked": 13,
+  "mismatched": [],
+  "wranglerTomlHashMatches": true,
+  "allSourceHashesMatch": true,
+  "newestSourceMtime": "2026-11-02T21:13:00+08:00 (src/articles.js)",
+  "notes": "wrangler.toml 內容未輸出；僅比對 SHA-256。"
+}

@@ -8,6 +8,8 @@
 //
 // 不在這裡碰 IndexedDB、DOM 或網路，讓四個執行環境的規則不會分叉。
 
+import { normalizeVocabularySource, MAX_VOCABULARY_SOURCES } from './vocabulary-source.mjs';
+
 export const READING_ENTITY_TYPES = [
     'learningItem',
     'articleDocument',
@@ -45,6 +47,7 @@ export const READING_ERRORS = {
     invalidEntity: 'reading_invalid_entity',
     invalidPatch: 'reading_invalid_patch',
     entityTooLarge: 'reading_entity_too_large',
+    sourcesFull: 'vocabulary_sources_full',
     notFound: 'reading_entity_not_found',
     revisionRequired: 'reading_revision_required',
     revisionConflict: 'reading_revision_conflict',
@@ -208,13 +211,10 @@ export function normalizeReadingPatch(entityType, raw) {
                 break;
             case 'sources':
                 out.sources = Array.isArray(value)
-                    ? value.filter(isPlainObject).slice(0, 100).map((source) => ({
-                        sentence: cleanString(source.sentence, 4000),
-                        context: cleanString(source.context, 8000),
-                        articleId: cleanString(source.articleId, READING_LIMITS.maxEntityId),
-                        contentVersion: cleanString(source.contentVersion, READING_LIMITS.maxContentVersion),
-                        anchor: normalizeAnchor(source.anchor),
-                        addedAt: cleanString(source.addedAt, 40)
+                    ? value.filter(isPlainObject).map((source) => normalizeVocabularySource(source, {
+                        cleanString, normalizeAnchor,
+                        maxEntityId: READING_LIMITS.maxEntityId,
+                        maxContentVersion: READING_LIMITS.maxContentVersion
                     }))
                     : [];
                 break;
@@ -327,6 +327,10 @@ export function validateReadingMutation(raw) {
     if (!mutationId) return { ok: false, error: READING_ERRORS.invalidMutation };
     let patch = null;
     if (op === 'upsert') {
+        if (entityType === 'vocabularyEntry' && Array.isArray(raw.patch?.sources)
+            && raw.patch.sources.filter(isPlainObject).length > MAX_VOCABULARY_SOURCES) {
+            return { ok: false, error: READING_ERRORS.sourcesFull };
+        }
         patch = normalizeReadingPatch(entityType, raw.patch);
         if (!patch) return { ok: false, error: READING_ERRORS.invalidPatch };
         const size = patchSize(patch);

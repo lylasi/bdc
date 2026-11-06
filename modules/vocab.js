@@ -6,6 +6,7 @@ import * as articleStore from './article-store.js';
 import * as readingStore from './reading-store.js';
 import { contentVersionOf, normalizeAnchor } from '../shared/reading-protocol.mjs';
 import { t } from './i18n.js';
+import { normalizeVocabularyWordKey, publicSourceUrl, MAX_VOCABULARY_SOURCES } from '../shared/vocabulary-source.mjs';
 
 // Vocabulary helpers: default book, add/dedupe, and AI completion
 
@@ -36,14 +37,7 @@ export function _collapseSpaces(s) {
 // - 移除首尾非字母數字的符號（含中英文標點與括號/引號）
 // - 合併多空白，轉小寫，比對更穩定
 export function normalizeWordKey(text) {
-    let s = String(text || '');
-    s = _collapseSpaces(s);
-    // 去除首尾常見標點與括號、引號（中英文）
-    s = s.replace(/^[\s"'“”‘’()\[\]{}<>，。！？；：,.!?;:]+/, '');
-    s = s.replace(/[\s"'“”‘’()\[\]{}<>，。！？；：,.!?;:]+$/, '');
-    // 再次合併空白
-    s = _collapseSpaces(s);
-    return s.toLowerCase();
+    return normalizeVocabularyWordKey(text);
 }
 
 // 顯示文字的清理（保留原大小寫，但移除首尾噪音符號與多餘空白）
@@ -211,6 +205,8 @@ function buildEntrySource(options, text) {
 function appendSource(entry, source) {
     const sources = Array.isArray(entry.sources) ? [...entry.sources] : [];
     const exists = sources.some((item) => item
+        && publicSourceUrl(item.sourceUrl) === publicSourceUrl(source.sourceUrl)
+        && (item.meaning || '') === (source.meaning || '')
         && articleStore.sameArticleReference(item.articleId, source.articleId)
         && item.sentence === source.sentence
         && item.anchor?.start === source.anchor?.start
@@ -393,6 +389,10 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
     if (dup) {
         // 同詞已有詞條：不丟新語境，追加來源並建立這篇文章的關聯。
         const nextDup = appendSource({ ...dup, bookId: book.id }, sourceInfo);
+        if (nextDup.sources.length > MAX_VOCABULARY_SOURCES) {
+            ui.displayMessage(t('vocabulary.sourcesLimitReached'), 'error');
+            return { ok: false, reason: 'sources_full', error: 'vocabulary_sources_full' };
+        }
         const linkId = item ? `vl_${item.id}_${dup.id}` : '';
         const result = await readingStore.addVocabularyEntryWithLink({
             book: { ...book },
@@ -409,7 +409,8 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
             } : null
         });
         if (!result.ok) {
-            ui.displayMessage(t('vocabulary.addFailed', { message: result.error || '' }), 'error');
+            ui.displayMessage(result.error === 'vocabulary_sources_full'
+                ? t('vocabulary.sourcesLimitReached') : t('vocabulary.addFailed', { message: result.error || '' }), 'error');
             return { ok: false, reason: 'save_failed', error: result.error };
         }
         insertEntryIntoMemory(book.id, result.entry || nextDup);

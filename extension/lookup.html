@@ -137,6 +137,26 @@
         </div>
     </section>
 
+    <section class="ext-card" aria-labelledby="ext-capture-heading">
+        <h2 class="ext-card-title" id="ext-capture-heading" data-i18n="extension.captureTitle"></h2>
+        <div class="ext-field">
+            <label for="ext-capture-book" data-i18n="extension.captureBookLabel"></label>
+            <select id="ext-capture-book" data-i18n-aria-label="extension.captureBookLabel"></select>
+        </div>
+        <p id="ext-capture-source" class="ext-source"></p>
+        <p class="ext-status-line" data-i18n="extension.captureHint"></p>
+        <div class="ext-row">
+            <button type="button" id="ext-capture-save" class="ext-btn ext-btn-primary" disabled data-i18n="extension.captureSave"></button>
+            <button type="button" id="ext-capture-refresh" class="ext-btn" data-i18n="extension.captureRefresh"></button>
+        </div>
+        <div id="ext-capture-notice" class="ext-notice" role="status" aria-live="polite" hidden></div>
+        <details id="ext-capture-pending" class="ext-pending" hidden>
+            <summary id="ext-capture-pending-summary"></summary>
+            <p class="ext-status-line" data-i18n="extension.capturePendingHint"></p>
+            <ul id="ext-capture-pending-list"></ul>
+        </details>
+    </section>
+
     <script type="module" src="./lookup.js"></script>
 </body>
 </html>

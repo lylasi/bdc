@@ -1,0 +1,57 @@
+{
+  "id": "842d6c04-f1b0-427d-8691-6921c4ca67b3",
+  "number": 12,
+  "metadata": {
+    "created_on": "2026-11-02T13:33:08.595675Z",
+    "source": "wrangler",
+    "has_preview": true
+  },
+  "annotations": {
+    "workers/message": "fix legacy article identity verification (27cdd18)",
+    "workers/tag": "legacy-identity-27cdd18",
+    "workers/triggered_by": "version_upload"
+  },
+  "resources": {
+    "script": {
+      "etag": "e5e47d2ae5fc4075ef88b421ea1c5bfdd40e09c7064251cda5d3a530ff2b34c2",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler"
+    },
+    "script_runtime": {
+      "compatibility_date": "2026-01-01",
+      "usage_model": "standard"
+    },
+    "bindings": [
+      {
+        "name": "AI_CATALOG_DIGEST_KEY",
+        "type": "secret_text"
+      },
+      {
+        "name": "AI_CREDENTIAL_KEY_V1",
+        "type": "secret_text"
+      },
+      {
+        "name": "AI_CREDENTIAL_KEY_VERSION",
+        "text": "1",
+        "type": "plain_text"
+      },
+      {
+        "name": "ALLOW_ORIGIN",
+        "text": "*",
+        "type": "plain_text"
+      },
+      {
+        "database_id": "[redacted-id]",
+        "id": "[redacted-id]",
+        "name": "DB",
+        "type": "d1"
+      },
+      {
+        "name": "PASSWORD_PEPPER",
+        "type": "secret_text"
+      }
+    ]
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "timestamp": "2026-11-06T00:42:33.521Z",
+  "endpoint": "https://bdc-sync-api.penzibdc.workers.dev",
+  "checks": [
+    {
+      "name": "actual_extension_id",
+      "ok": true,
+      "detail": "gpdlnepmkdlggbkfjjaegbkdedmailoi"
+    },
+    {
+      "name": "no_BDC_website_tab",
+      "ok": true
+    },
+    {
+      "name": "production_auth_capabilities",
+      "ok": true,
+      "detail": {
+        "capabilitiesStatus": 200,
+        "methods": {
+          "pairingLogin": true,
+          "loginLinks": true,
+          "passwordLogin": true,
+          "passwordMinLength": 10,
+          "adminPasswordMinLength": 12
+        },
+        "unauthorizedStatus": 401,
+        "preflightStatus": 204,
+        "allowOrigin": "*"
+      }
+    },
+    {
+      "name": "production_authentication_required",
+      "ok": true
+    },
+    {
+      "name": "actual_extension_origin_preflight",
+      "ok": true,
+      "detail": {
+        "allowOrigin": "*"
+      }
+    },
+    {
+      "name": "production_disposable_account_login",
+      "ok": true,
+      "detail": {
+        "loggedIn": true,
+        "userId": "ext_probe_20261106083656410_b66e2964",
+        "role": "user",
+        "catalog": {
+          "status": "verified",
+          "usable": true,
+          "version": 4,
+          "providerCount": 1
+        },
+        "credentialSync": {
+          "status": "synced",
+          "error": ""
+        },
+        "task": {
+          "task": "articleWordTranslation",
+          "spec": "managed-legacy-hapi:grok-4.20-fast",
+          "provider": "managed-legacy-hapi",
+          "providerLabel": "HAPI",
+          "source": "managed",
+          "model": "grok-4.20-fast",
+          "thinking": "none",
+          "status": "ready",
+          "errorCode": "",
+          "selectedPersonalMissingKey": false
+        },
+        "accountText": "已连接账户：Extension live integration probe",
+        "accountNotice": "登录成功",
+        "taskText": "当前查词模型：HAPI · grok-4.20-fast（思考：关闭思考）",
+        "lookupNotice": "",
+        "meaning": "",
+        "metadata": ""
+      }
+    },
+    {
+      "name": "production_managed_catalog_loaded",
+      "ok": true,
+      "detail": {
+        "status": "verified",
+        "usable": true,
+        "version": 4,
+        "providerCount": 1
+      }
+    },
+    {
+      "name": "cloud_credentials_metadata_loaded",
+      "ok": true,
+      "detail": {
+        "status": "synced",
+        "error": ""
+      }
+    },
+    {
+      "name": "submitted_token_cleared_from_input",
+      "ok": true
+    },
+    {
+      "name": "contextual_task_uses_managed_provider",
+      "ok": true,
+      "detail": {
+        "task": "articleWordTranslation",
+        "spec": "managed-legacy-hapi:grok-4.20-fast",
+        "provider": "managed-legacy-hapi",
+        "providerLabel": "HAPI",
+        "source": "managed",
+        "model": "grok-4.20-fast",
+        "thinking": "none",
+        "status": "ready",
+        "errorCode": "",
+        "selectedPersonalMissingKey": false
+      }
+    },
+    {
+      "name": "real_AI_contextual_lookup_zh_CN",
+      "ok": true,
+      "detail": {
+        "loggedIn": true,
+        "userId": "ext_probe_20261106083656410_b66e2964",
+        "role": "user",
+        "catalog": {
+          "status": "verified",
+          "usable": true,
+          "version": 4,
+          "providerCount": 1
+        },
+        "credentialSync": {
+          "status": "synced",
+          "error": ""
+        },
+        "task": {
+          "task": "articleWordTranslation",
+          "spec": "managed-legacy-hapi:grok-4.20-fast",
+          "provider": "managed-legacy-hapi",
+          "providerLabel": "HAPI",
+          "source": "managed",
+          "model": "grok-4.20-fast",
+          "thinking": "none",
+          "status": "ready",
+          "errorCode": "",
+          "selectedPersonalMissingKey": false
+        },
+        "accountText": "已连接账户：Extension live integration probe",
+        "accountNotice": "登录成功",
+        "taskText": "当前查词模型：HAPI · grok-4.20-fast（思考：关闭思考）",
+        "lookupNotice": "",
+        "meaning": "句中释义：（收取）…的费用",
+        "metadata": "模型：managed-legacy-hapi:grok-4.20-fast · 任务：articleWordTranslation · 思考：关闭思考"
+      }
+    },
+    {
+      "name": "provider_direct_request_observed",
+      "ok": true,
+      "detail": {
+        "requestCount": 1,
+        "requests": [
+          {
+            "origin": "https://hapi.141455.xyz",
+            "method": "POST"
+          }
+        ]
+      }
+    },
+    {
+      "name": "managed_credential_downloaded_without_cache",
+      "ok": true
+    },
+    {
+      "name": "real_lookup_cache_reused",
+      "ok": true,
+      "detail": {
+        "requestCount": 1
+      }
+    },
+    {
+      "name": "zh_HK_connected_and_model_status",
+      "ok": true,
+      "detail": {
+        "accountText": "已連接帳戶：Extension live integration probe",
+        "taskText": "目前查詞模型：HAPI · grok-4.20-fast（思考：關閉思考）"
+      }
+    },
+    {
+      "name": "zh_HK_empty_selection_error",
+      "ok": true,
+      "detail": {
+        "notice": "請輸入要查詢的單詞或片語"
+      }
+    },
+    {
+      "name": "no_horizontal_overflow",
+      "ok": true
+    },
+    {
+      "name": "logout_clears_account",
+      "ok": true
+    },
+    {
+      "name": "worker_calls_remained_read_only",
+      "ok": true
+    },
+    {
+      "name": "no_page_exceptions",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "network": [
+    {
+      "path": "/auth-capabilities",
+      "method": "GET",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 401,
+      "noStore": true
+    },
+    {
+      "path": "/snapshot",
+      "method": "OPTIONS",
+      "status": 204,
+      "noStore": true
+    },
+    {
+      "path": "/me",
+      "method": "GET",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "path": "/snapshot",
+      "method": "GET",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "path": "/ai-credentials",
+      "method": "GET",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "path": "/ai-catalog/providers/managed-legacy-hapi/credential",
+      "method": "GET",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "providerOrigin": "https://hapi.141455.xyz",
+      "method": "POST",
+      "status": 200
+    }
+  ],
+  "providerRequests": [
+    {
+      "origin": "https://hapi.141455.xyz",
+      "method": "POST"
+    }
+  ],
+  "pageErrors": [],
+  "mockUsed": false
+}

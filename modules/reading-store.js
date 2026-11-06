@@ -10,6 +10,7 @@
 import * as state from './state.js';
 import * as articleStore from './article-store.js';
 import * as cache from './cache.js';
+import { publicSourceUrl, MAX_VOCABULARY_SOURCES } from '../shared/vocabulary-source.mjs';
 import {
     STORE,
     applyPermanentOperations,
@@ -624,6 +625,9 @@ function mutationToRecord(mutation) {
  * 讓函式能在交易前決定 revision / base。
  */
 async function writeEntity(entityType, input, { op = 'upsert', existing = null, extraOperations = [], ctx = captureReadingContext() } = {}) {
+    if (entityType === 'vocabularyEntry' && op !== 'delete' && input.sources?.length > MAX_VOCABULARY_SOURCES) {
+        return { ok: false, error: 'vocabulary_sources_full' };
+    }
     const storeName = storeForType(entityType);
     if (!storeName) return { ok: false, error: 'invalid_entity_type' };
     if (!isReadingContextActive(ctx)) return staleResult();
@@ -1341,6 +1345,8 @@ function mergeVocabularySources(existingSources, incomingSources) {
     for (const source of Array.isArray(incomingSources) ? incomingSources : []) {
         if (!source) continue;
         const exists = sources.some((item) => item
+            && publicSourceUrl(item.sourceUrl) === publicSourceUrl(source.sourceUrl)
+            && (item.meaning || '') === (source.meaning || '')
             && sameArticle(item.articleId, source.articleId)
             && item.sentence === source.sentence
             && item.anchor?.start === source.anchor?.start
@@ -1441,6 +1447,11 @@ async function addVocabularyEntryWithLinkInner({ book, entry, item = null, link 
                 if (entry?.id) {
                     const existing = results.entry || null;
                     const incoming = { ...entry, id: entry.id, bookId: entry.bookId || book?.id || existing?.bookId || '' };
+                    const mergedSources = mergeVocabularySources(existing?.sources, incoming.sources);
+                    if (mergedSources.length > MAX_VOCABULARY_SOURCES) {
+                        resolve({ error: 'vocabulary_sources_full' });
+                        return;
+                    }
                     entryEntity = {
                         ...(existing || {}),
                         ...incoming,
@@ -1448,7 +1459,7 @@ async function addVocabularyEntryWithLinkInner({ book, entry, item = null, link 
                         scope: ctx.scope,
                         key: entityKey(entry.id, ctx.scope),
                         examples: Array.isArray(incoming.examples) ? incoming.examples : (existing?.examples || []),
-                        sources: mergeVocabularySources(existing?.sources, incoming.sources),
+                        sources: mergedSources,
                         addedAt: existing?.addedAt || incoming.addedAt || timestamp,
                         createdAt: existing?.createdAt || incoming.createdAt || timestamp,
                         updatedAt: timestamp,
@@ -1567,6 +1578,7 @@ async function addVocabularyEntryWithLinkInner({ book, entry, item = null, link 
         return fallback;
     }
     const value = transaction.value || {};
+    if (value.error) return { ok: false, error: value.error };
     for (const [entityType, entity] of [
         ['vocabularyBook', value.bookEntity],
         ['vocabularyEntry', value.entryEntity],

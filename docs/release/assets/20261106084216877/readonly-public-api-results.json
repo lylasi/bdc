@@ -1,0 +1,192 @@
+{
+  "timestamp": "2026-11-06T00:42:42.677Z",
+  "endpoint": "https://bdc-sync-api.penzibdc.workers.dev",
+  "extensionRoot": "/Users/linus/CODE/bdc-extension-ai-proof-20261105/extension",
+  "privilegedProfileUsed": false,
+  "profileRemoved": true,
+  "readOnly": true,
+  "passed": 12,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "extension_service_worker_present",
+      "ok": true,
+      "detail": {
+        "extensionId": "gpdlnepmkdlggbkfjjaegbkdedmailoi"
+      }
+    },
+    {
+      "name": "extension_page_origin_is_extension",
+      "ok": true,
+      "detail": "chrome-extension://gpdlnepmkdlggbkfjjaegbkdedmailoi"
+    },
+    {
+      "name": "extension_manifest_is_mv3",
+      "ok": true,
+      "detail": {
+        "manifestVersion": 3
+      }
+    },
+    {
+      "name": "auth_capabilities_200_from_extension_origin",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "keys": [
+          "adminPasswordMinLength",
+          "loginLinks",
+          "pairingLogin",
+          "passwordLogin",
+          "passwordMinLength"
+        ],
+        "flags": {
+          "pairingLogin": true,
+          "loginLinks": true,
+          "passwordLogin": true
+        }
+      }
+    },
+    {
+      "name": "anonymous_ai_catalog_401",
+      "ok": true,
+      "detail": {
+        "status": 401,
+        "error": "unauthorized"
+      }
+    },
+    {
+      "name": "snapshot_options_204",
+      "ok": true,
+      "detail": {
+        "status": 204,
+        "allowOrigin": "*",
+        "allowMethods": "GET, POST, PUT, DELETE, OPTIONS",
+        "allowHeaders": "Authorization, Content-Type"
+      }
+    },
+    {
+      "name": "anonymous_snapshot_get_401",
+      "ok": true,
+      "detail": {
+        "status": 401,
+        "error": "unauthorized"
+      }
+    },
+    {
+      "name": "extension_page_responses_no_store",
+      "ok": true,
+      "detail": {
+        "noStore": true
+      }
+    },
+    {
+      "name": "explicit_extension_origin_preflight_204",
+      "ok": true,
+      "detail": {
+        "status": 204,
+        "allowOrigin": "*"
+      }
+    },
+    {
+      "name": "all_worker_requests_read_only",
+      "ok": true,
+      "detail": {
+        "methods": [
+          "GET",
+          "OPTIONS"
+        ]
+      }
+    },
+    {
+      "name": "no_authorization_header_sent",
+      "ok": true,
+      "detail": {
+        "authorizedRequestCount": 0
+      }
+    },
+    {
+      "name": "no_page_exceptions",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "workerRequests": [
+    {
+      "path": "/auth-capabilities",
+      "method": "GET",
+      "hasOriginHeader": false,
+      "originIsExtension": false,
+      "hasAuthorization": false,
+      "hasCookie": false
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "hasOriginHeader": false,
+      "originIsExtension": false,
+      "hasAuthorization": false,
+      "hasCookie": false
+    },
+    {
+      "path": "/snapshot",
+      "method": "OPTIONS",
+      "hasOriginHeader": false,
+      "originIsExtension": false,
+      "hasAuthorization": false,
+      "hasCookie": false
+    },
+    {
+      "path": "/snapshot",
+      "method": "GET",
+      "hasOriginHeader": false,
+      "originIsExtension": false,
+      "hasAuthorization": false,
+      "hasCookie": false
+    }
+  ],
+  "workerResponses": [
+    {
+      "path": "/auth-capabilities",
+      "method": "GET",
+      "status": 200,
+      "allowOrigin": "*",
+      "allowMethods": "GET, POST, PUT, DELETE, OPTIONS",
+      "allowHeaders": "Authorization, Content-Type",
+      "cacheControl": "no-store, no-cache, must-revalidate, private"
+    },
+    {
+      "path": "/ai-catalog",
+      "method": "GET",
+      "status": 401,
+      "allowOrigin": "*",
+      "allowMethods": "GET, POST, PUT, DELETE, OPTIONS",
+      "allowHeaders": "Authorization, Content-Type",
+      "cacheControl": "no-store, no-cache, must-revalidate, private"
+    },
+    {
+      "path": "/snapshot",
+      "method": "OPTIONS",
+      "status": 204,
+      "allowOrigin": "*",
+      "allowMethods": "GET, POST, PUT, DELETE, OPTIONS",
+      "allowHeaders": "Authorization, Content-Type",
+      "cacheControl": "no-store, no-cache, must-revalidate, private"
+    },
+    {
+      "path": "/snapshot",
+      "method": "GET",
+      "status": 401,
+      "allowOrigin": "*",
+      "allowMethods": "GET, POST, PUT, DELETE, OPTIONS",
+      "allowHeaders": "Authorization, Content-Type",
+      "cacheControl": "no-store, no-cache, must-revalidate, private"
+    }
+  ],
+  "pageErrors": [],
+  "originObservation": {
+    "extensionOrigin": "chrome-extension://gpdlnepmkdlggbkfjjaegbkdedmailoi",
+    "requestsCarryingExtensionOrigin": 0,
+    "requestsWithoutOriginHeader": 4,
+    "note": "ALLOW_ORIGIN=* 前提下伺服器一律回 Access-Control-Allow-Origin: *，故此項不作為來源限制的證據。"
+  }
+}

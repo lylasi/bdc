@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-11-06T00:49:37.791148+00:00",
+  "note": "Recorded after execution from the exact command submitted in this session; deployment output and before/after API metadata are separate evidence.",
+  "cwd": "/Users/linus/CODE/bdc/cloudflare-worker",
+  "argv": [
+    "node",
+    "/Users/linus/.npm/_npx/32026684e21afda6/node_modules/wrangler/bin/wrangler.js",
+    "deploy",
+    "--config",
+    "/Users/linus/CODE/bdc/cloudflare-worker/wrangler.toml",
+    "--keep-vars",
+    "--tag",
+    "extension-proof-7f060e7",
+    "--message",
+    "Redeploy existing Worker configuration for BDC extension live integration test; unchanged Worker source"
+  ]
+}

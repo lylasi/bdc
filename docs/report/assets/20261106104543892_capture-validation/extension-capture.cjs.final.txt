@@ -1,0 +1,31 @@
+Packaged 48 files into /Users/linus/CODE/bdc-extension-ai-proof-20261105/extension
+PASS 真實 SQLite 詞書列表及帳戶隔離
+PASS 完成查詞前不能收藏
+PASS 無 BDC 主站分頁也可使用
+PASS 明確收藏後詞條與網頁來源已提交
+PASS 保存已展示的意思且不重新呼叫 AI
+PASS 保存選詞定位、原句及當次意思
+PASS 成功回執後待傳清除
+PASS 手動修改查詢清除舊來源網址
+PASS 提交後回應遺失仍保留原 requestId 待傳
+PASS 重開面板使用原回執恢復，沒有重複來源
+PASS 服務暫時不可用時不誤報成功
+PASS 本機待傳不保存登入 token 或 AI Key
+PASS 關閉再開仍保留待傳
+PASS 恢復服務並重試後保存完成
+PASS 切換帳戶只顯示新帳戶詞書
+PASS 切換帳戶不傳送前帳戶的待傳
+PASS 返回原帳戶才恢復其待傳
+PASS 目標詞書刪除後明確保留待傳並報錯
+PASS 刪除目標不會悄悄改存另一個詞書
+PASS 可明確取消本機待傳
+PASS 主站逐項同步看見新詞條
+PASS 主站顯示原網頁、原句及當次意思
+PASS 空白瀏覽器備份還原保留來源網址及當次意思
+PASS 主站直接保存及複合交易均拒絕第101個來源
+PASS 快照版本不變仍可於返回前景發現新收藏
+PASS 返回實際主站自動同步並更新詞書畫面
+PASS 香港繁體收藏介面及窄畫面
+PASS 簡體收藏介面及窄畫面
+PASS 無未捕獲頁面錯誤
+{"passed":29,"failed":0,"output":"/Users/linus/CODE/bdc-extension-ai-proof-20261105/docs/report/assets/20261106112155150_extension-capture"}
