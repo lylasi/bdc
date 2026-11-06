@@ -1,0 +1,14 @@
+{
+  "before": "4e7de51d1d07c143fd6714b6a38352fd9ea4503c",
+  "target": "c7439bc855f76ee238766eeb13d3d71bc19c5f54",
+  "config": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "files": {
+    "index.html": "01f75f9379b5805540532a3aceeae046bb9f4d696dffaf5883d00c2f81f82b0a",
+    "styles.css": "1628a52f2756ca49e2fc16e97f85e14259e870df8b02049a1c91916d54068b89",
+    "features/vocabulary/vocabulary.js": "66895bdec94ea651c56a772e05c3f915acdf4e2383354dbc6ea2e981a3c5523d",
+    "features/sync/sync.js": "10bbcfd779cc5728dd502b0b4d15b1ba97ee58e0fdeb74af02b53a26fc6e9916",
+    "modules/settings.js": "f71e36e6c39a9f1f5863802b3d5f39227afe3685e37b5e046d87d68f3977ba7d",
+    "locales/zh-CN.js": "0ea9d0f66ed0eaa395606e4f871901e1b82d9c843947926b60fcf6061aa290e0",
+    "locales/zh-HK.js": "2dfd5e01d7969f9232e943e8661aa826c5b7aec36b831bb0a28297346fd5eff8"
+  }
+}

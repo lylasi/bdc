@@ -1,0 +1,239 @@
+{
+  "passed": 43,
+  "checks": [
+    {
+      "name": "zh-CN: localized setting label",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: setting on",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: all source entries visible",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: content unchanged after locale change",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: compact closed source controls",
+      "ok": true,
+      "detail": [
+        {
+          "width": 74.765625,
+          "summaryHeight": 28,
+          "border": "0px",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "width": 74.765625,
+          "summaryHeight": 28,
+          "border": "0px",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "width": 74.765625,
+          "summaryHeight": 28,
+          "border": "0px",
+          "background": "rgba(0, 0, 0, 0)"
+        }
+      ]
+    },
+    {
+      "name": "zh-CN: keyboard expands source",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: source sentence, meaning and context retained",
+      "ok": true,
+      "detail": "Example article\n\n原句：The company rebranded its services.\n\n当时释义：重新命名\n\n附近语境：The new name was announced today.\n\n2026/11/6 18:00:00"
+    },
+    {
+      "name": "zh-CN: safe original link retained",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: keyboard collapses source",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: mobile open source wraps without overflow",
+      "ok": true,
+      "detail": {
+        "page": 0,
+        "sources": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "zh-CN: hide applies immediately",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: hide retains vocabulary and source data",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: toggle saves false",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: localized auto-save status",
+      "ok": true,
+      "detail": "已自动保存 · 00:53:36"
+    },
+    {
+      "name": "zh-CN: hidden choice survives reload",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: setting remains off after reload",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: keyboard toggle restores source entries",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: restoring retains saved source content",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: localized setting label",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: setting on",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: all source entries visible",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: content unchanged after locale change",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: compact closed source controls",
+      "ok": true,
+      "detail": [
+        {
+          "width": 74.765625,
+          "summaryHeight": 28,
+          "border": "0px",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "width": 74.765625,
+          "summaryHeight": 28,
+          "border": "0px",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "width": 74.765625,
+          "summaryHeight": 28,
+          "border": "0px",
+          "background": "rgba(0, 0, 0, 0)"
+        }
+      ]
+    },
+    {
+      "name": "zh-HK: keyboard expands source",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: source sentence, meaning and context retained",
+      "ok": true,
+      "detail": "Example article\n\n原句：The company rebranded its services.\n\n當時釋義：重新命名\n\n附近語境：The new name was announced today.\n\n6/11/2026 下午6:00:00"
+    },
+    {
+      "name": "zh-HK: safe original link retained",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: keyboard collapses source",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: mobile open source wraps without overflow",
+      "ok": true,
+      "detail": {
+        "page": 0,
+        "sources": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "zh-HK: hide applies immediately",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: hide retains vocabulary and source data",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: toggle saves false",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: localized auto-save status",
+      "ok": true,
+      "detail": "已自動儲存 · 00:53:38"
+    },
+    {
+      "name": "zh-HK: hidden choice survives reload",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: setting remains off after reload",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: keyboard toggle restores source entries",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: restoring retains saved source content",
+      "ok": true
+    },
+    {
+      "name": "320px: no page overflow",
+      "ok": true
+    },
+    {
+      "name": "settings: grouped fields survive source toggles",
+      "ok": true
+    },
+    {
+      "name": "floating statusbar: platform detection",
+      "ok": true
+    },
+    {
+      "name": "floating statusbar: state persistence",
+      "ok": true
+    },
+    {
+      "name": "floating statusbar: test controls visible",
+      "ok": true
+    },
+    {
+      "name": "floating statusbar: controls removed",
+      "ok": true
+    },
+    {
+      "name": "browser: no JavaScript errors",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "pageErrors": []
+}

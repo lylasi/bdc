@@ -1,0 +1,51 @@
+{
+  "before": "4e7de51d1d07c143fd6714b6a38352fd9ea4503c",
+  "head": "c7439bc855f76ee238766eeb13d3d71bc19c5f54",
+  "pull": "Updating 4e7de51..c7439bc\nFast-forward\n ...250\\255\\345\\256\\232\\351\\251\\227\\350\\255\\211.md\" |   49 +\n .../browser-checks.json                            |  239 +\n .../i18n-full.json                                 | 9918 ++++++++++++++++++++\n .../i18n-summary.json                              |   29 +\n .../incremental-checks.json                        |   17 +\n .../settings-autosave.log                          |   20 +\n .../storage-failure-checks.json                    |   71 +\n .../zh-CN-desktop-closed.png                       |  Bin 0 -> 50939 bytes\n .../zh-CN-desktop-open.png                         |  Bin 0 -> 66589 bytes\n .../zh-CN-mobile-closed.png                        |  Bin 0 -> 47944 bytes\n .../zh-CN-mobile-hidden.png                        |  Bin 0 -> 40564 bytes\n .../zh-CN-mobile-open.png                          |  Bin 0 -> 62658 bytes\n .../zh-CN-mobile-settings.png                      |  Bin 0 -> 59735 bytes\n .../zh-HK-desktop-closed.png                       |  Bin 0 -> 51215 bytes\n .../zh-HK-desktop-open.png                         |  Bin 0 -> 67427 bytes\n .../zh-HK-mobile-closed.png                        |  Bin 0 -> 48516 bytes\n .../zh-HK-mobile-hidden.png                        |  Bin 0 -> 40699 bytes\n .../zh-HK-mobile-open.png                          |  Bin 0 -> 63756 bytes\n .../zh-HK-mobile-settings.png                      |  Bin 0 -> 62490 bytes\n .../zh-HK-narrow-open.png                          |  Bin 0 -> 61079 bytes\n features/sync/sync.js                              |   25 +\n features/vocabulary/vocabulary.js                  |   20 +-\n index.html                                         |  198 +-\n locales/zh-CN.js                                   |    2 +\n locales/zh-HK.js                                   |    2 +\n modules/settings.js                                |    4 +-\n styles.css                                         |   25 +-\n 27 files changed, 10506 insertions(+), 113 deletions(-)\n create mode 100644 \"docs/report/20261107001259022_\\350\\251\\236\\346\\242\\235\\344\\276\\206\\346\\272\\220\\347\\262\\276\\347\\260\\241\\350\\210\\207\\351\\241\\257\\347\\244\\272\\350\\250\\255\\345\\256\\232\\351\\251\\227\\350\\255\\211.md\"\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/browser-checks.json\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/i18n-full.json\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/i18n-summary.json\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/incremental-checks.json\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/settings-autosave.log\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/storage-failure-checks.json\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-CN-desktop-closed.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-CN-desktop-open.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-CN-mobile-closed.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-CN-mobile-hidden.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-CN-mobile-open.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-CN-mobile-settings.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-HK-desktop-closed.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-HK-desktop-open.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-HK-mobile-closed.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-HK-mobile-hidden.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-HK-mobile-open.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-HK-mobile-settings.png\n create mode 100644 docs/report/assets/20261107001259022_compact-word-sources/zh-HK-narrow-open.png\nFrom https://github.com/lylasi/bdc\n * branch            master     -> FETCH_HEAD\n   4e7de51..c7439bc  master     -> origin/master\n",
+  "restart": " Container bdc Restarting \n Container bdc Started \n",
+  "nginx": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n",
+  "container_running": true,
+  "container_health": "healthy",
+  "started_at": "2026-11-06T17:25:27.277159271Z",
+  "private_config_before": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "private_config_after": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "private_config_runtime": "6961935c69385e837692203fb0eba506a04b7d7b99680ef0e2dd5d09870aec93",
+  "http_status": 200,
+  "files": {
+    "index.html": {
+      "source": "01f75f9379b5805540532a3aceeae046bb9f4d696dffaf5883d00c2f81f82b0a",
+      "runtime": "01f75f9379b5805540532a3aceeae046bb9f4d696dffaf5883d00c2f81f82b0a",
+      "ok": true
+    },
+    "styles.css": {
+      "source": "1628a52f2756ca49e2fc16e97f85e14259e870df8b02049a1c91916d54068b89",
+      "runtime": "1628a52f2756ca49e2fc16e97f85e14259e870df8b02049a1c91916d54068b89",
+      "ok": true
+    },
+    "features/vocabulary/vocabulary.js": {
+      "source": "66895bdec94ea651c56a772e05c3f915acdf4e2383354dbc6ea2e981a3c5523d",
+      "runtime": "66895bdec94ea651c56a772e05c3f915acdf4e2383354dbc6ea2e981a3c5523d",
+      "ok": true
+    },
+    "features/sync/sync.js": {
+      "source": "10bbcfd779cc5728dd502b0b4d15b1ba97ee58e0fdeb74af02b53a26fc6e9916",
+      "runtime": "10bbcfd779cc5728dd502b0b4d15b1ba97ee58e0fdeb74af02b53a26fc6e9916",
+      "ok": true
+    },
+    "modules/settings.js": {
+      "source": "f71e36e6c39a9f1f5863802b3d5f39227afe3685e37b5e046d87d68f3977ba7d",
+      "runtime": "f71e36e6c39a9f1f5863802b3d5f39227afe3685e37b5e046d87d68f3977ba7d",
+      "ok": true
+    },
+    "locales/zh-CN.js": {
+      "source": "0ea9d0f66ed0eaa395606e4f871901e1b82d9c843947926b60fcf6061aa290e0",
+      "runtime": "0ea9d0f66ed0eaa395606e4f871901e1b82d9c843947926b60fcf6061aa290e0",
+      "ok": true
+    },
+    "locales/zh-HK.js": {
+      "source": "2dfd5e01d7969f9232e943e8661aa826c5b7aec36b831bb0a28297346fd5eff8",
+      "runtime": "2dfd5e01d7969f9232e943e8661aa826c5b7aec36b831bb0a28297346fd5eff8",
+      "ok": true
+    }
+  }
+}

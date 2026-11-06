@@ -1,0 +1,71 @@
+{
+  "passed": 16,
+  "checks": [
+    {
+      "name": "zh-CN: failed hide restores switch",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: failed hide leaves source visible",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: failed hide reports localized error",
+      "ok": true,
+      "detail": "自动保存失败，请重试"
+    },
+    {
+      "name": "zh-CN: hide succeeds after storage recovers",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: failed show keeps switch off",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: failed show keeps source hidden",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: failed show reports localized error",
+      "ok": true
+    },
+    {
+      "name": "zh-CN: show succeeds after storage recovers",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: failed hide restores switch",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: failed hide leaves source visible",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: failed hide reports localized error",
+      "ok": true,
+      "detail": "自動儲存失敗，請重試"
+    },
+    {
+      "name": "zh-HK: hide succeeds after storage recovers",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: failed show keeps switch off",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: failed show keeps source hidden",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: failed show reports localized error",
+      "ok": true
+    },
+    {
+      "name": "zh-HK: show succeeds after storage recovers",
+      "ok": true
+    }
+  ]
+}
