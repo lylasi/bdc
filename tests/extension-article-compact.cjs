@@ -87,6 +87,7 @@ async function measure(frame) {
             await openBooks(frame); await frame.locator('#ext-book-page').click();
             await frame.waitForFunction(() => document.querySelector('#ext-capture-book').value.startsWith('webbook_'));
             const pageBookId = await frame.locator('#ext-capture-book').inputValue();
+            check(locale + ' 新建詞書並選取後不殘留快取詞書不存在的提示', await frame.locator('#ext-capture-notice').isHidden());
             await frame.locator('#ext-book-options > summary').click();
             await frame.locator('#ext-inline-more').click();
             await frame.waitForTimeout(250);
@@ -116,6 +117,9 @@ async function measure(frame) {
             await frame.locator('#ext-article-save').click();
             await frame.waitForFunction(() => !document.querySelector('#ext-article-save').disabled || document.querySelector('#ext-workspace-pending').hidden === false);
             await frame.locator('#ext-workspace-pending').waitFor({ state: 'visible' });
+            // Enqueue makes pending visible before the first send finishes.
+            // Retry only after that attempt has settled, as a user would.
+            await frame.locator('#ext-article-cancel').waitFor({ state: 'hidden' });
             check(locale + ' 保存仍斷線時保留待傳及不可變預覽，不假成功', await frame.locator('#ext-article-body').isDisabled() && await frame.locator('#ext-article-open').isHidden());
             const aiBeforeRetry = env.state.aiCalls;
             fault = 'none';

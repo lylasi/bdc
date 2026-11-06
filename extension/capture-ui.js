@@ -138,6 +138,7 @@ export function createCaptureUI(dom) {
         dom.captureBook.value = books.some((book) => book.id === selected) ? selected : '';
         if (['extension.captureSaved', 'extension.captureSavedTo'].includes(notice?.key) && savedKey !== currentKey()) notice = null;
         if (previous && !selected && books.length) setNotice('extension.captureTargetMissing', 'error');
+        else if (selected && notice?.key === 'extension.captureTargetMissing') notice = null;
         render();
     }
     async function loadBooks(session) {
@@ -290,6 +291,7 @@ export function createCaptureUI(dom) {
         savedKey = '';
         lastAttempt = null;
         if (['extension.captureSaved', 'extension.captureSavedTo'].includes(notice?.key)) notice = null;
+        if (dom.captureBook.value && notice?.key === 'extension.captureTargetMissing') notice = null;
         const session = captureAuthSession();
         if (session.loggedIn && dom.captureBook.value) storage?.set({ [choiceKey(session)]: dom.captureBook.value }).catch(showError);
         render();
