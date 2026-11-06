@@ -145,13 +145,41 @@ function applyThenFail(context, env, token, pathname) {
     });
 }
 
+async function waitFor(run, { timeout = 10000, interval = 100 } = {}) {
+    const started = Date.now();
+    while (Date.now() - started < timeout) {
+        try { const value = await run(); if (value) return value; } catch (_) { /* keep polling */ }
+        await sleep(interval);
+    }
+    return false;
+}
+async function openSettings(scope) {
+    const dialog = scope.locator('#ext-settings-dialog');
+    if (await dialog.evaluate((node) => node.open).catch(() => false)) return;
+    if (await scope.locator('#ext-inline-settings').isVisible().catch(() => false)) await scope.locator('#ext-inline-settings').click();
+    else await scope.locator('#ext-settings-open').click();
+    await waitFor(() => dialog.evaluate((node) => node.open).catch(() => false), { timeout: 5000 });
+}
+async function closeSettings(scope) {
+    const dialog = scope.locator('#ext-settings-dialog');
+    if (!(await dialog.evaluate((node) => node.open).catch(() => false))) return;
+    await scope.locator('#ext-settings-close').click();
+    await waitFor(async () => !(await dialog.evaluate((node) => node.open).catch(() => false)), { timeout: 5000 });
+    await sleep(150);
+}
+async function openAccount(scope) {
+    if (!(await scope.locator('#ext-account-details').evaluate((node) => node.open))) await scope.locator('#ext-account-summary').click();
+}
 async function connect(popup, base, env, token) {
+    await openSettings(popup);
+    await openAccount(popup);
     await popup.locator('#ext-endpoint-input').fill(env.base);
     await popup.locator('#ext-login-mode').selectOption('token');
     await popup.locator('#ext-token-input').fill(token);
     await popup.locator('#ext-connect-btn').click();
     await popup.waitForFunction(() => !document.querySelector('#ext-connect-btn').disabled
         && /已连接账户/.test(document.querySelector('#ext-account-status').textContent), null, { timeout: 30000 });
+    await closeSettings(popup);
 }
 
 (async () => {
@@ -354,30 +382,57 @@ async function connect(popup, base, env, token) {
         check('網頁世界沒有 chrome.runtime', pageWorldLeak.runtimeId === false);
 
         /* ---------- 6. 待傳 UI（F1 回歸） ---------- */
+        const workspaceErrors = [];
+        const openWorkspaceWindow = async () => {
+            await article.bringToFront();
+            const opened = context.waitForEvent('page');
+            await popup.evaluate(() => document.querySelector('#ext-home-article').click());
+            const windowPage = await opened;
+            windowPage.on('pageerror', (error) => workspaceErrors.push(error.message));
+            await windowPage.waitForURL(/view=article/, { timeout: 15000 });
+            await windowPage.locator('#ext-page-article-section').waitFor({ state: 'visible', timeout: 20000 });
+            return windowPage;
+        };
+        const reopenWorkspace = async () => {
+            if (workspace && !workspace.isClosed()) await workspace.close();
+            workspace = await openWorkspaceWindow();
+            await workspace.waitForFunction(() => !!document.querySelector('#ext-account-status').textContent, null, { timeout: 30000 });
+            return workspace;
+        };
+        const openInlinePanel = async () => {
+            await article.bringToFront();
+            await article.evaluate(() => getSelection().removeAllRanges());
+            await selectWord();
+            await article.waitForFunction(() => !!document.querySelector('bdc-page-lookup'), null, { timeout: 15000 });
+            const frame = await waitFor(() => article.frames().find((candidate) => candidate.url().startsWith(base + '/lookup.html')) || false, { timeout: 15000 });
+            if (!frame) throw new Error('inline frame did not reopen');
+            await frame.waitForFunction(() => !!document.querySelector('#ext-result-meaning')?.textContent, null, { timeout: 30000 });
+            await frame.locator('#ext-inline-more').click();
+            await frame.waitForFunction(() => document.body.classList.contains('ext-expanded'), null, { timeout: 8000 });
+            return frame;
+        };
+        let workspace = await openWorkspaceWindow();
+        await workspace.waitForFunction(() => !!document.querySelector('#ext-account-status').textContent, null, { timeout: 30000 });
         const editedBody = '使用者編輯後的正文（第一次）';
         const blockedEdit = '待傳存在時嘗試改寫的正文（不得進入雲端）';
         await article.bringToFront();
-        await popup.locator('#ext-article-extract').click();
-        await popup.locator('#ext-article-preview').waitFor({ state: 'visible', timeout: 60000 });
-        const firstTitle = await popup.locator('#ext-article-title').inputValue();
+        await workspace.locator('#ext-article-extract').click();
+        await workspace.locator('#ext-article-preview').waitFor({ state: 'visible', timeout: 60000 });
+        const firstTitle = await workspace.locator('#ext-article-title').inputValue();
         check('面板可從目前分頁擷取文章並預覽', firstTitle.length > 0);
-        await popup.locator('#ext-article-body').fill(editedBody);
-        await popup.locator('#ext-article-analyze').check();
+        await workspace.locator('#ext-article-body').fill(editedBody);
+        await workspace.locator('#ext-article-analyze').check();
 
         // 文章已寫入伺服器，但回應被換成 503（等同「回應遺失」）。
         await applyThenFail(context, env, ALICE, '/articles');
         const aiBeforeSave = env.state.aiCalls;
-        const lostArticleReply = context.waitForEvent('response', { predicate: (response) =>
-            response.url() === env.base + '/articles' && response.request().method() === 'POST' && response.status() === 503,
-            timeout: 30000 });
-        await popup.locator('#ext-article-save').click();
-        await popup.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length > 0, null, { timeout: 30000 });
-        await popup.waitForFunction(() => !document.querySelector('#ext-workspace-notice').hidden, null, { timeout: 30000 });
-        await lostArticleReply;
+        await workspace.locator('#ext-article-save').click();
+        await workspace.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length > 0, null, { timeout: 30000 });
+        await workspace.waitForFunction(() => !document.querySelector('#ext-workspace-notice').hidden, null, { timeout: 30000 });
         const aiAfterSave = env.state.aiCalls;
-        const lockedNow = await popup.evaluate(() => document.querySelector('#ext-article-body').disabled
+        const lockedNow = await workspace.evaluate(() => document.querySelector('#ext-article-body').disabled
             && document.querySelector('#ext-article-title').disabled && document.querySelector('#ext-article-analyze').disabled);
-        check('保存失敗後待傳出現且預覽立即鎖定', lockedNow && (await pendingCount(popup)) === 1);
+        check('保存失敗後待傳出現且預覽立即鎖定', lockedNow && (await pendingCount(workspace)) === 1);
         check('勾選逐段分析時保存會跑一次 AI 分析', aiAfterSave > aiBeforeSave, { aiBeforeSave, aiAfterSave });
         const savedArticleCount = await articleRowCount(env);
         const savedArticleBody = await articleBody(env);
@@ -387,21 +442,20 @@ async function connect(popup, base, env, token) {
 
         // 重開面板：page-link 也被擋，自動重試失敗 → 待傳仍在（F1 的現場）。
         await context.route('**/vocabulary/page-link', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{"code":"capture_failed"}' }));
-        await popup.reload();
-        await popup.waitForFunction(() => !!document.querySelector('#ext-account-status').textContent, null, { timeout: 30000 });
-        await popup.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length > 0, null, { timeout: 30000 });
-        debug.push({ step: 'after-reload-1', pending: await pendingKeys(popup), notice: await noticeText(popup), aiCalls: env.state.aiCalls });
-        check('重開面板後待傳仍在（重試失敗保留）', (await pendingCount(popup)) === 1, await pendingKeys(popup));
+        workspace = await reopenWorkspace();
+        await workspace.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length > 0, null, { timeout: 30000 });
+        debug.push({ step: 'after-reload-1', pending: await pendingKeys(workspace), notice: await noticeText(workspace), aiCalls: env.state.aiCalls });
+        check('重開面板後待傳仍在（重試失敗保留）', (await pendingCount(workspace)) === 1, await pendingKeys(workspace));
         check('重試失敗不會重跑 AI', env.state.aiCalls === aiAfterSave, { aiAfterSave, aiCalls: env.state.aiCalls });
 
         // F1：重開面板後再按「擷取本頁文章」時，必須從待傳還原原稿並鎖定，
         //     而不是產生第二份可編輯的新稿（那樣的編輯會被「沿用」靜默丟棄）。
         const markRestore = requestLog.length;
         await article.bringToFront();
-        await popup.locator('#ext-article-extract').click();
-        await popup.locator('#ext-article-preview').waitFor({ state: 'visible', timeout: 60000 });
-        await popup.waitForFunction(() => !document.querySelector('#ext-workspace-notice').hidden, null, { timeout: 30000 });
-        const lockState = await popup.evaluate(() => ({
+        await workspace.locator('#ext-article-extract').click();
+        await workspace.locator('#ext-article-preview').waitFor({ state: 'visible', timeout: 60000 });
+        await workspace.waitForFunction(() => !document.querySelector('#ext-workspace-notice').hidden, null, { timeout: 30000 });
+        const lockState = await workspace.evaluate(() => ({
             title: document.querySelector('#ext-article-title').value,
             body: document.querySelector('#ext-article-body').value,
             analyzeChecked: document.querySelector('#ext-article-analyze').checked,
@@ -425,25 +479,25 @@ async function connect(popup, base, env, token) {
             lockState.title === firstTitle && lockState.body === editedBody && lockState.analyzeChecked === true,
             { title: lockState.title, bodyLength: lockState.body.length, analyzeChecked: lockState.analyzeChecked });
         check('F1：還原待傳時沒有重跑 AI、沒有新增待傳',
-            env.state.aiCalls === aiAfterSave && aiRequestsSince(markRestore) === 0 && (await pendingCount(popup)) === 1,
+            env.state.aiCalls === aiAfterSave && aiRequestsSince(markRestore) === 0 && (await pendingCount(workspace)) === 1,
             { aiCalls: env.state.aiCalls, aiRequests: aiRequestsSince(markRestore) });
         // 原流程在此直接 fill 一個 disabled 的 textarea（會 timeout）；改成驗證輸入真的被拒絕。
-        const bodyEditable = await popup.locator('#ext-article-body').fill(blockedEdit, { timeout: 1500 }).then(() => true).catch(() => false);
+        const bodyEditable = await workspace.locator('#ext-article-body').fill(blockedEdit, { timeout: 1500 }).then(() => true).catch(() => false);
         check('F1：待傳鎖定時輸入框不可編輯（輸入被拒絕，不會出現第二份新稿）', bodyEditable === false
-            && (await popup.locator('#ext-article-body').inputValue()) === editedBody);
+            && (await workspace.locator('#ext-article-body').inputValue()) === editedBody);
 
         // 待傳清單的「取消本機待傳」不得刪掉雲端已保存的內容。
         await applyThenFail(context, env, ALICE, '/vocabulary/books');
         const booksBeforeCancel = await bookCount(env);
-        if (!await popup.locator('#ext-book-options').evaluate(node => node.open)) await popup.locator('#ext-book-options > summary').click();
-        await popup.locator('#ext-book-page').click();
-        await popup.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 2, null, { timeout: 30000 });
-        check('建立本頁詞書的回應遺失時也會留下待傳', (await pendingCount(popup)) === 2, await pendingKeys(popup));
+        // 文章 popup 只顯示文章區；建立本頁詞書仍在原網頁的 inline 小窗（已展開）。
+        await panel.locator('#ext-book-page').click();
+        await workspace.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 2, null, { timeout: 30000 });
+        check('建立本頁詞書的回應遺失時也會留下待傳', (await pendingCount(workspace)) === 2, await pendingKeys(workspace));
         check('伺服器其實已建立本頁詞書', (await bookCount(env)) === booksBeforeCancel + 1, { booksBeforeCancel, now: await bookCount(env) });
-        await popup.evaluate(() => { document.querySelector('#ext-workspace-pending').open = true; });
-        await popup.locator('#ext-workspace-pending-list li').filter({ hasText: '待建立词书' }).locator('button').last().click();
-        await popup.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 1, null, { timeout: 30000 });
-        check('取消待傳只刪本機那一筆', (await pendingCount(popup)) === 1, await pendingKeys(popup));
+        await workspace.evaluate(() => { document.querySelector('#ext-workspace-pending').open = true; });
+        await workspace.locator('#ext-workspace-pending-list li').filter({ hasText: '待建立词书' }).locator('button').last().click();
+        await workspace.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 1, null, { timeout: 30000 });
+        check('取消待傳只刪本機那一筆', (await pendingCount(workspace)) === 1, await pendingKeys(workspace));
         check('取消待傳不刪雲端已建立的詞書', (await bookCount(env)) === booksBeforeCancel + 1);
         await context.unroute('**/vocabulary/books');
 
@@ -452,11 +506,11 @@ async function connect(popup, base, env, token) {
         await context.unroute('**/articles');
         const markRetry = requestLog.length;
         const aiBeforeRetry = env.state.aiCalls;
-        await popup.evaluate(() => { document.querySelector('#ext-workspace-pending').open = true; });
-        await popup.locator('#ext-workspace-pending-list li').filter({ hasText: '待保存文章' }).locator('button').first().click();
-        await popup.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 0, null, { timeout: 30000 });
-        debug.push({ step: 'after-pending-retry', pending: await pendingKeys(popup), notice: await noticeText(popup), aiCalls: env.state.aiCalls, requests: requestsSince(markRetry), body: await articleBody(env) });
-        check('由待傳列重試成功後清掉該筆待傳', (await pendingCount(popup)) === 0, await pendingKeys(popup));
+        await workspace.evaluate(() => { document.querySelector('#ext-workspace-pending').open = true; });
+        await workspace.locator('#ext-workspace-pending-list li').filter({ hasText: '待保存文章' }).locator('button').first().click();
+        await workspace.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 0, null, { timeout: 30000 });
+        debug.push({ step: 'after-pending-retry', pending: await pendingKeys(workspace), notice: await noticeText(workspace), aiCalls: env.state.aiCalls, requests: requestsSince(markRetry), body: await articleBody(env) });
+        check('由待傳列重試成功後清掉該筆待傳', (await pendingCount(workspace)) === 0, await pendingKeys(workspace));
         check('重試後雲端保留第一次的正文（第二次編輯沒有蓋掉雲端）',
             (await articleBody(env)).includes(editedBody) && !(await articleBody(env)).includes(blockedEdit));
         check('重試沒有重建文章（仍只有一篇、文章 ID 不變）',
@@ -468,22 +522,22 @@ async function connect(popup, base, env, token) {
         check('重試走的是 GET ?sourceUrl 與 page-link 補關聯',
             requestsSince(markRetry).some((entry) => entry.method === 'GET' && entry.path.startsWith('/vocabulary/books?sourceUrl='))
             && writesSince(markRetry, '/vocabulary/page-link') === 1, requestsSince(markRetry));
-        check('重試成功時介面有提示（沿用既有文章，不是靜默成功）', /沿用/.test(await noticeText(popup)), { notice: await noticeText(popup) });
+        check('重試成功時介面有提示（沿用既有文章，不是靜默成功）', /沿用/.test(await noticeText(workspace)), { notice: await noticeText(workspace) });
 
         // 本頁已無待傳、雲端已有文章：直接顯示既有文章的開啟入口，不再產生「可編輯但存不進去」的預覽。
         const markExisting = requestLog.length;
         const aiBeforeExisting = env.state.aiCalls;
         await article.bringToFront();
-        await popup.locator('#ext-article-extract').click();
+        await workspace.locator('#ext-article-extract').click();
         // 「開啟入口」在待傳重試成功後就已顯示，因此用「請求序列＋擷取按鈕恢復可用」確認這次擷取真的跑完。
         for (let attempt = 0; attempt < 100; attempt += 1) {
             const seen = requestsSince(markExisting);
             if (seen.some((entry) => entry.method === 'GET' && entry.path.startsWith('/vocabulary/books?sourceUrl='))
                 && writesSince(markExisting, '/vocabulary/page-link') === 1
-                && await popup.evaluate(() => !document.querySelector('#ext-article-extract').disabled)) break;
+                && await workspace.evaluate(() => !document.querySelector('#ext-article-extract').disabled)) break;
             await sleep(100);
         }
-        const entryState = await popup.evaluate(() => ({
+        const entryState = await workspace.evaluate(() => ({
             previewHidden: document.querySelector('#ext-article-preview').hidden,
             openHidden: document.querySelector('#ext-article-open').hidden,
             openText: document.querySelector('#ext-article-open').textContent,
@@ -507,10 +561,10 @@ async function connect(popup, base, env, token) {
             const probeUrl = env.base + '/test-article?crossTabProbe=1';
             await article.goto(probeUrl);
             await article.bringToFront();
-            await popup.locator('#ext-article-extract').click();
-            await popup.locator('#ext-article-preview').waitFor({ state: 'visible', timeout: 60000 });
-            await popup.locator('#ext-article-body').fill('正在編輯但尚未保存的正文');
-            const injected = await popup.evaluate(async (sourceUrl) => {
+            await workspace.locator('#ext-article-extract').click();
+            await workspace.locator('#ext-article-preview').waitFor({ state: 'visible', timeout: 60000 });
+            await workspace.locator('#ext-article-body').fill('正在編輯但尚未保存的正文');
+            const injected = await workspace.evaluate(async (sourceUrl) => {
                 const { captureAuthSession } = await import('./modules/sync-cloudflare.js');
                 const { captureScopeKey } = await import('./shared/capture-client.mjs');
                 const session = captureAuthSession();
@@ -524,7 +578,7 @@ async function connect(popup, base, env, token) {
                 return { key: key.slice(-14) };
             }, probeUrl);
             await sleep(1200);
-            const probeState = await popup.evaluate(() => ({
+            const probeState = await workspace.evaluate(() => ({
                 body: document.querySelector('#ext-article-body').value,
                 bodyDisabled: document.querySelector('#ext-article-body').disabled,
                 notice: document.querySelector('#ext-workspace-notice').textContent,
@@ -532,10 +586,10 @@ async function connect(popup, base, env, token) {
             }));
             debug.push({ step: 'cross-tab-pending-probe', injected, probeState, aiCalls: env.state.aiCalls });
             // 清掉這筆注入的待傳（走 UI 的「取消本機待傳」）。
-            await popup.evaluate(() => { document.querySelector('#ext-workspace-pending').open = true; });
-            await popup.locator('#ext-workspace-pending-list li').filter({ hasText: '待保存文章' }).locator('button').last().click();
-            await popup.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 0, null, { timeout: 30000 });
-            debug.push({ step: 'cross-tab-pending-probe-cleanup', pending: await pendingCount(popup) });
+            await workspace.evaluate(() => { document.querySelector('#ext-workspace-pending').open = true; });
+            await workspace.locator('#ext-workspace-pending-list li').filter({ hasText: '待保存文章' }).locator('button').last().click();
+            await workspace.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 0, null, { timeout: 30000 });
+            debug.push({ step: 'cross-tab-pending-probe-cleanup', pending: await pendingCount(workspace) });
         } catch (error) {
             debug.push({ step: 'cross-tab-pending-probe', error: String((error && error.message) || error) });
         }
@@ -543,26 +597,26 @@ async function connect(popup, base, env, token) {
         // 另一筆健康待傳（自訂詞書的回應遺失）：重開面板要能自動重試並清掉，且不重複建立。
         await applyThenFail(context, env, ALICE, '/vocabulary/books');
         const booksBeforeAutoRetry = await bookCount(env);
-        if (!await popup.locator('#ext-book-options').evaluate(node => node.open)) await popup.locator('#ext-book-options > summary').click();
-        await popup.locator('#ext-book-new').click();
-        await popup.locator('#ext-book-link-page').uncheck();
-        await popup.locator('#ext-book-name').fill('自動重試用的詞書');
-        await popup.locator('#ext-book-submit').click();
-        await popup.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 1, null, { timeout: 30000 });
-        check('自訂詞書的回應遺失也會留下待傳', (await pendingCount(popup)) === 1, await pendingKeys(popup));
+        // 文章 popup 不顯示詞書表單；自訂詞書從（重新開啟的）inline 小窗建立，待傳仍是全域。
+        const bookPanel = await openInlinePanel();
+        await bookPanel.locator('#ext-book-new').click();
+        await bookPanel.locator('#ext-book-link-page').uncheck();
+        await bookPanel.locator('#ext-book-name').fill('自動重試用的詞書');
+        await bookPanel.locator('#ext-book-submit').click();
+        await workspace.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 1, null, { timeout: 30000 });
+        check('自訂詞書的回應遺失也會留下待傳', (await pendingCount(workspace)) === 1, await pendingKeys(workspace));
         check('伺服器其實已建立自訂詞書', (await bookCount(env)) === booksBeforeAutoRetry + 1, { booksBeforeAutoRetry, now: await bookCount(env) });
         await context.unroute('**/vocabulary/books');
 
         // 再重開一次：剩下的待傳會自動重試並清掉。
-        await popup.reload();
-        await popup.waitForFunction(() => !!document.querySelector('#ext-account-status').textContent, null, { timeout: 30000 });
+        workspace = await reopenWorkspace();
         let pendingAfterRetry = null;
         for (let attempt = 0; attempt < 60; attempt += 1) {
-            pendingAfterRetry = await pendingCount(popup);
+            pendingAfterRetry = await pendingCount(workspace);
             if (pendingAfterRetry === 0) break;
             await sleep(250);
         }
-        debug.push({ step: 'after-reload-2', pending: await pendingKeys(popup), notice: await noticeText(popup), aiCalls: env.state.aiCalls, items: await popup.evaluate(() => document.querySelector('#ext-workspace-pending-list').textContent) });
+        debug.push({ step: 'after-reload-2', pending: await pendingKeys(workspace), notice: await noticeText(workspace), aiCalls: env.state.aiCalls, items: await workspace.evaluate(() => document.querySelector('#ext-workspace-pending-list').textContent) });
         check('重開面板會自動重試並清掉待傳', pendingAfterRetry === 0, { pendingAfterRetry, debug: debug[debug.length - 1] });
         check('自動重試沒有把詞書建成兩本', (await bookCount(env)) === booksBeforeAutoRetry + 1, { books: await bookCount(env) });
         check('自動重試後文章仍只有一篇、內容不變', (await articleRowCount(env)) === articlesBefore + 1 && (await articleBody(env)).includes(editedBody));
@@ -571,25 +625,27 @@ async function connect(popup, base, env, token) {
         // 導航到新的 query URL：這才是「真的新頁面」（沒有待傳、雲端也沒有文章），可用來驗證取消 AI。
         await article.goto(env.base + '/test-article?logoutProbe=1');
         check('登出前：分頁已換到新 query URL（真新頁面）', new URL(article.url()).searchParams.get('logoutProbe') === '1', { url: article.url() });
-        await article.bringToFront();
-        await popup.locator('#ext-article-extract').click();
-        await popup.locator('#ext-article-preview').waitFor({ state: 'visible', timeout: 60000 });
-        check('換頁後可建立新的可編輯預覽（登出前置條件成立）', (await popup.locator('#ext-article-body').inputValue()).length > 0);
-        await popup.locator('#ext-article-body').fill('登出前留在輸入框的內容');
+        // 文章 popup 的 window ticket 綁定來源網址；來源換頁後舊 popup 必須重開才能讀新頁。
+        workspace = await reopenWorkspace();
+        await workspace.locator('#ext-article-extract').click();
+        await workspace.locator('#ext-article-preview').waitFor({ state: 'visible', timeout: 60000 });
+        check('換頁後可建立新的可編輯預覽（登出前置條件成立）', (await workspace.locator('#ext-article-body').inputValue()).length > 0);
+        await workspace.locator('#ext-article-body').fill('登出前留在輸入框的內容');
         // 讓 AI 慢下來，才能觀察「登出時取消 AI」。
         await context.route('**/mock-ai/**', async (route) => {
             await sleep(1200);
             await route.continue().catch(() => {});
         });
         const markLogout = requestLog.length;
-        await popup.locator('#ext-article-extract').click();
-        await popup.waitForFunction(() => !document.querySelector('#ext-article-cancel').hidden, null, { timeout: 30000 }).catch(() => {});
+        await workspace.locator('#ext-article-extract').click();
+        await workspace.waitForFunction(() => !document.querySelector('#ext-article-cancel').hidden, null, { timeout: 30000 }).catch(() => {});
         await sleep(200);
-        if (!await popup.locator('#ext-account-details').evaluate(node => node.open)) await popup.locator('#ext-account-summary').click();
-        await popup.locator('#ext-logout-btn').click();
-        await popup.waitForFunction(() => /未登录账户/.test(document.querySelector('#ext-account-status').textContent), null, { timeout: 30000 });
+        await openSettings(workspace);
+        await openAccount(workspace);
+        await workspace.locator('#ext-logout-btn').click();
+        await workspace.waitForFunction(() => /未登录账户/.test(document.querySelector('#ext-account-status').textContent), null, { timeout: 30000 });
         await sleep(2500);
-        const afterLogout = await popup.evaluate(() => ({
+        const afterLogout = await workspace.evaluate(() => ({
             previewHidden: document.querySelector('#ext-article-preview').hidden,
             cancelHidden: document.querySelector('#ext-article-cancel').hidden,
             bodyResidue: document.querySelector('#ext-article-body').value,
@@ -607,9 +663,9 @@ async function connect(popup, base, env, token) {
         await context.unroute('**/mock-ai/**');
 
         // 登入另一個帳戶：不得看到前一個帳戶的預覽或待傳。
-        await connect(popup, base, env, BOB);
-        await popup.waitForFunction(() => document.querySelector('#ext-account-status').textContent.includes('bob'), null, { timeout: 30000 });
-        const afterSwitch = await popup.evaluate(() => ({
+        await connect(workspace, base, env, BOB);
+        await workspace.waitForFunction(() => document.querySelector('#ext-account-status').textContent.includes('bob'), null, { timeout: 30000 });
+        const afterSwitch = await workspace.evaluate(() => ({
             previewHidden: document.querySelector('#ext-article-preview').hidden,
             bodyResidue: document.querySelector('#ext-article-body').value,
             pendingHidden: document.querySelector('#ext-workspace-pending').hidden,
@@ -618,7 +674,7 @@ async function connect(popup, base, env, token) {
         check('切換帳戶後預覽仍為隱藏', afterSwitch.previewHidden === true);
         check('切換帳戶後看不到上一個帳戶的待傳', afterSwitch.pendingHidden === true && afterSwitch.pendingItems === 0, afterSwitch);
         check('切換帳戶後輸入框仍是空的', afterSwitch.bodyResidue.length === 0, { length: afterSwitch.bodyResidue.length });
-        check('流程中沒有未捕獲的擴充套件頁面錯誤', popupErrors.length === 0, popupErrors);
+        check('流程中沒有未捕獲的擴充套件頁面錯誤', popupErrors.length === 0 && workspaceErrors.length === 0, { popupErrors, workspaceErrors });
 
         // 原分頁換頁後，舊 ticket 必須失效（不得再讀取新頁面）。
         await article.goto(env.base + '/test-article?other=1');

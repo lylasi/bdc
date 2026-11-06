@@ -1,0 +1,22 @@
+{
+  "baselineVersion": "0.6.2",
+  "productVersion": "0.6.3",
+  "patchFiles": [
+    "extension/lookup.js",
+    "extension/lookup.html",
+    "extension/lookup.css",
+    "extension/capture-ui.js",
+    "extension/inline-panel.js",
+    "extension/manifest.json",
+    "modules/api.js",
+    "modules/ai-models.js",
+    "modules/extension-ai-runtime.js",
+    "locales/zh-CN.js",
+    "locales/zh-HK.js",
+    "README.md",
+    "extension/page-lookup.js"
+  ],
+  "generatedReleaseMap": "80ebb3b7f25c",
+  "releaseModuleCount": 102,
+  "privateConfigurationIncluded": false
+}

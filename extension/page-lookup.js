@@ -3,12 +3,12 @@
     if (globalThis.__bdcPageLookupInstalled || window.top !== window) return;
     if (document.getElementById('article-input') && document.getElementById('vocab-book-list') && document.getElementById('article-analysis-container')) return;
     globalThis.__bdcPageLookupInstalled = true;
-    let host, shadow, button, panel, toast;
+    let host, shadow, button, panel, toast, ball;
     let selectedRange = null, anchorRange = null, lastRect = null;
     let ticket = '', mode = 'compact', protectedState = false, desiredHeight = 180;
     let labels = {}, closeRequest = null, opening = 0, openingBusy = false, scheduled = false;
     const t = (key) => labels[key] || 'BDC';
-    chrome.runtime.sendMessage({ type: 'BDC_INLINE_LABELS' }).then((result) => { labels = result?.value || {}; }).catch(() => {});
+    chrome.runtime.sendMessage({ type: 'BDC_INLINE_LABELS' }).then((result) => { labels = result?.value || {}; ensureShell(); updateBall(); }).catch(() => {});
 
     function viewport() {
         const v = window.visualViewport;
@@ -47,17 +47,18 @@
         panel?.remove(); panel = null; ticket = ''; closeRequest = null;
         anchorRange = null; lastRect = null; mode = 'compact'; protectedState = false;
         if (button) button.hidden = true;
+        updateBall();
     }
     function requestClose(reason, replacement = null) {
         if (!panel) { removePanel(); return; }
         if (closeRequest) return;
-        if (reason !== 'replace' && reason !== 'explicit' && (mode === 'expanded' || protectedState)) return;
+        if (reason !== 'replace' && reason !== 'explicit' && (mode !== 'compact' || protectedState)) return;
         const requestId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
         closeRequest = { requestId, replacement };
         chrome.runtime.sendMessage({ type: 'BDC_INLINE_REQUEST_CLOSE', ticket, requestId, reason }).then((response) => {
             if (response?.ok || closeRequest?.requestId !== requestId) return;
             closeRequest = null;
-            if (reason !== 'replace' && !protectedState && mode !== 'expanded') removePanel();
+            if (reason !== 'replace' && !protectedState && mode === 'compact') removePanel();
         }).catch(() => { if (closeRequest?.requestId === requestId) closeRequest = null; });
     }
     function position() {
@@ -72,6 +73,14 @@
             }
         }
         if (!panel) return;
+        if (mode === 'assistant' || mode === 'assistant-dock' || mode === 'dialog') {
+            const dock = mode === 'assistant-dock';
+            const width = Math.min(mode === 'dialog' ? 480 : dock ? 420 : 380, Math.max(0, v.width - 24));
+            const height = Math.min(mode === 'dialog' ? 720 : dock ? v.height - 24 : 520, Math.max(80, v.height - 32));
+            size(panel, { width, height, left: mode === 'dialog' ? v.left + (v.width - width) / 2 : v.left + v.width - width - 12,
+                top: mode === 'dialog' ? v.top + (v.height - height) / 2 : dock ? v.top + 12 : v.top + v.height - height - 16 });
+            return;
+        }
         if (mode === 'expanded') {
             const width = Math.min(420, Math.max(0, v.width - 24));
             const height = Math.min(Math.max(160, desiredHeight + 2), Math.max(80, v.height - 24));
@@ -83,7 +92,8 @@
         if (rect) lastRect = rect;
         if (!lastRect) return;
         const width = Math.min(340, Math.max(0, v.width - 16));
-        let height = Math.min(desiredHeight, Math.max(80, v.height - 16), Math.max(160, Math.floor(v.height * 0.65)));
+        // The reported body height excludes the iframe's two 1px borders.
+        let height = Math.min(desiredHeight + 2, Math.max(80, v.height - 16), Math.max(160, Math.floor(v.height * 0.65)));
         const below = v.top + v.height - 8 - lastRect.bottom - 8;
         const above = lastRect.top - 8 - v.top - 8;
         const down = below >= height || below >= above;
@@ -120,6 +130,25 @@
         panel.src = chrome.runtime.getURL('lookup.html') + '?embedded=1&ticket=' + encodeURIComponent(ticket);
         shadow.appendChild(panel); position();
     }
+    function updateBall() {
+        if (!ball) return;
+        ball.hidden = labels.assistantEnabled === false || !!panel && ['assistant', 'assistant-dock', 'dialog'].includes(mode);
+        ball.title = t('extension.assistantOpen'); ball.setAttribute('aria-label', t('extension.assistantOpen'));
+    }
+    async function openAssistant() {
+        ensureShell();
+        if (panel) { requestClose('replace', 'assistant'); return; }
+        if (openingBusy) return;
+        const version = ++opening; openingBusy = true;
+        const result = await chrome.runtime.sendMessage({ type: 'BDC_OPEN_ASSISTANT' }).catch(() => null);
+        if (version !== opening) return;
+        openingBusy = false;
+        if (!result?.ok) { toast.textContent = t('extension.inlineOpenFailed'); toast.hidden = false; size(toast, { right: 16, bottom: 76 }); return; }
+        ticket = result.value.ticket; mode = 'assistant'; protectedState = false; closeRequest = null;
+        panel = document.createElement('iframe'); panel.title = t('extension.assistantTitle');
+        panel.src = chrome.runtime.getURL('lookup.html') + '?embedded=1&view=assistant&ticket=' + encodeURIComponent(ticket);
+        shadow.appendChild(panel); position(); updateBall();
+    }
     function ensureShell() {
         if (host?.isConnected) return;
         host = document.createElement('bdc-page-lookup');
@@ -127,7 +156,7 @@
         shadow = host.attachShadow({ mode: 'closed' });
         const style = document.createElement('style');
         // 僅視覺：顏色、圓角、陰影、焦點環。字級、內距、定位等幾何由上方 position() 決定，勿在此改動。
-        style.textContent = ':host{all:initial}button{font:13px system-ui;padding:7px 12px;background:#0f766e;color:#fff;border:0;border-radius:8px;box-shadow:0 4px 14px rgba(23,28,33,.22),0 1px 2px rgba(23,28,33,.14);cursor:pointer;pointer-events:auto;position:fixed;transition:background-color .12s ease,box-shadow .12s ease}button:hover{background:#0b5f59;box-shadow:0 6px 18px rgba(23,28,33,.26)}button:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(15,118,110,.35),0 4px 14px rgba(23,28,33,.22)}iframe{box-sizing:border-box;border:1px solid #dcdad3;border-radius:10px;background:#fff;box-shadow:0 12px 34px rgba(23,28,33,.18),0 2px 6px rgba(23,28,33,.08);position:fixed;pointer-events:auto;color-scheme:light}p{position:fixed;box-sizing:border-box;max-width:300px;margin:0;padding:10px;background:#fdf6e8;border:1px solid #ecd9ae;border-radius:8px;color:#8a5308;box-shadow:0 6px 20px rgba(23,28,33,.12);font:13px/1.5 system-ui;pointer-events:auto}[hidden]{display:none!important}';
+        style.textContent = ':host{all:initial}button{font:13px system-ui;padding:7px 12px;background:#0f766e;color:#fff;border:0;border-radius:8px;box-shadow:0 4px 14px rgba(23,28,33,.22),0 1px 2px rgba(23,28,33,.14);cursor:pointer;pointer-events:auto;position:fixed;transition:background-color .12s ease,box-shadow .12s ease}button:hover{background:#0b5f59;box-shadow:0 6px 18px rgba(23,28,33,.26)}button:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(15,118,110,.35),0 4px 14px rgba(23,28,33,.22)}iframe{box-sizing:border-box;border:1px solid #dcdad3;border-radius:10px;background:#fff;box-shadow:0 12px 34px rgba(23,28,33,.18),0 2px 6px rgba(23,28,33,.08);position:fixed;pointer-events:auto;color-scheme:light}p{position:fixed;box-sizing:border-box;max-width:300px;margin:0;padding:10px;background:#fdf6e8;border:1px solid #ecd9ae;border-radius:8px;color:#8a5308;box-shadow:0 6px 20px rgba(23,28,33,.12);font:13px/1.5 system-ui;pointer-events:auto}.bdc-assistant-ball{right:20px;bottom:max(24px,env(safe-area-inset-bottom));width:46px;height:46px;padding:0;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 20px rgba(15,118,110,.3);border:1px solid rgba(255,255,255,.6)}[hidden]{display:none!important}';
         shadow.appendChild(style);
         button = document.createElement('button'); button.type = 'button'; button.textContent = t('extension.inlineLookup'); button.hidden = true;
         toast = document.createElement('p'); toast.setAttribute('role', 'status'); toast.hidden = true;
@@ -139,7 +168,10 @@
             if (panel) requestClose('replace', range);
             else open(range);
         });
-        shadow.append(button, toast); document.documentElement.appendChild(host);
+        ball = document.createElement('button'); ball.type = 'button'; ball.className = 'bdc-assistant-ball';
+        ball.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/></svg>';
+        ball.addEventListener('click', (event) => { if (event.isTrusted) openAssistant(); });
+        shadow.append(button, toast, ball); document.documentElement.appendChild(host); updateBall();
     }
     document.addEventListener('pointerdown', (event) => {
         if (!event.isTrusted || event.composedPath().includes(host)) return;
@@ -160,10 +192,14 @@
         if (panel) requestClose('explicit');
         else removePanel();
     }, true);
-    chrome.runtime.onMessage.addListener((message, sender) => {
-        if (sender.id !== chrome.runtime.id || !panel || message?.ticket !== ticket) return;
+    chrome.runtime.onMessage.addListener((message, sender, reply) => {
+        if (sender.id !== chrome.runtime.id) return;
+        if (message?.type === 'BDC_SHELL_PREFERENCES') { labels = message.value || {}; ensureShell(); updateBall(); return; }
+        if (message?.type === 'BDC_SHOW_ASSISTANT') { openAssistant(); reply({ ok: true }); return; }
+        if (!panel || message?.ticket !== ticket) return;
         if (message.type === 'BDC_INLINE_STATE') {
-            mode = message.mode === 'expanded' ? 'expanded' : 'compact';
+            mode = ['compact', 'expanded', 'assistant', 'assistant-dock', 'dialog'].includes(message.mode) ? message.mode : 'compact';
+            updateBall();
             protectedState = message.protected === true;
             if (Number.isFinite(message.height)) desiredHeight = Math.max(80, Math.min(20000, message.height));
             position();
@@ -172,7 +208,8 @@
         } else if (message.type === 'BDC_INLINE_REMOVE') {
             const replacement = closeRequest?.requestId === message.requestId ? closeRequest.replacement : null;
             removePanel();
-            if (replacement) open(replacement);
+            if (replacement === 'assistant') openAssistant();
+            else if (replacement) open(replacement);
         }
     });
     addEventListener('scroll', schedulePosition, { capture: true, passive: true });

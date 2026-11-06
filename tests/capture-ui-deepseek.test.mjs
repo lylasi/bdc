@@ -127,7 +127,7 @@ function fakeClient(hooks = {}) {
         queue: [],
         pendingItems: (hooks.pending || []).slice(),
         retryResults: [],
-        booksResult: hooks.booksResult || { books: [{ id: 'book', name: 'Book' }], defaultBookId: 'book' },
+        booksResult: hooks.booksResult || { books: [{ id: 'book', name: '网页' }], defaultBookId: 'book' },
         booksError: hooks.booksError || null
     };
     const wait = (kind, value) => {
@@ -251,13 +251,14 @@ async function saveOnce(h, { resolveSend = true } = {}) {
 test('載入詞書後：有結果才可按收藏，成功後顯示已加入且清單消失', async (t) => {
     const h = await build(t);
     await h.ui.sync();
-    assert.equal(h.dom.captureBook.value, 'book', '伺服器明確給的合法預設詞書應被選取');
+    assert.equal(h.dom.captureBook.value, 'book', '應自動選用網頁詞書');
     assert.equal(h.dom.captureSave.disabled, true, '還沒有查詞結果時不得按收藏');
     showWord(h.ui);
     assert.equal(h.dom.captureSave.disabled, false);
     await saveOnce(h);
-    assert.equal(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"Book"}', '成功提示必須指明收藏到哪一本詞書');
-    assert.equal(h.dom.captureSave.textContent, 'extension.captureSaved');
+    assert.equal(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"网页"}', '成功提示必須指明收藏到哪一本詞書');
+    assert.equal(h.dom.captureSave.textContent, 'extension.captureAddedShort');
+    assert.equal(h.dom.captureSave.attributes['aria-label'], 'extension.captureSaved');
     assert.equal(h.dom.captureSave.disabled, true, '已加入後同一個結果不得再按一次');
     assert.equal(h.dom.capturePending.hidden, true);
 });
@@ -274,7 +275,7 @@ test('收藏離線：必須明說已保留待傳，不得顯示已加入，且�
     h.client.reject('send', Object.assign(new Error('offline'), { code: 'capture_pending' }));
     await clicking;
     assert.equal(h.dom.captureNotice.textContent, 'extension.capturePending', '離線時必須明說已保留待傳');
-    assert.notEqual(h.dom.captureSave.textContent, 'extension.captureSaved');
+    assert.notEqual(h.dom.captureSave.textContent, 'extension.captureAddedShort');
     assert.equal(h.dom.captureSave.disabled, false, '失敗後必須能再試');
     assert.equal(h.dom.capturePending.hidden, false, '待傳清單必須出現');
     assert.equal(h.dom.capturePendingSummary.textContent, 'extension.capturePendingCount{"count":1}');
@@ -320,7 +321,7 @@ test('每個 client 錯誤碼都要顯示對應訊息，且不得看起來像已
         h.client.reject('enqueue', Object.assign(new Error(code), { code }));
         await clicking;
         assert.equal(h.dom.captureNotice.textContent, key, `${code} 應顯示 ${key}`);
-        assert.notEqual(h.dom.captureSave.textContent, 'extension.captureSaved');
+        assert.notEqual(h.dom.captureSave.textContent, 'extension.captureAddedShort');
         assert.equal(h.dom.captureSave.disabled, false, `${code} 之後必須能再試`);
     }
 });
@@ -345,7 +346,7 @@ test('詞書載入失敗但有快取：提示離線，舊快取不得當成明�
     assert.equal(h.dom.captureSave.disabled, false, '離線時選好快取詞書仍可收藏');
 });
 
-test('標記 explicit-v1 的快取可沿用明確選擇', async (t) => {
+test('舊版標記的任意預設不能取代網頁規則', async (t) => {
     const moduleUrl = buildHarnessModule(t);
     const h = await build(t, {
         moduleUrl,
@@ -357,16 +358,16 @@ test('標記 explicit-v1 的快取可沿用明確選擇', async (t) => {
     };
     await h.ui.sync();
     await tick();
-    assert.equal(h.dom.captureBook.value, 'cached', '明確政策下的快取預設仍要沿用');
+    assert.equal(h.dom.captureBook.value, '', '任意帳戶預設不可被誤認為網頁詞書');
     showWord(h.ui);
-    assert.equal(h.dom.captureSave.disabled, false);
+    assert.equal(h.dom.captureSave.disabled, true);
 });
 
 // ── 2. 競態 ────────────────────────────────────────────────────────────────
 
 test('收藏途中切換目標詞書：結束後按鈕必須恢復可用，且提示指明原詞書', async (t) => {
     const h = await build(t, {
-        booksResult: { books: [{ id: 'book', name: 'Book' }, { id: 'book2', name: 'Book 2' }], defaultBookId: 'book' }
+        booksResult: { books: [{ id: 'book', name: '网页' }, { id: 'book2', name: 'Book 2' }], defaultBookId: 'book' }
     });
     await h.ui.sync();
     showWord(h.ui);
@@ -381,14 +382,14 @@ test('收藏途中切換目標詞書：結束後按鈕必須恢復可用，且�
     await clicking;
     await tick();
     assert.equal(h.dom.captureSave.disabled, false, '收藏結束後按鈕必須恢復可用（不得卡在「正在加入…」）');
-    assert.equal(h.dom.captureSave.textContent, 'extension.captureSave', '切換後的新詞書其實還沒收藏');
-    assert.equal(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"Book"}',
+    assert.equal(h.dom.captureSave.textContent, 'extension.captureAddShort', '切換後的新詞書其實還沒收藏');
+    assert.equal(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"网页"}',
         '成功提示必須說明加入的是原詞書，不是切換後的詞書');
 });
 
 test('收藏途中換詞書：新詞書不得標成已加入，且可立刻為新詞書再收藏一次', async (t) => {
     const h = await build(t, {
-        booksResult: { books: [{ id: 'book', name: 'Book' }, { id: 'book2', name: 'Book 2' }], defaultBookId: 'book' }
+        booksResult: { books: [{ id: 'book', name: '网页' }, { id: 'book2', name: 'Book 2' }], defaultBookId: 'book' }
     });
     await h.ui.sync();
     showWord(h.ui);
@@ -401,8 +402,8 @@ test('收藏途中換詞書：新詞書不得標成已加入，且可立刻為�
     await tick();
     h.client.resolve('send');
     await clicking;
-    assert.notEqual(h.dom.captureSave.textContent, 'extension.captureSaved', '新詞書其實還沒收藏');
-    assert.equal(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"Book"}');
+    assert.notEqual(h.dom.captureSave.textContent, 'extension.captureAddedShort', '新詞書其實還沒收藏');
+    assert.equal(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"网页"}');
 
     // 為新詞書再按一次：必須建立新操作（bookId=book2），不得重送舊詞書的操作。
     const second = h.dom.captureSave.click();
@@ -431,15 +432,15 @@ test('舊收藏的 finally 不得解除新收藏的忙碌狀態（activeSave 令
     h.client.resolve('send');            // 舊 attempt 先完成
     await first;
     await tick();
-    assert.equal(h.dom.captureSave.textContent, 'extension.captureSaving', '舊 attempt 不得解除新 attempt 的忙碌狀態');
+    assert.equal(h.dom.captureSave.textContent, 'extension.captureAddingShort', '舊 attempt 不得解除新 attempt 的忙碌狀態');
     assert.equal(h.dom.captureSave.disabled, true);
     assert.equal(h.dom.captureNotice.textContent, '', '已不是目前 attempt，不得搶著顯示成功提示');
     h.client.resolve('enqueue');
     await tick();
     h.client.resolve('send');
     await second;
-    assert.equal(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"Book"}', '新 attempt 完成才顯示成功');
-    assert.equal(h.dom.captureSave.textContent, 'extension.captureSaved');
+    assert.equal(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"网页"}', '新 attempt 完成才顯示成功');
+    assert.equal(h.dom.captureSave.textContent, 'extension.captureAddedShort');
 });
 
 test('收藏途中重新查詞：新結果不得被標成已收藏', async (t) => {
@@ -453,11 +454,11 @@ test('收藏途中重新查詞：新結果不得被標成已收藏', async (t) =
     h.ui.clearResult();
     showWord(h.ui, { result: { text: 'rise', meaning: '上升' } });
     assert.equal(h.dom.captureSave.disabled, false, '新結果應該可以收藏');
-    assert.equal(h.dom.captureSave.textContent, 'extension.captureSave');
+    assert.equal(h.dom.captureSave.textContent, 'extension.captureAddShort');
     h.client.resolve('send');
     await clicking;
-    assert.notEqual(h.dom.captureSave.textContent, 'extension.captureSaved', '新結果不得被標成已收藏');
-    assert.notEqual(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"Book"}', '新結果不得收到舊結果的成功提示');
+    assert.notEqual(h.dom.captureSave.textContent, 'extension.captureAddedShort', '新結果不得被標成已收藏');
+    assert.notEqual(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"网页"}', '新結果不得收到舊結果的成功提示');
 });
 
 test('收藏途中帳戶事件觸發 sync：不得卡在收藏中，舊 attempt 也不得冒出成功提示', async (t) => {
@@ -473,44 +474,67 @@ test('收藏途中帳戶事件觸發 sync：不得卡在收藏中，舊 attempt 
     h.client.resolve('send');
     await clicking;
     await syncing;
-    assert.notEqual(h.dom.captureSave.textContent, 'extension.captureSaving');
+    assert.notEqual(h.dom.captureSave.textContent, 'extension.captureAddingShort');
     assert.equal(h.dom.captureSave.disabled, true, 'sync 後沒有查詞結果，收藏應不可按');
     assert.equal(h.dom.captureNotice.textContent, '', '已被 sync 作廢的舊收藏不得事後顯示成功');
 });
 
-// ── 2b. 明確選書（不再猜預設）─────────────────────────────────────────────
+// ── 2b. 本頁優先、網頁後備及本次手動選擇 ─────────────────────────────────
 
-test('沒有明確預設：首次必須由使用者選書，選過之後同一頁會記住、換頁不沿用', async (t) => {
-    const moduleUrl = buildHarnessModule(t);
-    const booksResult = { books: [{ id: 'book', name: 'Book' }, { id: 'book2', name: 'Book 2' }], defaultBookId: '' };
-    // 生產順序：面板啟動先 sync()，擷取到來源後才 setSource()。
-    const h = await build(t, { moduleUrl, booksResult });
+test('本頁詞書優先於舊記憶與帳戶預設；手動選擇只對當前面板有效', async (t) => {
+    const booksResult = { books: [{ id: 'web', name: '網頁生詞' }, { id: 'page', name: 'Article', sourceUrl: 'https://news.example/a' },
+        { id: 'other', name: 'Other' }], defaultBookId: 'other' };
+    const h = await build(t, { booksResult });
+    h.storage.values[`bdc_capture_book_v1:${captureScopeKey(loggedIn)}:${encodeURIComponent('https://news.example/a')}`] = 'other';
     await h.ui.sync();
-    await tick();
-    h.ui.setSource({ pageUrl: 'https://news.example/a', pageTitle: 'Stocks plunge' });
-    await tick();
-    assert.equal(h.dom.captureBook.value, '', '沒有合法預設時必須停在「請選擇詞書」，不可自動挑第一本');
-    showWord(h.ui);
-    assert.equal(h.dom.captureSave.disabled, true, '沒選詞書就不得收藏');
-    h.dom.captureBook.value = 'book2';
+    assert.equal(h.dom.captureBook.value, 'web', '沒有來源時使用既有繁體網頁詞書');
+    h.ui.setSource({ pageUrl: 'https://news.example/a#comments', pageTitle: 'Article' });
+    assert.equal(h.dom.captureBook.value, 'page', '同一原文的頁面詞書優先');
+    h.dom.captureBook.value = 'other';
     for (const handler of h.dom.captureBook.listeners.get('change') || []) handler();
-    assert.equal(h.dom.captureSave.disabled, false, '明確選書後即可收藏');
-    await saveOnce(h);
-    assert.equal(h.dom.captureNotice.textContent, 'extension.captureSavedTo{"book":"Book 2"}', '成功提示要指明實際的詞書');
+    await h.ui.refreshBooks();
+    assert.equal(h.dom.captureBook.value, 'other', '本次明確改選不應被重新整理覆蓋');
+    h.ui.setSource({ pageUrl: 'https://news.example/b', pageTitle: 'Another' });
+    assert.equal(h.dom.captureBook.value, 'web', '換頁恢復網頁後備，不沿用其他頁選擇');
+    await h.ui.sync();
+    h.ui.setSource({ pageUrl: 'https://news.example/a', pageTitle: 'Article' });
+    assert.equal(h.dom.captureBook.value, 'page', '重新開啟時再次使用本頁詞書');
+});
 
-    const again = await build(t, { moduleUrl, booksResult, storage: h.storage });
-    await again.ui.sync();
-    await tick();
-    again.ui.setSource({ pageUrl: 'https://news.example/a', pageTitle: 'Stocks plunge' });
-    await tick();
-    assert.equal(again.dom.captureBook.value, 'book2', '同一頁的明確選擇必須被記住');
+test('選中目標刪除後禁止偷偷轉存；明確選擇才解除鎖定', async (t) => {
+    const h = await build(t, { booksResult: { books: [{ id: 'book', name: '网页' }, { id: 'page', name: 'Page', sourceUrl: 'https://news.example/a' }], defaultBookId: '' } });
+    await h.ui.sync();
+    h.ui.setSource({ pageUrl: 'https://news.example/a' });
+    showWord(h.ui);
+    h.client.booksResult.books = h.client.booksResult.books.filter((book) => book.id !== 'page');
+    h.ui.setTargetResolver(async () => { throw new Error('不應自動建書'); });
+    await h.ui.refreshBooks();
+    assert.equal(h.dom.captureBook.value, '');
+    assert.equal(h.dom.captureSave.disabled, true);
+    assert.equal(h.dom.captureNotice.textContent, 'extension.captureTargetMissing');
+    h.dom.captureBook.value = 'book';
+    for (const handler of h.dom.captureBook.listeners.get('change') || []) handler();
+    assert.equal(h.dom.captureSave.disabled, false);
+});
 
-    const otherPage = await build(t, { moduleUrl, booksResult, storage: h.storage });
-    await otherPage.ui.sync();
+test('首次建立後備期間重新查詞：舊保存不得把新結果加入', async (t) => {
+    const h = await build(t, { booksResult: { books: [], defaultBookId: '' } });
+    await h.ui.sync();
+    const gate = defer();
+    let current;
+    h.ui.setTargetResolver(async (_, isCurrent) => { await gate.promise; current = isCurrent(); });
+    showWord(h.ui);
+    assert.equal(h.dom.captureSave.disabled, false, '首次收藏可由解析器建立網頁詞書');
+    const saving = h.dom.captureSave.click();
     await tick();
-    otherPage.ui.setSource({ pageUrl: 'https://news.example/b', pageTitle: 'Another page' });
-    await tick();
-    assert.equal(otherPage.dom.captureBook.value, '', '換頁面不得沿用上一頁的選擇');
+    assert.equal(h.dom.captureSave.disabled, true, '等待建書期間禁止連按');
+    h.ui.clearResult();
+    showWord(h.ui, { result: { text: 'rise', meaning: '上升' } });
+    gate.resolve();
+    await saving;
+    assert.equal(current, false);
+    assert.equal(h.client.calls.enqueue, 0, '過期的首次保存不能替換新結果');
+    assert.notEqual(h.dom.captureSave.textContent, 'extension.captureAddedShort');
 });
 
 // ── 3. 待傳清單 ────────────────────────────────────────────────────────────
@@ -522,7 +546,7 @@ test('待傳清單：顯示詞書名稱，可逐筆取消，取消後清單消�
     assert.equal(h.dom.capturePending.hidden, false);
     const [item] = h.dom.capturePendingList.children;
     const label = item.children.find((child) => child.tagName === 'SPAN');
-    assert.equal(label.textContent, 'plunge · Book');
+    assert.equal(label.textContent, 'plunge · 网页');
     const actions = item.children.find((child) => child.className === 'ext-row');
     const [retryButton, cancelButton] = actions.children;
     assert.equal(retryButton.textContent, 'extension.captureRetry');
@@ -548,7 +572,7 @@ test('待傳清單：損壞記錄要顯示成損壞、只能取消不能重試�
     assert.equal(items.length, 2, '壞記錄不得被藏起來');
     const brokenItem = items[1];
     const label = brokenItem.children.find((child) => child.tagName === 'SPAN');
-    assert.equal(label.textContent, 'extension.captureInvalidPending · Book', '壞記錄要用「已損壞」文案，不可顯示 foreign 字詞');
+    assert.equal(label.textContent, 'extension.captureInvalidPending · 网页', '壞記錄要用「已損壞」文案，不可顯示 foreign 字詞');
     assert.ok(!label.textContent.includes('Foreign'));
     const status = brokenItem.children.find((child) => child.tagName === 'P');
     assert.equal(status.textContent, 'extension.captureInvalidPending');

@@ -1,0 +1,39 @@
+PASS zh-CN: export source and legacy words; import provenance; overwrite stable ID; changed/invalid source
+locator.click: Timeout 5000ms exceeded.
+Call log:
+[2m  - waiting for locator('#export-vocab-book-btn')[22m
+[2m    - locator resolved to <button disabled title="匯出生字簿" class="action-chip" id="export-vocab-book-btn" data-i18n-title="vocabulary.exportBook">…</button>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    10 × waiting for element to be visible, enabled and stable[22m
+[2m       - element is not enabled[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+    at /Users/linus/CODE/bdc-release-0.6.3-20261107/tests/vocabulary-source-transfer.cjs:31:58 {
+  log: [
+    "  - waiting for locator('#export-vocab-book-btn')",
+    '    - locator resolved to <button disabled title="匯出生字簿" class="action-chip" id="export-vocab-book-btn" data-i18n-title="vocabulary.exportBook">…</button>',
+    '  - attempting click action',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not enabled',
+    '    - retrying click action',
+    '    - waiting 20ms',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not enabled',
+    '    - retrying click action',
+    '      - waiting 100ms',
+    '    10 × waiting for element to be visible, enabled and stable',
+    '       - element is not enabled',
+    '     - retrying click action',
+    '       - waiting 500ms'
+  ],
+  name: 'TimeoutError'
+}

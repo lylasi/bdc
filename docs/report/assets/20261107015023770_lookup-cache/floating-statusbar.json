@@ -1,0 +1,14 @@
+[
+  {
+    "name": "testPlatformDetection",
+    "passed": true
+  },
+  {
+    "name": "testStatePersistence",
+    "passed": true
+  },
+  {
+    "name": "testFloatingControls",
+    "passed": true
+  }
+]

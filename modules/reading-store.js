@@ -1631,7 +1631,14 @@ export function syncVocabularyFromMemory(books, options = {}) {
             createdAt: existingBook?.createdAt || book.createdAt || timestamp,
             updatedAt: timestamp
         };
-        if (!existingBook || existingBook.name !== nextBook.name || existingBook.sourceType !== nextBook.sourceType) {
+        // 來源關聯（articleId／sourceUrl）與 shareId 也是詞書身份的一部分；
+        // 只比名稱會讓「只改來源網址」的編輯留在記憶體、沒有寫進永久層。
+        if (!existingBook
+            || existingBook.name !== nextBook.name
+            || existingBook.sourceType !== nextBook.sourceType
+            || (existingBook.articleId || '') !== (nextBook.articleId || '')
+            || (existingBook.sourceUrl || '') !== (nextBook.sourceUrl || '')
+            || (existingBook.shareId || '') !== (nextBook.shareId || '')) {
             entries.push({ entityType: 'vocabularyBook', input: nextBook, existing: existingBook });
         }
         const words = Array.isArray(book.words) ? book.words : [];

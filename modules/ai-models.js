@@ -9,6 +9,7 @@
 
 import {
     loadAIProfile,
+    getActiveAIScope,
     updateAIProfile,
     isManagedProviderId,
     isPersonalProviderId
@@ -309,8 +310,8 @@ function getPersonalDefaultSpec() {
     return spec;
 }
 
-function getManagedTaskSpecSafe(taskName) {
-    if (!isManagedUsable()) return '';
+function getManagedTaskSpecSafe(taskName, cacheOnly = false) {
+    if (!cacheOnly && !isManagedUsable()) return '';
     return getManagedTaskSpec(normalizeTaskName(taskName));
 }
 
@@ -334,14 +335,14 @@ export function resolveAITaskSpec(taskName = 'default', { settings } = {}) {
     return getManagedTaskSpecSafe(taskName);
 }
 
-export function getPreferredTaskSpec(taskNames = [], { settings, override } = {}) {
+export function getPreferredTaskSpec(taskNames = [], { settings, override, cacheOnly = false } = {}) {
     if (hasModelSpec(override)) return override;
     for (const taskName of taskNames) {
         const stored = getStoredMapping(taskName, settings);
         if (hasModelSpec(stored)) {
             const resolution = splitSpec(stringifyModelSpec(stored));
             if (resolution.providerId === 'default') {
-                const managed = getManagedTaskSpecSafe(taskName);
+                const managed = getManagedTaskSpecSafe(taskName, cacheOnly);
                 if (managed) return managed;
                 continue;
             }
@@ -351,7 +352,7 @@ export function getPreferredTaskSpec(taskNames = [], { settings, override } = {}
     const personal = getPersonalDefaultSpec();
     if (personal) return personal;
     for (const taskName of taskNames) {
-        const managed = getManagedTaskSpecSafe(taskName);
+        const managed = getManagedTaskSpecSafe(taskName, cacheOnly);
         if (managed) return managed;
     }
     return '';
@@ -425,13 +426,13 @@ export function normalizeModelSpec(spec, { task = 'default' } = {}) {
  * asynchronously by resolveAIRequestConfigAsync; this function never returns a
  * shared key it does not already have in memory.
  */
-export function resolveAIRequestConfig({ task = 'default', model, apiUrl, apiKey, provider, profile, settings } = {}) {
+export function resolveAIRequestConfig({ task = 'default', model, apiUrl, apiKey, provider, profile, settings, cacheOnly = false } = {}) {
     const canonicalTask = normalizeTaskName(task);
     const chosenSpec = hasModelSpec(model) ? model : resolveAITaskSpec(canonicalTask, { settings });
     if (!hasModelSpec(chosenSpec)) throw modelError('model_not_selected', 'no model selected');
     const split = splitSpec(chosenSpec);
     let providerId = firstNonEmptyString(provider, profile, split.providerId);
-    if (providerId === 'default') providerId = splitSpec(getManagedTaskSpecSafe(canonicalTask)).providerId;
+    if (providerId === 'default') providerId = splitSpec(getManagedTaskSpecSafe(canonicalTask, cacheOnly)).providerId;
     if (!providerId) providerId = findProviderForModel(split.model);
     if (!providerId) throw modelError('model_provider_missing', 'no provider for model', { model: split.model });
 
@@ -471,7 +472,12 @@ export function resolveAIRequestConfig({ task = 'default', model, apiUrl, apiKey
         resolvedKey = record.apiKey;
     }
     if (record.source === 'managed') {
-        if (!isManagedUsable()) {
+        const catalog = getCatalogState();
+        const scope = getActiveAIScope();
+        // Public metadata may identify an existing local answer before online
+        // verification. It must never authorise a new request or return a key.
+        const sameAccount = !scope.guest && catalog.userId === scope.userId && catalog.endpoint === scope.endpoint;
+        if ((cacheOnly && !sameAccount) || (!cacheOnly && !isManagedUsable())) {
             throw modelError(
                 getCatalogState().status === 'expired' ? 'managed_session_expired' : 'managed_login_required',
                 'managed session unavailable',
@@ -488,20 +494,21 @@ export function resolveAIRequestConfig({ task = 'default', model, apiUrl, apiKey
         provider: providerId,
         profile: providerId,
         apiUrl: record.apiUrl,
-        apiKey: resolvedKey,
+        apiKey: cacheOnly ? '' : resolvedKey,
         modelsUrl: record.modelsUrl || '',
         authMode: record.authMode || 'bearer',
         format: record.format || 'openai-chat',
         source: record.source,
         label: record.label || record.name || providerId,
         binding: record.source === 'personal' ? (record.credential ? record.credential.binding : null) : null,
-        requiresManagedCredential: record.source === 'managed' && requiresAuth
+        requiresManagedCredential: !cacheOnly && record.source === 'managed' && requiresAuth
     };
 }
 
 /** Async resolution used by every AI request: fetches a managed key on demand. */
 export async function resolveAIRequestConfigAsync(options = {}) {
-    const config = resolveAIRequestConfig(options);
+    // A cache-only resolution is never an authorisation for transport.
+    const config = resolveAIRequestConfig({ ...options, cacheOnly: false });
     if (!config.requiresManagedCredential) return config;
     const credential = await getManagedCredential(config.provider);
     const expected = {

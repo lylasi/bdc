@@ -1,0 +1,8 @@
+{
+  "source": "flows.txt",
+  "findingsCount": 3,
+  "severity": {
+    "low": 3
+  },
+  "note": "本輪結果以獨立stdout日誌為準；共享docs/report/root-audit/flows.json後被另一巡檢覆寫，未使用其內容作本輪結論。"
+}

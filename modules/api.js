@@ -1080,7 +1080,7 @@ export async function analyzeParagraph(paragraph, opts = {}) {
             const resolved = normalizeModelSpec(modelSpec);
             try {
                 const cached = await cache.getParagraphAnalysisCached(paragraph, cacheLevel, cacheModelKey(resolved), cacheOptions);
-                if (cached) return cached;
+                if (cached && !cached.failed && String(cached.chinese_translation || '').trim()) return cached;
             } catch (_) {}
         }
     }
@@ -1129,6 +1129,7 @@ export async function analyzeParagraph(paragraph, opts = {}) {
                 parsed = normalizeParagraphResponse(rawParsed, '');
             }
             if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw new Error('Schema validation failed');
+            if (!String(parsed.chinese_translation || '').trim()) throw new Error('Empty paragraph translation');
             try { await cache.setParagraphAnalysisCached(paragraph, cacheLevel, cacheModelKey(resolved), parsed, 14 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
             return parsed;
         } catch (error) {
@@ -2255,8 +2256,7 @@ export async function getWordPronunciations(word, accent, { signal, refresh = fa
 }
 
 
-/** Shared lookup boundary; configuration and transport remain in the existing AI layer. */
-export async function lookupSelection({ text = '', sentence = '', context = '', locale, signal, noCache = false, timeoutMs = 20000, model, thinking: thinkingOverride } = {}) {
+function lookupInputs({ text = '', sentence = '', context = '', locale, model, thinking: thinkingOverride } = {}, cacheOnly = false) {
     const cleanText = String(text || '').trim();
     if (!cleanText) throw Object.assign(new Error(t('errors.lookupTextRequired')), { code: 'lookup_text_required' });
     const cleanContext = String(context || '').trim();
@@ -2268,13 +2268,83 @@ export async function lookupSelection({ text = '', sentence = '', context = '', 
     const task = isPhrase ? 'articlePhraseTranslation' : (cleanSentence ? 'articleWordTranslation' : 'wordAnalysis');
     const chain = isPhrase ? ['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis']
         : (cleanSentence ? ['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'] : ['wordAnalysis']);
-    const modelSpec = getPreferredTaskSpec(chain, { settings: loadGlobalSettings(), override: model });
-    let connection;
-    try { connection = await resolveAIRequestConfigAsync({ task, model: modelSpec }); }
-    catch (error) { throw localizeAIError(error); }
+    const modelSpec = getPreferredTaskSpec(chain, { settings: loadGlobalSettings(), override: model, cacheOnly });
     const thinking = resolveThinkingLevel(task, { override: thinkingOverride }).level;
     const promptId = isPhrase ? 'article.phraseAnalysis' : (cleanSentence ? 'article.wordTooltip' : 'dictionary.wordAnalysis');
     const promptVersion = getPromptVersion(promptId);
+    return { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptId, promptVersion };
+}
+
+function lookupResult(raw, query, connection, fromCache = false) {
+    const { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, thinking, promptVersion } = query;
+    const analysis = raw?.analysis || {};
+    const meaning = String(analysis.meaning || '').trim();
+    if (!meaning || raw.failed) throw invalidLookupResponse();
+    const actual = raw.lookupModel || connection;
+    const phonetic = String(analysis.phonetic || '').trim();
+    const pos = String(analysis.pos || '').trim();
+    const role = String(analysis.role || analysis.usage || '').trim();
+    const examples = Array.isArray(analysis.examples) ? analysis.examples : [];
+    return {
+        kind: isPhrase ? 'phrase' : 'word', task, text: cleanText, word: cleanText, selection: cleanText,
+        sentence: cleanSentence, context: cleanContext, locale: effectiveLocale, scope: cacheScope,
+        provider: actual.provider, model: actual.model, thinking, promptVersion, fromCache,
+        phonetic, pos, meaning, role, usage: role, examples,
+        analysis: { phonetic, pos, meaning, role, usage: role, examples }
+    };
+}
+
+/** Read existing successful answers only; never sync configuration or fetch a key. */
+export async function getCachedLookupSelection(input = {}) {
+    try {
+        const query = lookupInputs(input, true);
+        const { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptVersion } = query;
+        const opts = { strict: true };
+        const cacheOptions = { locale: effectiveLocale, promptVersion, thinking, structuredLookup: 1 };
+        const fallbackTasks = isPhrase ? ['articlePhraseTranslationFallback', 'wordAnalysis'] : ['articleWordTranslationFallback', 'wordAnalysis'];
+        const candidates = hasModelSpec(input.model) || (!isPhrase && !cleanSentence) ? [modelSpec]
+            : buildModelCandidates(modelSpec, getPreferredTaskSpec(fallbackTasks, { cacheOnly: true }));
+        const contextHash = isPhrase || cleanContext ? await cache.makeKey('ctx', cleanContext) : '';
+        if (!isPhrase && cleanContext) cacheOptions.contextHash = contextHash;
+        Object.assign(cacheOptions, cacheScope);
+        for (const candidate of candidates) {
+            let connection;
+            try { connection = resolveAIRequestConfig({ task, model: candidate, cacheOnly: true }); }
+            catch (_) { continue; }
+            const modelKey = analysisCacheModelKey(connection, opts);
+            let raw;
+            if (isPhrase) raw = await cache.getSelectionAnalysisCached(cleanText, cleanSentence || cleanText, contextHash, modelKey, cacheOptions);
+            else if (cleanSentence) raw = await cache.getWordAnalysisCached(cleanText, cleanSentence, modelKey, cacheOptions);
+            else raw = await cache.getCached('dictionaryWordAnalysis', {
+                word: cleanText, locale: effectiveLocale, promptVersion, thinking, ...cacheScope, modelKey, schema: 'structured-v1'
+            });
+            if (typeof raw?.analysis?.meaning === 'string' && raw.analysis.meaning.trim() && !raw.failed) {
+                const currentScope = getActiveAIScope();
+                if (input.signal?.aborted || (currentScope.endpoint || '') !== cacheScope.endpoint || (currentScope.userId || '') !== cacheScope.userId) return null;
+                return lookupResult(raw, query, connection, true);
+            }
+        }
+    } catch (_) {}
+    return null;
+}
+
+/** Shared lookup boundary; configuration and transport remain in the existing AI layer. */
+export async function lookupSelection(input = {}) {
+    const { signal, noCache = false, timeoutMs = 20000, model } = input;
+    const query = lookupInputs(input);
+    if (!noCache) {
+        const cached = await getCachedLookupSelection(input);
+        signal?.throwIfAborted();
+        const currentScope = getActiveAIScope();
+        if ((currentScope.endpoint || '') !== query.cacheScope.endpoint || (currentScope.userId || '') !== query.cacheScope.userId) {
+            throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
+        }
+        if (cached) return cached;
+    }
+    const { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptId, promptVersion } = query;
+    let connection;
+    try { connection = await resolveAIRequestConfigAsync({ task, model: modelSpec }); }
+    catch (error) { throw localizeAIError(error); }
     const opts = { timeoutMs, signal, noCache, locale: effectiveLocale, context: cleanContext, cacheScope, strict: true, model, thinking };
     let raw;
     if (isPhrase) {
@@ -2299,19 +2369,5 @@ export async function lookupSelection({ text = '', sentence = '', context = '', 
             await cache.setCached('dictionaryWordAnalysis', cachePayload, raw, 30 * 24 * 60 * 60 * 1000);
         }
     }
-    const analysis = raw?.analysis || {};
-    const meaning = String(analysis.meaning || '').trim();
-    if (!meaning || raw.failed) throw invalidLookupResponse();
-    const actual = raw.lookupModel || connection;
-    const phonetic = String(analysis.phonetic || '').trim();
-    const pos = String(analysis.pos || '').trim();
-    const role = String(analysis.role || analysis.usage || '').trim();
-    const examples = Array.isArray(analysis.examples) ? analysis.examples : [];
-    return {
-        kind: isPhrase ? 'phrase' : 'word', task, text: cleanText, word: cleanText, selection: cleanText,
-        sentence: cleanSentence, context: cleanContext, locale: effectiveLocale, scope: cacheScope,
-        provider: actual.provider, model: actual.model, thinking, promptVersion,
-        phonetic, pos, meaning, role, usage: role, examples,
-        analysis: { phonetic, pos, meaning, role, usage: role, examples }
-    };
+    return lookupResult(raw, query, connection);
 }

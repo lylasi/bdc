@@ -59,7 +59,7 @@ import {
 } from './ai-models.js';
 import { isThinkingLevel } from './ai-thinking.js';
 import { EXTENSION_AI_TASKS, getExtensionAIChoice, saveExtensionAIChoice } from './extension-ai-preferences.js';
-import { lookupSelection, resetThinkingFallbackMemory, extractPageArticle, analyzeParagraph } from './api.js';
+import { lookupSelection, getCachedLookupSelection, resetThinkingFallbackMemory, extractPageArticle, analyzeParagraph, streamAIResponse } from './api.js';
 import { sanitizeAISettings } from './ai-settings-sanitize.js';
 import { getLocale, t } from './i18n.js';
 
@@ -336,7 +336,8 @@ function taskChain(task) {
         articleWordTranslation: ['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'],
         articlePhraseTranslation: ['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis'],
         articleCleanup: ['articleCleanup', 'articleAnalysis', 'wordAnalysis'],
-        articleParagraphTranslation: ['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis']
+        articleParagraphTranslation: ['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis'],
+        assistant: ['assistant', 'articleAnalysis', 'wordAnalysis']
     })[task] || [];
 }
 
@@ -498,6 +499,20 @@ export function getExtensionReadiness({ text = '', sentence = '', context = '' }
  * Execute contextual lookup in the trusted extension context while guarding
  * against account switches / logout / endpoint changes during the in-flight request.
  */
+export async function readExtensionLookupCache(input = {}) {
+    const session = captureAuthSession();
+    const scopeKey = getActiveAIScope().key;
+    if (!session.loggedIn || input.noCache) return null;
+    input.signal?.throwIfAborted();
+    const choice = getExtensionAIChoice(getExtensionLookupTask(input));
+    const result = await getCachedLookupSelection({ ...input, locale: input.locale || getLocale(), model: choice.model, thinking: choice.thinking });
+    input.signal?.throwIfAborted();
+    if (!isAuthSessionCurrent(session) || getActiveAIScope().key !== scopeKey) {
+        throw Object.assign(new Error(t('extension.staleLookupDiscarded')), { code: 'stale_session' });
+    }
+    return result;
+}
+
 export async function runExtensionLookup({
     text = '',
     sentence = '',
@@ -582,6 +597,36 @@ export async function runExtensionArticleTask({ page, article, analyze = false, 
                 paragraph_analysis: paragraphs, word_alignment: [], detailed_analysis: [], updatedAt: new Date().toISOString() };
         }
         assertCurrent();
+        return result;
+    } finally {
+        signal?.removeEventListener('abort', abort);
+        window.removeEventListener(AUTH_EVENT, authChanged);
+    }
+}
+
+// Freeze the selected model/thinking before sending, and gate every streamed
+// chunk on the captured account, just as one-shot extension tasks do.
+export async function runExtensionAssistant({ messages, model, thinking, signal, onDelta, onReasoning } = {}) {
+    const session = captureAuthSession();
+    const scope = getActiveAIScope().key;
+    if (!session.loggedIn) throw Object.assign(new Error('unauthorized'), { code: 'unauthorized' });
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    const current = () => isAuthSessionCurrent(session) && getActiveAIScope().key === scope;
+    const authChanged = () => { if (!current()) abort(); };
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) abort();
+    window.addEventListener(AUTH_EVENT, authChanged);
+    try {
+        controller.signal.throwIfAborted();
+        const settings = getExtensionAITaskSettings('assistant');
+        const result = await streamAIResponse({ messages, model: model ?? settings.model,
+            thinking: thinking ?? settings.thinking, taskType: 'assistant', maxTokens: 4096,
+            signal: controller.signal,
+            onDelta: (text) => { if (current() && !controller.signal.aborted) onDelta?.(text); },
+            onReasoning: (text) => { if (current() && !controller.signal.aborted) onReasoning?.(text); } });
+        controller.signal.throwIfAborted();
+        if (!current()) throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
         return result;
     } finally {
         signal?.removeEventListener('abort', abort);

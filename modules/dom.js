@@ -175,6 +175,7 @@ export const dimmingIntensity = document.getElementById('dimming-intensity');
 export const articleSourceBar = document.getElementById('article-source-bar');
 export const articleSourceLabel = document.getElementById('article-source-label');
 export const articleSourceLink = document.getElementById('article-source-link');
+export const articleBookBtn = document.getElementById('article-book-btn');
 export const articleReadingRecordsBtn = document.getElementById('article-reading-records-btn');
 export const articleReadingCount = document.getElementById('article-reading-count');
 export const articleReadingMarksToggle = document.getElementById('article-reading-marks-toggle');

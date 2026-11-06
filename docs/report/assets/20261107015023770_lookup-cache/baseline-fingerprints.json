@@ -1,0 +1,17 @@
+{
+  "extension/lookup.js": "fbbcefbb313419d761c13deaaf21575b73715eec4283cee65f0ea32a6e2463ad",
+  "extension/lookup.html": "f7c814bbb40336a9dbe7a1a4fe1a6b371bc5c7792dcf0020035e3bddea409249",
+  "extension/lookup.css": "4c65547bafe08560568dea04c690c75d1b2f141a1836dbc1ccc513c1230bfc92",
+  "extension/capture-ui.js": "c041f09a671de3e094fe90bc07e08ae1750cec8a5c29821a1f3aae65ee3b1b41",
+  "extension/inline-panel.js": "2375aca5b9e9889a66e0fccd7b2f5ffa573c1ab262fb649ae22047377fd5f590",
+  "extension/manifest.json": "2859219d1237b2e9317d67f98d0e73ec43b883cca899685127c024c887f5e046",
+  "modules/api.js": "369c47510b0a334f7d43108b3fc15acb9e6470a0f36af70a4dce0c39f5c91336",
+  "modules/ai-models.js": "03d3bb24110d67442fd913d4988d23ec270c689558f1febaa6f8f9f4dddee312",
+  "modules/extension-ai-runtime.js": "c6337b101060a83a363f477ca5ebd5ac49ce05de852393d3b986f800584c559d",
+  "locales/zh-CN.js": "5824ae59faedc32f0a55ccc8c0a2ab28e1626e39a44ddb4a976d045ca198f114",
+  "locales/zh-HK.js": "5c9321bd6f9f95ff85ba32d9ce352b2c38bd8aa8bd3ac3dc2214468b65d3c6cb",
+  "scripts/package-extension.mjs": "273cabbba7ca88845bcb430bde9b0dc7ba296e65608605e10a345dd0c6d9e2fe",
+  "index.html": "8626dd0f6ce835e6565ba1680e80a9011fdd9b7604ddc656b36379a3d7c620a3",
+  "README.md": "78bb75c498b1a18cff8f1b4a7f73f446a186e0d85437e37bde5c9eaa95d63d46",
+  "extension/page-lookup.js": "8d85258fcb133383262fd563d6912c54191bd8280df11410396a4b219e69562c"
+}

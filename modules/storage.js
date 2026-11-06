@@ -3,6 +3,7 @@ import * as readingStore from './reading-store.js';
 import * as articleStore from './article-store.js';
 import { touch as syncTouch } from './sync-signals.js';
 import { t } from './i18n.js';
+import { publicSourceUrl } from '../shared/vocabulary-source.mjs';
 
 // =================================
 // 本地存儲管理 (LocalStorage)
@@ -456,6 +457,8 @@ export function getOrCreateArticleWordbook(articleMetaInput, options = {}) {
     }
 
     articleMeta = saveArticleMeta(articleMeta);
+    // 只把可對外的 http(s) 來源寫進詞書；舊資料的 javascript:／帳密網址不得帶入。
+    const safeSourceUrl = publicSourceUrl(articleMeta.sourceUrl);
 
     // 2. 沿用已關聯的頁面詞書；舊文章仍以 articleMeta.id 建立詞書。
     const wordbookId = articleMeta.id;
@@ -470,6 +473,7 @@ export function getOrCreateArticleWordbook(articleMetaInput, options = {}) {
             ...existingBook,
             sourceType: existingBook.sourceType || 'article',
             articleId: existingBook.articleId || articleMeta.id,
+            sourceUrl: existingBook.sourceUrl || safeSourceUrl,
             name: existingBook.name || articleMeta.title,
             createdAt: existingBook.createdAt || nowIso
         };
@@ -480,6 +484,7 @@ export function getOrCreateArticleWordbook(articleMetaInput, options = {}) {
             words: [],
             sourceType: 'article',
             articleId: articleMeta.id,
+            sourceUrl: safeSourceUrl,
             createdAt: nowIso
         };
     } else {

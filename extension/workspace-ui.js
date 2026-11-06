@@ -4,6 +4,7 @@ import { runExtensionArticleTask } from './modules/extension-ai-runtime.js';
 import { getAIErrorTranslationKey } from './modules/api.js';
 import { t } from './modules/i18n.js';
 import { pageUrlKey } from './shared/page-protocol.mjs';
+import { captureScopeKey } from './shared/capture-client.mjs';
 
 export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     const client = getExtensionWorkspaceClient();
@@ -15,6 +16,7 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     let epoch = 0;
     let message = null;
     let savedArticleId = '';
+    let ready = false;
     const listeners = new Set();
     const hasDraft = () => (!!preview && !currentJob) || (!dom.bookForm.hidden && !!(dom.bookName.value.trim() || dom.bookMakeDefault.checked || !dom.bookLinkPage.checked));
     const errorKeys = { capture_target_missing: 'extension.captureTargetMissing', capture_request_mismatch: 'extension.captureRequestMismatch',
@@ -23,16 +25,18 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
         page_extraction_truncated: 'extension.pageExtractionTruncated', invalid_article: 'extension.pageArticleEmpty',
         page_analysis_failed: 'extension.pageAnalysisFailed', page_unavailable: 'extension.inlineUnavailable', stale_session: 'extension.captureLoginRequired',
         page_pending_conflict: 'extension.pagePendingConflict',
-        capture_invalid_input: 'extension.captureInvalidInput' };
+        capture_invalid_input: 'extension.captureInvalidInput', capture_outbox_full: 'extension.captureOutboxFull' };
     function render() {
-        for (const el of [dom.createPageBook, dom.createBook, dom.createDefaultBook, dom.defaultBook, dom.articleExtract]) el.disabled = busy || !state.loggedIn;
+        for (const el of [dom.createPageBook, dom.createBook, dom.createDefaultBook, dom.defaultBook, dom.articleExtract]) el.disabled = busy || !ready || !state.loggedIn;
         dom.createDefaultBook.hidden = !!state.defaultBookId;
         const pageBook = state.source?.pageUrl ? state.books.find((book) => pageUrlKey(book.sourceUrl) === pageUrlKey(state.source.pageUrl)) : null;
         dom.createPageBook.hidden = !!pageBook && state.selectedBookId === pageBook.id;
         dom.createPageBook.textContent = t(pageBook ? 'extension.bookUsePage' : 'extension.bookCreatePage');
         dom.defaultBook.disabled ||= !state.selectedBookId || state.selectedBookId === state.defaultBookId;
         dom.defaultBook.textContent = t(state.selectedBookId && state.selectedBookId === state.defaultBookId ? 'extension.bookIsDefault' : 'extension.bookSetDefault');
-        dom.articleSave.disabled = busy || !preview || !!currentJob;
+        dom.articleSave.disabled = busy || !ready || !preview || !!currentJob;
+        dom.articleSave.textContent = t(dom.articleAnalyze.checked ? 'extension.pageArticleSave' : 'extension.pageArticleSaveOnly');
+        dom.bookSubmit.disabled = busy || !ready || !state.loggedIn;
         dom.articleExtract.disabled ||= !!currentJob;
         dom.articleCancel.hidden = !busy;
         for (const input of [dom.articleTitle, dom.articleBody, dom.articleAnalyze]) input.disabled = busy || !!currentJob;
@@ -96,9 +100,10 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
         }
         dom.workspacePendingBox.hidden = pending.length === 0;
     }
-    async function applyReceipt(job, receipt) {
+    async function applyReceipt(job, receipt, select = true) {
         if (job.type === 'book') {
-            await captureUI.selectBook(receipt.bookId);
+            if (select) await captureUI.selectBook(receipt.bookId);
+            else await captureUI.refreshBooks();
             notice('extension.bookCreated', { name: state.books.find((book) => book.id === receipt.bookId)?.name || job.payload.name });
             dom.bookForm.hidden = true;
         } else {
@@ -111,7 +116,7 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
         render();
     }
     async function create(kind) {
-        if (busy || !state.loggedIn) return;
+        if (busy || !ready || !state.loggedIn) return;
         const session = captureAuthSession();
         const version = epoch;
         busy = true; render();
@@ -134,8 +139,42 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
         } catch (error) { if (isAuthSessionCurrent(session) && version === epoch) showError(error); }
         finally { if (version === epoch) { busy = false; render(); await showPending(); } }
     }
+    async function ensureCaptureBook(session, isCurrent) {
+        const ensure = async () => {
+            if (!isCurrent()) return;
+            if (busy || !ready || !state.loggedIn) throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
+            // Refresh inside the lock: another lookup window may have just
+            // created the shared collection, or a page book may now exist.
+            const loaded = await captureUI.refreshBooks({ strict: true });
+            if (!isCurrent()) return;
+            if (!loaded) throw Object.assign(new Error('capture_revision_conflict'), { code: 'capture_revision_conflict' });
+            if (state.targetMissing) throw Object.assign(new Error('capture_target_missing'), { code: 'capture_target_missing' });
+            if (state.selectedBookId) return;
+            const version = epoch;
+            busy = true; render();
+            try {
+                // Reuse a durable create after a lost reply instead of creating
+                // another collection on each click.
+                const pending = await client.pending(session);
+                if (!isCurrent()) return;
+                const job = pending.find((item) => !item.invalid && item.type === 'book' && !item.payload.sourceUrl
+                    && ['网页', '網頁', '网页生词', '網頁生詞'].includes(item.payload.name?.trim()))
+                    || await client.enqueue('book', { name: t('extension.webBookName'), kind: 'custom', sourceUrl: '', makeDefault: false }, session);
+                if (!isCurrent()) return;
+                const receipt = await client.send(job, session);
+                if (!isCurrent()) return;
+                await applyReceipt(job, receipt);
+            } finally {
+                if (version === epoch) { busy = false; render(); await showPending(); }
+            }
+        };
+        // Extension documents share an origin, so concurrent first saves use
+        // the same collection without needing a new server endpoint.
+        if (globalThis.navigator?.locks) return navigator.locks.request('bdc-web-book:' + captureScopeKey(session), ensure);
+        return ensure();
+    }
     async function extract() {
-        if (busy || !state.loggedIn) return;
+        if (busy || !ready || !state.loggedIn) return;
         const session = captureAuthSession(); const version = epoch;
         busy = true; controller = new AbortController(); notice('extension.pageExtracting');
         const signal = controller.signal;
@@ -170,12 +209,13 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
             captureUI.setSource({ pageUrl: page.pageUrl, pageTitle: page.pageTitle });
             preview = result; currentJob = null; savedArticleId = '';
             dom.articleTitle.value = result.title; dom.articleBody.value = result.body;
+            dom.articleAnalyze.checked = true;
             dom.articlePreview.hidden = false; notice(deferredLookup ? 'extension.pagePreviewSyncDeferred' : 'extension.pagePreviewReady');
         } catch (error) { if (version === epoch && isAuthSessionCurrent(session)) showError(error); }
         finally { if (version === epoch) { busy = false; controller = null; render(); } }
     }
     async function saveArticle() {
-        if (busy || !preview) return;
+        if (busy || !ready || !state.loggedIn || !preview) return;
         const session = captureAuthSession(); const version = epoch;
         busy = true; controller = new AbortController(); notice('extension.pageSaving');
         try {
@@ -215,15 +255,15 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     dom.articleExtract.addEventListener('click', extract);
     dom.articleSave.addEventListener('click', saveArticle);
     dom.articleCancel.addEventListener('click', () => controller?.abort());
-    dom.articleOpen.addEventListener('click', async () => {
+    async function openArticle() {
+        if (!savedArticleId) return;
         try {
-            const stored = await chrome.storage.local.get('bdc_extension_app_url');
-            const url = new URL(dom.appUrl.value.trim() || stored.bdc_extension_app_url || 'https://bdc.a4a4.qzz.io/');
-            if (!/^https?:$/.test(url.protocol)) throw new Error('invalid_url');
-            url.searchParams.delete('module'); url.searchParams.delete('article'); url.hash = 'a/' + encodeURIComponent(savedArticleId);
-            await chrome.tabs.create({ url: url.href });
+            const response = await chrome.runtime.sendMessage({ type: 'BDC_OPEN_SITE', target: 'article', id: savedArticleId,
+                replace: true, ...(ticket ? { ticket } : {}) });
+            if (!response?.ok) throw new Error('invalid_url');
         } catch (_) { notice('extension.pageAppUrlInvalid', {}, true); }
-    });
+    }
+    dom.articleOpen.addEventListener('click', openArticle);
     dom.appUrl.addEventListener('change', () => chrome.storage.local.set({ bdc_extension_app_url: dom.appUrl.value.trim() }));
     chrome.storage.local.get('bdc_extension_app_url').then((value) => { dom.appUrl.value = value.bdc_extension_app_url || 'https://bdc.a4a4.qzz.io/'; });
     chrome.storage.onChanged.addListener((changes, area) => {
@@ -239,7 +279,7 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     window.addEventListener(AUTH_EVENT, () => {
         epoch += 1; controller?.abort(); controller = null; busy = false; preview = null; currentJob = null; savedArticleId = '';
         dom.articleTitle.value = ''; dom.articleBody.value = ''; dom.bookName.value = '';
-        dom.bookMakeDefault.checked = false; dom.bookLinkPage.checked = true; dom.articleAnalyze.checked = false;
+        dom.bookMakeDefault.checked = false; dom.bookLinkPage.checked = true; dom.articleAnalyze.checked = true;
         dom.articlePreview.hidden = true; dom.bookForm.hidden = true; message = null; render();
         syncWorkspace().catch(showError);
     });
@@ -248,11 +288,22 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
         if (session.loggedIn) {
             const results = await client.retry(session);
             if (!isAuthSessionCurrent(session)) return;
-            for (const result of results) if (result.receipt) await applyReceipt(result.job, result.receipt);
+            for (const result of results) if (result.receipt) await applyReceipt(result.job, result.receipt, false);
         }
         await showPending(); render();
     }
     return { render, sync: syncWorkspace,
+        setReady(value, error = null) {
+            ready = value;
+            captureUI.setTargetResolver(value ? ensureCaptureBook : null);
+            if (error) showError(error);
+            render();
+        },
+        async importPage() {
+            // The context-menu shortcut prepares an editable preview only.
+            // Analysis and writes require the separate confirmation button.
+            await extract();
+        },
         createPageBook: () => create('page'),
         subscribe(callback) { listeners.add(callback); render(); return () => listeners.delete(callback); },
         discardDraft() {

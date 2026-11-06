@@ -33,7 +33,9 @@ export function createCaptureUI(dom) {
     let busy = false;
     let activeSave = null;
     let loadVersion = 0;
-    let choiceVersion = 0;
+    let manualBookId = '';
+    let targetMissing = false;
+    let resolveTarget = null;
     let sourceKey = '';
     let lastAttempt = null;
     let savedKey = '';
@@ -43,7 +45,9 @@ export function createCaptureUI(dom) {
     const pendingErrors = new Map();
 
     const currentKey = () => `${displayVersion}:${dom.captureBook.value}`;
-    const choiceKey = (session) => `bdc_capture_book_v1:${captureScopeKey(session)}:${encodeURIComponent(source?.pageUrl || '__manual__')}`;
+    // Recognise earlier web collections in either locale without renaming them.
+    const webBook = () => books.find((book) => !book.sourceUrl && ['网页', '網頁', '网页生词', '網頁生詞'].includes(book.name.trim()));
+    const automaticBook = () => (source?.pageUrl && books.find((book) => pageUrlKey(book.sourceUrl) === pageUrlKey(source.pageUrl))) || webBook();
     function setNotice(key, kind = 'info', params = {}) {
         notice = key ? { key, kind, params } : null;
         render();
@@ -54,15 +58,16 @@ export function createCaptureUI(dom) {
     function render() {
         const session = captureAuthSession();
         const saved = !!displayed && savedKey === currentKey();
-        dom.captureSave.disabled = busy || saved || !session.loggedIn || !displayed || !dom.captureBook.value;
+        dom.captureSave.disabled = busy || saved || !session.loggedIn || !displayed || (!dom.captureBook.value && (!resolveTarget || targetMissing));
         dom.captureSave.textContent = t(busy ? 'extension.captureAddingShort' : saved ? 'extension.captureAddedShort' : 'extension.captureAddShort');
-        dom.captureSave.title = t(busy ? 'extension.captureSaving' : saved ? 'extension.captureSaved' : 'extension.captureSave');
-        dom.captureSave.setAttribute('aria-label', dom.captureSave.title);
+        dom.captureSave.setAttribute('aria-label', t(busy ? 'extension.captureSaving' : saved ? 'extension.captureSaved' : 'extension.captureSave'));
+        dom.captureSave.title = t('extension.captureDestination', { book: books.find((book) => book.id === dom.captureBook.value)?.name || t('extension.webBookName') });
+        dom.captureBook.disabled = busy;
         dom.captureRefresh.disabled = !session.loggedIn;
         dom.captureNotice.hidden = !notice;
         dom.captureNotice.textContent = notice ? t(notice.key, notice.params) : '';
         dom.captureNotice.classList.toggle('ext-notice-error', notice?.kind === 'error');
-        dom.captureNotice.classList.toggle('ext-capture-success', saved && ['extension.captureSaved', 'extension.captureSavedTo'].includes(notice?.key));
+        dom.captureNotice.classList.toggle('ext-notice-success', saved && ['extension.captureSavedTo', 'extension.captureSaved'].includes(notice?.key));
         dom.capturePending.hidden = pending.length === 0;
         dom.capturePendingSummary.textContent = t('extension.capturePendingCount', { count: pending.length });
         dom.capturePendingList.replaceChildren();
@@ -105,9 +110,10 @@ export function createCaptureUI(dom) {
             link.textContent = source.pageTitle || t('extension.captureOpenSource');
             dom.captureSource.appendChild(link);
         } else dom.captureSource.textContent = t('extension.captureManualSource');
-        if (dom.captureHint) dom.captureHint.textContent = t(displayed ? (dom.captureBook.value ? 'extension.captureReadyHint' : 'extension.captureChooseToSave') : 'extension.captureHint');
+        if (dom.captureHint) dom.captureHint.textContent = t(displayed ? (dom.captureBook.value ? 'extension.captureReadyHint'
+            : resolveTarget && !targetMissing ? 'extension.bookAutoWeb' : 'extension.captureChooseToSave') : 'extension.captureHint');
         const current = { books, defaultBookId, source, selectedBookId: dom.captureBook.value, loggedIn: session.loggedIn,
-            hasResult: !!displayed, busy, displayVersion };
+            hasResult: !!displayed, busy, displayVersion, targetMissing };
         for (const listener of listeners) listener(current);
     }
     async function updatePending(session = captureAuthSession()) {
@@ -117,17 +123,15 @@ export function createCaptureUI(dom) {
         render();
     }
     async function restoreChoice(session = captureAuthSession(), useDefault = false) {
-        const version = ++choiceVersion;
-        const key = choiceKey(session);
-        const previous = (await storage?.get(key))?.[key];
-        if (version !== choiceVersion || !isAuthSessionCurrent(session)) return;
-        const pageBookId = source?.pageUrl ? books.find((book) => pageUrlKey(book.sourceUrl) === pageUrlKey(source.pageUrl))?.id : '';
-        const candidates = [previous, !useDefault && dom.captureBook.value, pageBookId, defaultBookId];
-        const selected = candidates.find((id) => id && books.some((book) => book.id === id)) || '';
+        if (!isAuthSessionCurrent(session)) return;
+        if (useDefault) { manualBookId = ''; targetMissing = false; }
+        const previous = manualBookId || dom.captureBook.value;
+        if (!useDefault && previous && !books.some((book) => book.id === previous)) targetMissing = true;
+        const selected = targetMissing ? '' : manualBookId || automaticBook()?.id || '';
         dom.captureBook.replaceChildren();
         const placeholder = document.createElement('option');
         placeholder.value = '';
-        placeholder.textContent = t(books.length ? 'extension.captureChooseBook' : 'extension.captureNoBooks');
+        placeholder.textContent = t(targetMissing ? 'extension.captureChooseBook' : automaticBook() ? 'extension.bookAutomatic' : 'extension.bookAutoWeb');
         dom.captureBook.appendChild(placeholder);
         for (const book of books) {
             const option = document.createElement('option');
@@ -136,17 +140,15 @@ export function createCaptureUI(dom) {
             dom.captureBook.appendChild(option);
         }
         dom.captureBook.value = books.some((book) => book.id === selected) ? selected : '';
-        if (['extension.captureSaved', 'extension.captureSavedTo'].includes(notice?.key) && savedKey !== currentKey()) notice = null;
-        if (previous && !selected && books.length) setNotice('extension.captureTargetMissing', 'error');
-        else if (selected && notice?.key === 'extension.captureTargetMissing') notice = null;
+        if (targetMissing) setNotice('extension.captureTargetMissing', 'error');
         render();
     }
-    async function loadBooks(session) {
+    async function loadBooks(session, { strict = false } = {}) {
         const version = ++loadVersion;
         const cacheKey = `bdc_capture_books_v1:${captureScopeKey(session)}`;
         const cached = (await storage?.get(cacheKey))?.[cacheKey];
         if (version !== loadVersion || !isAuthSessionCurrent(session)) return;
-        if (Array.isArray(cached?.books)) {
+        if (!books.length && !manualBookId && Array.isArray(cached?.books)) {
             books = cached.books;
             defaultBookId = cached.selectionPolicy === 'explicit-v1' ? (cached.defaultBookId || '') : '';
             await restoreChoice(session);
@@ -159,13 +161,14 @@ export function createCaptureUI(dom) {
             await storage?.set({ [cacheKey]: { ...result, selectionPolicy: 'explicit-v1' } }).catch(() => {});
             if (version !== loadVersion || !isAuthSessionCurrent(session)) return;
             await restoreChoice(session);
-            // The empty select and create action already explain the empty
-            // state. Keep notices for errors and pending work, not duplicates.
             if (notice?.key === 'extension.captureNoBooks' || notice?.key === 'extension.captureBooksOffline') setNotice(null);
+            return true;
         } catch (error) {
             if (!isAuthSessionCurrent(session) || version !== loadVersion) return;
             if (books.length && (!error.status || error.status >= 500)) setNotice('extension.captureBooksOffline');
             else showError(error);
+            if (strict) throw error;
+            return false;
         }
     }
     async function retryOne(operation) {
@@ -195,17 +198,23 @@ export function createCaptureUI(dom) {
         if (results.some((result) => result.error)) showError({ code: results.find((result) => result.error).error }, true);
     }
     async function save(expectedVersion = displayVersion) {
-        if (busy || !displayed || !dom.captureBook.value || expectedVersion !== displayVersion) return;
+        if (busy || !displayed || targetMissing || (!dom.captureBook.value && !resolveTarget) || expectedVersion !== displayVersion) return;
         const session = captureAuthSession();
-        const key = currentKey();
+        if (!session.loggedIn) return;
         const snapshot = displayed;
         const attempt = Symbol('save');
-        const bookName = books.find((book) => book.id === dom.captureBook.value)?.name || dom.captureBook.value;
-        let operation = lastAttempt?.displayKey === key ? lastAttempt.operation : null;
+        let operation = null;
         activeSave = attempt;
         busy = true;
         setNotice(null);
         try {
+            const isCurrent = () => isAuthSessionCurrent(session) && activeSave === attempt && expectedVersion === displayVersion && displayed === snapshot;
+            if (!dom.captureBook.value) await resolveTarget(session, isCurrent);
+            if (!isCurrent()) return;
+            if (!dom.captureBook.value || targetMissing) throw Object.assign(new Error('capture_target_missing'), { code: 'capture_target_missing' });
+            const key = currentKey();
+            const bookName = books.find((book) => book.id === dom.captureBook.value)?.name || dom.captureBook.value;
+            operation = lastAttempt?.displayKey === key ? lastAttempt.operation : null;
             if (!operation) {
                 operation = await client.enqueue({
                     bookId: dom.captureBook.value,
@@ -240,9 +249,10 @@ export function createCaptureUI(dom) {
     async function sync() {
         const session = captureAuthSession();
         loadVersion += 1;
-        choiceVersion += 1;
         books = [];
         defaultBookId = '';
+        manualBookId = '';
+        targetMissing = false;
         pending = [];
         pendingErrors.clear();
         clearResult();
@@ -287,14 +297,12 @@ export function createCaptureUI(dom) {
         Promise.allSettled([loadBooks(session), retryAll(session)]).then(() => updatePending()).catch(showError);
     });
     dom.captureBook.addEventListener('change', () => {
-        choiceVersion += 1;
+        manualBookId = dom.captureBook.value;
+        targetMissing = false;
         savedKey = '';
         lastAttempt = null;
-        if (['extension.captureSaved', 'extension.captureSavedTo'].includes(notice?.key)) notice = null;
-        if (dom.captureBook.value && notice?.key === 'extension.captureTargetMissing') notice = null;
-        const session = captureAuthSession();
-        if (session.loggedIn && dom.captureBook.value) storage?.set({ [choiceKey(session)]: dom.captureBook.value }).catch(showError);
-        render();
+        setNotice(null);
+        restoreChoice().catch(showError);
     });
     window.addEventListener('online', () => retryAll().catch(showError));
     globalThis.chrome?.storage?.onChanged?.addListener((changes, area) => {
@@ -304,13 +312,16 @@ export function createCaptureUI(dom) {
         sync, setSource, clearResult,
         subscribe(callback) { listeners.add(callback); render(); return () => listeners.delete(callback); },
         getDisplayVersion() { return displayVersion; },
+        setTargetResolver(callback) { resolveTarget = callback; render(); },
         saveCurrent(expectedVersion) { return save(expectedVersion); },
-        refreshBooks() { return loadBooks(captureAuthSession()); },
+        refreshBooks(options) { return loadBooks(captureAuthSession(), options); },
         async selectBook(id) {
             const session = captureAuthSession();
             if (!isAuthSessionCurrent(session)) return;
-            await storage?.set({ [choiceKey(session)]: id });
-            if (!isAuthSessionCurrent(session)) return;
+            manualBookId = id;
+            targetMissing = false;
+            savedKey = '';
+            lastAttempt = null;
             await loadBooks(session);
             await restoreChoice(session);
         },

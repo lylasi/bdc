@@ -1,12 +1,13 @@
 {
     "manifest_version": 3,
     "name": "__MSG_extensionName__",
-    "version": "0.5.1",
+    "version": "0.6.3",
     "description": "__MSG_extensionDescription__",
     "permissions": [
         "storage",
         "activeTab",
-        "scripting"
+        "scripting",
+        "contextMenus"
     ],
     "host_permissions": [
         "http://*/*",
@@ -47,6 +48,8 @@
                 "capture-ui.js",
                 "workspace-ui.js",
                 "inline-panel.js",
+                "assistant-ui.js",
+                "icons.js",
                 "modules/*",
                 "locales/*",
                 "shared/*",

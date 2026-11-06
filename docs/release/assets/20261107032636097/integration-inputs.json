@@ -1,0 +1,452 @@
+{
+  "source_head": "5b20535",
+  "remote_head": "3d733b1725b2fc215d6b5caa9608f826e07e5981",
+  "approved_zip_sha256": "e2e5845e5bdbbf81f66e4703adb28f2cfa480d5eba8ea96b6afb4dd840dea58d",
+  "files": [
+    {
+      "file": "README.md",
+      "source_sha256": "40efa1253cf745a0d3e3a56515751746be32de08c282ac92e9ba2bb8d4503967",
+      "approved_sha256": "40efa1253cf745a0d3e3a56515751746be32de08c282ac92e9ba2bb8d4503967",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "40efa1253cf745a0d3e3a56515751746be32de08c282ac92e9ba2bb8d4503967"
+    },
+    {
+      "file": "extension/ai-controls.js",
+      "source_sha256": "81b75528e7bdc787865a8164303aef1fa6ee3f2e99239a39904390b01ca75e2f",
+      "approved_sha256": "81b75528e7bdc787865a8164303aef1fa6ee3f2e99239a39904390b01ca75e2f",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "81b75528e7bdc787865a8164303aef1fa6ee3f2e99239a39904390b01ca75e2f"
+    },
+    {
+      "file": "extension/background.js",
+      "source_sha256": "3bcdca6306f62719beca253b6e7763cda9eab5cf54aa938d25377765fa770958",
+      "approved_sha256": "3bcdca6306f62719beca253b6e7763cda9eab5cf54aa938d25377765fa770958",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "3bcdca6306f62719beca253b6e7763cda9eab5cf54aa938d25377765fa770958"
+    },
+    {
+      "file": "extension/capture-ui.js",
+      "source_sha256": "1a8c0cd46cacdbe28c9e04916c016fb8048fc245f83f03fc53eeb90aa8225b6b",
+      "approved_sha256": "1a8c0cd46cacdbe28c9e04916c016fb8048fc245f83f03fc53eeb90aa8225b6b",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "1a8c0cd46cacdbe28c9e04916c016fb8048fc245f83f03fc53eeb90aa8225b6b"
+    },
+    {
+      "file": "extension/inline-panel.js",
+      "source_sha256": "a6a78a4f22089db84416f0032cf5e1203be51b8d4b204c12353c3c05232505f7",
+      "approved_sha256": "a6a78a4f22089db84416f0032cf5e1203be51b8d4b204c12353c3c05232505f7",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "a6a78a4f22089db84416f0032cf5e1203be51b8d4b204c12353c3c05232505f7"
+    },
+    {
+      "file": "extension/lookup.css",
+      "source_sha256": "73a4387f4583a56221f077a061d7aa02b70143f384a99d09eb24e0ebbb221090",
+      "approved_sha256": "73a4387f4583a56221f077a061d7aa02b70143f384a99d09eb24e0ebbb221090",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "73a4387f4583a56221f077a061d7aa02b70143f384a99d09eb24e0ebbb221090"
+    },
+    {
+      "file": "extension/lookup.html",
+      "source_sha256": "75a60c9eaf770891662a276db5c04d0e86ab8c4e0df9076542cfe6138baf883f",
+      "approved_sha256": "75a60c9eaf770891662a276db5c04d0e86ab8c4e0df9076542cfe6138baf883f",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "75a60c9eaf770891662a276db5c04d0e86ab8c4e0df9076542cfe6138baf883f"
+    },
+    {
+      "file": "extension/lookup.js",
+      "source_sha256": "801f8b539e6b5ab0511eb6c799f476150c7ee9d0ecb4d9daeffa197807a141c9",
+      "approved_sha256": "801f8b539e6b5ab0511eb6c799f476150c7ee9d0ecb4d9daeffa197807a141c9",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "801f8b539e6b5ab0511eb6c799f476150c7ee9d0ecb4d9daeffa197807a141c9"
+    },
+    {
+      "file": "extension/manifest.json",
+      "source_sha256": "2d1bc31e644b3ba336bfdd765472c874d804e2a4f0ef11114d1311b463932740",
+      "approved_sha256": "2d1bc31e644b3ba336bfdd765472c874d804e2a4f0ef11114d1311b463932740",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "2d1bc31e644b3ba336bfdd765472c874d804e2a4f0ef11114d1311b463932740"
+    },
+    {
+      "file": "extension/page-lookup.js",
+      "source_sha256": "4e5e5c5ae66eb6ab12b646d89b8ed69db96c73164dc3ee87a79a66548efc14f4",
+      "approved_sha256": "4e5e5c5ae66eb6ab12b646d89b8ed69db96c73164dc3ee87a79a66548efc14f4",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "4cc5800c630ea8ef1e92758858e2fdbeb8b0987e7315b675891212e0c5ce8b6f"
+    },
+    {
+      "file": "extension/workspace-ui.js",
+      "source_sha256": "257e1bd4665399a64195418eba1334fda6fe8bd02776695d8542f1783455a3e5",
+      "approved_sha256": "257e1bd4665399a64195418eba1334fda6fe8bd02776695d8542f1783455a3e5",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "da9f3e6fd344abc863c0fd5b5823ad7313f3a405f2c51d82c87b429becc0e186"
+    },
+    {
+      "file": "features/article/article.js",
+      "source_sha256": "8824c6eb5324d57a153ca3c4f5dcfcdf5b9e367f1a357c1eb39f190e59132cb2",
+      "approved_sha256": "ebc2fec3c384302fdaedf336af35d2e5fcf4fcbf0c17772405364d082dedae3e",
+      "from_approved_zip": false,
+      "selected_hunks": [
+        43,
+        258,
+        306,
+        321,
+        331,
+        448,
+        480,
+        575,
+        623,
+        697,
+        916,
+        3420,
+        4848,
+        4910
+      ],
+      "conflict": false,
+      "release_sha256": "ebc2fec3c384302fdaedf336af35d2e5fcf4fcbf0c17772405364d082dedae3e"
+    },
+    {
+      "file": "features/sync/sync.js",
+      "source_sha256": "10bbcfd779cc5728dd502b0b4d15b1ba97ee58e0fdeb74af02b53a26fc6e9916",
+      "approved_sha256": "10bbcfd779cc5728dd502b0b4d15b1ba97ee58e0fdeb74af02b53a26fc6e9916",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "10bbcfd779cc5728dd502b0b4d15b1ba97ee58e0fdeb74af02b53a26fc6e9916"
+    },
+    {
+      "file": "features/vocabulary/vocabulary.js",
+      "source_sha256": "aa7cf6c578dd083f0db1ca8e3f686a4bb343d7c5a0747471174e8204c2b06a31",
+      "approved_sha256": "aa7cf6c578dd083f0db1ca8e3f686a4bb343d7c5a0747471174e8204c2b06a31",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "77c0948aa450d640e8d496d271f483a9b9990e31c1d02c9d05416c525d036361"
+    },
+    {
+      "file": "index.html",
+      "source_sha256": "9640979b9951a9bf1afc107e4dac12042480e560b40f26efed6d2e6a2f9ead9c",
+      "approved_sha256": "83ff2ddad51f3301ee0dc4a6908fe9edfc7014c690bce82acca7d2e63b2f543e",
+      "from_approved_zip": false,
+      "selected_hunks": [
+        1131
+      ],
+      "conflict": false,
+      "release_sha256": "0a75674feffefec59d6fe0dfdbec7276afa393064464d5327df686641c6629a2"
+    },
+    {
+      "file": "locales/zh-CN.js",
+      "source_sha256": "1c7f9c1fad8f5c0859fd145f5f09750be21fcc06b5b112bc06baa4d126fd3263",
+      "approved_sha256": "bbb84b18b6753598017b3a76a1bef54299719e29cf8da4bc899fdc866d465db0",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "2798895977c38b77682fce24c35c66e65bda6e88bf043236e0e7bbf9c087e8db"
+    },
+    {
+      "file": "locales/zh-HK.js",
+      "source_sha256": "5e11586ce4770be85769dbccc6c868f7ce655eb5f2706948b2cb163483efd161",
+      "approved_sha256": "99ea7f4b03b8543a4f561a71cd58e48df80eed920675a8e84035e16bba1bbb39",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "cbb62c2aa9ddd41951994087cbebd193f04db7826f97af7b2b10a67d0bac11cf"
+    },
+    {
+      "file": "main.js",
+      "source_sha256": "74d747b2f3b6ae015dabd115c393c4360ecf1ec0eb6232c37eb6984e3f2bd47c",
+      "approved_sha256": "74d747b2f3b6ae015dabd115c393c4360ecf1ec0eb6232c37eb6984e3f2bd47c",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "74d747b2f3b6ae015dabd115c393c4360ecf1ec0eb6232c37eb6984e3f2bd47c"
+    },
+    {
+      "file": "modules/ai-models.js",
+      "source_sha256": "f39f55ecff2772f332fd1a8a591b82f07eafd2e6fef0dd2f55561d707149cd48",
+      "approved_sha256": "f39f55ecff2772f332fd1a8a591b82f07eafd2e6fef0dd2f55561d707149cd48",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "f39f55ecff2772f332fd1a8a591b82f07eafd2e6fef0dd2f55561d707149cd48"
+    },
+    {
+      "file": "modules/api.js",
+      "source_sha256": "c8fa7f23d66acad11ce73aaca5927e0c4dd1cfdf77dc50d8c99ddea66362537e",
+      "approved_sha256": "c8fa7f23d66acad11ce73aaca5927e0c4dd1cfdf77dc50d8c99ddea66362537e",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "c8fa7f23d66acad11ce73aaca5927e0c4dd1cfdf77dc50d8c99ddea66362537e"
+    },
+    {
+      "file": "modules/dom.js",
+      "source_sha256": "095bc451161704ac6cb75e6e0b410a932d35edba15387f8d1fc78a50cf75b025",
+      "approved_sha256": "d65c59d470084cea9c5b338c34a720543c213132f1ecd7c13dc9a67bbc2b062e",
+      "from_approved_zip": false,
+      "selected_hunks": [
+        177
+      ],
+      "conflict": false,
+      "release_sha256": "d65c59d470084cea9c5b338c34a720543c213132f1ecd7c13dc9a67bbc2b062e"
+    },
+    {
+      "file": "modules/extension-ai-preferences.js",
+      "source_sha256": "3ed3cad0da28702c9b3739e0ad12602b8b88049e1d7feffed169e59c588a245b",
+      "approved_sha256": "3ed3cad0da28702c9b3739e0ad12602b8b88049e1d7feffed169e59c588a245b",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "3ed3cad0da28702c9b3739e0ad12602b8b88049e1d7feffed169e59c588a245b"
+    },
+    {
+      "file": "modules/extension-ai-runtime.js",
+      "source_sha256": "cc44138ddd88a70b15fdc40784439666477ab980d230916fdef2391141641ff5",
+      "approved_sha256": "cc44138ddd88a70b15fdc40784439666477ab980d230916fdef2391141641ff5",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "cc44138ddd88a70b15fdc40784439666477ab980d230916fdef2391141641ff5"
+    },
+    {
+      "file": "modules/reading-store.js",
+      "source_sha256": "23344d0c0221d17349472673911b6dfa5326d58fe89721fa8dbf5dfe614e227b",
+      "approved_sha256": "23344d0c0221d17349472673911b6dfa5326d58fe89721fa8dbf5dfe614e227b",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "23344d0c0221d17349472673911b6dfa5326d58fe89721fa8dbf5dfe614e227b"
+    },
+    {
+      "file": "modules/settings.js",
+      "source_sha256": "f71e36e6c39a9f1f5863802b3d5f39227afe3685e37b5e046d87d68f3977ba7d",
+      "approved_sha256": "f71e36e6c39a9f1f5863802b3d5f39227afe3685e37b5e046d87d68f3977ba7d",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "f71e36e6c39a9f1f5863802b3d5f39227afe3685e37b5e046d87d68f3977ba7d"
+    },
+    {
+      "file": "modules/storage.js",
+      "source_sha256": "5b0fb44fcace370dad1be47b92f1512ce397bff6612439f29599e257a442c105",
+      "approved_sha256": "5b0fb44fcace370dad1be47b92f1512ce397bff6612439f29599e257a442c105",
+      "from_approved_zip": true,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "5b0fb44fcace370dad1be47b92f1512ce397bff6612439f29599e257a442c105"
+    },
+    {
+      "file": "scripts/package-extension.mjs",
+      "source_sha256": "273cabbba7ca88845bcb430bde9b0dc7ba296e65608605e10a345dd0c6d9e2fe",
+      "approved_sha256": "273cabbba7ca88845bcb430bde9b0dc7ba296e65608605e10a345dd0c6d9e2fe",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "273cabbba7ca88845bcb430bde9b0dc7ba296e65608605e10a345dd0c6d9e2fe"
+    },
+    {
+      "file": "tests/capture-ui-deepseek.test.mjs",
+      "source_sha256": "1a978fe5739cfae80a07b7cc187b0a78a68ec906a82c55f6043d6685cc4c61f4",
+      "approved_sha256": "1a978fe5739cfae80a07b7cc187b0a78a68ec906a82c55f6043d6685cc4c61f4",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "1a978fe5739cfae80a07b7cc187b0a78a68ec906a82c55f6043d6685cc4c61f4"
+    },
+    {
+      "file": "tests/extension-ai-controls.cjs",
+      "source_sha256": "9f6672576e9314ac27e452e123c900bbdabcf7725840fc5b71e7477442546c94",
+      "approved_sha256": "9f6672576e9314ac27e452e123c900bbdabcf7725840fc5b71e7477442546c94",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "9f6672576e9314ac27e452e123c900bbdabcf7725840fc5b71e7477442546c94"
+    },
+    {
+      "file": "tests/extension-capture.cjs",
+      "source_sha256": "72b3fbfe447f06e4e0c2ac4bbb9505dc15714c578c0250930083ebefa5d2c3f2",
+      "approved_sha256": "72b3fbfe447f06e4e0c2ac4bbb9505dc15714c578c0250930083ebefa5d2c3f2",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "72b3fbfe447f06e4e0c2ac4bbb9505dc15714c578c0250930083ebefa5d2c3f2"
+    },
+    {
+      "file": "tests/extension-inline-security-deepseek.cjs",
+      "source_sha256": "b66323ee73e679c42ab866913357a0c14d118cb9cc8e8c31d44795ad4564ba65",
+      "approved_sha256": "b66323ee73e679c42ab866913357a0c14d118cb9cc8e8c31d44795ad4564ba65",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "b66323ee73e679c42ab866913357a0c14d118cb9cc8e8c31d44795ad4564ba65"
+    },
+    {
+      "file": "tests/extension-page-workspace.cjs",
+      "source_sha256": "c7d65201f36cf48480e54c9fe95c8a2b07adb263f08074ca09dbf33b075f52d6",
+      "approved_sha256": "c7d65201f36cf48480e54c9fe95c8a2b07adb263f08074ca09dbf33b075f52d6",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": true,
+      "release_sha256": "c7d65201f36cf48480e54c9fe95c8a2b07adb263f08074ca09dbf33b075f52d6"
+    },
+    {
+      "file": "tests/helpers/extension-mv3.cjs",
+      "source_sha256": "b6897ab9d916ccaacfd5053deb1b37f292c79ae718030c8a440dfb76a55ed185",
+      "approved_sha256": "b6897ab9d916ccaacfd5053deb1b37f292c79ae718030c8a440dfb76a55ed185",
+      "from_approved_zip": false,
+      "selected_hunks": null,
+      "conflict": false,
+      "release_sha256": "b6897ab9d916ccaacfd5053deb1b37f292c79ae718030c8a440dfb76a55ed185"
+    },
+    {
+      "file": "extension/assistant-ui.js",
+      "source_sha256": "cce2755a9a2b7c27dbd1712766613d0ed8d9a37c1ba94021eac9b291ee4a6182",
+      "new": true,
+      "from_approved_zip": true,
+      "release_sha256": "cce2755a9a2b7c27dbd1712766613d0ed8d9a37c1ba94021eac9b291ee4a6182"
+    },
+    {
+      "file": "extension/icons.js",
+      "source_sha256": "ec60599ebdbcab512d08506c0d39b08cfdc080eb5634e675430b00b4151ad48f",
+      "new": true,
+      "from_approved_zip": true,
+      "release_sha256": "ec60599ebdbcab512d08506c0d39b08cfdc080eb5634e675430b00b4151ad48f"
+    },
+    {
+      "file": "modules/article-book-link.js",
+      "source_sha256": "c1b7be12137b712a6e930cdc8db48a810088050006ba2b82ec3637f82a32f483",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "c1b7be12137b712a6e930cdc8db48a810088050006ba2b82ec3637f82a32f483"
+    },
+    {
+      "file": "modules/extension-assistant.js",
+      "source_sha256": "5b135d39a136be217ea6a756c8796d08e7f2653fb0cda6756efd5680cb480bb5",
+      "new": true,
+      "from_approved_zip": true,
+      "release_sha256": "5b135d39a136be217ea6a756c8796d08e7f2653fb0cda6756efd5680cb480bb5"
+    },
+    {
+      "file": "modules/vocabulary-route.js",
+      "source_sha256": "bc9ce8476d502381ae9c27d892399804bf92b9df19f5c802cbabf6e9ffeb71a0",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "bc9ce8476d502381ae9c27d892399804bf92b9df19f5c802cbabf6e9ffeb71a0"
+    },
+    {
+      "file": "shared/article-book-link.mjs",
+      "source_sha256": "97629a9d9f4e9361785d72d9665e506ad41c1954d42f949c5c81334378cd55d1",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "97629a9d9f4e9361785d72d9665e506ad41c1954d42f949c5c81334378cd55d1"
+    },
+    {
+      "file": "tests/article-book-link.cjs",
+      "source_sha256": "d541742ee7b369308ae92310067c468fae3746bb7969975ba299e8ab7ae6d523",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "d541742ee7b369308ae92310067c468fae3746bb7969975ba299e8ab7ae6d523"
+    },
+    {
+      "file": "tests/article-book-link.test.mjs",
+      "source_sha256": "5a60475497048eb89e9bae50c1ae69812331212619ebc873ae6ea186ada35b0d",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "5a60475497048eb89e9bae50c1ae69812331212619ebc873ae6ea186ada35b0d"
+    },
+    {
+      "file": "tests/extension-article-confirm.cjs",
+      "source_sha256": "374bea394032c21990fd145a3d9c049285df1246062d03fbdc8a0470759980c6",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "51bf421a6b27036d88876ce4a831f834ae4af5caa52e2ba15a54e5a2df888cc2"
+    },
+    {
+      "file": "tests/extension-assistant.test.mjs",
+      "source_sha256": "08d8bd32c6bd2d2140a717ccea9f8b10b844136068e05edc1141cae11b4fd593",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "08d8bd32c6bd2d2140a717ccea9f8b10b844136068e05edc1141cae11b4fd593"
+    },
+    {
+      "file": "tests/extension-capture-footer.cjs",
+      "source_sha256": "e0a3f1f202dd219c99da781251caec48d8363f1878007dc8ef67f2d52a4727f2",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "e0a3f1f202dd219c99da781251caec48d8363f1878007dc8ef67f2d52a4727f2"
+    },
+    {
+      "file": "tests/extension-compact-assistant.cjs",
+      "source_sha256": "8c8dcacb01d04967f3458260f4d5df0343406ae418ca22aeabb3ed2a85449d78",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "8c8dcacb01d04967f3458260f4d5df0343406ae418ca22aeabb3ed2a85449d78"
+    },
+    {
+      "file": "tests/extension-focus.cjs",
+      "source_sha256": "dc4e9cd4c4a356c28beed2fb83e39000b4789b8cd23388c2e8d46d4fc8ca0aa9",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "dc4e9cd4c4a356c28beed2fb83e39000b4789b8cd23388c2e8d46d4fc8ca0aa9"
+    },
+    {
+      "file": "tests/extension-lookup-cache.cjs",
+      "source_sha256": "f3e653ecf4b0d5b985cea6bb748bdf6c1bd03874db02c6f651d2b05069ff7fa3",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "f3e653ecf4b0d5b985cea6bb748bdf6c1bd03874db02c6f651d2b05069ff7fa3"
+    },
+    {
+      "file": "tests/extension-lookup-cache-deepseek.cjs",
+      "source_sha256": "504e6e88a98cbcf08bc3054488825a93e608ebf84f882ba692d825ad551afc2e",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "504e6e88a98cbcf08bc3054488825a93e608ebf84f882ba692d825ad551afc2e"
+    },
+    {
+      "file": "tests/vocabulary-source-transfer.cjs",
+      "source_sha256": "7f4adfb988bb7f533479c8315f05113b7fdb1666020734bfa36b6bf48e1239f2",
+      "new": true,
+      "from_approved_zip": false,
+      "release_sha256": "7f4adfb988bb7f533479c8315f05113b7fdb1666020734bfa36b6bf48e1239f2"
+    }
+  ],
+  "conflicts": [
+    "README.md",
+    "extension/capture-ui.js",
+    "extension/inline-panel.js",
+    "extension/lookup.css",
+    "extension/lookup.html",
+    "extension/manifest.json",
+    "extension/workspace-ui.js",
+    "features/vocabulary/vocabulary.js",
+    "locales/zh-CN.js",
+    "locales/zh-HK.js",
+    "tests/extension-capture.cjs",
+    "tests/extension-inline-security-deepseek.cjs",
+    "tests/extension-page-workspace.cjs"
+  ],
+  "excluded": "Unrelated sentence-reading work, concurrent vocabulary source-modal work, private configuration, old untracked material and selfhost/kokoro.",
+  "resolution": "Use the approved 0.6.3 package for extension sources; merge optional article preflight recovery, public locale entries and expanded panel height from origin/master. Include only approved article/book routing hunks from source-only site modules."
+}

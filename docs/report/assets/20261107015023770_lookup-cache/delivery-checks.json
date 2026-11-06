@@ -1,0 +1,15 @@
+{
+  "version": "0.6.3",
+  "filesMatch": 68,
+  "repeatZipMatches": true,
+  "publicExampleOnly": true,
+  "independent": {
+    "passed": 37,
+    "failed": 0
+  },
+  "captureRegressions": {
+    "passed": 31,
+    "failed": 0
+  },
+  "zipSha256": "e2e5845e5bdbbf81f66e4703adb28f2cfa480d5eba8ea96b6afb4dd840dea58d"
+}

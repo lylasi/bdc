@@ -3,12 +3,13 @@ import * as state from './modules/state.js';
 import { loadVocabularyBooks } from './modules/storage.js';
 import * as articleStore from './modules/article-store.js';
 import { readArticleRoute, articleHash, writeArticleRoute } from './modules/article-route.js';
+import { readVocabularyRoute } from './modules/vocabulary-route.js';
 import * as readingStore from './modules/reading-store.js';
 import * as cache from './modules/cache.js';
 import { prepareBackupStorage } from './modules/backup-store.js';
 import { initModal, setupNumberSteppers, initTooltip, displayMessage, confirmAction } from './modules/ui.js';
 import { unlockAudioContext } from './modules/audio.js';
-import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView } from './features/vocabulary/vocabulary.js';
+import { initVocabulary, handleVocabularyQueryParams, refreshVocabularyView, selectVocabularyBook } from './features/vocabulary/vocabulary.js';
 import { initLearning, populateLearningBookSelector, populateWordSelect } from './features/learning/learning.js';
 import { initDictation, populateDictationBookSelector, togglePauseDictation } from './features/dictation/dictation.js';
 import { initQuiz, populateQuizBookSelector, stopQuiz } from './features/quiz/quiz.js';
@@ -58,6 +59,9 @@ const BUTTON_ID_TO_PRIMARY_ALIAS = {
 
 let leaveQuizPromptOpen = false;
 let navigationSeq = 0;
+// 深連結的詞書可能尚未同步到本機；閱讀資料變更時再套用一次。
+let pendingVocabularyRouteId = '';
+let vocabularyRouteNoticeTimer = 0;
 
 /**
  * 可重建快取的容量治理（P3-T2）：初始化後在閒置時最多每 24 小時掃一次。
@@ -383,6 +387,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         try { openLoginModal(); } catch (_) {}
     });
 
+    document.addEventListener('bdc:reading-change', retryPendingVocabularyRoute);
+    window.addEventListener('bdc:articles-scope-changed', retryPendingVocabularyRoute);
+
     // 7. 手動觸發一次change事件來更新初始狀態
     await step('listenOnlyMode', () => {
         if (dom.listenOnlyMode) {
@@ -442,11 +449,71 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
+function clearPendingVocabularyRoute() {
+    pendingVocabularyRouteId = '';
+    clearTimeout(vocabularyRouteNoticeTimer);
+    vocabularyRouteNoticeTimer = 0;
+}
+
+function scheduleVocabularyRouteNotice() {
+    clearTimeout(vocabularyRouteNoticeTimer);
+    vocabularyRouteNoticeTimer = window.setTimeout(() => {
+        vocabularyRouteNoticeTimer = 0;
+        if (!pendingVocabularyRouteId) return;
+        const route = readVocabularyRoute();
+        if (!route || route.id !== pendingVocabularyRouteId) {
+            pendingVocabularyRouteId = '';
+            return;
+        }
+        displayMessage(t('vocabulary.deepLinkMissing'), 'warning', 6000);
+    }, 2500);
+}
+
+/**
+ * 套用 `#v/<bookId>` 深連結。
+ * 找不到時保留網址並提示，等閱讀資料同步後再重試；不建立替代詞書。
+ */
+async function applyVocabularyRoute() {
+    const route = readVocabularyRoute();
+    if (!route) {
+        clearPendingVocabularyRoute();
+        return true;
+    }
+    if (route.invalid) {
+        clearPendingVocabularyRoute();
+        displayMessage(t('vocabulary.deepLinkInvalid'), 'warning', 5000);
+        return false;
+    }
+    if (!route.id) {
+        clearPendingVocabularyRoute();
+        return true;
+    }
+    const result = selectVocabularyBook(route.id);
+    if (result.ok) {
+        clearPendingVocabularyRoute();
+        return true;
+    }
+    pendingVocabularyRouteId = route.id;
+    scheduleVocabularyRouteNotice();
+    return false;
+}
+
+function retryPendingVocabularyRoute() {
+    if (!pendingVocabularyRouteId) return;
+    const route = readVocabularyRoute();
+    if (!route || route.id !== pendingVocabularyRouteId) {
+        clearPendingVocabularyRoute();
+        return;
+    }
+    if (selectVocabularyBook(pendingVocabularyRouteId).ok) clearPendingVocabularyRoute();
+}
+
 async function handleModuleRouting(options = {}) {
     const href = window.location.href;
     const seq = ++navigationSeq;
     const aliasFromUrl = extractModuleAliasFromUrl();
     if (!aliasFromUrl) {
+        clearPendingVocabularyRoute();
         if (options.ensureHash) {
             const activeBtn = document.querySelector('.nav-btn.active');
             if (activeBtn) updateModuleHashFromButtonId(activeBtn.id, { replace: true });
@@ -470,7 +537,13 @@ async function handleModuleRouting(options = {}) {
     if (buttonId === 'article-btn') {
         if (!readArticleRoute()) writeArticleRoute('', { replace: true });
         await showArticleRoute({ restoreDraft: !!options.ensureHash });
+    } else if (buttonId === 'vocabulary-btn') {
+        leaveArticleRoute();
+        await applyVocabularyRoute();
+        // 有效深連結保留 #v/<id>；一般入口仍維持既有的 #v。
+        updateModuleHashFromButtonId(button.id, { replace: true });
     } else {
+        clearPendingVocabularyRoute();
         leaveArticleRoute();
         updateModuleHashFromButtonId(button.id, { replace: true });
     }
@@ -519,7 +592,11 @@ function updateModuleHashFromButtonId(buttonId, { replace = false } = {}) {
     const alias = BUTTON_ID_TO_PRIMARY_ALIAS[buttonId];
     if (!alias) return;
 
-    const desiredHash = buttonId === 'article-btn' ? articleHash(state.currentArticleId || '') : `#${alias}`;
+    const vocabularyRoute = buttonId === 'vocabulary-btn' ? readVocabularyRoute() : null;
+    const keepVocabularyRoute = !!(vocabularyRoute && vocabularyRoute.id && !vocabularyRoute.invalid);
+    const desiredHash = buttonId === 'article-btn'
+        ? articleHash(state.currentArticleId || '')
+        : (keepVocabularyRoute ? window.location.hash : `#${alias}`);
     if (window.location.hash === desiredHash) return;
 
     const cleanedSearch = getSearchWithoutRoutingParams();

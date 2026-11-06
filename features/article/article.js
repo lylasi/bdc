@@ -41,6 +41,9 @@ import {
 } from './analysis-state.js';
 import * as paragraphPipeline from './paragraph-pipeline.js';
 import { contentVersionOf } from '../../shared/reading-protocol.mjs';
+import { publicSourceUrl } from '../../shared/vocabulary-source.mjs';
+import { resolveVocabularyBookForArticle } from '../../modules/article-book-link.js';
+import { vocabBookHash } from '../../modules/vocabulary-route.js';
 import { initReadingPanel, openReadingPanelForItem } from './reading-panel.js';
 import { initPhrasePicker, openPhrasePicker } from './phrase-picker.js';
 import { openQuickModelPicker } from '../../modules/quick-model-picker.js';
@@ -256,6 +259,7 @@ function beginImportContext() {
     state.setCurrentWordbookId(null);
     articleContext.recordId = null;
     articleContext.origin = 'imported';
+    updateArticleBookAction();
 }
 
 /** 所有匯入入口都經過這裡：先換編輯上下文，再決定是否命中既有來源。 */
@@ -304,6 +308,7 @@ function applyImportedArticle(text, meta = {}) {
     writeArticleRoute();
     queueDraftSave();
     updateArticleEntry();
+    updateArticleBookAction();
     if (typeof updateHistoryIndicators === 'function') updateHistoryIndicators();
 }
 
@@ -319,6 +324,7 @@ function setLoadedArticleContext(recordId, meta = {}) {
             title: meta.title || ''
         });
     }
+    updateArticleBookAction();
 }
 
 function resetArticleContext() {
@@ -329,6 +335,7 @@ function resetArticleContext() {
         if (typeof state.setCurrentArticleId === 'function') state.setCurrentArticleId(null);
         if (typeof state.setCurrentWordbookId === 'function') state.setCurrentWordbookId(null);
     } catch (_) { /* ignore */ }
+    updateArticleBookAction();
 }
 
 /**
@@ -446,8 +453,10 @@ function updateArticleSourceBarFromDataset() {
     label.textContent = text;
 
     if (link) {
-        if (sourceType === 'url' && rawUrl) {
-            link.href = rawUrl;
+        // 只把可對外的 http(s) 放進 href；舊資料可能有 javascript:／含帳密網址。
+        const safeUrl = sourceType === 'url' ? publicSourceUrl(rawUrl) : '';
+        if (safeUrl) {
+            link.href = safeUrl;
             link.textContent = t('article.openSource');
             link.classList.remove('hidden');
         } else {
@@ -476,6 +485,97 @@ function setCurrentArticleSourceMeta(meta = {}) {
         ds.sourceTitle = meta.title;
     }
     updateArticleSourceBarFromDataset();
+}
+
+/** 文章目前可建立／開啟詞書的記錄；只有已落盤的記錄才有穩定身份。 */
+function currentArticleRecordForBook() {
+    const id = articleContext.recordId;
+    if (!id) return null;
+    const record = articleStore.getRecord(id);
+    return record && !record.deletedAt ? record : null;
+}
+
+function updateArticleBookAction() {
+    const button = dom.articleBookBtn;
+    if (!button) return;
+    const record = currentArticleRecordForBook();
+    const info = record ? resolveVocabularyBookForArticle(record) : null;
+    const hasBook = !!info?.book;
+    // 保留可點擊：尚未儲存的文章按下時要說明原因，行動裝置也看得到提示。
+    button.disabled = false;
+    button.dataset.hasRecord = record ? '1' : '0';
+    button.dataset.hasBook = hasBook ? '1' : '0';
+    const title = !record
+        ? t('article.openBookNeedsRecord')
+        : (hasBook ? t('article.openBookTitle') : t('article.createBookTitle'));
+    button.title = title;
+    button.setAttribute('aria-label', title);
+}
+
+/** 以正式 hash 路由進入詞書；由主站統一處理離開測驗確認與模組切換。 */
+function navigateToVocabularyBook(bookId) {
+    const id = String(bookId || '');
+    if (!id) return false;
+    const hash = vocabBookHash(id);
+    if (window.location.hash === hash) {
+        // 已在同一詞書 route：交給路由重新套用（例如資料剛同步完成）。
+        try { window.dispatchEvent(new Event('hashchange')); } catch (_) { /* noop */ }
+    } else {
+        window.location.hash = hash;
+    }
+    return true;
+}
+
+async function openArticleVocabularyBook() {
+    const record = currentArticleRecordForBook();
+    if (!record) {
+        ui.displayMessage(t('article.openBookNeedsRecord'), 'warning', 4500);
+        return;
+    }
+    const articleId = record.articleId;
+    const existing = resolveVocabularyBookForArticle(record);
+    if (existing.book) {
+        navigateToVocabularyBook(existing.book.id);
+        return;
+    }
+
+    const confirmed = await ui.confirmAction({
+        title: t('article.createBookTitle'),
+        message: t('article.createBookMessage'),
+        confirmLabel: t('article.createBookConfirm'),
+        cancelLabel: t('common.cancel')
+    });
+    if (!confirmed) return;
+
+    // 等待確認框期間可能已切換文章；不要替另一篇建立詞書。
+    const current = currentArticleRecordForBook();
+    if (!current || current.articleId !== articleId) return;
+
+    let created = null;
+    try {
+        const safeUrl = publicSourceUrl(current.sourceUrl);
+        created = storage.getOrCreateArticleWordbook({
+            id: current.articleId,
+            title: current.title || t('article.untitled'),
+            sourceType: current.sourceType || 'paste',
+            ...(safeUrl ? { sourceUrl: safeUrl } : {})
+        }, { createWordbook: true });
+    } catch (error) {
+        ui.displayMessage(t('article.createBookFailed', { message: error?.message || '' }), 'error', 6000);
+        return;
+    }
+    const bookId = created?.wordbook?.id;
+    if (!bookId) {
+        ui.displayMessage(t('article.createBookFailed', { message: '' }), 'error', 6000);
+        return;
+    }
+    // 其他分頁可能在等待期間已用同一 articleId／網址建立詞書；以最新解析為準。
+    const after = resolveVocabularyBookForArticle(current);
+    const targetId = after.book?.id || bookId;
+    updateArticleBookAction();
+    if (navigateToVocabularyBook(targetId)) {
+        ui.displayMessage(t('article.bookCreated'), 'success', 3200);
+    }
 }
 
 function clearCurrentArticleSourceMeta() {
@@ -573,6 +673,7 @@ export function initArticle() {
         refreshHistoryModal();
         updateHistoryIndicators();
         updateArticleEntry();
+        updateArticleBookAction();
         setRouteStatus(routeStatusReason);
         // 頁內查詞結果綁定介面語言與模型：換語言就失效，避免顯示上一種語言的詳解。
         try { wordLookupCache().clear(); } catch (_) { /* noop */ }
@@ -621,6 +722,9 @@ export function initArticle() {
     dom.analyzeArticleBtn.addEventListener('click', analyzeArticle);
     if (dom.resumeAnalysisBtn) dom.resumeAnalysisBtn.addEventListener('click', resumeAnalysis);
     dom.clearArticleBtn.addEventListener('click', () => clearArticleInput());
+    if (dom.articleBookBtn) dom.articleBookBtn.addEventListener('click', () => {
+        openArticleVocabularyBook().catch((error) => console.warn('[article] 開啟詞書失敗:', error));
+    });
     if (dom.articleHistoryBtn) dom.articleHistoryBtn.addEventListener('click', openArticleHistory);
     if (dom.articleAiModelBtn) dom.articleAiModelBtn.addEventListener('click', () => {
         openQuickModelPicker({
@@ -695,6 +799,7 @@ export function initArticle() {
     window.addEventListener('bdc:articles-change', () => {
         updateHistoryIndicators();
         updateArticleEntry();
+        updateArticleBookAction();
         if (articleContext.recordId && !articleStore.getRecord(articleContext.recordId)) {
             saveCurrentDraft();
             clearArticleInput({ keepDraft: true, keepRoute: true });
@@ -914,6 +1019,7 @@ export function initArticle() {
     }
 
     updateHistoryIndicators();
+    updateArticleBookAction();
     try { updateArticleSourceBarFromDataset(); } catch (_) {}
 
     // 選字快速加入生詞本／選短語（文章詳解區）
@@ -3418,6 +3524,7 @@ async function analyzeArticle() {
         else queueDraftSave();
         setRouteStatus('');
         updateArticleEntry();
+        updateArticleBookAction();
     }
     updateHistoryIndicators();
 
@@ -4846,7 +4953,7 @@ let articleReaderLayoutFrame = 0;
 function initArticleReaderOverflow() {
     // 移動原有按鈕而不複製，保留事件、閱讀記錄數與側欄狀態。
     articleReaderActionSlots = [dom.articleInputToggle, dom.importArticleBtn,
-        dom.showArticleLibraryBtn, dom.articleHistoryBtn, dom.articleSidebarToggle].map((button) => {
+        dom.showArticleLibraryBtn, dom.articleBookBtn, dom.articleHistoryBtn, dom.articleSidebarToggle].map((button) => {
         const anchor = document.createComment('article-reader-action');
         button.before(anchor);
         return { button, anchor };
@@ -4908,7 +5015,7 @@ function updateArticleReaderOverflow() {
     if (requiredWidth() > available + 0.5) {
         dom.articleReaderMore.classList.remove('hidden');
         // 優先保留輸入與播放／倍速；真正放不下時才逐項收納。
-        for (const button of [dom.showArticleLibraryBtn, dom.importArticleBtn,
+        for (const button of [dom.showArticleLibraryBtn, dom.articleBookBtn, dom.importArticleBtn,
             dom.articleHistoryBtn, dom.articleSidebarToggle, dom.articleInputToggle]) {
             dom.articleReaderMenu.append(button);
             dom.articleReaderActions.classList.toggle('hidden', !dom.articleReaderActions.children.length);

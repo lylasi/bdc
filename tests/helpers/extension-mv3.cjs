@@ -31,7 +31,10 @@ async function environment() {
     }
     const env = { DB: createD1Adapter(createSqliteDatabase(db)), ALLOWED_ORIGINS: '*',
         AI_CREDENTIAL_KEY_V1: Buffer.alloc(32, 7).toString('base64'), AI_CREDENTIAL_KEY_VERSION: '1', AI_CATALOG_DIGEST_KEY: 'catalog-test-digest-key-32-characters' };
-    const state = { aiCalls: 0, captureCalls: [], failCaptures: false, loseNextReply: false };
+    const state = { aiCalls: 0, captureCalls: [], failCaptures: false, loseNextReply: false,
+        // Assistant streaming contract: real SSE when `stream:true`, every request
+        // body recorded so tests can assert article/URL/reference/history context.
+        assistant: { calls: 0, requests: [], mode: 'ok' } };
     let base;
     const server = http.createServer(async (req, res) => {
         try {
@@ -46,7 +49,42 @@ async function environment() {
                 const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Content-Type': 'application/json' };
                 if (req.method === 'OPTIONS') { res.writeHead(204, headers); return res.end(); }
                 state.aiCalls += 1;
-                const prompt = JSON.parse(raw).messages.map((m) => typeof m.content === 'string' ? m.content : '').join('\n');
+                let body = {};
+                try { body = JSON.parse(raw || '{}'); } catch (_) {}
+                const prompt = (body.messages || []).map((m) => typeof m.content === 'string' ? m.content : '').join('\n');
+                // Only the assistant path streams. Keep the one-shot JSON contract
+                // for lookup/article tasks that existing suites already assert.
+                if (body.stream === true) {
+                    state.assistant.calls += 1;
+                    state.assistant.requests.push(body);
+                    if (state.assistant.mode === 'fail') {
+                        res.writeHead(503, headers);
+                        return res.end(JSON.stringify({ error: { message: 'mock assistant failure' } }));
+                    }
+                    const question = [...(body.messages || [])].reverse().find((message) => message.role === 'user')?.content || '';
+                    const answer = '助手回答：' + String(question).replace(/\s+/g, ' ').slice(0, 60) + '（mock 完成）';
+                    const streamHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                        'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' };
+                    res.writeHead(200, streamHeaders);
+                    const chunk = (text) => res.write('data: ' + JSON.stringify({ choices: [{ delta: { content: text } }] }) + '\n\n');
+                    const pieces = [answer.slice(0, 10), answer.slice(10, 24), answer.slice(24)];
+                    chunk(pieces[0]);
+                    if (state.assistant.mode === 'hang') {
+                        // Keep the stream open after a partial answer; the test clicks
+                        // #ext-assistant-stop, which aborts the fetch and closes this socket.
+                        const keepAlive = setInterval(() => { try { res.write(': keep-alive\n\n'); } catch (_) {} }, 1000);
+                        req.on('close', () => clearInterval(keepAlive));
+                        res.on('close', () => clearInterval(keepAlive));
+                        return;
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 25));
+                    chunk(pieces[1]);
+                    await new Promise((resolve) => setTimeout(resolve, 25));
+                    chunk(pieces[2]);
+                    res.write('data: ' + JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }] }) + '\n\n');
+                    res.write('data: [DONE]\n\n');
+                    return res.end();
+                }
                 if (prompt.includes('Clean the supplied Markdown article')) {
                     res.writeHead(200, headers);
                     return res.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: '# Major tech stocks plunge\n\nMajor tech stocks plunge as investors worry. Markets remain volatile.\n\n## Outlook\n\nPeople gather information before making decisions.' } }] }));
@@ -82,7 +120,7 @@ async function environment() {
         } catch (error) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: error.message })); }
     });
     base = await listen(server);
-    const tasks = Object.fromEntries(['wordAnalysis', 'articleWordTranslation', 'articlePhraseTranslation', 'articleCleanup', 'articleParagraphTranslation', 'articleAnalysis'].map((task) => [task, { providerId: 'managed-capture', model: 'capture-model' }]));
+    const tasks = Object.fromEntries(['wordAnalysis', 'articleWordTranslation', 'articlePhraseTranslation', 'articleCleanup', 'articleParagraphTranslation', 'articleAnalysis', 'assistant'].map((task) => [task, { providerId: 'managed-capture', model: 'capture-model' }]));
     const publish = await fetch(base + '/admin/ai-catalog/publish', {
         method: 'POST', headers: { Authorization: `Bearer ${ADMIN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ baseVersion: 0, mutationId: 'publish-capture-test', config: { schemaVersion: 1, providers: [{
@@ -108,7 +146,7 @@ async function environment() {
         });
     });
     const appBase = await listen(appServer);
-    return { base, appBase, state, db, async close() { await Promise.all([new Promise((r) => server.close(r)), new Promise((r) => appServer.close(r))]); db.close(); } };
+    return { base, appBase, state, db, async close() { server.closeAllConnections?.(); appServer.closeAllConnections?.(); await Promise.all([new Promise((r) => server.close(r)), new Promise((r) => appServer.close(r))]); db.close(); } };
 }
 
 module.exports = { environment, ALICE, BOB, ADMIN };

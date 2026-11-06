@@ -1,4 +1,13 @@
 // Actual MV3 + actual Worker/SQLite + website modules. Only AI transport is a mock.
+//
+// 0.6.0 互動更新：登入與模型設定在 #ext-settings-open（首頁）或
+// #ext-inline-settings（小窗）打開的 dialog；查詞表單在小窗
+// #ext-inline-edit 打開的 #ext-query-dialog；首頁不再有常駐查詞／收藏區。
+// 0.6.1 互動更新：收藏列只留 #ext-capture-save 與 #ext-book-settings；
+// #ext-capture-book／#ext-open-book／#ext-capture-refresh／建書按鈕與表單都在
+// #ext-book-settings 打開的原生 #ext-book-dialog（#ext-book-close 關閉）；
+// 選書、重整與建書都先開 dialog，選好關閉後再按收藏列保存。
+// 原業務斷言全部保留。
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -17,15 +26,23 @@ const BOB = 'b'.repeat(43);
 const ADMIN = 'z'.repeat(43);
 const AI_KEY = 'sk-capture-fixture-not-real';
 const checks = [];
+const sleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 
 function check(name, condition, detail) {
     checks.push({ name, ok: !!condition, ...(detail ? { detail } : {}) });
-    console.log(`${condition ? 'PASS' : 'FAIL'} ${name}`);
-    assert.ok(condition, name + (detail ? ': ' + JSON.stringify(detail) : ''));
+    console.log(`${condition ? 'PASS' : 'FAIL'} ${name}${condition || !detail ? '' : ': ' + JSON.stringify(detail)}`);
 }
 async function listen(server) {
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
     return `http://127.0.0.1:${server.address().port}`;
+}
+async function waitFor(run, { timeout = 10000, interval = 100 } = {}) {
+    const started = Date.now();
+    while (Date.now() - started < timeout) {
+        try { const value = await run(); if (value) return value; } catch (_) { /* keep polling */ }
+        await sleep(interval);
+    }
+    return false;
 }
 
 async function environment() {
@@ -112,29 +129,146 @@ async function environment() {
         });
     });
     const appBase = await listen(appServer);
-    return { base, appBase, state, db, async close() { await Promise.all([new Promise((r) => server.close(r)), new Promise((r) => appServer.close(r))]); db.close(); } };
+    return { base, appBase, state, db, async close() { server.closeAllConnections?.(); appServer.closeAllConnections?.(); await Promise.all([new Promise((r) => server.close(r)), new Promise((r) => appServer.close(r))]); db.close(); } };
 }
 
-async function connect(page, endpoint, token = ALICE) {
-    await page.locator('#ext-endpoint-input').fill(endpoint);
-    await page.locator('#ext-login-mode').selectOption('token');
-    await page.locator('#ext-token-input').fill(token);
-    await page.locator('#ext-connect-btn').click();
-    await page.waitForFunction(() => !document.querySelector('#ext-connect-btn').disabled);
-    await page.waitForFunction(() => document.querySelector('#ext-capture-book').options.length > 1);
+async function openSettings(scope) {
+    const dialog = scope.locator('#ext-settings-dialog');
+    if (await dialog.evaluate((node) => node.open).catch(() => false)) return;
+    if (await scope.locator('#ext-inline-settings').isVisible().catch(() => false)) await scope.locator('#ext-inline-settings').click();
+    else await scope.locator('#ext-settings-open').click();
+    await waitFor(() => dialog.evaluate((node) => node.open).catch(() => false), { timeout: 5000 });
 }
-async function lookup(page, sentence) {
-    await page.locator('#ext-word-input').fill('plunge');
-    await page.locator('#ext-sentence-input').fill(sentence);
-    await page.locator('#ext-lookup-btn').click();
-    await page.waitForFunction(() => !document.querySelector('#ext-lookup-btn').disabled);
-    assert.ok(await page.locator('#ext-result-meaning').textContent());
+async function closeSettings(scope) {
+    const dialog = scope.locator('#ext-settings-dialog');
+    if (!(await dialog.evaluate((node) => node.open).catch(() => false))) return;
+    await scope.locator('#ext-settings-close').click();
+    await waitFor(async () => !(await dialog.evaluate((node) => node.open).catch(() => false)), { timeout: 5000 });
+    await sleep(150);
+}
+async function openAccount(scope) {
+    if (!(await scope.locator('#ext-account-details').evaluate((node) => node.open))) await scope.locator('#ext-account-summary').click();
+}
+async function openBookDialog(scope) {
+    const dialog = scope.locator('#ext-book-dialog');
+    const opened = () => dialog.evaluate((node) => node.open).catch(() => false);
+    if (await opened()) return;
+    // 上一個原生 dialog 的 close 事件會還原 inline 模式並收起 backdrop；
+    // 先等它跑完，否則緊接的第一次點擊可能落在交接空窗而被吞掉。
+    await scope.waitForFunction(() => !document.querySelector('dialog[open]')
+        && !document.body.classList.contains('ext-modal-open'), null, { timeout: 5000 }).catch(() => {});
+    await scope.locator('#ext-book-settings').click();
+    if (!(await waitFor(opened, { timeout: 3000 }))) {
+        // 使用者可見的重試：第一次點擊落在面板縮回的位置。
+        await scope.locator('#ext-book-settings').click();
+    }
+    if (!(await waitFor(opened, { timeout: 5000 }))) {
+        const state = await scope.evaluate(() => {
+            const select = document.querySelector('#ext-capture-book');
+            const box = select?.getBoundingClientRect();
+            const bookDialog = document.querySelector('#ext-book-dialog');
+            return { bodyClass: document.body.className,
+                bookOpen: bookDialog?.open, bookDisplay: bookDialog && getComputedStyle(bookDialog).display,
+                queryOpen: document.querySelector('#ext-query-dialog')?.open,
+                settingsOpen: document.querySelector('#ext-settings-dialog')?.open,
+                bookSettingsDisabled: document.querySelector('#ext-book-settings')?.disabled,
+                selectBox: box && { x: box.x, y: box.y, width: box.width, height: box.height },
+                viewport: { width: innerWidth, height: innerHeight } };
+        }).catch((error) => ({ error: error.message }));
+        throw new Error('book dialog did not open: ' + JSON.stringify(state));
+    }
+}
+async function closeBookDialog(scope) {
+    const dialog = scope.locator('#ext-book-dialog');
+    const opened = () => dialog.evaluate((node) => node.open).catch(() => false);
+    if (!(await opened())) return;
+    await scope.locator('#ext-book-close').click();
+    await waitFor(async () => !(await opened())
+        && !(await scope.evaluate(() => document.body.classList.contains('ext-modal-open')).catch(() => true)), { timeout: 5000 });
+    await sleep(100);
+}
+// 0.6.1：選書只在 #ext-book-dialog 內有效，選好關閉 dialog 後才按收藏列保存。
+async function selectCaptureBook(scope, id) {
+    await openBookDialog(scope);
+    await scope.locator('#ext-capture-book').selectOption(id);
+    await closeBookDialog(scope);
+}
+async function connect(scope, endpoint, token = ALICE) {
+    await openSettings(scope);
+    await openAccount(scope);
+    await scope.locator('#ext-endpoint-input').fill(endpoint);
+    await scope.locator('#ext-login-mode').selectOption('token');
+    await scope.locator('#ext-token-input').fill(token);
+    await scope.locator('#ext-connect-btn').click();
+    await scope.waitForFunction(() => !document.querySelector('#ext-connect-btn').disabled);
+    await scope.waitForFunction(() => document.querySelector('#ext-capture-book').options.length > 1);
+}
+async function lookup(frame, { word = 'plunge', sentence, context } = {}) {
+    if (!(await frame.locator('#ext-query-dialog').evaluate((node) => node.open))) await frame.locator('#ext-inline-edit').click();
+    await frame.waitForFunction(() => document.querySelector('#ext-query-dialog').open, null, { timeout: 5000 });
+    if (word !== undefined) await frame.locator('#ext-word-input').fill(word);
+    if (sentence !== undefined) await frame.locator('#ext-sentence-input').fill(sentence);
+    if (context !== undefined) await frame.locator('#ext-context-input').fill(context);
+    await frame.locator('#ext-lookup-btn').click();
+    await frame.waitForFunction(() => !document.querySelector('#ext-lookup-btn').disabled, null, { timeout: 40000 });
+    assert.ok(await frame.locator('#ext-result-meaning').textContent());
 }
 async function outbox(page) {
     return page.evaluate(async () => Object.values(await chrome.storage.local.get(null)).filter((value) => value?.payload?.requestId && value?.endpoint));
 }
-async function waitSaved(page) {
-    await page.waitForFunction(() => /已加入/.test(document.querySelector('#ext-capture-save').textContent));
+async function waitSaved(scope) {
+    await scope.waitForFunction(() => /已加入/.test(document.querySelector('#ext-capture-save').textContent), null, { timeout: 20000 });
+}
+async function refreshCapture(frame) {
+    // 0.6.1：重整按鈕在 #ext-book-dialog 內，不再需要先展開「更多」。
+    await openBookDialog(frame);
+    await frame.locator('#ext-capture-refresh').click();
+    await closeBookDialog(frame);
+}
+async function shellButtons(cdp) {
+    let root;
+    try { ({ root } = await cdp.send('DOM.getDocument', { depth: -1, pierce: true })); } catch (_) { return []; }
+    const nodes = [];
+    const walk = (node) => {
+        if (node.nodeName === 'BUTTON') nodes.push(node);
+        for (const child of node.children || []) walk(child);
+        for (const shadow of node.shadowRoots || []) walk(shadow);
+    };
+    walk(root);
+    const result = [];
+    for (const node of nodes) {
+        const model = await cdp.send('DOM.getBoxModel', { backendNodeId: node.backendNodeId }).then((value) => value.model).catch(() => null);
+        if (!model || model.width < 8 || model.height < 8) continue;
+        const attributes = {};
+        const raw = node.attributes || [];
+        for (let index = 0; index + 1 < raw.length; index += 2) attributes[raw[index]] = raw[index + 1];
+        result.push({ attributes, className: String(attributes.class || ''), center: {
+            x: (model.border[0] + model.border[2] + model.border[4] + model.border[6]) / 4,
+            y: (model.border[1] + model.border[3] + model.border[5] + model.border[7]) / 4
+        } });
+    }
+    return result;
+}
+async function selectPlunge(article) {
+    const rect = await article.evaluate(() => {
+        const text = document.querySelector('#article').firstChild;
+        const start = text.textContent.indexOf('plunge');
+        const range = document.createRange(); range.setStart(text, start); range.setEnd(text, start + 6);
+        const box = range.getBoundingClientRect(); return { x: box.x, y: box.y, width: box.width, height: box.height, start };
+    });
+    await article.mouse.move(rect.x + 1, rect.y + rect.height / 2); await article.mouse.down();
+    await article.mouse.move(rect.x + rect.width - 1, rect.y + rect.height / 2, { steps: 8 }); await article.mouse.up();
+    return rect;
+}
+async function openCard(article, cdp, extBase) {
+    const rect = await selectPlunge(article);
+    const button = await waitFor(async () => (await shellButtons(cdp)).find((item) => !/bdc-assistant-ball/.test(item.className)) || false);
+    assert.ok(button, 'inline lookup button');
+    await article.mouse.click(button.center.x, button.center.y);
+    const frame = await waitFor(() => article.frames().find((candidate) => candidate.url().startsWith(extBase + '/lookup.html')) || false, { timeout: 15000 });
+    assert.ok(frame, 'inline frame');
+    await frame.waitForFunction(() => !!document.querySelector('#ext-result-meaning')?.textContent, null, { timeout: 30000 });
+    return frame;
 }
 
 (async () => {
@@ -143,40 +277,62 @@ async function waitSaved(page) {
     let testEnv, context;
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'bdc-capture-e2e-'));
     const pageErrors = [];
+    const debug = {};
     try {
         testEnv = await environment();
         const { base, appBase, state, db } = testEnv;
         const ext = path.join(ROOT, 'extension');
-        context = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true, viewport: { width: 400, height: 1000 },
+        context = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true, viewport: { width: 420, height: 1000 },
             args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`] });
         context.on('page', (page) => page.on('pageerror', (error) => pageErrors.push(error.message)));
         const sw = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
         const extUrl = `chrome-extension://${new URL(sw.url()).host}/lookup.html`;
         let page = await context.newPage();
         await page.goto(extUrl);
-        await connect(page, base);
-        check('真實 SQLite 詞書列表及帳戶隔離', await page.locator('#ext-capture-book option').allTextContents().then((values) => values.includes('Reading') && !values.includes('Bob only')));
-        check('完成查詞前不能收藏', await page.locator('#ext-capture-save').isDisabled());
-        check('無 BDC 主站分頁也可使用', context.pages().every((p) => !p.url().startsWith(appBase)));
+        await page.waitForFunction(() => !!document.querySelector('#ext-account-status')?.textContent);
 
+        /* ---------- 真實 SQLite 詞書、登入 dialog ---------- */
+        await connect(page, base);
+        await closeSettings(page);
         const article = await context.newPage();
         await article.goto(base + '/test-article');
-        await article.evaluate(() => {
-            const text = document.querySelector('#article').firstChild;
-            const start = text.textContent.indexOf('plunge');
-            const range = document.createRange(); range.setStart(text, start); range.setEnd(text, start + 6);
-            const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
-        });
         await article.bringToFront();
-        await page.evaluate(() => document.querySelector('#ext-extract-btn').click());
-        await page.waitForFunction(() => document.querySelector('#ext-word-input').value === 'plunge');
-        await page.locator('#ext-capture-book').selectOption('book');
-        await page.locator('#ext-lookup-btn').click();
-        await page.waitForFunction(() => !document.querySelector('#ext-lookup-btn').disabled);
-        await page.waitForFunction(() => !document.querySelector('#ext-capture-save').disabled);
+        await article.waitForFunction(() => !!document.querySelector('bdc-page-lookup'));
+        const cdp = await context.newCDPSession(article);
+        const frame = await openCard(article, cdp, extUrl.slice(0, extUrl.lastIndexOf('/')));
+        // 0.6.1：詞書列表在 #ext-book-dialog 內，需先開啟才能操作下拉。
+        await openBookDialog(frame);
+        check('真實 SQLite 詞書列表及帳戶隔離', await frame.locator('#ext-capture-book option').allTextContents().then((values) => values.includes('Reading') && !values.includes('Bob only')));
+        await closeBookDialog(frame);
+        check('無 BDC 主站分頁也可使用', context.pages().every((p) => !p.url().startsWith(appBase)));
+
+        // 完成查詞前不能收藏：在小窗查詞 dialog 清空詞並使舊結果失效。
+        await frame.locator('#ext-inline-edit').click();
+        await frame.waitForFunction(() => document.querySelector('#ext-query-dialog').open);
+        await frame.locator('#ext-word-input').fill('');
+        check('完成查詞前不能收藏', await frame.locator('#ext-capture-save').isDisabled());
+        // 由目前選取範圍擷取原句（原 #ext-extract-btn 現在位於查詞 dialog 內）。
+        // 以 evaluate 觸發按鈕，避免滑鼠移入 iframe 清掉原網頁的選取範圍。
+        await frame.evaluate(() => document.querySelector('#ext-extract-btn').click());
+        const extractedWord = await waitFor(() => frame.locator('#ext-word-input').inputValue().then((value) => value === 'plunge' ? value : false), { timeout: 10000 });
+        if (!extractedWord) {
+            debug.extractFailure = {
+                word: await frame.locator('#ext-word-input').inputValue().catch(() => ''),
+                sentence: await frame.locator('#ext-sentence-input').inputValue().catch(() => ''),
+                notice: await frame.locator('#ext-lookup-notice').textContent().catch(() => ''),
+                selection: await article.evaluate(() => getSelection().toString()).catch(() => ''),
+                body: await frame.locator('body').innerText().then((text) => text.slice(0, 500)).catch(() => '')
+            };
+            fs.writeFileSync(path.join(OUT, 'extract-debug.json'), JSON.stringify(debug.extractFailure, null, 2));
+        }
+        check('可從目前選取範圍擷取原詞與原句', !!extractedWord, debug.extractFailure);
+        await frame.locator('#ext-lookup-btn').click();
+        await frame.waitForFunction(() => !document.querySelector('#ext-lookup-btn').disabled);
+        await selectCaptureBook(frame, 'book');
+        await frame.waitForFunction(() => !document.querySelector('#ext-capture-save').disabled);
         const calls = state.aiCalls;
-        await page.locator('#ext-capture-save').click();
-        await waitSaved(page);
+        await frame.locator('#ext-capture-save').click();
+        await waitSaved(frame);
         const first = db.prepare("SELECT * FROM reading_entities WHERE entity_type='vocabularyEntry' AND owner_user_id='alice'").get();
         const saved = JSON.parse(first.data_json);
         check('明確收藏後詞條與網頁來源已提交', saved.bookId === 'book' && saved.sources[0].sourceUrl === base + '/test-article' && saved.sources[0].pageTitle === 'Major tech stocks plunge');
@@ -184,14 +340,17 @@ async function waitSaved(page) {
         check('保存選詞定位、原句及當次意思', saved.sources[0].anchor.start >= 0 && saved.sources[0].sentence.includes('stocks plunge') && saved.sources[0].meaning === saved.meaning);
         check('成功回執後待傳清除', (await outbox(page)).length === 0);
 
-        await lookup(page, 'Stocks plunge again.');
-        check('手動修改查詢清除舊來源網址', await page.locator('#ext-capture-source a').count() === 0);
-        await page.locator('#ext-capture-book').selectOption('book-2');
+        await lookup(frame, { sentence: 'Stocks plunge again.' });
+        // The article-bound editor keeps provenance after a correction; exact offsets are invalidated.
+        check('手動修正查詢保留原文來源', await frame.locator('#ext-capture-source a').getAttribute('href') === base + '/test-article');
+        await selectCaptureBook(frame, 'book-2');
         state.loseNextReply = true;
-        await page.locator('#ext-capture-save').click();
-        await page.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
+        await frame.locator('#ext-capture-save').click();
+        await frame.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
         await page.waitForFunction(async () => Object.keys(await chrome.storage.local.get(null)).some((key) => key.startsWith('bdc_capture_outbox_v1:')));
         const pendingBefore = (await outbox(page))[0];
+        check('修正後的待傳保留原文但不沿用舊定位', pendingBefore?.payload.source.sourceUrl === base + '/test-article'
+            && pendingBefore?.payload.source.anchor.start === -1 && pendingBefore?.payload.source.anchor.end === -1);
         check('提交後回應遺失仍保留原 requestId 待傳', !!pendingBefore && db.prepare('SELECT COUNT(*) AS n FROM vocabulary_captures').get().n === 2);
         await page.close();
         const replayResponse = context.waitForEvent('response', {
@@ -210,52 +369,64 @@ async function waitSaved(page) {
             { replayCount, receiptCount, sourceCount: secondEntry?.sources.length });
 
         state.failCaptures = true;
-        await lookup(page, 'Prices plunge on Friday.');
-        await page.locator('#ext-capture-book').selectOption('book');
-        await page.locator('#ext-capture-save').click();
-        await page.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
-        check('服務暫時不可用時不誤報成功', (await outbox(page)).length === 1 && !(await page.locator('#ext-capture-save').textContent()).includes('已加入'));
+        await lookup(frame, { sentence: 'Prices plunge on Friday.' });
+        await selectCaptureBook(frame, 'book');
+        await frame.locator('#ext-capture-save').click();
+        await frame.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
+        // Other open frames also refresh the button state. Wait for the
+        // durable failed operation rather than treating one label update as
+        // proof that the asynchronous enqueue/send lifecycle has finished.
+        await page.waitForFunction(async () => Object.values(await chrome.storage.local.get(null))
+            .filter((value) => value?.payload?.requestId && value?.endpoint).length === 1);
+        check('服務暫時不可用時不誤報成功', (await outbox(page)).length === 1 && !(await frame.locator('#ext-capture-save').textContent()).includes('已加入'), {
+            pending: await outbox(page), label: await frame.locator('#ext-capture-save').textContent(),
+            notice: await frame.locator('#ext-capture-notice').textContent(), lastCall: state.captureCalls.at(-1),
+            sentence: await frame.locator('#ext-sentence-input').inputValue()
+        });
         const queued = JSON.stringify(await outbox(page));
         check('本機待傳不保存登入 token 或 AI Key', !queued.includes(ALICE) && !queued.includes(AI_KEY));
         await page.close(); page = await context.newPage(); await page.goto(extUrl);
         await page.waitForFunction(() => document.querySelector('#ext-capture-book').options.length > 1);
         check('關閉再開仍保留待傳', (await outbox(page)).length === 1);
         state.failCaptures = false;
-        if (!await page.locator('#ext-book-options').evaluate(node => node.open)) await page.locator('#ext-book-options > summary').click();
-        await page.locator('#ext-capture-refresh').click();
+        await refreshCapture(frame);
         await page.waitForFunction(async () => !Object.keys(await chrome.storage.local.get(null)).some((key) => key.startsWith('bdc_capture_outbox_v1:')));
         check('恢復服務並重試後保存完成', JSON.parse(db.prepare('SELECT data_json FROM reading_entities WHERE entity_id=?').get(first.entity_id).data_json).sources.length === 2);
 
         state.failCaptures = true;
-        await lookup(page, 'Shares plunge before the close.');
-        await page.locator('#ext-capture-save').click();
-        await page.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
+        await lookup(frame, { sentence: 'Shares plunge before the close.' });
+        await frame.locator('#ext-capture-save').click();
+        await frame.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
         const callsBeforeSwitch = state.captureCalls.length;
         const receiptsBeforeSwitch = db.prepare('SELECT COUNT(*) AS n FROM vocabulary_captures').get().n;
-        if (!await page.locator('#ext-account-details').evaluate(node => node.open)) await page.locator('#ext-account-summary').click();
-        await page.locator('#ext-logout-btn').click();
+        await openSettings(frame); await openAccount(frame);
+        await frame.locator('#ext-logout-btn').click();
         state.failCaptures = false;
-        await connect(page, base, BOB);
-        check('切換帳戶只顯示新帳戶詞書', await page.locator('#ext-capture-book option').allTextContents().then((values) => values.includes('Bob only') && !values.includes('Reading')));
+        await connect(frame, base, BOB);
+        await closeSettings(frame);
+        await openBookDialog(frame);
+        check('切換帳戶只顯示新帳戶詞書', await frame.locator('#ext-capture-book option').allTextContents().then((values) => values.includes('Bob only') && !values.includes('Reading')));
+        await closeBookDialog(frame);
         check('切換帳戶不傳送前帳戶的待傳', state.captureCalls.length === callsBeforeSwitch && db.prepare('SELECT COUNT(*) AS n FROM vocabulary_captures').get().n === receiptsBeforeSwitch);
-        if (!await page.locator('#ext-account-details').evaluate(node => node.open)) await page.locator('#ext-account-summary').click();
-        await page.locator('#ext-logout-btn').click();
-        await connect(page, base, ALICE);
+        await openSettings(frame); await openAccount(frame);
+        await frame.locator('#ext-logout-btn').click();
+        await connect(frame, base, ALICE);
+        await closeSettings(frame);
         await page.waitForFunction(async () => !Object.keys(await chrome.storage.local.get(null)).some((key) => key.startsWith('bdc_capture_outbox_v1:')));
         check('返回原帳戶才恢復其待傳', db.prepare('SELECT COUNT(*) AS n FROM vocabulary_captures').get().n === receiptsBeforeSwitch + 1);
+        await closeSettings(frame);
 
-        await lookup(page, 'Markets plunge after the announcement.');
-        await page.locator('#ext-capture-book').selectOption('book-2');
+        await lookup(frame, { sentence: 'Markets plunge after the announcement.' });
+        await selectCaptureBook(frame, 'book-2');
         db.exec("UPDATE reading_entities SET deleted_at='2026-11-06',revision=revision+1 WHERE entity_id='book-2'");
-        await page.locator('#ext-capture-save').click();
-        await page.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
-        check('目標詞書刪除後明確保留待傳並報錯', (await outbox(page)).length === 1 && /不存在|删除|刪除/.test(await page.locator('#ext-capture-notice').textContent()));
-        if (!await page.locator('#ext-book-options').evaluate(node => node.open)) await page.locator('#ext-book-options > summary').click();
-        await page.locator('#ext-capture-refresh').click();
-        await page.waitForFunction(() => !Array.from(document.querySelector('#ext-capture-book').options).some((option) => option.value === 'book-2'));
-        check('刪除目標不會悄悄改存另一個詞書', await page.locator('#ext-capture-book').inputValue() === '' && await page.locator('#ext-capture-save').isDisabled());
-        await page.locator('#ext-capture-pending summary').click();
-        await page.locator('#ext-capture-pending-list li button').nth(1).click();
+        await frame.locator('#ext-capture-save').click();
+        await frame.waitForFunction(() => !/正在|加入中/.test(document.querySelector('#ext-capture-save').textContent));
+        check('目標詞書刪除後明確保留待傳並報錯', (await outbox(page)).length === 1 && /不存在|删除|刪除/.test(await frame.locator('#ext-capture-notice').textContent()));
+        await refreshCapture(frame);
+        await frame.waitForFunction(() => !Array.from(document.querySelector('#ext-capture-book').options).some((option) => option.value === 'book-2'));
+        check('刪除目標不會悄悄改存另一個詞書', await frame.locator('#ext-capture-book').inputValue() === '' && await frame.locator('#ext-capture-save').isDisabled());
+        await frame.locator('#ext-capture-pending summary').click();
+        await frame.locator('#ext-capture-pending-list li button').nth(1).click();
         await page.waitForFunction(async () => !Object.keys(await chrome.storage.local.get(null)).some((key) => key.startsWith('bdc_capture_outbox_v1:')));
         check('可明確取消本機待傳', (await outbox(page)).length === 0);
 
@@ -277,9 +448,10 @@ async function waitSaved(page) {
         });
         check('主站逐項同步看見新詞條', synced.books.find((book) => book.id === 'book')?.words.some((word) => word.word === 'plunge'));
         await app.locator('#vocab-book-list li').filter({ hasText: '单词本' }).first().click();
-        await app.locator('.word-sources summary').first().click();
-        check('主站顯示原網頁、原句及當次意思', await app.locator('.word-source a').first().getAttribute('href') === base + '/test-article'
-            && (await app.locator('.word-sources').first().textContent()).includes('當時釋義'));
+        await app.locator('.word-sources-btn').first().click();
+        check('主站來源彈窗顯示原網頁、原句及當次意思', await app.locator('#app-modal').isVisible()
+            && await app.locator('#app-modal .word-source a').first().getAttribute('href') === base + '/test-article'
+            && (await app.locator('#app-modal .word-sources').textContent()).includes('當時釋義'));
         fs.writeFileSync(path.join(OUT, 'reading-export-shape.json'), JSON.stringify({ keys: Object.keys(synced.backup), ok: synced.backup.ok }, null, 2));
         await app.screenshot({ path: path.join(OUT, 'website-source-zh-HK.png'), fullPage: true });
 
@@ -339,20 +511,26 @@ async function waitSaved(page) {
         await pollPage.evaluate(() => dispatchEvent(new Event('focus')));
         await pollPage.waitForFunction(() => window.__capturePollEvents.some((event) => event.eventType === 'reading'));
         check('快照版本不變仍可於返回前景發現新收藏', versionBefore === versionAfter);
-        await pollPage.evaluate(async () => (await import('/modules/sync-cloudflare.js')).unsubscribeChannel(window.__capturePollChannel));
+        await pollPage.evaluate(async () => (await import('./modules/sync-cloudflare.js')).unsubscribeChannel(window.__capturePollChannel));
         await pollPage.close();
         await app.evaluate(() => dispatchEvent(new Event('focus')));
         await app.waitForFunction(() => document.querySelector('#word-list')?.textContent.includes('gather'), null, { timeout: 35000 });
         check('返回實際主站自動同步並更新詞書畫面', (await app.locator('#word-list').textContent()).includes('gather'));
 
-        await page.locator('#ext-locale-select').selectOption('zh-HK');
-        check('香港繁體收藏介面及窄畫面', await page.locator('#ext-capture-save').textContent() === '加入' && await page.locator('#ext-capture-save').getAttribute('aria-label') === '加入詞書'
-            && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-        await page.screenshot({ path: path.join(OUT, 'extension-capture-zh-HK.png'), fullPage: true });
-        await page.locator('#ext-locale-select').selectOption('zh-CN');
-        check('簡體收藏介面及窄畫面', await page.locator('#ext-capture-save').textContent() === '加入' && await page.locator('#ext-capture-save').getAttribute('aria-label') === '加入词书'
-            && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-        await page.screenshot({ path: path.join(OUT, 'extension-capture-zh-CN.png'), fullPage: true });
+        await openSettings(frame);
+        await frame.locator('#ext-locale-select').selectOption('zh-HK');
+        await closeSettings(frame);
+        check('香港繁體收藏介面及窄畫面', await frame.locator('#ext-capture-save').textContent() === '加入'
+            && await frame.locator('#ext-capture-save').getAttribute('aria-label') === '加入詞書'
+            && await frame.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await article.screenshot({ path: path.join(OUT, 'extension-capture-zh-HK.png'), fullPage: true });
+        await openSettings(frame);
+        await frame.locator('#ext-locale-select').selectOption('zh-CN');
+        await closeSettings(frame);
+        check('簡體收藏介面及窄畫面', await frame.locator('#ext-capture-save').textContent() === '加入'
+            && await frame.locator('#ext-capture-save').getAttribute('aria-label') === '加入词书'
+            && await frame.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await article.screenshot({ path: path.join(OUT, 'extension-capture-zh-CN.png'), fullPage: true });
         check('無未捕獲頁面錯誤', pageErrors.length === 0, pageErrors);
     } catch (error) {
         checks.push({ name: 'execution', ok: false, detail: error.stack });
@@ -374,7 +552,9 @@ async function waitSaved(page) {
         if (context) await context.close();
         if (testEnv) await testEnv.close();
         fs.rmSync(profile, { recursive: true, force: true });
+        const failed = checks.filter((c) => !c.ok);
+        if (failed.length) process.exitCode = 1;
         fs.writeFileSync(path.join(OUT, 'results.json'), JSON.stringify({ timestamp: new Date().toISOString(), checks, pageErrors, realWorkerAndSQLite: true, aiMocked: true }, null, 2));
-        console.log(JSON.stringify({ passed: checks.filter((c) => c.ok).length, failed: checks.filter((c) => !c.ok).length, output: OUT }));
+        console.log(JSON.stringify({ passed: checks.length - failed.length, failed: failed.length, output: OUT }));
     }
 })();

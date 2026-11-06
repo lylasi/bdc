@@ -1,0 +1,174 @@
+{
+  "checks": [
+    {
+      "name": "首次查詢真的呼叫一次 AI，常駐重查圖示在結果出現後可用",
+      "ok": true
+    },
+    {
+      "name": "首次回應不標成快取",
+      "ok": true
+    },
+    {
+      "name": "關窗後重開，同步請求被按住仍在兩秒內讀到本機結果",
+      "ok": true,
+      "detail": {
+        "scenario": "reopen-blocked-network",
+        "elapsed": 233,
+        "held": 4
+      }
+    },
+    {
+      "name": "命中的內容就是第一次成功結果，網絡仍未放行",
+      "ok": true
+    },
+    {
+      "name": "刷新原網頁後仍能直讀本機，沒有重跑 AI",
+      "ok": true,
+      "detail": {
+        "scenario": "reload-blocked-network",
+        "elapsed": 252,
+        "held": 4
+      }
+    },
+    {
+      "name": "另一網站相同詞句與語境也可重用本機結果",
+      "ok": true,
+      "detail": {
+        "scenario": "other-origin-blocked-network",
+        "elapsed": 279,
+        "held": 4
+      }
+    },
+    {
+      "name": "重查圖示強制發出一次 AI 請求並更新結果",
+      "ok": true
+    },
+    {
+      "name": "重查圖示成功後仍在，沒有改成永久略過快取",
+      "ok": true
+    },
+    {
+      "name": "下次普通查詢重用強制重查後的新結果",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 收藏短按鈕與兩個圖示保持一行、320px 無溢出",
+      "ok": true,
+      "detail": {
+        "width": 302,
+        "height": 159,
+        "scroll": 302,
+        "buttons": [
+          {
+            "id": "ext-capture-save",
+            "x": 10,
+            "y": 116.78125,
+            "width": 64,
+            "height": 32,
+            "label": "加入词书",
+            "title": "收藏到《网页》"
+          },
+          {
+            "id": "ext-book-settings",
+            "x": 80,
+            "y": 116.78125,
+            "width": 34,
+            "height": 32,
+            "label": "选择或建立词书",
+            "title": "收藏到《网页》 · 选择或建立词书"
+          },
+          {
+            "id": "ext-inline-retry",
+            "x": 120,
+            "y": 116.78125,
+            "width": 34,
+            "height": 32,
+            "label": "重新查词（跳过缓存）",
+            "title": "重新查词（跳过缓存）"
+          }
+        ]
+      }
+    },
+    {
+      "name": "zh-CN 重查圖示有本地化可讀標籤",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 收藏短按鈕與兩個圖示保持一行、320px 無溢出",
+      "ok": true,
+      "detail": {
+        "width": 302,
+        "height": 159,
+        "scroll": 302,
+        "buttons": [
+          {
+            "id": "ext-capture-save",
+            "x": 10,
+            "y": 116.78125,
+            "width": 64,
+            "height": 32,
+            "label": "加入詞書",
+            "title": "收藏到《網頁》"
+          },
+          {
+            "id": "ext-book-settings",
+            "x": 80,
+            "y": 116.78125,
+            "width": 34,
+            "height": 32,
+            "label": "選擇或建立詞書",
+            "title": "收藏到《網頁》 · 選擇或建立詞書"
+          },
+          {
+            "id": "ext-inline-retry",
+            "x": 120,
+            "y": 116.78125,
+            "width": 34,
+            "height": 32,
+            "label": "重新查詞（略過快取）",
+            "title": "重新查詞（略過快取）"
+          }
+        ]
+      }
+    },
+    {
+      "name": "zh-HK 重查圖示有本地化可讀標籤",
+      "ok": true
+    },
+    {
+      "name": "重查失敗直接顯示錯誤，圖示保留且沒有舊答案冒充成功",
+      "ok": true
+    },
+    {
+      "name": "失敗後可再次點圖示恢復，不會卡在忙碌狀態",
+      "ok": true
+    },
+    {
+      "name": "恢復後普通查詢命中新成功結果，失敗沒有覆蓋快取",
+      "ok": true
+    },
+    {
+      "name": "所有流程無未捕獲 JavaScript 例外",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "timings": [
+    {
+      "scenario": "reopen-blocked-network",
+      "elapsed": 233,
+      "held": 4
+    },
+    {
+      "scenario": "reload-blocked-network",
+      "elapsed": 252,
+      "held": 4
+    },
+    {
+      "scenario": "other-origin-blocked-network",
+      "elapsed": 279,
+      "held": 4
+    }
+  ],
+  "errors": []
+}

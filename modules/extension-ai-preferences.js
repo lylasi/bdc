@@ -6,7 +6,7 @@ import { getAuthSnapshot } from './sync-cloudflare.js';
 import { isThinkingLevel } from './ai-thinking.js';
 
 export const EXTENSION_AI_PREFERENCES_PREFIX = 'bdc_extension_ai_preferences_v1:';
-export const EXTENSION_AI_TASKS = ['wordAnalysis', 'articleWordTranslation', 'articlePhraseTranslation', 'articleCleanup', 'articleParagraphTranslation'];
+export const EXTENSION_AI_TASKS = ['wordAnalysis', 'articleWordTranslation', 'articlePhraseTranslation', 'articleCleanup', 'articleParagraphTranslation', 'assistant'];
 
 function preferenceKey() {
     const scope = getActiveAIScope();

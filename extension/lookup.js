@@ -11,6 +11,7 @@ import {
     syncExtensionAccountAI,
     importScopedLocalProviderKey,
     getExtensionReadiness,
+    readExtensionLookupCache,
     runExtensionLookup,
     lookupSelection
 } from './modules/extension-ai-runtime.js';
@@ -22,11 +23,17 @@ import { createCaptureUI } from './capture-ui.js';
 import { createWorkspaceUI } from './workspace-ui.js';
 import { createInlinePanel } from './inline-panel.js';
 import { createAIControls } from './ai-controls.js';
+import { createAssistantUI } from './assistant-ui.js';
+import { publicSourceUrl } from './shared/vocabulary-source.mjs';
 import { EXTENSION_AI_PREFERENCES_PREFIX } from './modules/extension-ai-preferences.js';
 
 const pageParameters = new URLSearchParams(location.search);
 const isEmbedded = window.parent !== window;
-const inlineTicket = pageParameters.get('ticket') || '';
+const inlineTicket = pageParameters.get('ticket') || pageParameters.get('windowTicket') || '';
+const isWorkspaceWindow = pageParameters.has('windowTicket');
+const requestedView = pageParameters.get('view') || '';
+document.body.classList.add(isWorkspaceWindow ? 'ext-workspace-window' : isEmbedded ? 'ext-inline' : 'ext-home');
+if (requestedView === 'article') document.body.classList.add('ext-article-view');
 let inlineContext = null;
 if (isEmbedded || pageParameters.has('embedded')) {
     const result = await chrome.runtime.sendMessage({ type: 'BDC_INLINE_CONTEXT', ticket: inlineTicket }).catch(() => null);
@@ -38,6 +45,13 @@ if (isEmbedded || pageParameters.has('embedded')) {
     inlineContext = result.value;
     document.body.classList.add('ext-inline');
     document.getElementById('ext-inline-toolbar').hidden = false;
+}
+
+
+if (isWorkspaceWindow) {
+    const result = await chrome.runtime.sendMessage({ type: 'BDC_WINDOW_CONTEXT', ticket: inlineTicket }).catch(() => null);
+    if (!result?.ok) { initI18n(); document.body.textContent = t('extension.inlineUnavailable'); throw new Error('Invalid window context'); }
+    inlineContext = result.value;
 }
 
 const dom = {
@@ -80,6 +94,8 @@ const dom = {
     resultRole: document.getElementById('ext-result-role'),
     resultExamples: document.getElementById('ext-result-examples'),
     resultMeta: document.getElementById('ext-result-meta'),
+    resultCache: document.getElementById('ext-result-cache'),
+    requery: document.getElementById('ext-inline-retry'),
     captureBook: document.getElementById('ext-capture-book'),
     captureSave: document.getElementById('ext-capture-save'),
     captureRefresh: document.getElementById('ext-capture-refresh'),
@@ -107,34 +123,128 @@ const workspaceDom = {
     appUrl: document.getElementById('ext-app-url')
 };
 const workspaceUI = createWorkspaceUI(workspaceDom, captureUI, { ticket: inlineTicket });
+if (requestedView !== 'article') {
+    document.getElementById('ext-book-feedback').append(workspaceDom.workspaceNotice, workspaceDom.workspacePendingBox);
+}
 
 let activeLookupSequence = 0;
 let activeLookupController = null;
+let lookupSetupPromise = null;
 let lastResultPayload = null;
 let lastAccountNotice = null;
 let lastLookupNotice = null;
 let lastAccountIdentity = null;
+let assistantUI = null;
+let captureState = {};
+let workspaceState = {};
+let savedDialogMode = null;
+let querySnapshot = null;
+let querySubmitted = false;
 const inlineUI = isEmbedded ? createInlinePanel({
     more: document.getElementById('ext-inline-more'), back: document.getElementById('ext-inline-back'),
     close: document.getElementById('ext-inline-close'), confirm: document.getElementById('ext-inline-confirm'),
     confirmText: document.getElementById('ext-inline-confirm-text'), keep: document.getElementById('ext-inline-keep'),
-    discard: document.getElementById('ext-inline-discard'), quick: document.getElementById('ext-quick-capture'),
-    retry: document.getElementById('ext-inline-retry'), actionNotice: document.getElementById('ext-inline-action-notice'),
+    discard: document.getElementById('ext-inline-discard'),
+    actionNotice: document.getElementById('ext-inline-action-notice'),
     captureBook: dom.captureBook, lookup: dom.lookupBtn, queryInputs: [dom.wordInput, dom.sentenceInput, dom.contextInput]
-}, captureUI, workspaceUI, { ticket: inlineTicket, restoreQuery: () => {
+}, captureUI, workspaceUI, { ticket: inlineTicket, initialMode: requestedView === 'assistant' ? 'assistant' : 'compact',
+    getAuxState: () => document.body.classList.contains('ext-assistant-view') ? assistantUI?.getState() || {} : {},
+    onClose: () => assistantUI?.stop(),
+    onMode: (mode) => {
+        if (mode === 'dialog') return;
+        const assistant = mode === 'assistant' || mode === 'assistant-dock';
+        document.body.classList.toggle('ext-assistant-view', assistant);
+        const title = document.querySelector('.ext-toolbar-title');
+        if (title) {
+            title.dataset.i18n = assistant ? 'extension.assistantTitle' : 'extension.inlineTitle';
+            title.textContent = t(title.dataset.i18n);
+        }
+        const section = document.getElementById('ext-assistant-section');
+        if (section) section.hidden = !assistant;
+    }, restoreQuery: () => {
     const page = inlineContext.page;
     dom.wordInput.value = page.text; dom.sentenceInput.value = page.sentence || ''; dom.contextInput.value = page.context || '';
     captureUI.setSource(page); renderReadiness();
 } }) : null;
-const aiControls = createAIControls({ embedded: isEmbedded, onChange: renderReadiness, onLookup: handleLookup });
+const aiControls = createAIControls({ embedded: isEmbedded, onChange: renderReadiness, onLookup: () => {
+    document.getElementById('ext-settings-dialog')?.close();
+    handleLookup({ noCache: true });
+} });
+
+const assistantDom = Object.fromEntries(Object.entries({ section: 'section', context: 'context', reference: 'reference', referenceText: 'reference-text',
+    messages: 'messages', notice: 'notice', form: 'form', input: 'input', send: 'send', stop: 'stop', retry: 'retry',
+    newConversation: 'new', expand: 'expand' }).map(([key, suffix]) => [key, document.getElementById('ext-assistant-' + suffix)]));
+assistantUI = createAssistantUI(assistantDom, { ticket: inlineTicket, onState: () => inlineUI?.render(),
+    onExpand: () => {
+        const dock = inlineUI?.getMode() !== 'assistant-dock';
+        inlineUI?.setMode(dock ? 'assistant-dock' : 'assistant');
+        assistantDom.expand.setAttribute('aria-pressed', String(dock));
+        const label = t(dock ? 'extension.assistantCollapse' : 'extension.assistantExpand');
+        assistantDom.expand.title = label; assistantDom.expand.setAttribute('aria-label', label);
+        assistantDom.expand.dataset.i18nTitle = dock ? 'extension.assistantCollapse' : 'extension.assistantExpand';
+        assistantDom.expand.dataset.i18nAriaLabel = assistantDom.expand.dataset.i18nTitle;
+    } });
+
+async function openAssistant(fromWord = false) {
+    if (!isEmbedded && !isWorkspaceWindow) {
+        const response = await chrome.runtime.sendMessage({ type: 'BDC_SHOW_ASSISTANT' }).catch(() => null);
+        if (!response?.ok) showAccountNotice('error', 'extension.inlineUnavailable');
+        return;
+    }
+    inlineUI?.setMode('assistant');
+    document.body.classList.add('ext-assistant-view');
+    await assistantUI.open({ reference: fromWord ? [dom.wordInput.value, dom.sentenceInput.value].filter(Boolean).join('\n') : '' });
+}
+function openDialog(id) {
+    const dialog = document.getElementById(id);
+    if (!dialog || dialog.open) return;
+    if (savedDialogMode === null) savedDialogMode = inlineUI?.getMode() || null;
+    inlineUI?.setMode('dialog');
+    if (id === 'ext-query-dialog') {
+        document.body.classList.add('ext-edit-query');
+        querySubmitted = false;
+        querySnapshot = { text: dom.wordInput.value, sentence: dom.sentenceInput.value, context: dom.contextInput.value,
+            source: captureState.source, result: lastResultPayload };
+    }
+    document.body.classList.add('ext-modal-open');
+    dialog.showModal();
+    if (id === 'ext-query-dialog') dom.wordInput.focus();
+}
+async function openWorkspace() {
+    const result = await chrome.runtime.sendMessage({ type: 'BDC_OPEN_WINDOW', view: 'article',
+        ...(inlineTicket ? { ticket: inlineTicket } : {}) }).catch(() => null);
+    if (!result?.ok) showAccountNotice('error', 'extension.inlineUnavailable');
+}
+async function openBook(home = false) {
+    const result = await chrome.runtime.sendMessage({ type: 'BDC_OPEN_SITE', target: 'book', id: home ? '' : captureState.selectedBookId || '',
+        ...(inlineTicket ? { ticket: inlineTicket } : {}) }).catch(() => null);
+    if (!result?.ok) showAccountNotice('error', 'extension.pageAppUrlInvalid');
+}
+captureUI.subscribe((state) => {
+    captureState = state;
+    document.body.classList.toggle('ext-has-query', !!state.hasResult || !!dom.wordInput.value.trim());
+    const bookButton = document.getElementById('ext-open-book');
+    if (bookButton) bookButton.disabled = !state.selectedBookId;
+    const bookSettings = document.getElementById('ext-book-settings');
+    if (bookSettings) {
+        bookSettings.disabled = state.busy;
+        bookSettings.title = `${t('extension.captureDestination', { book: state.books.find((book) => book.id === state.selectedBookId)?.name || t('extension.webBookName') })} · ${t('extension.bookSettingsOpen')}`;
+    }
+    const sourceButton = document.getElementById('ext-open-source');
+    if (sourceButton) sourceButton.hidden = !publicSourceUrl(state.source?.pageUrl);
+});
+workspaceUI.subscribe((state) => { workspaceState = state; });
+
 
 function setNotice(el, kind, keyOrText, params = {}, isRawText = false) {
     if (!el) return;
     if (!keyOrText) {
+        el.hidden = true;
         el.classList.add('hidden');
         el.textContent = '';
         return;
     }
+    el.hidden = false;
     el.classList.remove('hidden', 'ext-notice-error', 'ext-notice-info');
     el.classList.add(kind === 'error' ? 'ext-notice-error' : 'ext-notice-info');
     el.textContent = isRawText ? String(keyOrText) : t(keyOrText, params);
@@ -143,6 +253,7 @@ function setNotice(el, kind, keyOrText, params = {}, isRawText = false) {
 function showAccountNotice(kind, keyOrText, params = {}, isRawText = false) {
     lastAccountNotice = keyOrText ? { kind, keyOrText, params, isRawText } : null;
     setNotice(dom.accountNotice, kind, keyOrText, params, isRawText);
+    setNotice(document.getElementById('ext-home-notice'), kind, kind === 'error' ? keyOrText : '', params, isRawText);
 }
 
 function showLookupNotice(kind, keyOrText, params = {}, isRawText = false) {
@@ -168,6 +279,7 @@ function clearDisplayedResult() {
     if (dom.resultPhonetic) dom.resultPhonetic.textContent = '';
     if (dom.resultPos) dom.resultPos.textContent = '';
     if (dom.resultMeaning) dom.resultMeaning.textContent = '';
+    if (dom.resultCache) dom.resultCache.hidden = true;
     if (dom.resultRole) dom.resultRole.textContent = '';
     if (dom.resultExamples) dom.resultExamples.innerHTML = '';
     if (dom.resultMeta) dom.resultMeta.textContent = '';
@@ -210,6 +322,7 @@ function renderResult(result) {
         return;
     }
     lastResultPayload = result;
+    dom.resultCache.hidden = !result.fromCache;
     dom.resultEmpty?.classList.add('hidden');
     dom.resultBox?.classList.remove('hidden');
     if (dom.resultWord) dom.resultWord.textContent = result.text || result.word || '';
@@ -224,7 +337,7 @@ function renderResult(result) {
         dom.resultPos.classList.toggle('hidden', !pos);
     }
     if (dom.resultMeaning) {
-        dom.resultMeaning.textContent = `${t('extension.resultMeaningLabel')}：${result.meaning}`;
+        dom.resultMeaning.textContent = result.meaning;
     }
     if (dom.resultRole) {
         const role = String(result.role || result.usage || '').trim();
@@ -253,6 +366,9 @@ function renderResult(result) {
 function renderReadiness() {
     const wordText = dom.wordInput ? dom.wordInput.value : '';
     const readiness = getExtensionReadiness({ text: wordText, sentence: dom.sentenceInput?.value, context: dom.contextInput?.value });
+    dom.requery.hidden = !wordText.trim();
+    dom.requery.disabled = !readiness.loggedIn || !!activeLookupController;
+    dom.requery.setAttribute('aria-busy', String(!!activeLookupController));
     aiControls.render(readiness, { busy: !!activeLookupController, hasQuery: !!wordText.trim() });
     const identity = readiness.loggedIn ? readiness.scope.key : '';
     const accountDetails = document.getElementById('ext-account-details');
@@ -270,6 +386,8 @@ function renderReadiness() {
         dom.endpointInput.value = readiness.endpoint;
     }
 
+    const homeStatus = document.getElementById('ext-home-status');
+    if (homeStatus) homeStatus.textContent = readiness.loggedIn ? t('extension.statusConnected', { user: readiness.label || readiness.userId }) : t('extension.statusDisconnected');
     if (dom.accountStatus) {
         dom.accountStatus.textContent = readiness.loggedIn
             ? t('extension.statusConnected', { user: readiness.label || readiness.userId })
@@ -333,6 +451,7 @@ function renderReadiness() {
 async function handleConnect() {
     if (!dom.connectBtn) return;
     invalidateLookup();
+    workspaceUI.setReady(false);
     dom.connectBtn.disabled = true;
     dom.connectBtn.textContent = t('extension.connecting');
     showAccountNotice('info', '');
@@ -360,6 +479,7 @@ async function handleConnect() {
         showFailure(showAccountNotice, error);
         renderReadiness();
     } finally {
+        workspaceUI.setReady(true);
         dom.connectBtn.disabled = false;
         dom.connectBtn.textContent = t('extension.connectBtn');
     }
@@ -368,6 +488,7 @@ async function handleConnect() {
 async function handleSync() {
     if (!dom.syncBtn) return;
     invalidateLookup();
+    workspaceUI.setReady(false);
     dom.syncBtn.disabled = true;
     dom.syncBtn.textContent = t('extension.syncing');
     showAccountNotice('info', '');
@@ -379,6 +500,7 @@ async function handleSync() {
         showFailure(showAccountNotice, error);
         renderReadiness();
     } finally {
+        workspaceUI.setReady(true);
         dom.syncBtn.disabled = false;
         dom.syncBtn.textContent = t('extension.syncBtn');
         renderReadiness();
@@ -447,7 +569,16 @@ async function handleExtractFromTab() {
     }
 }
 
-async function handleLookup() {
+function prepareLookupAccount() {
+    if (!lookupSetupPromise) {
+        const pending = syncExtensionAccountAI();
+        lookupSetupPromise = pending;
+        pending.catch(() => { if (lookupSetupPromise === pending) lookupSetupPromise = null; });
+    }
+    return lookupSetupPromise;
+}
+
+async function handleLookup({ noCache: forceRefresh = false } = {}) {
     aiControls.clearFallback();
     clearDisplayedResult();
     const seq = ++activeLookupSequence;
@@ -468,22 +599,30 @@ async function handleLookup() {
     const text = dom.wordInput ? dom.wordInput.value.trim() : '';
     const sentence = dom.sentenceInput ? dom.sentenceInput.value.trim() : '';
     const context = dom.contextInput ? dom.contextInput.value.trim() : '';
-    const noCache = !!(dom.forceRefresh && dom.forceRefresh.checked);
+    const noCache = forceRefresh || !!(dom.forceRefresh && dom.forceRefresh.checked);
     if (isEmbedded) dom.resultEmpty.textContent = t('extension.inlineLookingUp', { word: text });
 
     try {
-        const result = await runExtensionLookup({
+        const input = {
             text,
             sentence,
             context,
             locale: getLocale(),
             signal: controller.signal,
             noCache
-        });
+        };
+        let result = noCache ? null : await readExtensionLookupCache(input);
+        if (!result) {
+            await prepareLookupAccount();
+            controller.signal.throwIfAborted();
+            if (seq !== activeLookupSequence) return;
+            result = await runExtensionLookup(input);
+        }
         if (seq !== activeLookupSequence) return;
         renderResult(result);
         captureUI.showResult(result, { text, sentence, context }, getLocale());
         renderReadiness();
+        return result;
     } catch (error) {
         if (seq !== activeLookupSequence) return;
         clearDisplayedResult();
@@ -501,10 +640,14 @@ async function handleLookup() {
 }
 
 function refreshLocalizedView() {
+    if (requestedView === 'article') {
+        document.getElementById('ext-title').dataset.i18n = 'extension.pageArticleTitle';
+    }
     applyTranslations(document);
     captureUI.translate();
     workspaceUI.render();
     inlineUI?.render();
+    assistantUI?.render();
     chrome.storage.local.set({ bdc_extension_ui_locale: getLocale() }).catch(() => {});
     globalThis.chrome?.action?.setTitle({ title: t('extension.manifestTitle') }).catch(() => {});
     if (dom.localeSelect) dom.localeSelect.value = getLocale();
@@ -512,6 +655,8 @@ function refreshLocalizedView() {
     if (lastResultPayload) renderResult(lastResultPayload);
     if (lastAccountNotice) {
         setNotice(dom.accountNotice, lastAccountNotice.kind, lastAccountNotice.keyOrText, lastAccountNotice.params, lastAccountNotice.isRawText);
+        setNotice(document.getElementById('ext-home-notice'), lastAccountNotice.kind,
+            lastAccountNotice.kind === 'error' ? lastAccountNotice.keyOrText : '', lastAccountNotice.params, lastAccountNotice.isRawText);
     }
     if (lastLookupNotice) {
         setNotice(dom.lookupNotice, lastLookupNotice.kind, lastLookupNotice.keyOrText, lastLookupNotice.params, lastLookupNotice.isRawText);
@@ -520,6 +665,13 @@ function refreshLocalizedView() {
 
 async function initExtensionPage() {
     initI18n();
+    const savedUI = await chrome.storage.local.get(['bdc_extension_ui_locale', 'bdc_extension_assistant_enabled']);
+    if (savedUI.bdc_extension_ui_locale) setLocale(savedUI.bdc_extension_ui_locale, { persist: true });
+    const assistantToggle = document.getElementById('ext-assistant-enabled');
+    if (assistantToggle) {
+        assistantToggle.checked = savedUI.bdc_extension_assistant_enabled !== false;
+        assistantToggle.addEventListener('change', () => chrome.storage.local.set({ bdc_extension_assistant_enabled: assistantToggle.checked }));
+    }
     await restoreTrustedSessionState();
     syncLoginModeFields();
     refreshLocalizedView();
@@ -550,15 +702,65 @@ async function initExtensionPage() {
     dom.importKeyBtn?.addEventListener('click', handleImportKey);
     dom.extractBtn?.addEventListener('click', handleExtractFromTab);
     dom.lookupBtn?.addEventListener('click', handleLookup);
+    dom.requery.addEventListener('click', () => handleLookup({ noCache: true }));
     document.getElementById('ext-enable-inline').addEventListener('click', async () => {
         const response = await chrome.runtime.sendMessage({ type: 'BDC_ENABLE_INLINE' }).catch(() => null);
         showAccountNotice(response?.ok ? 'info' : 'error', response?.ok ? 'extension.inlineEnabled' : 'extension.inlineUnavailable');
     });
-    document.getElementById('ext-inline-settings').addEventListener('click', () => chrome.runtime.openOptionsPage());
-    document.getElementById('ext-inline-edit').addEventListener('click', () => { inlineUI?.expand(); document.body.classList.toggle('ext-edit-query'); });
+    for (const id of ['ext-inline-settings', 'ext-settings-open']) document.getElementById(id)?.addEventListener('click', () => openDialog('ext-settings-dialog'));
+    document.getElementById('ext-inline-edit')?.addEventListener('click', () => openDialog('ext-query-dialog'));
+    document.getElementById('ext-book-settings')?.addEventListener('click', () => openDialog('ext-book-dialog'));
+    for (const [id, closeId] of [['ext-settings-dialog', 'ext-settings-close'], ['ext-query-dialog', 'ext-query-close'], ['ext-book-dialog', 'ext-book-close']]) {
+        const dialog = document.getElementById(id);
+        document.getElementById(closeId)?.addEventListener('click', () => dialog.close());
+        dialog?.addEventListener('close', () => {
+            // Native close events are queued. A quick reopen must retain its
+            // own layout rather than applying the previous close afterwards.
+            if (dialog.open) return;
+            if (id === 'ext-query-dialog' && querySnapshot && !querySubmitted) {
+                const previous = querySnapshot;
+                dom.wordInput.value = previous.text; dom.sentenceInput.value = previous.sentence; dom.contextInput.value = previous.context;
+                captureUI.setSource(previous.source);
+                if (previous.result) {
+                    renderResult(previous.result);
+                    captureUI.showResult(previous.result, previous, getLocale());
+                }
+                inlineUI?.clearQueryDraft();
+                renderReadiness();
+            }
+            if (id === 'ext-query-dialog') {
+                querySnapshot = null;
+                document.body.classList.remove('ext-edit-query');
+            }
+            if (document.querySelector('dialog[open]')) return;
+            document.body.classList.remove('ext-modal-open');
+            if (savedDialogMode) inlineUI?.setMode(savedDialogMode);
+            savedDialogMode = null;
+        });
+    }
+    document.getElementById('ext-inline-ai')?.addEventListener('click', () => openAssistant(true));
+    document.getElementById('ext-home-assistant')?.addEventListener('click', () => openAssistant());
+    document.getElementById('ext-home-article')?.addEventListener('click', openWorkspace);
+    document.getElementById('ext-home-book')?.addEventListener('click', () => openBook(true));
+    document.getElementById('ext-open-book')?.addEventListener('click', () => openBook());
+    document.getElementById('ext-open-source')?.addEventListener('click', () => {
+        const url = publicSourceUrl(captureState.source?.pageUrl);
+        if (url) chrome.tabs.create({ url });
+    });
+    dom.lookupBtn.addEventListener('click', () => { querySubmitted = true; document.getElementById('ext-query-dialog')?.close(); });
+    window.addEventListener('beforeunload', (event) => {
+        if (isWorkspaceWindow && (workspaceState.busy || workspaceState.hasDraft)) { event.preventDefault(); event.returnValue = ''; }
+    });
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes.bdc_extension_assistant_enabled && assistantToggle) assistantToggle.checked = changes.bdc_extension_assistant_enabled.newValue !== false;
+    });
     for (const input of [dom.wordInput, dom.sentenceInput, dom.contextInput]) {
         input?.addEventListener('input', () => {
-            captureUI.setSource(null);
+            if (captureState.source?.anchor) {
+                // Keep the article link after a correction, but do not claim
+                // that edited text still has the original exact DOM offsets.
+                captureUI.setSource({ ...captureState.source, anchor: null });
+            }
             invalidateLookup();
             renderReadiness();
         });
@@ -577,6 +779,7 @@ async function initExtensionPage() {
 
     window.addEventListener(AUTH_EVENT, (ev) => {
         const kind = ev?.detail?.event || '';
+        if (['SIGNED_IN', 'ACCOUNT_CHANGED', 'SIGNED_OUT', 'SESSION_INVALID'].includes(kind)) lookupSetupPromise = null;
         if (kind === 'ACCOUNT_CHANGED' || kind === 'SIGNED_OUT' || kind === 'SESSION_INVALID') {
             invalidateLookup();
         }
@@ -594,21 +797,39 @@ async function initExtensionPage() {
         if (status.busy && !articleWasBusy) aiControls.clearFallback();
         articleWasBusy = !!status.busy;
     });
-    await captureUI.sync();
-    await workspaceUI.sync();
+    // Book lists and durable outboxes may use the network. A local lookup hit
+    // must be visible before either finishes loading.
+    const workspaceStartup = Promise.allSettled([captureUI.sync(), workspaceUI.sync()]);
+    if (!isWorkspaceWindow) workspaceUI.setReady(true);
     if (inlineContext) {
         const page = inlineContext.page;
         dom.wordInput.value = page.text; dom.sentenceInput.value = page.sentence || ''; dom.contextInput.value = page.context || '';
         captureUI.setSource(page);
-        if (getExtensionReadiness().loggedIn) {
+        if (requestedView === 'assistant') {
+            await workspaceStartup;
+            if (getExtensionReadiness().loggedIn) await syncExtensionAccountAI();
+            await openAssistant();
+        } else if (isWorkspaceWindow) {
+            await workspaceStartup;
+            if (getExtensionReadiness().loggedIn) {
+                try { await syncExtensionAccountAI(); }
+                catch (error) { workspaceUI.setReady(true, error); return; }
+                workspaceUI.setReady(true);
+                if (pageParameters.has('import')) await workspaceUI.importPage();
+            } else { workspaceUI.setReady(true); openDialog('ext-settings-dialog'); }
+        } else if (getExtensionReadiness().loggedIn) {
             dom.resultEmpty.textContent = t('extension.inlineLookingUp', { word: page.text });
-            try { await syncExtensionAccountAI(); await handleLookup(); }
+            try {
+                const result = await handleLookup();
+                if (result?.fromCache) prepareLookupAccount().catch((error) => showFailure(showAccountNotice, error));
+            }
             catch (error) { clearDisplayedResult(); showFailure(showLookupNotice, error); }
         } else {
             const status = document.getElementById('ext-inline-status');
             status.hidden = false; status.textContent = t('extension.inlineLoginRequired');
         }
     }
+    await workspaceStartup;
 }
 
 // Expose shared lookup & runtime helpers on globalThis for deterministic extension E2E verification

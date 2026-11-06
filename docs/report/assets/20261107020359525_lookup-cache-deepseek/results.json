@@ -1,0 +1,658 @@
+{
+  "stamp": "20261107020359525",
+  "engine": "chromium MV3",
+  "checks": [
+    {
+      "name": "(1) 首次查詞真的呼叫一次 AI、結果未標成快取",
+      "ok": true,
+      "detail": {
+        "aiCalls": 1,
+        "meaning": "deepseek-answer-1"
+      }
+    },
+    {
+      "name": "(1) 首次結果出現後常駐重查圖示可見且可點",
+      "ok": true
+    },
+    {
+      "name": "(1) 關窗後重開：同步／詞書請求仍被按住時，詞卡出現後 1.5 秒內已顯示本機結果",
+      "ok": true,
+      "detail": {
+        "scenario": "reopen-held-network",
+        "totalMs": 1898,
+        "frameToResultMs": 847,
+        "held": 4,
+        "heldPaths": [
+          "/me",
+          "/ai-catalog",
+          "/vocabulary/books",
+          "/snapshot"
+        ],
+        "holdStillActive": true
+      }
+    },
+    {
+      "name": "(1) 關窗後重開命中：真的按住了非 AI 請求，AI 次數不變",
+      "ok": true,
+      "detail": {
+        "held": 4,
+        "paths": [
+          "/me",
+          "/ai-catalog",
+          "/vocabulary/books",
+          "/snapshot"
+        ],
+        "aiCalls": 1,
+        "holdStillActive": true
+      }
+    },
+    {
+      "name": "(1) 命中期間沒有下載 managed Key；背景同步仍在被按住時答案已顯示",
+      "ok": true,
+      "detail": {
+        "credential": 0,
+        "catalogDelta": 1,
+        "heldPaths": [
+          "/me",
+          "/ai-catalog",
+          "/vocabulary/books",
+          "/snapshot"
+        ],
+        "holdStillActive": true
+      }
+    },
+    {
+      "name": "(1) 命中內容就是第一次的成功結果（非空、非錯誤）",
+      "ok": true,
+      "detail": {
+        "meaning": "deepseek-answer-1"
+      }
+    },
+    {
+      "name": "(1) 頁面刷新後仍在網絡被按住時直讀本機、沒有重跑 AI",
+      "ok": true,
+      "detail": {
+        "scenario": "reload-held-network",
+        "totalMs": 1286,
+        "frameToResultMs": 312,
+        "held": 4,
+        "heldPaths": [
+          "/me",
+          "/ai-catalog",
+          "/vocabulary/books",
+          "/snapshot"
+        ],
+        "holdStillActive": true
+      }
+    },
+    {
+      "name": "(2) cacheOnly 只讀公開 metadata：不返回共享 Key、不聲稱需要憑證",
+      "ok": true,
+      "detail": {
+        "syncError": "",
+        "syncApiKey": "",
+        "syncRequiresManagedCredential": false,
+        "asyncApiKeyIsSharedKey": true,
+        "asyncRequiresManagedCredential": true,
+        "cacheReadWorks": true,
+        "cacheReadFromCache": true,
+        "cacheReadMeaning": "deepseek-answer-1",
+        "guessedInputHit": false,
+        "cardQuery": {
+          "text": "plunge",
+          "sentence": "Major tech stocks plunge as investors worry.",
+          "context": "Major tech stocks plunge as investors worry. Markets remain volatile."
+        }
+      }
+    },
+    {
+      "name": "(2) resolveAIRequestConfigAsync 強制 cacheOnly:false，傳輸前仍取得並驗證共享 Key",
+      "ok": true,
+      "detail": {
+        "syncError": "",
+        "syncApiKey": "",
+        "syncRequiresManagedCredential": false,
+        "asyncApiKeyIsSharedKey": true,
+        "asyncRequiresManagedCredential": true,
+        "cacheReadWorks": true,
+        "cacheReadFromCache": true,
+        "cacheReadMeaning": "deepseek-answer-1",
+        "guessedInputHit": false,
+        "cardQuery": {
+          "text": "plunge",
+          "sentence": "Major tech stocks plunge as investors worry.",
+          "context": "Major tech stocks plunge as investors worry. Markets remain volatile."
+        }
+      }
+    },
+    {
+      "name": "(2) 新頁面（無 memory 共享 Key）仍能從本機讀到舊答案",
+      "ok": true,
+      "detail": {
+        "syncError": "",
+        "syncApiKey": "",
+        "syncRequiresManagedCredential": false,
+        "asyncApiKeyIsSharedKey": true,
+        "asyncRequiresManagedCredential": true,
+        "cacheReadWorks": true,
+        "cacheReadFromCache": true,
+        "cacheReadMeaning": "deepseek-answer-1",
+        "guessedInputHit": false,
+        "cardQuery": {
+          "text": "plunge",
+          "sentence": "Major tech stocks plunge as investors worry.",
+          "context": "Major tech stocks plunge as investors worry. Markets remain volatile."
+        }
+      }
+    },
+    {
+      "name": "(2) 共享 Key 沒有被擴充持久化（storage / localStorage / IndexedDB 均無）",
+      "ok": true,
+      "detail": {
+        "hits": [],
+        "databases": [
+          "bdc-cache"
+        ]
+      }
+    },
+    {
+      "name": "(2) 共享憑證 binding 不符時，強制查詞被拒且不發出 AI 請求",
+      "ok": true,
+      "detail": {
+        "result": {
+          "ok": false,
+          "code": "managed_binding_mismatch",
+          "message": "credential binding mismatch"
+        },
+        "credentialDelta": 1,
+        "aiCalls": 1
+      }
+    },
+    {
+      "name": "(5) 重查失敗：顯示錯誤、清空舊結果，重查圖示仍留在原位可點",
+      "ok": true,
+      "detail": {
+        "hitMeaning": "deepseek-answer-1",
+        "failureNotice": "供应商服务器暂时出错",
+        "failedState": {
+          "meaning": "",
+          "boxHidden": true,
+          "retryVisible": true,
+          "retryDisabled": false,
+          "cacheBadgeHidden": true,
+          "lookupNotice": "供应商服务器暂时出错",
+          "lookupNoticeHidden": false,
+          "inlineNotice": "供应商服务器暂时出错",
+          "inlineNoticeHidden": false,
+          "status": "",
+          "busy": "false"
+        },
+        "failedBadgeVisible": false,
+        "aiCalls": 1,
+        "aiAttempts": 4
+      }
+    },
+    {
+      "name": "(5) 重查圖示成功後強制發出一次 AI 並更新結果",
+      "ok": true,
+      "detail": {
+        "aiCalls": 2,
+        "hitMeaning": "deepseek-answer-1",
+        "retryMeaning": "deepseek-answer-2"
+      }
+    },
+    {
+      "name": "(5) 重查成功後圖示仍在，且沒有把預設查詞改成永久略過快取",
+      "ok": true,
+      "detail": {
+        "forceCheckboxGone": false
+      }
+    },
+    {
+      "name": "(5) 下一次普通查詞回到強制重查後的新快取（AI 次數不增）",
+      "ok": true,
+      "detail": {
+        "aiCalls": 2,
+        "meaning": "deepseek-answer-2"
+      }
+    },
+    {
+      "name": "(6) zh-HK：收藏列三顆控制項同一行、加入為短按鈕、320px 無水平溢出且不被裁切",
+      "ok": true,
+      "detail": {
+        "sameRow": true,
+        "nothingClipped": true,
+        "fitted": true,
+        "fitMs": 5,
+        "save": {
+          "id": "ext-capture-save",
+          "x": 10,
+          "y": 117,
+          "width": 64,
+          "height": 32,
+          "bottom": 149,
+          "clipped": false,
+          "label": "加入詞書",
+          "title": "收藏到《網頁》",
+          "text": "加入",
+          "visible": true
+        },
+        "source": {
+          "id": "ext-book-settings",
+          "x": 80,
+          "y": 117,
+          "width": 34,
+          "height": 32,
+          "bottom": 149,
+          "clipped": false,
+          "label": "選擇或建立詞書",
+          "title": "收藏到《網頁》 · 選擇或建立詞書",
+          "text": "",
+          "visible": true
+        },
+        "retry": {
+          "id": "ext-inline-retry",
+          "x": 120,
+          "y": 117,
+          "width": 34,
+          "height": 32,
+          "bottom": 149,
+          "clipped": false,
+          "label": "重新查詞（略過快取）",
+          "title": "重新查詞（略過快取）",
+          "text": "",
+          "visible": true
+        },
+        "scroll": [
+          302,
+          302
+        ],
+        "heights": [
+          159,
+          159
+        ]
+      }
+    },
+    {
+      "name": "(6) zh-HK：重查圖示有本地化 aria label，加入按鈕保留完整 aria label",
+      "ok": true,
+      "detail": {
+        "retryLabel": "重新查詞（略過快取）",
+        "saveLabel": "加入詞書",
+        "saveText": "加入"
+      }
+    },
+    {
+      "name": "(6) zh-HK：強制重查得到新結果（未標成快取），命中標記文案已本地化",
+      "ok": true,
+      "detail": {
+        "meaning": "deepseek-answer-3",
+        "badge": "本機快取",
+        "badgeVisibleAfterForce": false
+      }
+    },
+    {
+      "name": "(6) zh-HK：重開詞卡命中該語系快取、命中標記顯示、AI 次數不增",
+      "ok": true,
+      "detail": {
+        "meaning": "deepseek-answer-3",
+        "reopenMeaning": "deepseek-answer-3",
+        "aiCalls": 3,
+        "aiBefore": 2
+      }
+    },
+    {
+      "name": "(6) zh-CN：收藏列三顆控制項同一行、加入為短按鈕、320px 無水平溢出且不被裁切",
+      "ok": true,
+      "detail": {
+        "sameRow": true,
+        "nothingClipped": true,
+        "fitted": true,
+        "fitMs": 2,
+        "save": {
+          "id": "ext-capture-save",
+          "x": 10,
+          "y": 117,
+          "width": 64,
+          "height": 32,
+          "bottom": 149,
+          "clipped": false,
+          "label": "加入词书",
+          "title": "收藏到《网页》",
+          "text": "加入",
+          "visible": true
+        },
+        "source": {
+          "id": "ext-book-settings",
+          "x": 80,
+          "y": 117,
+          "width": 34,
+          "height": 32,
+          "bottom": 149,
+          "clipped": false,
+          "label": "选择或建立词书",
+          "title": "收藏到《网页》 · 选择或建立词书",
+          "text": "",
+          "visible": true
+        },
+        "retry": {
+          "id": "ext-inline-retry",
+          "x": 120,
+          "y": 117,
+          "width": 34,
+          "height": 32,
+          "bottom": 149,
+          "clipped": false,
+          "label": "重新查词（跳过缓存）",
+          "title": "重新查词（跳过缓存）",
+          "text": "",
+          "visible": true
+        },
+        "scroll": [
+          302,
+          302
+        ],
+        "heights": [
+          159,
+          159
+        ]
+      }
+    },
+    {
+      "name": "(6) zh-CN：重查圖示有本地化 aria label，加入按鈕保留完整 aria label",
+      "ok": true,
+      "detail": {
+        "retryLabel": "重新查词（跳过缓存）",
+        "saveLabel": "加入词书",
+        "saveText": "加入"
+      }
+    },
+    {
+      "name": "(6) zh-CN：強制重查得到新結果（未標成快取），命中標記文案已本地化",
+      "ok": true,
+      "detail": {
+        "meaning": "deepseek-answer-4",
+        "badge": "本机缓存",
+        "badgeVisibleAfterForce": false
+      }
+    },
+    {
+      "name": "(6) zh-CN：重開詞卡命中該語系快取、命中標記顯示、AI 次數不增",
+      "ok": true,
+      "detail": {
+        "meaning": "deepseek-answer-4",
+        "reopenMeaning": "deepseek-answer-4",
+        "aiCalls": 4,
+        "aiBefore": 3
+      }
+    },
+    {
+      "name": "(6) 加入按鈕保存的是當前顯示的意思",
+      "ok": true,
+      "detail": {
+        "capturedMeaning": "deepseek-answer-4",
+        "entries": 1,
+        "lastCapture": "plunge"
+      }
+    },
+    {
+      "name": "(3) 完全相同的輸入命中同一筆快取",
+      "ok": true,
+      "detail": {
+        "first": {
+          "meaning": "deepseek-answer-5",
+          "fromCache": false,
+          "thinking": "none",
+          "provider": "managed-capture",
+          "model": "capture-model"
+        },
+        "same": {
+          "meaning": "deepseek-answer-5",
+          "fromCache": true
+        },
+        "otherSentence": null,
+        "otherContext": null,
+        "otherLocale": null,
+        "otherThinking": null,
+        "thinkingLookup": {
+          "meaning": "deepseek-answer-6",
+          "thinking": "high"
+        },
+        "thinkingHit": "deepseek-answer-6",
+        "originalAgain": "deepseek-answer-5",
+        "noSentence": null
+      }
+    },
+    {
+      "name": "(3) 同詞不同 sentence / context / thinking 都不串快取",
+      "ok": true,
+      "detail": {
+        "first": {
+          "meaning": "deepseek-answer-5",
+          "fromCache": false,
+          "thinking": "none",
+          "provider": "managed-capture",
+          "model": "capture-model"
+        },
+        "same": {
+          "meaning": "deepseek-answer-5",
+          "fromCache": true
+        },
+        "otherSentence": null,
+        "otherContext": null,
+        "otherLocale": null,
+        "otherThinking": null,
+        "thinkingLookup": {
+          "meaning": "deepseek-answer-6",
+          "thinking": "high"
+        },
+        "thinkingHit": "deepseek-answer-6",
+        "originalAgain": "deepseek-answer-5",
+        "noSentence": null
+      }
+    },
+    {
+      "name": "(3) 同詞不同 locale 與無原句（不同 task 鏈）不串快取",
+      "ok": true,
+      "detail": {
+        "first": {
+          "meaning": "deepseek-answer-5",
+          "fromCache": false,
+          "thinking": "none",
+          "provider": "managed-capture",
+          "model": "capture-model"
+        },
+        "same": {
+          "meaning": "deepseek-answer-5",
+          "fromCache": true
+        },
+        "otherSentence": null,
+        "otherContext": null,
+        "otherLocale": null,
+        "otherThinking": null,
+        "thinkingLookup": {
+          "meaning": "deepseek-answer-6",
+          "thinking": "high"
+        },
+        "thinkingHit": "deepseek-answer-6",
+        "originalAgain": "deepseek-answer-5",
+        "noSentence": null
+      }
+    },
+    {
+      "name": "(3) 第二版 catalog（同模型不同上游 URL）發佈成功",
+      "ok": true,
+      "detail": {
+        "version": 2,
+        "publishedAt": "2026-11-06T18:53:27.053Z",
+        "idempotent": false,
+        "credentialRevisions": {
+          "managed-capture": 2
+        }
+      }
+    },
+    {
+      "name": "(3) 換上游 URL（同 provider/模型）後舊答案不再命中，並改打新上游",
+      "ok": true,
+      "detail": {
+        "upstream": {
+          "stale": null,
+          "otherModelCache": null,
+          "refreshed": {
+            "meaning": "upstream-alt-answer-1",
+            "model": "capture-model",
+            "provider": "managed-capture"
+          },
+          "otherModel": {
+            "meaning": "upstream-alt-answer-2",
+            "model": "capture-model-2"
+          },
+          "otherModelHit": "upstream-alt-answer-2"
+        },
+        "altCalls": 2
+      }
+    },
+    {
+      "name": "(3) 同供應商另一個模型不共用快取",
+      "ok": true,
+      "detail": {
+        "stale": null,
+        "otherModelCache": null,
+        "refreshed": {
+          "meaning": "upstream-alt-answer-1",
+          "model": "capture-model",
+          "provider": "managed-capture"
+        },
+        "otherModel": {
+          "meaning": "upstream-alt-answer-2",
+          "model": "capture-model-2"
+        },
+        "otherModelHit": "upstream-alt-answer-2"
+      }
+    },
+    {
+      "name": "(4) 查詞途中登出，遲到的回應不會顯示前一帳戶結果",
+      "ok": true,
+      "detail": {
+        "lateState": {
+          "meaning": "",
+          "boxHidden": true,
+          "notice": "",
+          "status": "请先点击“账户设置”登录，完成后重新选择网页上的词。"
+        },
+        "beforeLate": "upstream-alt-answer-3",
+        "inFlight": true
+      }
+    },
+    {
+      "name": "(4) 登出後重開詞卡不會從本機讀出前一帳戶答案，也沒有新增 AI 請求",
+      "ok": true,
+      "detail": {
+        "loggedOutState": {
+          "meaning": "",
+          "status": "请先点击“账户设置”登录，完成后重新选择网页上的词。",
+          "statusHidden": false
+        },
+        "aiCalls": 6
+      }
+    },
+    {
+      "name": "(4) 切換帳戶後同一詞不串前一帳戶快取，重新查得新答案",
+      "ok": true,
+      "detail": {
+        "bobIsolation": {
+          "cached": null,
+          "fresh": "upstream-alt-answer-5",
+          "fromCache": false
+        },
+        "alice": "deepseek-answer-5"
+      }
+    },
+    {
+      "name": "(4) 共享憑證 401 時不顯示舊答案、不發出 AI 請求，且有可見提示",
+      "ok": true,
+      "detail": {
+        "after401": {
+          "meaning": "",
+          "notice": "",
+          "inlineNotice": "",
+          "inlineNoticeHidden": true,
+          "status": "请先点击“账户设置”登录，完成后重新选择网页上的词。",
+          "statusHidden": false,
+          "boxHidden": true
+        },
+        "notice401": false,
+        "visibleHint401": true,
+        "authClicked": true,
+        "aiCalls": 6,
+        "bobMeaning": "upstream-alt-answer-6",
+        "bobCached": "upstream-alt-answer-6",
+        "bobCachedBadge": true
+      }
+    },
+    {
+      "name": "(4) 401 之前的本機命中不需要憑證下載",
+      "ok": true,
+      "detail": {
+        "bobCached": "upstream-alt-answer-6",
+        "bobMeaning": "upstream-alt-answer-6",
+        "bobCachedBadge": true
+      }
+    },
+    {
+      "name": "(0) 整個流程沒有未捕獲的 JavaScript 例外",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "timings": [
+    {
+      "scenario": "reopen-held-network",
+      "totalMs": 1898,
+      "frameToResultMs": 847,
+      "held": 4,
+      "heldPaths": [
+        "/me",
+        "/ai-catalog",
+        "/vocabulary/books",
+        "/snapshot"
+      ],
+      "holdStillActive": true
+    },
+    {
+      "scenario": "reload-held-network",
+      "totalMs": 1286,
+      "frameToResultMs": 312,
+      "held": 4,
+      "heldPaths": [
+        "/me",
+        "/ai-catalog",
+        "/vocabulary/books",
+        "/snapshot"
+      ],
+      "holdStillActive": true
+    }
+  ],
+  "notes": [
+    "命中後背景同步：catalog 請求 1 次（已送出但被按住），共享 Key 下載 0 次",
+    "詞卡實際查詞輸入：{\"text\":\"plunge\",\"sentence\":\"Major tech stocks plunge as investors worry.\",\"context\":\"Major tech stocks plunge as investors worry. Markets remain volatile.\"}",
+    "擴充可見的 IndexedDB：[\"bdc-cache\"]",
+    "重查失敗狀態：{\"noticeShown\":true,\"failedState\":{\"meaning\":\"\",\"boxHidden\":true,\"retryVisible\":true,\"retryDisabled\":false,\"cacheBadgeHidden\":true,\"lookupNotice\":\"供应商服务器暂时出错\",\"lookupNoticeHidden\":false,\"inlineNotice\":\"供应商服务器暂时出错\",\"inlineNoticeHidden\":false,\"status\":\"\",\"busy\":\"false\"},\"aiAttempts\":4}",
+    "locale zh-HK 點擊前後 iframe 位移：{\"boxBefore\":{\"x\":12,\"y\":16,\"width\":296,\"height\":618},\"boxAfter\":{\"x\":8,\"y\":163,\"width\":304,\"height\":130}}",
+    "遲到回應場景：AI 請求是否被按住 = 1",
+    "401 後的提示來源：{\"notice\":\"\",\"inlineNotice\":\"\",\"inlineNoticeHidden\":true,\"status\":\"请先点击“账户设置”登录，完成后重新选择网页上的词。\",\"statusHidden\":false}"
+  ],
+  "errors": [],
+  "aiCalls": 6,
+  "credentialDownloads": 12,
+  "catalogFetches": 31,
+  "alternates": [
+    "http://127.0.0.1:52307/mock-ai-alt/v1/chat/completions",
+    "http://127.0.0.1:52307/mock-ai-alt/v1/chat/completions",
+    "http://127.0.0.1:52307/mock-ai-alt/v1/chat/completions",
+    "http://127.0.0.1:52307/mock-ai-alt/v1/chat/completions",
+    "http://127.0.0.1:52307/mock-ai-alt/v1/chat/completions",
+    "http://127.0.0.1:52307/mock-ai-alt/v1/chat/completions"
+  ],
+  "heldDuringCacheRead": 4
+}
