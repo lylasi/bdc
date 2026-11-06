@@ -457,9 +457,10 @@ export function getOrCreateArticleWordbook(articleMetaInput, options = {}) {
 
     articleMeta = saveArticleMeta(articleMeta);
 
-    // 2. 確保文章專屬生詞本存在（id = articleMeta.id）
+    // 2. 沿用已關聯的頁面詞書；舊文章仍以 articleMeta.id 建立詞書。
     const wordbookId = articleMeta.id;
-    const existingBook = getWordbookById(wordbookId);
+    const existingBook = getWordbookById(wordbookId)
+        || state.vocabularyBooks.find((book) => !book.deletedAt && book.sourceType === 'article' && book.articleId === articleMeta.id);
 
     const nowIso = new Date().toISOString();
     let nextBook;

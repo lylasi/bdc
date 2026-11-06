@@ -36,6 +36,7 @@ const SHARED_FILES = [
     'modules/cache.js',
     'modules/extension-ai-runtime.js',
     'modules/extension-capture.js',
+    'modules/extension-workspace.js',
     'modules/i18n-config.js',
     'modules/i18n.js',
     'modules/permanent-db.js',
@@ -62,7 +63,9 @@ const SHARED_FILES = [
     'shared/reading-protocol.mjs',
     'shared/vocabulary-source.mjs',
     'shared/capture-protocol.mjs',
-    'shared/capture-client.mjs'
+    'shared/capture-client.mjs',
+    'shared/page-protocol.mjs',
+    'shared/workspace-client.mjs'
 ];
 
 function writeArtifact(destination, content) {
@@ -106,6 +109,9 @@ export function packageExtension() {
     const entryFiles = [
         'lookup.js',
         'capture-ui.js',
+        'workspace-ui.js',
+        'page-extractor.js',
+        'page-lookup.js',
         'background.js',
         'selection-extractor.js',
         ...SHARED_FILES

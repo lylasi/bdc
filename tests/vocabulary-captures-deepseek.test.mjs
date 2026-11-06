@@ -102,7 +102,7 @@ test('詞書列表：只回本人未刪除的詞書，且不靠名稱／字典�
     assert.equal(result.status, 200);
     assert.deepEqual(result.body.books.map((book) => book.id), ['aa-preferred', 'zz-plain'], '只回自己的、未刪除的詞書');
     assert.equal(result.body.defaultBookId, '', '帳號模型沒有明確預設：不得按名稱或 entity_id 猜一本');
-    assert.deepEqual(Object.keys(result.body.books[0]).sort(), ['id', 'name', 'revision'], '不得夾帶他人或內部欄位');
+    assert.deepEqual(Object.keys(result.body.books[0]).sort(), ['articleId', 'id', 'name', 'revision', 'sourceUrl'], '不得夾帶他人或內部欄位');
 
     const bob = await call('/vocabulary/books', undefined, bobToken);
     assert.deepEqual(bob.body.books.map((book) => book.id), ['bob-book']);
@@ -118,7 +118,7 @@ test('能力端點與方法限制：未發布前不得把收藏當成已可用',
     const { call } = setup(t);
     const caps = await call('/captures/capabilities');
     assert.deepEqual(caps.body, { captureVersion: 1, maxSources: 100 });
-    assert.equal((await call('/vocabulary/books', {})).status, 405);
+    assert.equal((await call('/vocabulary/books', {})).status, 400, '新建詞書入口拒絕不完整資料');
     assert.equal((await call('/captures')).status, 405, 'GET /captures 不是收藏入口');
     const anon = await worker.fetch(new Request('https://sync.example/captures/capabilities', { headers: { Origin: ORIGIN } }), { DB: { prepare() {} } });
     assert.equal(anon.status, 401);

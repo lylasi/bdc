@@ -1,0 +1,45 @@
+{
+  "debug": [
+    {
+      "url": "chrome-extension://gknnmeblljlmmkpcbniaboanhhglaedd/lookup.html",
+      "state": {
+        "notice": "操作未完成，已提交的待传项目可在下方重试。",
+        "captureNotice": "",
+        "account": "已连接账户：alice",
+        "choices": [
+          {
+            "text": "请选择词书",
+            "value": ""
+          },
+          {
+            "text": "单词本",
+            "value": "book"
+          },
+          {
+            "text": "Reading",
+            "value": "book-2"
+          }
+        ],
+        "pending": "待建立词书：网页生词重试取消本机待传"
+      }
+    },
+    {
+      "db": [
+        {
+          "entity_id": "book",
+          "data_json": "{\"name\":\"单词本\"}"
+        },
+        {
+          "entity_id": "book-2",
+          "data_json": "{\"name\":\"Reading\"}"
+        },
+        {
+          "entity_id": "bob-book",
+          "data_json": "{\"name\":\"Bob only\"}"
+        }
+      ],
+      "preferences": []
+    }
+  ],
+  "bookResponses": []
+}

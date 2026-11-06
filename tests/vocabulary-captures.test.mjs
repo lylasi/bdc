@@ -57,7 +57,7 @@ test('詞書列表按帳戶隔離、排除墓碑，不以名稱猜測預設', as
     entity('vocabularyBook', 'removed', { name: 'Removed' }, 'alice', 2, '2026-11-02');
     const result = await call(env, '/vocabulary/books');
     assert.equal(result.status, 200);
-    assert.deepEqual(result.body, { books: [{ id: 'book', name: '单词本', revision: 1 }], defaultBookId: '' });
+    assert.deepEqual(result.body, { books: [{ id: 'book', name: '单词本', revision: 1, sourceUrl: '', articleId: '' }], defaultBookId: '', pageBookId: '', articleId: '' });
 });
 
 test('收藏回執、詞條、來源及 reading cursor 一起提交；不改快照', async (t) => {

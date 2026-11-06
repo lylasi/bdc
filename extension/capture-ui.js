@@ -3,6 +3,7 @@ import { captureAuthSession, isAuthSessionCurrent } from './modules/sync-cloudfl
 import { t } from './modules/i18n.js';
 import { captureScopeKey } from './shared/capture-client.mjs';
 import { publicSourceUrl } from './shared/vocabulary-source.mjs';
+import { pageUrlKey } from './shared/page-protocol.mjs';
 
 const errorKeys = {
     capture_target_missing: 'extension.captureTargetMissing',
@@ -38,6 +39,7 @@ export function createCaptureUI(dom) {
     let savedKey = '';
     let notice = null;
     let pending = [];
+    let onChange = () => {};
     const pendingErrors = new Map();
 
     const currentKey = () => `${displayVersion}:${dom.captureBook.value}`;
@@ -100,6 +102,8 @@ export function createCaptureUI(dom) {
             link.textContent = source.pageTitle || t('extension.captureOpenSource');
             dom.captureSource.appendChild(link);
         } else dom.captureSource.textContent = t('extension.captureManualSource');
+        if (dom.captureHint) dom.captureHint.textContent = t(displayed ? (dom.captureBook.value ? 'extension.captureReadyHint' : 'extension.captureChooseToSave') : 'extension.captureHint');
+        onChange({ books, defaultBookId, source, selectedBookId: dom.captureBook.value, loggedIn: session.loggedIn });
     }
     async function updatePending(session = captureAuthSession()) {
         const list = await client.pending(session);
@@ -112,7 +116,8 @@ export function createCaptureUI(dom) {
         const key = choiceKey(session);
         const previous = (await storage?.get(key))?.[key];
         if (version !== choiceVersion || !isAuthSessionCurrent(session)) return;
-        const selected = previous || (!useDefault && dom.captureBook.value) || defaultBookId;
+        const pageBookId = source?.pageUrl ? books.find((book) => pageUrlKey(book.sourceUrl) === pageUrlKey(source.pageUrl))?.id : '';
+        const selected = previous || (!useDefault && dom.captureBook.value) || pageBookId || defaultBookId;
         dom.captureBook.replaceChildren();
         const placeholder = document.createElement('option');
         placeholder.value = '';
@@ -286,6 +291,16 @@ export function createCaptureUI(dom) {
     });
     return {
         sync, setSource, clearResult,
+        subscribe(callback) { onChange = callback; render(); },
+        refreshBooks() { return loadBooks(captureAuthSession()); },
+        async selectBook(id) {
+            const session = captureAuthSession();
+            if (!isAuthSessionCurrent(session)) return;
+            await storage?.set({ [choiceKey(session)]: id });
+            if (!isAuthSessionCurrent(session)) return;
+            await loadBooks(session);
+            await restoreChoice(session);
+        },
         showResult(result, query, locale) {
             displayVersion += 1;
             displayed = { result: structuredClone(result), query: { ...query }, source: source && { ...source }, locale };

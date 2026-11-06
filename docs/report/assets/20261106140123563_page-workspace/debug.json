@@ -1,0 +1,117 @@
+{
+  "debug": [
+    {
+      "url": "chrome-extension://gknnmeblljlmmkpcbniaboanhhglaedd/lookup.html",
+      "state": {
+        "notice": "已选择《网页生词》，现在可以加入生词。",
+        "captureNotice": "目标词书不存在或已删除，请选择其他词书后重新加入。",
+        "account": "已连接账户：alice",
+        "choices": [
+          {
+            "text": "请选择词书",
+            "value": ""
+          },
+          {
+            "text": "单词本",
+            "value": "book"
+          },
+          {
+            "text": "Reading",
+            "value": "book-2"
+          },
+          {
+            "text": "网页生词",
+            "value": "webbook_19e11d3b82a40cbe857c0d9682d057376f62632ded5860f8"
+          }
+        ],
+        "pending": ""
+      }
+    },
+    {
+      "url": "chrome-extension://gknnmeblljlmmkpcbniaboanhhglaedd/lookup.html?embedded=1&ticket=6b9ce094-e82a-4d45-9609-4a054e6931ad",
+      "state": {
+        "notice": "已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。",
+        "captureNotice": "已加入《Major tech stocks plunge》",
+        "account": "已连接账户：alice",
+        "choices": [
+          {
+            "text": "请选择词书",
+            "value": ""
+          },
+          {
+            "text": "单词本",
+            "value": "book"
+          },
+          {
+            "text": "Reading",
+            "value": "book-2"
+          },
+          {
+            "text": "Major tech stocks plunge",
+            "value": "webbook_061b38ed91b8b95aba78d8b680a69a4885ece9aac5edc1dc"
+          },
+          {
+            "text": "网页生词",
+            "value": "webbook_19e11d3b82a40cbe857c0d9682d057376f62632ded5860f8"
+          }
+        ],
+        "pending": ""
+      }
+    },
+    {
+      "db": [
+        {
+          "entity_id": "book",
+          "data_json": "{\"name\":\"单词本\"}"
+        },
+        {
+          "entity_id": "book-2",
+          "data_json": "{\"name\":\"Reading\"}"
+        },
+        {
+          "entity_id": "bob-book",
+          "data_json": "{\"name\":\"Bob only\"}"
+        },
+        {
+          "entity_id": "webbook_19e11d3b82a40cbe857c0d9682d057376f62632ded5860f8",
+          "data_json": "{\"name\":\"网页生词\",\"sourceUrl\":\"\",\"sourceType\":\"manual\",\"createdAt\":\"2026-11-06T06:01:25.363Z\",\"updatedAt\":\"2026-11-06T06:01:25.363Z\"}"
+        },
+        {
+          "entity_id": "webbook_061b38ed91b8b95aba78d8b680a69a4885ece9aac5edc1dc",
+          "data_json": "{\"name\":\"Major tech stocks plunge\",\"sourceUrl\":\"http://127.0.0.1:50594/test-article?strict=1\",\"sourceType\":\"article\",\"createdAt\":\"2026-11-06T06:01:25.821Z\",\"updatedAt\":\"2026-11-06T06:01:26.070Z\",\"articleId\":\"webart_061b38ed91b8b95aba78d8b680a69a4885ece9aac5edc1dc\"}"
+        }
+      ],
+      "preferences": [
+        {
+          "owner_user_id": "alice",
+          "default_book_id": "webbook_19e11d3b82a40cbe857c0d9682d057376f62632ded5860f8",
+          "updated_at": "2026-11-06T06:01:25.363Z"
+        }
+      ]
+    }
+  ],
+  "bookResponses": [
+    {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "requestId": "workspace_613d1556-823a-4813-a76a-ce840237f37e",
+        "bookId": "webbook_19e11d3b82a40cbe857c0d9682d057376f62632ded5860f8",
+        "created": true,
+        "revision": 1,
+        "defaultBookId": "webbook_19e11d3b82a40cbe857c0d9682d057376f62632ded5860f8"
+      }
+    },
+    {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "requestId": "workspace_5c3a4d62-865e-4d79-b4f0-f29821a2bf32",
+        "bookId": "webbook_061b38ed91b8b95aba78d8b680a69a4885ece9aac5edc1dc",
+        "created": true,
+        "revision": 1,
+        "defaultBookId": ""
+      }
+    }
+  ]
+}

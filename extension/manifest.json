@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "__MSG_extensionName__",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "__MSG_extensionDescription__",
     "permissions": [
         "storage",
@@ -24,5 +24,36 @@
         "service_worker": "background.js",
         "type": "module"
     },
-    "default_locale": "zh_CN"
+    "default_locale": "zh_CN",
+    "content_scripts": [
+        {
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "js": [
+                "page-lookup.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "lookup.html",
+                "lookup.css",
+                "lookup.js",
+                "capture-ui.js",
+                "workspace-ui.js",
+                "modules/*",
+                "locales/*",
+                "shared/*",
+                "ai-config.js"
+            ],
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ]
+        }
+    ]
 }

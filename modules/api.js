@@ -2105,6 +2105,25 @@ export async function aiExtractArticleFromHtml(html, opts = {}) {
     return md;
 }
 
+/** Extract the already-readable page without sending DOM/forms or rewriting its language. */
+export async function extractPageArticle(page, opts = {}) {
+    if (page?.tooLarge || Array.from(String(page?.text || '')).length > 100000) throw Object.assign(new Error('article_too_large'), { code: 'article_too_large' });
+    if (!String(page?.text || '').trim()) throw Object.assign(new Error('invalid_article'), { code: 'invalid_article' });
+    let truncated = false;
+    const input = /^\s*#\s+/.test(page.text) ? page.text : '# ' + String(page.pageTitle || '').replace(/\s+/g, ' ').trim() + '\n\n' + page.text;
+    const markdown = await aiCleanArticleMarkdown(input, {
+        ...opts, keepImages: false,
+        onNotice: (...args) => { truncated = true; opts.onNotice?.(...args); }
+    });
+    if (truncated) throw Object.assign(new Error('page_extraction_truncated'), { code: 'page_extraction_truncated' });
+    if (!String(markdown || '').trim()) throw Object.assign(new Error('invalid_article'), { code: 'invalid_article' });
+    const heading = markdown.match(/^\s*#\s+(.+)\n/);
+    const title = (heading?.[1] || page.pageTitle || '').trim().slice(0, 300);
+    const body = heading ? markdown.slice(heading[0].length).trim() : markdown.trim();
+    if (!body) throw Object.assign(new Error('invalid_article'), { code: 'invalid_article' });
+    return { title, body, sourceUrl: page.pageUrl, sourceType: 'url' };
+}
+
 /**
  * 直接抓取 HTML（若 CORS 允許），再交給 AI 產生乾淨 Markdown。
  * - 若 noThirdPartyGateway 為 false，且直抓失敗，會回退到 r.jina.ai + 清洗。

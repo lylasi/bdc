@@ -1,0 +1,141 @@
+{
+  "timestamp": "2026-11-06T06:06:19.428Z",
+  "checks": [
+    {
+      "name": "真實 SQLite 詞書列表及帳戶隔離",
+      "ok": true
+    },
+    {
+      "name": "完成查詞前不能收藏",
+      "ok": true
+    },
+    {
+      "name": "無 BDC 主站分頁也可使用",
+      "ok": true
+    },
+    {
+      "name": "明確收藏後詞條與網頁來源已提交",
+      "ok": true
+    },
+    {
+      "name": "保存已展示的意思且不重新呼叫 AI",
+      "ok": true
+    },
+    {
+      "name": "保存選詞定位、原句及當次意思",
+      "ok": true
+    },
+    {
+      "name": "成功回執後待傳清除",
+      "ok": true
+    },
+    {
+      "name": "手動修改查詢清除舊來源網址",
+      "ok": true
+    },
+    {
+      "name": "提交後回應遺失仍保留原 requestId 待傳",
+      "ok": true
+    },
+    {
+      "name": "重開面板使用原回執恢復，沒有重複來源",
+      "ok": true,
+      "detail": {
+        "replayCount": 2,
+        "receiptCount": 2,
+        "sourceCount": 1
+      }
+    },
+    {
+      "name": "服務暫時不可用時不誤報成功",
+      "ok": true
+    },
+    {
+      "name": "本機待傳不保存登入 token 或 AI Key",
+      "ok": true
+    },
+    {
+      "name": "關閉再開仍保留待傳",
+      "ok": true
+    },
+    {
+      "name": "恢復服務並重試後保存完成",
+      "ok": true
+    },
+    {
+      "name": "切換帳戶只顯示新帳戶詞書",
+      "ok": true
+    },
+    {
+      "name": "切換帳戶不傳送前帳戶的待傳",
+      "ok": true
+    },
+    {
+      "name": "返回原帳戶才恢復其待傳",
+      "ok": true
+    },
+    {
+      "name": "目標詞書刪除後明確保留待傳並報錯",
+      "ok": true
+    },
+    {
+      "name": "刪除目標不會悄悄改存另一個詞書",
+      "ok": true
+    },
+    {
+      "name": "可明確取消本機待傳",
+      "ok": true
+    },
+    {
+      "name": "主站逐項同步看見新詞條",
+      "ok": true
+    },
+    {
+      "name": "主站顯示原網頁、原句及當次意思",
+      "ok": true
+    },
+    {
+      "name": "空白瀏覽器備份還原保留來源網址及當次意思",
+      "ok": true
+    },
+    {
+      "name": "主站直接保存及複合交易均拒絕第101個來源",
+      "ok": true,
+      "detail": {
+        "single": {
+          "ok": false,
+          "error": "vocabulary_sources_full"
+        },
+        "composite": {
+          "ok": false,
+          "error": "vocabulary_sources_full"
+        },
+        "sourceCount": 100
+      }
+    },
+    {
+      "name": "快照版本不變仍可於返回前景發現新收藏",
+      "ok": true
+    },
+    {
+      "name": "返回實際主站自動同步並更新詞書畫面",
+      "ok": true
+    },
+    {
+      "name": "香港繁體收藏介面及窄畫面",
+      "ok": true
+    },
+    {
+      "name": "簡體收藏介面及窄畫面",
+      "ok": true
+    },
+    {
+      "name": "無未捕獲頁面錯誤",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "pageErrors": [],
+  "realWorkerAndSQLite": true,
+  "aiMocked": true
+}

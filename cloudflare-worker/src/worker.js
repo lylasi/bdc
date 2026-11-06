@@ -509,7 +509,7 @@ export default {
       }
 
       if (path === '/articles' || path.startsWith('/articles/')) {
-        return handleArticlesRoute({
+        return await handleArticlesRoute({
           request,
           env,
           url,
@@ -518,7 +518,7 @@ export default {
         });
       }
 
-      if (path === '/captures' || path === '/captures/capabilities' || path === '/vocabulary/books') {
+      if (path === '/captures' || path === '/captures/capabilities' || path === '/vocabulary/books' || path === '/vocabulary/default' || path === '/vocabulary/page-link') {
         return handleVocabularyCaptureRoute({ request, env, url, user });
       }
 

@@ -79,7 +79,7 @@ function elements() {
 
 // ── 暫存模組圖：原檔複製 + 只替換網路／儲存／session／i18n ─────────────────
 
-const SHARED = ['shared/capture-client.mjs', 'shared/capture-protocol.mjs', 'shared/reading-protocol.mjs', 'shared/vocabulary-source.mjs'];
+const SHARED = ['shared/capture-client.mjs', 'shared/capture-protocol.mjs', 'shared/reading-protocol.mjs', 'shared/vocabulary-source.mjs', 'shared/page-protocol.mjs'];
 
 function buildHarnessModule(t) {
     const dir = mkdtempSync(join(tmpdir(), 'bdc-capture-ui-'));

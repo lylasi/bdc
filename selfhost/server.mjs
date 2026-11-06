@@ -478,7 +478,7 @@ async function handle(req, res) {
     return handleSnapshot(req, res, user, path);
   }
 
-  if (path === '/captures' || path === '/captures/capabilities' || path === '/vocabulary/books') {
+  if (path === '/captures' || path === '/captures/capabilities' || path === '/vocabulary/books' || path === '/vocabulary/default' || path === '/vocabulary/page-link') {
     const bodyText = req.method === 'GET' || req.method === 'HEAD' ? undefined : await readText(req, 128 * 1024);
     const response = await handleVocabularyCaptureRoute({
       request: toWebRequest({ method: req.method, url: url.toString(), headers: req.headers, bodyText }),

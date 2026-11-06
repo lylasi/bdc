@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="./lookup.css" />
 </head>
 <body>
+    <div id="ext-inline-toolbar" class="ext-row" hidden>
+        <strong data-i18n="extension.inlineTitle"></strong>
+        <button id="ext-inline-edit" type="button" class="ext-btn" data-i18n="extension.inlineEdit"></button>
+        <button id="ext-inline-settings" type="button" class="ext-btn" data-i18n="extension.inlineSettings"></button>
+        <button id="ext-inline-close" type="button" class="ext-btn" data-i18n="extension.inlineClose"></button>
+    </div>
+    <p id="ext-inline-status" class="ext-notice" hidden></p>
     <header class="ext-header">
         <div>
             <h1 class="ext-title" id="ext-title" data-i18n="extension.title"></h1>
@@ -22,11 +29,15 @@
         </div>
     </header>
 
-    <section class="ext-card" aria-labelledby="ext-account-heading">
+    <section class="ext-card" id="ext-account-section" aria-labelledby="ext-account-heading">
         <h2 class="ext-card-title" id="ext-account-heading" data-i18n="extension.accountSectionTitle"></h2>
         <div class="ext-field">
             <label for="ext-endpoint-input" data-i18n="extension.endpointLabel"></label>
             <input type="url" id="ext-endpoint-input" data-i18n-placeholder="extension.endpointPlaceholder" autocomplete="off" />
+        </div>
+        <div class="ext-field">
+            <label for="ext-app-url" data-i18n="extension.appUrlLabel"></label>
+            <input type="url" id="ext-app-url" placeholder="https://your-bdc.example/" autocomplete="off" />
         </div>
         <div class="ext-field">
             <label for="ext-login-mode" data-i18n="extension.loginModeLabel"></label>
@@ -66,6 +77,7 @@
             <button type="button" id="ext-connect-btn" class="ext-btn ext-btn-primary" data-i18n="extension.connectBtn"></button>
             <button type="button" id="ext-sync-btn" class="ext-btn" data-i18n="extension.syncBtn"></button>
             <button type="button" id="ext-logout-btn" class="ext-btn" data-i18n="extension.logoutBtn"></button>
+            <button type="button" id="ext-enable-inline" class="ext-btn" data-i18n="extension.inlineEnable"></button>
         </div>
 
         <div class="ext-status-list" id="ext-readiness-box" aria-live="polite">
@@ -91,7 +103,7 @@
         <div id="ext-account-notice" class="ext-notice hidden" role="status" aria-live="polite"></div>
     </section>
 
-    <section class="ext-card" aria-labelledby="ext-lookup-heading">
+    <section class="ext-card" id="ext-lookup-section" aria-labelledby="ext-lookup-heading">
         <h2 class="ext-card-title" id="ext-lookup-heading" data-i18n="extension.lookupSectionTitle"></h2>
         <div class="ext-row" style="margin-bottom: 8px;">
             <button type="button" id="ext-extract-btn" class="ext-btn" data-i18n="extension.extractFromTabBtn"></button>
@@ -124,6 +136,7 @@
     <section class="ext-card" aria-labelledby="ext-result-heading">
         <h2 class="ext-card-title" id="ext-result-heading" data-i18n="extension.resultSectionTitle"></h2>
         <div id="ext-result-empty" class="ext-status-line" data-i18n="extension.resultEmpty"></div>
+        <div id="ext-inline-lookup-notice" class="ext-notice" role="alert" aria-live="assertive" hidden></div>
         <div id="ext-result-box" class="ext-result-box hidden" aria-live="polite">
             <div class="ext-result-head">
                 <span class="ext-result-word" id="ext-result-word"></span>
@@ -144,16 +157,59 @@
             <select id="ext-capture-book" data-i18n-aria-label="extension.captureBookLabel"></select>
         </div>
         <p id="ext-capture-source" class="ext-source"></p>
-        <p class="ext-status-line" data-i18n="extension.captureHint"></p>
+        <p id="ext-capture-hint" class="ext-status-line" data-i18n="extension.captureHint"></p>
         <div class="ext-row">
             <button type="button" id="ext-capture-save" class="ext-btn ext-btn-primary" disabled data-i18n="extension.captureSave"></button>
             <button type="button" id="ext-capture-refresh" class="ext-btn" data-i18n="extension.captureRefresh"></button>
         </div>
         <div id="ext-capture-notice" class="ext-notice" role="status" aria-live="polite" hidden></div>
+        <div class="ext-row ext-book-actions">
+            <button id="ext-book-page" type="button" class="ext-btn" data-i18n="extension.bookCreatePage"></button>
+            <button id="ext-book-new" type="button" class="ext-btn" data-i18n="extension.bookCreate"></button>
+            <button id="ext-book-default-create" type="button" class="ext-btn" data-i18n="extension.bookCreateDefault"></button>
+            <button id="ext-book-set-default" type="button" class="ext-btn" data-i18n="extension.bookSetDefault"></button>
+        </div>
+        <div id="ext-book-form" class="ext-book-form" hidden>
+            <div class="ext-field">
+                <label for="ext-book-name" data-i18n="extension.bookName"></label>
+                <input id="ext-book-name" type="text" maxlength="300" data-i18n-placeholder="extension.bookNamePlaceholder" />
+            </div>
+            <label><input id="ext-book-link-page" type="checkbox" checked /><span data-i18n="extension.bookLinkPage"></span></label>
+            <label><input id="ext-book-make-default" type="checkbox" /><span data-i18n="extension.bookMakeDefault"></span></label>
+            <button id="ext-book-submit" type="button" class="ext-btn ext-btn-primary" data-i18n="extension.bookCreate"></button>
+        </div>
         <details id="ext-capture-pending" class="ext-pending" hidden>
             <summary id="ext-capture-pending-summary"></summary>
             <p class="ext-status-line" data-i18n="extension.capturePendingHint"></p>
             <ul id="ext-capture-pending-list"></ul>
+        </details>
+    </section>
+
+    <section class="ext-card" aria-labelledby="ext-page-article-heading">
+        <h2 id="ext-page-article-heading" class="ext-card-title" data-i18n="extension.pageArticleTitle"></h2>
+        <p class="ext-status-line" data-i18n="extension.pageArticleHint"></p>
+        <div class="ext-row">
+            <button id="ext-article-extract" type="button" class="ext-btn" data-i18n="extension.pageArticleExtract"></button>
+            <button id="ext-article-cancel" type="button" class="ext-btn" hidden data-i18n="extension.pageArticleCancel"></button>
+            <button id="ext-article-open" type="button" class="ext-btn" hidden data-i18n="extension.pageArticleOpen"></button>
+        </div>
+        <div id="ext-article-preview" hidden>
+            <div class="ext-field">
+                <label for="ext-article-title" data-i18n="extension.pageArticleTitleLabel"></label>
+                <input id="ext-article-title" type="text" maxlength="300" />
+            </div>
+            <div class="ext-field">
+                <label for="ext-article-body" data-i18n="extension.pageArticleBodyLabel"></label>
+                <textarea id="ext-article-body" rows="8"></textarea>
+            </div>
+            <label><input id="ext-article-analyze" type="checkbox" /><span data-i18n="extension.pageArticleAnalyze"></span></label>
+            <button id="ext-article-save" type="button" class="ext-btn ext-btn-primary" data-i18n="extension.pageArticleSave"></button>
+        </div>
+        <p id="ext-workspace-notice" class="ext-notice" role="status" aria-live="polite" hidden></p>
+        <details id="ext-workspace-pending" class="ext-pending" hidden>
+            <summary data-i18n="extension.workspacePending"></summary>
+            <p class="ext-status-line" data-i18n="extension.workspacePendingHint"></p>
+            <ul id="ext-workspace-pending-list"></ul>
         </details>
     </section>
 

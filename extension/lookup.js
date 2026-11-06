@@ -19,6 +19,23 @@ import { getAIErrorTranslationKey } from './modules/api.js';
 import { getLocale, setLocale, initI18n, applyTranslations, t } from './modules/i18n.js';
 import { extractActivePageSelectionInTab } from './selection-extractor.js';
 import { createCaptureUI } from './capture-ui.js';
+import { createWorkspaceUI } from './workspace-ui.js';
+
+const pageParameters = new URLSearchParams(location.search);
+const isEmbedded = window.parent !== window;
+const inlineTicket = pageParameters.get('ticket') || '';
+let inlineContext = null;
+if (isEmbedded || pageParameters.has('embedded')) {
+    const result = await chrome.runtime.sendMessage({ type: 'BDC_INLINE_CONTEXT', ticket: inlineTicket }).catch(() => null);
+    if (!isEmbedded || !result?.ok) {
+        initI18n();
+        document.body.textContent = t('extension.inlineUnavailable');
+        throw new Error('Invalid inline context');
+    }
+    inlineContext = result.value;
+    document.body.classList.add('ext-inline');
+    document.getElementById('ext-inline-toolbar').hidden = false;
+}
 
 const dom = {
     localeSelect: document.getElementById('ext-locale-select'),
@@ -67,10 +84,26 @@ const dom = {
     captureNotice: document.getElementById('ext-capture-notice'),
     capturePending: document.getElementById('ext-capture-pending'),
     capturePendingSummary: document.getElementById('ext-capture-pending-summary'),
-    capturePendingList: document.getElementById('ext-capture-pending-list')
+    capturePendingList: document.getElementById('ext-capture-pending-list'),
+    captureHint: document.getElementById('ext-capture-hint'),
+    inlineLookupNotice: document.getElementById('ext-inline-lookup-notice')
 };
 
 const captureUI = createCaptureUI(dom);
+const workspaceDom = {
+    createPageBook: document.getElementById('ext-book-page'), createBook: document.getElementById('ext-book-new'),
+    createDefaultBook: document.getElementById('ext-book-default-create'), defaultBook: document.getElementById('ext-book-set-default'),
+    bookForm: document.getElementById('ext-book-form'), bookName: document.getElementById('ext-book-name'),
+    bookLinkPage: document.getElementById('ext-book-link-page'), bookMakeDefault: document.getElementById('ext-book-make-default'),
+    bookSubmit: document.getElementById('ext-book-submit'), articleExtract: document.getElementById('ext-article-extract'),
+    articleCancel: document.getElementById('ext-article-cancel'), articleOpen: document.getElementById('ext-article-open'),
+    articlePreview: document.getElementById('ext-article-preview'), articleTitle: document.getElementById('ext-article-title'),
+    articleBody: document.getElementById('ext-article-body'), articleAnalyze: document.getElementById('ext-article-analyze'),
+    articleSave: document.getElementById('ext-article-save'), workspaceNotice: document.getElementById('ext-workspace-notice'),
+    workspacePendingBox: document.getElementById('ext-workspace-pending'), workspacePending: document.getElementById('ext-workspace-pending-list'),
+    appUrl: document.getElementById('ext-app-url')
+};
+const workspaceUI = createWorkspaceUI(workspaceDom, captureUI, { ticket: inlineTicket });
 
 let activeLookupSequence = 0;
 let activeLookupController = null;
@@ -98,6 +131,7 @@ function showAccountNotice(kind, keyOrText, params = {}, isRawText = false) {
 function showLookupNotice(kind, keyOrText, params = {}, isRawText = false) {
     lastLookupNotice = keyOrText ? { kind, keyOrText, params, isRawText } : null;
     setNotice(dom.lookupNotice, kind, keyOrText, params, isRawText);
+    if (isEmbedded) setNotice(dom.inlineLookupNotice, kind, keyOrText, params, isRawText);
 }
 
 function syncLoginModeFields() {
@@ -111,6 +145,7 @@ function clearDisplayedResult() {
     captureUI.clearResult();
     lastResultPayload = null;
     dom.resultEmpty?.classList.remove('hidden');
+    if (dom.resultEmpty) dom.resultEmpty.textContent = t('extension.resultEmpty');
     dom.resultBox?.classList.add('hidden');
     if (dom.resultWord) dom.resultWord.textContent = '';
     if (dom.resultPhonetic) dom.resultPhonetic.textContent = '';
@@ -203,6 +238,11 @@ function renderResult(result) {
 function renderReadiness() {
     const wordText = dom.wordInput ? dom.wordInput.value : '';
     const readiness = getExtensionReadiness({ text: wordText, sentence: dom.sentenceInput?.value, context: dom.contextInput?.value });
+    if (isEmbedded) {
+        const status = document.getElementById('ext-inline-status');
+        status.hidden = readiness.loggedIn;
+        if (!readiness.loggedIn) status.textContent = t('extension.inlineLoginRequired');
+    }
 
     if (dom.endpointInput && document.activeElement !== dom.endpointInput && readiness.endpoint) {
         dom.endpointInput.value = readiness.endpoint;
@@ -404,6 +444,7 @@ async function handleLookup() {
     const sentence = dom.sentenceInput ? dom.sentenceInput.value.trim() : '';
     const context = dom.contextInput ? dom.contextInput.value.trim() : '';
     const noCache = !!(dom.forceRefresh && dom.forceRefresh.checked);
+    if (isEmbedded) dom.resultEmpty.textContent = t('extension.inlineLookingUp', { word: text });
 
     try {
         const result = await runExtensionLookup({
@@ -435,6 +476,8 @@ async function handleLookup() {
 function refreshLocalizedView() {
     applyTranslations(document);
     captureUI.translate();
+    workspaceUI.render();
+    chrome.storage.local.set({ bdc_extension_ui_locale: getLocale() }).catch(() => {});
     globalThis.chrome?.action?.setTitle({ title: t('extension.manifestTitle') }).catch(() => {});
     if (dom.localeSelect) dom.localeSelect.value = getLocale();
     renderReadiness();
@@ -479,6 +522,16 @@ async function initExtensionPage() {
     dom.importKeyBtn?.addEventListener('click', handleImportKey);
     dom.extractBtn?.addEventListener('click', handleExtractFromTab);
     dom.lookupBtn?.addEventListener('click', handleLookup);
+    document.getElementById('ext-enable-inline').addEventListener('click', async () => {
+        const response = await chrome.runtime.sendMessage({ type: 'BDC_ENABLE_INLINE' }).catch(() => null);
+        showAccountNotice(response?.ok ? 'info' : 'error', response?.ok ? 'extension.inlineEnabled' : 'extension.inlineUnavailable');
+    });
+    document.getElementById('ext-inline-settings').addEventListener('click', () => chrome.runtime.openOptionsPage());
+    document.getElementById('ext-inline-edit').addEventListener('click', () => document.body.classList.toggle('ext-edit-query'));
+    document.getElementById('ext-inline-close').addEventListener('click', () => parent.postMessage({ type: 'BDC_CLOSE_INLINE', ticket: inlineTicket }, '*'));
+    if (isEmbedded) window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') parent.postMessage({ type: 'BDC_CLOSE_INLINE', ticket: inlineTicket }, '*');
+    });
     for (const input of [dom.wordInput, dom.sentenceInput, dom.contextInput]) {
         input?.addEventListener('input', () => {
             captureUI.setSource(null);
@@ -509,7 +562,21 @@ async function initExtensionPage() {
     });
     window.addEventListener('bdc:ai-catalog-change', () => renderReadiness());
     window.addEventListener('bdc:ai-credential-sync', () => renderReadiness());
-    captureUI.sync().catch(() => {});
+    await captureUI.sync();
+    await workspaceUI.sync();
+    if (inlineContext) {
+        const page = inlineContext.page;
+        dom.wordInput.value = page.text; dom.sentenceInput.value = page.sentence || ''; dom.contextInput.value = page.context || '';
+        captureUI.setSource(page);
+        if (getExtensionReadiness().loggedIn) {
+            dom.resultEmpty.textContent = t('extension.inlineLookingUp', { word: page.text });
+            try { await syncExtensionAccountAI(); await handleLookup(); }
+            catch (error) { clearDisplayedResult(); showFailure(showLookupNotice, error); }
+        } else {
+            const status = document.getElementById('ext-inline-status');
+            status.hidden = false; status.textContent = t('extension.inlineLoginRequired');
+        }
+    }
 }
 
 // Expose shared lookup & runtime helpers on globalThis for deterministic extension E2E verification

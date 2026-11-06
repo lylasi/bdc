@@ -13,7 +13,7 @@ export function publicSourceUrl(value) {
     if (!raw || raw.length > 4096) return '';
     try {
         const url = new URL(raw);
-        return /^(https?:)$/.test(url.protocol) && !url.username && !url.password ? url.href : '';
+        return /^(https?:)$/.test(url.protocol) && !url.username && !/^https?:\/\/[^/]*@/i.test(url.href) ? url.href : '';
     } catch (_) { return ''; }
 }
 

@@ -1,0 +1,18 @@
+{
+  "checks": [
+    {
+      "name": "可信擴充套件帳戶已連接",
+      "ok": true
+    },
+    {
+      "name": "execution",
+      "ok": false,
+      "detail": "page.waitForFunction: Timeout 30000ms exceeded.\n    at /Users/linus/CODE/bdc-extension-page-reading-20261106/tests/extension-page-workspace.cjs:41:21"
+    }
+  ],
+  "errors": [],
+  "consoles": [],
+  "aiMocked": true,
+  "realMV3": true,
+  "realWorkerSQLite": true
+}

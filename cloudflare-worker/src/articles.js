@@ -17,6 +17,7 @@
 // 不洩漏跨帳戶的存在性。`label` 與 `token_hash` 都不參與文章身份。
 
 import { errorJson, json, readJsonBody } from './http.js';
+import { linkPageVocabularyBooks } from './page-links.js';
 import {
     ARTICLE_ERRORS,
     ARTICLE_LIMITS,
@@ -296,13 +297,20 @@ export async function handleArticlesRoute({ request, env, url, user, rest }) {
     // --- 新增 ---
     if ((path === '' || path === '/') && method === 'POST') {
         const body = await readJsonBody(request, ARTICLE_LIMITS.requestMaxBytes);
-        return handleCreate({ request, env, user, body });
+        const response = await handleCreate({ request, env, user, body });
+        if (response.ok) {
+            const saved = await response.clone().json();
+            await linkPageVocabularyBooks(env, userId, saved.article);
+        }
+        return response;
     }
 
     // --- 單篇 ---
     const restoreMatch = path.match(/^\/([^/]+)\/restore$/);
     if (restoreMatch && method === 'POST') {
-        return handleRestore({ request, env, user, articleId: decodeURIComponent(restoreMatch[1]) });
+        const response = await handleRestore({ request, env, user, articleId: decodeURIComponent(restoreMatch[1]) });
+        if (response.ok) await linkPageVocabularyBooks(env, userId, (await response.clone().json()).article);
+        return response;
     }
     const singleMatch = path.match(/^\/([^/]+)$/);
     if (singleMatch) {
@@ -312,7 +320,14 @@ export async function handleArticlesRoute({ request, env, url, user, rest }) {
             if (!row) return errorJson(ARTICLE_ERRORS.notFound, 404, env, request);
             return respondDoc(env, request, row, 200, { deleted: !!row.deleted_at });
         }
-        if (method === 'PUT') return handleUpdate({ request, env, user, articleId });
+        if (method === 'PUT') {
+            const response = await handleUpdate({ request, env, user, articleId });
+            if (response.ok) {
+                const saved = await response.clone().json();
+                await linkPageVocabularyBooks(env, userId, saved.article);
+            }
+            return response;
+        }
         if (method === 'DELETE') return handleDelete({ request, env, user, articleId });
     }
 

@@ -350,6 +350,11 @@ export async function addWordToCurrentArticleBook(text, options = {}) {
     if (wbId) {
         try { book = storage.getWordbookById(wbId); } catch (_) { /* ignore */ }
         if (!book) {
+            const targetArticleId = articleId || state.currentArticleId || wbId;
+            book = state.vocabularyBooks.find((candidate) => !candidate.deletedAt && candidate.sourceType === 'article' && candidate.articleId === targetArticleId) || null;
+            if (book) state.setCurrentWordbookId(book.id);
+        }
+        if (!book) {
             // 文章由獨立文章儲存建立時，storage 可能還沒有對應的詞書 metadata；
             // 直接以同一個穩定 ID 建立，避免落到「未命名文章」或別的預設詞書。
             const record = articleStore.getRecord(wbId) || articleStore.getRecord(articleId);

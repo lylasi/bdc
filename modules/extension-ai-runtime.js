@@ -55,7 +55,7 @@ import {
     resolveAIRequestConfig,
     resolveThinkingLevel
 } from './ai-models.js';
-import { lookupSelection, resetThinkingFallbackMemory } from './api.js';
+import { lookupSelection, resetThinkingFallbackMemory, extractPageArticle, analyzeParagraph } from './api.js';
 import { sanitizeAISettings } from './ai-settings-sanitize.js';
 import { getLocale, t } from './i18n.js';
 
@@ -488,6 +488,44 @@ export async function runExtensionLookup({
         try {
             if (typeof window !== 'undefined') window.removeEventListener(AUTH_EVENT, onAuthChange);
         } catch (_) {}
+    }
+}
+
+export async function runExtensionArticleTask({ page, article, analyze = false, signal, onProgress } = {}) {
+    const session = captureAuthSession();
+    const scope = getActiveAIScope();
+    if (!session.loggedIn) throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    const authChanged = () => { if (!isAuthSessionCurrent(session)) abort(); };
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) abort();
+    window.addEventListener(AUTH_EVENT, authChanged);
+    const assertCurrent = () => {
+        controller.signal.throwIfAborted();
+        if (!isAuthSessionCurrent(session) || getActiveAIScope().key !== scope.key) throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
+    };
+    try {
+        let result;
+        if (!analyze) result = await extractPageArticle(structuredClone(page), { signal: controller.signal, onProgress });
+        else {
+            const blocks = String(article.body || '').split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean);
+            const paragraphs = [];
+            for (let i = 0; i < blocks.length; i += 1) {
+                assertCurrent();
+                onProgress?.(i + 1, blocks.length);
+                const paragraph = await analyzeParagraph(i === 0 ? blocks[i].replace(/^#\s+/, '') : blocks[i], { level: 'quick', signal: controller.signal });
+                if (paragraph.failed || !paragraph.chinese_translation) throw Object.assign(new Error('page_analysis_failed'), { code: 'page_analysis_failed' });
+                paragraphs.push(paragraph);
+            }
+            result = { chinese_translation: paragraphs.map((paragraph) => paragraph.chinese_translation).join('\n\n'),
+                paragraph_analysis: paragraphs, word_alignment: [], detailed_analysis: [], updatedAt: new Date().toISOString() };
+        }
+        assertCurrent();
+        return result;
+    } finally {
+        signal?.removeEventListener('abort', abort);
+        window.removeEventListener(AUTH_EVENT, authChanged);
     }
 }
 

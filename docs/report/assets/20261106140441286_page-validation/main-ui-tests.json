@@ -1,0 +1,30 @@
+[
+  {
+    "cmd": [
+      "node",
+      "tests/settings-autosave.cjs"
+    ],
+    "exit_code": 0
+  },
+  {
+    "cmd": [
+      "node",
+      "tests/reading-phrase-lookup.cjs"
+    ],
+    "exit_code": 0
+  },
+  {
+    "cmd": [
+      "node",
+      "tests/ai-review-regressions.mjs"
+    ],
+    "exit_code": 0
+  },
+  {
+    "cmd": [
+      "node",
+      "tests/audit-flows.cjs"
+    ],
+    "exit_code": 0
+  }
+]

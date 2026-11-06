@@ -3,6 +3,9 @@ import { ensureReadingState, readingRevisionStatements } from './reading.js';
 import { normalizeReadingPatch, patchSize, READING_LIMITS } from '../../shared/reading-protocol.mjs';
 import { CAPTURE_MAX_BYTES, captureFingerprint, validateCapture } from '../../shared/capture-protocol.mjs';
 import { MAX_VOCABULARY_SOURCES, normalizeVocabularyWordKey, vocabularySourceKey } from '../../shared/vocabulary-source.mjs';
+import { defaultCaptureBook, handleCaptureBookWrite } from './capture-books.js';
+import { findPageArticle } from './page-links.js';
+import { pageUrlKey } from '../../shared/page-protocol.mjs';
 
 const failure = (code, status = 409) => Object.assign(new Error(code), { code, status });
 
@@ -31,16 +34,17 @@ async function stableEntryId(bookId, wordKey) {
     return 'capture_' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, 48);
 }
 
-async function listBooks(env, userId) {
+async function listBooks(env, userId, sourceUrl = '') {
     const result = await env.DB.prepare('SELECT * FROM reading_entities WHERE owner_user_id = ? AND entity_type = ? AND deleted_at IS NULL ORDER BY entity_id')
         .bind(userId, 'vocabularyBook').all();
     const books = (result.results || []).map((row) => {
         const book = parseRow(row);
-        return { id: book.id, name: book.name || '', revision: book.revision };
+        return { id: book.id, name: book.name || '', revision: book.revision, sourceUrl: book.sourceUrl || '', articleId: book.articleId || '' };
     });
-    // The account model has no explicit default-book setting. Require the
-    // first choice and let the extension remember that page's selection.
-    return { books, defaultBookId: '' };
+    const article = sourceUrl ? await findPageArticle(env, userId, sourceUrl) : null;
+    return { books, defaultBookId: await defaultCaptureBook(env, userId, books),
+        pageBookId: pageUrlKey(sourceUrl) ? (books.find((book) => pageUrlKey(book.sourceUrl) === pageUrlKey(sourceUrl))?.id || '') : '',
+        articleId: article?.id || '' };
 }
 
 async function captureWord(env, userId, capture) {
@@ -160,8 +164,11 @@ async function captureWord(env, userId, capture) {
 
 export async function handleVocabularyCaptureRoute({ request, env, url, user }) {
     try {
+        if (url.pathname === '/vocabulary/default' || url.pathname === '/vocabulary/page-link' || (url.pathname === '/vocabulary/books' && request.method !== 'GET')) {
+            return handleCaptureBookWrite({ request, env, url, user });
+        }
         if (url.pathname === '/vocabulary/books' && request.method === 'GET') {
-            return json(await listBooks(env, user.user_id), 200, env, request);
+            return json(await listBooks(env, user.user_id, url.searchParams.get('sourceUrl') || ''), 200, env, request);
         }
         if (url.pathname === '/captures/capabilities' && request.method === 'GET') {
             return json({ captureVersion: 1, maxSources: MAX_VOCABULARY_SOURCES }, 200, env, request);
