@@ -1,0 +1,1097 @@
+[
+  {
+    "id": "A1 menu in viewport desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A2 no horizontal overflow desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A3 no reflow desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A4 every item hit-testable desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A5 item touch target >= 40px desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A6 no text clipped desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A7 labels desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A8 bottom anchor menu in viewport desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A9 bottom anchor items clickable desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A10 top anchor items clickable desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A12 quick-read clickable desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A13 quick-read does not cover hint desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A14 inline buttons per sentence still 1 desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A16 menu after 1px smooth scroll desktop/zh-CN",
+    "status": "INFO",
+    "detail": "{\"stillOpen\":false}"
+  },
+  {
+    "id": "A15 no page errors desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A1 menu in viewport m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A2 no horizontal overflow m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A3 no reflow m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A4 every item hit-testable m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A5 item touch target >= 40px m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A6 no text clipped m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A7 labels m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A8 bottom anchor menu in viewport m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A9 bottom anchor items clickable m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A10 top anchor items clickable m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A11 touch target ±14px (-14) m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A11 touch target ±14px (14) m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A16 menu after 1px smooth scroll m320/zh-CN",
+    "status": "INFO",
+    "detail": "{\"stillOpen\":false}"
+  },
+  {
+    "id": "A15 no page errors m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A1 menu in viewport m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A2 no horizontal overflow m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A3 no reflow m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A4 every item hit-testable m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A5 item touch target >= 40px m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A6 no text clipped m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A7 labels m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A8 bottom anchor menu in viewport m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A9 bottom anchor items clickable m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A10 top anchor items clickable m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A11 touch target ±14px (-14) m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A11 touch target ±14px (14) m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A16 menu after 1px smooth scroll m390/zh-CN",
+    "status": "INFO",
+    "detail": "{\"stillOpen\":false}"
+  },
+  {
+    "id": "A15 no page errors m390/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A1 menu in viewport desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A2 no horizontal overflow desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A3 no reflow desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A4 every item hit-testable desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A5 item touch target >= 40px desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A6 no text clipped desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A7 labels desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A8 bottom anchor menu in viewport desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A9 bottom anchor items clickable desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A10 top anchor items clickable desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A12 quick-read clickable desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A13 quick-read does not cover hint desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A14 inline buttons per sentence still 1 desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A16 menu after 1px smooth scroll desktop/zh-HK",
+    "status": "INFO",
+    "detail": "{\"stillOpen\":false}"
+  },
+  {
+    "id": "A15 no page errors desktop/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A1 menu in viewport m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A2 no horizontal overflow m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A3 no reflow m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A4 every item hit-testable m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A5 item touch target >= 40px m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A6 no text clipped m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A7 labels m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A8 bottom anchor menu in viewport m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A9 bottom anchor items clickable m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A10 top anchor items clickable m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A11 touch target ±14px (-14) m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A11 touch target ±14px (14) m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A16 menu after 1px smooth scroll m320/zh-HK",
+    "status": "INFO",
+    "detail": "{\"stillOpen\":false}"
+  },
+  {
+    "id": "A15 no page errors m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A1 menu in viewport m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A2 no horizontal overflow m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A3 no reflow m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A4 every item hit-testable m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A5 item touch target >= 40px m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A6 no text clipped m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A7 labels m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A8 bottom anchor menu in viewport m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A9 bottom anchor items clickable m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A10 top anchor items clickable m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A11 touch target ±14px (-14) m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A11 touch target ±14px (14) m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "A16 menu after 1px smooth scroll m390/zh-HK",
+    "status": "INFO",
+    "detail": "{\"stillOpen\":false}"
+  },
+  {
+    "id": "A15 no page errors m390/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B1 Enter opens menu and focuses first item",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B2 ArrowDown moves",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B3 End goes last",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B4 ArrowDown wraps",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B5 ArrowUp wraps",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B6 Home goes first",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B7 Escape closes and restores focus",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B8 Space opens menu with focus",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B9 Tab from menu",
+    "status": "INFO",
+    "detail": "{\"closed\":true,\"tag\":\"BUTTON\",\"id\":\"assistant-fab\",\"cls\":\"assistant-fab\",\"label\":\"AI 助手\",\"inArticle\":false}"
+  },
+  {
+    "id": "B10 Tab closes menu",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B11 ArrowDown on trigger opens menu",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B12 Escape after analyze",
+    "status": "INFO",
+    "detail": "{\"modalHidden\":true,\"focus\":\"interactive-sentence\"}"
+  },
+  {
+    "id": "B13 no page errors (keyboard)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B1 Enter opens menu and focuses first item",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B2 ArrowDown moves",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B3 End goes last",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B4 ArrowDown wraps",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B5 ArrowUp wraps",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B6 Home goes first",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B7 Escape closes and restores focus",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B8 Space opens menu with focus",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B9 Tab from menu",
+    "status": "INFO",
+    "detail": "{\"closed\":true,\"tag\":\"BUTTON\",\"id\":\"assistant-fab\",\"cls\":\"assistant-fab\",\"label\":\"AI 助手\",\"inArticle\":false}"
+  },
+  {
+    "id": "B10 Tab closes menu",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B11 ArrowDown on trigger opens menu",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "B12 Escape after analyze",
+    "status": "INFO",
+    "detail": "{\"modalHidden\":true,\"focus\":\"interactive-sentence\"}"
+  },
+  {
+    "id": "B13 no page errors (keyboard)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C1 once plays exact sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C2 once plays one time only",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C3 once stops playback",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C4 sidebar settings untouched",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C5 continue reads to end once each",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C6 continue stops at end",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C7 continue from last sentence reads once",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C8 continue from last stops",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C9 loop repeats with ~500ms gap",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C10 loop repeats same sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C11 no late loop after stop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C12 pause during gap cancels pending loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C13 resume replays same sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C14 next keeps loop mode",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C15 next reads following sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C16 loop continues on new sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C17 prev returns and keeps looping",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C18 menu shows stop state",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C19 same sentence same mode stops",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C20 no audio after same-mode stop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C21 mode switch replaces loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C22 mode switch leaves stopped state",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C23 no late loop when switching sentence in gap",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C24 full reading replaced, not resumed",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C25 other audio stops loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C26 resume after interruption replays once",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C27 error ends loop without retry",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C29 menu vs app auto-scroll",
+    "status": "INFO",
+    "detail": "{\"openedNow\":true,\"stillOpen\":false}"
+  },
+  {
+    "id": "C28 clearing article stops loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C29 no page errors (playback)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C1 once plays exact sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C2 once plays one time only",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C3 once stops playback",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C4 sidebar settings untouched",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C5 continue reads to end once each",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C6 continue stops at end",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C7 continue from last sentence reads once",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C8 continue from last stops",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C9 loop repeats with ~500ms gap",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C10 loop repeats same sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C11 no late loop after stop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C12 pause during gap cancels pending loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C13 resume replays same sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C14 next keeps loop mode",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C15 next reads following sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C16 loop continues on new sentence",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C17 prev returns and keeps looping",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C18 menu shows stop state",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C19 same sentence same mode stops",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C20 no audio after same-mode stop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C21 mode switch replaces loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C22 mode switch leaves stopped state",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C23 no late loop when switching sentence in gap",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C24 full reading replaced, not resumed",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C25 other audio stops loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C26 resume after interruption replays once",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C27 error ends loop without retry",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C29 menu vs app auto-scroll",
+    "status": "INFO",
+    "detail": "{\"openedNow\":true,\"stillOpen\":false}"
+  },
+  {
+    "id": "C28 clearing article stops loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "C29 no page errors (playback)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D1 selection toolbar appears desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D2 toolbar inside viewport desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D3 read button clickable desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D4 read button target size desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D5 selection read plays selected text only desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D6 selection read stops after once desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D7 toolbar hides after read desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D8 Chinese selection desktop/zh-CN",
+    "status": "INFO",
+    "detail": "{\"selected\":\"甲句一\",\"barShown\":false}"
+  },
+  {
+    "id": "D10 no page errors (selection) desktop/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D1 selection toolbar appears m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D2 toolbar inside viewport m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D3 read button clickable m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D4 read button target size m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D5 selection read plays selected text only m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D6 selection read stops after once m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D7 toolbar hides after read m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D8 Chinese selection m320/zh-CN",
+    "status": "INFO",
+    "detail": "{\"selected\":\"甲句一\",\"barShown\":false}"
+  },
+  {
+    "id": "D10 no page errors (selection) m320/zh-CN",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D1 selection toolbar appears m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D2 toolbar inside viewport m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D3 read button clickable m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D4 read button target size m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D5 selection read plays selected text only m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D6 selection read stops after once m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D7 toolbar hides after read m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "D8 Chinese selection m320/zh-HK",
+    "status": "INFO",
+    "detail": "{\"selected\":\"甲句一\",\"barShown\":false}"
+  },
+  {
+    "id": "D10 no page errors (selection) m320/zh-HK",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E1 no external request for menu or read",
+    "status": "FAIL",
+    "detail": "[\"http://127.0.0.1:19999/independent-audit/auth-capabilities\"]"
+  },
+  {
+    "id": "E2 AI not triggered by reading",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E3 floating reader carries mode label",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E4 loop survives locale switch",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E5 menu labels follow locale",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E6 trigger aria-label follows locale",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E7 account scope change stops loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E8 menu closed after scope change",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E9 no page errors (ai/locale)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E1 no external request for menu or read",
+    "status": "FAIL",
+    "detail": "[\"http://127.0.0.1:19999/independent-audit/auth-capabilities\"]"
+  },
+  {
+    "id": "E2 AI not triggered by reading",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E3 floating reader carries mode label",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E4 loop survives locale switch",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E5 menu labels follow locale",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E6 trigger aria-label follows locale",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E7 account scope change stops loop",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E8 menu closed after scope change",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "E9 no page errors (ai/locale)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "F1 loop after navigating to another module",
+    "status": "INFO",
+    "detail": "{\"before\":1,\"after\":1,\"stillPlaying\":false}"
+  },
+  {
+    "id": "F2 no page errors (navigation)",
+    "status": "PASS",
+    "detail": ""
+  }
+]

@@ -1,0 +1,224 @@
+PASS A1 menu in viewport desktop/zh-CN
+PASS A2 no horizontal overflow desktop/zh-CN
+PASS A3 no reflow desktop/zh-CN
+PASS A4 every item hit-testable desktop/zh-CN
+PASS A5 item touch target >= 40px desktop/zh-CN
+PASS A6 no text clipped desktop/zh-CN
+PASS A7 labels desktop/zh-CN
+PASS A8 bottom anchor menu in viewport desktop/zh-CN
+PASS A9 bottom anchor items clickable desktop/zh-CN
+PASS A10 top anchor items clickable desktop/zh-CN
+PASS A12 quick-read clickable desktop/zh-CN
+PASS A13 quick-read does not cover hint desktop/zh-CN
+PASS A14 inline buttons per sentence still 1 desktop/zh-CN
+INFO A16 menu after 1px smooth scroll desktop/zh-CN :: {"stillOpen":false}
+PASS A15 no page errors desktop/zh-CN
+PASS A1 menu in viewport m320/zh-CN
+PASS A2 no horizontal overflow m320/zh-CN
+PASS A3 no reflow m320/zh-CN
+PASS A4 every item hit-testable m320/zh-CN
+PASS A5 item touch target >= 40px m320/zh-CN
+PASS A6 no text clipped m320/zh-CN
+PASS A7 labels m320/zh-CN
+PASS A8 bottom anchor menu in viewport m320/zh-CN
+PASS A9 bottom anchor items clickable m320/zh-CN
+PASS A10 top anchor items clickable m320/zh-CN
+PASS A11 touch target ±14px (-14) m320/zh-CN
+PASS A11 touch target ±14px (14) m320/zh-CN
+INFO A16 menu after 1px smooth scroll m320/zh-CN :: {"stillOpen":false}
+PASS A15 no page errors m320/zh-CN
+PASS A1 menu in viewport m390/zh-CN
+PASS A2 no horizontal overflow m390/zh-CN
+PASS A3 no reflow m390/zh-CN
+PASS A4 every item hit-testable m390/zh-CN
+PASS A5 item touch target >= 40px m390/zh-CN
+PASS A6 no text clipped m390/zh-CN
+PASS A7 labels m390/zh-CN
+PASS A8 bottom anchor menu in viewport m390/zh-CN
+PASS A9 bottom anchor items clickable m390/zh-CN
+PASS A10 top anchor items clickable m390/zh-CN
+PASS A11 touch target ±14px (-14) m390/zh-CN
+PASS A11 touch target ±14px (14) m390/zh-CN
+INFO A16 menu after 1px smooth scroll m390/zh-CN :: {"stillOpen":false}
+PASS A15 no page errors m390/zh-CN
+PASS A1 menu in viewport desktop/zh-HK
+PASS A2 no horizontal overflow desktop/zh-HK
+PASS A3 no reflow desktop/zh-HK
+PASS A4 every item hit-testable desktop/zh-HK
+PASS A5 item touch target >= 40px desktop/zh-HK
+PASS A6 no text clipped desktop/zh-HK
+PASS A7 labels desktop/zh-HK
+PASS A8 bottom anchor menu in viewport desktop/zh-HK
+PASS A9 bottom anchor items clickable desktop/zh-HK
+PASS A10 top anchor items clickable desktop/zh-HK
+PASS A12 quick-read clickable desktop/zh-HK
+PASS A13 quick-read does not cover hint desktop/zh-HK
+PASS A14 inline buttons per sentence still 1 desktop/zh-HK
+INFO A16 menu after 1px smooth scroll desktop/zh-HK :: {"stillOpen":false}
+PASS A15 no page errors desktop/zh-HK
+PASS A1 menu in viewport m320/zh-HK
+PASS A2 no horizontal overflow m320/zh-HK
+PASS A3 no reflow m320/zh-HK
+PASS A4 every item hit-testable m320/zh-HK
+PASS A5 item touch target >= 40px m320/zh-HK
+PASS A6 no text clipped m320/zh-HK
+PASS A7 labels m320/zh-HK
+PASS A8 bottom anchor menu in viewport m320/zh-HK
+PASS A9 bottom anchor items clickable m320/zh-HK
+PASS A10 top anchor items clickable m320/zh-HK
+PASS A11 touch target ±14px (-14) m320/zh-HK
+PASS A11 touch target ±14px (14) m320/zh-HK
+INFO A16 menu after 1px smooth scroll m320/zh-HK :: {"stillOpen":false}
+PASS A15 no page errors m320/zh-HK
+PASS A1 menu in viewport m390/zh-HK
+PASS A2 no horizontal overflow m390/zh-HK
+PASS A3 no reflow m390/zh-HK
+PASS A4 every item hit-testable m390/zh-HK
+PASS A5 item touch target >= 40px m390/zh-HK
+PASS A6 no text clipped m390/zh-HK
+PASS A7 labels m390/zh-HK
+PASS A8 bottom anchor menu in viewport m390/zh-HK
+PASS A9 bottom anchor items clickable m390/zh-HK
+PASS A10 top anchor items clickable m390/zh-HK
+PASS A11 touch target ±14px (-14) m390/zh-HK
+PASS A11 touch target ±14px (14) m390/zh-HK
+INFO A16 menu after 1px smooth scroll m390/zh-HK :: {"stillOpen":false}
+PASS A15 no page errors m390/zh-HK
+PASS B1 Enter opens menu and focuses first item
+PASS B2 ArrowDown moves
+PASS B3 End goes last
+PASS B4 ArrowDown wraps
+PASS B5 ArrowUp wraps
+PASS B6 Home goes first
+PASS B7 Escape closes and restores focus
+PASS B8 Space opens menu with focus
+INFO B9 Tab from menu :: {"closed":true,"tag":"BUTTON","id":"assistant-fab","cls":"assistant-fab","label":"AI 助手","inArticle":false}
+PASS B10 Tab closes menu
+PASS B11 ArrowDown on trigger opens menu
+INFO B12 Escape after analyze :: {"modalHidden":true,"focus":"interactive-sentence"}
+PASS B13 no page errors (keyboard)
+PASS B1 Enter opens menu and focuses first item
+PASS B2 ArrowDown moves
+PASS B3 End goes last
+PASS B4 ArrowDown wraps
+PASS B5 ArrowUp wraps
+PASS B6 Home goes first
+PASS B7 Escape closes and restores focus
+PASS B8 Space opens menu with focus
+INFO B9 Tab from menu :: {"closed":true,"tag":"BUTTON","id":"assistant-fab","cls":"assistant-fab","label":"AI 助手","inArticle":false}
+PASS B10 Tab closes menu
+PASS B11 ArrowDown on trigger opens menu
+INFO B12 Escape after analyze :: {"modalHidden":true,"focus":"interactive-sentence"}
+PASS B13 no page errors (keyboard)
+PASS C1 once plays exact sentence
+PASS C2 once plays one time only
+PASS C3 once stops playback
+PASS C4 sidebar settings untouched
+PASS C5 continue reads to end once each
+PASS C6 continue stops at end
+PASS C7 continue from last sentence reads once
+PASS C8 continue from last stops
+PASS C9 loop repeats with ~500ms gap
+PASS C10 loop repeats same sentence
+PASS C11 no late loop after stop
+PASS C12 pause during gap cancels pending loop
+PASS C13 resume replays same sentence
+PASS C14 next keeps loop mode
+PASS C15 next reads following sentence
+PASS C16 loop continues on new sentence
+PASS C17 prev returns and keeps looping
+PASS C18 menu shows stop state
+PASS C19 same sentence same mode stops
+PASS C20 no audio after same-mode stop
+PASS C21 mode switch replaces loop
+PASS C22 mode switch leaves stopped state
+PASS C23 no late loop when switching sentence in gap
+PASS C24 full reading replaced, not resumed
+PASS C25 other audio stops loop
+PASS C26 resume after interruption replays once
+PASS C27 error ends loop without retry
+INFO C29 menu vs app auto-scroll :: {"openedNow":true,"stillOpen":false}
+PASS C28 clearing article stops loop
+PASS C29 no page errors (playback)
+PASS C1 once plays exact sentence
+PASS C2 once plays one time only
+PASS C3 once stops playback
+PASS C4 sidebar settings untouched
+PASS C5 continue reads to end once each
+PASS C6 continue stops at end
+PASS C7 continue from last sentence reads once
+PASS C8 continue from last stops
+PASS C9 loop repeats with ~500ms gap
+PASS C10 loop repeats same sentence
+PASS C11 no late loop after stop
+PASS C12 pause during gap cancels pending loop
+PASS C13 resume replays same sentence
+PASS C14 next keeps loop mode
+PASS C15 next reads following sentence
+PASS C16 loop continues on new sentence
+PASS C17 prev returns and keeps looping
+PASS C18 menu shows stop state
+PASS C19 same sentence same mode stops
+PASS C20 no audio after same-mode stop
+PASS C21 mode switch replaces loop
+PASS C22 mode switch leaves stopped state
+PASS C23 no late loop when switching sentence in gap
+PASS C24 full reading replaced, not resumed
+PASS C25 other audio stops loop
+PASS C26 resume after interruption replays once
+PASS C27 error ends loop without retry
+INFO C29 menu vs app auto-scroll :: {"openedNow":true,"stillOpen":false}
+PASS C28 clearing article stops loop
+PASS C29 no page errors (playback)
+PASS D1 selection toolbar appears desktop/zh-CN
+PASS D2 toolbar inside viewport desktop/zh-CN
+PASS D3 read button clickable desktop/zh-CN
+PASS D4 read button target size desktop/zh-CN
+PASS D5 selection read plays selected text only desktop/zh-CN
+PASS D6 selection read stops after once desktop/zh-CN
+PASS D7 toolbar hides after read desktop/zh-CN
+INFO D8 Chinese selection desktop/zh-CN :: {"selected":"甲句一","barShown":false}
+PASS D10 no page errors (selection) desktop/zh-CN
+PASS D1 selection toolbar appears m320/zh-CN
+PASS D2 toolbar inside viewport m320/zh-CN
+PASS D3 read button clickable m320/zh-CN
+PASS D4 read button target size m320/zh-CN
+PASS D5 selection read plays selected text only m320/zh-CN
+PASS D6 selection read stops after once m320/zh-CN
+PASS D7 toolbar hides after read m320/zh-CN
+INFO D8 Chinese selection m320/zh-CN :: {"selected":"甲句一","barShown":false}
+PASS D10 no page errors (selection) m320/zh-CN
+PASS D1 selection toolbar appears m320/zh-HK
+PASS D2 toolbar inside viewport m320/zh-HK
+PASS D3 read button clickable m320/zh-HK
+PASS D4 read button target size m320/zh-HK
+PASS D5 selection read plays selected text only m320/zh-HK
+PASS D6 selection read stops after once m320/zh-HK
+PASS D7 toolbar hides after read m320/zh-HK
+INFO D8 Chinese selection m320/zh-HK :: {"selected":"甲句一","barShown":false}
+PASS D10 no page errors (selection) m320/zh-HK
+FAIL E1 no external request for menu or read :: ["http://127.0.0.1:19999/independent-audit/auth-capabilities"]
+PASS E2 AI not triggered by reading
+PASS E3 floating reader carries mode label
+PASS E4 loop survives locale switch
+PASS E5 menu labels follow locale
+PASS E6 trigger aria-label follows locale
+PASS E7 account scope change stops loop
+PASS E8 menu closed after scope change
+PASS E9 no page errors (ai/locale)
+FAIL E1 no external request for menu or read :: ["http://127.0.0.1:19999/independent-audit/auth-capabilities"]
+PASS E2 AI not triggered by reading
+PASS E3 floating reader carries mode label
+PASS E4 loop survives locale switch
+PASS E5 menu labels follow locale
+PASS E6 trigger aria-label follows locale
+PASS E7 account scope change stops loop
+PASS E8 menu closed after scope change
+PASS E9 no page errors (ai/locale)
+INFO F1 loop after navigating to another module :: {"before":1,"after":1,"stillPlaying":false}
+PASS F2 no page errors (navigation)
+
+== 201 pass, 2 fail, 16 info ==
+FAILURES:
+- E1 no external request for menu or read :: ["http://127.0.0.1:19999/independent-audit/auth-capabilities"]
+- E1 no external request for menu or read :: ["http://127.0.0.1:19999/independent-audit/auth-capabilities"]

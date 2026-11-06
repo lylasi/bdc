@@ -1,0 +1,6 @@
+PASS desktop zh-CN: menu, keyboard, once, continue, loop, pause, navigation, stop, interruption, selection, hover, error, analysis
+PASS mobile 320 zh-CN: one inline button, no reflow/overflow, menu fits, touch playback and stop
+PASS mobile 390 zh-CN: one inline button, no reflow/overflow, menu fits, touch playback and stop
+PASS desktop zh-HK: menu, keyboard, once, continue, loop, pause, navigation, stop, interruption, selection, hover, error, analysis
+PASS mobile 320 zh-HK: one inline button, no reflow/overflow, menu fits, touch playback and stop
+PASS mobile 390 zh-HK: one inline button, no reflow/overflow, menu fits, touch playback and stop

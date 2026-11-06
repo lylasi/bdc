@@ -1,0 +1,10 @@
+PASS continue across Chinese-source paragraph skips it :: ["Visitors sign the book at the door.","Morning light falls across the long wooden table.","Two students copy new words into their notebooks."]
+PASS continue finishes at last English sentence without stall :: ["Visitors sign the book at the door.","Morning light falls across the long wooden table.","Two students copy new words into their notebooks.","A final sentence closes the article."]
+PASS no page errors (continue) :: []
+PASS sidebar full reading still skips Chinese-source paragraph :: ["The reading room opens at eight.","Visitors sign the book at the door.","Morning light falls across the long wooden table.","Two students copy new words into their notebooks.","A final sentence closes the article."]
+PASS no page errors (full) :: []
+INFO loop continues after module switch (F4 existing behaviour) :: {"calls":2,"floating":{"visible":true,"mode":"loop"}}
+PASS floating stop halts cross-module loop :: {"after":2,"now":2}
+PASS no page errors (cross-module) :: []
+
+=== 7 pass / 0 fail / 1 info ===

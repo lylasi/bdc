@@ -893,6 +893,17 @@ export default {
         modelLabel: '模型'
     },
     article: {
+        sentenceActions: '句子操作',
+        englishSentenceOnly: '此处仅支持朗读英文原句。',
+        sentenceNotReadable: '此句暂时无法朗读，请重新打开文章后再试。',
+        readSentence: '朗读本句',
+        readFromHere: '从这里开始读',
+        loopSentence: '循环读本句',
+        stopSentence: '停止朗读本句',
+        stopFromHere: '停止连续朗读',
+        stopLoopSentence: '停止循环本句',
+        readSelection: '朗读选中内容',
+        playbackModeLabel: '{mode} · {action}',
         openBookNeedsRecord: '先分析或打开一篇文章，才能建立词书。',
         createBookFailed: '无法建立词书：{message}',
         bookCreated: '已建立这篇文章的词书',

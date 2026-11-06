@@ -1,0 +1,8 @@
+INFO J1 fixture :: {"triggers":4,"paragraphs":[{"zhSource":false,"buttons":2},{"zhSource":true,"buttons":1},{"zhSource":false,"buttons":1}]}
+PASS J2 Chinese-source paragraph still renders a read trigger
+INFO J3 Chinese-source sentence read :: {"menuOpen":true,"before":0,"after":0,"feedback":[]}
+FAIL J4 Chinese-source sentence read gives feedback :: {"after":0,"feedback":[]}
+INFO J5 continue across Chinese paragraph :: {"beforeContinue":0,"texts":["Alpha sentence one.","Alpha sentence two.","Beta sentence three."]}
+PASS J6 no page errors
+
+== 2 pass, 1 fail ==

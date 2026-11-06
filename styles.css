@@ -4067,6 +4067,7 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
     height: 28px;
     transform: translate(-50%, -50%);
 }
+.sent-analyze-btn.icon-only .icon { width: 12px; height: 12px; }
 @media (pointer: coarse) {
     .sent-analyze-btn.icon-only::after { width: 32px; height: 32px; }
 }
@@ -4096,6 +4097,61 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
 /* 最後一個詞與句末解析鍵綁成一組不可斷行（結構由 bindAnalyzeButtonToLastWord 建立）：
    原子行內元素本身永遠可斷行，行尾放不下時整顆鍵會被擠到下一行句首，看起來像屬於下一句。 */
 .sentence-tail { white-space: nowrap; }
+
+/* 句尾共用操作入口；浮動操作不參與正文排版。 */
+.article-sentence-menu {
+    position: fixed;
+    z-index: 2550;
+    width: 208px;
+    max-width: calc(100vw - 16px);
+    padding: 4px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    box-shadow: var(--sh-3);
+}
+.article-sentence-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: var(--r-xs);
+    background: transparent;
+    color: var(--ink-800);
+    font: inherit;
+    font-size: var(--fs-sm);
+    text-align: left;
+    cursor: pointer;
+}
+.article-sentence-menu button:hover,
+.article-sentence-menu button:focus-visible,
+.article-sentence-menu button.is-active { background: var(--primary-100); color: var(--primary-700); }
+.article-sentence-menu button:disabled { opacity: .5; cursor: default; }
+.article-sentence-menu-hint { margin: 4px 12px; color: var(--ink-500); font-size: var(--fs-xs); line-height: 1.5; }
+.article-sentence-menu button:last-child { border-top: 1px solid var(--line); border-radius: 0; }
+.article-sentence-quick-read {
+    position: fixed;
+    z-index: 1950;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--primary-600);
+    box-shadow: var(--sh-3);
+    cursor: pointer;
+}
+@media (hover: none), (pointer: coarse) {
+    .article-sentence-quick-read { display: none; }
+}
+.floating-reader .fr-toggle { position: relative; }
+.floating-reader .fr-mode-icon { position: absolute; width: 10px; height: 10px; top: 1px; right: 1px; color: var(--primary-600); }
 
 /* 指向句末解析鍵 → 該英文句與其對應中文句同時加深，確認這顆鍵作用在哪一句 */
 #article-analysis-container .interactive-sentence.sentence-linked,

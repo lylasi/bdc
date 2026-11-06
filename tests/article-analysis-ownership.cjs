@@ -256,6 +256,7 @@ function mockReply(promptText) {
     console.log('\n[情境 1b] 句子詳解延遲回來');
     await page.evaluate(() => {
         document.querySelector('#article-analysis-container .sent-analyze-btn')?.click();
+        document.querySelector('#article-sentence-menu [data-sentence-action="analyze"]')?.click();
     });
     await page.waitForTimeout(250); // 請求在路上（延遲 1400ms）
     // 使用者關掉句卡彈窗（請求不會被取消），再切換文章

@@ -1,0 +1,16 @@
+INFO G1 pending loop at module change :: {"before":1,"after":2,"lateCalls":1}
+PASS G2 no page errors (module change)
+INFO G3 pending loop at article switch :: {"before":1,"after":1,"lateCalls":0,"last":"Alpha sentence two."}
+PASS G4 no page errors (article switch)
+PASS G5 right-click does not open menu
+PASS G6 contextmenu default not prevented
+PASS G7 menu fits collapsed sidebar 320
+PASS G8 floating reader inside viewport 320
+PASS G9 quick-read still usable without translation
+INFO G10 hint text without translation :: {"hintShown":true,"text":"合成译文，仅供测试。"}
+PASS G11 quick-read plays even without translation
+INFO G12 cross-sentence selection :: {"selected":"Alpha sentence one. Alpha sentence two.","barShown":0}
+PASS G13 reading triggers no AI/TTS request
+INFO G14 baseline external requests :: ["http://127.0.0.1:19999/independent-audit/auth-capabilities"]
+
+== 9 pass, 0 fail, 5 info ==

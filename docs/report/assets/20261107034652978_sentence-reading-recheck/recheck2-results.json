@@ -1,0 +1,290 @@
+[
+  {
+    "name": "F2 mobile 390 zh-CN menu opens by tap",
+    "ok": true,
+    "detail": {
+      "hidden": false,
+      "menu": {
+        "top": 437.953125,
+        "bottom": 615.953125,
+        "left": 92.140625,
+        "right": 300.140625
+      },
+      "trigger": {
+        "top": 413.953125,
+        "bottom": 429.953125
+      },
+      "gapBelow": 8,
+      "gapAbove": -202,
+      "scrollY": 654,
+      "innerHeight": 844,
+      "innerWidth": 390
+    }
+  },
+  {
+    "name": "F2 mobile 390 zh-CN scroll keeps menu open and anchored",
+    "ok": true,
+    "detail": {
+      "hidden": false,
+      "menu": {
+        "top": 297.953125,
+        "bottom": 475.953125,
+        "left": 92.140625,
+        "right": 300.140625
+      },
+      "trigger": {
+        "top": 273.953125,
+        "bottom": 289.953125
+      },
+      "gapBelow": 8,
+      "gapAbove": -202,
+      "scrollY": 794,
+      "innerHeight": 844,
+      "innerWidth": 390
+    }
+  },
+  {
+    "name": "F2 mobile 390 zh-CN menu stays inside viewport",
+    "ok": true,
+    "detail": {
+      "hidden": false,
+      "menu": {
+        "top": 297.953125,
+        "bottom": 475.953125,
+        "left": 92.140625,
+        "right": 300.140625
+      },
+      "trigger": {
+        "top": 273.953125,
+        "bottom": 289.953125
+      },
+      "gapBelow": 8,
+      "gapAbove": -202,
+      "scrollY": 794,
+      "innerHeight": 844,
+      "innerWidth": 390
+    }
+  },
+  {
+    "name": "F2 mobile 390 zh-CN tap on item after scroll still plays",
+    "ok": true,
+    "detail": "The reading room opens at eight."
+  },
+  {
+    "name": "F2 mobile 390 zh-CN off-screen anchor closes menu on mobile",
+    "ok": true,
+    "detail": {
+      "hidden": true,
+      "menu": {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+      },
+      "trigger": {
+        "top": -1327.453125,
+        "bottom": -1311.453125
+      },
+      "gapBelow": 1311.453125,
+      "gapAbove": -1327.453125,
+      "scrollY": 2439,
+      "innerHeight": 844,
+      "innerWidth": 390
+    }
+  },
+  {
+    "name": "F2 mobile 390 zh-CN no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F3 edges zh-CN last sentence Tab",
+    "ok": null,
+    "detail": {
+      "native": {
+        "tag": "BUTTON",
+        "cls": "retry-paragraph-btn",
+        "id": "",
+        "inArticle": true,
+        "fab": false
+      },
+      "menu": {
+        "tag": "BUTTON",
+        "cls": "retry-paragraph-btn",
+        "id": "",
+        "inArticle": true,
+        "fab": false,
+        "hidden": true
+      }
+    }
+  },
+  {
+    "name": "F3 edges zh-CN last sentence Tab: menu closed",
+    "ok": true,
+    "detail": {
+      "tag": "BUTTON",
+      "cls": "retry-paragraph-btn",
+      "id": "",
+      "inArticle": true,
+      "fab": false,
+      "hidden": true
+    }
+  },
+  {
+    "name": "F3 edges zh-CN last sentence Tab: not the page-footer AI fab",
+    "ok": true,
+    "detail": {
+      "tag": "BUTTON",
+      "cls": "retry-paragraph-btn",
+      "id": "",
+      "inArticle": true,
+      "fab": false,
+      "hidden": true
+    }
+  },
+  {
+    "name": "F3 edges zh-CN first sentence Shift+Tab",
+    "ok": null,
+    "detail": {
+      "native": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "inArticle": true,
+        "fab": false
+      },
+      "menu": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "inArticle": true,
+        "fab": false,
+        "hidden": true
+      }
+    }
+  },
+  {
+    "name": "F3 edges zh-CN first sentence Shift+Tab: menu closed",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "inArticle": true,
+      "fab": false,
+      "hidden": true
+    }
+  },
+  {
+    "name": "F3 edges zh-CN first sentence Shift+Tab: not the page-footer AI fab",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "inArticle": true,
+      "fab": false,
+      "hidden": true
+    }
+  },
+  {
+    "name": "F3 edges zh-CN no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F3 edges zh-HK last sentence Tab",
+    "ok": null,
+    "detail": {
+      "native": {
+        "tag": "BUTTON",
+        "cls": "retry-paragraph-btn",
+        "id": "",
+        "inArticle": true,
+        "fab": false
+      },
+      "menu": {
+        "tag": "BUTTON",
+        "cls": "retry-paragraph-btn",
+        "id": "",
+        "inArticle": true,
+        "fab": false,
+        "hidden": true
+      }
+    }
+  },
+  {
+    "name": "F3 edges zh-HK last sentence Tab: menu closed",
+    "ok": true,
+    "detail": {
+      "tag": "BUTTON",
+      "cls": "retry-paragraph-btn",
+      "id": "",
+      "inArticle": true,
+      "fab": false,
+      "hidden": true
+    }
+  },
+  {
+    "name": "F3 edges zh-HK last sentence Tab: not the page-footer AI fab",
+    "ok": true,
+    "detail": {
+      "tag": "BUTTON",
+      "cls": "retry-paragraph-btn",
+      "id": "",
+      "inArticle": true,
+      "fab": false,
+      "hidden": true
+    }
+  },
+  {
+    "name": "F3 edges zh-HK first sentence Shift+Tab",
+    "ok": null,
+    "detail": {
+      "native": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "inArticle": true,
+        "fab": false
+      },
+      "menu": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "inArticle": true,
+        "fab": false,
+        "hidden": true
+      }
+    }
+  },
+  {
+    "name": "F3 edges zh-HK first sentence Shift+Tab: menu closed",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "inArticle": true,
+      "fab": false,
+      "hidden": true
+    }
+  },
+  {
+    "name": "F3 edges zh-HK first sentence Shift+Tab: not the page-footer AI fab",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "inArticle": true,
+      "fab": false,
+      "hidden": true
+    }
+  },
+  {
+    "name": "F3 edges zh-HK no page errors",
+    "ok": true,
+    "detail": []
+  }
+]

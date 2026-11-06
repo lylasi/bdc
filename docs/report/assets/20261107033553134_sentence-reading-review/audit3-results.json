@@ -1,0 +1,77 @@
+[
+  {
+    "id": "H1 sentence read reuses selected speed",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H2 no page errors (speed)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H3 stale view disables read actions",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H4 stale view keeps analyze enabled",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H5 stale tooltip",
+    "status": "INFO",
+    "detail": "\"正文已更新，请重新打开该句后再操作。\""
+  },
+  {
+    "id": "H6 disabled read cannot be triggered",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H7 no page errors (stale)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H8 loop keeps running after route change",
+    "status": "INFO",
+    "detail": "{\"calls\":2,\"text\":\"Alpha sentence two.\",\"readerVisible\":true,\"articleVisible\":true,\"stopVisible\":{\"x\":717,\"y\":839,\"w\":40,\"h\":40,\"top\":{}}}"
+  },
+  {
+    "id": "H9 stopped from another module",
+    "status": "INFO",
+    "detail": "{\"calls\":2}"
+  },
+  {
+    "id": "H10 trigger aria-expanded true when open",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H11 aria-expanded false after scroll close",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H12 loop gaps",
+    "status": "INFO",
+    "detail": "[564,765,760]"
+  },
+  {
+    "id": "H13 loop gaps >= 450ms",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H14 no page errors (aria/gap)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "H15 continue-mode menu on first sentence after advancing",
+    "status": "INFO",
+    "detail": "{\"labels\":[\"朗读本句\",\"从这里开始读\",\"循环读本句\",\"句子解析\"],\"current\":\"Alpha sentence two.\"}"
+  }
+]

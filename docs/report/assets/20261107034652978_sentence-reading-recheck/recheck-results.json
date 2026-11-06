@@ -1,0 +1,1129 @@
+[
+  {
+    "name": "F1 desktop zh-CN fixture has Chinese-source paragraph",
+    "ok": true,
+    "detail": {
+      "zhTriggerIndex": 2
+    }
+  },
+  {
+    "name": "F1 desktop zh-CN menu opens on Chinese-source sentence",
+    "ok": true,
+    "detail": {
+      "box": {
+        "x": 882,
+        "y": 430.0625,
+        "w": 208,
+        "h": 204
+      }
+    }
+  },
+  {
+    "name": "F1 desktop zh-CN three reading actions disabled",
+    "ok": true,
+    "detail": {
+      "once": {
+        "disabled": true,
+        "text": "朗读本句",
+        "title": "此处仅支持朗读英文原句。"
+      },
+      "continue": {
+        "disabled": true,
+        "text": "从这里开始读",
+        "title": "此处仅支持朗读英文原句。"
+      },
+      "loop": {
+        "disabled": true,
+        "text": "循环读本句",
+        "title": "此处仅支持朗读英文原句。"
+      },
+      "analyze": {
+        "disabled": false,
+        "text": "句子解析",
+        "title": ""
+      }
+    }
+  },
+  {
+    "name": "F1 desktop zh-CN analyze stays enabled",
+    "ok": true,
+    "detail": {
+      "disabled": false,
+      "text": "句子解析",
+      "title": ""
+    }
+  },
+  {
+    "name": "F1 desktop zh-CN visible bilingual hint equals englishSentenceOnly",
+    "ok": true,
+    "detail": {
+      "hintText": "此处仅支持朗读英文原句。",
+      "expectHint": "此处仅支持朗读英文原句。"
+    }
+  },
+  {
+    "name": "F1 desktop zh-CN disabled items carry the same reason title",
+    "ok": true,
+    "detail": "此处仅支持朗读英文原句。"
+  },
+  {
+    "name": "F1 desktop zh-CN menu fits viewport / no horizontal overflow",
+    "ok": true,
+    "detail": {
+      "box": {
+        "x": 882,
+        "y": 430.0625,
+        "w": 208,
+        "h": 204
+      },
+      "viewport": {
+        "w": 1280,
+        "h": 900
+      }
+    }
+  },
+  {
+    "name": "F1 desktop zh-CN forced click on disabled read makes no speech",
+    "ok": true,
+    "detail": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  {
+    "name": "F1 desktop zh-CN menu still open after forced click",
+    "ok": null,
+    "detail": true
+  },
+  {
+    "name": "F1 desktop zh-CN analyze item clickable (enabled & focusable)",
+    "ok": true
+  },
+  {
+    "name": "F1 desktop zh-CN hover quick-read hidden on Chinese-source",
+    "ok": true,
+    "detail": "article-sentence-quick-read hidden"
+  },
+  {
+    "name": "F1 desktop zh-CN stale view disables reading with stale reason",
+    "ok": true,
+    "detail": {
+      "expire": {
+        "once": true,
+        "continue": true,
+        "loop": true,
+        "analyze": false
+      },
+      "hint": "正文已更新，请重新打开该句后再操作。",
+      "expected": "正文已更新，请重新打开该句后再操作。",
+      "hintVisible": true
+    }
+  },
+  {
+    "name": "F1 desktop zh-CN English sentence keeps reading actions enabled",
+    "ok": true,
+    "detail": {
+      "out": {
+        "once": false,
+        "continue": false,
+        "loop": false,
+        "analyze": false
+      },
+      "hintVisible": false
+    }
+  },
+  {
+    "name": "F1 desktop zh-CN zero external requests",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F1 desktop zh-CN no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F1 desktop zh-CN zh trigger index",
+    "ok": null,
+    "detail": 2
+  },
+  {
+    "name": "F1 desktop zh-HK fixture has Chinese-source paragraph",
+    "ok": true,
+    "detail": {
+      "zhTriggerIndex": 2
+    }
+  },
+  {
+    "name": "F1 desktop zh-HK menu opens on Chinese-source sentence",
+    "ok": true,
+    "detail": {
+      "box": {
+        "x": 882,
+        "y": 430.0625,
+        "w": 208,
+        "h": 204
+      }
+    }
+  },
+  {
+    "name": "F1 desktop zh-HK three reading actions disabled",
+    "ok": true,
+    "detail": {
+      "once": {
+        "disabled": true,
+        "text": "朗讀本句",
+        "title": "此處只支援朗讀英文原句。"
+      },
+      "continue": {
+        "disabled": true,
+        "text": "從這裏開始讀",
+        "title": "此處只支援朗讀英文原句。"
+      },
+      "loop": {
+        "disabled": true,
+        "text": "循環讀本句",
+        "title": "此處只支援朗讀英文原句。"
+      },
+      "analyze": {
+        "disabled": false,
+        "text": "句子解析",
+        "title": ""
+      }
+    }
+  },
+  {
+    "name": "F1 desktop zh-HK analyze stays enabled",
+    "ok": true,
+    "detail": {
+      "disabled": false,
+      "text": "句子解析",
+      "title": ""
+    }
+  },
+  {
+    "name": "F1 desktop zh-HK visible bilingual hint equals englishSentenceOnly",
+    "ok": true,
+    "detail": {
+      "hintText": "此處只支援朗讀英文原句。",
+      "expectHint": "此處只支援朗讀英文原句。"
+    }
+  },
+  {
+    "name": "F1 desktop zh-HK disabled items carry the same reason title",
+    "ok": true,
+    "detail": "此處只支援朗讀英文原句。"
+  },
+  {
+    "name": "F1 desktop zh-HK menu fits viewport / no horizontal overflow",
+    "ok": true,
+    "detail": {
+      "box": {
+        "x": 882,
+        "y": 430.0625,
+        "w": 208,
+        "h": 204
+      },
+      "viewport": {
+        "w": 1280,
+        "h": 900
+      }
+    }
+  },
+  {
+    "name": "F1 desktop zh-HK forced click on disabled read makes no speech",
+    "ok": true,
+    "detail": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  {
+    "name": "F1 desktop zh-HK menu still open after forced click",
+    "ok": null,
+    "detail": true
+  },
+  {
+    "name": "F1 desktop zh-HK analyze item clickable (enabled & focusable)",
+    "ok": true
+  },
+  {
+    "name": "F1 desktop zh-HK hover quick-read hidden on Chinese-source",
+    "ok": true,
+    "detail": "article-sentence-quick-read hidden"
+  },
+  {
+    "name": "F1 desktop zh-HK English sentence keeps reading actions enabled",
+    "ok": true,
+    "detail": {
+      "out": {
+        "once": false,
+        "continue": false,
+        "loop": false,
+        "analyze": false
+      },
+      "hintVisible": false
+    }
+  },
+  {
+    "name": "F1 desktop zh-HK zero external requests",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F1 desktop zh-HK no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F1 desktop zh-HK zh trigger index",
+    "ok": null,
+    "detail": 2
+  },
+  {
+    "name": "F1 mobile 320 zh-CN fixture has Chinese-source paragraph",
+    "ok": true,
+    "detail": {
+      "zhTriggerIndex": 2
+    }
+  },
+  {
+    "name": "F1 mobile 320 zh-CN menu opens on Chinese-source sentence",
+    "ok": true,
+    "detail": {
+      "box": {
+        "x": 86,
+        "y": 438.078125,
+        "w": 208,
+        "h": 204
+      }
+    }
+  },
+  {
+    "name": "F1 mobile 320 zh-CN three reading actions disabled",
+    "ok": true,
+    "detail": {
+      "once": {
+        "disabled": true,
+        "text": "朗读本句",
+        "title": "此处仅支持朗读英文原句。"
+      },
+      "continue": {
+        "disabled": true,
+        "text": "从这里开始读",
+        "title": "此处仅支持朗读英文原句。"
+      },
+      "loop": {
+        "disabled": true,
+        "text": "循环读本句",
+        "title": "此处仅支持朗读英文原句。"
+      },
+      "analyze": {
+        "disabled": false,
+        "text": "句子解析",
+        "title": ""
+      }
+    }
+  },
+  {
+    "name": "F1 mobile 320 zh-CN analyze stays enabled",
+    "ok": true,
+    "detail": {
+      "disabled": false,
+      "text": "句子解析",
+      "title": ""
+    }
+  },
+  {
+    "name": "F1 mobile 320 zh-CN visible bilingual hint equals englishSentenceOnly",
+    "ok": true,
+    "detail": {
+      "hintText": "此处仅支持朗读英文原句。",
+      "expectHint": "此处仅支持朗读英文原句。"
+    }
+  },
+  {
+    "name": "F1 mobile 320 zh-CN disabled items carry the same reason title",
+    "ok": true,
+    "detail": "此处仅支持朗读英文原句。"
+  },
+  {
+    "name": "F1 mobile 320 zh-CN menu fits viewport / no horizontal overflow",
+    "ok": true,
+    "detail": {
+      "box": {
+        "x": 86,
+        "y": 438.078125,
+        "w": 208,
+        "h": 204
+      },
+      "viewport": {
+        "w": 320,
+        "h": 844
+      }
+    }
+  },
+  {
+    "name": "F1 mobile 320 zh-CN forced click on disabled read makes no speech",
+    "ok": true,
+    "detail": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  {
+    "name": "F1 mobile 320 zh-CN menu still open after forced click",
+    "ok": null,
+    "detail": true
+  },
+  {
+    "name": "F1 mobile 320 zh-CN analyze item clickable (enabled & focusable)",
+    "ok": true
+  },
+  {
+    "name": "F1 mobile 320 zh-CN English sentence keeps reading actions enabled",
+    "ok": true,
+    "detail": {
+      "out": {
+        "once": false,
+        "continue": false,
+        "loop": false,
+        "analyze": false
+      },
+      "hintVisible": false
+    }
+  },
+  {
+    "name": "F1 mobile 320 zh-CN zero external requests",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F1 mobile 320 zh-CN no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F1 mobile 320 zh-CN zh trigger index",
+    "ok": null,
+    "detail": 2
+  },
+  {
+    "name": "F1 mobile 390 zh-HK fixture has Chinese-source paragraph",
+    "ok": true,
+    "detail": {
+      "zhTriggerIndex": 2
+    }
+  },
+  {
+    "name": "F1 mobile 390 zh-HK menu opens on Chinese-source sentence",
+    "ok": true,
+    "detail": {
+      "box": {
+        "x": 92,
+        "y": 438.390625,
+        "w": 208,
+        "h": 204
+      }
+    }
+  },
+  {
+    "name": "F1 mobile 390 zh-HK three reading actions disabled",
+    "ok": true,
+    "detail": {
+      "once": {
+        "disabled": true,
+        "text": "朗讀本句",
+        "title": "此處只支援朗讀英文原句。"
+      },
+      "continue": {
+        "disabled": true,
+        "text": "從這裏開始讀",
+        "title": "此處只支援朗讀英文原句。"
+      },
+      "loop": {
+        "disabled": true,
+        "text": "循環讀本句",
+        "title": "此處只支援朗讀英文原句。"
+      },
+      "analyze": {
+        "disabled": false,
+        "text": "句子解析",
+        "title": ""
+      }
+    }
+  },
+  {
+    "name": "F1 mobile 390 zh-HK analyze stays enabled",
+    "ok": true,
+    "detail": {
+      "disabled": false,
+      "text": "句子解析",
+      "title": ""
+    }
+  },
+  {
+    "name": "F1 mobile 390 zh-HK visible bilingual hint equals englishSentenceOnly",
+    "ok": true,
+    "detail": {
+      "hintText": "此處只支援朗讀英文原句。",
+      "expectHint": "此處只支援朗讀英文原句。"
+    }
+  },
+  {
+    "name": "F1 mobile 390 zh-HK disabled items carry the same reason title",
+    "ok": true,
+    "detail": "此處只支援朗讀英文原句。"
+  },
+  {
+    "name": "F1 mobile 390 zh-HK menu fits viewport / no horizontal overflow",
+    "ok": true,
+    "detail": {
+      "box": {
+        "x": 92,
+        "y": 438.390625,
+        "w": 208,
+        "h": 204
+      },
+      "viewport": {
+        "w": 390,
+        "h": 844
+      }
+    }
+  },
+  {
+    "name": "F1 mobile 390 zh-HK forced click on disabled read makes no speech",
+    "ok": true,
+    "detail": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  {
+    "name": "F1 mobile 390 zh-HK menu still open after forced click",
+    "ok": null,
+    "detail": true
+  },
+  {
+    "name": "F1 mobile 390 zh-HK analyze item clickable (enabled & focusable)",
+    "ok": true
+  },
+  {
+    "name": "F1 mobile 390 zh-HK English sentence keeps reading actions enabled",
+    "ok": true,
+    "detail": {
+      "out": {
+        "once": false,
+        "continue": false,
+        "loop": false,
+        "analyze": false
+      },
+      "hintVisible": false
+    }
+  },
+  {
+    "name": "F1 mobile 390 zh-HK zero external requests",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F1 mobile 390 zh-HK no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F1 mobile 390 zh-HK zh trigger index",
+    "ok": null,
+    "detail": 2
+  },
+  {
+    "name": "F2 desktop zh-CN 1px scroll keeps menu open",
+    "ok": true,
+    "detail": {
+      "hidden": false,
+      "menu": {
+        "top": 306,
+        "bottom": 484,
+        "left": 738.140625,
+        "right": 946.140625
+      },
+      "trigger": {
+        "top": 282,
+        "bottom": 298,
+        "left": 930.140625,
+        "right": 946.140625
+      },
+      "gapBelow": 8,
+      "gapAbove": -202,
+      "scrollY": 1
+    }
+  },
+  {
+    "name": "F2 desktop zh-CN in-view scroll keeps menu open and anchored",
+    "ok": true,
+    "detail": {
+      "hidden": false,
+      "menu": {
+        "top": 186,
+        "bottom": 364,
+        "left": 738.140625,
+        "right": 946.140625
+      },
+      "trigger": {
+        "top": 162,
+        "bottom": 178,
+        "left": 930.140625,
+        "right": 946.140625
+      },
+      "gapBelow": 8,
+      "gapAbove": -202,
+      "scrollY": 121
+    }
+  },
+  {
+    "name": "F2 desktop zh-CN anchor still in viewport",
+    "ok": true,
+    "detail": {
+      "top": 162,
+      "bottom": 178,
+      "left": 930.140625,
+      "right": 946.140625
+    }
+  },
+  {
+    "name": "F2 desktop zh-CN smooth auto-scroll keeps menu open",
+    "ok": true,
+    "detail": {
+      "hidden": false,
+      "menu": {
+        "top": 36,
+        "bottom": 214,
+        "left": 738.140625,
+        "right": 946.140625
+      },
+      "trigger": {
+        "top": 12,
+        "bottom": 28,
+        "left": 930.140625,
+        "right": 946.140625
+      },
+      "gapBelow": 8,
+      "gapAbove": -202,
+      "scrollY": 271
+    }
+  },
+  {
+    "name": "F2 desktop zh-CN menu remains clickable after scroll",
+    "ok": true,
+    "detail": {
+      "spoke": "The reading room opens at eight.",
+      "expect": "The reading room opens at eight."
+    }
+  },
+  {
+    "name": "F2 desktop zh-CN once stops after one utterance",
+    "ok": true,
+    "detail": {
+      "calls": 1
+    }
+  },
+  {
+    "name": "F2 desktop zh-CN anchor really off-screen before asserting",
+    "ok": true,
+    "detail": {
+      "top": -918,
+      "bottom": -902,
+      "left": 930.140625,
+      "right": 946.140625
+    }
+  },
+  {
+    "name": "F2 desktop zh-CN off-screen anchor closes menu",
+    "ok": true,
+    "detail": {
+      "hidden": true,
+      "expanded": "false",
+      "trigger": {
+        "top": -918,
+        "bottom": -902,
+        "left": 930.140625,
+        "right": 946.140625
+      },
+      "scrollY": 1201
+    }
+  },
+  {
+    "name": "F2 desktop zh-CN removed-anchor behaviour",
+    "ok": null,
+    "detail": true
+  },
+  {
+    "name": "F2 desktop zh-CN resize closes menu (existing behaviour)",
+    "ok": true
+  },
+  {
+    "name": "F2 desktop zh-CN no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F3 desktop zh-CN ArrowDown opens menu and focuses first item",
+    "ok": true,
+    "detail": {
+      "hidden": false,
+      "focused": true
+    }
+  },
+  {
+    "name": "F3 desktop zh-CN Tab leaves menu",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-CN Tab lands on article control (not page-footer AI fab)",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-CN Tab target matches native next-focusable",
+    "ok": true,
+    "detail": {
+      "menuTab": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "hidden": true,
+        "inArticle": true,
+        "fab": false
+      },
+      "nativeNext": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": ""
+      }
+    }
+  },
+  {
+    "name": "F3 desktop zh-CN Shift+Tab leaves menu",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-CN Shift+Tab lands on previous article control",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-CN Shift+Tab target matches native previous-focusable",
+    "ok": true,
+    "detail": {
+      "menuShiftTab": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "hidden": true,
+        "inArticle": true,
+        "fab": false
+      },
+      "nativePrev": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": ""
+      }
+    }
+  },
+  {
+    "name": "F3 desktop zh-CN Escape closes menu and restores trigger focus",
+    "ok": true,
+    "detail": {
+      "hidden": true,
+      "focusBack": true,
+      "expanded": "false"
+    }
+  },
+  {
+    "name": "F3 desktop zh-CN sentence textContent unpolluted by menu",
+    "ok": true,
+    "detail": {
+      "text": "The reading room opens at eight.",
+      "hasMenuText": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-CN no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F3 desktop zh-HK ArrowDown opens menu and focuses first item",
+    "ok": true,
+    "detail": {
+      "hidden": false,
+      "focused": true
+    }
+  },
+  {
+    "name": "F3 desktop zh-HK Tab leaves menu",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-HK Tab lands on article control (not page-footer AI fab)",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-HK Tab target matches native next-focusable",
+    "ok": true,
+    "detail": {
+      "menuTab": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "hidden": true,
+        "inArticle": true,
+        "fab": false
+      },
+      "nativeNext": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": ""
+      }
+    }
+  },
+  {
+    "name": "F3 desktop zh-HK Shift+Tab leaves menu",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-HK Shift+Tab lands on previous article control",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-HK Shift+Tab target matches native previous-focusable",
+    "ok": true,
+    "detail": {
+      "menuShiftTab": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "hidden": true,
+        "inArticle": true,
+        "fab": false
+      },
+      "nativePrev": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": ""
+      }
+    }
+  },
+  {
+    "name": "F3 desktop zh-HK Escape closes menu and restores trigger focus",
+    "ok": true,
+    "detail": {
+      "hidden": true,
+      "focusBack": true,
+      "expanded": "false"
+    }
+  },
+  {
+    "name": "F3 desktop zh-HK sentence textContent unpolluted by menu",
+    "ok": true,
+    "detail": {
+      "text": "The reading room opens at eight.",
+      "hasMenuText": false
+    }
+  },
+  {
+    "name": "F3 desktop zh-HK no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F3 mobile 320 zh-CN ArrowDown opens menu and focuses first item",
+    "ok": true,
+    "detail": {
+      "hidden": false,
+      "focused": true
+    }
+  },
+  {
+    "name": "F3 mobile 320 zh-CN Tab leaves menu",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 mobile 320 zh-CN Tab lands on article control (not page-footer AI fab)",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 mobile 320 zh-CN Tab target matches native next-focusable",
+    "ok": true,
+    "detail": {
+      "menuTab": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "hidden": true,
+        "inArticle": true,
+        "fab": false
+      },
+      "nativeNext": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": ""
+      }
+    }
+  },
+  {
+    "name": "F3 mobile 320 zh-CN Shift+Tab leaves menu",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 mobile 320 zh-CN Shift+Tab lands on previous article control",
+    "ok": true,
+    "detail": {
+      "tag": "SPAN",
+      "cls": "interactive-sentence",
+      "id": "",
+      "hidden": true,
+      "inArticle": true,
+      "fab": false
+    }
+  },
+  {
+    "name": "F3 mobile 320 zh-CN Shift+Tab target matches native previous-focusable",
+    "ok": true,
+    "detail": {
+      "menuShiftTab": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": "",
+        "hidden": true,
+        "inArticle": true,
+        "fab": false
+      },
+      "nativePrev": {
+        "tag": "SPAN",
+        "cls": "interactive-sentence",
+        "id": ""
+      }
+    }
+  },
+  {
+    "name": "F3 mobile 320 zh-CN Escape closes menu and restores trigger focus",
+    "ok": true,
+    "detail": {
+      "hidden": true,
+      "focusBack": true,
+      "expanded": "false"
+    }
+  },
+  {
+    "name": "F3 mobile 320 zh-CN sentence textContent unpolluted by menu",
+    "ok": true,
+    "detail": {
+      "text": "The reading room opens at eight.",
+      "hasMenuText": false
+    }
+  },
+  {
+    "name": "F3 mobile 320 zh-CN no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "F5 selection label zh-HK readSelection uses 選取",
+    "ok": true,
+    "detail": {
+      "hk": "朗讀選取內容",
+      "cn": "朗读选中内容"
+    }
+  },
+  {
+    "name": "F5 selection label zh-CN readSelection unchanged",
+    "ok": true,
+    "detail": {
+      "hk": "朗讀選取內容",
+      "cn": "朗读选中内容"
+    }
+  },
+  {
+    "name": "F5 selection label zh-HK selection toolbar shows 選取 wording",
+    "ok": true,
+    "detail": {
+      "word": "The",
+      "visible": true,
+      "text": "",
+      "title": "朗讀選取內容",
+      "aria": "朗讀選取內容"
+    }
+  },
+  {
+    "name": "F5 selection label selection read speaks the selected fragment once",
+    "ok": true,
+    "detail": {
+      "spoke": "The",
+      "word": "The"
+    }
+  },
+  {
+    "name": "F5 selection label selection read stops after one utterance",
+    "ok": true,
+    "detail": {
+      "calls": 1
+    }
+  },
+  {
+    "name": "F5 selection label no page errors",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "EN regression once speaks the sentence",
+    "ok": true,
+    "detail": {
+      "spoke": "The reading room opens at eight.",
+      "expect": "The reading room opens at eight."
+    }
+  },
+  {
+    "name": "EN regression once stops (no extra calls)",
+    "ok": true,
+    "detail": {
+      "calls": 1
+    }
+  },
+  {
+    "name": "EN regression stop button disabled after once",
+    "ok": true
+  },
+  {
+    "name": "EN regression loop repeats same sentence with >=500ms gaps",
+    "ok": true,
+    "detail": {
+      "gap": 501,
+      "gap2": 502,
+      "sameText": true
+    }
+  },
+  {
+    "name": "EN regression loop mode exposes floating stop",
+    "ok": true
+  },
+  {
+    "name": "EN regression floating stop halts loop",
+    "ok": true,
+    "detail": {
+      "callsAfterStop": 4,
+      "now": 4
+    }
+  },
+  {
+    "name": "EN regression continue reads next sentence once each",
+    "ok": true,
+    "detail": {
+      "seq": [
+        "The reading room opens at eight.",
+        "The reading room opens at eight.",
+        "The reading room opens at eight.",
+        "The reading room opens at eight.",
+        "The reading room opens at eight.",
+        "Visitors sign the book at the door.",
+        "Morning light falls across the long wooden table."
+      ]
+    }
+  },
+  {
+    "name": "EN regression zero external requests",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "EN regression no page errors",
+    "ok": true,
+    "detail": []
+  }
+]

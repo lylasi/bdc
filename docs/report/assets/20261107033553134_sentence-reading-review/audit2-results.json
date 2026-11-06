@@ -1,0 +1,72 @@
+[
+  {
+    "id": "G1 pending loop at module change",
+    "status": "INFO",
+    "detail": "{\"before\":1,\"after\":2,\"lateCalls\":1}"
+  },
+  {
+    "id": "G2 no page errors (module change)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "G3 pending loop at article switch",
+    "status": "INFO",
+    "detail": "{\"before\":1,\"after\":1,\"lateCalls\":0,\"last\":\"Alpha sentence two.\"}"
+  },
+  {
+    "id": "G4 no page errors (article switch)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "G5 right-click does not open menu",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "G6 contextmenu default not prevented",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "G7 menu fits collapsed sidebar 320",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "G8 floating reader inside viewport 320",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "G9 quick-read still usable without translation",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "G10 hint text without translation",
+    "status": "INFO",
+    "detail": "{\"hintShown\":true,\"text\":\"合成译文，仅供测试。\"}"
+  },
+  {
+    "id": "G11 quick-read plays even without translation",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "G12 cross-sentence selection",
+    "status": "INFO",
+    "detail": "{\"selected\":\"Alpha sentence one. Alpha sentence two.\",\"barShown\":0}"
+  },
+  {
+    "id": "G13 reading triggers no AI/TTS request",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "id": "G14 baseline external requests",
+    "status": "INFO",
+    "detail": "[\"http://127.0.0.1:19999/independent-audit/auth-capabilities\"]"
+  }
+]

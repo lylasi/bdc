@@ -48,6 +48,7 @@ import { initReadingPanel, openReadingPanelForItem } from './reading-panel.js';
 import { initPhrasePicker, openPhrasePicker } from './phrase-picker.js';
 import { openQuickModelPicker } from '../../modules/quick-model-picker.js';
 import { segmentWords, shouldSkipNode } from './tokenize.js';
+import { initSentenceActions, openSentenceActions, closeSentenceActions, refreshSentenceActions } from './sentence-actions.js';
 // P3-T5：長文效能量測（?perf=1）；關閉時所有呼叫都是 no-op。
 import * as perfProbe from './perf-probe.js';
 
@@ -694,6 +695,7 @@ export function initArticle() {
             dom.prevChunkBtn.textContent = t(mode === 'paragraph' ? 'article.previousParagraph' : 'article.previousSentence');
             dom.nextChunkBtn.textContent = t(mode === 'paragraph' ? 'article.nextParagraph' : 'article.nextSentence');
         }
+        if (!dom.stopReadArticleBtn.disabled) updateChunkNav();
         // 句子／解析鍵的 aria-label 是渲染時動態組的，換語言要重套。
         refreshSentenceAccessibility();
         if (wordModeState?.hint) wordModeState.hint.textContent = t('article.wordModeHint');
@@ -886,6 +888,16 @@ export function initArticle() {
             positionWordTooltipMenu();
         });
     }, { passive: true, capture: true });
+    initSentenceActions({
+        read: startSentenceReading,
+        analyze: (sentence) => toggleSentenceCard(sentence, { keyboard: true }),
+        readUnavailableReason: sentenceReadingUnavailableReason,
+        isActive: (sentence, mode) => !dom.stopReadArticleBtn.disabled
+            && sentencePlaybackMode === mode && state.readingChunks[state.currentChunkIndex]?.el === sentence,
+        onOpen: clearSentenceLink,
+        onQuickHide: clearSentenceLink,
+        hintBounds: () => sentenceHintEl?.classList.contains('is-shown') ? sentenceHintEl.getBoundingClientRect() : null
+    });
     dom.readArticleBtn.addEventListener('click', handleReadButtonClick);
     dom.stopReadArticleBtn.addEventListener('click', stopReadArticle);
     dom.articleCompactReadBtn.addEventListener('click', handleReadButtonClick);
@@ -899,7 +911,7 @@ export function initArticle() {
         const detail = event?.detail || {};
         if (detail.owner !== 'article-reading') return;
         if (!state.readingChunks || !state.readingChunks.length) return;
-        _playToken++;
+        invalidateArticlePlayback();
         state.setIsReadingChunkPaused(true);
         _interruptedByOtherAudio = true;
         updateReadButtonUI('paused');
@@ -2486,9 +2498,6 @@ function wrapWordsInTextHTML(text, { locale = 'en' } = {}) {
     return out;
 }
 
-// 句末解析鍵的圖示（線性 sprite 風格的圓形 i）與說明文字
-const SENT_ANALYZE_ICON_PATH = 'M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5A5.5 5.5 0 1 0 8 13.5 5.5 5.5 0 0 0 8 2.5zm.93 3.412a1.5 1.5 0 0 0-2.83.588h1.005c0-.356.29-.64.652-.64.316 0 .588.212.588.53 0 .255-.127.387-.453.623-.398.29-.87.654-.87 1.29v.255h1V8c0-.254.128-.387.454-.623.398-.29.87-.654.87-1.29 0-.364-.146-.706-.416-.935zM8 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z';
-
 /** 句首片段：供 aria-label 與解析鍵名稱使用（不翻譯原文）。 */
 function sentenceSnippet(text, max = 40) {
     const flat = String(text || '').replace(/\s+/g, ' ').trim();
@@ -2513,18 +2522,18 @@ function refreshSentenceAccessibility() {
     container.querySelectorAll('.sent-analyze-btn').forEach((btn) => {
         const sentenceEl = btn.closest('.sentence-wrap')?.querySelector('.interactive-sentence');
         const sentence = sentenceEl?.getAttribute('data-sentence') || '';
-        btn.setAttribute('aria-label', sentenceAriaLabel(sentence));
+        btn.setAttribute('aria-label', `${sentenceSnippet(sentence)} · ${t('article.sentenceActions')}`);
     });
 }
 
 /**
- * 句末解析鍵：內嵌在句子結尾（inline），不再絕對定位漂在段落右緣。
+ * 句末共用操作鍵：沿用解析鍵的尺寸，朗讀不另佔正文位置。
  * 只留 aria-label，不用 title，避免原生 tooltip 與站內浮動提示重複。
  */
 function sentenceAnalyzeButtonHtml(paraIdx, sentIdx, sentence = '') {
-    const label = escapeAttr(sentenceAriaLabel(sentence));
-    return `<button class="sent-analyze-btn icon-only" data-para-index="${paraIdx}" data-sent-index="${sentIdx}" aria-expanded="false" aria-label="${label}">`
-        + `<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="${SENT_ANALYZE_ICON_PATH}"/></svg>`
+    const label = escapeAttr(`${sentenceSnippet(sentence)} · ${t('article.sentenceActions')}`);
+    return `<button type="button" class="sent-analyze-btn icon-only" data-para-index="${paraIdx}" data-sent-index="${sentIdx}" aria-haspopup="menu" aria-controls="article-sentence-menu" aria-expanded="false" aria-label="${label}">`
+        + '<svg class="icon" width="12" height="12" aria-hidden="true"><use href="#ic-more"/></svg>'
         + `</button>`;
 }
 
@@ -5198,6 +5207,62 @@ let _playToken = 0; // 用於避免競態：切段期間舊的 onEnd 不再推�
 let _articlePlaybackStatus = 'stopped';
 // 文章朗讀被其他音訊（通常是單詞發音）打斷：恢復時只能重播本句，不能假裝續播。
 let _interruptedByOtherAudio = false;
+// 句尾操作只影響本次播放，不改寫側欄的模式／重複次數。
+let sentencePlaybackMode = null; // null | 'once' | 'continue' | 'loop' | 'selection'
+let sentenceLoopTimer = null;
+const SENTENCE_PLAYBACK_LABELS = {
+    once: 'article.readSentence',
+    continue: 'article.readFromHere',
+    loop: 'article.loopSentence',
+    selection: 'article.readSelection'
+};
+
+function invalidateArticlePlayback() {
+    _playToken++;
+    clearTimeout(sentenceLoopTimer);
+    sentenceLoopTimer = null;
+}
+
+function sentenceReadingUnavailableReason(sentence) {
+    if (!sentence?.isConnected || !dom.articleAnalysisContainer.contains(sentence) || isArticleViewStale()) {
+        return 'article.staleSentenceCard';
+    }
+    if (sentence.closest('.paragraph-pair')?.dataset.sourceLanguage === 'zh') {
+        return 'article.englishSentenceOnly';
+    }
+    return '';
+}
+
+function startSentenceReading(sentence, mode, selection = '') {
+    if (!dom.stopReadArticleBtn.disabled && sentencePlaybackMode === mode
+        && state.readingChunks[state.currentChunkIndex]?.el === sentence && mode !== 'selection') {
+        stopReadArticle();
+        return;
+    }
+    const unavailable = sentenceReadingUnavailableReason(sentence);
+    if (unavailable) {
+        ui.displayMessage(t(unavailable), 'warning');
+        return;
+    }
+    const chunks = mode === 'selection'
+        ? [{ type: 'sentence', text: selection.trim(), el: sentence }]
+        : buildReadingChunks('sentence');
+    const index = chunks.findIndex((chunk) => chunk.el === sentence && chunk.text);
+    if (index < 0) {
+        ui.displayMessage(t('article.sentenceNotReadable'), 'warning');
+        return;
+    }
+    stopReadArticle();
+    sentencePlaybackMode = mode;
+    state.setReadingChunks(chunks);
+    state.setCurrentChunkIndex(index);
+    state.setSentenceRepeatCount(0);
+    dom.stopReadArticleBtn.disabled = false;
+    dom.chunkNavControls.classList.toggle('hidden', chunks.length <= 1);
+    updateChunkNav();
+    showFloatingReader();
+    playCurrentChunk();
+}
 // 浮動播放控制（避免捲動後看不到控制）
 let _floatingReader = null;
 let _englishOnly = false;   // 僅顯示英文
@@ -5326,8 +5391,18 @@ function updateFloatingToggle() {
         btn.title = isPaused
             ? (_interruptedByOtherAudio ? t('article.replayChunk') : t('article.resume'))
             : t('article.pause');
+        if (sentencePlaybackMode) {
+            btn.title = t('article.playbackModeLabel', { mode: t(SENTENCE_PLAYBACK_LABELS[sentencePlaybackMode]), action: btn.title });
+        }
         btn.setAttribute('aria-label', btn.title);
+        if (sentencePlaybackMode === 'loop') {
+            btn.insertAdjacentHTML('beforeend', '<svg class="icon fr-mode-icon" aria-hidden="true"><use href="#ic-replay"/></svg>');
+        }
     }
+    _floatingReader.dataset.readingMode = sentencePlaybackMode || dom.readingModeSelect.value;
+    _floatingReader.setAttribute('aria-label', sentencePlaybackMode
+        ? t('article.playbackModeLabel', { mode: t(SENTENCE_PLAYBACK_LABELS[sentencePlaybackMode]), action: t('article.readingControls') })
+        : t('article.readingControls'));
     // EN-only 按鈕：切換圖標與高亮
     const enBtn = _floatingReader.querySelector('.fr-en');
     if (enBtn) {
@@ -5349,6 +5424,7 @@ function readArticle() {
         ui.displayMessage(t('article.enterArticleToRead'), 'warning');
         return;
     }
+    stopReadArticle();
     const mode = dom.readingModeSelect.value;
     if (isArticleViewStale()) {
         // 不阻塞朗讀，但要說清楚唸的是最新輸入，不是畫面上的舊分析。
@@ -5370,7 +5446,10 @@ function readArticle() {
 }
 
 function stopReadArticle() {
+    invalidateArticlePlayback();
     audio.stopCurrentAudio();
+    sentencePlaybackMode = null;
+    state.setSentenceRepeatCount(0);
     _interruptedByOtherAudio = false;
     state.setIsReadingChunkPaused(false);
     dom.stopReadArticleBtn.disabled = true;
@@ -5383,6 +5462,8 @@ function stopReadArticle() {
 }
 
 function playCurrentChunk() {
+    clearTimeout(sentenceLoopTimer);
+    sentenceLoopTimer = null;
     if (state.currentChunkIndex < 0 || state.currentChunkIndex >= state.readingChunks.length) {
         stopReadArticle();
         return;
@@ -5393,7 +5474,7 @@ function playCurrentChunk() {
         dom.currentSentenceDisplay.textContent = (chunk?.type === 'full') ? t('article.readingFull') : (chunk?.text || '');
     }
 
-    const repeatTimesVal = parseInt(dom.chunkRepeatTimes.value, 10) || 1;
+    const repeatTimesVal = sentencePlaybackMode ? 1 : (parseInt(dom.chunkRepeatTimes.value, 10) || 1);
     
     const token = ++_playToken;
     const onStatus = (status) => {
@@ -5405,6 +5486,17 @@ function playCurrentChunk() {
         if (token !== _playToken) return; // 已切換，不再推進
         state.setSentenceRepeatCount(state.sentenceRepeatCount + 1);
         if (state.isReadingChunkPaused) return;
+        if (sentencePlaybackMode === 'loop') {
+            sentenceLoopTimer = setTimeout(() => {
+                sentenceLoopTimer = null;
+                if (token === _playToken && !state.isReadingChunkPaused && !dom.stopReadArticleBtn.disabled) playCurrentChunk();
+            }, 500);
+            return;
+        }
+        if (sentencePlaybackMode === 'once' || sentencePlaybackMode === 'selection') {
+            stopReadArticle();
+            return;
+        }
         if (state.sentenceRepeatCount < repeatTimesVal) {
             playCurrentChunk();
         } else {
@@ -5427,52 +5519,35 @@ function playCurrentChunk() {
 }
 
 function playNextChunk() {
-    // 防止在非播放状态下切换
-    if (dom.stopReadArticleBtn.disabled) return;
-    showFloatingReader();
-    
-    if (state.currentChunkIndex < state.readingChunks.length - 1) {
-        audio.stopCurrentAudio();
-        _playToken++; // 取消前一段的 onEnd 推進
-        _interruptedByOtherAudio = false;
-        state.setCurrentChunkIndex(state.currentChunkIndex + 1);
-        state.setSentenceRepeatCount(0);
-        state.setIsReadingChunkPaused(false);
-        
-        // 立即更新UI
-        updateChunkNav();
-        
-        // 短延遲後開始播放
-        setTimeout(() => { playCurrentChunk(); }, 10);
-    }
+    moveReadingChunk(1);
 }
 
 function playPrevChunk() {
-    // 防止在非播放状态下切换
+    moveReadingChunk(-1);
+}
+
+function moveReadingChunk(delta) {
     if (dom.stopReadArticleBtn.disabled) return;
+    const index = state.currentChunkIndex + delta;
+    if (index < 0 || index >= state.readingChunks.length) return;
+    invalidateArticlePlayback();
+    audio.stopCurrentAudio();
+    _interruptedByOtherAudio = false;
+    state.setCurrentChunkIndex(index);
+    state.setSentenceRepeatCount(0);
+    state.setIsReadingChunkPaused(false);
     showFloatingReader();
-    
-    if (state.currentChunkIndex > 0) {
-        audio.stopCurrentAudio();
-        _playToken++;
-        _interruptedByOtherAudio = false;
-        state.setCurrentChunkIndex(state.currentChunkIndex - 1);
-        state.setSentenceRepeatCount(0);
-        state.setIsReadingChunkPaused(false);
-        
-        // 立即更新UI
-        updateChunkNav();
-        
-        // 短延遲後開始播放
-        setTimeout(() => { playCurrentChunk(); }, 10);
-    }
+    updateChunkNav();
+    playCurrentChunk();
 }
 
 function togglePauseResume() {
+    if (dom.stopReadArticleBtn.disabled) return;
     const wasPaused = state.isReadingChunkPaused;
     // 朗讀進行中使用者又按了播放／暫停：把先前用「關閉」收掉的朗讀列帶回來，
     // 否則關掉後就再也叫不回來（關閉只收起控制條，不會停止朗讀）。
     if (!dom.stopReadArticleBtn.disabled) showFloatingReader();
+    invalidateArticlePlayback();
     audio.stopCurrentAudio();
     state.setIsReadingChunkPaused(!wasPaused);
     if (wasPaused) {
@@ -5537,6 +5612,7 @@ function updateReadButtonUI(status) {
     dom.articleCompactStopBtn.disabled = dom.stopReadArticleBtn.disabled;
     // 同步更新浮動控制的暫停/播放按鈕
     updateFloatingToggle();
+    refreshSentenceActions();
 }
 
 /**
@@ -5560,6 +5636,13 @@ function updateChunkNav() {
     dom.chunkProgressSpan.textContent = `${state.currentChunkIndex + 1} / ${state.readingChunks.length}`;
     dom.prevChunkBtn.disabled = state.currentChunkIndex === 0;
     dom.nextChunkBtn.disabled = state.currentChunkIndex === state.readingChunks.length - 1;
+    const paragraphMode = !sentencePlaybackMode && dom.readingModeSelect.value === 'paragraph';
+    dom.prevChunkBtn.textContent = t(paragraphMode ? 'article.previousParagraph' : 'article.previousSentence');
+    dom.nextChunkBtn.textContent = t(paragraphMode ? 'article.nextParagraph' : 'article.nextSentence');
+    if (_floatingReader) {
+        _floatingReader.querySelector('.fr-prev').disabled = dom.prevChunkBtn.disabled;
+        _floatingReader.querySelector('.fr-next').disabled = dom.nextChunkBtn.disabled;
+    }
 }
 
 function clearReadingHighlights() {
@@ -5827,6 +5910,12 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
     // 1) 點句子本體即開合句卡（解析鍵改為內嵌後，右側熱區已移除，整句都是點擊範圍）
     const wrap = rawTarget?.closest && rawTarget.closest('.sentence-wrap');
     const isIcon = rawTarget?.closest && rawTarget.closest('.sent-analyze-btn');
+    if (isIcon) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openSentenceActions(isIcon, { keyboard: ev.detail === 0 });
+        return;
+    }
     const isWord = rawTarget?.closest && rawTarget.closest('.interactive-word');
     if (wrap && !isIcon && !isWord) {
         // 若點擊來源位於已展開的句卡內部，則不觸發句子層級的開合。
@@ -5906,14 +5995,6 @@ dom.articleAnalysisContainer.addEventListener('click', async (ev) => {
         }
         return;
     }
-    const btn = rawTarget?.closest && rawTarget.closest('.sent-analyze-btn');
-    if (!btn) return;
-    ev.stopPropagation();
-    clearSentenceLink();   // 句卡要開了，懸停提示先收掉
-    const paraIdx = parseInt(btn.getAttribute('data-para-index'), 10) || 0;
-    const sentIdx = parseInt(btn.getAttribute('data-sent-index'), 10) || 0;
-    const el = dom.articleAnalysisContainer.querySelector(`.interactive-sentence[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
-    if (el) await toggleSentenceCard(el);
 });
 
 // 句子詳解在「彈窗模式」下也需要支援片語「詳解」按鈕的委派處理
@@ -7822,6 +7903,7 @@ function initArticleSelectionToWordbook() {
         bar.className = 'article-selection-bar';
         bar.setAttribute('role', 'toolbar');
         bar.innerHTML = `
+          <button type="button" class="btn-ghost btn-mini" data-act="read" title="${t('article.readSelection')}" aria-label="${t('article.readSelection')}"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-speaker"/></svg></button>
           <button type="button" class="btn-ghost btn-mini" data-act="lookup">${t('article.lookupPhrase')}</button>
           <button type="button" class="btn-ghost btn-mini" data-act="add">${t('article.addToWordbook')}</button>
           <button type="button" class="btn-ghost btn-mini" data-act="mark">${t('article.markThis')}</button>
@@ -7843,6 +7925,12 @@ function initArticleSelectionToWordbook() {
             if (!readingActions.actionContextActive(captured.actionContext)) {
                 hideBar();
                 ui.displayMessage(t('article.saveFailedRetry'), 'error');
+                return;
+            }
+            if (act === 'read') {
+                hideBar();
+                window.getSelection()?.removeAllRanges();
+                startSentenceReading(captured.sentenceElement, 'selection', captured.text);
                 return;
             }
             if (act === 'phrase') {
@@ -7953,6 +8041,7 @@ function initArticleSelectionToWordbook() {
         return {
             text,
             sentence,
+            sentenceElement: sentenceEl,
             context,
             articleId,
             startOffset,
@@ -7978,6 +8067,11 @@ function initArticleSelectionToWordbook() {
         const noteButton = bar.querySelector('[data-act="note"]');
         const phraseButton = bar.querySelector('[data-act="phrase"]');
         const lookupButton = bar.querySelector('[data-act="lookup"]');
+        const readButton = bar.querySelector('[data-act="read"]');
+        if (readButton) {
+            readButton.title = t('article.readSelection');
+            readButton.setAttribute('aria-label', t('article.readSelection'));
+        }
         if (addButton) addButton.textContent = t('article.addToWordbook');
         if (noteButton) noteButton.textContent = t('article.writeNote');
         if (phraseButton) phraseButton.textContent = t('article.pickPhrase');
@@ -8003,8 +8097,10 @@ function initArticleSelectionToWordbook() {
         snapshot = captured;
         const element = ensureBar();
         syncBarState(captured);
-        const left = Math.max(8, Math.min(window.innerWidth - 260, captured.rect.left));
-        const top = Math.max(8, Math.min(window.innerHeight - 60, captured.rect.bottom + 8));
+        element.classList.add('is-visible');
+        const bounds = element.getBoundingClientRect();
+        const left = Math.max(8, Math.min(document.documentElement.clientWidth - bounds.width - 8, captured.rect.left));
+        const top = Math.max(8, Math.min(window.innerHeight - bounds.height - 8, captured.rect.bottom + 8));
         element.style.left = `${left}px`;
         element.style.top = `${top}px`;
         element.classList.add('is-visible');
@@ -8026,6 +8122,7 @@ function initArticleSelectionToWordbook() {
     });
     window.addEventListener('scroll', () => { if (bar) hideBar(); }, { passive: true });
     window.addEventListener('resize', () => { if (bar) hideBar(); });
+    document.addEventListener('bdc:locale-change', () => { if (bar && snapshot) syncBarState(snapshot); });
 }
 
 /**
@@ -8118,9 +8215,6 @@ let wordModeState = null;        // { sentenceEl, words, hint }
 function setSentenceExpanded(sentenceEl, expanded) {
     if (!sentenceEl || !sentenceEl.isConnected) return;
     sentenceEl.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    const wrap = sentenceEl.closest('.sentence-wrap');
-    const analyzeBtn = wrap ? wrap.querySelector('.sent-analyze-btn') : null;
-    if (analyzeBtn) analyzeBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
 }
 
 function focusSentenceElement(sentenceEl) {
@@ -8259,6 +8353,7 @@ function handleArticleAnalysisKeydown(event) {
 }
 
 async function toggleSentenceCard(sentenceEl, options = {}) {
+    closeSentenceActions();
     const openedByKeyboard = options.keyboard === true;
     // 句卡是模態層；先把單詞詳解收起來，避免它留在遮罩後方。
     if (isWordTooltipVisible()) dismissWordTooltip({ restoreFocus: false, source: 'sentence-card' });
@@ -8846,6 +8941,7 @@ if (dom.articleAnalysisContainer) {
         if (!btn) return;
         const to = ev.relatedTarget;
         if (to && btn.contains(to)) return;   // 只是移到按鈕內的 svg，不算離開
+        if (to && dom.articleSentenceQuickRead.contains(to)) return;
         clearSentenceLink();
     });
     // 提示是 fixed 定位，不會跟著句子捲動：捲動時改為重新對位，句子捲出畫面才收起

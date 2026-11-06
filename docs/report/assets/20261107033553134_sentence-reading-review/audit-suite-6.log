@@ -1,0 +1,9 @@
+PASS K1 hover keeps sentence link highlight
+INFO K2 trigger hit area (desktop) :: {"box":{"x":837.71875,"y":283,"width":16,"height":16},"up":"trigger","down":"trigger","left":"trigger","right":"trigger","style":"28px"}
+PASS K3 trigger hit area >= 24px
+PASS K4 no page errors
+INFO K5 trigger hit area (320 coarse) :: {"box":{"x":191.71875,"y":470.453125,"width":16,"height":16},"up15":"trigger","down15":"trigger","left15":"trigger","right15":"trigger"}
+PASS K6 mobile trigger hit area >= 30px
+PASS K7 no page errors (mobile)
+
+== 5 pass, 0 fail ==

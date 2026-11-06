@@ -1,0 +1,5 @@
+INFO I1 loop after switching module :: {"before":1,"calls":2,"last":"Alpha sentence two.","module":"vocabulary","articleActive":false,"readerVisible":true,"stopHit":"fr-stop","stopRect":{"x":717,"y":839,"w":40,"h":40},"lateCalls":1}
+INFO I2 stopped from other module :: {"calls":2}
+PASS I3 no page errors
+
+== 1 pass, 0 fail ==

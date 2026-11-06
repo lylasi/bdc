@@ -1,0 +1,66 @@
+[
+  {
+    "name": "continue across Chinese-source paragraph skips it",
+    "ok": true,
+    "detail": [
+      "Visitors sign the book at the door.",
+      "Morning light falls across the long wooden table.",
+      "Two students copy new words into their notebooks."
+    ]
+  },
+  {
+    "name": "continue finishes at last English sentence without stall",
+    "ok": true,
+    "detail": [
+      "Visitors sign the book at the door.",
+      "Morning light falls across the long wooden table.",
+      "Two students copy new words into their notebooks.",
+      "A final sentence closes the article."
+    ]
+  },
+  {
+    "name": "no page errors (continue)",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "sidebar full reading still skips Chinese-source paragraph",
+    "ok": true,
+    "detail": [
+      "The reading room opens at eight.",
+      "Visitors sign the book at the door.",
+      "Morning light falls across the long wooden table.",
+      "Two students copy new words into their notebooks.",
+      "A final sentence closes the article."
+    ]
+  },
+  {
+    "name": "no page errors (full)",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "name": "loop continues after module switch (F4 existing behaviour)",
+    "ok": null,
+    "detail": {
+      "calls": 2,
+      "floating": {
+        "visible": true,
+        "mode": "loop"
+      }
+    }
+  },
+  {
+    "name": "floating stop halts cross-module loop",
+    "ok": true,
+    "detail": {
+      "after": 2,
+      "now": 2
+    }
+  },
+  {
+    "name": "no page errors (cross-module)",
+    "ok": true,
+    "detail": []
+  }
+]

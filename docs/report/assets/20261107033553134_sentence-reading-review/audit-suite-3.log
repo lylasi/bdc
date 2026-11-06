@@ -1,0 +1,17 @@
+PASS H1 sentence read reuses selected speed
+PASS H2 no page errors (speed)
+PASS H3 stale view disables read actions
+PASS H4 stale view keeps analyze enabled
+INFO H5 stale tooltip :: "正文已更新，请重新打开该句后再操作。"
+PASS H6 disabled read cannot be triggered
+PASS H7 no page errors (stale)
+INFO H8 loop keeps running after route change :: {"calls":2,"text":"Alpha sentence two.","readerVisible":true,"articleVisible":true,"stopVisible":{"x":717,"y":839,"w":40,"h":40,"top":{}}}
+INFO H9 stopped from another module :: {"calls":2}
+PASS H10 trigger aria-expanded true when open
+PASS H11 aria-expanded false after scroll close
+INFO H12 loop gaps :: [564,765,760]
+PASS H13 loop gaps >= 450ms
+PASS H14 no page errors (aria/gap)
+INFO H15 continue-mode menu on first sentence after advancing :: {"labels":["朗读本句","从这里开始读","循环读本句","句子解析"],"current":"Alpha sentence two."}
+
+== 10 pass, 0 fail, 5 info ==

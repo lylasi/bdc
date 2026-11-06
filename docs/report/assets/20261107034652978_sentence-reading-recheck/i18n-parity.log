@@ -1,0 +1,6 @@
+keys CN 2432 HK 2432 onlyCN 0 onlyHK 0 {"onlyCn":[],"onlyHk":[]}
+article.englishSentenceOnly |CN: "此处仅支持朗读英文原句。" |HK: "此處只支援朗讀英文原句。"
+article.sentenceNotReadable |CN: "此句暂时无法朗读，请重新打开文章后再试。" |HK: "此句暫時無法朗讀，請重新開啟文章後再試。"
+article.readSelection |CN: "朗读选中内容" |HK: "朗讀選取內容"
+article.staleSentenceCard |CN: "正文已更新，请重新打开该句后再操作。" |HK: "正文已更新，請重新開啟該句後再操作。"
+article.sourceAlreadyChinese |CN: "原文已是中文，无需翻译" |HK: "原文已是中文，無需翻譯"
