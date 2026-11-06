@@ -30,8 +30,25 @@ function normalizePreferences(value) {
 export function getExtensionAIPreferences() {
     const key = preferenceKey();
     if (!key) return {};
-    try { return normalizePreferences(JSON.parse(localStorage.getItem(key) || '{}')); }
-    catch (_) { return {}; }
+    let tasks = {};
+    // Read the preview format for compatibility. New writes are per field so
+    // independent browser pages never replace another task/field's choices.
+    try { tasks = normalizePreferences(JSON.parse(localStorage.getItem(key) || '{}')); }
+    catch (_) {}
+    for (const task of EXTENSION_AI_TASKS) {
+        for (const field of ['model', 'thinking']) {
+            try {
+                const raw = localStorage.getItem(`${key}:${task}:${field}`);
+                if (raw === null) continue;
+                const choice = normalizePreferences(JSON.parse(raw))[task] || {};
+                if (!tasks[task]) tasks[task] = {};
+                // An empty record is a reset marker, including for preview data.
+                if (Object.hasOwn(choice, field)) tasks[task][field] = choice[field];
+                else delete tasks[task][field];
+            } catch (_) {}
+        }
+    }
+    return normalizePreferences(tasks);
 }
 
 export function getExtensionAIChoice(task) {
@@ -39,20 +56,22 @@ export function getExtensionAIChoice(task) {
 }
 
 // Callers validate the model against the shared task allowlist before saving.
-// Read/modify/write is synchronous, so two trusted extension pages cannot lose
-// unrelated task edits. A storage failure must never show a success notice.
+// Each field has its own key: localStorage read/modify/write across separate
+// renderer processes is not atomic. A failure must never show a success notice.
 export function saveExtensionAIChoice(task, patch) {
     const key = preferenceKey();
     if (!key || !EXTENSION_AI_TASKS.includes(task)) {
         throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
     }
-    const tasks = getExtensionAIPreferences();
-    if (patch === null) delete tasks[task];
-    else tasks[task] = { ...(tasks[task] || {}), ...patch };
-    const serialized = JSON.stringify(normalizePreferences(tasks));
+    const choice = normalizePreferences({ [task]: patch })[task] || {};
+    const fields = patch === null ? ['model', 'thinking'] : Object.keys(patch).filter((field) => field === 'model' || field === 'thinking');
     try {
-        localStorage.setItem(key, serialized);
-        if (localStorage.getItem(key) !== serialized) throw new Error('not persisted');
+        for (const field of fields) {
+            const fieldKey = `${key}:${task}:${field}`;
+            const serialized = JSON.stringify({ [task]: Object.hasOwn(choice, field) ? { [field]: choice[field] } : {} });
+            localStorage.setItem(fieldKey, serialized);
+            if (localStorage.getItem(fieldKey) !== serialized) throw new Error('not persisted');
+        }
     } catch (cause) {
         throw Object.assign(new Error('profile_save_failed'), { code: 'profile_save_failed', cause });
     }

@@ -131,6 +131,26 @@ async function lookup(page) {
         await openAccount(page); await page.locator('#ext-logout-btn').click(); await login(page, env.base, ALICE, 'alice');
         await page.locator('#ext-word-input').fill('plunge'); await page.locator('#ext-sentence-input').fill(''); await openAI(page);
         check('切回帳戶恢復自己的偏好', await page.locator('#ext-ai-model').inputValue() === 'managed-capture:reasoning-model' && await page.locator('#ext-ai-thinking').inputValue() === 'low');
+        const other = await context.newPage(); await other.goto(base + '/lookup.html');
+        await other.waitForFunction(() => document.querySelector('#ext-account-status').textContent.includes('alice'));
+        await other.locator('#ext-word-input').fill('plunge'); await openAI(other);
+        let retained = true;
+        for (let round = 0; round < 4; round += 1) {
+            const model = round % 2 ? 'reasoning-model' : 'capture-model';
+            const thinking = round % 2 ? 'low' : 'medium';
+            await Promise.all([page.locator('#ext-ai-model').selectOption('managed-capture:' + model), other.locator('#ext-ai-thinking').selectOption(thinking)]);
+            const actual = await page.evaluate(async () => (await import('./modules/extension-ai-runtime.js')).getExtensionAITaskSettings('wordAnalysis'));
+            retained &&= actual.model === 'managed-capture:' + model && actual.thinking === thinking;
+        }
+        check('兩個視窗並行修改同用途的模型和思考均保留', retained);
+        await page.locator('#ext-ai-task').selectOption('articleCleanup'); await other.locator('#ext-ai-task').selectOption('articleParagraphTranslation');
+        await Promise.all([page.locator('#ext-ai-model').selectOption('managed-capture:capture-model'), other.locator('#ext-ai-model').selectOption('managed-capture:reasoning-model')]);
+        const both = await page.evaluate(async () => {
+            const { getExtensionAITaskSettings: get } = await import('./modules/extension-ai-runtime.js');
+            return [get('articleCleanup').model, get('articleParagraphTranslation').model];
+        });
+        check('兩個視窗並行修改不同用途均保留', both[0] === 'managed-capture:capture-model' && both[1] === 'managed-capture:reasoning-model');
+        await other.close();
         const preferences = await page.evaluate(() => Object.entries(localStorage).filter(([key]) => key.startsWith('bdc_extension_ai_preferences_v1:')));
         check('偏好儲存不含 Token、Key 或 API URL', !/test-cmdo|aaaaa|bbbbb|apiKey|Bearer|mock-ai/.test(JSON.stringify(preferences)));
         check('無頁面 JavaScript 例外', errors.length === 0);

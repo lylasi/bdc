@@ -55,15 +55,17 @@ export function createAIControls({ embedded, onChange, onLookup }) {
     const reset = element('button', { id: 'ext-ai-reset', type: 'button', class: 'ext-btn' }, actions);
     const anchor = document.querySelector(embedded ? '#ext-inline-toolbar' : '.ext-header');
     anchor.insertAdjacentElement('afterend', root);
+    const fallback = element('p', { id: 'ext-ai-fallback', class: 'ext-notice ext-notice-info', role: 'status', 'aria-live': 'polite', hidden: '' });
+    root.insertAdjacentElement('afterend', fallback);
 
-    let selectedTask = 'lookup', lastReadiness = null, lastScope = '', lastState = {}, lastNotice = null;
+    let selectedTask = 'lookup', lastReadiness = null, lastScope = '', lastState = {}, lastNotice = null, fallbackModel = '';
     const currentTask = () => selectedTask === 'lookup' ? lastReadiness.taskResolution.task : selectedTask;
     function render(readiness = lastReadiness, state = lastState) {
         if (!readiness) return;
         lastReadiness = readiness; lastState = state;
         const scope = readiness.loggedIn ? readiness.scope.key : '';
         if (scope !== lastScope) {
-            lastScope = scope; selectedTask = 'lookup'; lastNotice = null; root.open = false;
+            lastScope = scope; selectedTask = 'lookup'; lastNotice = null; fallbackModel = ''; root.open = false;
         }
         const settings = getExtensionAITaskSettings(currentTask());
         label.textContent = t('extension.aiOptions');
@@ -93,6 +95,8 @@ export function createAIControls({ embedded, onChange, onLookup }) {
         requery.disabled = !settings.loggedIn || state.busy || !state.hasQuery;
         reset.textContent = t('extension.aiReset');
         reset.disabled = !settings.loggedIn || !settings.hasOverride;
+        fallback.hidden = !fallbackModel;
+        fallback.textContent = fallbackModel ? t('extension.aiThinkingFallback', { model: fallbackModel }) : '';
     }
     function change(patch) {
         try {
@@ -112,5 +116,9 @@ export function createAIControls({ embedded, onChange, onLookup }) {
         onChange(); render();
     });
     requery.addEventListener('click', () => onLookup());
-    return { render };
+    return {
+        render,
+        notifyThinkingFallback(detail) { fallbackModel = String(detail?.model || ''); render(); },
+        clearFallback() { fallbackModel = ''; fallback.hidden = true; }
+    };
 }

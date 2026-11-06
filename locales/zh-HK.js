@@ -1516,6 +1516,7 @@ export default {
         aiRequery: '用此設定重新查詞',
         aiReset: '恢復帳戶設定',
         aiResetDone: '已恢復此用途的帳戶設定。',
+        aiThinkingFallback: '{model} 未接受思考參數，本次已使用服務端預設設定完成請求。',
         captureTitle: '加入詞書',
         captureBookLabel: '目標詞書',
         inlineLookingUp: '正在查詢 {word}…',

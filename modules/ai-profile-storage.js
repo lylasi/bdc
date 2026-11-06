@@ -529,7 +529,9 @@ export function applyRemoteAISettings(ai, updatedAt, scope) {
         if (!providers[id] && profile.providers[id]) providers[id] = profile.providers[id];
     }
     profile.providers = providers;
-    profile.taskModels = normalizeTaskModelMap(remote.models || remote.tasks);
+    // Legacy snapshots can carry only `tasks`, while sanitisation always adds
+    // an empty `models` object. Merge valid mappings; canonical models win.
+    profile.taskModels = { ...normalizeTaskModelMap(remote.tasks), ...normalizeTaskModelMap(remote.models) };
     // Older snapshots have no thinking field. Only replace the local map when
     // the snapshot actually carried one, otherwise a new device's choices
     // would be wiped by an older client.
@@ -583,7 +585,7 @@ export function applyAISettingsPatch(ai, scope) {
         }
         const hasMappings = Object.prototype.hasOwnProperty.call(ai, 'models')
             || Object.prototype.hasOwnProperty.call(ai, 'tasks');
-        const mappings = normalizeTaskModelMap(ai.models || ai.tasks);
+        const mappings = { ...normalizeTaskModelMap(ai.tasks), ...normalizeTaskModelMap(ai.models) };
         if (hasMappings) profile.taskModels = mappings;
         if (isPlainObject(ai.thinking)) {
             profile.taskThinking = {

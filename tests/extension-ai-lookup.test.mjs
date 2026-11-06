@@ -765,6 +765,24 @@ test('9. standalone word lookup validates structured meanings before caching', a
     assert.equal((await runtime.runExtensionLookup({ text: 'battery' })).meaning, '电池');
 });
 
+test('10. tasks-only account snapshots and mixed patches preserve task model mappings', async () => {
+    resetStorageAndRuntime();
+    mockState.catalog.providers[0].models.push({ id: 'gpt-managed-alt' });
+    mockState.snapshots.alice.payload.aiSettings.settings = {
+        providers: {}, models: {}, tasks: { wordAnalysis: 'managed-main:gpt-managed-alt' }, thinking: { wordAnalysis: 'medium' }
+    };
+    await runtime.connectExtensionAccount({ endpoint: 'https://sync.mock.test', mode: 'token', token: mockState.users.alice.token });
+    assert.equal(runtime.getExtensionAITaskSettings('wordAnalysis').model, 'managed-main:gpt-managed-alt');
+    assert.equal(runtime.getExtensionAITaskSettings('wordAnalysis').thinking, 'medium');
+    const { applyAISettingsPatch } = await import('../extension/modules/ai-profile-storage.js');
+    const profile = applyAISettingsPatch({
+        tasks: { wordAnalysis: 'managed-main:gpt-managed-alt', articleCleanup: 'managed-main:gpt-managed-alt' },
+        models: { wordAnalysis: 'managed-main:gpt-managed-fast' }
+    });
+    assert.equal(profile.taskModels.wordAnalysis, 'managed-main:gpt-managed-fast');
+    assert.equal(profile.taskModels.articleCleanup, 'managed-main:gpt-managed-alt');
+});
+
 after(() => {
     runtime.stopExtensionRuntimeTimers();
 });

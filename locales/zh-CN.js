@@ -1516,6 +1516,7 @@ export default {
         aiRequery: '用此设置重新查词',
         aiReset: '恢复账户设置',
         aiResetDone: '已恢复此用途的账户设置。',
+        aiThinkingFallback: '{model} 未接受思考参数，本次已使用服务端默认设置完成请求。',
         captureTitle: '加入词书',
         captureBookLabel: '目标词书',
         inlineLookingUp: '正在查询 {word}…',

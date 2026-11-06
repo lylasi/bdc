@@ -448,6 +448,7 @@ async function handleExtractFromTab() {
 }
 
 async function handleLookup() {
+    aiControls.clearFallback();
     clearDisplayedResult();
     const seq = ++activeLookupSequence;
     if (activeLookupController) {
@@ -587,6 +588,12 @@ async function initExtensionPage() {
     window.addEventListener('bdc:ai-catalog-change', () => renderReadiness());
     window.addEventListener('bdc:ai-settings-applied', () => renderReadiness());
     window.addEventListener('bdc:ai-credential-sync', () => renderReadiness());
+    window.addEventListener('bdc:ai-thinking-fallback', (event) => aiControls.notifyThinkingFallback(event.detail));
+    let articleWasBusy = false;
+    workspaceUI.subscribe((status) => {
+        if (status.busy && !articleWasBusy) aiControls.clearFallback();
+        articleWasBusy = !!status.busy;
+    });
     await captureUI.sync();
     await workspaceUI.sync();
     if (inlineContext) {
