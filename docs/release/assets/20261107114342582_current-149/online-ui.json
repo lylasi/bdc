@@ -1,0 +1,12 @@
+[
+  {
+    "site": "http://10.10.10.149:8001",
+    "exit": 0,
+    "seconds": 26.4
+  },
+  {
+    "site": "https://bdc.a4a4.qzz.io",
+    "exit": 0,
+    "seconds": 109.9
+  }
+]

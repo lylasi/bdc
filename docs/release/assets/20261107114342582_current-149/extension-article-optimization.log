@@ -1,0 +1,36 @@
+PASS 長文清洗切成三塊並全部完成
+PASS 清洗回應亂序完成仍按原文順序組合
+PASS 清洗並行不超過兩塊
+PASS 此案例確實以非原序完成（保序斷言有鑑別力）
+PASS 同版本 catalog refresh 確實執行（generation 增加、版本不變）
+PASS 同版本 catalog refresh 不中止文章任務，也不報設定變更
+PASS 內容類失敗不中止其他段，錯誤帶 failedIndexes 與 causeCode
+PASS 失敗時進度停在未完成段落，不報全數完成
+PASS 成功段只請求一次，失敗段走完標準與後備
+PASS 重試只補失敗段，成功段直接復用快取
+PASS 重試完成後進度才到全數完成
+PASS 停止會快速結束在途清洗
+PASS 停止後不再啟動第三塊
+PASS 部分清洗失敗時 UI 明確提示保留原文與塊數
+PASS 部分清洗失敗保留該塊完整原文，其餘塊仍用清洗結果並保序
+PASS 確認前沒有 POST /articles 或 page-link
+PASS 確認前沒有送出逐段翻譯或建立文章
+PASS 手動停止會立即回到可操作狀態
+PASS 停止後沒有寫入文章或 page-link
+PASS 新頁面擷取完成，預設勾選分析且尚未寫入
+PASS 回應遺失後留下待傳並凍結內容／分析／擷取
+PASS 凍結時主按鈕改為重試匯入且可點
+PASS 第一次確認其實已建立文章（回應遺失情境成立）
+PASS 第一次確認有送出逐段翻譯
+PASS 主按鈕重試成功後清空待傳
+PASS 主按鈕重試不新增文章、文章 ID 不變
+PASS 主按鈕重試不重跑 AI
+PASS 主按鈕重試不重送 POST /articles，只重用既有文章
+PASS 重試成功不是靜默完成（提示沿用既有文章）
+PASS 已存在文章提取只做唯讀 GET，不寫 page-link、不重送文章
+PASS 已存在文章顯示沿用入口與說明
+PASS 只有明確「在 BDC 打開」才補 page-link
+PASS 開啟既有文章不重送文章、不重跑 AI
+PASS 開啟既有文章後導向 BDC 文章路由
+PASS 流程中沒有未捕獲頁面錯誤
+{"passed":35,"failed":0,"output":"/Users/linus/CODE/bdc/docs/release/assets/20261107114342582_current-149/optimization"}

@@ -1,0 +1,250 @@
+✔ openai-chat: text request and auth header (20.993291ms)
+✔ openai-chat: image input is encoded for the protocol (0.795167ms)
+✔ openai-chat: structured output is requested (2.636417ms)
+✔ openai-chat: streaming deltas are decoded (1.408125ms)
+✔ openai-chat: cancellation aborts the stream (0.754167ms)
+✔ anthropic-messages: text request and auth header (0.759ms)
+✔ anthropic-messages: image input is encoded for the protocol (0.607584ms)
+✔ anthropic-messages: structured output is requested (0.376166ms)
+✔ anthropic-messages: streaming deltas are decoded (0.402125ms)
+✔ anthropic-messages: cancellation aborts the stream (0.41325ms)
+✔ gemini: text request and auth header (1.002375ms)
+✔ gemini: image input is encoded for the protocol (0.558792ms)
+✔ gemini: structured output is requested (0.335375ms)
+✔ gemini: streaming deltas are decoded (0.396958ms)
+✔ gemini: cancellation aborts the stream (0.305875ms)
+✔ reasoning output never reaches the answer channel (0.844ms)
+✔ non-retryable error statuses map to stable provider error codes (0.980208ms)
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm1'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'articleSentenceTranslation',
+  level: 'high',
+  provider: 'personal-anthropic',
+  model: 'm1'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'assistant',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm2'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'none',
+  provider: 'personal-chat',
+  model: 'm-levels'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'none',
+  provider: 'personal-chat',
+  model: 'm-endpoint'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'none',
+  provider: 'personal-chat',
+  model: 'm-reset'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'none',
+  provider: 'personal-chat',
+  model: 'm-reset'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm-422'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm-late-event'
+}
+✔ retryable failures keep their code after the bounded retries (14874.768208ms)
+✔ a missing provider key never borrows another provider (0.56325ms)
+✔ rejected thinking parameters are remembered and drop the token floor (1.421917ms)
+✔ anthropic max_tokens rejection during thinking also falls back once (0.455541ms)
+✔ streaming thinking fallback remembers the target and restores maxTokens (0.904625ms)
+✔ unsupported thinking memory is scoped to the level that was rejected (0.641167ms)
+✔ unsupported thinking memory is retried after the endpoint changes (0.482833ms)
+✔ auth and catalog changes clear the thinking fallback memory (0.723708ms)
+✔ structured 422 detail arrays trigger one thinking-free retry (0.350083ms)
+✔ Anthropic max_tokens and Gemini MAX_TOKENS stop reasons trigger the truncation retry (0.608917ms)
+✔ truncation doubles the adapter outbound budget when the caller gave no maxTokens (0.821ms)
+✔ a fallback event is emitted when the remembered auto request succeeds (0.432625ms)
+✔ analysis requests send the thinking level used in their cache key (4.302334ms)
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm-pinned'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm-pinned'
+}
+✔ a catalog reset during a rejected request does not poison the new memory (6.051292ms)
+✔ a thinking fallback retry stays on the endpoint that rejected it (0.68375ms)
+✔ F1: a new device downloads the key that only exists on the server (44.741792ms)
+✔ F1: an explicit local-only key is never replaced by the cloud copy (0.978292ms)
+✔ F1: a cloud row bound to another endpoint is not downloaded (0.750416ms)
+✔ F1: a remote delete tombstone never creates a local key (0.642333ms)
+✔ F2: a provider saved while an upload is in flight survives the sync (9.279542ms)
+✔ F2: a key changed while its upload is in flight is kept as a new pending upload (9.391833ms)
+✔ F2: deleting a provider during its upload keeps the delete (6.341583ms)
+✔ F2: task model changes made during a sync are preserved (7.570625ms)
+✔ R1: removing the cloud copy keeps the local key and goes local-only (2.078542ms)
+✔ R1: remove-cloud against an already deleted cloud row keeps the local key (0.904125ms)
+✔ R1: a lost remove-cloud response is confirmed by its tombstone without clearing the key (0.793833ms)
+✔ R1: deleting the provider still removes the key everywhere (0.992167ms)
+✔ R1: a tombstone this device never asked for still clears the local copy (0.7765ms)
+✔ R2: a key saved during the conflict download is not overwritten (0.613833ms)
+✔ R2: a conflict result of a previous login session is discarded (0.420667ms)
+✔ R2: adopting the cloud version replaces the key when nothing changed meanwhile (0.355667ms)
+✔ R2: a downloaded conflict answer older than the conflict is rejected (0.638459ms)
+✔ R2: a downloaded key bound to another endpoint is not stored (0.654375ms)
+✔ R2: adopting a cloud copy that was deleted meanwhile drops the key (0.413167ms)
+✔ R2: resolving with the local version uploads against the conflicted version (1.050625ms)
+✔ F3: a 401 from an older account does not sign out the new one (6.439417ms)
+✔ F3: a real 401 in the current session still ends the session (6.9825ms)
+✔ F4: switching accounts without signing out locks shared keys (1.576167ms)
+✔ F3: a 401 credential download from the previous account cannot sign out the new one (0.613208ms)
+✔ F4: a cross-tab account change also locks the shared keys (0.484792ms)
+✔ F6: legacy per-task model choices survive the migration (0.78475ms)
+✔ F6: a failed profile write keeps the old task choices (0.288ms)
+✔ P1: the account key policy defaults to cloud and travels in the snapshot (0.583917ms)
+✔ P2: downloading a key does not move the AI definition timestamp (0.768625ms)
+✔ P2: switching the key sync mode does not move the AI definition timestamp (0.97975ms)
+✔ lwwMerge keeps thinking from the older AI settings side (0.25ms)
+✔ lwwMerge merges older thinking into a newer remote winner (0.055334ms)
+✔ lwwMerge lets the winning side override duplicate thinking tasks (0.048542ms)
+✔ lwwMerge omits thinking when both sides have none (0.033ms)
+✔ lwwMerge bumps updatedAt when it adopts loser-only thinking so the merge applies locally (0.740792ms)
+✔ P0: applying remote AI settings triggers the credential download that was missed (302.574833ms)
+✔ detection candidates keep path prefixes and avoid credential URLs (4.053083ms)
+✔ chat completions adapter builds a faithful OpenAI request (0.576667ms)
+✔ anthropic adapter uses Messages wire format and headers (0.260208ms)
+✔ gemini adapter substitutes the model and encodes images (0.3575ms)
+✔ thinking policy normalises values and keeps the documented app defaults (0.1935ms)
+✔ chat completions maps every non-auto thinking level to reasoning_effort (0.123792ms)
+✔ anthropic enables extended thinking with temperature 1 and a larger max_tokens (0.137875ms)
+✔ gemini maps 2.5 to thinkingBudget and 3 to thinkingLevel (0.276875ms)
+✔ gemini 2.5 reserves the thinking budget on top of the answer allowance (0.182375ms)
+✔ adapters expose the actual outbound max tokens after thinking adjustments (0.148792ms)
+✔ assistant request plan freezes the effective thinking level and model for retries (0.229959ms)
+✔ stream event parsing works for every protocol (0.248875ms)
+✔ stream event parsing keeps reasoning separate from the answer (0.143292ms)
+✔ snapshot sanitizer removes keys, managed definitions and URL overrides (0.397041ms)
+✔ credential sync decision table matches the specification (0.142625ms)
+✔ worker idempotency and provider-id validation (0.1275ms)
+✔ profile normalisation drops unsafe URLs and unknown credential modes (0.279666ms)
+✔ profile and snapshot sanitisation keep only valid thinking mappings (0.2175ms)
+✔ empty thinking maps are never emitted by views or sanitizers (0.172334ms)
+✔ older AI snapshots do not clear newer task thinking choices (0.189042ms)
+✔ thinking priority is override > personal setting > app default (0.207542ms)
+✔ static checker reads stdin instead of reporting an uninspected pass (47.226875ms)
+✔ static checker accepts clean stdin and reports what it scanned (58.542292ms)
+✔ static checker permits protocol hostname hints but rejects concrete provider URLs (129.909958ms)
+✔ static checker preserves key checks after URL strings and ignores line comments (62.790459ms)
+✔ static checker refuses empty stdin instead of reporting clean (33.885333ms)
+✔ static checker refuses a target that is not a directory (28.648292ms)
+✔ static checker refuses a missing target and an empty directory (65.537666ms)
+✔ static checker scans a real directory in both directions (60.784875ms)
+✔ a pending delete keeps its keep-local intent through normalisation (0.92875ms)
+✔ <details> open state survives a settings re-render (0.450667ms)
+✔ saving one settings field keeps the rest of pen_global_settings (0.51075ms)
+✔ authentication, roles and passcode strength (43.1415ms)
+✔ admin user management: list, create, edit and reset (28.608208ms)
+✔ admin user management: admin, unknown-user and weak-passcode guards (1.643042ms)
+✔ device pairing: one-time codes, session auth and revocation (8.805125ms)
+✔ login code TTL options, default and revocation (4.616833ms)
+✔ auth capabilities expose login-code and password support (0.446833ms)
+✔ password login issues a session and rejects bad credentials (31.231916ms)
+✔ password login is rate limited per client and username (1.045292ms)
+✔ change password rotates auth_version and revokes other sessions (35.574958ms)
+✔ admin can assign credentials and password reset revokes sessions (36.333125ms)
+✔ passcode change and recovery reset revoke paired sessions (2.812209ms)
+✔ personal credentials: isolation, CAS, idempotency and tombstones (5.112084ms)
+✔ credential binding is part of the AAD (1.112208ms)
+✔ managed catalog: admin-only publish, shared key download and versions (4.487291ms)
+✔ disabled providers cannot be downloaded; clearing requires disabling (1.382958ms)
+✔ missing master key only breaks credential routes (0.466625ms)
+✔ origin allow-list and no-store headers (0.335083ms)
+✔ server-side snapshot sanitisation drops keys and managed definitions (1.271917ms)
+✔ snapshot CAS still works (0.433542ms)
+✔ article identity includes public id, storage id and aliases (2.521833ms)
+✔ article finds a book by the same stable id first (0.635292ms)
+✔ article finds a book whose articleId points at a storage alias (0.335458ms)
+✔ explicit linkedBookId wins over an older articleId association (0.267375ms)
+✔ exact page URL fallback ignores ordinary fragments but keeps hash routes (0.692958ms)
+✔ same display name alone never creates an article/book link (0.097959ms)
+✔ duplicate page books are deterministic and marked ambiguous (0.127834ms)
+✔ soft-deleted books are ignored (0.064917ms)
+✔ book finds its article by articleId or by sharing the same id (0.201541ms)
+✔ book finds the public article when it stored the internal storage id (0.881625ms)
+✔ book without articleId falls back to the same page URL only (0.102709ms)
+✔ article meta linkedBookId can point back to a book without articleId (0.076542ms)
+✔ soft-deleted articles are ignored (0.204458ms)
+✔ safe source URLs only allow credential-free http(s) (0.805625ms)
+✔ vocabulary deep link parses #v, #vocab and #vocabulary (0.321167ms)
+✔ vocabulary deep link keeps legacy url: book ids round-trippable (0.055875ms)
+✔ vocabulary bare route remains #v for existing navigation (0.035667ms)
+✔ assistant conversations isolate accounts, endpoints, pages and changed article text (1.942917ms)
+✔ stored conversations cannot introduce system messages or unbounded input (0.313083ms)
+✔ assistant requests include article source, word reference and completed history once (1.644459ms)
+✔ switching the UI language changes assistant instructions while preserving source and user input (0.264834ms)
+✔ A1 入列只寫 storage，不發任何請求；送出的請求一定在落盤之後 (46.709625ms)
+✔ A2 Chrome 重排物件鍵後，重送仍視為同一筆 payload（canonical 比較） (6.91175ms)
+✔ A3 storage 寫入失敗時回 capture_storage_failed，且完全沒有網路請求 (1.54525ms)
+✔ A4 落盤後被竄改的 payload 不得送出（capture_invalid_record） (1.303625ms)
+✔ B1 pending 只回目前帳戶的待傳，外帳戶內容完全不出現 (1.229709ms)
+✔ B2 切換帳戶後重送舊工作回 stale_session，且不發出任何請求 (1.1335ms)
+✔ B3 切換 endpoint（同 userId）後舊工作不得送往新 endpoint (2.595542ms)
+✔ B4 pending 讀取（storage.get 未回）期間切換帳戶：enqueue 必須放棄寫入 (3.9615ms)
+✔ B5 send 讀取 storage 期間切換帳戶：不得發出請求、舊待傳保留 (2.860084ms)
+✔ B6 GET books 與 POST /articles 之間的 hash 等待中切換帳戶：不得建立文章 (5.200334ms)
+✔ C1 畸形待傳標成 invalid、不顯示外來內容、可單獨取消，健康項照常送出 (9.604041ms)
+✔ C2 待傳上限 20 筆（含損壞項），第 21 筆回 capture_outbox_full (6.046917ms)
+✔ C3 retry：有 HTTP status 的失敗不會阻斷後續健康項 (4.570875ms)
+✔ C4 本機錯誤（capture_invalid_record／input／response）跳過該筆，續送後續健康項 (3.23275ms)
+✔ C4b 網路中斷與 429／5xx 仍會停止續送（不是「跳過」，等使用者處理） (4.276708ms)
+✔ C5 回執 requestId 不符不得清 pending (1.0595ms)
+✔ C6 回執 bookId 非法不得清 pending (1.001625ms)
+✔ C7 401 不清 pending，且錯誤帶 status (1.568958ms)
+✔ C8 有效回執才清 pending（書） (2.417084ms)
+✔ D1 首次保存：GET sourceUrl → POST /articles → page-link，頁書被關聯 (3.916583ms)
+[bdc-sync] route failed: ERR_SQLITE_ERROR
+✔ D2 文章已存在：不再 POST /articles，改由 page-link 補關聯並回 reused (3.752292ms)
+✔ D3 本次 POST /articles 成功但連結失敗（500）：pending 保留，重試可補關聯 (4.561792ms)
+✔ D4 回應遺失後重試：不重複建立、也不覆蓋雲端已編輯的內容 (5.386834ms)
+✔ D5 現況：同網址再存一次（新 requestId）會沿用舊文章，本地新內容不會送出 (4.903958ms)
+✔ D6 入列時就拒絕非法 sourceUrl 與非法文章內容（不落盤、不發請求） (1.984667ms)
+✔ D7 page-link 回執 articleId 非法時不得清 pending (2.878125ms)
+✔ D11 舊版後端對 page-link 回 404 時轉成 capture_server_update_required，業務 404 保留原錯誤碼 (3.642458ms)
+✔ D8 網址片段（#comments）不會被當成另一頁 (3.208583ms)
+✔ D9 不同網址會建立不同文章 (3.409792ms)
+✔ D10 同網址文章已被刪除（墓碑）時改用新的穩定 ID 重建，不會卡住 (5.141167ms)
+✔ E1 兩個 client 共用同一份 storage 併發送同一筆工作：只建立一次，兩邊回執都有效 (2.355209ms)
+✔ E2 取消只刪本機待傳，不刪雲端已建立的文章與詞書關聯 (2.6845ms)
+✔ E3 pending 依 createdAt 排序（同時間以 key 穩定），retry 也照此順序送出 (4.595292ms)
+✔ E4 同網址的兩筆文章工作併發送出：只建立一篇文章 (2.327125ms)
+✔ E5 storage.remove 失敗後重試：不會重複建書（伺服器 ledger 冪等） (2.978583ms)
+ℹ tests 175
+ℹ suites 0
+ℹ pass 175
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15047.441

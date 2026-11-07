@@ -1,0 +1,15 @@
+{
+  "attempts": [
+    {
+      "command": "git push origin master",
+      "result": "failed",
+      "reason": "curl 55: connection reset by peer",
+      "remoteAfter": "c224be3abe12840a17a8194ecd24785234ed46cb"
+    },
+    {
+      "command": "git -c http.version=HTTP/1.1 -c http.postBuffer=268435456 push origin master",
+      "result": "success",
+      "head": "0d15f87d0a19b68f5e69c50c9a92133a76af4f99"
+    }
+  ]
+}

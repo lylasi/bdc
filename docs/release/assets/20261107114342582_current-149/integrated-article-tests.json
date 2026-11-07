@@ -1,0 +1,17 @@
+[
+  {
+    "test": "extension-article-speed",
+    "exit": 0,
+    "seconds": 33.96
+  },
+  {
+    "test": "extension-article-optimization",
+    "exit": 0,
+    "seconds": 16.06
+  },
+  {
+    "test": "extension-article-confirm",
+    "exit": 0,
+    "seconds": 10.94
+  }
+]
