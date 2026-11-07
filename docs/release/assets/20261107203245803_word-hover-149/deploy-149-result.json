@@ -1,0 +1,431 @@
+{
+  "before": "7669824dde2f403209b459ddafc352f97979434a",
+  "head": "0dfdca4c207763405fab62d805de581ac3a0210d",
+  "release": "c40067a291c4",
+  "containerRunning": true,
+  "containerHealth": "healthy",
+  "startedAt": "2026-11-07T12:39:58.394630679Z",
+  "nginx": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n",
+  "restart": " Container bdc Restarting \n Container bdc Started \n",
+  "httpStatus": 200,
+  "privateConfigPreserved": true,
+  "runtimeFiles": {
+    "features/admin-users/admin-users.js": {
+      "sha256": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04",
+      "ok": true
+    },
+    "features/ai-admin/ai-admin.js": {
+      "sha256": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87",
+      "ok": true
+    },
+    "features/article/analysis-state.js": {
+      "sha256": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3",
+      "ok": true
+    },
+    "features/article/article.js": {
+      "sha256": "100061e139bbef0b9e28e1797e633ea9ce693a5299dfdd5d3e132532f00b8617",
+      "ok": true
+    },
+    "features/article/paragraph-pipeline.js": {
+      "sha256": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3",
+      "ok": true
+    },
+    "features/article/perf-probe.js": {
+      "sha256": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61",
+      "ok": true
+    },
+    "features/article/phrase-picker.js": {
+      "sha256": "e135fe40fa3604c5257b18b6017439678c3cb5ec331acbc8b325f93efae2ad7b",
+      "ok": true
+    },
+    "features/article/reading-export-dialog.js": {
+      "sha256": "5d31c61b07de31dce86e51c7136a52cba275c500e58b8dcc63d0f3a573e6670a",
+      "ok": true
+    },
+    "features/article/reading-panel.js": {
+      "sha256": "e30f42c2c526a7d91d5eda99ebc8c24fc926b0781022a4a3ac4e58b0e1b0714f",
+      "ok": true
+    },
+    "features/article/reading-view.js": {
+      "sha256": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+      "ok": true
+    },
+    "features/article/sentence-actions.js": {
+      "sha256": "74214e11b7a2836a647c000dfa1667b02ff57bd7c922abe77f3c3a42c379e688",
+      "ok": true
+    },
+    "features/article/tokenize.js": {
+      "sha256": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a",
+      "ok": true
+    },
+    "features/assistant/assistant.js": {
+      "sha256": "69f158bc78cf30b020ed9dfe053e9ae88cc44e39cfcb6afe3f69d4502efbef4b",
+      "ok": true
+    },
+    "features/assistant/request-plan.js": {
+      "sha256": "6c399c3cf46bfc712b22018c9a03ceb179562491ee79007abb037fc90694687f",
+      "ok": true
+    },
+    "features/assistant/word-chat.js": {
+      "sha256": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+      "ok": true
+    },
+    "features/dictation/dictation-grader.js": {
+      "sha256": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd",
+      "ok": true
+    },
+    "features/dictation/dictation.js": {
+      "sha256": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b",
+      "ok": true
+    },
+    "features/learning/learning.js": {
+      "sha256": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36",
+      "ok": true
+    },
+    "features/ocr/ocr.js": {
+      "sha256": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e",
+      "ok": true
+    },
+    "features/phonetics/phonetics.js": {
+      "sha256": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce",
+      "ok": true
+    },
+    "features/phonetics/word-sheet.js": {
+      "sha256": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b",
+      "ok": true
+    },
+    "features/qa/qa-checker.js": {
+      "sha256": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1",
+      "ok": true
+    },
+    "features/qa/qa-creator.js": {
+      "sha256": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba",
+      "ok": true
+    },
+    "features/qa/qa-pdf.js": {
+      "sha256": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e",
+      "ok": true
+    },
+    "features/qa/qa-storage.js": {
+      "sha256": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226",
+      "ok": true
+    },
+    "features/qa/qa-trainer.js": {
+      "sha256": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee",
+      "ok": true
+    },
+    "features/qa/qa.js": {
+      "sha256": "d18898ad9a88ae2b3cf23e3308b07a4e4c80470819f3c1cc866371981af7f0ad",
+      "ok": true
+    },
+    "features/quiz/quiz.js": {
+      "sha256": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede",
+      "ok": true
+    },
+    "features/sync/ai-provider-settings.js": {
+      "sha256": "c0370f3ad6e92eb4a29a32107d43f6b6148123add8c1e122cfdd2d6605ca3e43",
+      "ok": true
+    },
+    "features/sync/sync-status.js": {
+      "sha256": "35779b7c612bf9dc6db0ad5f29bdabf87ea0f99f6924529c857e416b342e1a5e",
+      "ok": true
+    },
+    "features/sync/sync.js": {
+      "sha256": "10bbcfd779cc5728dd502b0b4d15b1ba97ee58e0fdeb74af02b53a26fc6e9916",
+      "ok": true
+    },
+    "features/vocabulary/vocabulary.js": {
+      "sha256": "803587959630eae07a673819721421453043709f73ec2c4328029c359f71e9a4",
+      "ok": true
+    },
+    "locales/zh-CN.js": {
+      "sha256": "8e0ad1ed8117fb6238ed82c69b9b34125cab26368ec31fc7c99b1eb98c2b528a",
+      "ok": true
+    },
+    "locales/zh-HK.js": {
+      "sha256": "2b7db64e36d5b6713b6b2d975d28b7bf25a78cf487ffe6abda031d619db736b1",
+      "ok": true
+    },
+    "main.js": {
+      "sha256": "74d747b2f3b6ae015dabd115c393c4360ecf1ec0eb6232c37eb6984e3f2bd47c",
+      "ok": true
+    },
+    "modules/ai-catalog.js": {
+      "sha256": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec",
+      "ok": true
+    },
+    "modules/ai-credential-sync.js": {
+      "sha256": "46dea4caa35e605dcd5b69879d0033055dcbace09420e52044d9175f986d2a9c",
+      "ok": true
+    },
+    "modules/ai-model-picker.js": {
+      "sha256": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee",
+      "ok": true
+    },
+    "modules/ai-models.js": {
+      "sha256": "f39f55ecff2772f332fd1a8a591b82f07eafd2e6fef0dd2f55561d707149cd48",
+      "ok": true
+    },
+    "modules/ai-profile-storage.js": {
+      "sha256": "9c8a4c3603e2f1175202b78853d981a80e17b228d81068871f370f29b959f399",
+      "ok": true
+    },
+    "modules/ai-protocols/anthropic.js": {
+      "sha256": "65765ba253ba830e82930236bb756d30f9c39b6661f428a6def2bda24893630b",
+      "ok": true
+    },
+    "modules/ai-protocols/chat-completions.js": {
+      "sha256": "4966045e6e7ad0403e848aa4f8dc6c5b390a1a033b6ba59c3715420a0b4d23d4",
+      "ok": true
+    },
+    "modules/ai-protocols/common.js": {
+      "sha256": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181",
+      "ok": true
+    },
+    "modules/ai-protocols/gemini.js": {
+      "sha256": "fdb8999adb513b766993b4aa62783b6f91c587bf1ab2c1497a894c467664813b",
+      "ok": true
+    },
+    "modules/ai-protocols/index.js": {
+      "sha256": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9",
+      "ok": true
+    },
+    "modules/ai-settings-sanitize.js": {
+      "sha256": "6284741710a92240a4358b2a5f39f773cf6ebeb2efebfa6afa0108f654eec705",
+      "ok": true
+    },
+    "modules/ai-thinking-help.js": {
+      "sha256": "b086623750c09a696a05e31d8fb43c9efc9e5de34233fc670c5a0d04042d5c2f",
+      "ok": true
+    },
+    "modules/ai-thinking.js": {
+      "sha256": "6a406ab27beb2636fdc69ffbd1d52eb231bb8e99b02b3587731114de1d073423",
+      "ok": true
+    },
+    "modules/api.js": {
+      "sha256": "579a808a2267655aecb2ff3d0d96cf7f492d75dee6374cd8eb7ccdf417d2e327",
+      "ok": true
+    },
+    "modules/article-book-link.js": {
+      "sha256": "c1b7be12137b712a6e930cdc8db48a810088050006ba2b82ec3637f82a32f483",
+      "ok": true
+    },
+    "modules/article-route.js": {
+      "sha256": "ef01b3585776c3fee60c4f47e4072c790fb462b3174d6c7370f95f7ca2194011",
+      "ok": true
+    },
+    "modules/article-session.js": {
+      "sha256": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b",
+      "ok": true
+    },
+    "modules/article-store.js": {
+      "sha256": "86ab267766b4811abbe49e7fc16ec797ab5db5ccb7efc53dc99fbd347fd309b6",
+      "ok": true
+    },
+    "modules/article-sync.js": {
+      "sha256": "1ab7f89480638e2592cf8a47e0da613b07a68ec223886ed19babac3bed2b709e",
+      "ok": true
+    },
+    "modules/audio.js": {
+      "sha256": "ffb3bd27a65462bb7d2be90f3261418b65ffc3ddb9d0c51527031ad4abe0b25c",
+      "ok": true
+    },
+    "modules/backup-store.js": {
+      "sha256": "4477928bd610a9c74f7f414d4c6538295d36c22e17e8616e3bbffa4c33e1e469",
+      "ok": true
+    },
+    "modules/cache.js": {
+      "sha256": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd",
+      "ok": true
+    },
+    "modules/detail-state.js": {
+      "sha256": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086",
+      "ok": true
+    },
+    "modules/dom.js": {
+      "sha256": "1a39e46e7b6236925182a02e7433b01f8f844d5857324e90ffcd0d8e973fde0f",
+      "ok": true
+    },
+    "modules/i18n-config.js": {
+      "sha256": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66",
+      "ok": true
+    },
+    "modules/i18n.js": {
+      "sha256": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76",
+      "ok": true
+    },
+    "modules/local-backup.js": {
+      "sha256": "2f4d7c482e8204ea3f10dd55676728a5bc3597dc9f1033a30ab8bf0b5900809a",
+      "ok": true
+    },
+    "modules/markdown.js": {
+      "sha256": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558",
+      "ok": true
+    },
+    "modules/permanent-db.js": {
+      "sha256": "89e8a09ddd00b91dada37145c4212b7ea3796009f13e37dcc7eb2f5561a5e43d",
+      "ok": true
+    },
+    "modules/phonetics-data.js": {
+      "sha256": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0",
+      "ok": true
+    },
+    "modules/platform.js": {
+      "sha256": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690",
+      "ok": true
+    },
+    "modules/prompts/article.js": {
+      "sha256": "f93dc485bf774327797368ffb60d8c4ef03d15b724f7b82ba7d1a7eba9fbeca9",
+      "ok": true
+    },
+    "modules/prompts/assistant.js": {
+      "sha256": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6",
+      "ok": true
+    },
+    "modules/prompts/dictation.js": {
+      "sha256": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec",
+      "ok": true
+    },
+    "modules/prompts/dictionary.js": {
+      "sha256": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7",
+      "ok": true
+    },
+    "modules/prompts/import.js": {
+      "sha256": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf",
+      "ok": true
+    },
+    "modules/prompts/index.js": {
+      "sha256": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+      "ok": true
+    },
+    "modules/prompts/language-rules.js": {
+      "sha256": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986",
+      "ok": true
+    },
+    "modules/prompts/learning.js": {
+      "sha256": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e",
+      "ok": true
+    },
+    "modules/prompts/ocr.js": {
+      "sha256": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0",
+      "ok": true
+    },
+    "modules/prompts/qa.js": {
+      "sha256": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837",
+      "ok": true
+    },
+    "modules/qr.js": {
+      "sha256": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363",
+      "ok": true
+    },
+    "modules/quick-model-picker.js": {
+      "sha256": "3e29c2dec7765b4e562ac8316ab6ff8b966b6c5c3804e435152b238bb70432ab",
+      "ok": true
+    },
+    "modules/reading-actions.js": {
+      "sha256": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+      "ok": true
+    },
+    "modules/reading-edition.js": {
+      "sha256": "e15feb34ed2ca831787a2d19ea8c7adea69e16f3360e626068828dc47ba6e9f7",
+      "ok": true
+    },
+    "modules/reading-export.js": {
+      "sha256": "350a9cc197f63cb0ed9b7018582fa3ae24060a9e8c061becf92674ab6fc19d47",
+      "ok": true
+    },
+    "modules/reading-store.js": {
+      "sha256": "23344d0c0221d17349472673911b6dfa5326d58fe89721fa8dbf5dfe614e227b",
+      "ok": true
+    },
+    "modules/reading-sync.js": {
+      "sha256": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e",
+      "ok": true
+    },
+    "modules/settings.js": {
+      "sha256": "f71e36e6c39a9f1f5863802b3d5f39227afe3685e37b5e046d87d68f3977ba7d",
+      "ok": true
+    },
+    "modules/state.js": {
+      "sha256": "246ba41c1eaca5b6be2ff8eeaf25bd64bc962cb0055bc4bb339855f2656c5a7f",
+      "ok": true
+    },
+    "modules/storage.js": {
+      "sha256": "5b0fb44fcace370dad1be47b92f1512ce397bff6612439f29599e257a442c105",
+      "ok": true
+    },
+    "modules/sync-cloudflare.js": {
+      "sha256": "5bb36b5ffed2968179dc0e77f35fb5de2f41ab042886ca1bd318e0915860f0bb",
+      "ok": true
+    },
+    "modules/sync-core.js": {
+      "sha256": "8254471389dd8bd87397999bf353fdf195382ab57a78e52f73e3b9ca0ef90da6",
+      "ok": true
+    },
+    "modules/sync-signals.js": {
+      "sha256": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff",
+      "ok": true
+    },
+    "modules/theme-art.js": {
+      "sha256": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4",
+      "ok": true
+    },
+    "modules/theme.js": {
+      "sha256": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd",
+      "ok": true
+    },
+    "modules/ui.js": {
+      "sha256": "d635ab2f214ea3417323a36e914c6e974283035c5ff55ca4cc30147c36040e85",
+      "ok": true
+    },
+    "modules/validate.js": {
+      "sha256": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8",
+      "ok": true
+    },
+    "modules/vendor/qrcode-generator.js": {
+      "sha256": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c",
+      "ok": true
+    },
+    "modules/vocab.js": {
+      "sha256": "14b818bad3d92f60829c91b12d9583f5c60af96963e03a7916367007c710b95f",
+      "ok": true
+    },
+    "modules/vocabulary-route.js": {
+      "sha256": "bc9ce8476d502381ae9c27d892399804bf92b9df19f5c802cbabf6e9ffeb71a0",
+      "ok": true
+    },
+    "modules/voices.js": {
+      "sha256": "54280077f0d6d19f8d93539fb7f82e768f9fe862c208cf416c2ff4138d824b13",
+      "ok": true
+    },
+    "shared/article-book-link.mjs": {
+      "sha256": "97629a9d9f4e9361785d72d9665e506ad41c1954d42f949c5c81334378cd55d1",
+      "ok": true
+    },
+    "shared/article-protocol.mjs": {
+      "sha256": "e8c03d9e26db99d01a5b3e93ab329bf499eace29ca5d81b1f63ded32421b2c6d",
+      "ok": true
+    },
+    "shared/page-protocol.mjs": {
+      "sha256": "9a1cf273a67c55c5a3e1259f52993941c043d5b89773139f70eae6b7bfc5dab6",
+      "ok": true
+    },
+    "shared/reading-protocol.mjs": {
+      "sha256": "6c115d1256e7221cabcef1b6682d31ed57f7d1eb4073fc566bc474d103650f1e",
+      "ok": true
+    },
+    "shared/vocabulary-source.mjs": {
+      "sha256": "8fbe1556b200cb8bb976d57dfe7e1639615a3ee1512b15a0da3c9c2f8a27c04f",
+      "ok": true
+    },
+    "index.html": {
+      "sha256": "bed67ec0709aa6f841ac695ce74ae9ca7268b093a5286b30beba9f7129a481cf",
+      "ok": true
+    },
+    "styles.css": {
+      "sha256": "1bdac418da8c877bc8980e4e2288d54d70b13859dea5879e3cba93cc50c2e7b1",
+      "ok": true
+    }
+  },
+  "worktreeClean": true
+}

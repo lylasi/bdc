@@ -1,0 +1,4 @@
+PASS hover path 1280 zh-CN: word-only hover, return from sentence preview, wrapped tail, both bridges, text dwell, real mouse click, retargeting, viewport edges, dismissal and Escape
+PASS hover path 960 zh-CN: word-only hover, return from sentence preview, wrapped tail, both bridges, text dwell, real mouse click, retargeting, viewport edges, dismissal and Escape
+PASS hover path 1280 zh-HK: word-only hover, return from sentence preview, wrapped tail, both bridges, text dwell, real mouse click, retargeting, viewport edges, dismissal and Escape
+PASS hover path 960 zh-HK: word-only hover, return from sentence preview, wrapped tail, both bridges, text dwell, real mouse click, retargeting, viewport edges, dismissal and Escape

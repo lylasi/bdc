@@ -1,0 +1,3 @@
+PASS http://10.10.10.149:8001 104 runtime assets match committed release c40067a291c4
+PASS https://bdc.a4a4.qzz.io 104 runtime assets match committed release c40067a291c4
+PASS 208 checks total

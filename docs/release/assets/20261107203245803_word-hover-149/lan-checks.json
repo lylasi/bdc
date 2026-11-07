@@ -1,0 +1,11 @@
+[
+  {
+    "command": [
+      "node",
+      "tests/article-sentence-hover.cjs"
+    ],
+    "base": "http://10.10.10.149:8001",
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/lan-article-sentence-hover.cjs.log"
+  }
+]

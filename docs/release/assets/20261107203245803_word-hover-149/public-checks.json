@@ -1,0 +1,22 @@
+[
+  {
+    "command": [
+      "node",
+      "tests/article-sentence-hover.cjs"
+    ],
+    "base": "https://bdc.a4a4.qzz.io",
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/public-article-sentence-hover.cjs.log"
+  },
+  {
+    "command": [
+      "node",
+      "--require=/private/tmp/bdc-word-hover-browser-timeout-20261107203245803.cjs",
+      "tests/article-sentence-reading.cjs"
+    ],
+    "base": "https://bdc.a4a4.qzz.io",
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/public-article-sentence-reading.cjs.log",
+    "startupTimeoutMs": 60000
+  }
+]

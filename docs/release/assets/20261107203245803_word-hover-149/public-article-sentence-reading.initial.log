@@ -1,0 +1,22 @@
+PASS desktop zh-CN: menu, keyboard, once, continue, loop, pause, navigation, stop, interruption, selection, hover, error, analysis
+PASS mobile 320 zh-CN: one inline button, no reflow/overflow, menu fits, touch playback and stop
+PASS mobile 390 zh-CN: one inline button, no reflow/overflow, menu fits, touch playback and stop
+PASS Chinese source desktop zh-CN: disabled reading with explanation, analysis available, no dead shortcut
+PASS Chinese source mobile 320 zh-CN: disabled reading with explanation, analysis available, no dead shortcut
+PASS desktop zh-HK: menu, keyboard, once, continue, loop, pause, navigation, stop, interruption, selection, hover, error, analysis
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.waitForEvent: Timeout 30000ms exceeded while waiting for event "console"
+=========================== logs ===========================
+waiting for event "console"
+============================================================
+    at setup (/private/tmp/bdc-word-hover-publish-20261107203245803/tests/article-sentence-reading.cjs:62:25)
+    at async mobile (/private/tmp/bdc-word-hover-publish-20261107203245803/tests/article-sentence-reading.cjs:284:39)
+    at async run (/private/tmp/bdc-word-hover-publish-20261107203245803/tests/article-sentence-reading.cjs:350:45) {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.20.0

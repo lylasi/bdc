@@ -1,0 +1,11 @@
+[
+  {
+    "command": [
+      "node",
+      "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/verify-runtime.cjs"
+    ],
+    "base": "",
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/online-runtime-verify-runtime.cjs.log"
+  }
+]
