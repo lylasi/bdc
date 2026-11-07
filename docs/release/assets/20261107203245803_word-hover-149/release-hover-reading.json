@@ -1,0 +1,18 @@
+[
+  {
+    "command": [
+      "node",
+      "tests/article-sentence-hover.cjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/release-article-sentence-hover.cjs.log"
+  },
+  {
+    "command": [
+      "node",
+      "tests/article-sentence-reading.cjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/release-article-sentence-reading.cjs.log"
+  }
+]

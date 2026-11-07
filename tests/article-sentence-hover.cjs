@@ -1,4 +1,4 @@
-/** Regression: slowly move from a wrapped sentence into its reading popover. */
+/** Regression: word hover stays local; sentence-end hover opens a reachable popover. */
 const assert = require('node:assert/strict');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const { setup, count, last, finish, screenshot } = require('./article-sentence-reading.cjs');
@@ -41,6 +41,21 @@ async function runCase(browser, locale, width) {
         });
         assert.ok(geometry, 'Fixture must wrap and put its sentence-end trigger near the left edge');
         const trigger = page.locator('.sent-analyze-btn').nth(1);
+        const sentence = page.locator('.interactive-sentence').nth(1);
+        const word = sentence.locator('.interactive-word').first();
+        const assertWordHover = async (target = word) => {
+            await target.hover();
+            assert.equal(await page.locator('.sentence-linked').count(), 0, 'Word hover must not highlight either whole sentence');
+            assert.equal(await page.locator('.sentence-hint.is-shown').count(), 0, 'Word hover must not show the sentence popover');
+            assert.equal(await page.locator('#article-sentence-quick-read').isVisible(), false);
+            const highlighted = await page.locator('.interactive-sentence .interactive-word').evaluateAll((words) => words
+                .filter((el) => getComputedStyle(el).backgroundColor !== 'rgba(0, 0, 0, 0)')
+                .map((el) => el.textContent));
+            assert.deepEqual(highlighted, [await target.textContent()], 'Only the hovered word should have a background');
+        };
+        await assertWordHover(sentence.locator('.interactive-word').nth(1));
+        await assertWordHover();
+        await screenshot(page, `word-hover-${width}-${locale}.png`);
         await trigger.hover();
         const hint = page.locator('.sentence-hint.is-shown');
         const quick = page.locator('#article-sentence-quick-read');
@@ -52,6 +67,19 @@ async function runCase(browser, locale, width) {
         assert.ok(button.y >= card.y && button.y + button.height <= card.y + card.height);
         assert.equal(await hint.getAttribute('role'), 'dialog');
         assert.equal(await hint.evaluate((el) => getComputedStyle(el).pointerEvents), 'auto');
+
+        // Returning to a word in the same sentence must clear the whole-sentence
+        // state immediately, including when the popover's speaker had focus.
+        await assertWordHover();
+        await trigger.hover();
+        await quick.focus();
+        await assertWordHover();
+        await trigger.focus();
+        assert.equal(await page.locator('.sentence-linked').count(), 2, 'Keyboard focus on the sentence-end button should still preview its sentence');
+        await sentence.focus();
+        assert.equal(await page.locator('.sentence-hint.is-shown').count(), 0, 'Focus on sentence text must not preview the whole sentence');
+        await sentence.evaluate((el) => el.blur());
+        await trigger.hover();
 
         // Cross the physical gap slowly, then stop over the translation before
         // moving to the button. Locator.click() alone would teleport the mouse.
@@ -125,7 +153,7 @@ async function runCase(browser, locale, width) {
         assert.equal(await last(page), SENTENCE);
         await finish(page);
         assert.deepEqual(errors, []);
-        console.log(`PASS hover path ${width} ${locale}: wrapped tail, both bridges, text dwell, real mouse click, retargeting, viewport edges, dismissal and Escape`);
+        console.log(`PASS hover path ${width} ${locale}: word-only hover, return from sentence preview, wrapped tail, both bridges, text dwell, real mouse click, retargeting, viewport edges, dismissal and Escape`);
     } finally { await context.close(); }
 }
 

@@ -1,0 +1,26 @@
+[
+  {
+    "command": [
+      "node",
+      "tests/article-keyboard-tooltip.cjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/release-article-keyboard-tooltip.cjs.log"
+  },
+  {
+    "command": [
+      "node",
+      "tests/reading-phrase-lookup.cjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/release-reading-phrase-lookup.cjs.log"
+  },
+  {
+    "command": [
+      "node",
+      "tests/release-asset-versioning.cjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/release/assets/20261107203245803_word-hover-149/release-release-asset-versioning.cjs.log"
+  }
+]

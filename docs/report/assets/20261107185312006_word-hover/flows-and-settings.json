@@ -1,0 +1,18 @@
+[
+  {
+    "command": [
+      "node",
+      "tests/audit-flows.cjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/report/assets/20261107185312006_word-hover/audit-flows.log"
+  },
+  {
+    "command": [
+      "node",
+      "tests/settings-autosave.cjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/report/assets/20261107185312006_word-hover/settings-autosave.log"
+  }
+]

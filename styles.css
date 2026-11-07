@@ -2296,6 +2296,13 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
 }
 .example-item .example-chinese { color: var(--ink-600); font-size: var(--fs-md); margin-top: 2px; }
 .interactive-word { cursor: help; border-bottom: 1px dashed var(--ink-300); }
+@media (hover: hover) and (pointer: fine) {
+    #article-analysis-container .interactive-word:hover {
+        background: var(--accent-050);
+        border-radius: 4px;
+        box-shadow: 0 0 0 2px var(--accent-050);
+    }
+}
 /* 連結內維持連結行為（P3-T4）：即使舊 HTML 字串預先包了 token，也不要看起來像查詞。 */
 a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
 .example-item .interactive-word { cursor: pointer; border-bottom-color: transparent; }

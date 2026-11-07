@@ -1,0 +1,7 @@
+{
+  "command": [
+    "node",
+    "tests/article-keyboard-tooltip.cjs"
+  ],
+  "exitCode": 0
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "command": [
+      "node",
+      "--check",
+      "features/article/sentence-actions.js"
+    ],
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "node",
+      "--check",
+      "tests/article-sentence-hover.cjs"
+    ],
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "--",
+      "features/article/sentence-actions.js",
+      "styles.css"
+    ],
+    "exitCode": 0,
+    "output": ""
+  }
+]

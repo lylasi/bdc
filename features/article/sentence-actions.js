@@ -138,9 +138,12 @@ export function initSentenceActions(callbacks) {
     });
     const showQuick = (event) => {
         if (menuTarget || suppressQuickFocus || event.pointerType === 'touch' || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        const wrap = event.target.closest('.sentence-wrap');
-        const trigger = wrap?.querySelector('.sent-analyze-btn');
-        if (!trigger) return;
+        const trigger = event.target.closest('.sent-analyze-btn');
+        if (!trigger) {
+            // 回到正文單詞時立即恢復逐詞互動；離開按鈕的延遲只用來跨到浮層。
+            if (quickTarget && event.target.closest('.interactive-sentence, .interactive-word')) hideQuick();
+            return;
+        }
         const target = targetFor(trigger);
         if (!target) return;
         clearTimeout(hideTimer);
@@ -158,7 +161,7 @@ export function initSentenceActions(callbacks) {
     };
     const scheduleHide = (event) => {
         const to = event.relatedTarget;
-        if (to && (quickPopover?.contains(to) || quick.contains(to) || quickTarget?.trigger.closest('.sentence-wrap')?.contains(to))) return;
+        if (to && (quickPopover?.contains(to) || quick.contains(to) || quickTarget?.trigger.contains(to))) return;
         clearTimeout(hideTimer);
         hideTimer = setTimeout(() => {
             if (!quickPopover?.contains(document.activeElement)) hideQuick();

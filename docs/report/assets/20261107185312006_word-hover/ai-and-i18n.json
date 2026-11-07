@@ -1,0 +1,29 @@
+[
+  {
+    "command": [
+      "node",
+      "--test",
+      "tests/ai-worker.test.mjs",
+      "tests/ai-units.test.mjs",
+      "tests/ai-sync-regressions.test.mjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/report/assets/20261107185312006_word-hover/ai-sync-regressions.test.log"
+  },
+  {
+    "command": [
+      "node",
+      "tests/audit-i18n.mjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/report/assets/20261107185312006_word-hover/audit-i18n.log"
+  },
+  {
+    "command": [
+      "node",
+      "tests/ai-review-regressions.mjs"
+    ],
+    "exitCode": 0,
+    "log": "/Users/linus/CODE/bdc/docs/report/assets/20261107185312006_word-hover/ai-review-regressions.log"
+  }
+]
