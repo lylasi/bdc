@@ -96,4 +96,3 @@ function check(name, ok, detail) { checks.push({name,ok:!!ok,...(detail ? {detai
  console.log(JSON.stringify({passed:result.passed,total:result.total,failed:checks.filter(c=>!c.ok)},null,2));
  if(checks.some(c=>!c.ok))process.exitCode=1;
 })().catch(e=>{console.error(e);process.exitCode=1;});
-
