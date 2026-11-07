@@ -17,6 +17,7 @@ export const vocabBookList = document.getElementById('vocab-book-list');
 export const addVocabBookBtn = document.getElementById('add-vocab-book-btn');
 export const importVocabBookBtn = document.getElementById('import-vocab-book-btn');
 export const currentBookName = document.getElementById('current-book-name');
+export const bookNameDetailsBtn = document.getElementById('book-name-details-btn');
 export const currentBookMeta = document.getElementById('current-book-meta');
 export const editVocabBookBtn = document.getElementById('edit-vocab-book-btn');
 export const deleteVocabBookBtn = document.getElementById('delete-vocab-book-btn');

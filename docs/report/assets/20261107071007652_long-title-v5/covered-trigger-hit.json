@@ -1,0 +1,181 @@
+{
+  "measuredAt": "2026-11-06T23:19:01.636Z",
+  "rows": [
+    {
+      "locale": "zh-CN",
+      "size": "320x500",
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "centerY": 484.8
+      },
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "navRect": {
+        "top": 437,
+        "bottom": 500
+      },
+      "triggerCoveredByNavPx": 34.2,
+      "triggerVisiblePx": 0,
+      "hitTarget": "BUTTON#nav-more-btn.nav-more-trigger",
+      "hitIsTrigger": false
+    },
+    {
+      "locale": "zh-CN",
+      "size": "320x520",
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "centerY": 484.8
+      },
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "navRect": {
+        "top": 457,
+        "bottom": 520
+      },
+      "triggerCoveredByNavPx": 38,
+      "triggerVisiblePx": 0,
+      "hitTarget": "BUTTON#nav-more-btn.nav-more-trigger",
+      "hitIsTrigger": false
+    },
+    {
+      "locale": "zh-CN",
+      "size": "360x500",
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "centerY": 484.8
+      },
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "navRect": {
+        "top": 437,
+        "bottom": 500
+      },
+      "triggerCoveredByNavPx": 34.2,
+      "triggerVisiblePx": 0,
+      "hitTarget": "SPAN#.nav-text",
+      "hitIsTrigger": false
+    },
+    {
+      "locale": "zh-CN",
+      "size": "360x520",
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "centerY": 484.8
+      },
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "navRect": {
+        "top": 457,
+        "bottom": 520
+      },
+      "triggerCoveredByNavPx": 38,
+      "triggerVisiblePx": 0,
+      "hitTarget": "svg#.[object SVGAnimatedStrin",
+      "hitIsTrigger": false
+    },
+    {
+      "locale": "zh-HK",
+      "size": "320x500",
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "centerY": 484.8
+      },
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "navRect": {
+        "top": 437,
+        "bottom": 500
+      },
+      "triggerCoveredByNavPx": 34.2,
+      "triggerVisiblePx": 0,
+      "hitTarget": "BUTTON#nav-more-btn.nav-more-trigger",
+      "hitIsTrigger": false
+    },
+    {
+      "locale": "zh-HK",
+      "size": "320x520",
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "centerY": 484.8
+      },
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "navRect": {
+        "top": 457,
+        "bottom": 520
+      },
+      "triggerCoveredByNavPx": 38,
+      "triggerVisiblePx": 0,
+      "hitTarget": "BUTTON#nav-more-btn.nav-more-trigger",
+      "hitIsTrigger": false
+    },
+    {
+      "locale": "zh-HK",
+      "size": "360x500",
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "centerY": 484.8
+      },
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "navRect": {
+        "top": 437,
+        "bottom": 500
+      },
+      "triggerCoveredByNavPx": 34.2,
+      "triggerVisiblePx": 0,
+      "hitTarget": "SPAN#.nav-text",
+      "hitIsTrigger": false
+    },
+    {
+      "locale": "zh-HK",
+      "size": "360x520",
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "centerY": 484.8
+      },
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "navRect": {
+        "top": 457,
+        "bottom": 520
+      },
+      "triggerCoveredByNavPx": 38,
+      "triggerVisiblePx": 0,
+      "hitTarget": "svg#.[object SVGAnimatedStrin",
+      "hitIsTrigger": false
+    }
+  ]
+}

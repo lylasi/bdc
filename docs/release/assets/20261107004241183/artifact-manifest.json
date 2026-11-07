@@ -1,0 +1,30 @@
+{
+  "stamp": "20261107004241183",
+  "version": "0.6.1",
+  "archive": "/Users/linus/CODE/bdc/docs/release/assets/20261107004241183/BDC-extension-0.6.1.zip",
+  "archiveBytes": 385238,
+  "sha256": "48f358e9d2f47d2661a7e9bad56ebd0ab09443d478ced5df4f205428022db530",
+  "files": 68,
+  "report": "/Users/linus/CODE/bdc/docs/report/20261107004241183_擴充單行收藏列與自動詞書驗證.md",
+  "releaseNotes": "/Users/linus/CODE/bdc/docs/release/20261107004241183_擴充套件0.6.1交付說明.md",
+  "reportAssets": "/Users/linus/CODE/bdc/docs/report/assets/20261107004241183_extension-footer",
+  "releaseMap": "97802ab09783",
+  "browserChecks": {
+    "footer": 24,
+    "capture": 31,
+    "compactAssistant": 86,
+    "pageWorkspace": 20
+  },
+  "unitTests": {
+    "captureUI": 21,
+    "captureWorkspaceClientsAndEndpoints": 122,
+    "ai": 87
+  },
+  "focusLocales": [
+    "zh-CN",
+    "zh-HK"
+  ],
+  "floatingStatusbarPassed": true,
+  "generatedConfigSource": "ai-config.example.js",
+  "verifiedAt": "2026-11-07T00:44:09.195066+08:00"
+}

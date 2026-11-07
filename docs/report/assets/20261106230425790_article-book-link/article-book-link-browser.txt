@@ -1,0 +1,39 @@
+
+[zh-CN]
+  ok   zh-CN 直接開 #v/<bookId> 選中正確詞書
+  ok   zh-CN 深連結保留在網址
+  ok   zh-CN 詞書顯示安全原文來源
+  ok   zh-CN 詞書可回文章
+  ok   zh-CN 回文章使用公開 articleId
+  ok   zh-CN 文章一鍵開既有詞書
+  ok   zh-CN 非法來源網址不寫入詞書
+  ok   zh-CN 非法來源網址保留編輯彈窗
+  ok   zh-CN 無關聯文章尚未建立詞書
+  ok   zh-CN 無關聯時建立一本且只建立一本
+  ok   zh-CN 同名詞書沒有被誤綁
+  ok   zh-CN 建立後直接開啟新詞書
+  ok   zh-CN 舊詞書可用同頁網址回文章
+  ok   zh-CN 網址補關聯導向正確文章
+  ok   zh-CN 不安全詞書來源不顯示連結
+  ok   zh-CN 不安全文章來源不顯示連結
+  ok   zh-CN 外部詞書顯示原文來源
+  ok   zh-CN 外部詞書不顯示回文章
+  ok   zh-CN 外部詞書來源編輯可持久化
+  ok   zh-CN 舊 url: 詞書 ID 可深連結
+  ok   zh-CN 舊 url: 詞書連結保留
+  ok   zh-CN 缺書深連結保留網址
+  ok   zh-CN 缺書深連結有提示
+  ok   zh-CN 沒有頁面例外
+  ok   zh-CN 沒有非網路 console error
+
+[zh-HK]
+  ok   zh-HK 直接開 #v/<bookId> 選中正確詞書
+  ok   zh-HK 深連結保留在網址
+  ok   zh-HK 詞書顯示安全原文來源
+  ok   zh-HK 詞書可回文章
+  ok   zh-HK 回文章使用公開 articleId
+  ok   zh-HK 文章一鍵開既有詞書
+  ok   zh-HK 沒有頁面例外
+  ok   zh-HK 沒有非網路 console error
+
+all checks passed

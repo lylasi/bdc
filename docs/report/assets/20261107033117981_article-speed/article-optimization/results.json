@@ -1,0 +1,997 @@
+{
+  "checks": [
+    {
+      "name": "長文清洗切成三塊並全部完成",
+      "ok": true,
+      "detail": {
+        "requests": 3,
+        "bodyLength": 309
+      }
+    },
+    {
+      "name": "清洗回應亂序完成仍按原文順序組合",
+      "ok": true,
+      "detail": {
+        "order": [
+          0,
+          109,
+          218
+        ]
+      }
+    },
+    {
+      "name": "清洗並行不超過兩塊",
+      "ok": true,
+      "detail": {
+        "peak": 2
+      }
+    },
+    {
+      "name": "此案例確實以非原序完成（保序斷言有鑑別力）",
+      "ok": true,
+      "detail": {
+        "completionOrder": [
+          1,
+          2,
+          0
+        ]
+      }
+    },
+    {
+      "name": "同版本 catalog refresh 確實執行（generation 增加、版本不變）",
+      "ok": true,
+      "detail": {
+        "refresh": {
+          "beforeVersion": 1,
+          "afterVersion": 1,
+          "beforeGeneration": 8,
+          "afterGeneration": 9
+        },
+        "catalogReads": 1
+      }
+    },
+    {
+      "name": "同版本 catalog refresh 不中止文章任務，也不報設定變更",
+      "ok": true,
+      "detail": {
+        "outcome": {
+          "parts": 4
+        }
+      }
+    },
+    {
+      "name": "內容類失敗不中止其他段，錯誤帶 failedIndexes 與 causeCode",
+      "ok": true,
+      "detail": {
+        "name": "Error",
+        "code": "page_analysis_failed",
+        "causeCode": "empty_translation",
+        "failedIndexes": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "name": "失敗時進度停在未完成段落，不報全數完成",
+      "ok": true,
+      "detail": [
+        {
+          "done": 0,
+          "total": 5
+        },
+        {
+          "done": 1,
+          "total": 5
+        },
+        {
+          "done": 2,
+          "total": 5
+        },
+        {
+          "done": 3,
+          "total": 5
+        }
+      ]
+    },
+    {
+      "name": "成功段只請求一次，失敗段走完標準與後備",
+      "ok": true,
+      "detail": [
+        1,
+        2,
+        1,
+        2,
+        1
+      ]
+    },
+    {
+      "name": "重試只補失敗段，成功段直接復用快取",
+      "ok": true,
+      "detail": {
+        "firstRunCounts": [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        "secondRunCounts": [
+          1,
+          3,
+          1,
+          3,
+          1
+        ]
+      }
+    },
+    {
+      "name": "重試完成後進度才到全數完成",
+      "ok": true,
+      "detail": [
+        {
+          "done": 0,
+          "total": 5
+        },
+        {
+          "done": 1,
+          "total": 5
+        },
+        {
+          "done": 2,
+          "total": 5
+        },
+        {
+          "done": 3,
+          "total": 5
+        },
+        {
+          "done": 4,
+          "total": 5
+        },
+        {
+          "done": 5,
+          "total": 5
+        }
+      ]
+    },
+    {
+      "name": "停止會快速結束在途清洗",
+      "ok": true,
+      "detail": {
+        "error": {
+          "name": "AbortError",
+          "code": 20
+        },
+        "ms": 6.3648339999999735
+      }
+    },
+    {
+      "name": "停止後不再啟動第三塊",
+      "ok": true,
+      "detail": {
+        "abortCallsBefore": 2,
+        "abortCallsAfter": 2
+      }
+    },
+    {
+      "name": "部分清洗失敗時 UI 明確提示保留原文與塊數",
+      "ok": true,
+      "detail": {
+        "notice": "有 1 块正文未能完整整理，已保留原文。请检查后再确认导入。",
+        "raw": "有 1 块正文未能完整整理，已保留原文。请检查后再确认导入。"
+      }
+    },
+    {
+      "name": "部分清洗失敗保留該塊完整原文，其餘塊仍用清洗結果並保序",
+      "ok": true,
+      "detail": {
+        "length": 2004,
+        "positions": [
+          0,
+          90,
+          1916
+        ]
+      }
+    },
+    {
+      "name": "確認前沒有 POST /articles 或 page-link",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        }
+      ]
+    },
+    {
+      "name": "確認前沒有送出逐段翻譯或建立文章",
+      "ok": true,
+      "detail": {
+        "translations": 0,
+        "articles": 0
+      }
+    },
+    {
+      "name": "手動停止會立即回到可操作狀態",
+      "ok": true,
+      "detail": {
+        "ms": 31.717666999998983,
+        "notice": "已停止，可重新提取或保存。"
+      }
+    },
+    {
+      "name": "停止後沒有寫入文章或 page-link",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ]
+    },
+    {
+      "name": "新頁面擷取完成，預設勾選分析且尚未寫入",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/ai-credentials"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "GET",
+          "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        },
+        {
+          "method": "POST",
+          "path": "/mock-ai/v1/chat/completions"
+        }
+      ]
+    },
+    {
+      "name": "回應遺失後留下待傳並凍結內容／分析／擷取",
+      "ok": true,
+      "detail": {
+        "titleDisabled": true,
+        "bodyDisabled": true,
+        "analyzeDisabled": true,
+        "extractDisabled": true,
+        "saveDisabled": false,
+        "saveText": "重试导入",
+        "pendingItems": 1,
+        "pendingHidden": false
+      }
+    },
+    {
+      "name": "凍結時主按鈕改為重試匯入且可點",
+      "ok": true,
+      "detail": {
+        "titleDisabled": true,
+        "bodyDisabled": true,
+        "analyzeDisabled": true,
+        "extractDisabled": true,
+        "saveDisabled": false,
+        "saveText": "重试导入",
+        "pendingItems": 1,
+        "pendingHidden": false
+      }
+    },
+    {
+      "name": "第一次確認其實已建立文章（回應遺失情境成立）",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    {
+      "name": "第一次確認有送出逐段翻譯",
+      "ok": true
+    },
+    {
+      "name": "主按鈕重試成功後清空待傳",
+      "ok": true
+    },
+    {
+      "name": "主按鈕重試不新增文章、文章 ID 不變",
+      "ok": true,
+      "detail": {
+        "ids": [
+          "webart_12f4d6dffe9cb812c92f114034f926a4a64643f13813897b"
+        ],
+        "firstIds": [
+          "webart_12f4d6dffe9cb812c92f114034f926a4a64643f13813897b"
+        ]
+      }
+    },
+    {
+      "name": "主按鈕重試不重跑 AI",
+      "ok": true,
+      "detail": {
+        "aiCalls": 0,
+        "translations": 0
+      }
+    },
+    {
+      "name": "主按鈕重試不重送 POST /articles，只重用既有文章",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        },
+        {
+          "method": "GET",
+          "path": "/vocabulary/books"
+        }
+      ]
+    },
+    {
+      "name": "重試成功不是靜默完成（提示沿用既有文章）",
+      "ok": true,
+      "detail": {
+        "notice": "这篇网页已有文章，已沿用原记录并保留原内容。"
+      }
+    },
+    {
+      "name": "已存在文章提取只做唯讀 GET，不寫 page-link、不重送文章",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+        }
+      ]
+    },
+    {
+      "name": "已存在文章顯示沿用入口與說明",
+      "ok": true,
+      "detail": {
+        "notice": "这篇网页已有文章，已沿用原记录并保留原内容。"
+      }
+    },
+    {
+      "name": "只有明確「在 BDC 打開」才補 page-link",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        }
+      ]
+    },
+    {
+      "name": "開啟既有文章不重送文章、不重跑 AI",
+      "ok": true,
+      "detail": [
+        {
+          "method": "GET",
+          "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+        },
+        {
+          "method": "POST",
+          "path": "/vocabulary/page-link"
+        }
+      ]
+    },
+    {
+      "name": "開啟既有文章後導向 BDC 文章路由",
+      "ok": true,
+      "detail": {
+        "url": "http://127.0.0.1:53212/#a/webart_12f4d6dffe9cb812c92f114034f926a4a64643f13813897b"
+      }
+    },
+    {
+      "name": "流程中沒有未捕獲頁面錯誤",
+      "ok": true,
+      "detail": {
+        "errors": [],
+        "consoles": [
+          "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "consoles": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "aiCalls": [
+    {
+      "kind": "cleanup",
+      "marker": "CLEANSLOT0",
+      "prefix": "CLEAN",
+      "index": 0,
+      "started": 1367.803333,
+      "maxTokens": 2647,
+      "fulfilled": 2270.509625
+    },
+    {
+      "kind": "cleanup",
+      "marker": "CLEANSLOT1",
+      "prefix": "CLEAN",
+      "index": 1,
+      "started": 1576.173291,
+      "maxTokens": 2631,
+      "fulfilled": 2082.911833
+    },
+    {
+      "kind": "cleanup",
+      "marker": "CLEANSLOT2",
+      "prefix": "CLEAN",
+      "index": 2,
+      "started": 2114.217291,
+      "maxTokens": 2631,
+      "fulfilled": 2217.149208
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PCATSLOT0",
+      "prefix": "PCAT",
+      "index": 0,
+      "started": 2295.788291,
+      "maxTokens": 800,
+      "fulfilled": 3499.859333
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PCATSLOT1",
+      "prefix": "PCAT",
+      "index": 1,
+      "started": 2895.836375,
+      "maxTokens": 800,
+      "fulfilled": 4100.170541
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PCATSLOT2",
+      "prefix": "PCAT",
+      "index": 2,
+      "started": 3506.664333,
+      "maxTokens": 800,
+      "fulfilled": 4714.715041
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PCATSLOT3",
+      "prefix": "PCAT",
+      "index": 3,
+      "started": 4105.93,
+      "maxTokens": 800,
+      "fulfilled": 5309.939125
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PFAILSLOT0",
+      "prefix": "PFAIL",
+      "index": 0,
+      "started": 5317.549833,
+      "maxTokens": 800,
+      "fulfilled": 5441.532208
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PFAILSLOT1",
+      "prefix": "PFAIL",
+      "index": 1,
+      "started": 6020.549166,
+      "maxTokens": 800,
+      "fulfilled": 6145.290708
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PFAILSLOT2",
+      "prefix": "PFAIL",
+      "index": 2,
+      "started": 6442.866125,
+      "maxTokens": 800,
+      "fulfilled": 6566.650416
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PFAILSLOT1",
+      "prefix": "PFAIL",
+      "index": 1,
+      "started": 6865.509458,
+      "maxTokens": 700,
+      "fulfilled": 6989.0225
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PFAILSLOT3",
+      "prefix": "PFAIL",
+      "index": 3,
+      "started": 7492.842583,
+      "maxTokens": 800,
+      "fulfilled": 7615.946083
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PFAILSLOT4",
+      "prefix": "PFAIL",
+      "index": 4,
+      "started": 7909.189083,
+      "maxTokens": 800,
+      "fulfilled": 8033.600625
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PFAILSLOT3",
+      "prefix": "PFAIL",
+      "index": 3,
+      "started": 8335.467875,
+      "maxTokens": 700,
+      "fulfilled": 8457.570125
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PFAILSLOT1",
+      "prefix": "PFAIL",
+      "index": 1,
+      "started": 8466.439875,
+      "maxTokens": 800,
+      "fulfilled": 8591.445916
+    },
+    {
+      "kind": "paragraph",
+      "marker": "PFAILSLOT3",
+      "prefix": "PFAIL",
+      "index": 3,
+      "started": 9167.772291,
+      "maxTokens": 800,
+      "fulfilled": 9289.660416
+    },
+    {
+      "kind": "cleanup",
+      "marker": "ABORTSLOT0",
+      "prefix": "ABORT",
+      "index": 0,
+      "started": 9296.921,
+      "maxTokens": 2647,
+      "fulfilled": 10800.392208
+    },
+    {
+      "kind": "cleanup",
+      "marker": "ABORTSLOT1",
+      "prefix": "ABORT",
+      "index": 1,
+      "started": 9593.931833,
+      "maxTokens": 2631,
+      "fulfilled": 11096.536583
+    },
+    {
+      "kind": "cleanup",
+      "marker": "UISLOT0",
+      "prefix": "UI",
+      "index": 0,
+      "started": 9795.168083,
+      "maxTokens": 2624,
+      "fulfilled": 10049.891416
+    },
+    {
+      "kind": "cleanup",
+      "marker": "UISLOT1",
+      "prefix": "UI",
+      "index": 1,
+      "started": 9947.873958,
+      "maxTokens": 2608,
+      "fulfilled": 10850.616791
+    },
+    {
+      "kind": "cleanup",
+      "marker": "UISLOT2",
+      "prefix": "UI",
+      "index": 2,
+      "started": 10098.021375,
+      "maxTokens": 2608,
+      "fulfilled": 10303.1315
+    },
+    {
+      "kind": "cleanup",
+      "marker": "UISLOT0",
+      "prefix": "UI",
+      "index": 0,
+      "started": 11509.535958,
+      "maxTokens": 2624,
+      "fulfilled": 13012.482125
+    },
+    {
+      "kind": "cleanup",
+      "marker": "RETRYSLOT0",
+      "prefix": "RETRY",
+      "index": 0,
+      "started": 11718.098958,
+      "maxTokens": 2627,
+      "fulfilled": 11840.853833
+    },
+    {
+      "kind": "cleanup",
+      "marker": "RETRYSLOT1",
+      "prefix": "RETRY",
+      "index": 1,
+      "started": 11869.968916,
+      "maxTokens": 2611,
+      "fulfilled": 11992.471791
+    },
+    {
+      "kind": "cleanup",
+      "marker": "RETRYSLOT2",
+      "prefix": "RETRY",
+      "index": 2,
+      "started": 12020.346791,
+      "maxTokens": 2611,
+      "fulfilled": 12143.729458
+    },
+    {
+      "kind": "paragraph",
+      "marker": "",
+      "prefix": "",
+      "index": -1,
+      "started": 12517.833083,
+      "maxTokens": 800,
+      "fulfilled": 12642.245791
+    },
+    {
+      "kind": "paragraph",
+      "marker": "RETRYSLOT0",
+      "prefix": "RETRY",
+      "index": 0,
+      "started": 13019.701208,
+      "maxTokens": 800,
+      "fulfilled": 13144.294458
+    },
+    {
+      "kind": "paragraph",
+      "marker": "",
+      "prefix": "",
+      "index": -1,
+      "started": 13519.507375,
+      "maxTokens": 800,
+      "fulfilled": 13642.541
+    },
+    {
+      "kind": "paragraph",
+      "marker": "RETRYSLOT1",
+      "prefix": "RETRY",
+      "index": 1,
+      "started": 14021.043541,
+      "maxTokens": 800,
+      "fulfilled": 14142.21425
+    },
+    {
+      "kind": "paragraph",
+      "marker": "RETRYSLOT2",
+      "prefix": "RETRY",
+      "index": 2,
+      "started": 14518.6665,
+      "maxTokens": 800,
+      "fulfilled": 14642.7575
+    }
+  ],
+  "requestLog": [
+    {
+      "method": "GET",
+      "path": "/me"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books"
+    },
+    {
+      "method": "GET",
+      "path": "/snapshot"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-credentials"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-credentials"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "GET",
+      "path": "/me"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books"
+    },
+    {
+      "method": "GET",
+      "path": "/snapshot"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-credentials"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-credentials"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "GET",
+      "path": "/me"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books"
+    },
+    {
+      "method": "GET",
+      "path": "/snapshot"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-credentials"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "GET",
+      "path": "/ai-credentials"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "POST",
+      "path": "/mock-ai/v1/chat/completions"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+    },
+    {
+      "method": "POST",
+      "path": "/articles"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+    },
+    {
+      "method": "POST",
+      "path": "/vocabulary/page-link"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+    },
+    {
+      "method": "GET",
+      "path": "/vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A53213%2Farticle%3Fmode%3Dretry"
+    },
+    {
+      "method": "POST",
+      "path": "/vocabulary/page-link"
+    }
+  ],
+  "cleanupPeak": 4,
+  "realMV3": true,
+  "realWorkerSQLite": true,
+  "aiMocked": true
+}

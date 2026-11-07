@@ -1,0 +1,40 @@
+[
+  {
+    "sample": "british-bf-emma",
+    "voice": "bf_emma",
+    "speed": 1.0,
+    "characters": 130,
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "bytes": 114092,
+    "generationSeconds": 5.409,
+    "audioSeconds": 7.128,
+    "realTimeFactor": 0.759,
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "24000",
+        "channels": 1
+      }
+    ]
+  },
+  {
+    "sample": "word-af-heart",
+    "voice": "af_heart",
+    "speed": 1.0,
+    "characters": 13,
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "bytes": 22316,
+    "generationSeconds": 1.571,
+    "audioSeconds": 1.392,
+    "realTimeFactor": 1.129,
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "24000",
+        "channels": 1
+      }
+    ]
+  }
+]

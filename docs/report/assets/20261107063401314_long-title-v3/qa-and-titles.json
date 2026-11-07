@@ -1,0 +1,1814 @@
+{
+  "startedAt": "2026-11-06T22:57:28.938Z",
+  "script": "docs/report/assets/20261107063401314_long-title-v3/audit-qa-and-titles.cjs",
+  "results": [
+    {
+      "surface": "qa-card+preview",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "320",
+        "width": 320,
+        "height": 720
+      },
+      "card": {
+        "found": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "textLen": 247,
+        "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "titleMatches": true,
+        "lines": 2,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "rect": {
+          "x": 29,
+          "y": 1420.5,
+          "w": 193.2,
+          "h": 40,
+          "right": 222.2,
+          "bottom": 1460.5
+        },
+        "cardRect": {
+          "x": 12,
+          "y": 1406.5,
+          "w": 296,
+          "h": 229.2,
+          "right": 308,
+          "bottom": 1635.7
+        },
+        "countRect": {
+          "x": 230.2,
+          "y": 1419.5,
+          "w": 60.8,
+          "h": 26.4
+        },
+        "overlapWithCount": 0,
+        "clipsX": false,
+        "clipsY": true,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "modal": {
+        "open": true,
+        "found": true,
+        "modalTitle": "查看问答集",
+        "modalTitleLines": 1,
+        "modalTitleRect": {
+          "x": 20,
+          "y": 73.6,
+          "w": 280,
+          "h": 22.5,
+          "right": 300,
+          "bottom": 96.1
+        },
+        "nameText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "nameLen": 247,
+        "nameLines": 9,
+        "clamp": "none",
+        "overflowWrap": "anywhere",
+        "whiteSpace": "pre-wrap",
+        "overflow": "visible",
+        "nameRect": {
+          "x": 20,
+          "y": 121.1,
+          "w": 280,
+          "h": 267.2,
+          "right": 300,
+          "bottom": 388.3
+        },
+        "nameInternalClipY": false,
+        "nameInternalClipX": false,
+        "bodyRect": {
+          "x": 0,
+          "y": 105.1,
+          "w": 320,
+          "h": 614.9,
+          "right": 320,
+          "bottom": 720
+        },
+        "bodyOverflowY": "auto",
+        "bodyScrollable": true,
+        "bodyScrollHeight": 639,
+        "bodyClientHeight": 615,
+        "cardRect": {
+          "x": 0,
+          "y": 57.6,
+          "w": 320,
+          "h": 662.4,
+          "right": 320,
+          "bottom": 720
+        },
+        "insideRight": true,
+        "cardInsideViewport": true,
+        "cardInsideViewportY": true,
+        "docOverflowX": 0,
+        "questionCount": 1
+      },
+      "closed": true,
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/qa-preview_zh-CN_320.png"
+    },
+    {
+      "surface": "qa-card+preview",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "390",
+        "width": 390,
+        "height": 844
+      },
+      "card": {
+        "found": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "textLen": 247,
+        "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "titleMatches": true,
+        "lines": 2,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "rect": {
+          "x": 29,
+          "y": 1083.4,
+          "w": 263.2,
+          "h": 40,
+          "right": 292.2,
+          "bottom": 1123.4
+        },
+        "cardRect": {
+          "x": 12,
+          "y": 1069.4,
+          "w": 366,
+          "h": 229.2,
+          "right": 378,
+          "bottom": 1298.6
+        },
+        "countRect": {
+          "x": 300.2,
+          "y": 1082.4,
+          "w": 60.8,
+          "h": 26.4
+        },
+        "overlapWithCount": 0,
+        "clipsX": false,
+        "clipsY": true,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "modal": {
+        "open": true,
+        "found": true,
+        "modalTitle": "查看问答集",
+        "modalTitleLines": 1,
+        "modalTitleRect": {
+          "x": 20,
+          "y": 232.9,
+          "w": 350,
+          "h": 22.5,
+          "right": 370,
+          "bottom": 255.4
+        },
+        "nameText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "nameLen": 247,
+        "nameLines": 7,
+        "clamp": "none",
+        "overflowWrap": "anywhere",
+        "whiteSpace": "pre-wrap",
+        "overflow": "visible",
+        "nameRect": {
+          "x": 20,
+          "y": 280.4,
+          "w": 350,
+          "h": 207.8,
+          "right": 370,
+          "bottom": 488.2
+        },
+        "nameInternalClipY": false,
+        "nameInternalClipX": false,
+        "bodyRect": {
+          "x": 0,
+          "y": 264.4,
+          "w": 390,
+          "h": 579.6,
+          "right": 390,
+          "bottom": 844
+        },
+        "bodyOverflowY": "auto",
+        "bodyScrollable": false,
+        "bodyScrollHeight": 580,
+        "bodyClientHeight": 580,
+        "cardRect": {
+          "x": 0,
+          "y": 216.9,
+          "w": 390,
+          "h": 627.1,
+          "right": 390,
+          "bottom": 844
+        },
+        "insideRight": true,
+        "cardInsideViewport": true,
+        "cardInsideViewportY": true,
+        "docOverflowX": 0,
+        "questionCount": 1
+      },
+      "closed": true,
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/qa-preview_zh-CN_390.png"
+    },
+    {
+      "surface": "qa-card+preview",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "834",
+        "width": 834,
+        "height": 1112
+      },
+      "card": {
+        "found": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "textLen": 247,
+        "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "titleMatches": true,
+        "lines": 2,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "rect": {
+          "x": 31,
+          "y": 1147.4,
+          "w": 703.2,
+          "h": 40,
+          "right": 734.2,
+          "bottom": 1187.4
+        },
+        "cardRect": {
+          "x": 14,
+          "y": 1133.4,
+          "w": 806,
+          "h": 140.4,
+          "right": 820,
+          "bottom": 1273.8
+        },
+        "countRect": {
+          "x": 742.2,
+          "y": 1146.4,
+          "w": 60.8,
+          "h": 26.4
+        },
+        "overlapWithCount": 0,
+        "clipsX": false,
+        "clipsY": true,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "modal": {
+        "open": true,
+        "found": true,
+        "modalTitle": "查看问答集",
+        "modalTitleLines": 1,
+        "modalTitleRect": {
+          "x": 36,
+          "y": 357.8,
+          "w": 762,
+          "h": 22.5,
+          "right": 798,
+          "bottom": 380.3
+        },
+        "nameText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "nameLen": 247,
+        "nameLines": 3,
+        "clamp": "none",
+        "overflowWrap": "anywhere",
+        "whiteSpace": "pre-wrap",
+        "overflow": "visible",
+        "nameRect": {
+          "x": 36,
+          "y": 405.3,
+          "w": 762,
+          "h": 89.1,
+          "right": 798,
+          "bottom": 494.4
+        },
+        "nameInternalClipY": false,
+        "nameInternalClipX": false,
+        "bodyRect": {
+          "x": 16,
+          "y": 389.3,
+          "w": 802,
+          "h": 380.9,
+          "right": 818,
+          "bottom": 770.2
+        },
+        "bodyOverflowY": "auto",
+        "bodyScrollable": false,
+        "bodyScrollHeight": 381,
+        "bodyClientHeight": 381,
+        "cardRect": {
+          "x": 16,
+          "y": 341.8,
+          "w": 802,
+          "h": 428.4,
+          "right": 818,
+          "bottom": 770.2
+        },
+        "insideRight": true,
+        "cardInsideViewport": true,
+        "cardInsideViewportY": true,
+        "docOverflowX": 0,
+        "questionCount": 1
+      },
+      "closed": true,
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/qa-preview_zh-CN_834.png"
+    },
+    {
+      "surface": "qa-card+preview",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 900
+      },
+      "card": {
+        "found": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "textLen": 247,
+        "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "titleMatches": true,
+        "lines": 2,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "rect": {
+          "x": 275,
+          "y": 1088.4,
+          "w": 905.2,
+          "h": 40,
+          "right": 1180.2,
+          "bottom": 1128.4
+        },
+        "cardRect": {
+          "x": 258,
+          "y": 1074.4,
+          "w": 1008,
+          "h": 140.4,
+          "right": 1266,
+          "bottom": 1214.8
+        },
+        "countRect": {
+          "x": 1188.2,
+          "y": 1087.4,
+          "w": 60.8,
+          "h": 26.4
+        },
+        "overlapWithCount": 0,
+        "clipsX": false,
+        "clipsY": true,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "modal": {
+        "open": true,
+        "found": true,
+        "modalTitle": "查看问答集",
+        "modalTitleLines": 1,
+        "modalTitleRect": {
+          "x": 160,
+          "y": 251.8,
+          "w": 960,
+          "h": 22.5,
+          "right": 1120,
+          "bottom": 274.3
+        },
+        "nameText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "nameLen": 247,
+        "nameLines": 3,
+        "clamp": "none",
+        "overflowWrap": "anywhere",
+        "whiteSpace": "pre-wrap",
+        "overflow": "visible",
+        "nameRect": {
+          "x": 160,
+          "y": 299.3,
+          "w": 960,
+          "h": 89.1,
+          "right": 1120,
+          "bottom": 388.4
+        },
+        "nameInternalClipY": false,
+        "nameInternalClipX": false,
+        "bodyRect": {
+          "x": 140,
+          "y": 283.3,
+          "w": 1000,
+          "h": 380.9,
+          "right": 1140,
+          "bottom": 664.2
+        },
+        "bodyOverflowY": "auto",
+        "bodyScrollable": false,
+        "bodyScrollHeight": 381,
+        "bodyClientHeight": 381,
+        "cardRect": {
+          "x": 140,
+          "y": 235.8,
+          "w": 1000,
+          "h": 428.4,
+          "right": 1140,
+          "bottom": 664.2
+        },
+        "insideRight": true,
+        "cardInsideViewport": true,
+        "cardInsideViewportY": true,
+        "docOverflowX": 0,
+        "questionCount": 1
+      },
+      "closed": true,
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/qa-preview_zh-CN_1280.png"
+    },
+    {
+      "surface": "article-library",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "320",
+        "width": 320,
+        "height": 720
+      },
+      "real": {
+        "count": 30,
+        "missingTitleAttr": 0,
+        "mismatch": [],
+        "maxLines": 2,
+        "clipsX": 0,
+        "sample": [
+          {
+            "text": "Unit 1: Let's give a hand",
+            "len": 25,
+            "titleAttr": "Unit 1: Let's give a hand",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 2: Terrible disasters",
+            "len": 26,
+            "titleAttr": "Unit 2: Terrible disasters",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 3: Cooking is fun",
+            "len": 22,
+            "titleAttr": "Unit 3: Cooking is fun",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          }
+        ]
+      },
+      "injected": {
+        "lines": 2,
+        "clamp": "2",
+        "rect": {
+          "x": 37,
+          "y": 338.6,
+          "w": 246,
+          "h": 35,
+          "right": 283,
+          "bottom": 373.6
+        },
+        "clipsX": false,
+        "clipsY": true,
+        "titleAttrLen": 247,
+        "docOverflowX": 0,
+        "cardOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/article-library_zh-CN_320.png"
+    },
+    {
+      "surface": "article-library",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "390",
+        "width": 390,
+        "height": 844
+      },
+      "real": {
+        "count": 30,
+        "missingTitleAttr": 0,
+        "mismatch": [],
+        "maxLines": 2,
+        "clipsX": 0,
+        "sample": [
+          {
+            "text": "Unit 1: Let's give a hand",
+            "len": 25,
+            "titleAttr": "Unit 1: Let's give a hand",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 2: Terrible disasters",
+            "len": 26,
+            "titleAttr": "Unit 2: Terrible disasters",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 3: Cooking is fun",
+            "len": 22,
+            "titleAttr": "Unit 3: Cooking is fun",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          }
+        ]
+      },
+      "injected": {
+        "lines": 2,
+        "clamp": "2",
+        "rect": {
+          "x": 37,
+          "y": 398.1,
+          "w": 316,
+          "h": 35,
+          "right": 353,
+          "bottom": 433.1
+        },
+        "clipsX": false,
+        "clipsY": true,
+        "titleAttrLen": 247,
+        "docOverflowX": 0,
+        "cardOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/article-library_zh-CN_390.png"
+    },
+    {
+      "surface": "article-library",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "834",
+        "width": 834,
+        "height": 1112
+      },
+      "real": {
+        "count": 30,
+        "missingTitleAttr": 0,
+        "mismatch": [],
+        "maxLines": 1,
+        "clipsX": 0,
+        "sample": [
+          {
+            "text": "Unit 1: Let's give a hand",
+            "len": 25,
+            "titleAttr": "Unit 1: Let's give a hand",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 2: Terrible disasters",
+            "len": 26,
+            "titleAttr": "Unit 2: Terrible disasters",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 3: Cooking is fun",
+            "len": 22,
+            "titleAttr": "Unit 3: Cooking is fun",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          }
+        ]
+      },
+      "injected": {
+        "lines": 2,
+        "clamp": "2",
+        "rect": {
+          "x": 174,
+          "y": 327.8,
+          "w": 486,
+          "h": 35,
+          "right": 660,
+          "bottom": 362.8
+        },
+        "clipsX": false,
+        "clipsY": true,
+        "titleAttrLen": 247,
+        "docOverflowX": 0,
+        "cardOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/article-library_zh-CN_834.png"
+    },
+    {
+      "surface": "article-library",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 900
+      },
+      "real": {
+        "count": 30,
+        "missingTitleAttr": 0,
+        "mismatch": [],
+        "maxLines": 1,
+        "clipsX": 0,
+        "sample": [
+          {
+            "text": "Unit 1: Let's give a hand",
+            "len": 25,
+            "titleAttr": "Unit 1: Let's give a hand",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 2: Terrible disasters",
+            "len": 26,
+            "titleAttr": "Unit 2: Terrible disasters",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 3: Cooking is fun",
+            "len": 22,
+            "titleAttr": "Unit 3: Cooking is fun",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          }
+        ]
+      },
+      "injected": {
+        "lines": 2,
+        "clamp": "2",
+        "rect": {
+          "x": 397,
+          "y": 276.9,
+          "w": 486,
+          "h": 35,
+          "right": 883,
+          "bottom": 311.9
+        },
+        "clipsX": false,
+        "clipsY": true,
+        "titleAttrLen": 247,
+        "docOverflowX": 0,
+        "cardOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/article-library_zh-CN_1280.png"
+    },
+    {
+      "surface": "article-history",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "320",
+        "width": 320,
+        "height": 720
+      },
+      "seeded": {
+        "ok": true,
+        "error": ""
+      },
+      "history": {
+        "count": 1,
+        "allHaveTitle": true,
+        "target": {
+          "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "len": 247,
+          "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "titleMatches": true,
+          "whiteSpace": "nowrap",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "rect": {
+            "x": 35,
+            "y": 540.2,
+            "w": 202,
+            "h": 23.1,
+            "right": 237,
+            "bottom": 563.3
+          },
+          "rowRect": {
+            "x": 20,
+            "y": 527.2,
+            "w": 278,
+            "h": 115.8,
+            "right": 298,
+            "bottom": 643
+          },
+          "clipsX": true,
+          "overlapWithSide": 0,
+          "rowOverflowX": 0
+        },
+        "first": {
+          "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "len": 247,
+          "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "titleMatches": true,
+          "whiteSpace": "nowrap",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "rect": {
+            "x": 35,
+            "y": 540.2,
+            "w": 202,
+            "h": 23.1,
+            "right": 237,
+            "bottom": 563.3
+          },
+          "rowRect": {
+            "x": 20,
+            "y": 527.2,
+            "w": 278,
+            "h": 115.8,
+            "right": 298,
+            "bottom": 643
+          },
+          "clipsX": true,
+          "overlapWithSide": 0,
+          "rowOverflowX": 0
+        },
+        "docOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/ar-history_zh-CN_320.png"
+    },
+    {
+      "surface": "article-history",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 900
+      },
+      "seeded": {
+        "ok": true,
+        "error": ""
+      },
+      "history": {
+        "count": 1,
+        "allHaveTitle": true,
+        "target": {
+          "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "len": 247,
+          "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "titleMatches": true,
+          "whiteSpace": "nowrap",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "rect": {
+            "x": 177,
+            "y": 512.2,
+            "w": 878,
+            "h": 23.1,
+            "right": 1055,
+            "bottom": 535.3
+          },
+          "rowRect": {
+            "x": 160,
+            "y": 499.2,
+            "w": 958,
+            "h": 94.3,
+            "right": 1118,
+            "bottom": 593.5
+          },
+          "clipsX": true,
+          "overlapWithSide": 0,
+          "rowOverflowX": 0
+        },
+        "first": {
+          "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "len": 247,
+          "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "titleMatches": true,
+          "whiteSpace": "nowrap",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "rect": {
+            "x": 177,
+            "y": 512.2,
+            "w": 878,
+            "h": 23.1,
+            "right": 1055,
+            "bottom": 535.3
+          },
+          "rowRect": {
+            "x": 160,
+            "y": 499.2,
+            "w": 958,
+            "h": 94.3,
+            "right": 1118,
+            "bottom": 593.5
+          },
+          "clipsX": true,
+          "overlapWithSide": 0,
+          "rowOverflowX": 0
+        },
+        "docOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/ar-history_zh-CN_1280.png"
+    },
+    {
+      "surface": "news-title",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "320",
+        "width": 320,
+        "height": 720
+      },
+      "news": {
+        "feedFound": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "titleAttrLen": 247,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "lines": 2,
+        "rect": {
+          "x": 33,
+          "y": 590.2,
+          "w": 254,
+          "h": 46.2,
+          "right": 287,
+          "bottom": 636.4
+        },
+        "clipsX": false,
+        "overlapWithActions": 0,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/news-title_zh-CN_320.png"
+    },
+    {
+      "surface": "news-title",
+      "locale": "zh-CN",
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 900
+      },
+      "news": {
+        "feedFound": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "titleAttrLen": 247,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "lines": 2,
+        "rect": {
+          "x": 173,
+          "y": 531.8,
+          "w": 934,
+          "h": 46.2,
+          "right": 1107,
+          "bottom": 578
+        },
+        "clipsX": false,
+        "overlapWithActions": 0,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/news-title_zh-CN_1280.png"
+    },
+    {
+      "surface": "qa-card+preview",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "320",
+        "width": 320,
+        "height": 720
+      },
+      "card": {
+        "found": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "textLen": 247,
+        "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "titleMatches": true,
+        "lines": 2,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "rect": {
+          "x": 29,
+          "y": 1420.5,
+          "w": 181.2,
+          "h": 40,
+          "right": 210.2,
+          "bottom": 1460.5
+        },
+        "cardRect": {
+          "x": 12,
+          "y": 1406.5,
+          "w": 296,
+          "h": 229.2,
+          "right": 308,
+          "bottom": 1635.7
+        },
+        "countRect": {
+          "x": 218.2,
+          "y": 1419.5,
+          "w": 72.8,
+          "h": 26.4
+        },
+        "overlapWithCount": 0,
+        "clipsX": false,
+        "clipsY": true,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "modal": {
+        "open": true,
+        "found": true,
+        "modalTitle": "查看問答集",
+        "modalTitleLines": 1,
+        "modalTitleRect": {
+          "x": 20,
+          "y": 73.6,
+          "w": 280,
+          "h": 22.5,
+          "right": 300,
+          "bottom": 96.1
+        },
+        "nameText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "nameLen": 247,
+        "nameLines": 9,
+        "clamp": "none",
+        "overflowWrap": "anywhere",
+        "whiteSpace": "pre-wrap",
+        "overflow": "visible",
+        "nameRect": {
+          "x": 20,
+          "y": 121.1,
+          "w": 280,
+          "h": 267.2,
+          "right": 300,
+          "bottom": 388.3
+        },
+        "nameInternalClipY": false,
+        "nameInternalClipX": false,
+        "bodyRect": {
+          "x": 0,
+          "y": 105.1,
+          "w": 320,
+          "h": 614.9,
+          "right": 320,
+          "bottom": 720
+        },
+        "bodyOverflowY": "auto",
+        "bodyScrollable": true,
+        "bodyScrollHeight": 639,
+        "bodyClientHeight": 615,
+        "cardRect": {
+          "x": 0,
+          "y": 57.6,
+          "w": 320,
+          "h": 662.4,
+          "right": 320,
+          "bottom": 720
+        },
+        "insideRight": true,
+        "cardInsideViewport": true,
+        "cardInsideViewportY": true,
+        "docOverflowX": 0,
+        "questionCount": 1
+      },
+      "closed": true,
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/qa-preview_zh-HK_320.png"
+    },
+    {
+      "surface": "qa-card+preview",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "390",
+        "width": 390,
+        "height": 844
+      },
+      "card": {
+        "found": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "textLen": 247,
+        "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "titleMatches": true,
+        "lines": 2,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "rect": {
+          "x": 29,
+          "y": 1083.4,
+          "w": 251.2,
+          "h": 40,
+          "right": 280.2,
+          "bottom": 1123.4
+        },
+        "cardRect": {
+          "x": 12,
+          "y": 1069.4,
+          "w": 366,
+          "h": 229.2,
+          "right": 378,
+          "bottom": 1298.6
+        },
+        "countRect": {
+          "x": 288.2,
+          "y": 1082.4,
+          "w": 72.8,
+          "h": 26.4
+        },
+        "overlapWithCount": 0,
+        "clipsX": false,
+        "clipsY": true,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "modal": {
+        "open": true,
+        "found": true,
+        "modalTitle": "查看問答集",
+        "modalTitleLines": 1,
+        "modalTitleRect": {
+          "x": 20,
+          "y": 232.9,
+          "w": 350,
+          "h": 22.5,
+          "right": 370,
+          "bottom": 255.4
+        },
+        "nameText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "nameLen": 247,
+        "nameLines": 7,
+        "clamp": "none",
+        "overflowWrap": "anywhere",
+        "whiteSpace": "pre-wrap",
+        "overflow": "visible",
+        "nameRect": {
+          "x": 20,
+          "y": 280.4,
+          "w": 350,
+          "h": 207.8,
+          "right": 370,
+          "bottom": 488.2
+        },
+        "nameInternalClipY": false,
+        "nameInternalClipX": false,
+        "bodyRect": {
+          "x": 0,
+          "y": 264.4,
+          "w": 390,
+          "h": 579.6,
+          "right": 390,
+          "bottom": 844
+        },
+        "bodyOverflowY": "auto",
+        "bodyScrollable": false,
+        "bodyScrollHeight": 580,
+        "bodyClientHeight": 580,
+        "cardRect": {
+          "x": 0,
+          "y": 216.9,
+          "w": 390,
+          "h": 627.1,
+          "right": 390,
+          "bottom": 844
+        },
+        "insideRight": true,
+        "cardInsideViewport": true,
+        "cardInsideViewportY": true,
+        "docOverflowX": 0,
+        "questionCount": 1
+      },
+      "closed": true,
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/qa-preview_zh-HK_390.png"
+    },
+    {
+      "surface": "qa-card+preview",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "834",
+        "width": 834,
+        "height": 1112
+      },
+      "card": {
+        "found": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "textLen": 247,
+        "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "titleMatches": true,
+        "lines": 2,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "rect": {
+          "x": 31,
+          "y": 1147.4,
+          "w": 691.2,
+          "h": 40,
+          "right": 722.2,
+          "bottom": 1187.4
+        },
+        "cardRect": {
+          "x": 14,
+          "y": 1133.4,
+          "w": 806,
+          "h": 140.4,
+          "right": 820,
+          "bottom": 1273.8
+        },
+        "countRect": {
+          "x": 730.2,
+          "y": 1146.4,
+          "w": 72.8,
+          "h": 26.4
+        },
+        "overlapWithCount": 0,
+        "clipsX": false,
+        "clipsY": true,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "modal": {
+        "open": true,
+        "found": true,
+        "modalTitle": "查看問答集",
+        "modalTitleLines": 1,
+        "modalTitleRect": {
+          "x": 36,
+          "y": 357.8,
+          "w": 762,
+          "h": 22.5,
+          "right": 798,
+          "bottom": 380.3
+        },
+        "nameText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "nameLen": 247,
+        "nameLines": 3,
+        "clamp": "none",
+        "overflowWrap": "anywhere",
+        "whiteSpace": "pre-wrap",
+        "overflow": "visible",
+        "nameRect": {
+          "x": 36,
+          "y": 405.3,
+          "w": 762,
+          "h": 89.1,
+          "right": 798,
+          "bottom": 494.4
+        },
+        "nameInternalClipY": false,
+        "nameInternalClipX": false,
+        "bodyRect": {
+          "x": 16,
+          "y": 389.3,
+          "w": 802,
+          "h": 380.9,
+          "right": 818,
+          "bottom": 770.2
+        },
+        "bodyOverflowY": "auto",
+        "bodyScrollable": false,
+        "bodyScrollHeight": 381,
+        "bodyClientHeight": 381,
+        "cardRect": {
+          "x": 16,
+          "y": 341.8,
+          "w": 802,
+          "h": 428.4,
+          "right": 818,
+          "bottom": 770.2
+        },
+        "insideRight": true,
+        "cardInsideViewport": true,
+        "cardInsideViewportY": true,
+        "docOverflowX": 0,
+        "questionCount": 1
+      },
+      "closed": true,
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/qa-preview_zh-HK_834.png"
+    },
+    {
+      "surface": "qa-card+preview",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 900
+      },
+      "card": {
+        "found": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "textLen": 247,
+        "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "titleMatches": true,
+        "lines": 2,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "rect": {
+          "x": 275,
+          "y": 1088.4,
+          "w": 893.2,
+          "h": 40,
+          "right": 1168.2,
+          "bottom": 1128.4
+        },
+        "cardRect": {
+          "x": 258,
+          "y": 1074.4,
+          "w": 1008,
+          "h": 140.4,
+          "right": 1266,
+          "bottom": 1214.8
+        },
+        "countRect": {
+          "x": 1176.2,
+          "y": 1087.4,
+          "w": 72.8,
+          "h": 26.4
+        },
+        "overlapWithCount": 0,
+        "clipsX": false,
+        "clipsY": true,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "modal": {
+        "open": true,
+        "found": true,
+        "modalTitle": "查看問答集",
+        "modalTitleLines": 1,
+        "modalTitleRect": {
+          "x": 160,
+          "y": 251.8,
+          "w": 960,
+          "h": 22.5,
+          "right": 1120,
+          "bottom": 274.3
+        },
+        "nameText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "nameLen": 247,
+        "nameLines": 3,
+        "clamp": "none",
+        "overflowWrap": "anywhere",
+        "whiteSpace": "pre-wrap",
+        "overflow": "visible",
+        "nameRect": {
+          "x": 160,
+          "y": 299.3,
+          "w": 960,
+          "h": 89.1,
+          "right": 1120,
+          "bottom": 388.4
+        },
+        "nameInternalClipY": false,
+        "nameInternalClipX": false,
+        "bodyRect": {
+          "x": 140,
+          "y": 283.3,
+          "w": 1000,
+          "h": 380.9,
+          "right": 1140,
+          "bottom": 664.2
+        },
+        "bodyOverflowY": "auto",
+        "bodyScrollable": false,
+        "bodyScrollHeight": 381,
+        "bodyClientHeight": 381,
+        "cardRect": {
+          "x": 140,
+          "y": 235.8,
+          "w": 1000,
+          "h": 428.4,
+          "right": 1140,
+          "bottom": 664.2
+        },
+        "insideRight": true,
+        "cardInsideViewport": true,
+        "cardInsideViewportY": true,
+        "docOverflowX": 0,
+        "questionCount": 1
+      },
+      "closed": true,
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/qa-preview_zh-HK_1280.png"
+    },
+    {
+      "surface": "article-library",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "320",
+        "width": 320,
+        "height": 720
+      },
+      "real": {
+        "count": 30,
+        "missingTitleAttr": 0,
+        "mismatch": [],
+        "maxLines": 2,
+        "clipsX": 0,
+        "sample": [
+          {
+            "text": "Unit 1: Let's give a hand",
+            "len": 25,
+            "titleAttr": "Unit 1: Let's give a hand",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 2: Terrible disasters",
+            "len": 26,
+            "titleAttr": "Unit 2: Terrible disasters",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 3: Cooking is fun",
+            "len": 22,
+            "titleAttr": "Unit 3: Cooking is fun",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          }
+        ]
+      },
+      "injected": {
+        "lines": 2,
+        "clamp": "2",
+        "rect": {
+          "x": 37,
+          "y": 338.6,
+          "w": 246,
+          "h": 35,
+          "right": 283,
+          "bottom": 373.6
+        },
+        "clipsX": false,
+        "clipsY": true,
+        "titleAttrLen": 247,
+        "docOverflowX": 0,
+        "cardOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/article-library_zh-HK_320.png"
+    },
+    {
+      "surface": "article-library",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "390",
+        "width": 390,
+        "height": 844
+      },
+      "real": {
+        "count": 30,
+        "missingTitleAttr": 0,
+        "mismatch": [],
+        "maxLines": 2,
+        "clipsX": 0,
+        "sample": [
+          {
+            "text": "Unit 1: Let's give a hand",
+            "len": 25,
+            "titleAttr": "Unit 1: Let's give a hand",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 2: Terrible disasters",
+            "len": 26,
+            "titleAttr": "Unit 2: Terrible disasters",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 3: Cooking is fun",
+            "len": 22,
+            "titleAttr": "Unit 3: Cooking is fun",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          }
+        ]
+      },
+      "injected": {
+        "lines": 2,
+        "clamp": "2",
+        "rect": {
+          "x": 37,
+          "y": 398.1,
+          "w": 316,
+          "h": 35,
+          "right": 353,
+          "bottom": 433.1
+        },
+        "clipsX": false,
+        "clipsY": true,
+        "titleAttrLen": 247,
+        "docOverflowX": 0,
+        "cardOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/article-library_zh-HK_390.png"
+    },
+    {
+      "surface": "article-library",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "834",
+        "width": 834,
+        "height": 1112
+      },
+      "real": {
+        "count": 30,
+        "missingTitleAttr": 0,
+        "mismatch": [],
+        "maxLines": 1,
+        "clipsX": 0,
+        "sample": [
+          {
+            "text": "Unit 1: Let's give a hand",
+            "len": 25,
+            "titleAttr": "Unit 1: Let's give a hand",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 2: Terrible disasters",
+            "len": 26,
+            "titleAttr": "Unit 2: Terrible disasters",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 3: Cooking is fun",
+            "len": 22,
+            "titleAttr": "Unit 3: Cooking is fun",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          }
+        ]
+      },
+      "injected": {
+        "lines": 2,
+        "clamp": "2",
+        "rect": {
+          "x": 174,
+          "y": 327.8,
+          "w": 486,
+          "h": 35,
+          "right": 660,
+          "bottom": 362.8
+        },
+        "clipsX": false,
+        "clipsY": true,
+        "titleAttrLen": 247,
+        "docOverflowX": 0,
+        "cardOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/article-library_zh-HK_834.png"
+    },
+    {
+      "surface": "article-library",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 900
+      },
+      "real": {
+        "count": 30,
+        "missingTitleAttr": 0,
+        "mismatch": [],
+        "maxLines": 1,
+        "clipsX": 0,
+        "sample": [
+          {
+            "text": "Unit 1: Let's give a hand",
+            "len": 25,
+            "titleAttr": "Unit 1: Let's give a hand",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 2: Terrible disasters",
+            "len": 26,
+            "titleAttr": "Unit 2: Terrible disasters",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          },
+          {
+            "text": "Unit 3: Cooking is fun",
+            "len": 22,
+            "titleAttr": "Unit 3: Cooking is fun",
+            "titleMatches": true,
+            "clamp": "2",
+            "lines": 1,
+            "clipsX": false
+          }
+        ]
+      },
+      "injected": {
+        "lines": 2,
+        "clamp": "2",
+        "rect": {
+          "x": 397,
+          "y": 276.9,
+          "w": 486,
+          "h": 35,
+          "right": 883,
+          "bottom": 311.9
+        },
+        "clipsX": false,
+        "clipsY": true,
+        "titleAttrLen": 247,
+        "docOverflowX": 0,
+        "cardOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/article-library_zh-HK_1280.png"
+    },
+    {
+      "surface": "article-history",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "320",
+        "width": 320,
+        "height": 720
+      },
+      "seeded": {
+        "ok": true,
+        "error": ""
+      },
+      "history": {
+        "count": 1,
+        "allHaveTitle": true,
+        "target": {
+          "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "len": 247,
+          "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "titleMatches": true,
+          "whiteSpace": "nowrap",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "rect": {
+            "x": 35,
+            "y": 540.2,
+            "w": 202,
+            "h": 23.1,
+            "right": 237,
+            "bottom": 563.3
+          },
+          "rowRect": {
+            "x": 20,
+            "y": 527.2,
+            "w": 278,
+            "h": 115.8,
+            "right": 298,
+            "bottom": 643
+          },
+          "clipsX": true,
+          "overlapWithSide": 0,
+          "rowOverflowX": 0
+        },
+        "first": {
+          "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "len": 247,
+          "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "titleMatches": true,
+          "whiteSpace": "nowrap",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "rect": {
+            "x": 35,
+            "y": 540.2,
+            "w": 202,
+            "h": 23.1,
+            "right": 237,
+            "bottom": 563.3
+          },
+          "rowRect": {
+            "x": 20,
+            "y": 527.2,
+            "w": 278,
+            "h": 115.8,
+            "right": 298,
+            "bottom": 643
+          },
+          "clipsX": true,
+          "overlapWithSide": 0,
+          "rowOverflowX": 0
+        },
+        "docOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/ar-history_zh-HK_320.png"
+    },
+    {
+      "surface": "article-history",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 900
+      },
+      "seeded": {
+        "ok": true,
+        "error": ""
+      },
+      "history": {
+        "count": 1,
+        "allHaveTitle": true,
+        "target": {
+          "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "len": 247,
+          "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "titleMatches": true,
+          "whiteSpace": "nowrap",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "rect": {
+            "x": 177,
+            "y": 512.2,
+            "w": 878,
+            "h": 23.1,
+            "right": 1055,
+            "bottom": 535.3
+          },
+          "rowRect": {
+            "x": 160,
+            "y": 499.2,
+            "w": 958,
+            "h": 94.3,
+            "right": 1118,
+            "bottom": 593.5
+          },
+          "clipsX": true,
+          "overlapWithSide": 0,
+          "rowOverflowX": 0
+        },
+        "first": {
+          "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "len": 247,
+          "titleAttr": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+          "titleMatches": true,
+          "whiteSpace": "nowrap",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "rect": {
+            "x": 177,
+            "y": 512.2,
+            "w": 878,
+            "h": 23.1,
+            "right": 1055,
+            "bottom": 535.3
+          },
+          "rowRect": {
+            "x": 160,
+            "y": 499.2,
+            "w": 958,
+            "h": 94.3,
+            "right": 1118,
+            "bottom": 593.5
+          },
+          "clipsX": true,
+          "overlapWithSide": 0,
+          "rowOverflowX": 0
+        },
+        "docOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/ar-history_zh-HK_1280.png"
+    },
+    {
+      "surface": "news-title",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "320",
+        "width": 320,
+        "height": 720
+      },
+      "news": {
+        "feedFound": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "titleAttrLen": 247,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "lines": 2,
+        "rect": {
+          "x": 33,
+          "y": 590.2,
+          "w": 254,
+          "h": 46.2,
+          "right": 287,
+          "bottom": 636.4
+        },
+        "clipsX": false,
+        "overlapWithActions": 0,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/news-title_zh-HK_320.png"
+    },
+    {
+      "surface": "news-title",
+      "locale": "zh-HK",
+      "viewport": {
+        "name": "1280",
+        "width": 1280,
+        "height": 900
+      },
+      "news": {
+        "feedFound": true,
+        "text": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "titleAttrLen": 247,
+        "clamp": "2",
+        "overflowWrap": "anywhere",
+        "lines": 2,
+        "rect": {
+          "x": 173,
+          "y": 531.8,
+          "w": 934,
+          "h": 46.2,
+          "right": 1107,
+          "bottom": 578
+        },
+        "clipsX": false,
+        "overlapWithActions": 0,
+        "cardOverflowX": 0,
+        "docOverflowX": 0
+      },
+      "pageErrors": [],
+      "findings": [],
+      "screenshot": "docs/report/assets/20261107063401314_long-title-v3/shots/news-title_zh-HK_1280.png"
+    }
+  ]
+}

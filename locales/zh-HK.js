@@ -77,7 +77,7 @@ export default {
         languageLabel: '顯示語言',
         languageHint: '介面及 AI 回覆使用所選語言，學習內容保持原樣。',
         showWordSources: '顯示單字來源',
-        wordSourcesHint: '在詞書顯示來源入口，點擊可查看原句與語境。',
+        wordSourcesHint: '在詞書顯示來源圖示，點擊後可在彈窗查看原句與語境。',
         theme: '配色主題', themeHint: '主色與紙面底色會一起變化，文字、提示色與排版保持不變。', themeTeal: '墨青', themeBlue: '海藍', themeIndigo: '靛藍', themeViolet: '紫羅蘭', themeSlate: '石墨', themeForest: '森林綠', themeCandy: '糖果粉', themeCoffee: '咖啡棕', themeFlame: '火影', themeNight: '夜刃',
         themeArt: '背景插畫', themeArtHint: '可為每套配色各放一張圖片；未選時用主題自帶圖片，只保存在本機，不會上傳或同步。',
         themeArtPick: '選擇圖片', themeArtClear: '移除', themeArtNone: '目前配色還沒有圖片', themeArtBuiltIn: '使用主題自帶圖片',
@@ -525,6 +525,9 @@ export default {
         deepLinkInvalid: '詞書連結無效。',
         deepLinkMissing: '找不到這本詞書，可能尚未同步到此裝置。',
         savedSources: '來源（{count}）',
+        viewSources: '查看 {word} 的來源（{count}）',
+        wordSourcesTitle: '單字來源（{count}）',
+        viewFullName: '查看完整名稱',
         sourcesLimitReached: '該詞條的來源已達上限，未加入新的來源。',
         openOriginalSource: '開啟原網頁',
         sourceSentence: '原句：',
@@ -581,7 +584,7 @@ export default {
         importHere: '按此匯入',
         emptyBook: '這個生字簿是空的，按右上角鉛筆按鈕新增生字。'
         ,newBookTitle: '新增生字簿'
-        ,editBookTitle: '編輯生字簿 - {name}'
+        ,editBookTitle: '編輯生字簿'
         ,bookName: '生字簿名稱'
         ,bookNamePlaceholder: '例如：雅思核心詞彙'
         ,bulkWords: '批量新增生字（每行一個）'
@@ -977,6 +980,7 @@ export default {
         ,downloadLinkOpened: '已開啟下載連結；是否完成由瀏覽器及服務決定'
         ,analysisRecordMissing: '這篇文章的分析記錄已刪除，無法自動還原原文。請重新匯入或貼上文章內容後再分析。'
         ,doneStatus: '完成', failedStatus: '解析失敗', refresh: '重新擷取', refreshing: '重新擷取中...', staleSentenceCard: '正文已更新，請重新開啟該句後再操作。', sentenceAnalysis: '句子解析', sentenceNoTranslation: '（本句暫無中文譯文）', processing: '處理中…', cleaning: 'AI 清洗中…', cleaningProgress: 'AI 清洗中…（{done}/{total}）', fetching: '擷取中…', cleanupTruncated: '內容較長，AI 清洗已達模型輸出上限，結果可能少了尾段；建議分段導入。', extractTruncated: '內容較長，AI 擷取已達模型輸出上限，結果可能少了尾段；建議分段導入。', sourcesFallbackHint: '新聞來源端點沒有回應，目前顯示的是 ai-config.js 裡設定的後備來源清單，可能與服務端實際支援的來源不一致。', collapse: '收合', close: '關閉', closeWindow: '關閉視窗', details: '詳解', detailsLoading: '詳解載入中...', loading: '載入中...', loadingDetails: '正在載入詳解...', analyzeSelection: '解析選中內容', selectPhraseHint: '選取句中片語後按一下', collapseArea: '按此區收合', collapseAreaAria: '按右側空白區可收合', selectPhraseFirst: '請先在該句中選取片語', analyzingSelection: '解析中...', phraseLabel: '片語：', usageLabel: '用法：', roleLabel: '作用：', meaningLabel: '意思：', pronunciation: '發音', analyzePhrase: '解析片語', analyzeOtherPhrase: '自訂片語...', phrasePrompt: '輸入要解析的片語', analysisRetry: '解析失敗，請稍後再試', analysisRetryShort: '解析失敗，請稍後重試', noAnalysisData: '找不到分析資料。', retry: '重試', retrying: '重試中...', addToWordbook: '加入生字簿', addSelectedToWordbook: '加入生字簿（選中）', selectWordOrPhrase: '請先在該句中選取字詞或片語', wordAnalysisFailed: '解析失敗。'
+        ,cleanupPartial: '有 {count} 段正文未能完整整理，已保留原文，請檢查後再套用。'
         ,historyRecords: '閱讀記錄'
         ,historyOpenTitle: '開啟閱讀記錄'
         ,historyStatusEdited: '內容已修改，尚未分析'
@@ -1442,7 +1446,7 @@ export default {
         ,previewEmpty: '請輸入內容：每兩行為一組（第一行為問題，第二行為答案）', formatErrors: '格式錯誤：', parsedPairs: '成功解析 {count} 個問答對', copy: '複製', moveUp: '上移', moveDown: '下移', addPair: '新增問答', copyAll: '複製全部', clearAll: '清空全部', confirmClearPairs: '確定清空所有問答對嗎？', confirmDeleteQuestion: '刪除第 {number} 題？', pairDeleted: '已刪除該問答對', pairCopied: '已複製該題到剪貼簿', allPairsCopied: '已複製全部問答對', newQuestion: '（請輸入問題）', newAnswer: '（請輸入答案）', unansweredConfirm: '尚有 {count} 題未回答，確定完成訓練嗎？', cancelTrainingConfirm: '確定取消目前訓練嗎？所有進度都會遺失。', aiUnavailable: 'AI 服務不可用，將使用基本校對模式', noCheckableAnswers: '沒有可校對的答案（尚未輸入內容）', aiFallback: 'AI 校對失敗，改用基本校對模式'
         ,allCorrectRecommendation: '太好了！所有答案都正確，繼續保持！', spellingRecommendation: '建議多練習單詞拼寫，可以使用拼寫檢查工具', grammarRecommendation: '建議溫習相關文法規則，多做文法練習', reviewRecommendation: '有些答案需要重點留意，建議重新學習相關內容'
         ,trainingOptionsTitle: '問答訓練設定', trainingOptionsDescription: '請選擇你的訓練偏好，這些設定會影響你的學習體驗', trainingMode: '訓練模式', trainingModeDescription: '選擇問題的出現順序', sequentialMode: '順序模式', sequentialDescription: '按照原始順序練習', randomMode: '隨機模式', randomDescription: '隨機打亂問題順序', layout: '練習呈現', layoutDescription: '是否分題練習', listMode: '列表模式（預設）', listDescription: '一次列出全部題目，逐題輸入；每題可單獨 AI 校對', singleMode: '分題模式', singleDescription: '一題一題作答，逐題切換', learningAdvice: '學習建議', differenceHint: '差異提示', missing: '缺少：', extra: '多出：', partialCorrect: '部分正確', needsImprovement: '需改進', teacherFeedback: '教師回饋', aiFeedback: 'AI 回饋：', strengths: '亮點表現', aiReview: 'AI 評語自檢', aiReviewOk: 'AI 評語檢查：沒有明顯問題', improvementAdvice: '改進建議', studyFocusLabel: '學習重點', improvedExamples: '優化範例', example: '範例 {number}：', explanationLabel: '解析：', needsCorrection: '需要修正', noStandardAnswer: '尚未有標準答案', issuePunctuation: '標點／格式', issueGrammar: '文法', issueSpelling: '拼寫', issueVocabulary: '用字', issueStructure: '句子結構',
-        previewTitle: '查看問答集：{name}', questionTotal: '題目數量：{count}', shuffleOrder: '隨機順序', resetOrder: '重設', copyContent: '複製內容', perPage: '每頁', lineCount: '行數', exportQuestions: '匯出手寫默書', exportAnswers: '匯出答案', startPreviewTraining: '開始訓練此問答集', close: '關閉', shuffledNotice: '已隨機打亂題目順序', resetNotice: '已重設為原順序', nothingToCopy: '沒有可複製的內容', contentCopied: '內容已複製（含序號、Q/A）', copyContentFailed: '複製內容失敗', previewFailed: '無法預覽問答集，請稍後再試。', exportQuestionsFailed: '匯出手寫默書 PDF 失敗', exportAnswersFailed: '匯出答案 PDF 失敗'
+        previewTitle: '查看問答集', questionTotal: '題目數量：{count}', shuffleOrder: '隨機順序', resetOrder: '重設', copyContent: '複製內容', perPage: '每頁', lineCount: '行數', exportQuestions: '匯出手寫默書', exportAnswers: '匯出答案', startPreviewTraining: '開始訓練此問答集', close: '關閉', shuffledNotice: '已隨機打亂題目順序', resetNotice: '已重設為原順序', nothingToCopy: '沒有可複製的內容', contentCopied: '內容已複製（含序號、Q/A）', copyContentFailed: '複製內容失敗', previewFailed: '無法預覽問答集，請稍後再試。', exportQuestionsFailed: '匯出手寫默書 PDF 失敗', exportAnswersFailed: '匯出答案 PDF 失敗'
     },
     qaPdf: {
         loadSetFailed: '問答集載入失敗', loadLibraryFailed: 'jsPDF 載入失敗，請檢查網絡連線或重新整理頁面', preparingEngine: '首次導出需準備 PDF 元件（含中文字型），請稍候…', answer: '答案：{answer}', ordered: '_順序', shuffled: '_亂序', withAnswers: '_含答案', handwriting: '_手寫版', exportSuccess: '手寫默書 PDF 已成功匯出！', exportFailed: '手寫默書 PDF 匯出失敗：{message}', handwritingTitle: '{name} - 手寫默書練習', identity: '日期：_______________    姓名：_______________    成績：_______________', instructionsWithAnswers: '說明：請根據問題寫出答案，答案已在題目下方提供參考。', instructions: '說明：請在橫線上寫出完整的英文答案，注意大小寫及標點符號。', page: '第 {current} 頁，共 {total} 頁', reportTitle: '問答訓練結果報告', errorSummary: '錯誤點彙總（精簡）', reportFile: '問答訓練報告_{name}_{date}.pdf', reportSuccess: 'PDF 報告已成功匯出！', reportFailed: 'PDF 匯出失敗：{message}', setName: '問答集名稱：{name}', trainingTime: '訓練時間：{start} - {end}', duration: '訓練時長：{duration}', mode: '訓練模式：{mode}', random: '隨機模式', sequential: '順序模式', total: '題目總數：{count}', answered: '已作答：{count}', summary: '訓練總結', incorrect: '錯題數：{count}', unanswered: '未作答：{count}', details: '詳細答案分析', questionNumber: '第 {number} 題', question: '問題：{text}', standardAnswer: '標準答案：{text}', userAnswer: '你的答案：{text}', noAnswer: '（未回答）', verdict: '判定：{result}', correct: '正確', wrong: '錯誤', feedback: '回饋：{text}', suggestion: '建議：{text}', generatedAt: '產生時間：{time}', durationShort: '{minutes}分{seconds}秒'
@@ -1635,10 +1639,16 @@ export default {
         pageArticleSave: '確認並分析匯入',
         pageArticleSaveOnly: '確認並匯入正文',
         pageExtracting: '正在讀取網頁並擷取正文…',
-        pageExtractProgress: '正在整理正文 {current}/{total}…',
+        pageExtractProgress: '已處理 {current}/{total} 段正文…',
+        pageExtractionPartial: '有 {count} 段正文未能完整整理，已保留原文。請檢查後再確認匯入。',
+        pageReplacePreviewConfirm: '重新擷取會取代你修改過的標題及正文，是否繼續？',
+        pageArticleRetry: '重試匯入',
+        pageAnalyzing: '正在翻譯文章…',
+        pageAnalysisPartialFailed: '{count} 段翻譯未完成，正文已保留。再次確認會沿用已完成的結果，只補未完成段落。',
         pagePreviewReady: '正文已擷取，尚未分析或匯入。請檢查或修改標題與正文，再確認匯入。',
         pageSaving: '正在保存文章…',
-        pageAnalysisProgress: '正在分析段落 {current}/{total}…',
+        pageAnalysisProgress: '已完成 {current}/{total} 段翻譯…',
+        pageAnalysisSettingsChanged: '語言或 AI 設定已更改，正文預覽已保留。請確認設定後重新匯入。',
         pageArticleSaved: '已保存到文章詳解，同頁詞書已關聯。返回 BDC 同步後可閱讀。',
         pageArticleReused: '這篇網頁已有文章，已沿用原記錄並保留原內容。',
         pageArticleTooLarge: '正文超過單篇 100,000 字元上限，請縮短後匯入。',

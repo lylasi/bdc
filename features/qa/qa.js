@@ -435,7 +435,7 @@ function createQASetCard(qaSet) {
   return `
     <div class="qa-set-card" data-qa-id="${escapeAttr(qaSet.id)}">
       <div class="qa-set-header">
-        <h5 class="qa-set-name">${escapeHtml(qaSet.name)}</h5>
+        <h5 class="qa-set-name" title="${escapeAttr(qaSet.name)}">${escapeHtml(qaSet.name)}</h5>
         <span class="qa-set-count">${escapeHtml(t('qa.questionsCount', { count: qaSet.questionCount }))}</span>
       </div>
       <div class="qa-set-description">${escapeHtml(qaSet.description)}</div>
@@ -495,7 +495,7 @@ function openQASetPreviewModal(qaSet) {
   } catch (_) {}
 
   if (dom.modalTitle) {
-    dom.modalTitle.textContent = t('qa.previewTitle', { name: qaSet.name || '' });
+    dom.modalTitle.textContent = t('qa.previewTitle');
   }
 
   if (!dom.modalBody) return;
@@ -538,6 +538,7 @@ function openQASetPreviewModal(qaSet) {
 
   dom.modalBody.innerHTML = `
     <div class="qa-view-modal">
+      <p class="qa-preview-name">${escapeHtml(qaSet.name || '')}</p>
       <div class="qa-view-meta">
         ${metaDesc ? `<p class="qa-view-desc">${metaDesc}</p>` : ''}
         <span class="qa-view-count">${t('qa.questionTotal', { count: total })}</span>

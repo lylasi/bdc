@@ -1,0 +1,15 @@
+
+### 文章詳解
+  ok   初始：{"textarea":"","historyCount":"0","historyEntry":true,"historyStatus":"尚未存入阅读记录","sourceBarVisible":false,"analysisHtml":21}
+  ok   文章庫：{"open":true,"count":"30 篇","items":30,"categories":["全部分类","ready reading","R&E"]}
+  ok   載入文章後：{"input":1861,"historyStatus":"已暂存草稿 · 1秒钟前","analysisLen":199,"modalOpen":false}
+  ok   分類數：3
+  ok   分析結果：{"container":4024,"text":"解析失败 失败原因：模型没有返回译文 重试本段 The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet. 分析失败"}
+  ok   空文章送出提示：["请输入要分析的文章！×","请输入要分析的文章！","×"]
+  ok   清空後輸入框長度：0
+  ok   朗讀按鈕 disabled=false
+  ok   朗讀中：{"stopVisible":true,"chunkNav":"none"}
+  ok   閱讀記錄：{"open":true,"title":"阅读记录","rows":1,"hasSearch":true,"body":"最近阅读 最近更新 标题 A→Z 全部来源网页 / 新闻文章库 / 文件图片 OCR粘贴文字 未保存的草稿 2秒钟前 · Unit 1: Let's give a hand 恢复 丢弃 搜索范围：已下载到本机的文章全文 今天 Unit 1: Let's give a hand 7秒钟前 · 文章库 "}
+
+=== 共 0 項發現 ===
+嚴重度分布: {} -> /Users/linus/CODE/bdc/docs/report/root-audit/flows.json

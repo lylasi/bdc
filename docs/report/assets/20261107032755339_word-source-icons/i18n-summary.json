@@ -1,0 +1,27 @@
+{
+  "localeCounts": {
+    "zh-CN": 2481,
+    "zh-HK": 2481
+  },
+  "onlyInZhCN": [],
+  "onlyInZhHK": [],
+  "interpolationMismatch": [],
+  "missingKeys": [
+    {
+      "key": "phonetics.",
+      "refs": [
+        ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:19",
+        ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:23",
+        ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:76"
+      ]
+    },
+    {
+      "key": "a.b",
+      "refs": [
+        ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75",
+        ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75",
+        ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:77"
+      ]
+    }
+  ]
+}

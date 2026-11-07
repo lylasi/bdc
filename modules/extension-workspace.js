@@ -28,7 +28,7 @@ export async function setDefaultCaptureBook(bookId) {
     return data;
 }
 
-export async function findExistingPageArticle(sourceUrl, { signal, timeoutMs = 6000 } = {}) {
+export async function findExistingPageArticle(sourceUrl, { link = false, signal, timeoutMs = 6000 } = {}) {
     const session = captureAuthSession();
     if (!session.loggedIn) throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
     const request = async (path, options) => {
@@ -47,6 +47,7 @@ export async function findExistingPageArticle(sourceUrl, { signal, timeoutMs = 6
     const data = await request('/vocabulary/books?sourceUrl=' + encodeURIComponent(sourceUrl), { method: 'GET' });
     if (!data.articleId) return '';
     if (!isValidArticleReference(data.articleId)) throw Object.assign(new Error('capture_invalid_response'), { code: 'capture_invalid_response' });
+    if (!link) return data.articleId;
     let linked;
     try { linked = await request('/vocabulary/page-link', { method: 'POST', body: JSON.stringify({ sourceUrl }) }); }
     catch (error) {

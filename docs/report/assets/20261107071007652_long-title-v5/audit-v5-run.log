@@ -1,0 +1,104 @@
+資源版本: b37b774bc1c7
+vocabulary.js sha256(本機)=803587959630eae0… sha256(HTTP)=803587959630eae0… 一致=true
+守衛行: if (trigger.bottom <= viewportTop || trigger.top >= viewportBottom) {
+
+[A] locale mode  size        帶(top..bottom)  按鈕(top..bottom) 交集 預期  實際   選單(y..bottom) 可捲 判定
+zh-CN empty  320x500    57..437   465.8..503.8      0 closed closed - - PASS
+zh-CN long   320x500    57..437   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  320x520    57..457   465.8..503.8      0 closed closed - - PASS
+zh-CN long   320x520    57..457   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  320x540    57..477   465.8..503.8   11.2 open   open   218.8..461.8 n PASS
+zh-CN long   320x540    57..477   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  320x560    57..497   465.8..503.8   31.2 open   open   218.8..461.8 n PASS
+zh-CN long   320x560    57..497   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  320x568    57..505   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   320x568    57..505   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  320x580    57..517   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   320x580    57..517   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  320x600    57..537   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   320x600    57..537   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  320x620    57..557   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   320x620    57..557   383.5..421.5     38 open   open   435.5..549 Y PASS
+zh-CN empty  320x640    57..577   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   320x640    57..577   383.5..421.5     38 open   open   435.5..569 Y PASS
+zh-CN empty  320x720    57..657   465.8..503.8     38 open   open   507.8..649 Y PASS
+zh-CN long   320x720    57..657   383.5..421.5     38 open   open   435.5..649 Y PASS
+zh-CN empty  360x500    57..437   465.8..503.8      0 closed closed - - PASS
+zh-CN long   360x500    57..437   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  360x520    57..457   465.8..503.8      0 closed closed - - PASS
+zh-CN long   360x520    57..457   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  360x540    57..477   465.8..503.8   11.2 open   open   218.8..461.8 n PASS
+zh-CN long   360x540    57..477   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  360x560    57..497   465.8..503.8   31.2 open   open   218.8..461.8 n PASS
+zh-CN long   360x560    57..497   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  360x568    57..505   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   360x568    57..505   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  360x580    57..517   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   360x580    57..517   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  360x600    57..537   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   360x600    57..537   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-CN empty  360x620    57..557   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   360x620    57..557   383.5..421.5     38 open   open   435.5..549 Y PASS
+zh-CN empty  360x640    57..577   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-CN long   360x640    57..577   383.5..421.5     38 open   open   435.5..569 Y PASS
+zh-CN empty  360x720    57..657   465.8..503.8     38 open   open   507.8..649 Y PASS
+zh-CN long   360x720    57..657   383.5..421.5     38 open   open   435.5..649 Y PASS
+zh-HK empty  320x500    57..437   465.8..503.8      0 closed closed - - PASS
+zh-HK long   320x500    57..437   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  320x520    57..457   465.8..503.8      0 closed closed - - PASS
+zh-HK long   320x520    57..457   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  320x540    57..477   465.8..503.8   11.2 open   open   218.8..461.8 n PASS
+zh-HK long   320x540    57..477   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  320x560    57..497   465.8..503.8   31.2 open   open   218.8..461.8 n PASS
+zh-HK long   320x560    57..497   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  320x568    57..505   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   320x568    57..505   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  320x580    57..517   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   320x580    57..517   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  320x600    57..537   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   320x600    57..537   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  320x620    57..557   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   320x620    57..557   383.5..421.5     38 open   open   435.5..549 Y PASS
+zh-HK empty  320x640    57..577   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   320x640    57..577   383.5..421.5     38 open   open   435.5..569 Y PASS
+zh-HK empty  320x720    57..657   465.8..503.8     38 open   open   507.8..649 Y PASS
+zh-HK long   320x720    57..657   383.5..421.5     38 open   open   435.5..649 Y PASS
+zh-HK empty  360x500    57..437   465.8..503.8      0 closed closed - - PASS
+zh-HK long   360x500    57..437   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  360x520    57..457   465.8..503.8      0 closed closed - - PASS
+zh-HK long   360x520    57..457   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  360x540    57..477   465.8..503.8   11.2 open   open   218.8..461.8 n PASS
+zh-HK long   360x540    57..477   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  360x560    57..497   465.8..503.8   31.2 open   open   218.8..461.8 n PASS
+zh-HK long   360x560    57..497   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  360x568    57..505   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   360x568    57..505   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  360x580    57..517   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   360x580    57..517   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  360x600    57..537   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   360x600    57..537   383.5..421.5     38 open   open   136.5..379.5 n PASS
+zh-HK empty  360x620    57..557   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   360x620    57..557   383.5..421.5     38 open   open   435.5..549 Y PASS
+zh-HK empty  360x640    57..577   465.8..503.8     38 open   open   218.8..461.8 n PASS
+zh-HK long   360x640    57..577   383.5..421.5     38 open   open   435.5..569 Y PASS
+zh-HK empty  360x720    57..657   465.8..503.8     38 open   open   507.8..649 Y PASS
+zh-HK long   360x720    57..657   383.5..421.5     38 open   open   435.5..649 Y PASS
+
+[B] 完全無交集 → 應收合
+B1 zh-CN 360x720→360x480: 交集=0 按鈕=465.8..503.8 帶=57..417 menu.hidden=true aria=false → PASS
+B2 zh-CN 360x720 + translateY(-620px): 交集=0 按鈕=-154.2..-116.2 帶=57..657 menu.hidden=true aria=false → PASS
+B1 zh-HK 360x720→360x480: 交集=0 按鈕=465.8..503.8 帶=57..417 menu.hidden=true aria=false → PASS
+B2 zh-HK 360x720 + translateY(-620px): 交集=0 按鈕=-154.2..-116.2 帶=57..657 menu.hidden=true aria=false → PASS
+
+[C] 桌面對照
+zh-CN 1024x900 menu: band=57..900 moreDisplay=flex menu=201.9..444.9 可捲=false → PASS
+zh-CN 1440x900 chips: band=57..900 moreDisplay=none chipsResponse={"modalOpen":false,"modalTitle":"Modal Title","toast":"至少需要两个单词本才能合并。×","menuPainted":false} → PASS
+zh-HK 1024x900 menu: band=57..900 moreDisplay=flex menu=201.9..444.9 可捲=false → PASS
+zh-HK 1440x900 chips: band=57..900 moreDisplay=none chipsResponse={"modalOpen":false,"modalTitle":"Modal Title","toast":"至少需要兩個生字簿才能合併。×","menuPainted":false} → PASS
+
+合計 88 例（A=80, B=4, C=4）
+A 內：預期開啟 72 例（部分可見）、預期收合 8 例（完全無交集）
+R1 情境（空詞書、矮視口、按鈕部分可見）: 32 例，全部開啟=true
+FAIL: 0
+hash 前後一致: true
+json: docs/report/assets/20261107071007652_long-title-v5/trigger-intersection-v5.json

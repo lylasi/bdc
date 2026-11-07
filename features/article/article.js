@@ -1096,13 +1096,14 @@ function applyCnMask(on) {
 
 // api 層回報的非致命問題（例如清洗結果被模型輸出上限截斷）→ 用語系文案提示使用者
 const IMPORT_NOTICE_KEYS = {
+    'cleanup-partial': 'article.cleanupPartial',
     'cleanup-truncated': 'article.cleanupTruncated',
     'extract-truncated': 'article.extractTruncated'
 };
-function onImportNotice(code) {
+function onImportNotice(code, params = {}) {
     const key = IMPORT_NOTICE_KEYS[code];
     if (!key) return;
-    try { ui.displayMessage(t(key), 'warning', 6000); } catch (_) {}
+    try { ui.displayMessage(t(key, params), 'warning', 6000); } catch (_) {}
 }
 
 // 導入文章（網址/圖片OCR）— 使用一顆按鈕彈窗，避免佔版面
@@ -4255,7 +4256,7 @@ function historyRowHtml(record) {
     return `
         <div class="ar-history-item${isCurrent ? ' is-current' : ''}" data-key="${escapeAttr(record.articleId)}" role="listitem" tabindex="0">
             <button type="button" class="ar-history-open" data-act="open">
-                <span class="ar-history-title">${escapeHtml(title)}</span>
+                <span class="ar-history-title" title="${escapeAttr(title)}">${escapeHtml(title)}</span>
                 <span class="ar-history-meta">${escapeHtml(timeText)} · ${escapeHtml(sourceLabel(record.sourceType))} · ${escapeHtml(status)}${dirty}${conflict}</span>
                 <span class="ar-history-summary">${escapeHtml(summary)}</span>
             </button>
@@ -5784,7 +5785,7 @@ function renderArticleLibraryList(filter = {}) {
     }
     dom.articleLibraryList.innerHTML = items.map(article => `
         <div class="article-library-item" data-path="${escapeAttr(article.path)}" data-category="${escapeAttr(article.category || '')}">
-            <h4>${escapeHtml(article.title)}</h4>
+            <h4 title="${escapeAttr(article.title)}">${escapeHtml(article.title)}</h4>
             <p class="description">${escapeHtml(article.description)}</p>
             <div class="meta">
                 <span class="difficulty">${escapeHtml(article.difficulty)}</span>

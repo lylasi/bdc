@@ -1,0 +1,63 @@
+[
+  {
+    "width": 320,
+    "chipsVisible": false,
+    "focusInMenu": "action-chip word-panel-more-btn",
+    "modalOpen": true,
+    "afterClose": {
+      "tag": "BUTTON",
+      "id": "word-panel-more-btn",
+      "cls": "action-chip word-panel-more-btn"
+    },
+    "mergeOpen": true,
+    "afterMergeClose": {
+      "tag": "BUTTON",
+      "id": "word-panel-more-btn",
+      "cls": "action-chip word-panel-more-btn"
+    }
+  },
+  {
+    "width": 719,
+    "chipsVisible": false,
+    "focusInMenu": "action-chip word-panel-more-btn",
+    "modalOpen": true,
+    "afterClose": {
+      "tag": "BUTTON",
+      "id": "word-panel-more-btn",
+      "cls": "action-chip word-panel-more-btn"
+    },
+    "mergeOpen": true,
+    "afterMergeClose": {
+      "tag": "BUTTON",
+      "id": "word-panel-more-btn",
+      "cls": "action-chip word-panel-more-btn"
+    }
+  },
+  {
+    "width": 1024,
+    "chipsVisible": false,
+    "focusInMenu": "action-chip word-panel-more-btn",
+    "modalOpen": true,
+    "afterClose": {
+      "tag": "BUTTON",
+      "id": "word-panel-more-btn",
+      "cls": "action-chip word-panel-more-btn"
+    },
+    "mergeOpen": true,
+    "afterMergeClose": {
+      "tag": "BUTTON",
+      "id": "word-panel-more-btn",
+      "cls": "action-chip word-panel-more-btn"
+    }
+  },
+  {
+    "width": 1440,
+    "chipsVisible": true,
+    "modalOpen": true,
+    "afterClose": {
+      "tag": "BUTTON",
+      "id": "edit-vocab-book-btn",
+      "cls": "action-chip"
+    }
+  }
+]

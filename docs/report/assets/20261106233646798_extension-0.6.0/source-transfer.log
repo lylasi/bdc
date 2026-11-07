@@ -1,0 +1,14 @@
+seed {
+  active: 'transfer-book',
+  book: 'Transfer original',
+  disabled: false,
+  modal: 'modal-overlay hidden'
+}
+PASS zh-CN: export source and legacy words; import provenance; overwrite stable ID; changed/invalid source
+seed {
+  active: 'transfer-book',
+  book: 'Transfer original',
+  disabled: false,
+  modal: 'modal-overlay hidden'
+}
+PASS zh-HK: export source and legacy words; import provenance; overwrite stable ID; changed/invalid source

@@ -1,0 +1,16 @@
+{
+  "stamp": "20261106233646798",
+  "archive": "/Users/linus/CODE/bdc/docs/release/assets/20261106233646798/BDC-extension-0.6.0.zip",
+  "archiveBytes": 385834,
+  "sha256": "4cddbabf45436baf63fe2c34dae1ff46b25988481783b296ff24cc45eb060cdb",
+  "files": 68,
+  "reportAssets": "/Users/linus/CODE/bdc/docs/report/assets/20261106233646798_extension-0.6.0",
+  "releaseMap": "e6462cb95be4",
+  "e2ePassed": 84,
+  "report": "/Users/linus/CODE/bdc/docs/report/20261106233646798_擴充精簡文章助手與詞書關聯交付驗證.md",
+  "releaseNotes": "/Users/linus/CODE/bdc/docs/release/20261106233646798_擴充套件0.6.0交付說明.md",
+  "independentE2ePassed": 85,
+  "capturePassed": 31,
+  "securityPassed": 72,
+  "verifiedAt": "2026-11-06T23:58:33.684283+08:00"
+}

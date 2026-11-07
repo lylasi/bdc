@@ -1,0 +1,21 @@
+{
+  "version": "0.6.2",
+  "archive": "/Users/linus/CODE/bdc/docs/release/assets/20261107013017565/BDC-extension-0.6.2.zip",
+  "archiveBytes": 385397,
+  "sha256": "b02921e6bdb3cd6cb0a368e506494825d1181ac6226bbe4e3056dd515d887c4e",
+  "files": 68,
+  "report": "/Users/linus/CODE/bdc/docs/report/20261107013017565_文章擷取先預覽確認匯入驗證.md",
+  "reportAssets": "/Users/linus/CODE/bdc/docs/report/assets/20261107013017565_article-confirm",
+  "browserChecks": {
+    "confirmation": 17,
+    "compact": 97,
+    "workspace": 24
+  },
+  "aiTestsPassed": 87,
+  "settingsPassed": 18,
+  "aiReviewPassed": 29,
+  "phraseChecksPassed": 28,
+  "releaseMap": "3f18566a2f7a",
+  "generatedConfigSource": "ai-config.example.js",
+  "verifiedAt": "2026-11-07T01:32:12.461910+08:00"
+}

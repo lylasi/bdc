@@ -1,0 +1,13 @@
+{
+  "modules/api.js": "c8fa7f23d66acad11ce73aaca5927e0c4dd1cfdf77dc50d8c99ddea66362537e",
+  "modules/extension-ai-runtime.js": "cc44138ddd88a70b15fdc40784439666477ab980d230916fdef2391141641ff5",
+  "extension/workspace-ui.js": "257e1bd4665399a64195418eba1334fda6fe8bd02776695d8542f1783455a3e5",
+  "extension/lookup.html": "75a60c9eaf770891662a276db5c04d0e86ab8c4e0df9076542cfe6138baf883f",
+  "extension/lookup.css": "73a4387f4583a56221f077a061d7aa02b70143f384a99d09eb24e0ebbb221090",
+  "extension/manifest.json": "2d1bc31e644b3ba336bfdd765472c874d804e2a4f0ef11114d1311b463932740",
+  "locales/zh-CN.js": "1c7f9c1fad8f5c0859fd145f5f09750be21fcc06b5b112bc06baa4d126fd3263",
+  "locales/zh-HK.js": "5e11586ce4770be85769dbccc6c868f7ce655eb5f2706948b2cb163483efd161",
+  "scripts/package-extension.mjs": "273cabbba7ca88845bcb430bde9b0dc7ba296e65608605e10a345dd0c6d9e2fe",
+  "index.html": "9640979b9951a9bf1afc107e4dac12042480e560b40f26efed6d2e6a2f9ead9c",
+  "README.md": "40efa1253cf745a0d3e3a56515751746be32de08c282ac92e9ba2bb8d4503967"
+}

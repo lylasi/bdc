@@ -1,0 +1,163 @@
+{
+  "results": [
+    {
+      "name": "zh-CN: A can open their private article URL",
+      "ok": true,
+      "detail": {
+        "hash": "#a/art_delete_verification"
+      }
+    },
+    {
+      "name": "zh-CN: B opening A's URL cannot read A's article",
+      "ok": true,
+      "detail": {
+        "apiStatus": 404,
+        "message": "当前账户下找不到这篇文章，可能已删除或属于其他账户。"
+      }
+    },
+    {
+      "name": "zh-CN: B cannot delete A's article with the same ID",
+      "ok": true,
+      "detail": {
+        "apiStatus": 404
+      }
+    },
+    {
+      "name": "zh-CN: B can have an independent copy with exactly the same ID",
+      "ok": true,
+      "detail": {
+        "aliceTitle": "Article from account A",
+        "bobTitle": "Independent copy owned by B"
+      }
+    },
+    {
+      "name": "zh-CN: deleting B's reading record removes B's saved article",
+      "ok": true,
+      "detail": {
+        "deleteLabel": "删除记录",
+        "deletedAt": "2026-10-28T03:37:29.634Z",
+        "revision": 2
+      }
+    },
+    {
+      "name": "zh-CN: A's article and URL remain available after B deletes the record",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "revision": 1,
+        "deletedAt": ""
+      }
+    },
+    {
+      "name": "zh-CN: B's other device receives the deletion",
+      "ok": true,
+      "detail": {
+        "sameAccount": "bob",
+        "deletionSynced": true
+      }
+    },
+    {
+      "name": "zh-CN: undo restores B's article without modifying A",
+      "ok": true,
+      "detail": {
+        "restored": true,
+        "aliceRevision": 1
+      }
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "user": "alice",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles/art_delete_verification",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles/art_delete_verification",
+      "status": 404
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles/art_delete_verification",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles/art_delete_verification",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles?cursor=0&limit=200",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "DELETE",
+      "path": "/articles/art_delete_verification",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles?cursor=0&limit=200",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles?cursor=1&limit=200",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "POST",
+      "path": "/articles/art_delete_verification/restore",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles?cursor=2&limit=200",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "POST",
+      "path": "/articles/batch",
+      "status": 200
+    },
+    {
+      "user": "alice",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles?cursor=0&limit=200",
+      "status": 200
+    },
+    {
+      "user": "bob",
+      "locale": "zh-CN",
+      "method": "GET",
+      "path": "/articles?cursor=2&limit=200",
+      "status": 200
+    }
+  ],
+  "serverErrors": "[bdc-selfhost] 警告：ALLOWED_ORIGINS 未限制，任何網站都可呼叫此 API。正式環境請設定明確來源。\n"
+}

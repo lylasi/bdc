@@ -1,0 +1,2024 @@
+{
+  "finishedAt": "2026-11-06T22:42:18.862Z",
+  "results": [
+    {
+      "locale": "zh-CN",
+      "case": "empty-320x560",
+      "findings": [],
+      "pageErrors": [],
+      "beforeScroll": {
+        "found": true,
+        "innerHeight": 560,
+        "menu": {
+          "y": 218.8,
+          "bottom": 461.8,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 497,
+          "bottom": 560,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "补全资料",
+            "disabled": true,
+            "rect": {
+              "x": 114,
+              "y": 225.8,
+              "bottom": 269.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 247.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合并",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 269.8,
+              "bottom": 313.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 291.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "导出",
+            "disabled": true,
+            "rect": {
+              "x": 114,
+              "y": 313.8,
+              "bottom": 357.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 335.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "编辑",
+            "disabled": true,
+            "rect": {
+              "x": 114,
+              "y": 357.8,
+              "bottom": 401.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 379.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "删除",
+            "disabled": true,
+            "rect": {
+              "x": 114,
+              "y": 410.8,
+              "bottom": 454.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 432.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "afterScroll": {
+        "found": true,
+        "innerHeight": 560,
+        "menu": {
+          "y": 218.8,
+          "bottom": 461.8,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 497,
+          "bottom": 560,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "补全资料",
+            "disabled": true,
+            "rect": {
+              "x": 114,
+              "y": 225.8,
+              "bottom": 269.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 247.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合并",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 269.8,
+              "bottom": 313.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 291.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "导出",
+            "disabled": true,
+            "rect": {
+              "x": 114,
+              "y": 313.8,
+              "bottom": 357.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 335.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "编辑",
+            "disabled": true,
+            "rect": {
+              "x": 114,
+              "y": 357.8,
+              "bottom": 401.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 379.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "删除",
+            "disabled": true,
+            "rect": {
+              "x": 114,
+              "y": 410.8,
+              "bottom": 454.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 432.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "realClickTarget": "删除",
+      "realClick": {
+        "clicked": [],
+        "navClicked": 0,
+        "menuStillOpen": true
+      },
+      "expectedClickFired": "disabled(不應觸發)"
+    },
+    {
+      "locale": "zh-CN",
+      "case": "long-320x560",
+      "findings": [
+        {
+          "severity": "medium",
+          "code": "menu-item-covered",
+          "detail": "未捲動時 1/5 項 pointer 不可達：[\"合并@508.5(BUTTON.nav-btn)\"]"
+        },
+        {
+          "severity": "medium",
+          "code": "menu-item-covered-after-scroll",
+          "detail": "捲到底後仍 1 項 pointer 不可達：[\"删除@523.5(BUTTON.nav-btn)\"]"
+        },
+        {
+          "severity": "medium",
+          "code": "last-item-click-blocked",
+          "detail": "真實點擊「删除」未觸發來源按鈕（clicked=[]）"
+        },
+        {
+          "severity": "medium",
+          "code": "click-hit-nav-bar",
+          "detail": "點擊落在導覽列（1 次）"
+        }
+      ],
+      "pageErrors": [],
+      "beforeScroll": {
+        "found": true,
+        "innerHeight": 560,
+        "menu": {
+          "y": 435.5,
+          "bottom": 552,
+          "h": 116.5,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 115
+        },
+        "nav": {
+          "top": 497,
+          "bottom": 560,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "补全资料",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 442.5,
+              "bottom": 486.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 464.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合并",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 486.5,
+              "bottom": 530.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 508.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "BUTTON.nav-btn",
+            "coveredByNav": true
+          },
+          {
+            "index": 2,
+            "text": "导出",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 530.5,
+              "bottom": 574.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 552.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": true
+          },
+          {
+            "index": 3,
+            "text": "编辑",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 574.5,
+              "bottom": 618.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 596.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "删除",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 627.5,
+              "bottom": 671.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 649.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [
+          "合并@508.5(BUTTON.nav-btn)"
+        ],
+        "clippedItems": [
+          "导出",
+          "编辑",
+          "删除"
+        ]
+      },
+      "afterScroll": {
+        "found": true,
+        "innerHeight": 560,
+        "menu": {
+          "y": 435.5,
+          "bottom": 552,
+          "h": 116.5,
+          "scrollTop": 126,
+          "scrollHeight": 241,
+          "clientHeight": 115
+        },
+        "nav": {
+          "top": 497,
+          "bottom": 560,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "补全资料",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 316.5,
+              "bottom": 360.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 338.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合并",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 360.5,
+              "bottom": 404.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 382.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "导出",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 404.5,
+              "bottom": 448.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 426.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "编辑",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 448.5,
+              "bottom": 492.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 470.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "删除",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 501.5,
+              "bottom": 545.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 523.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "BUTTON.nav-btn",
+            "coveredByNav": true
+          }
+        ],
+        "blockedItems": [
+          "删除@523.5(BUTTON.nav-btn)"
+        ],
+        "clippedItems": [
+          "补全资料",
+          "合并",
+          "导出"
+        ]
+      },
+      "realClickTarget": "删除",
+      "realClick": {
+        "clicked": [],
+        "navClicked": 1,
+        "menuStillOpen": false
+      },
+      "expectedClickFired": "删除"
+    },
+    {
+      "locale": "zh-CN",
+      "case": "empty-390x600",
+      "findings": [],
+      "pageErrors": [],
+      "beforeScroll": {
+        "found": true,
+        "innerHeight": 600,
+        "menu": {
+          "y": 218.8,
+          "bottom": 461.8,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 537,
+          "bottom": 600,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "补全资料",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 225.8,
+              "bottom": 269.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 247.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合并",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 269.8,
+              "bottom": 313.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 291.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "导出",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 313.8,
+              "bottom": 357.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 335.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "编辑",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 357.8,
+              "bottom": 401.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 379.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "删除",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 410.8,
+              "bottom": 454.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 432.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "afterScroll": {
+        "found": true,
+        "innerHeight": 600,
+        "menu": {
+          "y": 218.8,
+          "bottom": 461.8,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 537,
+          "bottom": 600,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "补全资料",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 225.8,
+              "bottom": 269.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 247.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合并",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 269.8,
+              "bottom": 313.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 291.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "导出",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 313.8,
+              "bottom": 357.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 335.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "编辑",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 357.8,
+              "bottom": 401.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 379.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "删除",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 410.8,
+              "bottom": 454.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 432.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "realClickTarget": "删除",
+      "realClick": {
+        "clicked": [],
+        "navClicked": 0,
+        "menuStillOpen": true
+      },
+      "expectedClickFired": "disabled(不應觸發)"
+    },
+    {
+      "locale": "zh-CN",
+      "case": "long-390x600",
+      "findings": [
+        {
+          "severity": "medium",
+          "code": "menu-item-covered",
+          "detail": "未捲動時 1/5 項 pointer 不可達：[\"导出@552.5(use.[object SVGAnimatedString])\"]"
+        },
+        {
+          "severity": "medium",
+          "code": "menu-item-covered-after-scroll",
+          "detail": "捲到底後仍 1 項 pointer 不可達：[\"删除@563.5(use.[object SVGAnimatedString])\"]"
+        },
+        {
+          "severity": "medium",
+          "code": "last-item-click-blocked",
+          "detail": "真實點擊「删除」未觸發來源按鈕（clicked=[]）"
+        },
+        {
+          "severity": "medium",
+          "code": "click-hit-nav-bar",
+          "detail": "點擊落在導覽列（1 次）"
+        }
+      ],
+      "pageErrors": [],
+      "beforeScroll": {
+        "found": true,
+        "innerHeight": 600,
+        "menu": {
+          "y": 435.5,
+          "bottom": 592,
+          "h": 156.5,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 155
+        },
+        "nav": {
+          "top": 537,
+          "bottom": 600,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "补全资料",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 442.5,
+              "bottom": 486.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 464.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合并",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 486.5,
+              "bottom": 530.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 508.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "导出",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 530.5,
+              "bottom": 574.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 552.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "use.[object SVGAnimatedString]",
+            "coveredByNav": true
+          },
+          {
+            "index": 3,
+            "text": "编辑",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 574.5,
+              "bottom": 618.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 596.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": true
+          },
+          {
+            "index": 4,
+            "text": "删除",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 627.5,
+              "bottom": 671.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 649.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [
+          "导出@552.5(use.[object SVGAnimatedString])"
+        ],
+        "clippedItems": [
+          "编辑",
+          "删除"
+        ]
+      },
+      "afterScroll": {
+        "found": true,
+        "innerHeight": 600,
+        "menu": {
+          "y": 435.5,
+          "bottom": 592,
+          "h": 156.5,
+          "scrollTop": 86,
+          "scrollHeight": 241,
+          "clientHeight": 155
+        },
+        "nav": {
+          "top": 537,
+          "bottom": 600,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "补全资料",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 356.5,
+              "bottom": 400.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 378.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合并",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 400.5,
+              "bottom": 444.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 422.5,
+            "fullyInsideMenu": false,
+            "hitIsItem": null,
+            "hitTag": "(clipped by menu)",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "导出",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 444.5,
+              "bottom": 488.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 466.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "编辑",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 488.5,
+              "bottom": 532.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 510.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "删除",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 541.5,
+              "bottom": 585.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 563.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "use.[object SVGAnimatedString]",
+            "coveredByNav": true
+          }
+        ],
+        "blockedItems": [
+          "删除@563.5(use.[object SVGAnimatedString])"
+        ],
+        "clippedItems": [
+          "补全资料",
+          "合并"
+        ]
+      },
+      "realClickTarget": "删除",
+      "realClick": {
+        "clicked": [],
+        "navClicked": 1,
+        "menuStillOpen": false
+      },
+      "expectedClickFired": "删除"
+    },
+    {
+      "locale": "zh-HK",
+      "case": "empty-320x560",
+      "findings": [
+        {
+          "severity": "medium",
+          "code": "menu-item-covered",
+          "detail": "未捲動時 5/5 項 pointer 不可達：[\"補全資料@0((null))\",\"合併@0((null))\",\"匯出@0((null))\",\"編輯@0((null))\",\"刪除@0((null))\"]"
+        },
+        {
+          "severity": "medium",
+          "code": "menu-item-covered-after-scroll",
+          "detail": "捲到底後仍 5 項 pointer 不可達：[\"補全資料@0((null))\",\"合併@0((null))\",\"匯出@0((null))\",\"編輯@0((null))\",\"刪除@0((null))\"]"
+        }
+      ],
+      "pageErrors": [],
+      "beforeScroll": {
+        "found": true,
+        "innerHeight": 560,
+        "menu": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0,
+          "scrollTop": 0,
+          "scrollHeight": 0,
+          "clientHeight": 0
+        },
+        "nav": {
+          "top": 497,
+          "bottom": 560,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "補全資料",
+            "disabled": true,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合併",
+            "disabled": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "匯出",
+            "disabled": true,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "編輯",
+            "disabled": true,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "刪除",
+            "disabled": true,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [
+          "補全資料@0((null))",
+          "合併@0((null))",
+          "匯出@0((null))",
+          "編輯@0((null))",
+          "刪除@0((null))"
+        ],
+        "clippedItems": []
+      },
+      "afterScroll": {
+        "found": true,
+        "innerHeight": 560,
+        "menu": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0,
+          "scrollTop": 0,
+          "scrollHeight": 0,
+          "clientHeight": 0
+        },
+        "nav": {
+          "top": 497,
+          "bottom": 560,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "補全資料",
+            "disabled": true,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合併",
+            "disabled": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "匯出",
+            "disabled": true,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "編輯",
+            "disabled": true,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "刪除",
+            "disabled": true,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "w": 0,
+              "h": 0
+            },
+            "centerX": 0,
+            "centerY": 0,
+            "fullyInsideMenu": true,
+            "hitIsItem": false,
+            "hitTag": "(null)",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [
+          "補全資料@0((null))",
+          "合併@0((null))",
+          "匯出@0((null))",
+          "編輯@0((null))",
+          "刪除@0((null))"
+        ],
+        "clippedItems": []
+      },
+      "realClickTarget": "刪除",
+      "realClick": {
+        "clicked": [],
+        "navClicked": 0,
+        "menuStillOpen": false
+      },
+      "expectedClickFired": "disabled(不應觸發)"
+    },
+    {
+      "locale": "zh-HK",
+      "case": "long-320x560",
+      "findings": [],
+      "pageErrors": [],
+      "beforeScroll": {
+        "found": true,
+        "innerHeight": 560,
+        "menu": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 497,
+          "bottom": 560,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "補全資料",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 143.5,
+              "bottom": 187.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 165.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合併",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 187.5,
+              "bottom": 231.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 209.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "匯出",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 231.5,
+              "bottom": 275.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 253.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "編輯",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 275.5,
+              "bottom": 319.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 297.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "刪除",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 328.5,
+              "bottom": 372.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 350.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "afterScroll": {
+        "found": true,
+        "innerHeight": 560,
+        "menu": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 497,
+          "bottom": 560,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "補全資料",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 143.5,
+              "bottom": 187.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 165.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合併",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 187.5,
+              "bottom": 231.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 209.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "匯出",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 231.5,
+              "bottom": 275.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 253.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "編輯",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 275.5,
+              "bottom": 319.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 297.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "刪除",
+            "disabled": false,
+            "rect": {
+              "x": 114,
+              "y": 328.5,
+              "bottom": 372.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 201,
+            "centerY": 350.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "realClickTarget": "刪除",
+      "realClick": {
+        "clicked": [
+          "delete-vocab-book-btn"
+        ],
+        "navClicked": 0,
+        "menuStillOpen": false
+      },
+      "expectedClickFired": "刪除"
+    },
+    {
+      "locale": "zh-HK",
+      "case": "empty-390x600",
+      "findings": [],
+      "pageErrors": [],
+      "beforeScroll": {
+        "found": true,
+        "innerHeight": 600,
+        "menu": {
+          "y": 218.8,
+          "bottom": 461.8,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 537,
+          "bottom": 600,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "補全資料",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 225.8,
+              "bottom": 269.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 247.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合併",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 269.8,
+              "bottom": 313.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 291.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "匯出",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 313.8,
+              "bottom": 357.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 335.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "編輯",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 357.8,
+              "bottom": 401.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 379.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "刪除",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 410.8,
+              "bottom": 454.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 432.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "afterScroll": {
+        "found": true,
+        "innerHeight": 600,
+        "menu": {
+          "y": 218.8,
+          "bottom": 461.8,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 537,
+          "bottom": 600,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "補全資料",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 225.8,
+              "bottom": 269.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 247.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合併",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 269.8,
+              "bottom": 313.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 291.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "匯出",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 313.8,
+              "bottom": 357.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 335.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "編輯",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 357.8,
+              "bottom": 401.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 379.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "刪除",
+            "disabled": true,
+            "rect": {
+              "x": 184,
+              "y": 410.8,
+              "bottom": 454.8,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 432.8,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "realClickTarget": "刪除",
+      "realClick": {
+        "clicked": [],
+        "navClicked": 0,
+        "menuStillOpen": true
+      },
+      "expectedClickFired": "disabled(不應觸發)"
+    },
+    {
+      "locale": "zh-HK",
+      "case": "long-390x600",
+      "findings": [],
+      "pageErrors": [],
+      "beforeScroll": {
+        "found": true,
+        "innerHeight": 600,
+        "menu": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 537,
+          "bottom": 600,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "補全資料",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 143.5,
+              "bottom": 187.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 165.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合併",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 187.5,
+              "bottom": 231.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 209.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "匯出",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 231.5,
+              "bottom": 275.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 253.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "編輯",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 275.5,
+              "bottom": 319.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 297.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "刪除",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 328.5,
+              "bottom": 372.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 350.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "afterScroll": {
+        "found": true,
+        "innerHeight": 600,
+        "menu": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 241
+        },
+        "nav": {
+          "top": 537,
+          "bottom": 600,
+          "h": 63,
+          "zIndex": "1200",
+          "position": "fixed"
+        },
+        "menuZ": "40",
+        "items": [
+          {
+            "index": 0,
+            "text": "補全資料",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 143.5,
+              "bottom": 187.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 165.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "SPAN.",
+            "coveredByNav": false
+          },
+          {
+            "index": 1,
+            "text": "合併",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 187.5,
+              "bottom": 231.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 209.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 2,
+            "text": "匯出",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 231.5,
+              "bottom": 275.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 253.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 3,
+            "text": "編輯",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 275.5,
+              "bottom": 319.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 297.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item",
+            "coveredByNav": false
+          },
+          {
+            "index": 4,
+            "text": "刪除",
+            "disabled": false,
+            "rect": {
+              "x": 184,
+              "y": 328.5,
+              "bottom": 372.5,
+              "w": 174,
+              "h": 44
+            },
+            "centerX": 271,
+            "centerY": 350.5,
+            "fullyInsideMenu": true,
+            "hitIsItem": true,
+            "hitTag": "BUTTON.menu-item danger",
+            "coveredByNav": false
+          }
+        ],
+        "blockedItems": [],
+        "clippedItems": []
+      },
+      "realClickTarget": "刪除",
+      "realClick": {
+        "clicked": [
+          "delete-vocab-book-btn"
+        ],
+        "navClicked": 0,
+        "menuStillOpen": false
+      },
+      "expectedClickFired": "刪除"
+    }
+  ]
+}

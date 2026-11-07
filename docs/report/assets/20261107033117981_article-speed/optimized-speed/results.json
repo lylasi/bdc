@@ -1,0 +1,789 @@
+{
+  "baseline": false,
+  "checks": [
+    {
+      "name": "延遲供應商仍按原文順序組合全部段落",
+      "ok": true
+    },
+    {
+      "name": "實際請求並行不超過兩個",
+      "ok": true,
+      "detail": {
+        "ms": 5559.799999952316,
+        "peak": 2,
+        "requests": 8,
+        "progress": [
+          {
+            "done": 0,
+            "total": 8,
+            "time": 0.5
+          },
+          {
+            "done": 1,
+            "total": 8,
+            "time": 1232.5
+          },
+          {
+            "done": 2,
+            "total": 8,
+            "time": 1829.7999999523163
+          },
+          {
+            "done": 3,
+            "total": 8,
+            "time": 2240.7999999523163
+          },
+          {
+            "done": 4,
+            "total": 8,
+            "time": 3039
+          },
+          {
+            "done": 5,
+            "total": 8,
+            "time": 3139.7999999523163
+          },
+          {
+            "done": 6,
+            "total": 8,
+            "time": 4450.299999952316
+          },
+          {
+            "done": 7,
+            "total": 8,
+            "time": 4548.399999856949
+          },
+          {
+            "done": 8,
+            "total": 8,
+            "time": 5558.599999904633
+          }
+        ]
+      }
+    },
+    {
+      "name": "多塊清洗維持原始順序及全部段落",
+      "ok": true
+    },
+    {
+      "name": "清洗最多兩塊並行，完成進度由零開始",
+      "ok": true,
+      "detail": {
+        "ms": 1864.8999998569489,
+        "peak": 2,
+        "requests": 3,
+        "progress": [
+          {
+            "done": 0,
+            "total": 3
+          },
+          {
+            "done": 1,
+            "total": 3
+          },
+          {
+            "done": 2,
+            "total": 3
+          },
+          {
+            "done": 3,
+            "total": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "確認後能同時處理兩段",
+      "ok": true,
+      "detail": {
+        "ms": 5559.799999952316,
+        "peak": 2,
+        "requests": 8,
+        "progress": [
+          {
+            "done": 0,
+            "total": 8,
+            "time": 0.5
+          },
+          {
+            "done": 1,
+            "total": 8,
+            "time": 1232.5
+          },
+          {
+            "done": 2,
+            "total": 8,
+            "time": 1829.7999999523163
+          },
+          {
+            "done": 3,
+            "total": 8,
+            "time": 2240.7999999523163
+          },
+          {
+            "done": 4,
+            "total": 8,
+            "time": 3039
+          },
+          {
+            "done": 5,
+            "total": 8,
+            "time": 3139.7999999523163
+          },
+          {
+            "done": 6,
+            "total": 8,
+            "time": 4450.299999952316
+          },
+          {
+            "done": 7,
+            "total": 8,
+            "time": 4548.399999856949
+          },
+          {
+            "done": 8,
+            "total": 8,
+            "time": 5558.599999904633
+          }
+        ]
+      }
+    },
+    {
+      "name": "並行仍保留設定的請求開始間隔",
+      "ok": true,
+      "detail": [
+        2192.347333,
+        2694.219666,
+        3404.241958,
+        4002.593625,
+        4505.478583,
+        5211.905583,
+        5714.876708,
+        6623.600125
+      ]
+    },
+    {
+      "name": "完成進度從零開始且單調遞增",
+      "ok": true,
+      "detail": [
+        {
+          "done": 0,
+          "total": 8,
+          "time": 0.5
+        },
+        {
+          "done": 1,
+          "total": 8,
+          "time": 1232.5
+        },
+        {
+          "done": 2,
+          "total": 8,
+          "time": 1829.7999999523163
+        },
+        {
+          "done": 3,
+          "total": 8,
+          "time": 2240.7999999523163
+        },
+        {
+          "done": 4,
+          "total": 8,
+          "time": 3039
+        },
+        {
+          "done": 5,
+          "total": 8,
+          "time": 3139.7999999523163
+        },
+        {
+          "done": 6,
+          "total": 8,
+          "time": 4450.299999952316
+        },
+        {
+          "done": 7,
+          "total": 8,
+          "time": 4548.399999856949
+        },
+        {
+          "done": 8,
+          "total": 8,
+          "time": 5558.599999904633
+        }
+      ]
+    },
+    {
+      "name": "最後一段完成後才顯示全數完成",
+      "ok": true
+    },
+    {
+      "name": "重做同一文章直接復用成功段落，不再翻譯",
+      "ok": true,
+      "detail": {
+        "ms": 6.900000095367432,
+        "requests": 0
+      }
+    },
+    {
+      "name": "同一文章相同段落只請求一次，保留全部位置",
+      "ok": true
+    },
+    {
+      "name": "配置限制為一個時仍逐個傳輸",
+      "ok": true,
+      "detail": [
+        {
+          "prefix": "LIMIT",
+          "index": 0,
+          "started": 11225.729333,
+          "mode": "normal",
+          "maxTokens": 800,
+          "fulfilled": 11827.929541
+        },
+        {
+          "prefix": "LIMIT",
+          "index": 1,
+          "started": 11828.808,
+          "mode": "normal",
+          "maxTokens": 800,
+          "fulfilled": 12430.474958
+        },
+        {
+          "prefix": "LIMIT",
+          "index": 2,
+          "started": 12433.313291,
+          "mode": "normal",
+          "maxTokens": 800,
+          "fulfilled": 13037.701708
+        }
+      ]
+    },
+    {
+      "name": "失敗時不返回半份文章，不報完成百分百",
+      "ok": true
+    },
+    {
+      "name": "重試復用已成功段落，只補未完成的段落",
+      "ok": true
+    },
+    {
+      "name": "停止能快速結束在途與排隊工作",
+      "ok": true,
+      "detail": {
+        "canceled": {
+          "name": "AbortError",
+          "code": 20
+        },
+        "ms": 5.478624999999738
+      }
+    },
+    {
+      "name": "429 退避期間停止不必等待 Retry-After",
+      "ok": true,
+      "detail": 3.7331669999985024
+    },
+    {
+      "name": "同版本供應商列表刷新不會誤停翻譯",
+      "ok": true,
+      "detail": {
+        "refreshed": {
+          "before": 1,
+          "after": 1
+        }
+      }
+    },
+    {
+      "name": "更換語言中止舊任務，不組合混合語言文章",
+      "ok": true,
+      "detail": {
+        "name": "Error",
+        "code": "article_context_changed"
+      }
+    },
+    {
+      "name": "連續截斷的非空回應不被當作完整翻譯保存",
+      "ok": true,
+      "detail": {
+        "error": {
+          "name": "Error",
+          "code": "page_analysis_failed"
+        },
+        "progress": [
+          {
+            "done": 0,
+            "total": 1,
+            "time": 0.6000001430511475
+          }
+        ],
+        "ms": 2431.2999999523163
+      }
+    },
+    {
+      "name": "截斷結果不寫成功快取，之後可正常重試",
+      "ok": true
+    },
+    {
+      "name": "JSON 後備路徑仍能取得完整翻譯",
+      "ok": true
+    },
+    {
+      "name": "成功的純文字後備也能復用快取",
+      "ok": true
+    },
+    {
+      "name": "登出會收束舊帳戶任務，沒有遲到文章結果",
+      "ok": true,
+      "detail": {
+        "name": "Error",
+        "code": "stale_session"
+      }
+    },
+    {
+      "name": "另一帳戶不命中前一帳戶的段落快取",
+      "ok": true
+    },
+    {
+      "name": "沒有意外頁面錯誤或文章寫入",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "metrics": {
+    "cold": {
+      "ms": 5559.799999952316,
+      "peak": 2,
+      "requests": 8,
+      "progress": [
+        {
+          "done": 0,
+          "total": 8,
+          "time": 0.5
+        },
+        {
+          "done": 1,
+          "total": 8,
+          "time": 1232.5
+        },
+        {
+          "done": 2,
+          "total": 8,
+          "time": 1829.7999999523163
+        },
+        {
+          "done": 3,
+          "total": 8,
+          "time": 2240.7999999523163
+        },
+        {
+          "done": 4,
+          "total": 8,
+          "time": 3039
+        },
+        {
+          "done": 5,
+          "total": 8,
+          "time": 3139.7999999523163
+        },
+        {
+          "done": 6,
+          "total": 8,
+          "time": 4450.299999952316
+        },
+        {
+          "done": 7,
+          "total": 8,
+          "time": 4548.399999856949
+        },
+        {
+          "done": 8,
+          "total": 8,
+          "time": 5558.599999904633
+        }
+      ]
+    },
+    "cleanup": {
+      "ms": 1864.8999998569489,
+      "peak": 2,
+      "requests": 3,
+      "progress": [
+        {
+          "done": 0,
+          "total": 3
+        },
+        {
+          "done": 1,
+          "total": 3
+        },
+        {
+          "done": 2,
+          "total": 3
+        },
+        {
+          "done": 3,
+          "total": 3
+        }
+      ]
+    },
+    "cached": {
+      "ms": 6.900000095367432,
+      "requests": 0
+    },
+    "cancelMs": 5.478624999999738,
+    "backoffCancelMs": 3.7331669999985024
+  },
+  "calls": [
+    {
+      "prefix": "SPEED",
+      "index": 0,
+      "started": 2192.347333,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 3998.636375
+    },
+    {
+      "prefix": "SPEED",
+      "index": 1,
+      "started": 2694.219666,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 3398.784333
+    },
+    {
+      "prefix": "SPEED",
+      "index": 2,
+      "started": 3404.241958,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 4409.576375
+    },
+    {
+      "prefix": "SPEED",
+      "index": 3,
+      "started": 4002.593625,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 5208.03825
+    },
+    {
+      "prefix": "SPEED",
+      "index": 4,
+      "started": 4505.478583,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 5308.179583
+    },
+    {
+      "prefix": "SPEED",
+      "index": 5,
+      "started": 5211.905583,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 6717.055833
+    },
+    {
+      "prefix": "SPEED",
+      "index": 6,
+      "started": 5714.876708,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 6619.309916
+    },
+    {
+      "prefix": "SPEED",
+      "index": 7,
+      "started": 6623.600125,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 7727.41025
+    },
+    {
+      "prefix": "CLEAN",
+      "index": 0,
+      "started": 7736.556625,
+      "mode": "normal",
+      "maxTokens": 4173,
+      "fulfilled": 9540.040666
+    },
+    {
+      "prefix": "CLEAN",
+      "index": 1,
+      "started": 7889.357833,
+      "mode": "normal",
+      "maxTokens": 4173,
+      "fulfilled": 8593.762958
+    },
+    {
+      "prefix": "CLEAN",
+      "index": 2,
+      "started": 8595.741458,
+      "mode": "normal",
+      "maxTokens": 4173,
+      "fulfilled": 9600.027666
+    },
+    {
+      "prefix": "DUP",
+      "index": 0,
+      "started": 9613.115458,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 10216.730083
+    },
+    {
+      "prefix": "DUP",
+      "index": 1,
+      "started": 10115.772291,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 10719.261541
+    },
+    {
+      "prefix": "DUP",
+      "index": 2,
+      "started": 10615.020916,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 11218.631708
+    },
+    {
+      "prefix": "LIMIT",
+      "index": 0,
+      "started": 11225.729333,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 11827.929541
+    },
+    {
+      "prefix": "LIMIT",
+      "index": 1,
+      "started": 11828.808,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 12430.474958
+    },
+    {
+      "prefix": "LIMIT",
+      "index": 2,
+      "started": 12433.313291,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 13037.701708
+    },
+    {
+      "prefix": "FAIL",
+      "index": 0,
+      "started": 13045.686458,
+      "mode": "fail",
+      "maxTokens": 800,
+      "fulfilled": 13649.218208
+    },
+    {
+      "prefix": "FAIL",
+      "index": 1,
+      "started": 13548.353625,
+      "mode": "fail",
+      "maxTokens": 800,
+      "fulfilled": 14150.871125
+    },
+    {
+      "prefix": "FAIL",
+      "index": 2,
+      "started": 14049.303041,
+      "mode": "fail",
+      "maxTokens": 800,
+      "fulfilled": 14652.965291
+    },
+    {
+      "prefix": "FAIL",
+      "index": 3,
+      "started": 14548.386541,
+      "mode": "fail",
+      "maxTokens": 800,
+      "fulfilled": 15150.684333
+    },
+    {
+      "prefix": "FAIL",
+      "index": 2,
+      "started": 15048.863791,
+      "mode": "fail",
+      "maxTokens": 700,
+      "fulfilled": 15651.526791
+    },
+    {
+      "prefix": "FAIL",
+      "index": 4,
+      "started": 15549.936583,
+      "mode": "fail",
+      "maxTokens": 800,
+      "fulfilled": 16154.695083
+    },
+    {
+      "prefix": "FAIL",
+      "index": 5,
+      "started": 16049.68875,
+      "mode": "fail",
+      "maxTokens": 800,
+      "fulfilled": 16652.7485
+    },
+    {
+      "prefix": "FAIL",
+      "index": 2,
+      "started": 16661.326958,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 17265.609625
+    },
+    {
+      "prefix": "CANCEL",
+      "index": 0,
+      "started": 17271.9815,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 19076.735541
+    },
+    {
+      "prefix": "BACKOFF",
+      "index": 0,
+      "started": 19212.100083,
+      "mode": "rate-limit",
+      "maxTokens": 800,
+      "fulfilled": 19213.225625
+    },
+    {
+      "prefix": "CATALOG",
+      "index": 0,
+      "started": 19246.274416,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 21049.172333
+    },
+    {
+      "prefix": "CATALOG",
+      "index": 1,
+      "started": 19748.8635,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 21553.441875
+    },
+    {
+      "prefix": "LOCALE",
+      "index": 0,
+      "started": 21572.8195,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 23375.974
+    },
+    {
+      "prefix": "TRUNCATE",
+      "index": 0,
+      "started": 23513.379791,
+      "mode": "truncate",
+      "maxTokens": 800,
+      "fulfilled": 24118.866333
+    },
+    {
+      "prefix": "TRUNCATE",
+      "index": 0,
+      "started": 24120.29325,
+      "mode": "truncate",
+      "maxTokens": 1824,
+      "fulfilled": 24723.399291
+    },
+    {
+      "prefix": "TRUNCATE",
+      "index": 0,
+      "started": 24725.20675,
+      "mode": "truncate",
+      "maxTokens": 700,
+      "fulfilled": 25329.108708
+    },
+    {
+      "prefix": "TRUNCATE",
+      "index": 0,
+      "started": 25333.105458,
+      "mode": "truncate",
+      "maxTokens": 1724,
+      "fulfilled": 25937.250833
+    },
+    {
+      "prefix": "TRUNCATE",
+      "index": 0,
+      "started": 25945.147458,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 26549.387583
+    },
+    {
+      "prefix": "FALLBACK",
+      "index": 0,
+      "started": 26556.696083,
+      "mode": "fallback",
+      "maxTokens": 800,
+      "fulfilled": 27161.4485
+    },
+    {
+      "prefix": "FALLBACK",
+      "index": 1,
+      "started": 27057.459625,
+      "mode": "fallback",
+      "maxTokens": 800,
+      "fulfilled": 27664.109625
+    },
+    {
+      "prefix": "FALLBACK",
+      "index": 0,
+      "started": 27560.230625,
+      "mode": "fallback",
+      "maxTokens": 700,
+      "fulfilled": 28164.177291
+    },
+    {
+      "prefix": "FALLBACK",
+      "index": 1,
+      "started": 28058.598,
+      "mode": "fallback",
+      "maxTokens": 700,
+      "fulfilled": 28662.260291
+    },
+    {
+      "prefix": "SCOPE",
+      "index": 0,
+      "started": 28668.852041,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 29271.4885
+    },
+    {
+      "prefix": "SCOPE",
+      "index": 1,
+      "started": 29170.157416,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 29774.8505
+    },
+    {
+      "prefix": "ACCOUNT",
+      "index": 0,
+      "started": 29782.022625,
+      "mode": "normal",
+      "maxTokens": 800
+    },
+    {
+      "prefix": "SCOPE",
+      "index": 0,
+      "started": 29834.742791,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 30437.321791
+    },
+    {
+      "prefix": "SCOPE",
+      "index": 1,
+      "started": 30343.322875,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 30946.312041
+    }
+  ],
+  "errors": []
+}

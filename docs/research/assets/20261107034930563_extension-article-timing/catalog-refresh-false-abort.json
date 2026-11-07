@@ -1,0 +1,14 @@
+{
+  "cat": {
+    "before": 2,
+    "after": 3,
+    "version": 1
+  },
+  "paraBeforeRefresh": 2,
+  "paraTotal": 2,
+  "aborted": 2,
+  "notice": "语言或 AI 设置已更改，正文预览已保留。请确认设置后重新导入。",
+  "previewVisible": true,
+  "articles": 0,
+  "openVisible": false
+}

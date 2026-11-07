@@ -799,7 +799,9 @@ async function initExtensionPage() {
     });
     // Book lists and durable outboxes may use the network. A local lookup hit
     // must be visible before either finishes loading.
-    const workspaceStartup = Promise.allSettled([captureUI.sync(), workspaceUI.sync()]);
+    const captureStartup = captureUI.sync();
+    const workspaceOnlyStartup = workspaceUI.sync();
+    const workspaceStartup = Promise.allSettled([captureStartup, workspaceOnlyStartup]);
     if (!isWorkspaceWindow) workspaceUI.setReady(true);
     if (inlineContext) {
         const page = inlineContext.page;
@@ -810,9 +812,11 @@ async function initExtensionPage() {
             if (getExtensionReadiness().loggedIn) await syncExtensionAccountAI();
             await openAssistant();
         } else if (isWorkspaceWindow) {
-            await workspaceStartup;
+            // Previous confirmed jobs must settle, but the article preview
+            // does not need the capture book list to finish loading.
+            await Promise.allSettled([workspaceOnlyStartup]);
             if (getExtensionReadiness().loggedIn) {
-                try { await syncExtensionAccountAI(); }
+                try { await syncExtensionAccountAI({ forceCatalog: false }); }
                 catch (error) { workspaceUI.setReady(true, error); return; }
                 workspaceUI.setReady(true);
                 if (pageParameters.has('import')) await workspaceUI.importPage();

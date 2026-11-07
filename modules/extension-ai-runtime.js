@@ -188,7 +188,7 @@ export async function pullExtensionAISettings() {
  * Every step checks session currency so an account switch or logout mid-flight
  * drops stale responses cleanly.
  */
-export async function syncExtensionAccountAI() {
+export async function syncExtensionAccountAI({ forceCatalog = true } = {}) {
     const session = captureAuthSession();
     if (!session.loggedIn) {
         return getExtensionReadiness();
@@ -200,7 +200,7 @@ export async function syncExtensionAccountAI() {
         throw err;
     }
     await Promise.all([
-        refreshAICatalog({ force: true, reason: 'extension-sync' }),
+        refreshAICatalog({ force: forceCatalog, reason: 'extension-sync' }),
         syncCredentials({ reason: 'extension-sync' })
     ]);
     if (!isAuthSessionCurrent(session)) {
@@ -569,30 +569,88 @@ export async function runExtensionArticleTask({ page, article, analyze = false, 
     const scope = getActiveAIScope();
     if (!session.loggedIn) throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
     const controller = new AbortController();
-    const abort = () => controller.abort();
-    const authChanged = () => { if (!isAuthSessionCurrent(session)) abort(); };
+    const task = analyze ? 'articleParagraphTranslation' : 'articleCleanup';
+    const locale = getLocale();
+    const choice = getExtensionAIChoice(task);
+    const contextSnapshot = () => {
+        const profile = loadAIProfile(scope);
+        return {
+            choice: getExtensionAIChoice(task),
+            profileConfig: { providers: profile.providers, taskModels: profile.taskModels,
+                taskThinking: profile.taskThinking, defaultModel: profile.defaultModel },
+            catalogVersion: getCatalogState().version,
+            catalogConfig: { providers: getCatalogState().providers, tasks: getCatalogState().tasks }
+        };
+    };
+    const context = contextSnapshot();
+    const contextKey = JSON.stringify(context);
+    const cacheContext = JSON.stringify(context);
+    const abort = () => controller.abort(signal?.reason);
     signal?.addEventListener('abort', abort, { once: true });
     if (signal?.aborted) abort();
-    window.addEventListener(AUTH_EVENT, authChanged);
     const assertCurrent = () => {
         controller.signal.throwIfAborted();
         if (!isAuthSessionCurrent(session) || getActiveAIScope().key !== scope.key) throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
+        if (getLocale() !== locale || JSON.stringify(contextSnapshot()) !== contextKey) {
+            throw Object.assign(new Error('article_context_changed'), { code: 'article_context_changed' });
+        }
     };
+    const contextChanged = () => {
+        try { assertCurrent(); } catch (error) { controller.abort(error); }
+    };
+    const contextEvents = [AUTH_EVENT, 'storage', 'bdc:ai-catalog-change', 'bdc:ai-settings-applied', 'bdc:extension-endpoint-change'];
+    for (const event of contextEvents) window.addEventListener(event, contextChanged);
+    document.addEventListener('bdc:locale-change', contextChanged);
     try {
+        assertCurrent();
         let result;
         // Freeze preferences for this operation, including multi-block articles.
-        const choice = getExtensionAIChoice(analyze ? 'articleParagraphTranslation' : 'articleCleanup');
         if (!analyze) result = await extractPageArticle(structuredClone(page), { ...choice, signal: controller.signal, onProgress });
         else {
             const blocks = String(article.body || '').split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean);
-            const paragraphs = [];
-            for (let i = 0; i < blocks.length; i += 1) {
-                assertCurrent();
-                onProgress?.(i + 1, blocks.length);
-                const paragraph = await analyzeParagraph(i === 0 ? blocks[i].replace(/^#\s+/, '') : blocks[i], { ...choice, level: 'quick', signal: controller.signal });
-                if (paragraph.failed || !paragraph.chinese_translation) throw Object.assign(new Error('page_analysis_failed'), { code: 'page_analysis_failed' });
-                paragraphs.push(paragraph);
-            }
+            const paragraphs = new Array(blocks.length);
+            const unique = new Map();
+            blocks.forEach((block, index) => {
+                const text = index === 0 ? block.replace(/^#\s+/, '') : block;
+                if (!unique.has(text)) unique.set(text, { text, indices: [] });
+                unique.get(text).indices.push(index);
+            });
+            const jobs = [...unique.values()];
+            let next = 0, completed = 0, failure = null;
+            const failedIndexes = [];
+            let causeCode = '';
+            onProgress?.(0, blocks.length);
+            const run = async () => {
+                try {
+                    while (next < jobs.length && !failure) {
+                        assertCurrent();
+                        const job = jobs[next++];
+                        const paragraph = await analyzeParagraph(job.text, { ...choice, level: 'quick', locale,
+                            cacheScope: scope.key, cacheContext, signal: controller.signal });
+                        assertCurrent();
+                        if (paragraph.failed || !String(paragraph.chinese_translation || '').trim()) {
+                            const code = paragraph.errorCode || 'empty_translation';
+                            failedIndexes.push(...job.indices);
+                            causeCode ||= code;
+                            // Keep useful work when one paragraph has a content
+                            // error. Provider/session failures still stop the batch.
+                            if (['empty_translation', 'empty_response', 'provider_error', 'paragraph_translation_truncated'].includes(code)) continue;
+                            throw Object.assign(new Error('page_analysis_failed'), { code: 'page_analysis_failed', causeCode: code });
+                        }
+                        for (const index of job.indices) paragraphs[index] = structuredClone(paragraph);
+                        completed += job.indices.length;
+                        onProgress?.(completed, blocks.length);
+                    }
+                } catch (error) {
+                    if (!failure) failure = error;
+                    controller.abort(error);
+                }
+            };
+            // Keep only two paragraph jobs alive. The shared API queue still
+            // applies the configured provider/model/task limit and spacing.
+            await Promise.allSettled(Array.from({ length: Math.min(2, jobs.length) }, run));
+            if (failure) throw failure;
+            if (failedIndexes.length) throw Object.assign(new Error('page_analysis_failed'), { code: 'page_analysis_failed', failedIndexes, causeCode });
             result = { chinese_translation: paragraphs.map((paragraph) => paragraph.chinese_translation).join('\n\n'),
                 paragraph_analysis: paragraphs, word_alignment: [], detailed_analysis: [], updatedAt: new Date().toISOString() };
         }
@@ -600,7 +658,8 @@ export async function runExtensionArticleTask({ page, article, analyze = false, 
         return result;
     } finally {
         signal?.removeEventListener('abort', abort);
-        window.removeEventListener(AUTH_EVENT, authChanged);
+        for (const event of contextEvents) window.removeEventListener(event, contextChanged);
+        document.removeEventListener('bdc:locale-change', contextChanged);
     }
 }
 
@@ -633,6 +692,7 @@ export async function runExtensionAssistant({ messages, model, thinking, signal,
         window.removeEventListener(AUTH_EVENT, authChanged);
     }
 }
+
 
 export {
     lookupSelection,

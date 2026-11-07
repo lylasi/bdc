@@ -1,0 +1,34 @@
+
+[延遲回應不重開已收起的彈窗]
+  ok   收起後遲到回應不重開彈窗
+
+[句卡 refresh 保留重複句的精確 occurrence]
+  ok   第一處句卡凍結自己的 occurrence
+  ok   refresh 保存到卡片自己的 occurrence（不是 -1／另一處）
+  ok   refresh 更新原卡片與 sentence_analysis
+
+[舊版片語回應不污染新正文]
+  ok   片語舊回應未併入目前正文
+
+[舊版查詞回應不污染目前正文]
+  ok   舊版查詞不污染目前 result.detailed_analysis
+  ok   查詞解釋仍只保存成原版本
+  ok   改版後舊回應不重新顯示彈窗
+
+[refresh 等待期間改版則丟棄結果]
+  ok   改版後 refresh 不寫入 legacy sentence_analysis
+  ok   改版後 refresh 不更新原卡片
+  ok   競態不顯示多餘的儲存失敗訊息
+
+[正文已改版後點舊句卡 refresh 必須被阻止]
+  ok   改版後點 refresh 不再發送新請求
+  ok   舊卡 refresh 不在新版本建立 -1 條目
+  ok   舊卡 refresh 不污染新版 sentence_analysis
+
+[首次句子回應延遲跨版本不得重繪新正文]
+  ok   首次句子延遲回應不寫入新版 sentence_analysis
+  ok   首次句子延遲回應不重繪新版本卡片
+  ok   首次句子延遲回應只保留原版本條目
+  ok   流程沒有 page error
+
+文章版本歸屬回歸測試全部通過

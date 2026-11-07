@@ -1,0 +1,2 @@
+index.html 的 release import map 不是最新（應為 00820aaf9e2b）。
+請執行：node scripts/update-release-map.mjs

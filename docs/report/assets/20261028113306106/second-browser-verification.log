@@ -1,0 +1,19 @@
+ok 1 - zh-CN: A can open their private article URL
+ok 2 - zh-CN: B opening A's URL cannot read A's article
+ok 3 - zh-CN: B cannot delete A's article with the same ID
+ok 4 - zh-CN: B can have an independent copy with exactly the same ID
+ok 5 - zh-CN: deleting B's reading record removes B's saved article
+ok 6 - zh-CN: A's article and URL remain available after B deletes the record
+ok 7 - zh-CN: B's other device receives the deletion
+ok 8 - zh-CN: undo restores B's article without modifying A
+page.waitForEvent: Timeout 20000ms exceeded while waiting for event "console"
+=========================== logs ===========================
+waiting for event "console"
+============================================================
+    at load (/Users/linus/CODE/bdc/docs/report/assets/20261028113306106/verify-article-delete.cjs:114:34)
+    at /Users/linus/CODE/bdc/docs/report/assets/20261028113306106/verify-article-delete.cjs:221:23
+    at check (/Users/linus/CODE/bdc/docs/report/assets/20261028113306106/verify-article-delete.cjs:30:26)
+    at main (/Users/linus/CODE/bdc/docs/report/assets/20261028113306106/verify-article-delete.cjs:220:19) {
+  log: [],
+  name: 'TimeoutError'
+}

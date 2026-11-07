@@ -1,0 +1,94 @@
+PASS zh-CN：移除舊短語入口，保留精簡主要操作
+PASS zh-CN：AI 圖示具本地化標籤
+PASS zh-CN：五個操作保持單列
+PASS zh-CN：加詞本使用短標籤與完整提示
+PASS zh-CN：收起更多選單後仍可直接問 AI
+PASS zh-CN：在詞卡下方展開且聚焦空白輸入框
+PASS zh-CN：開啟不發送、不開右下角助手
+PASS zh-CN：展開狀態正確
+PASS zh-CN：點擊空白處保留詞卡與草稿
+PASS zh-CN：切到另一位置不帶入舊問答區
+PASS zh-CN：另一位置輸入框獨立
+PASS zh-CN：回原位置自動恢復草稿
+PASS zh-CN：同詞不同句使用獨立會話
+PASS zh-CN：輸入法確認不誤發送
+PASS zh-CN：Shift+Enter 換行
+PASS zh-CN：按送出才請求並沿用共用 AI 模式
+PASS zh-CN：請求帶完整文章、所選原句及問題
+PASS zh-CN：請求不混入另一位置的歷史
+PASS zh-CN：可在詞卡追問並包含原對話
+PASS zh-CN：問題保存到精確第二個單詞
+PASS zh-CN：回答保留同一單詞來源
+PASS zh-CN：長回答限制高度並在區內捲動
+PASS zh-CN：彈出沿用原節點、對話及草稿
+PASS zh-CN：關閉原詞卡後仍可返回同一位置
+PASS zh-CN：問答可收起且焦點回 AI 圖示
+PASS zh-CN：重新展開保留對話及草稿
+PASS zh-CN：Escape 關閉詞卡並回到原詞
+PASS zh-CN：重載後恢復同一位置的歷史
+PASS zh-CN：即時換語言不改寫歷史或草稿
+PASS zh-CN：大視窗的保留文件按鈕同步切換語言
+PASS zh-CN：已保留文件狀態切換語言後仍正確
+PASS zh-CN：手機詞卡及輸入完整位於可視範圍
+PASS zh-CN：手機主要操作點擊區至少 44px
+PASS zh-CN：320px 手機工具列與選單無溢出
+PASS zh-CN：鍵盤升起後輸入框保留在可視範圍
+PASS zh-CN：停用時保留詞卡並提示原因
+PASS zh-CN：無 JavaScript 執行錯誤
+PASS zh-HK：移除舊短語入口，保留精簡主要操作
+PASS zh-HK：AI 圖示具本地化標籤
+PASS zh-HK：五個操作保持單列
+PASS zh-HK：加詞本使用短標籤與完整提示
+PASS zh-HK：收起更多選單後仍可直接問 AI
+PASS zh-HK：在詞卡下方展開且聚焦空白輸入框
+PASS zh-HK：開啟不發送、不開右下角助手
+PASS zh-HK：展開狀態正確
+PASS zh-HK：點擊空白處保留詞卡與草稿
+PASS zh-HK：切到另一位置不帶入舊問答區
+PASS zh-HK：另一位置輸入框獨立
+PASS zh-HK：回原位置自動恢復草稿
+PASS zh-HK：同詞不同句使用獨立會話
+PASS zh-HK：輸入法確認不誤發送
+PASS zh-HK：Shift+Enter 換行
+PASS zh-HK：按送出才請求並沿用共用 AI 模式
+PASS zh-HK：請求帶完整文章、所選原句及問題
+PASS zh-HK：請求不混入另一位置的歷史
+PASS zh-HK：可在詞卡追問並包含原對話
+PASS zh-HK：問題保存到精確第二個單詞
+PASS zh-HK：回答保留同一單詞來源
+PASS zh-HK：長回答限制高度並在區內捲動
+PASS zh-HK：彈出沿用原節點、對話及草稿
+PASS zh-HK：關閉原詞卡後仍可返回同一位置
+PASS zh-HK：問答可收起且焦點回 AI 圖示
+PASS zh-HK：重新展開保留對話及草稿
+PASS zh-HK：Escape 關閉詞卡並回到原詞
+PASS zh-HK：重載後恢復同一位置的歷史
+PASS zh-HK：即時換語言不改寫歷史或草稿
+PASS zh-HK：大視窗的保留文件按鈕同步切換語言
+PASS zh-HK：已保留文件狀態切換語言後仍正確
+PASS zh-HK：手機詞卡及輸入完整位於可視範圍
+PASS zh-HK：手機主要操作點擊區至少 44px
+PASS zh-HK：320px 手機工具列與選單無溢出
+PASS zh-HK：鍵盤升起後輸入框保留在可視範圍
+PASS zh-HK：停用時保留詞卡並提示原因
+PASS zh-HK：無 JavaScript 執行錯誤
+PASS 串流：彈出時仍在回答且沿用同一節點
+PASS 串流：返回詞卡時不中斷
+PASS 串流：彈出返回只發送一次請求且保留追問草稿
+PASS 串流：詞卡可停止，半段以 cancelled 保存
+PASS 串流：停止後恢復問題草稿
+PASS 串流：失敗可在詞卡重試且保留半段及草稿
+PASS 串流：切詞後仍可按原問題重試
+PASS 串流：重試不重複保存問題
+PASS 串流：範圍切換移除詞卡問答及大視窗
+PASS 串流：新範圍不帶入舊問答
+PASS 串流：失效範圍不保存舊回答
+PASS 串流：無 JavaScript 執行錯誤
+PASS 會話隔離：首次開主助手不載入詞卡對話
+PASS 會話隔離：主助手首次提問不帶詞卡問答
+PASS 會話隔離：主助手另建文章會話
+PASS 會話隔離：未指定會話時回到文章對話
+PASS 會話隔離：詞卡會話保持獨立
+PASS 會話隔離：無 JavaScript 執行錯誤
+
+全部通過：92 項檢查。

@@ -1,0 +1,96 @@
+{
+  "checks": [
+    {
+      "name": "可信擴充套件帳戶已連接",
+      "ok": true
+    },
+    {
+      "name": "選字旁小窗可查詞",
+      "ok": true
+    },
+    {
+      "name": "收藏列只顯示加入詞書與詞書設定",
+      "ok": true
+    },
+    {
+      "name": "浮窗可用「更多」展開完整面板",
+      "ok": true
+    },
+    {
+      "name": "詞書設定在原生 dialog 內開啟",
+      "ok": true
+    },
+    {
+      "name": "沒有預設時可直接建立並選用預設生詞本",
+      "ok": true
+    },
+    {
+      "name": "可直接建立並選用目前網頁詞書",
+      "ok": true
+    },
+    {
+      "name": "原網頁收藏沿用展示結果，不再呼叫 AI",
+      "ok": true
+    },
+    {
+      "name": "首頁文章入口開啟獨立文章 popup",
+      "ok": true
+    },
+    {
+      "name": "文章擷取不在 inline 更多內",
+      "ok": true
+    },
+    {
+      "name": "AI 擷取有標題、正文及章節，可先預覽",
+      "ok": true
+    },
+    {
+      "name": "先建頁書再存文章可自動關聯",
+      "ok": true
+    },
+    {
+      "name": "文章詳解保存完整正文和選擇的逐段分析",
+      "ok": true
+    },
+    {
+      "name": "網頁表單私有欄位未送入文章",
+      "ok": true
+    },
+    {
+      "name": "在 BDC 打開會於同一個文章 popup 導航 #a/<id>",
+      "ok": true,
+      "detail": {
+        "appUrl": "http://127.0.0.1:55749/#a/webart_224c0c4ec11d90bfd8241ef0baeeab78e9566f59251efb83",
+        "articleId": "webart_224c0c4ec11d90bfd8241ef0baeeab78e9566f59251efb83"
+      }
+    },
+    {
+      "name": "可直接開啟 BDC 的同一篇文章詳解",
+      "ok": true
+    },
+    {
+      "name": "文章詳解沿用已關聯的頁書，不另建空白詞書",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 浮窗沒有橫向溢出",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 浮窗沒有橫向溢出",
+      "ok": true
+    },
+    {
+      "name": "正常流程沒有未捕獲錯誤",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": [],
+  "consoles": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "aiMocked": true,
+  "realMV3": true,
+  "realWorkerSQLite": true
+}

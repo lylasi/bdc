@@ -1,0 +1,163 @@
+{
+  "checks": [
+    {
+      "name": "查詞不自動建立詞書，也不使用任意帳戶預設",
+      "ok": true
+    },
+    {
+      "name": "首次加入直接可按，懸停說明網頁目標",
+      "ok": true
+    },
+    {
+      "name": "底部只有一行加入按鈕與詞書圖示",
+      "ok": true,
+      "detail": {
+        "save": {
+          "x": 10,
+          "y": 116.78125,
+          "h": 32,
+          "w": 64
+        },
+        "settings": {
+          "x": 80,
+          "y": 116.78125,
+          "h": 32,
+          "w": 34
+        },
+        "section": {
+          "x": 10,
+          "y": 107.78125,
+          "h": 41,
+          "w": 318
+        },
+        "overflow": false
+      }
+    },
+    {
+      "name": "兩個窗口首次同時收藏只建立一本網頁詞書",
+      "ok": true,
+      "detail": [
+        {
+          "id": "webbook_7ea0f1dec00b5cdd5f862728b0e874db52173be345f21bca",
+          "name": "网页",
+          "sourceUrl": "",
+          "sourceType": "manual",
+          "createdAt": "2026-11-06T18:04:05.241Z",
+          "updatedAt": "2026-11-06T18:04:05.241Z"
+        },
+        {
+          "id": "book",
+          "name": "单词本"
+        },
+        {
+          "id": "book-2",
+          "name": "Reading"
+        }
+      ]
+    },
+    {
+      "name": "兩個窗口收藏均保留各自文章來源",
+      "ok": true,
+      "detail": [
+        {
+          "bookId": "webbook_7ea0f1dec00b5cdd5f862728b0e874db52173be345f21bca",
+          "word": "plunge",
+          "meaning": "暴跌（语境）",
+          "phonetic": "plʌndʒ",
+          "pos": "verb",
+          "examples": [],
+          "sources": [
+            {
+              "sentence": "Major tech stocks plunge as investors worry.",
+              "context": "Major tech stocks plunge as investors worry. Markets remain volatile.",
+              "articleId": "",
+              "contentVersion": "",
+              "anchor": {
+                "start": 18,
+                "end": 24,
+                "quote": "plunge",
+                "prefix": "Major tech stocks ",
+                "suffix": " as investors worry. Markets remain volatile."
+              },
+              "addedAt": "2026-11-06T18:04:05.255Z",
+              "sourceUrl": "http://127.0.0.1:57801/test-article?footer=2",
+              "pageTitle": "Major tech stocks plunge",
+              "meaning": "暴跌（语境）",
+              "locale": "zh-CN"
+            },
+            {
+              "sentence": "Major tech stocks plunge as investors worry.",
+              "context": "Major tech stocks plunge as investors worry. Markets remain volatile.",
+              "articleId": "",
+              "contentVersion": "",
+              "anchor": {
+                "start": 18,
+                "end": 24,
+                "quote": "plunge",
+                "prefix": "Major tech stocks ",
+                "suffix": " as investors worry. Markets remain volatile."
+              },
+              "addedAt": "2026-11-06T18:04:05.269Z",
+              "sourceUrl": "http://127.0.0.1:57801/test-article?footer=1",
+              "pageTitle": "Major tech stocks plunge",
+              "meaning": "暴跌（语境）",
+              "locale": "zh-CN"
+            }
+          ],
+          "source": "extension",
+          "context": "Major tech stocks plunge as investors worry.",
+          "addedAt": "2026-11-06T18:04:05.255Z",
+          "createdAt": "2026-11-06T18:04:05.255Z",
+          "updatedAt": "2026-11-06T18:04:05.269Z",
+          "deletedAt": ""
+        }
+      ]
+    },
+    {
+      "name": "建立後備不修改帳戶預設，也不重跑 AI",
+      "ok": true
+    },
+    {
+      "name": "成功狀態保持單行，不額外佔用提示列",
+      "ok": true,
+      "detail": {
+        "save": {
+          "x": 10,
+          "y": 116.78125,
+          "h": 32,
+          "w": 66
+        },
+        "settings": {
+          "x": 82,
+          "y": 116.78125,
+          "h": 32,
+          "w": 34
+        },
+        "section": {
+          "x": 10,
+          "y": 107.78125,
+          "h": 41,
+          "w": 318
+        },
+        "overflow": false
+      }
+    },
+    {
+      "name": "詞書圖示開彈窗，選書及新建控制可用",
+      "ok": true
+    },
+    {
+      "name": "彈窗建立本頁詞書並選用",
+      "ok": true
+    },
+    {
+      "name": "彈窗提供直接查看詞書入口",
+      "ok": true
+    },
+    {
+      "name": "頁書保存原句、原文與定位",
+      "ok": true
+    }
+  ],
+  "errors": []
+}

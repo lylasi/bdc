@@ -1,0 +1,19 @@
+ok 1 - zh-CN: A can open their private article URL
+ok 2 - zh-CN: B opening A's URL cannot read A's article
+ok 3 - zh-CN: B cannot delete A's article with the same ID
+ok 4 - zh-CN: B can have an independent copy with exactly the same ID
+ok 5 - zh-CN: deleting B's reading record removes B's saved article
+ok 6 - zh-CN: A's article and URL remain available after B deletes the record
+ok 7 - zh-CN: B's other device receives the deletion
+ok 8 - zh-CN: undo restores B's article without modifying A
+ok 9 - zh-CN: B's private link works again after undo
+ok 10 - zh-HK: A can open their private article URL
+ok 11 - zh-HK: B opening A's URL cannot read A's article
+ok 12 - zh-HK: B cannot delete A's article with the same ID
+ok 13 - zh-HK: B can have an independent copy with exactly the same ID
+ok 14 - zh-HK: deleting B's reading record removes B's saved article
+ok 15 - zh-HK: A's article and URL remain available after B deletes the record
+ok 16 - zh-HK: B's other device receives the deletion
+ok 17 - zh-HK: undo restores B's article without modifying A
+ok 18 - zh-HK: B's private link works again after undo
+PASS 18 checks; no page execution errors.

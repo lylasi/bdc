@@ -1,0 +1,167 @@
+{
+  "checks": [
+    {
+      "name": "首頁查詞表單與 AI 摘要已收進 dialog",
+      "ok": true
+    },
+    {
+      "name": "設定 dialog 可開啟且包含 AI 控件",
+      "ok": true
+    },
+    {
+      "name": "密碼、通行碼及 API Key 欄位遮蔽輸入",
+      "ok": true
+    },
+    {
+      "name": "未登入的帳戶表單展開，AI 控制停用",
+      "ok": true
+    },
+    {
+      "name": "登入後自動收合帳戶表單，帳戶狀態仍可見",
+      "ok": true
+    },
+    {
+      "name": "模型來自帳戶允許清單",
+      "ok": true
+    },
+    {
+      "name": "選擇即時保存但不自行呼叫 AI",
+      "ok": true
+    },
+    {
+      "name": "小窗可用 #ext-inline-edit 打開查詞 dialog",
+      "ok": true
+    },
+    {
+      "name": "小窗內可直接打開設定 dialog 並看到模型與思考選擇",
+      "ok": true
+    },
+    {
+      "name": "網頁單詞請求實際帶選定模型和 high",
+      "ok": true
+    },
+    {
+      "name": "相同選項可命中原有快取",
+      "ok": true
+    },
+    {
+      "name": "思考程度改變會分開快取並傳送 low",
+      "ok": true
+    },
+    {
+      "name": "關閉思考傳送 none",
+      "ok": true
+    },
+    {
+      "name": "跟隨服務端省略 reasoning_effort",
+      "ok": true
+    },
+    {
+      "name": "擴充套件選擇不改寫雲端 AI profile",
+      "ok": true
+    },
+    {
+      "name": "重開頁面仍保留按帳戶保存的選擇",
+      "ok": true
+    },
+    {
+      "name": "重新讀取帳戶 API 不覆蓋擴充套件選擇",
+      "ok": true
+    },
+    {
+      "name": "恢復帳戶設定會移除當前用途的覆寫",
+      "ok": true
+    },
+    {
+      "name": "短語有自己的設定，請求傳送 medium",
+      "ok": true
+    },
+    {
+      "name": "獨立查詞同樣使用選定模型和思考程度",
+      "ok": true
+    },
+    {
+      "name": "文章擷取實際使用所選模型和思考程度",
+      "ok": true
+    },
+    {
+      "name": "段落翻譯實際使用所選模型和思考程度",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 動態控制翻譯與窄窗不溢出",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 動態控制翻譯與窄窗不溢出",
+      "ok": true
+    },
+    {
+      "name": "換帳戶不沿用前一帳戶的模型與思考程度",
+      "ok": true
+    },
+    {
+      "name": "切回帳戶恢復自己的偏好",
+      "ok": true
+    },
+    {
+      "name": "兩個視窗並行修改同用途的模型和思考均保留",
+      "ok": true
+    },
+    {
+      "name": "兩個視窗並行修改不同用途均保留",
+      "ok": true
+    },
+    {
+      "name": "偏好儲存不含 Token、Key 或 API URL",
+      "ok": true
+    },
+    {
+      "name": "無頁面 JavaScript 例外",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "model": "reasoning-model",
+      "reasoning_effort": "high"
+    },
+    {
+      "model": "reasoning-model",
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "reasoning-model",
+      "reasoning_effort": "none"
+    },
+    {
+      "model": "reasoning-model"
+    },
+    {
+      "model": "capture-model",
+      "reasoning_effort": "none"
+    },
+    {
+      "model": "reasoning-model",
+      "reasoning_effort": "medium"
+    },
+    {
+      "model": "capture-model",
+      "reasoning_effort": "none"
+    },
+    {
+      "model": "reasoning-model",
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "reasoning-model",
+      "reasoning_effort": "high"
+    },
+    {
+      "model": "reasoning-model",
+      "reasoning_effort": "medium"
+    }
+  ]
+}

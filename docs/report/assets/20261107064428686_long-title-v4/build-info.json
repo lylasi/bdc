@@ -1,0 +1,73 @@
+{
+  "generatedAt": "2026-11-07T07:00:54.356",
+  "workspace": "/Users/linus/CODE/bdc",
+  "server": "http://127.0.0.1:8313",
+  "resourceVersion": {
+    "declaredByRequester_buildA": "16de1d2c639d",
+    "observedInIndexHtml_buildB": "?v=de4459ae4da5"
+  },
+  "buildA_startOfAudit": {
+    "note": "審查開始時（06:43:30）實際載入的版本＝使用者指定的 V4（資源版本 16de1d2c639d）",
+    "features/vocabulary/vocabulary.js": {
+      "md5": "20c242d4def9751d01828a67ff77c41c",
+      "sha256_16": "c7d98357f1c218f1ebb450e8"
+    },
+    "index.html": {
+      "md5": "37faf8066dbd96680abe0489519b110f"
+    },
+    "styles.css": {
+      "md5": "97fe37fc361cf5653a73ffca1bfc5080",
+      "sha256_16": "471822d77bf70cd69d350916"
+    },
+    "modules/dom.js": {
+      "md5": "ac3df8c73fcd34226ea604adf0e21e62"
+    }
+  },
+  "buildB_finalAudited": {
+    "note": "06:50:57 生產檔被更新（加入 window scroll → closeWordPanelMenu）；本報告的 46 個案例全部重跑在此版本，執行前後 hash 一致",
+    "features/vocabulary/vocabulary.js": {
+      "md5": "a58173e033c8ab815c002f37a34646ab",
+      "sha256_16": "3aed3a2944ee6f15",
+      "size": 71321
+    },
+    "index.html": {
+      "md5": "ea160feff903259bc322f117b87a9539",
+      "sha256_16": "d405e7c83c86a2b6",
+      "size": 99027
+    },
+    "styles.css": {
+      "md5": "97fe37fc361cf5653a73ffca1bfc5080",
+      "sha256_16": "471822d77bf70cd6",
+      "size": 268012
+    },
+    "modules/dom.js": {
+      "md5": "ac3df8c73fcd34226ea604adf0e21e62",
+      "sha256_16": "1a39e46e7b623692",
+      "size": 18435
+    }
+  },
+  "midAuditChange": {
+    "when": "2026-11-07 06:50:57（audit-menu-shrink-v4 與 audit-menu-focus-v4 執行期間）",
+    "files": [
+      "features/vocabulary/vocabulary.js",
+      "index.html"
+    ],
+    "observedDiff": [
+      "features/vocabulary/vocabulary.js: openWordPanelMenu 新增 window.addEventListener('scroll', closeWordPanelMenu, { passive: true })",
+      "features/vocabulary/vocabulary.js: closeWordPanelMenu 新增 window.removeEventListener('scroll', closeWordPanelMenu)",
+      "index.html: 資源版本 ?v=16de1d2c639d → ?v=de4459ae4da5（詞書面板 markup 逐字比對未變）"
+    ],
+    "behaviouralDiff_buildA_vs_B": "band 12/12 案例量測值逐位相同；收縮/焦點 36 個共同階段中僅 4 個（320×720 空詞書 page-scroll 200/400，兩種語系）不同：選單由「保持開啟」變為「收起」。其餘完全相同。",
+    "archivedEvidence": "shots/prev-build-0650/（build A 的 JSON 與截圖，未覆蓋）"
+  },
+  "artifacts": {
+    "menu-band-v4.json": "驗收 1：band 內、item 可達、enabled 項可點（12 案例）",
+    "menu-shrink-v4.json": "驗收 2：縮小／還原／重新開啟／頁面捲動（12 案例）",
+    "menu-open-short-v4.json": "驗收 2 補測：320×400 / 320×260 人類操作順序開選單（8 案例）+ 自動捲動假象診斷",
+    "menu-scroll-wheel-v4.json": "驗收 2 補測：真實滾輪（6 案例）",
+    "menu-focus-v4.json": "驗收 3：1024 側欄不誤判、選單/chips 路徑、焦點回歸（4 案例）",
+    "menu-v3-control-v4.json": "對照組：V3 算法（不扣操作區）重現最後一項被 nav 蓋住 vs V4",
+    "shots/": "截圖 96 張",
+    "shots/prev-build-0650/": "build A 封存證據 98 個檔案"
+  }
+}

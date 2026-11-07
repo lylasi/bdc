@@ -77,7 +77,7 @@ export default {
         languageLabel: '显示语言',
         languageHint: '界面和 AI 回复使用所选语言，学习内容保持原样。',
         showWordSources: '显示单词来源',
-        wordSourcesHint: '在单词本显示来源入口，点击可查看原句与语境。',
+        wordSourcesHint: '在单词本显示来源图标，点击后可在弹窗查看原句与语境。',
         theme: '配色主题', themeHint: '主色与纸面底色会一起变化，文字、提示色与排版保持不变。', themeTeal: '墨青', themeBlue: '海蓝', themeIndigo: '靛蓝', themeViolet: '紫罗兰', themeSlate: '石墨', themeForest: '森林绿', themeCandy: '糖果粉', themeCoffee: '咖啡棕', themeFlame: '火影', themeNight: '夜刃',
         themeArt: '背景插画', themeArtHint: '可给每套配色各放一张图片；未选时用主题自带图片，只保存在本机，不会上传或同步。',
         themeArtPick: '选择图片', themeArtClear: '移除', themeArtNone: '当前配色还没有图片', themeArtBuiltIn: '使用主题自带图片',
@@ -525,6 +525,9 @@ export default {
         deepLinkInvalid: '词书链接无效。',
         deepLinkMissing: '找不到这本词书，可能尚未同步到此设备。',
         savedSources: '来源（{count}）',
+        viewSources: '查看 {word} 的来源（{count}）',
+        wordSourcesTitle: '单词来源（{count}）',
+        viewFullName: '查看完整名称',
         sourcesLimitReached: '该词条的来源已达上限，未加入新的来源。',
         openOriginalSource: '打开原网页',
         sourceSentence: '原句：',
@@ -581,7 +584,7 @@ export default {
         importHere: '点击这里导入',
         emptyBook: '这个单词本是空的，点击右上角铅笔按钮添加单词。'
         ,newBookTitle: '新增单词本'
-        ,editBookTitle: '编辑单词本 - {name}'
+        ,editBookTitle: '编辑单词本'
         ,bookName: '单词本名称'
         ,bookNamePlaceholder: '例如：雅思核心词汇'
         ,bulkWords: '批量新增单词（每行一个）'
@@ -977,6 +980,7 @@ export default {
         ,downloadLinkOpened: '已打开下载链接；是否完成由浏览器与服务决定'
         ,analysisRecordMissing: '这篇文章的分析记录已删除，无法自动还原原文。请重新导入或粘贴文章内容后再分析。'
         ,doneStatus: '完成', failedStatus: '解析失败', refresh: '重新获取', refreshing: '重新获取中...', staleSentenceCard: '正文已更新，请重新打开该句后再操作。', sentenceAnalysis: '句子解析', sentenceNoTranslation: '（本句暂无中文译文）', processing: '处理中…', cleaning: 'AI 清洗中…', cleaningProgress: 'AI 清洗中…（{done}/{total}）', fetching: '提取中…', cleanupTruncated: '内容较长，AI 清洗已达到模型输出上限，结果可能缺少尾段；建议分段导入。', extractTruncated: '内容较长，AI 提取已达到模型输出上限，结果可能缺少尾段；建议分段导入。', sourcesFallbackHint: '新闻来源端点没有响应，当前显示的是 ai-config.js 中配置的备用来源清单，可能与服务端实际支持的来源不一致。', collapse: '收起', close: '关闭', closeWindow: '关闭窗口', details: '详解', detailsLoading: '详解加载中...', loading: '加载中...', loadingDetails: '正在加载详解...', analyzeSelection: '分析选中内容', selectPhraseHint: '选中句中短语后点击', collapseArea: '点击此区域收起', collapseAreaAria: '点击右侧空白区域可收起', selectPhraseFirst: '请先在该句中选中短语', analyzingSelection: '分析中...', phraseLabel: '短语：', usageLabel: '用法：', roleLabel: '作用：', meaningLabel: '意思：', pronunciation: '发音', analyzePhrase: '分析短语', analyzeOtherPhrase: '自定义短语...', phrasePrompt: '输入要分析的短语', analysisRetry: '分析失败，请稍后再试', analysisRetryShort: '分析失败，请稍后重试', noAnalysisData: '未找到分析数据。', retry: '重试', retrying: '重试中...', addToWordbook: '加入单词本', addSelectedToWordbook: '加入单词本（选中）', selectWordOrPhrase: '请先在该句中选中词语或短语', wordAnalysisFailed: '分析失败。'
+        ,cleanupPartial: '有 {count} 块正文未能完整整理，已保留原文，请检查后再应用。'
         ,historyRecords: '阅读记录'
         ,historyOpenTitle: '打开阅读记录'
         ,historyStatusEdited: '内容已修改，尚未分析'
@@ -1442,7 +1446,7 @@ export default {
         ,previewEmpty: '请输入内容：每两行为一组（第一行为问题，第二行为答案）', formatErrors: '格式错误：', parsedPairs: '成功解析 {count} 个问答对', copy: '复制', moveUp: '上移', moveDown: '下移', addPair: '新增问答', copyAll: '复制全部', clearAll: '清空全部', confirmClearPairs: '确定清空所有问答对吗？', confirmDeleteQuestion: '删除第 {number} 题？', pairDeleted: '已删除该问答对', pairCopied: '已复制该题到剪贴板', allPairsCopied: '已复制全部问答对', newQuestion: '（请输入问题）', newAnswer: '（请输入答案）', unansweredConfirm: '还有 {count} 题未回答，确定完成训练吗？', cancelTrainingConfirm: '确定取消当前训练吗？所有进度都将丢失。', aiUnavailable: 'AI 服务不可用，将使用基本校对模式', noCheckableAnswers: '没有可校对的答案（尚未输入内容）', aiFallback: 'AI 校对失败，改用基本校对模式'
         ,allCorrectRecommendation: '太棒了！所有答案都正确，继续保持！', spellingRecommendation: '建议多练习单词拼写，可以使用拼写检查工具', grammarRecommendation: '建议复习相关语法规则，多做语法练习', reviewRecommendation: '有些答案需要重点关注，建议重新学习相关内容'
         ,trainingOptionsTitle: '问答训练设置', trainingOptionsDescription: '请选择您的训练偏好，这些设置将影响您的学习体验', trainingMode: '训练模式', trainingModeDescription: '选择问题的出现顺序', sequentialMode: '顺序模式', sequentialDescription: '按照原始顺序练习', randomMode: '随机模式', randomDescription: '随机打乱问题顺序', layout: '练习呈现', layoutDescription: '是否分题练习', listMode: '列表模式（默认）', listDescription: '一次列出全部题目，逐题输入；每题可单独 AI 校对', singleMode: '分题模式', singleDescription: '一题一题作答，逐题切换', learningAdvice: '学习建议', differenceHint: '差异提示', missing: '缺少：', extra: '多出：', partialCorrect: '部分正确', needsImprovement: '需改进', teacherFeedback: '教师反馈', aiFeedback: 'AI 反馈：', strengths: '亮点表现', aiReview: 'AI 评语自检', aiReviewOk: 'AI 评语检查：无明显问题', improvementAdvice: '改进建议', studyFocusLabel: '学习重点', improvedExamples: '优化示例', example: '示例 {number}：', explanationLabel: '解析：', needsCorrection: '需要修正', noStandardAnswer: '还没有标准答案', issuePunctuation: '标点／格式', issueGrammar: '语法', issueSpelling: '拼写', issueVocabulary: '用词', issueStructure: '句子结构',
-        previewTitle: '查看问答集：{name}', questionTotal: '题目数量：{count}', shuffleOrder: '随机顺序', resetOrder: '重置', copyContent: '复制内容', perPage: '每页', lineCount: '行数', exportQuestions: '导出手写练习', exportAnswers: '导出答案', startPreviewTraining: '开始训练此问答集', close: '关闭', shuffledNotice: '已随机打乱题目顺序', resetNotice: '已重置为原顺序', nothingToCopy: '没有可复制的内容', contentCopied: '内容已复制（含序号、Q/A）', copyContentFailed: '复制内容失败', previewFailed: '无法预览问答集，请稍后再试。', exportQuestionsFailed: '导出手写练习 PDF 失败', exportAnswersFailed: '导出答案 PDF 失败'
+        previewTitle: '查看问答集', questionTotal: '题目数量：{count}', shuffleOrder: '随机顺序', resetOrder: '重置', copyContent: '复制内容', perPage: '每页', lineCount: '行数', exportQuestions: '导出手写练习', exportAnswers: '导出答案', startPreviewTraining: '开始训练此问答集', close: '关闭', shuffledNotice: '已随机打乱题目顺序', resetNotice: '已重置为原顺序', nothingToCopy: '没有可复制的内容', contentCopied: '内容已复制（含序号、Q/A）', copyContentFailed: '复制内容失败', previewFailed: '无法预览问答集，请稍后再试。', exportQuestionsFailed: '导出手写练习 PDF 失败', exportAnswersFailed: '导出答案 PDF 失败'
     },
     qaPdf: {
         loadSetFailed: '问答集加载失败', loadLibraryFailed: 'jsPDF 加载失败，请检查网络连接或刷新页面', preparingEngine: '首次导出需准备 PDF 组件（含中文字型），请稍候…', answer: '答案：{answer}', ordered: '_顺序', shuffled: '_乱序', withAnswers: '_含答案', handwriting: '_手写版', exportSuccess: '手写练习 PDF 已成功导出！', exportFailed: '手写练习 PDF 导出失败：{message}', handwritingTitle: '{name} - 手写练习', identity: '日期：_______________    姓名：_______________    成绩：_______________', instructionsWithAnswers: '说明：请根据问题写出答案，答案已在题目下方提供参考。', instructions: '说明：请在横线上写出完整的英文答案，注意大小写和标点符号。', page: '第 {current} 页，共 {total} 页', reportTitle: '问答训练结果报告', errorSummary: '错误点汇总（精简）', reportFile: '问答训练报告_{name}_{date}.pdf', reportSuccess: 'PDF 报告已成功导出！', reportFailed: 'PDF 导出失败：{message}', setName: '问答集名称：{name}', trainingTime: '训练时间：{start} - {end}', duration: '训练时长：{duration}', mode: '训练模式：{mode}', random: '随机模式', sequential: '顺序模式', total: '题目总数：{count}', answered: '已作答：{count}', summary: '训练总结', incorrect: '错题数：{count}', unanswered: '未作答：{count}', details: '详细答案分析', questionNumber: '第 {number} 题', question: '问题：{text}', standardAnswer: '标准答案：{text}', userAnswer: '您的答案：{text}', noAnswer: '（未回答）', verdict: '判定：{result}', correct: '正确', wrong: '错误', feedback: '反馈：{text}', suggestion: '建议：{text}', generatedAt: '生成时间：{time}', durationShort: '{minutes}分{seconds}秒'
@@ -1635,10 +1639,16 @@ export default {
         pageArticleSave: '确认并分析导入',
         pageArticleSaveOnly: '确认并导入正文',
         pageExtracting: '正在读取网页并提取正文…',
-        pageExtractProgress: '正在整理正文 {current}/{total}…',
+        pageExtractProgress: '已处理 {current}/{total} 块正文…',
+        pageExtractionPartial: '有 {count} 块正文未能完整整理，已保留原文。请检查后再确认导入。',
+        pageReplacePreviewConfirm: '重新提取会替换你修改过的标题和正文，继续吗？',
+        pageArticleRetry: '重试导入',
+        pageAnalyzing: '正在翻译文章…',
+        pageAnalysisPartialFailed: '{count} 段翻译未完成，正文已保留。再次确认会复用已完成的结果，只补未完成段落。',
         pagePreviewReady: '正文已提取，尚未分析或导入。请检查或修改标题与正文，再确认导入。',
         pageSaving: '正在保存文章…',
-        pageAnalysisProgress: '正在分析段落 {current}/{total}…',
+        pageAnalysisProgress: '已完成 {current}/{total} 段翻译…',
+        pageAnalysisSettingsChanged: '语言或 AI 设置已更改，正文预览已保留。请确认设置后重新导入。',
         pageArticleSaved: '已保存到文章详解，同页词书已关联。返回 BDC 同步后可阅读。',
         pageArticleReused: '这篇网页已有文章，已沿用原记录并保留原内容。',
         pageArticleTooLarge: '正文超过单篇 100,000 字符上限，请缩短后导入。',

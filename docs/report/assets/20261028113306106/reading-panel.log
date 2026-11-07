@@ -1,0 +1,28 @@
+  ok   zh-CN: counts, search and saved intersection
+  ok   zh-CN: desktop layout and original text locate
+  ok   zh-CN: draft failure, retry feedback and close flush
+  ok   zh-CN: mouse retry keeps the click target and returns focus to the note
+  ok   zh-CN: tools are clickable and backup entry downloads JSON
+  ok   zh-CN: document Markdown and linked source record
+  ok   zh-CN: delete cancel, delete and durable undo for item and document
+  ok   zh-CN: loading, read failure and retry distinguish unavailable data
+  ok   zh-CN: closed and open tools wrap Tab and Shift+Tab within the panel
+  ok   zh-CN: phone and tablet child dialogs, keyboard trap, locate return
+  ok   zh-CN: active recheck restores, old replies and stale undo preserve tombstones
+  ok   zh-CN: source conversation opens existing assistant without sending
+  ok   zh-CN: AI summary uses mock provider and preserves source records
+  ok   zh-HK: counts, search and saved intersection
+  ok   zh-HK: desktop layout and original text locate
+  ok   zh-HK: draft failure, retry feedback and close flush
+  ok   zh-HK: mouse retry keeps the click target and returns focus to the note
+  ok   zh-HK: tools are clickable and backup entry downloads JSON
+  ok   zh-HK: document Markdown and linked source record
+  ok   zh-HK: delete cancel, delete and durable undo for item and document
+  ok   zh-HK: loading, read failure and retry distinguish unavailable data
+  ok   zh-HK: closed and open tools wrap Tab and Shift+Tab within the panel
+  ok   zh-HK: phone and tablet child dialogs, keyboard trap, locate return
+  ok   zh-HK: active recheck restores, old replies and stale undo preserve tombstones
+  ok   zh-HK: source conversation opens existing assistant without sending
+  ok   zh-HK: AI summary uses mock provider and preserves source records
+
+26 checks passed

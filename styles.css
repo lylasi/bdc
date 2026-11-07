@@ -737,6 +737,7 @@ button.btn,
 .cancel-btn,
 .icon-btn,
 .play-btn,
+.word-sources-btn,
 .word-phonetics-btn,
 .speed-btn,
 .tab-btn,
@@ -1967,10 +1968,36 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     padding: var(--sp-4);
     min-width: 0;
     position: relative; /* 「更多操作」選單的定位基準 */
+    container-name: vocabulary-words;
+    container-type: inline-size;
 }
-.vocab-words-panel .panel-header { align-items: flex-start; }
-#current-book-name { font-size: var(--fs-lg); flex: 1 1 160px; min-width: 0; }
-.word-panel-actions { gap: 6px; }
+.vocab-words-panel .panel-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--sp-3);
+}
+.book-title-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    min-width: 0;
+}
+#current-book-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: var(--fs-lg);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.book-name-details-btn { flex: 0 0 auto; width: 32px; min-width: 32px; min-height: 32px; padding: 0; }
+.book-name-full { white-space: pre-wrap; overflow-wrap: anywhere; }
+.word-panel-actions { grid-column: 1 / -1; justify-content: flex-end; gap: 6px; }
 .word-panel-actions .icon-btn { width: 40px; min-width: 40px; min-height: 40px; }
 
 /* 「更多操作」：桌面隱藏，手機才出現 */
@@ -1994,6 +2021,7 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     border-radius: var(--r-md);
     box-shadow: var(--sh-3);
     animation: sheet-up 0.16s ease;
+    overflow-y: auto;
 }
 .word-panel-menu[hidden] { display: none; }
 .word-panel-menu .menu-item {
@@ -2020,25 +2048,26 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
 .word-panel-menu .menu-item.danger:hover { background: var(--danger-050); }
 .word-panel-menu .menu-sep { height: 1px; background: var(--line); margin: 4px 6px; }
 
-/* 窄螢幕（單欄）：標題列壓成一行，操作收進「更多」選單，把空間還給單詞列表。
-   五個 chip 需要約 432px，加上標題後面板要 ~680px 才排得下，故斷點取 719px。 */
+/* 窄螢幕：標題最多兩行，操作收進「更多」選單。 */
 @media (max-width: 719px) {
     .vocab-words-panel .panel-header {
-        align-items: center;
-        flex-wrap: nowrap;
         gap: var(--sp-2);
         margin-bottom: var(--sp-2);
     }
-    .vocab-words-panel .panel-header h3 {
-        font-size: var(--fs-base);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
+    .book-title-row { grid-column: 1; }
+    #current-book-name { font-size: var(--fs-base); }
     .word-panel-actions { display: none; }
-    .word-panel-more-btn { display: inline-flex; }
+    .word-panel-more-btn { display: inline-flex; grid-column: 2; grid-row: 1; }
     .vocab-words-panel .word-toolbar { margin: var(--sp-2) 0 0; }
     .word-panel-menu { top: calc(var(--sp-3) + 44px); right: var(--sp-3); }
+}
+/* 平板的雙欄會縮窄詞條面板，操作列按面板寬度收合。 */
+@container vocabulary-words (max-width: 480px) {
+    .vocab-words-panel .panel-header { gap: var(--sp-2); margin-bottom: var(--sp-2); }
+    .book-title-row { grid-column: 1; }
+    #current-book-name { font-size: var(--fs-base); }
+    .word-panel-actions { display: none; }
+    .word-panel-more-btn { display: inline-flex; grid-column: 2; grid-row: 1; }
 }
 .list-container {
     max-height: min(62vh, 620px);
@@ -2072,33 +2101,28 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     gap: 4px var(--sp-2);
     min-width: 0;
     flex: 1 1 auto;
+    overflow-wrap: anywhere;
 }
 .word-sources {
-    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
     min-width: 0;
-    max-width: 100%;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    overflow: visible;
+    margin: 0;
+    padding: 0;
+    list-style: none;
     font-size: var(--fs-sm);
     overflow-wrap: anywhere;
 }
-.word-sources[open] { flex-basis: 100%; }
-.word-item:has(.word-sources[open]) { align-items: flex-start; }
-.word-sources > summary {
-    width: fit-content;
-    min-height: 28px;
-    gap: 6px;
-    padding: 2px 4px;
-    border-radius: var(--r-sm);
-    font-size: var(--fs-xs);
-    font-weight: 500;
-    color: var(--ink-500);
+.modal-content:has(.word-sources) #modal-title { overflow-wrap: anywhere; }
+.word-source-term { font-size: var(--fs-lg); font-weight: 650; overflow-wrap: anywhere; white-space: pre-wrap; }
+.word-source {
+    padding: var(--sp-3) var(--sp-4);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
 }
-.word-sources > summary::before { width: 5px; height: 5px; border-width: 1px; flex-shrink: 0; }
-.word-sources[open] > summary { border-bottom: 0; }
-.word-sources > .word-source { margin-top: 4px; padding: 4px 10px; border-left: 2px solid var(--line-strong); }
+.word-source a { font-weight: 600; }
 .word-source p { margin: 5px 0; white-space: pre-wrap; }
 .word-source time { color: var(--ink-500); font-size: 11px; }
 
@@ -2120,6 +2144,7 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
 .interactive-word.highlight { background: var(--accent-050); border-radius: 4px; box-shadow: 0 0 0 2px var(--accent-050); }
 .word-item .word-actions { flex-wrap: nowrap; gap: 4px; }
 .play-btn,
+.word-sources-btn,
 .word-phonetics-btn {
     width: 38px;
     min-width: 38px;
@@ -2131,6 +2156,7 @@ details.dictation-advanced > summary:hover { background: var(--surface-3); }
     color: var(--ink-600);
 }
 .play-btn:hover,
+.word-sources-btn:hover,
 .word-phonetics-btn:hover { background: var(--primary-050); border-color: var(--primary-100); color: var(--primary-600); }
 .word-item-placeholder { grid-column: 1 / -1; }
 
@@ -3568,6 +3594,17 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
 }
 .article-library-item:hover { border-color: var(--primary-100); background: var(--primary-050); box-shadow: var(--sh-2); }
 .article-library-item h4 { font-size: var(--fs-md); margin-bottom: 3px; }
+.article-library-item h4,
+.news-title,
+.qa-set-name {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
 .article-library-item .description { font-size: var(--fs-sm); color: var(--ink-500); line-height: 1.6; }
 .article-library-item .meta { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
 .article-library-item .meta span {
@@ -4489,7 +4526,8 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
 }
 .qa-set-card:hover { border-color: var(--primary-100); box-shadow: var(--sh-2); }
 .qa-set-header { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
-.qa-set-name { font-size: var(--fs-base); }
+.qa-set-name { flex: 1 1 160px; font-size: var(--fs-base); }
+.qa-preview-name { font-size: var(--fs-lg); font-weight: 650; overflow-wrap: anywhere; white-space: pre-wrap; }
 .qa-set-description { color: var(--ink-500); font-size: var(--fs-md); margin-top: 3px; }
 .qa-set-actions { margin-top: var(--sp-3); display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .qa-set-actions .btn { min-height: 36px; }

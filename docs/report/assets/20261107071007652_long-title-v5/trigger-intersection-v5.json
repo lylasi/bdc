@@ -1,0 +1,7482 @@
+{
+  "environment": {
+    "localHash": "803587959630eae07a673819721421453043709f73ec2c4328029c359f71e9a4",
+    "servedHash": "803587959630eae07a673819721421453043709f73ec2c4328029c359f71e9a4",
+    "hashesMatch": true,
+    "assetVersion": "b37b774bc1c7",
+    "guardLine": "if (trigger.bottom <= viewportTop || trigger.top >= viewportBottom) {",
+    "startedAt": "2026-11-06T23:15:38.031Z"
+  },
+  "environmentAfter": {
+    "localHash": "803587959630eae07a673819721421453043709f73ec2c4328029c359f71e9a4",
+    "servedHash": "803587959630eae07a673819721421453043709f73ec2c4328029c359f71e9a4",
+    "assetVersion": "b37b774bc1c7",
+    "finishedAt": "2026-11-06T23:18:26.554Z"
+  },
+  "results": [
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 500
+      },
+      "expectation": "closed",
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 437,
+          "bottom": 500,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "",
+        "inlineMaxHeight": ""
+      },
+      "ariaExpanded": "false",
+      "reach": null,
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 0,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 500
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 437,
+          "bottom": 500,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 520
+      },
+      "expectation": "closed",
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 457,
+          "bottom": 520,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "",
+        "inlineMaxHeight": ""
+      },
+      "ariaExpanded": "false",
+      "reach": null,
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 0,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 520
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 457,
+          "bottom": 520,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 540
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 477
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 477,
+          "bottom": 540,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 11.2,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 11.2,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 540
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 477
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 477,
+          "bottom": 540,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 560
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 497
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 497,
+          "bottom": 560,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 31.2,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 31.2,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 560
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 497
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 497,
+          "bottom": 560,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 568
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 505
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 505,
+          "bottom": 568,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 568
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 505
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 505,
+          "bottom": 568,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 580
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 517
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 517,
+          "bottom": 580,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 580
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 517
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 517,
+          "bottom": 580,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 600
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 537
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 537,
+          "bottom": 600,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 600
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 537
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 537,
+          "bottom": 600,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 620
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 557
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 557,
+          "bottom": 620,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 620
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 557
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 557,
+          "bottom": 620,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 549,
+          "height": 113.5,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "113.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 498.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 129
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 640
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 577
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 577,
+          "bottom": 640,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 640
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 577
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 577,
+          "bottom": 640,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 569,
+          "height": 133.5,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "133.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 518.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 109
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 720
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 657,
+          "bottom": 720,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 507.8,
+          "bottom": 649,
+          "height": 141.2,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "54px",
+        "inlineMaxHeight": "141.156px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 514.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 597.8
+        },
+        "scrollable": true,
+        "scrollTopMax": 102
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 720
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 657,
+          "bottom": 720,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 649,
+          "height": 213.5,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "213.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 598.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 29
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 500
+      },
+      "expectation": "closed",
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 437,
+          "bottom": 500,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "",
+        "inlineMaxHeight": ""
+      },
+      "ariaExpanded": "false",
+      "reach": null,
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 0,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 500
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 437,
+          "bottom": 500,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 520
+      },
+      "expectation": "closed",
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 457,
+          "bottom": 520,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "",
+        "inlineMaxHeight": ""
+      },
+      "ariaExpanded": "false",
+      "reach": null,
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 0,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 520
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 457,
+          "bottom": 520,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 540
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 477
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 477,
+          "bottom": 540,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 11.2,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 11.2,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 540
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 477
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 477,
+          "bottom": 540,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 560
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 497
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 497,
+          "bottom": 560,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 31.2,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 31.2,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 560
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 497
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 497,
+          "bottom": 560,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 568
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 505
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 505,
+          "bottom": 568,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 568
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 505
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 505,
+          "bottom": 568,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 580
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 517
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 517,
+          "bottom": 580,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 580
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 517
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 517,
+          "bottom": 580,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 600
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 537
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 537,
+          "bottom": 600,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 600
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 537
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 537,
+          "bottom": 600,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 620
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 557
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 557,
+          "bottom": 620,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 620
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 557
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 557,
+          "bottom": 620,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 549,
+          "height": 113.5,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "113.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 498.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 129
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 640
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 577
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 577,
+          "bottom": 640,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 640
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 577
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 577,
+          "bottom": 640,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 569,
+          "height": 133.5,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "133.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 518.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 109
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 720
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 657,
+          "bottom": 720,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 507.8,
+          "bottom": 649,
+          "height": 141.2,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "54px",
+        "inlineMaxHeight": "141.156px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 514.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 597.8
+        },
+        "scrollable": true,
+        "scrollTopMax": 102
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-CN",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 720
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 657,
+          "bottom": 720,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 649,
+          "height": 213.5,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "213.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 598.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 29
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 500
+      },
+      "expectation": "closed",
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 437,
+          "bottom": 500,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "",
+        "inlineMaxHeight": ""
+      },
+      "ariaExpanded": "false",
+      "reach": null,
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 0,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 500
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 437,
+          "bottom": 500,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 520
+      },
+      "expectation": "closed",
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 457,
+          "bottom": 520,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "",
+        "inlineMaxHeight": ""
+      },
+      "ariaExpanded": "false",
+      "reach": null,
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 0,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 520
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 457,
+          "bottom": 520,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 540
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 477
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 477,
+          "bottom": 540,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 11.2,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 11.2,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 540
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 477
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 477,
+          "bottom": 540,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 560
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 497
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 497,
+          "bottom": 560,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 31.2,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 31.2,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 560
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 497
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 497,
+          "bottom": 560,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 568
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 505
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 505,
+          "bottom": 568,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 568
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 505
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 505,
+          "bottom": 568,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 580
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 517
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 517,
+          "bottom": 580,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 580
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 517
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 517,
+          "bottom": 580,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 600
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 537
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 537,
+          "bottom": 600,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 600
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 537
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 537,
+          "bottom": 600,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 620
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 557
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 557,
+          "bottom": 620,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 620
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 557
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 557,
+          "bottom": 620,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 549,
+          "height": 113.5,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "113.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 498.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 129
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 640
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 577
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 577,
+          "bottom": 640,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 640
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 577
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 577,
+          "bottom": 640,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 569,
+          "height": 133.5,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "133.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 518.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 109
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 320,
+        "height": 720
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 657,
+          "bottom": 720,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 507.8,
+          "bottom": 649,
+          "height": 141.2,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "54px",
+        "inlineMaxHeight": "141.156px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 514.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 597.8
+        },
+        "scrollable": true,
+        "scrollTopMax": 102
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 320,
+        "height": 720
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 320
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 657,
+          "bottom": 720,
+          "width": 320
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 649,
+          "height": 213.5,
+          "left": 107,
+          "right": 295,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "213.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 598.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 29
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 255,
+        "right": 295,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 500
+      },
+      "expectation": "closed",
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 437,
+          "bottom": 500,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "",
+        "inlineMaxHeight": ""
+      },
+      "ariaExpanded": "false",
+      "reach": null,
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 0,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 500
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 437
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 437,
+          "bottom": 500,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 520
+      },
+      "expectation": "closed",
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 457,
+          "bottom": 520,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "",
+        "inlineMaxHeight": ""
+      },
+      "ariaExpanded": "false",
+      "reach": null,
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 0,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 520
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 457
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 457,
+          "bottom": 520,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 540
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 477
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 477,
+          "bottom": 540,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 11.2,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 11.2,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 540
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 477
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 477,
+          "bottom": 540,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 560
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 497
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 497,
+          "bottom": 560,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 31.2,
+      "fullyInsideBand": false,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 31.2,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 560
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 497
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 497,
+          "bottom": 560,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 568
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 505
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 505,
+          "bottom": 568,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 568
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 505
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 505,
+          "bottom": 568,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 580
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 517
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 517,
+          "bottom": 580,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 580
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 517
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 517,
+          "bottom": 580,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 600
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 537
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 537,
+          "bottom": 600,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 600
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 537
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 537,
+          "bottom": 600,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 136.5,
+          "bottom": 379.5,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "314.453px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 143.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 328.5
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 620
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 557
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 557,
+          "bottom": 620,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 620
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 557
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 557,
+          "bottom": 620,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 549,
+          "height": 113.5,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "113.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 498.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 129
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 640
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 577
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 577,
+          "bottom": 640,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 218.8,
+          "bottom": 461.8,
+          "height": 243,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "-235px",
+        "inlineMaxHeight": "396.844px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 225.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 410.8
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 640
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 577
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 577,
+          "bottom": 640,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 569,
+          "height": 133.5,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "133.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 518.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 109
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "size": {
+        "width": 360,
+        "height": 720
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 657,
+          "bottom": 720,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 507.8,
+          "bottom": 649,
+          "height": 141.2,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "54px",
+        "inlineMaxHeight": "141.156px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 514.8
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 597.8
+        },
+        "scrollable": true,
+        "scrollTopMax": 102
+      },
+      "beforeTrigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "A",
+      "locale": "zh-HK",
+      "mode": "long",
+      "size": {
+        "width": 360,
+        "height": 720
+      },
+      "expectation": "open",
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 360
+        },
+        {
+          "cls": "app-nav",
+          "position": "fixed",
+          "top": 657,
+          "bottom": 720,
+          "width": 360
+        }
+      ],
+      "header": {
+        "top": 383.5,
+        "bottom": 431.5,
+        "height": 48,
+        "left": 25,
+        "right": 335,
+        "width": 310
+      },
+      "trigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "fullyInsideBand": true,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 435.5,
+          "bottom": 649,
+          "height": 213.5,
+          "left": 147,
+          "right": 335,
+          "width": 188
+        },
+        "scrollable": true,
+        "inlineTop": "64px",
+        "inlineMaxHeight": "213.547px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 442.5
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 598.5
+        },
+        "scrollable": true,
+        "scrollTopMax": 29
+      },
+      "beforeTrigger": {
+        "top": 383.5,
+        "bottom": 421.5,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "beforeOverlapBand": 38,
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "B1",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "viewport": "360x720→360x480",
+      "expectation": "closed",
+      "openedAt720": {
+        "overlapBand": 38,
+        "hidden": false
+      },
+      "band": {
+        "top": 57,
+        "bottom": 417
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "54px",
+        "inlineMaxHeight": "141.156px"
+      },
+      "ariaExpanded": "false",
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "B2",
+      "locale": "zh-CN",
+      "mode": "empty",
+      "viewport": "360x720 + translateY(-620px)",
+      "expectation": "closed",
+      "openedAt720": {
+        "overlapBand": 38,
+        "hidden": false
+      },
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "trigger": {
+        "top": -154.2,
+        "bottom": -116.2,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "54px",
+        "inlineMaxHeight": "141.156px"
+      },
+      "ariaExpanded": "false",
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "B1",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "viewport": "360x720→360x480",
+      "expectation": "closed",
+      "openedAt720": {
+        "overlapBand": 38,
+        "hidden": false
+      },
+      "band": {
+        "top": 57,
+        "bottom": 417
+      },
+      "trigger": {
+        "top": 465.8,
+        "bottom": 503.8,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "54px",
+        "inlineMaxHeight": "141.156px"
+      },
+      "ariaExpanded": "false",
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "B2",
+      "locale": "zh-HK",
+      "mode": "empty",
+      "viewport": "360x720 + translateY(-620px)",
+      "expectation": "closed",
+      "openedAt720": {
+        "overlapBand": 38,
+        "hidden": false
+      },
+      "band": {
+        "top": 57,
+        "bottom": 657
+      },
+      "trigger": {
+        "top": -154.2,
+        "bottom": -116.2,
+        "height": 38,
+        "left": 295,
+        "right": 335,
+        "width": 40
+      },
+      "overlapBand": 0,
+      "menu": {
+        "hidden": true,
+        "painted": false,
+        "rect": {
+          "top": 0,
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "width": 0
+        },
+        "scrollable": false,
+        "inlineTop": "54px",
+        "inlineMaxHeight": "141.156px"
+      },
+      "ariaExpanded": "false",
+      "failed": [],
+      "pass": true
+    },
+    {
+      "part": "C",
+      "locale": "zh-CN",
+      "viewport": "1024x900",
+      "mode": "menu",
+      "failed": [],
+      "band": {
+        "top": 57,
+        "bottom": 900
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 1024
+        },
+        {
+          "cls": "app-nav",
+          "position": "sticky",
+          "top": 57,
+          "bottom": 901,
+          "width": 244
+        }
+      ],
+      "moreDisplay": "flex",
+      "trigger": {
+        "top": 159.9,
+        "bottom": 197.9,
+        "height": 38,
+        "left": 953,
+        "right": 993,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 201.9,
+          "bottom": 444.9,
+          "height": 243,
+          "left": 809,
+          "right": 997,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "58px",
+        "inlineMaxHeight": "690.109px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 208.9
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 393.9
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "pass": true
+    },
+    {
+      "part": "C",
+      "locale": "zh-CN",
+      "viewport": "1440x900",
+      "mode": "chips",
+      "failed": [],
+      "band": {
+        "top": 57,
+        "bottom": 900
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 1440
+        },
+        {
+          "cls": "app-nav",
+          "position": "sticky",
+          "top": 57,
+          "bottom": 901,
+          "width": 244
+        }
+      ],
+      "moreDisplay": "none",
+      "chipsResponse": {
+        "modalOpen": false,
+        "modalTitle": "Modal Title",
+        "toast": "至少需要两个单词本才能合并。×",
+        "menuPainted": false
+      },
+      "pass": true
+    },
+    {
+      "part": "C",
+      "locale": "zh-HK",
+      "viewport": "1024x900",
+      "mode": "menu",
+      "failed": [],
+      "band": {
+        "top": 57,
+        "bottom": 900
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 1024
+        },
+        {
+          "cls": "app-nav",
+          "position": "sticky",
+          "top": 57,
+          "bottom": 901,
+          "width": 244
+        }
+      ],
+      "moreDisplay": "flex",
+      "trigger": {
+        "top": 159.9,
+        "bottom": 197.9,
+        "height": 38,
+        "left": 953,
+        "right": 993,
+        "width": 40
+      },
+      "overlapBand": 38,
+      "menu": {
+        "hidden": false,
+        "painted": true,
+        "rect": {
+          "top": 201.9,
+          "bottom": 444.9,
+          "height": 243,
+          "left": 809,
+          "right": 997,
+          "width": 188
+        },
+        "scrollable": false,
+        "inlineTop": "58px",
+        "inlineMaxHeight": "690.109px"
+      },
+      "ariaExpanded": "true",
+      "reach": {
+        "count": 5,
+        "first": {
+          "ok": true,
+          "why": "",
+          "y": 208.9
+        },
+        "last": {
+          "ok": true,
+          "why": "",
+          "y": 393.9
+        },
+        "scrollable": false,
+        "scrollTopMax": 0
+      },
+      "pass": true
+    },
+    {
+      "part": "C",
+      "locale": "zh-HK",
+      "viewport": "1440x900",
+      "mode": "chips",
+      "failed": [],
+      "band": {
+        "top": 57,
+        "bottom": 900
+      },
+      "bars": [
+        {
+          "cls": "app-bar",
+          "position": "sticky",
+          "top": 0,
+          "bottom": 57,
+          "width": 1440
+        },
+        {
+          "cls": "app-nav",
+          "position": "sticky",
+          "top": 57,
+          "bottom": 901,
+          "width": 244
+        }
+      ],
+      "moreDisplay": "none",
+      "chipsResponse": {
+        "modalOpen": false,
+        "modalTitle": "Modal Title",
+        "toast": "至少需要兩個生字簿才能合併。×",
+        "menuPainted": false
+      },
+      "pass": true
+    }
+  ]
+}

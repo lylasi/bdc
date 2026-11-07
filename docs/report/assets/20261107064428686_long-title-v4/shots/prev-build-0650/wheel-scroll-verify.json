@@ -1,0 +1,394 @@
+[
+  {
+    "locale": "zh-CN",
+    "kind": "empty",
+    "step": "opened",
+    "ih": 400,
+    "iw": 320,
+    "bandTop": 57,
+    "bandBottom": 337,
+    "scrollY": 285,
+    "triggerTop": 180.8,
+    "hidden": false,
+    "aria": "true",
+    "menu": {
+      "y": 222.8,
+      "bottom": 329
+    },
+    "items": [
+      {
+        "text": "补全资料",
+        "y": 229.8,
+        "bottom": 273.8,
+        "hit": "self"
+      },
+      {
+        "text": "合并",
+        "y": 273.8,
+        "bottom": 317.8,
+        "hit": "self"
+      },
+      {
+        "text": "导出",
+        "y": 317.8,
+        "bottom": 361.8,
+        "hit": "BUTTON.nav-btn"
+      },
+      {
+        "text": "编辑",
+        "y": 361.8,
+        "bottom": 405.8,
+        "hit": "SPAN.nav-label-full"
+      },
+      {
+        "text": "删除",
+        "y": 414.8,
+        "bottom": 458.8,
+        "hit": "off-viewport"
+      }
+    ]
+  },
+  {
+    "locale": "zh-CN",
+    "kind": "empty",
+    "step": "wheel-up(-260)",
+    "ih": 400,
+    "iw": 320,
+    "bandTop": 57,
+    "bandBottom": 337,
+    "scrollY": 25,
+    "triggerTop": 440.8,
+    "hidden": false,
+    "aria": "true",
+    "menu": {
+      "y": 482.8,
+      "bottom": 589
+    },
+    "items": [
+      {
+        "text": "补全资料",
+        "y": 489.8,
+        "bottom": 533.8,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "合并",
+        "y": 533.8,
+        "bottom": 577.8,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "导出",
+        "y": 577.8,
+        "bottom": 621.8,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "编辑",
+        "y": 621.8,
+        "bottom": 665.8,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "删除",
+        "y": 674.8,
+        "bottom": 718.8,
+        "hit": "off-viewport"
+      }
+    ]
+  },
+  {
+    "locale": "zh-CN",
+    "kind": "long",
+    "step": "opened",
+    "ih": 400,
+    "iw": 320,
+    "bandTop": 57,
+    "bandBottom": 337,
+    "scrollY": 202,
+    "triggerTop": 181.5,
+    "hidden": false,
+    "aria": "true",
+    "menu": {
+      "y": 65,
+      "bottom": 177.5
+    },
+    "items": [
+      {
+        "text": "补全资料",
+        "y": 72,
+        "bottom": 116,
+        "hit": "self"
+      },
+      {
+        "text": "合并",
+        "y": 116,
+        "bottom": 160,
+        "hit": "self"
+      },
+      {
+        "text": "导出",
+        "y": 160,
+        "bottom": 204,
+        "hit": "H3."
+      },
+      {
+        "text": "编辑",
+        "y": 204,
+        "bottom": 248,
+        "hit": "H3."
+      },
+      {
+        "text": "删除",
+        "y": 257,
+        "bottom": 301,
+        "hit": "SPAN.search-field"
+      }
+    ]
+  },
+  {
+    "locale": "zh-CN",
+    "kind": "long",
+    "step": "wheel-up(-260)",
+    "ih": 400,
+    "iw": 320,
+    "bandTop": 57,
+    "bandBottom": 337,
+    "scrollY": 0,
+    "triggerTop": 383.5,
+    "hidden": false,
+    "aria": "true",
+    "menu": {
+      "y": 267,
+      "bottom": 379.5
+    },
+    "items": [
+      {
+        "text": "补全资料",
+        "y": 274,
+        "bottom": 318,
+        "hit": "self"
+      },
+      {
+        "text": "合并",
+        "y": 318,
+        "bottom": 362,
+        "hit": "BUTTON.nav-btn"
+      },
+      {
+        "text": "导出",
+        "y": 362,
+        "bottom": 406,
+        "hit": "SPAN.nav-label-full"
+      },
+      {
+        "text": "编辑",
+        "y": 406,
+        "bottom": 450,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "删除",
+        "y": 459,
+        "bottom": 503,
+        "hit": "off-viewport"
+      }
+    ]
+  },
+  {
+    "locale": "zh-HK",
+    "kind": "empty",
+    "step": "opened",
+    "ih": 400,
+    "iw": 320,
+    "bandTop": 57,
+    "bandBottom": 337,
+    "scrollY": 285,
+    "triggerTop": 180.8,
+    "hidden": false,
+    "aria": "true",
+    "menu": {
+      "y": 222.8,
+      "bottom": 329
+    },
+    "items": [
+      {
+        "text": "補全資料",
+        "y": 229.8,
+        "bottom": 273.8,
+        "hit": "self"
+      },
+      {
+        "text": "合併",
+        "y": 273.8,
+        "bottom": 317.8,
+        "hit": "self"
+      },
+      {
+        "text": "匯出",
+        "y": 317.8,
+        "bottom": 361.8,
+        "hit": "BUTTON.nav-btn"
+      },
+      {
+        "text": "編輯",
+        "y": 361.8,
+        "bottom": 405.8,
+        "hit": "SPAN.nav-label-full"
+      },
+      {
+        "text": "刪除",
+        "y": 414.8,
+        "bottom": 458.8,
+        "hit": "off-viewport"
+      }
+    ]
+  },
+  {
+    "locale": "zh-HK",
+    "kind": "empty",
+    "step": "wheel-up(-260)",
+    "ih": 400,
+    "iw": 320,
+    "bandTop": 57,
+    "bandBottom": 337,
+    "scrollY": 25,
+    "triggerTop": 440.8,
+    "hidden": false,
+    "aria": "true",
+    "menu": {
+      "y": 482.8,
+      "bottom": 589
+    },
+    "items": [
+      {
+        "text": "補全資料",
+        "y": 489.8,
+        "bottom": 533.8,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "合併",
+        "y": 533.8,
+        "bottom": 577.8,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "匯出",
+        "y": 577.8,
+        "bottom": 621.8,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "編輯",
+        "y": 621.8,
+        "bottom": 665.8,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "刪除",
+        "y": 674.8,
+        "bottom": 718.8,
+        "hit": "off-viewport"
+      }
+    ]
+  },
+  {
+    "locale": "zh-HK",
+    "kind": "long",
+    "step": "opened",
+    "ih": 400,
+    "iw": 320,
+    "bandTop": 57,
+    "bandBottom": 337,
+    "scrollY": 202,
+    "triggerTop": 181.5,
+    "hidden": false,
+    "aria": "true",
+    "menu": {
+      "y": 65,
+      "bottom": 177.5
+    },
+    "items": [
+      {
+        "text": "補全資料",
+        "y": 72,
+        "bottom": 116,
+        "hit": "self"
+      },
+      {
+        "text": "合併",
+        "y": 116,
+        "bottom": 160,
+        "hit": "self"
+      },
+      {
+        "text": "匯出",
+        "y": 160,
+        "bottom": 204,
+        "hit": "H3."
+      },
+      {
+        "text": "編輯",
+        "y": 204,
+        "bottom": 248,
+        "hit": "H3."
+      },
+      {
+        "text": "刪除",
+        "y": 257,
+        "bottom": 301,
+        "hit": "SPAN.search-field"
+      }
+    ]
+  },
+  {
+    "locale": "zh-HK",
+    "kind": "long",
+    "step": "wheel-up(-260)",
+    "ih": 400,
+    "iw": 320,
+    "bandTop": 57,
+    "bandBottom": 337,
+    "scrollY": 0,
+    "triggerTop": 383.5,
+    "hidden": false,
+    "aria": "true",
+    "menu": {
+      "y": 267,
+      "bottom": 379.5
+    },
+    "items": [
+      {
+        "text": "補全資料",
+        "y": 274,
+        "bottom": 318,
+        "hit": "self"
+      },
+      {
+        "text": "合併",
+        "y": 318,
+        "bottom": 362,
+        "hit": "BUTTON.nav-btn"
+      },
+      {
+        "text": "匯出",
+        "y": 362,
+        "bottom": 406,
+        "hit": "SPAN.nav-label-full"
+      },
+      {
+        "text": "編輯",
+        "y": 406,
+        "bottom": 450,
+        "hit": "off-viewport"
+      },
+      {
+        "text": "刪除",
+        "y": 459,
+        "bottom": 503,
+        "hit": "off-viewport"
+      }
+    ]
+  }
+]

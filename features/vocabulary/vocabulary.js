@@ -43,6 +43,7 @@ export function initVocabulary() {
     dom.mergeVocabBooksBtn.addEventListener('click', openModalForMergeBooks);
     if (dom.completeMissingBtn) dom.completeMissingBtn.addEventListener('click', openModalForCompleteMissing);
     initWordPanelMoreMenu();
+    initBookNameLayout();
     if (dom.wordFilter) {
         dom.wordFilter.addEventListener('input', renderWordList);
     }
@@ -101,6 +102,41 @@ export function refreshVocabularyView() {
     }
 }
 
+let bookNameLayoutFrame = 0;
+
+function refreshBookNameLayout() {
+    if (!dom.bookNameDetailsBtn || bookNameLayoutFrame) return;
+    bookNameLayoutFrame = requestAnimationFrame(() => {
+        bookNameLayoutFrame = 0;
+        const name = dom.currentBookName;
+        const hasBook = state.vocabularyBooks.some(book => book.id === state.activeBookId);
+        dom.bookNameDetailsBtn.hidden = !hasBook || !name.clientWidth
+            || (name.scrollHeight <= name.clientHeight + 1 && name.scrollWidth <= name.clientWidth + 1);
+        positionWordPanelMenu();
+    });
+}
+
+function initBookNameLayout() {
+    dom.bookNameDetailsBtn?.addEventListener('click', () => {
+        const book = state.vocabularyBooks.find(candidate => candidate.id === state.activeBookId);
+        if (!book) return;
+        dom.modalTitle.textContent = t('vocabulary.bookName');
+        const name = document.createElement('p');
+        name.className = 'book-name-full';
+        name.textContent = book.name;
+        dom.modalBody.replaceChildren(name);
+        ui.openModal();
+    });
+    if (typeof ResizeObserver === 'function') {
+        const observer = new ResizeObserver(refreshBookNameLayout);
+        observer.observe(dom.currentBookName);
+        observer.observe(dom.currentBookName.parentElement);
+    } else {
+        window.addEventListener('resize', refreshBookNameLayout);
+    }
+    document.fonts?.ready.then(refreshBookNameLayout);
+}
+
 // =================================
 // 手機版：單詞本操作收進「更多」選單
 // （桌面仍顯示原本的 chips；選單項目由實際按鈕生成，事件與禁用狀態只有一份來源）
@@ -127,6 +163,7 @@ function buildWordPanelMenuItem(sourceBtn) {
 
     item.addEventListener('click', () => {
         closeWordPanelMenu();
+        wordPanelMoreBtnEl?.focus({ preventScroll: true });
         if (!sourceBtn.disabled) sourceBtn.click();
     });
     return item;
@@ -152,13 +189,47 @@ function handleWordPanelMenuKeydown(event) {
     wordPanelMoreBtnEl?.focus();
 }
 
+function positionWordPanelMenu() {
+    if (!wordPanelMenuEl || wordPanelMenuEl.hidden) return;
+    const header = dom.currentBookName.closest('.panel-header');
+    if (!header) return;
+    let viewportTop = 0;
+    let viewportBottom = window.innerHeight;
+    for (const bar of [dom.appBar, dom.appNav]) {
+        if (!bar || !['fixed', 'sticky'].includes(window.getComputedStyle(bar).position)) continue;
+        const bounds = bar.getBoundingClientRect();
+        if (bounds.width < window.innerWidth - 1 || bounds.bottom <= 0 || bounds.top >= window.innerHeight) continue;
+        if (bounds.top < window.innerHeight / 2) viewportTop = Math.max(viewportTop, bounds.bottom);
+        else viewportBottom = Math.min(viewportBottom, bounds.top);
+    }
+    const trigger = wordPanelMoreBtnEl.getBoundingClientRect();
+    if (trigger.bottom <= viewportTop || trigger.top >= viewportBottom) {
+        closeWordPanelMenu();
+        return;
+    }
+    wordPanelMenuEl.style.maxHeight = '';
+    const rect = header.getBoundingClientRect();
+    const below = Math.max(0, viewportBottom - rect.bottom - 12);
+    const above = Math.max(0, rect.top - viewportTop - 12);
+    const naturalHeight = wordPanelMenuEl.offsetHeight;
+    const openAbove = below < Math.min(naturalHeight, 100) && above > below;
+    const available = openAbove ? above : below;
+    wordPanelMenuEl.style.maxHeight = `${available}px`;
+    wordPanelMenuEl.style.top = `${openAbove
+        ? header.offsetTop - Math.min(naturalHeight, available) - 4
+        : header.offsetTop + header.offsetHeight + 4}px`;
+}
+
 function openWordPanelMenu() {
     if (!wordPanelMenuEl) return;
     syncWordPanelMenuState();
     wordPanelMenuEl.hidden = false;
+    positionWordPanelMenu();
+    if (wordPanelMenuEl.hidden) return;
     wordPanelMoreBtnEl?.setAttribute('aria-expanded', 'true');
     document.addEventListener('pointerdown', handleWordPanelMenuOutside, true);
     document.addEventListener('keydown', handleWordPanelMenuKeydown);
+    window.addEventListener('scroll', closeWordPanelMenu, { passive: true });
 }
 
 function closeWordPanelMenu() {
@@ -167,6 +238,7 @@ function closeWordPanelMenu() {
     wordPanelMoreBtnEl?.setAttribute('aria-expanded', 'false');
     document.removeEventListener('pointerdown', handleWordPanelMenuOutside, true);
     document.removeEventListener('keydown', handleWordPanelMenuKeydown);
+    window.removeEventListener('scroll', closeWordPanelMenu);
 }
 
 function initWordPanelMoreMenu() {
@@ -209,6 +281,7 @@ function initWordPanelMoreMenu() {
     // 由手機轉回桌面（按鈕被 CSS 隱藏）時收起來，避免殘留
     window.addEventListener('resize', () => {
         if (window.getComputedStyle(wordPanelMoreBtnEl).display === 'none') closeWordPanelMenu();
+        else positionWordPanelMenu();
     });
 }
 
@@ -364,8 +437,12 @@ export function selectVocabularyBook(bookId, { updateRoute = false } = {}) {
 function updateActiveBookView() {
     const activeBook = state.vocabularyBooks.find(b => b.id === state.activeBookId);
     if (activeBook) {
+        if (dom.bookNameDetailsBtn && dom.currentBookName.textContent !== String(activeBook.name || '')) {
+            dom.bookNameDetailsBtn.hidden = true;
+        }
         dom.currentBookName.textContent = activeBook.name;
         dom.currentBookName.title = activeBook.name || '';
+        refreshBookNameLayout();
         dom.editVocabBookBtn.disabled = false;
         dom.deleteVocabBookBtn.disabled = false;
         dom.exportVocabBookBtn.disabled = false;
@@ -424,6 +501,8 @@ function updateActiveBookView() {
         renderWordList();
     } else {
         dom.currentBookName.textContent = t('vocabulary.selectBook');
+        dom.currentBookName.title = '';
+        if (dom.bookNameDetailsBtn) dom.bookNameDetailsBtn.hidden = true;
         dom.editVocabBookBtn.disabled = true;
         dom.deleteVocabBookBtn.disabled = true;
         dom.exportVocabBookBtn.disabled = true;
@@ -599,7 +678,7 @@ function openModalForEditBook() {
     const book = state.vocabularyBooks.find(b => b.id === state.activeBookId);
     if (!book) return;
 
-    dom.modalTitle.textContent = t('vocabulary.editBookTitle', { name: book.name });
+    dom.modalTitle.textContent = t('vocabulary.editBookTitle');
     const sourceInfo = resolveArticleForVocabularyBook(book);
     const showSourceField = !!(sourceInfo.articleId || sourceInfo.sourceUrl);
     const safeSourceUrl = escapeAttr(sourceInfo.sourceUrl || '');
@@ -1447,45 +1526,68 @@ function buildWordItem(word, phoneticsEnabled, showSources) {
     });
 
     if (showSources && Array.isArray(word.sources) && word.sources.length) {
-        const details = document.createElement('details');
-        details.className = 'word-sources';
-        const summary = document.createElement('summary');
-        summary.textContent = t('vocabulary.savedSources', { count: word.sources.length });
-        details.appendChild(summary);
-        for (const source of word.sources) {
-            const item = document.createElement('div');
-            item.className = 'word-source';
-            const href = publicSourceUrl(source.sourceUrl);
-            if (href) {
-                const link = document.createElement('a');
-                link.href = href;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                link.textContent = source.pageTitle || t('vocabulary.openOriginalSource');
-                item.appendChild(link);
-            }
-            for (const [label, value] of [
-                ['vocabulary.sourceSentence', source.sentence],
-                ['vocabulary.sourceMeaning', source.meaning],
-                ['vocabulary.sourceContext', source.context]
-            ]) {
-                if (!value) continue;
-                const paragraph = document.createElement('p');
-                paragraph.textContent = `${t(label)}${value}`;
-                item.appendChild(paragraph);
-            }
-            if (source.addedAt) {
-                const time = document.createElement('time');
-                time.dateTime = source.addedAt;
-                time.textContent = formatDateTime(source.addedAt);
-                item.appendChild(time);
-            }
-            details.appendChild(item);
-        }
-        li.querySelector('.word-text').appendChild(details);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'word-sources-btn';
+        button.title = t('vocabulary.viewSources', { word: word.word, count: word.sources.length });
+        button.setAttribute('aria-label', button.title);
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.setAttribute('aria-controls', dom.appModal.id);
+        button.innerHTML = '<svg class="icon icon-sm" aria-hidden="true"><use href="#ic-doc"/></svg>';
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            openModalForWordSources(word);
+        });
+        li.querySelector('.word-actions').prepend(button);
     }
 
     return li;
+}
+
+/** 點擊來源圖示後才建立內容，沿用共用彈窗的關閉、鍵盤與焦點管理。 */
+function openModalForWordSources(word) {
+    dom.modalTitle.textContent = t('vocabulary.wordSourcesTitle', { count: word.sources.length });
+    const term = document.createElement('p');
+    term.className = 'word-source-term';
+    term.textContent = word.word;
+    const sources = document.createElement('ol');
+    sources.className = 'word-sources';
+    for (const source of word.sources) {
+        const item = document.createElement('li');
+        item.className = 'word-source';
+        const href = publicSourceUrl(source.sourceUrl);
+        if (href) {
+            const link = document.createElement('a');
+            link.href = href;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = source.pageTitle || t('vocabulary.openOriginalSource');
+            item.appendChild(link);
+        } else if (source.pageTitle) {
+            const title = document.createElement('strong');
+            title.textContent = source.pageTitle;
+            item.appendChild(title);
+        }
+        for (const [label, value] of [
+            ['vocabulary.sourceSentence', source.sentence],
+            ['vocabulary.sourceMeaning', source.meaning],
+            ['vocabulary.sourceContext', source.context]
+        ]) {
+            if (!value) continue;
+            const paragraph = document.createElement('p');
+            paragraph.textContent = `${t(label)}${value}`;
+            item.appendChild(paragraph);
+        }
+        if (source.addedAt) {
+            const time = document.createElement('time');
+            time.dateTime = source.addedAt;
+            time.textContent = formatDateTime(source.addedAt);
+            item.appendChild(time);
+        }
+        sources.appendChild(item);
+    }
+    dom.modalBody.replaceChildren(term, sources);
+    ui.openModal();
 }
 
 /** 更新篩選結果提示 */

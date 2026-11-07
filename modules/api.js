@@ -97,13 +97,34 @@ async function fetchJsonWithTimeout(url, { timeoutMs = 20000, signal, headers } 
  * 回報非致命問題（例如模型輸出被截斷）。
  * 只傳機器可讀的代碼，實際文案由呼叫端用 t() 決定，避免在這裡硬編中文。
  */
-function notifyNotice(opts, code) {
+function notifyNotice(opts, code, params = {}) {
     if (!code) return;
     try { console.warn('[article-import]', code); } catch (_) {}
-    try { if (typeof opts?.onNotice === 'function') opts.onNotice(code); } catch (_) {}
+    try { if (typeof opts?.onNotice === 'function') opts.onNotice(code, params); } catch (_) {}
 }
 
 const __aiQueues = new Map();
+
+function throwIfAIAborted(signal) {
+    if (signal?.aborted) throw signal.reason || new DOMException('Aborted', 'AbortError');
+}
+
+function waitForAI(ms, signal) {
+    throwIfAIAborted(signal);
+    if (ms <= 0) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const onAbort = () => {
+            clearTimeout(timer);
+            signal.removeEventListener('abort', onAbort);
+            reject(signal.reason || new DOMException('Aborted', 'AbortError'));
+        };
+        const timer = setTimeout(() => {
+            signal?.removeEventListener('abort', onAbort);
+            resolve();
+        }, ms);
+        signal?.addEventListener('abort', onAbort, { once: true });
+    });
+}
 
 function getLimitConfig(taskType = 'default') {
     const fallback = AI_LIMITS?.default || { maxConcurrency: 2, minIntervalMs: 150 };
@@ -118,31 +139,45 @@ function queueKeyForRequest({ endpoint, profile, model, taskType }) {
     return [endpoint || 'default-endpoint', profile || 'default-profile', model || 'default-model', taskType || 'default'].join('::');
 }
 
-async function enqueueAIRequest(queueKey, runner, { maxConcurrency = 1, minIntervalMs = 0 } = {}) {
+async function enqueueAIRequest(queueKey, runner, { maxConcurrency = 1, minIntervalMs = 0, signal } = {}) {
+    throwIfAIAborted(signal);
     let state = __aiQueues.get(queueKey);
     if (!state) {
         state = { active: 0, lastStartedAt: 0, pending: [] };
         __aiQueues.set(queueKey, state);
     }
     return await new Promise((resolve, reject) => {
+        let started = false;
+        const onAbort = () => {
+            if (started) return;
+            const index = state.pending.indexOf(execute);
+            if (index >= 0) state.pending.splice(index, 1);
+            signal.removeEventListener('abort', onAbort);
+            reject(signal.reason || new DOMException('Aborted', 'AbortError'));
+        };
         const execute = async () => {
+            started = true;
             state.active += 1;
             const now = Date.now();
-            const waitMs = Math.max(0, minIntervalMs - (now - state.lastStartedAt));
-            if (waitMs > 0) await new Promise(r => setTimeout(r, waitMs));
-            state.lastStartedAt = Date.now();
+            // Reserve each start time before waiting so two workers cannot
+            // wake together and bypass the configured interval.
+            state.lastStartedAt = Math.max(now, state.lastStartedAt + minIntervalMs);
             try {
+                await waitForAI(state.lastStartedAt - now, signal);
+                throwIfAIAborted(signal);
                 const result = await runner();
                 resolve(result);
             } catch (error) {
                 reject(error);
             } finally {
+                signal?.removeEventListener('abort', onAbort);
                 state.active = Math.max(0, state.active - 1);
                 const next = state.pending.shift();
                 if (next) next();
                 else if (state.active === 0) __aiQueues.delete(queueKey);
             }
         };
+        signal?.addEventListener('abort', onAbort, { once: true });
         if (state.active < maxConcurrency) execute();
         else state.pending.push(execute);
     });
@@ -599,6 +634,7 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
     let unregister = () => {};
 
     const fetchOnce = async () => {
+        throwIfAIAborted(ac.signal);
         let resolved = pinnedResolved;
         if (!resolved) {
             try {
@@ -615,6 +651,7 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
             }
             resolvedForFallback = resolved;
         }
+        throwIfAIAborted(ac.signal);
         unregister();
         unregister = registerController(ac, resolved.source);
         // This target already rejected the thinking field once in this session.
@@ -674,6 +711,7 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
                 throw localizeAIError(err);
             }
             const json = await resp.json();
+            throwIfAIAborted(ac.signal);
             const parsed = adapter.parseResponse(json);
             if (parsed.refusal && !parsed.text) {
                 const err = new Error('model refusal');
@@ -694,7 +732,7 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
                 source: resolved.source,
                 raw: json
             };
-        }, { maxConcurrency, minIntervalMs });
+        }, { maxConcurrency, minIntervalMs, signal: ac.signal });
     };
 
     const maxRetries = 2;
@@ -770,7 +808,7 @@ export async function requestAI({ model, messages, temperature = 0.5, maxTokens,
                     } else {
                         backoff = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 250, 5000);
                     }
-                    await new Promise((r) => setTimeout(r, backoff));
+                    await waitForAI(backoff, ac.signal);
                     attempt += 1;
                     continue;
                 }
@@ -1057,6 +1095,14 @@ export async function checkUserSentence(word, userSentence, opts = {}) {
  */
 export async function analyzeParagraph(paragraph, opts = {}) {
     const { timeoutMs = 45000, signal, level: requestedLevel = 'standard', noCache = false } = opts;
+    const capturedScope = getActiveAIScope().key;
+    const assertCurrent = () => {
+        throwIfAIAborted(signal);
+        if (getActiveAIScope().key !== capturedScope || (opts.cacheScope && opts.cacheScope !== capturedScope)) {
+            throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
+        }
+    };
+    assertCurrent();
     // 按句翻譯模式：呼叫端預先用與渲染一致的分句器切好句子傳入，
     // 模型只需返回等長的中文譯句陣列，對齊由構造保證
     const sentenceList = Array.isArray(opts.sentences)
@@ -1064,12 +1110,13 @@ export async function analyzeParagraph(paragraph, opts = {}) {
       : null;
     const sentenceMode = !!(sentenceList && sentenceList.length);
     const cacheLevel = sentenceMode ? `${requestedLevel}-sent` : requestedLevel;
-    const locale = getLocale();
+    const locale = normalizeLocale(opts.locale || getLocale());
     const promptVersion = getPromptVersion('article.paragraphTranslation');
     const thinking = resolveThinkingLevel('articleParagraphTranslation', { override: opts.thinking }).level;
     // The key records the requested level; a provider that rejects the thinking
     // parameter may have answered after api.js downgraded it to auto.
-    const cacheOptions = { locale, promptVersion, thinking };
+    const cacheOptions = { locale, promptVersion, thinking,
+        ...(opts.cacheScope ? { scope: opts.cacheScope, context: opts.cacheContext || '' } : {}) };
     const s = loadGlobalSettings();
     const primaryModel = getPreferredTaskSpec(['articleParagraphTranslation', 'articleAnalysis', 'wordAnalysis'], { settings: s, override: opts.model });
     const fallbackModel = getPreferredTaskSpec(['articleParagraphTranslationFallback', 'articleAnalysis', 'wordAnalysis'], { settings: s });
@@ -1078,10 +1125,12 @@ export async function analyzeParagraph(paragraph, opts = {}) {
     if (!noCache) {
         for (const modelSpec of candidates) {
             const resolved = normalizeModelSpec(modelSpec);
+            let cached;
             try {
-                const cached = await cache.getParagraphAnalysisCached(paragraph, cacheLevel, cacheModelKey(resolved), cacheOptions);
-                if (cached && !cached.failed && String(cached.chinese_translation || '').trim()) return cached;
+                cached = await cache.getParagraphAnalysisCached(paragraph, cacheLevel, cacheModelKey(resolved), cacheOptions);
             } catch (_) {}
+            assertCurrent();
+            if (cached && !cached.failed && String(cached.chinese_translation || '').trim()) return cached;
         }
     }
 
@@ -1111,6 +1160,8 @@ export async function analyzeParagraph(paragraph, opts = {}) {
                 taskType: 'articleParagraphTranslation',
                 thinking
             });
+            assertCurrent();
+            if (isLengthFinishReason(data.finishReason)) throw Object.assign(new Error('Paragraph translation truncated'), { code: 'paragraph_translation_truncated' });
             const content = pickMessageContent(data);
             const rawParsed = safeJsonParse(content);
             // 解析失敗（多為截斷殘骸）直接換下一個模型，不可把原始文字當譯文塞進結果與快取
@@ -1131,8 +1182,10 @@ export async function analyzeParagraph(paragraph, opts = {}) {
             if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw new Error('Schema validation failed');
             if (!String(parsed.chinese_translation || '').trim()) throw new Error('Empty paragraph translation');
             try { await cache.setParagraphAnalysisCached(paragraph, cacheLevel, cacheModelKey(resolved), parsed, 14 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+            assertCurrent();
             return parsed;
         } catch (error) {
+            assertCurrent();
             lastErr = error;
         }
     }
@@ -1151,14 +1204,19 @@ export async function analyzeParagraph(paragraph, opts = {}) {
             thinking
         });
         const raw = pickMessageContent(fb);
+        assertCurrent();
+        if (isLengthFinishReason(fb.finishReason)) throw Object.assign(new Error('Paragraph translation truncated'), { code: 'paragraph_translation_truncated' });
         const parsed = normalizeParagraphResponse(safeJsonParse(raw), plainAnswerOrEmpty(raw));
         if (!validate.validateArticleAnalysis(parsed, requestedLevel)) throw lastErr || new Error('Paragraph fallback failed');
         // 合法 schema 但沒有譯文：仍算失敗，呼叫端不得閃成功或寫入成功快取。
         if (!String(parsed.chinese_translation || '').trim()) {
             return { ...parsed, failed: true, errorCode: 'empty_translation' };
         }
+        try { await cache.setParagraphAnalysisCached(paragraph, cacheLevel, cacheModelKey(normalizeModelSpec(fallbackModelSpec)), parsed, 14 * 24 * 60 * 60 * 1000, cacheOptions); } catch (_) {}
+        assertCurrent();
         return parsed;
     } catch (_) {
+        assertCurrent();
         if (lastErr) console.warn('段落翻譯失敗，返回最小兜底。', lastErr);
         // additive：讓呼叫端能分辨「空結果」與「真的失敗」，不再把空譯文當成功。
         return {
@@ -1982,7 +2040,7 @@ async function cleanMarkdownChunk(chunk, ctx) {
     const messages = buildMessages('import.markdownCleanup', {
         imageRule: ctx.imageRule,
         markdownText: chunk
-    });
+    }, { locale: ctx.locale });
     // 推理模型的思考 token 和正文共用同一個上限，所以額度要按輸入長度給足
     const maxTokens = Math.min(8000, Math.max(ctx.baseMaxTokens, chunk.length + 800));
     const data = await requestAI({
@@ -2002,7 +2060,7 @@ async function cleanMarkdownChunk(chunk, ctx) {
     let content = (data?.choices?.[0]?.message?.content || '').trim();
     // 去掉偶發的 ``` 標記
     content = content.replace(/^```(?:markdown)?\n/, '').replace(/\n```\s*$/, '').trim();
-    return { content, truncated: data?.choices?.[0]?.finish_reason === 'length' };
+    return { content, truncated: isLengthFinishReason(data?.finishReason || data?.choices?.[0]?.finish_reason) };
 }
 
 export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
@@ -2027,33 +2085,54 @@ export async function aiCleanArticleMarkdown(markdownText, opts = {}) {
       ? 'Keep content-related images as Markdown image lines. Preserve their syntax and alt text; remove social, tracking and banner images.'
       : 'Remove all Markdown image lines without replacing them with links or descriptions.';
 
-    const ctx = { connection, model, temperature, baseMaxTokens, timeoutMs, signal, imageRule, thinking: opts.thinking };
     const source = String(markdownText || '');
     const chunks = splitMarkdownForCleanup(source);
-
-    // 短文章：維持單次呼叫
-    if (chunks.length <= 1) {
-        const { content, truncated } = await cleanMarkdownChunk(source, ctx);
-        if (truncated) notifyNotice(opts, 'cleanup-truncated');
-        return content;
-    }
-
-    // 長文章：逐塊清洗再拼回。先前是一次性送出，撞到輸出上限就會安靜地砍掉尾段。
-    const cleaned = [];
-    let truncatedAny = false;
-    for (let i = 0; i < chunks.length; i += 1) {
-        try { if (typeof opts.onProgress === 'function') opts.onProgress(i + 1, chunks.length); } catch (_) {}
+    const controller = new AbortController();
+    const abort = () => controller.abort(signal?.reason);
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) abort();
+    const ctx = { connection, model, temperature, baseMaxTokens, timeoutMs, signal: controller.signal,
+        locale: normalizeLocale(opts.locale || getLocale()), imageRule, thinking: opts.thinking };
+    const cleaned = new Array(chunks.length);
+    let next = 0, completed = 0, unprocessed = 0, failure = null;
+    const progress = () => { try { opts.onProgress?.(completed, chunks.length); } catch (_) {} };
+    const run = async () => {
         try {
-            const { content, truncated } = await cleanMarkdownChunk(chunks[i], ctx);
-            if (truncated) truncatedAny = true;
-            cleaned.push(content || chunks[i]);
-        } catch (err) {
-            if (i === 0) throw err;          // 第一塊就失敗：讓呼叫端決定怎麼提示
-            cleaned.push(chunks[i]);         // 後續失敗：保留原文，至少不丢內容
+            while (next < chunks.length && !failure) {
+                throwIfAIAborted(controller.signal);
+                const index = next++;
+                try {
+                    const { content, truncated } = await cleanMarkdownChunk(chunks[index], ctx);
+                    throwIfAIAborted(controller.signal);
+                    // Keep the complete original when cleanup is empty or
+                    // truncated; the user can review it before confirmation.
+                    cleaned[index] = !truncated && content ? content : chunks[index];
+                    if (truncated || !content) unprocessed++;
+                } catch (error) {
+                    throwIfAIAborted(controller.signal);
+                    if (/(?:unauthorized|stale_session|key_|binding|auth_failed|forbidden|provider_missing|provider_disabled|model_not_|catalog_)/.test(error?.code || '')) throw error;
+                    cleaned[index] = chunks[index];
+                    unprocessed++;
+                }
+                completed++;
+                progress();
+            }
+        } catch (error) {
+            if (!failure) failure = error;
+            controller.abort(error);
         }
+    };
+    try {
+        throwIfAIAborted(controller.signal);
+        progress();
+        await Promise.allSettled(Array.from({ length: Math.min(2, chunks.length) }, run));
+        if (failure) throw failure;
+        throwIfAIAborted(controller.signal);
+        if (unprocessed) notifyNotice(opts, 'cleanup-partial', { count: unprocessed });
+        return cleaned.join('\n\n');
+    } finally {
+        signal?.removeEventListener('abort', abort);
     }
-    if (truncatedAny) notifyNotice(opts, 'cleanup-truncated');
-    return cleaned.join('\n\n');
 }
 
 /**
@@ -2112,10 +2191,15 @@ export async function extractPageArticle(page, opts = {}) {
     if (page?.tooLarge || Array.from(String(page?.text || '')).length > 100000) throw Object.assign(new Error('article_too_large'), { code: 'article_too_large' });
     if (!String(page?.text || '').trim()) throw Object.assign(new Error('invalid_article'), { code: 'invalid_article' });
     let truncated = false;
+    let cleanupIncomplete = 0;
     const input = /^\s*#\s+/.test(page.text) ? page.text : '# ' + String(page.pageTitle || '').replace(/\s+/g, ' ').trim() + '\n\n' + page.text;
     const markdown = await aiCleanArticleMarkdown(input, {
         ...opts, keepImages: false,
-        onNotice: (...args) => { truncated = true; opts.onNotice?.(...args); }
+        onNotice: (code, params) => {
+            if (code === 'cleanup-truncated' || code === 'extract-truncated') truncated = true;
+            if (code === 'cleanup-partial') cleanupIncomplete += Number(params?.count) || 1;
+            opts.onNotice?.(code, params);
+        }
     });
     if (truncated) throw Object.assign(new Error('page_extraction_truncated'), { code: 'page_extraction_truncated' });
     if (!String(markdown || '').trim()) throw Object.assign(new Error('invalid_article'), { code: 'invalid_article' });
@@ -2123,7 +2207,7 @@ export async function extractPageArticle(page, opts = {}) {
     const title = (heading?.[1] || page.pageTitle || '').trim().slice(0, 300);
     const body = heading ? markdown.slice(heading[0].length).trim() : markdown.trim();
     if (!body) throw Object.assign(new Error('invalid_article'), { code: 'invalid_article' });
-    return { title, body, sourceUrl: page.pageUrl, sourceType: 'url' };
+    return { title, body, sourceUrl: page.pageUrl, sourceType: 'url', ...(cleanupIncomplete ? { cleanupIncomplete } : {}) };
 }
 
 /**

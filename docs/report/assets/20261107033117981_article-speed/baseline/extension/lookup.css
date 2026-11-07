@@ -1,0 +1,1536 @@
+/* =========================================================================
+   BDC 扩展 · 首页 / 查词小窗 / 编辑与设定弹窗 / 文章助手
+   结构：1) 设计令牌 2) 基础 3) 排版与区块 4) 表单 5) 按钮 6) 折叠与列表
+        7) 状态与提示 8) 查询结果 9) 内嵌小窗（compact / expanded）
+        10) 账户与服务连接 11) AI 控制区 12) 图标按钮 13) 首页快捷区
+        14) 原生 dialog（编辑 / 设定） 15) 文章助手
+        16) 视图状态（home / inline / article / assistant） 17) 窄屏
+   ========================================================================= */
+
+/* ============================ 1. 设计令牌 ============================ */
+:root {
+    color-scheme: light;
+
+    --ext-ink: #1d2228;
+    --ext-ink-soft: #48505a;
+    --ext-ink-muted: #6b7480;
+    --ext-line: #e6e4df;
+    --ext-line-strong: #cfcec8;
+
+    --ext-surface: #ffffff;
+    --ext-surface-2: #f7f6f3;
+    --ext-surface-3: #efeeea;
+
+    --ext-accent: #0f766e;
+    --ext-accent-strong: #0b5f59;
+    --ext-accent-soft: #e8f2f0;
+    --ext-accent-rgb: 15, 118, 110;
+
+    --ext-danger: #b42318;
+    --ext-danger-soft: #fdecea;
+    --ext-danger-line: #f0c9c5;
+    --ext-warn: #8a5308;
+    --ext-warn-soft: #fdf6e8;
+    --ext-warn-line: #ecd9ae;
+    --ext-info: #24559b;
+    --ext-info-soft: #eef3fd;
+    --ext-info-line: #cedcf6;
+
+    --ext-radius-sm: 6px;
+    --ext-radius: 8px;
+    --ext-radius-lg: 10px;
+    --ext-pad: 16px;
+    --ext-ring: 0 0 0 3px rgba(var(--ext-accent-rgb), 0.28);
+
+    --ext-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --ext-font-mono: ui-monospace, SFMono-Regular, Menlo, "Charis SIL", "Doulos SIL", monospace;
+    --ext-chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7480' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* ============================ 2. 基础 ============================ */
+* {
+    box-sizing: border-box;
+}
+html {
+    background: var(--ext-surface-2);
+    -webkit-text-size-adjust: 100%;
+}
+body {
+    width: 400px;
+    max-width: 100%;
+    min-width: 320px;
+    margin: 0 auto;
+    padding: var(--ext-pad);
+    font-family: var(--ext-font);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ext-ink);
+    background: var(--ext-surface);
+    -webkit-font-smoothing: antialiased;
+    overflow-wrap: break-word;
+}
+/* 内嵌 iframe：填满卡片，不参与外层排版 */
+body.ext-inline {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: var(--ext-pad);
+}
+
+[hidden],
+.hidden {
+    display: none !important;
+}
+.ext-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ============================ 3. 排版与区块 ============================ */
+.ext-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px 12px;
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--ext-line);
+}
+.ext-header-text {
+    flex: 1 1 160px;
+    min-width: 0;
+}
+.ext-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--ext-ink);
+}
+.ext-subtitle {
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ext-ink-muted);
+}
+.ext-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.ext-section {
+    padding: 12px 0;
+    border-top: 1px solid var(--ext-line);
+}
+.ext-header + .ext-section {
+    border-top: 0;
+    padding-top: 10px;
+}
+.ext-section-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.ext-section-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--ext-ink-muted);
+}
+.ext-section-head > .ext-btn {
+    flex: none;
+    margin-left: auto;
+}
+.ext-hint,
+.ext-source {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-muted);
+}
+.ext-source a {
+    color: var(--ext-accent);
+    text-decoration: none;
+}
+.ext-source a:hover {
+    text-decoration: underline;
+}
+.ext-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.ext-row-actions {
+    margin-top: 8px;
+    gap: 6px;
+}
+.ext-row-submit {
+    margin-top: 10px;
+}
+.ext-row-submit .ext-btn-primary {
+    margin-left: auto;
+}
+
+/* ============================ 4. 表单 ============================ */
+input,
+select,
+textarea,
+button {
+    font-family: inherit;
+}
+.ext-field {
+    margin-bottom: 8px;
+}
+.ext-field:last-child {
+    margin-bottom: 0;
+}
+.ext-field > label {
+    display: block;
+    margin: 0 0 4px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--ext-ink-soft);
+}
+.ext-field input:not([type="checkbox"]):not([type="radio"]),
+.ext-field select,
+.ext-field textarea,
+select.ext-select {
+    width: 100%;
+    min-width: 0;
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ext-ink);
+    background-color: var(--ext-surface);
+    border: 1px solid var(--ext-line-strong);
+    border-radius: var(--ext-radius-sm);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.ext-field select,
+select.ext-select {
+    padding-right: 26px;
+    appearance: none;
+    background-image: var(--ext-chevron);
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+.ext-field textarea {
+    padding: 6px 8px;
+    line-height: 1.5;
+    resize: vertical;
+}
+.ext-field input:not([type="checkbox"]):not([type="radio"]):hover,
+.ext-field select:hover,
+.ext-field textarea:hover,
+select.ext-select:hover {
+    border-color: #b9b8b1;
+}
+.ext-field input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+.ext-field select:focus-visible,
+.ext-field textarea:focus-visible,
+select.ext-select:focus-visible {
+    outline: none;
+    border-color: var(--ext-accent);
+    box-shadow: var(--ext-ring);
+}
+.ext-field input::placeholder,
+.ext-field textarea::placeholder {
+    color: #9aa1aa;
+}
+input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--ext-accent);
+    cursor: pointer;
+}
+input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: var(--ext-ring);
+    border-radius: 3px;
+}
+.ext-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ext-ink-soft);
+    cursor: pointer;
+}
+select.ext-select-sm {
+    flex: none;
+    width: auto;
+    max-width: 160px;
+    min-height: 26px;
+    padding: 2px 24px 2px 8px;
+    font-size: 12px;
+}
+
+/* ============================ 5. 按钮 ============================ */
+.ext-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 30px;
+    padding: 5px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--ext-ink);
+    text-align: center;
+    white-space: nowrap;
+    background: var(--ext-surface);
+    border: 1px solid var(--ext-line-strong);
+    border-radius: var(--ext-radius-sm);
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.ext-btn:hover:not(:disabled) {
+    background: var(--ext-surface-3);
+    border-color: #b9b8b1;
+}
+.ext-btn:active:not(:disabled) {
+    background: var(--ext-surface-2);
+}
+.ext-btn:focus-visible {
+    outline: none;
+    border-color: var(--ext-accent);
+    box-shadow: var(--ext-ring);
+}
+.ext-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+.ext-btn-primary {
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--ext-accent);
+    border-color: var(--ext-accent);
+}
+.ext-btn-primary:hover:not(:disabled) {
+    background: var(--ext-accent-strong);
+    border-color: var(--ext-accent-strong);
+}
+.ext-btn-primary:active:not(:disabled) {
+    background: #0a534e;
+}
+.ext-btn-quiet {
+    color: var(--ext-ink-soft);
+    background: transparent;
+    border-color: transparent;
+}
+.ext-btn-quiet:hover:not(:disabled) {
+    color: var(--ext-ink);
+    background: var(--ext-surface-3);
+    border-color: transparent;
+}
+.ext-btn-sm {
+    min-height: 26px;
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+/* ============================ 6. 折叠与列表 ============================ */
+.ext-disclosure {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+.ext-disclosure > summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 26px;
+    padding: 3px 0;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    border-radius: var(--ext-radius-sm);
+}
+.ext-disclosure > summary::-webkit-details-marker {
+    display: none;
+}
+.ext-disclosure > summary:hover .ext-disclosure-title {
+    color: var(--ext-accent);
+}
+.ext-disclosure > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--ext-ring);
+}
+.ext-disclosure > summary::after {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    margin-left: auto;
+    border-right: 1.5px solid var(--ext-ink-muted);
+    border-bottom: 1.5px solid var(--ext-ink-muted);
+    transform: rotate(45deg) translate(-1px, -1px);
+    transition: transform 0.15s ease;
+}
+.ext-disclosure[open] > summary::after {
+    transform: rotate(-135deg) translate(-1px, 1px);
+}
+.ext-disclosure-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--ext-ink);
+}
+.ext-disclosure-body {
+    padding-top: 6px;
+}
+.ext-disclosure-quiet > summary {
+    min-height: 24px;
+    padding: 2px 0;
+}
+.ext-disclosure-quiet .ext-disclosure-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ext-ink-soft);
+}
+.ext-disclosure-block > summary {
+    min-height: 32px;
+    padding: 4px 0;
+}
+.ext-disclosure-block .ext-disclosure-title {
+    font-size: 13px;
+}
+
+.ext-book-form,
+.ext-preview {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius);
+}
+.ext-pending-list {
+    display: grid;
+    gap: 6px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.ext-pending-list:empty {
+    display: none;
+}
+.ext-pending-list li {
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+    overflow-wrap: anywhere;
+}
+.ext-pending-list li p {
+    margin: 2px 0;
+    color: var(--ext-ink-muted);
+}
+.ext-pending-list li .ext-btn {
+    margin: 6px 6px 0 0;
+}
+.ext-pending-list li > button {
+    margin: 6px 6px 0 0;
+}
+
+/* ============================ 7. 状态与提示 ============================ */
+.ext-notice {
+    margin-top: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-soft);
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+    overflow-wrap: anywhere;
+}
+.ext-notice-info {
+    color: var(--ext-info);
+    background: var(--ext-info-soft);
+    box-shadow: inset 0 0 0 1px var(--ext-info-line);
+}
+.ext-notice-error {
+    color: var(--ext-danger);
+    background: var(--ext-danger-soft);
+    box-shadow: inset 0 0 0 1px var(--ext-danger-line);
+}
+.ext-status-list {
+    display: grid;
+    gap: 2px;
+    margin-top: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-muted);
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+}
+.ext-status-line {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.ext-chip {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    max-width: 100%;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.7;
+    color: var(--ext-ink-soft);
+    background: var(--ext-surface-3);
+    border-radius: 999px;
+    overflow-wrap: anywhere;
+}
+.ext-banner-warning {
+    margin-top: 8px;
+    padding: 8px 10px;
+    color: var(--ext-warn);
+    background: var(--ext-warn-soft);
+    border: 1px solid var(--ext-warn-line);
+    border-radius: var(--ext-radius);
+}
+.ext-banner-title {
+    margin: 0 0 2px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+.ext-banner-text {
+    margin: 0 0 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #7a4a07;
+}
+
+/* ============================ 8. 查询结果 ============================ */
+.ext-section-result {
+    padding-bottom: 10px;
+}
+.ext-result-box {
+    padding: 0;
+}
+.ext-result-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+}
+.ext-result-word {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    color: var(--ext-ink);
+    overflow-wrap: anywhere;
+}
+.ext-result-phonetic {
+    font-family: var(--ext-font-mono);
+    font-size: 12px;
+    color: var(--ext-ink-muted);
+    overflow-wrap: anywhere;
+}
+.ext-result-pos {
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.6;
+    color: var(--ext-accent-strong);
+    background: var(--ext-accent-soft);
+    border-radius: 4px;
+}
+.ext-result-meaning {
+    margin-top: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.55;
+    color: var(--ext-ink);
+    overflow-wrap: anywhere;
+}
+.ext-result-role {
+    margin-top: 3px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-soft);
+    overflow-wrap: anywhere;
+}
+.ext-result-extra {
+    margin-top: 4px;
+}
+.ext-result-examples {
+    margin: 2px 0 0;
+    padding-left: 16px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ext-ink-soft);
+}
+.ext-result-examples li {
+    margin: 2px 0;
+    overflow-wrap: anywhere;
+}
+/* 没有例句时整段折叠保持安静 */
+#ext-result-details:not(:has(li)) {
+    display: none;
+}
+.ext-result-meta {
+    margin-top: 8px;
+    padding-top: 6px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ext-ink-muted);
+    border-top: 1px solid var(--ext-line);
+    overflow-wrap: anywhere;
+}
+.ext-cache-badge {
+    color: var(--ext-ink-muted);
+    font-size: 10px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+/* ============================ 9. 内嵌小窗 ============================ */
+#ext-inline-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ext-toolbar-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--ext-ink-soft);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ext-toolbar-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+}
+
+.ext-inline {
+    --ext-pad: 12px;
+}
+/* 账户区已移入 #ext-settings-dialog：小窗仍可打开设定弹窗，不可再整块隐藏 */
+.ext-inline .ext-header {
+    display: none;
+}
+.ext-inline #ext-inline-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: calc(var(--ext-pad) * -1) calc(var(--ext-pad) * -1) 8px;
+    padding: 8px var(--ext-pad);
+    background: var(--ext-surface);
+    border-bottom: 1px solid var(--ext-line);
+}
+/* 查词表单已移入 #ext-query-dialog：未打开时 dialog 内容本就不渲染，
+   这里不再需要按模式隐藏 #ext-lookup-section（否则弹窗会变空白）。 */
+.ext-inline #ext-result-section {
+    border-top: 0;
+    padding-top: 0;
+}
+.ext-inline.ext-edit-query #ext-result-section {
+    border-top: 1px solid var(--ext-line);
+    padding-top: 12px;
+}
+
+/* --- 小窗（compact） --- */
+.ext-compact {
+    --ext-pad: 10px;
+}
+/* 只收合词卡自身：查词表单已移入 #ext-query-dialog，编辑弹窗内必须完整显示 */
+.ext-compact #ext-result-heading,
+.ext-compact #ext-result-role,
+.ext-compact #ext-result-meta,
+.ext-compact #ext-capture-heading,
+.ext-compact #ext-capture-section .ext-section-head,
+.ext-compact #ext-capture-source,
+.ext-compact #ext-capture-hint {
+    display: none !important;
+}
+/* 待傳狀態不可藏：小窗只收合成一行，需要時可就地展開 */
+.ext-compact .ext-pending {
+    margin-top: 6px;
+}
+.ext-compact .ext-pending > summary {
+    min-height: 22px;
+}
+.ext-compact .ext-section {
+    padding: 8px 0;
+}
+.ext-compact #ext-capture-section {
+    padding-bottom: 0;
+}
+.ext-compact #ext-capture-section .ext-field {
+    margin-bottom: 6px;
+}
+.ext-compact #ext-capture-section .ext-field > label {
+    display: none;
+}
+.ext-compact #ext-capture-section .ext-row-actions {
+    margin-top: 0;
+}
+.ext-compact #ext-capture-notice {
+    margin-top: 6px;
+}
+.ext-compact #ext-capture-notice.ext-notice-success {
+    display: none;
+}
+.ext-compact #ext-inline-status {
+    margin: 0 0 8px;
+}
+.ext-compact #ext-inline-action-notice {
+    margin: 0 0 8px;
+}
+
+/* 草稿确认：居中卡片 + 整卡遮罩 */
+#ext-inline-confirm {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 20;
+    width: max-content;
+    max-width: calc(100% - 20px);
+    max-height: calc(100% - 20px);
+    padding: 14px;
+    overflow: auto;
+    background: var(--ext-surface);
+    border: 1px solid var(--ext-line-strong);
+    border-radius: var(--ext-radius-lg);
+    box-shadow: 0 0 0 200vmax rgba(23, 28, 33, 0.35), 0 10px 30px rgba(23, 28, 33, 0.18);
+    transform: translate(-50%, -50%);
+}
+.ext-confirm-title {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--ext-ink);
+}
+.ext-confirm-text {
+    margin: 0 0 12px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ext-ink-soft);
+}
+
+/* ============================ 10. 账户与服务连接 ============================ */
+#ext-account-summary {
+    gap: 8px;
+}
+#ext-account-status {
+    flex: 0 1 auto;
+    overflow-wrap: anywhere;
+}
+#ext-account-details[open] #ext-account-summary {
+    margin-bottom: 2px;
+}
+#ext-account-notice {
+    margin-top: 8px;
+}
+#ext-missing-key-banner .ext-field {
+    margin-bottom: 6px;
+}
+#ext-missing-key-banner .ext-btn {
+    margin-top: 2px;
+}
+#ext-app-url,
+#ext-endpoint-input {
+    font-family: var(--ext-font-mono);
+    font-size: 12px;
+}
+
+/* ============================ 11. AI 控制区（设定弹窗插槽） ============================ */
+/* 由 ai-controls.js 动态生成的 <details id="ext-ai-controls">：
+   summary 内为 .ext-ai-summary-label / .ext-ai-summary-value，
+   内容为 .ext-ai-grid（两栏 .ext-field，内含 select），状态为 #ext-ai-notice。
+   优先插入 #ext-ai-settings-slot 并保持展开；若无插槽则回退到 header / toolbar 之后。 */
+#ext-ai-controls {
+    margin: 6px 0 0;
+    padding: 0 0 6px;
+    border: 0;
+    border-bottom: 1px solid var(--ext-line);
+}
+#ext-ai-controls > summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 3px 0;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    border-radius: var(--ext-radius-sm);
+}
+#ext-ai-controls > summary::-webkit-details-marker {
+    display: none;
+}
+#ext-ai-controls > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--ext-ring);
+}
+#ext-ai-controls > summary::after {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    margin-left: auto;
+    border-right: 1.5px solid var(--ext-ink-muted);
+    border-bottom: 1.5px solid var(--ext-ink-muted);
+    transform: rotate(45deg) translate(-1px, -1px);
+    transition: transform 0.15s ease;
+}
+#ext-ai-controls[open] > summary::after {
+    transform: rotate(-135deg) translate(-1px, 1px);
+}
+#ext-ai-controls .ext-ai-summary-label {
+    flex: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ext-ink-soft);
+    white-space: nowrap;
+}
+#ext-ai-controls .ext-ai-summary-value {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ext-ink-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ext-ai-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px 8px;
+    margin-top: 6px;
+}
+/* 三项控制：窄卡片时「思考」独占一行，宽面板时排成三栏 */
+.ext-ai-grid > .ext-field:nth-child(3) {
+    grid-column: 1 / -1;
+}
+@media (min-width: 400px) {
+    .ext-ai-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .ext-ai-grid > .ext-field:nth-child(3) {
+        grid-column: auto;
+    }
+}
+.ext-ai-hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-muted);
+}
+.ext-ai-actions {
+    margin-top: 8px;
+    gap: 6px;
+}
+.ext-ai-grid .ext-field {
+    margin-bottom: 0;
+    min-width: 0;
+}
+.ext-ai-grid .ext-field > label {
+    font-size: 11px;
+    color: var(--ext-ink-muted);
+}
+.ext-ai-grid input:not([type="checkbox"]):not([type="radio"]),
+.ext-ai-grid select,
+.ext-ai-grid textarea {
+    min-height: 28px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    font-size: 12px;
+}
+#ext-ai-notice {
+    margin-top: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ext-ink-soft);
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+    overflow-wrap: anywhere;
+}
+#ext-ai-notice.ext-notice-error {
+    color: var(--ext-danger);
+    background: var(--ext-danger-soft);
+    box-shadow: inset 0 0 0 1px var(--ext-danger-line);
+}
+#ext-ai-notice.ext-notice-info {
+    color: var(--ext-info);
+    background: var(--ext-info-soft);
+    box-shadow: inset 0 0 0 1px var(--ext-info-line);
+}
+/* 插槽：#ext-ai-settings-slot 在设定弹窗内，直接展开显示选项，不再有分隔线 */
+#ext-ai-settings-slot > #ext-ai-controls {
+    margin: 0;
+    padding: 0;
+    border-bottom: 0;
+}
+#ext-ai-settings-slot #ext-ai-controls > summary {
+    min-height: 24px;
+}
+#ext-ai-settings-slot #ext-ai-controls > summary::after {
+    display: none;
+}
+#ext-ai-settings-slot .ext-ai-hint {
+    margin-top: 4px;
+}
+#ext-ai-settings-slot #ext-ai-fallback {
+    margin-top: 6px;
+}
+
+/* ============================ 12. 图标按钮 ============================ */
+/* 图标按钮只挂 data-i18n-title / data-i18n-aria-label；SVG 内联在 HTML，
+   不可加 data-i18n（applyTranslations 会用 textContent 覆盖图标）。 */
+.ext-icon-only {
+    gap: 0;
+    min-width: 26px;
+    padding: 3px 5px;
+    color: var(--ext-ink-soft);
+}
+.ext-icon-only svg {
+    display: block;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.ext-btn-quiet.ext-icon-only:hover:not(:disabled) {
+    color: var(--ext-ink);
+}
+.ext-btn-primary.ext-icon-only {
+    color: #ffffff;
+}
+.ext-icon-only[aria-pressed="true"] {
+    color: var(--ext-accent-strong);
+    background: var(--ext-accent-soft);
+    border-color: rgba(var(--ext-accent-rgb), 0.22);
+}
+
+/* ============================ 13. 首页快捷区 ============================ */
+.ext-home-head {
+    align-items: center;
+    margin-bottom: 8px;
+}
+.ext-home-head .ext-section-title {
+    flex: 0 1 auto;
+}
+.ext-home-head #ext-home-status {
+    flex: 0 1 auto;
+    margin-left: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ext-chip:empty {
+    display: none;
+}
+.ext-home-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+.ext-home-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 60px;
+    padding: 9px 4px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--ext-ink-soft);
+    text-align: center;
+    background: var(--ext-surface-2);
+    border: 1px solid transparent;
+    border-radius: var(--ext-radius);
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.ext-home-action svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: var(--ext-accent);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.ext-home-action:hover:not(:disabled) {
+    color: var(--ext-ink);
+    background: var(--ext-accent-soft);
+    border-color: rgba(var(--ext-accent-rgb), 0.22);
+}
+.ext-home-action:active:not(:disabled) {
+    background: var(--ext-surface-3);
+}
+.ext-home-action:focus-visible {
+    outline: none;
+    border-color: var(--ext-accent);
+    box-shadow: var(--ext-ring);
+}
+.ext-home-action:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+/* 悬浮球开关：#ext-assistant-enabled（默认勾选），文案随 #ext-home-actions 一起 */
+.ext-switch {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+    padding: 7px 9px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ext-ink-soft);
+    background: var(--ext-surface-2);
+    border-radius: var(--ext-radius-sm);
+    cursor: pointer;
+}
+.ext-switch > input[type="checkbox"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+.ext-switch-track {
+    position: relative;
+    flex: none;
+    width: 30px;
+    height: 16px;
+    background: var(--ext-line-strong);
+    border-radius: 999px;
+    transition: background-color 0.15s ease;
+}
+.ext-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(23, 28, 33, 0.28);
+    transition: transform 0.15s ease;
+}
+.ext-switch > input[type="checkbox"]:checked + .ext-switch-track {
+    background: var(--ext-accent);
+}
+.ext-switch > input[type="checkbox"]:checked + .ext-switch-track::after {
+    transform: translateX(14px);
+}
+.ext-switch > input[type="checkbox"]:focus-visible + .ext-switch-track {
+    box-shadow: var(--ext-ring);
+}
+.ext-switch:hover .ext-switch-label {
+    color: var(--ext-ink);
+}
+.ext-switch-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* ============================ 14. 原生 dialog（编辑 / 设定） ============================ */
+/* 由主代理以 showModal() 打开并负责离开保护；未开启时 dialog 内容不渲染。 */
+dialog.ext-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 30;
+    width: min(440px, calc(100vw - 20px));
+    max-height: calc(100vh - 20px);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    color: var(--ext-ink);
+    background: var(--ext-surface);
+    border: 1px solid var(--ext-line-strong);
+    border-radius: var(--ext-radius-lg);
+    box-shadow: 0 12px 34px rgba(23, 28, 33, 0.18), 0 2px 6px rgba(23, 28, 33, 0.08);
+    transform: translate(-50%, -50%);
+}
+dialog.ext-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+dialog.ext-dialog::backdrop {
+    background: rgba(23, 28, 33, 0.35);
+}
+.ext-dialog-head {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 14px 9px;
+    border-bottom: 1px solid var(--ext-line);
+}
+.ext-dialog-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--ext-ink);
+}
+.ext-dialog-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 12px 14px 14px;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+/* 弹窗内不再需要区块分隔线：标题栏与 .ext-dialog-group 已提供层次 */
+dialog.ext-dialog .ext-section,
+dialog.ext-dialog .ext-dialog-section {
+    padding: 0;
+    border-top: 0;
+}
+dialog.ext-dialog .ext-section-head {
+    margin-bottom: 10px;
+}
+.ext-dialog-group {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--ext-line);
+}
+.ext-dialog-group-title {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--ext-ink-muted);
+}
+/* 次要操作（如「从当前标签页提取选中词」）紧跟对应字段，用安静的小按钮 */
+.ext-row-quiet {
+    margin: -2px 0 6px;
+}
+.ext-row-quiet .ext-btn-quiet {
+    padding-left: 0;
+    padding-right: 0;
+    color: var(--ext-accent);
+}
+.ext-row-quiet .ext-btn-quiet:hover:not(:disabled) {
+    color: var(--ext-accent-strong);
+    background: transparent;
+    text-decoration: underline;
+}
+/* 兼容旧的「编辑选词」内联展开：未以 showModal 打开时退回页面内区块 */
+body.ext-inline.ext-edit-query #ext-query-dialog:not([open]) {
+    position: static;
+    display: block;
+    width: auto;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+/* ============================ 15. 文章助手 ============================ */
+#ext-assistant-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ext-assistant-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.ext-assistant-heading {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.ext-assistant-title {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--ext-ink);
+}
+.ext-assistant-context {
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ext-ink-muted);
+    overflow-wrap: anywhere;
+}
+.ext-assistant-context:empty {
+    display: none;
+}
+.ext-assistant-head-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+}
+.ext-assistant-reference {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 9px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ext-ink-soft);
+    background: var(--ext-accent-soft);
+    border-radius: var(--ext-radius-sm);
+}
+.ext-assistant-reference-label {
+    flex: none;
+    font-weight: 600;
+    color: var(--ext-accent-strong);
+}
+.ext-assistant-reference-text {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.ext-assistant-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 46vh;
+    padding: 2px 1px;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+.ext-assistant-empty {
+    margin: 6px 2px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ext-ink-muted);
+}
+/* 主代理在空状态之后追加消息时，空状态自动让位 */
+#ext-assistant-messages > .ext-assistant-empty:not(:last-child) {
+    display: none;
+}
+.ext-assistant-msg {
+    margin: 0;
+    padding: 8px 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    border-radius: var(--ext-radius);
+    overflow-wrap: anywhere;
+}
+.ext-assistant-msg p {
+    margin: 0 0 6px;
+}
+.ext-assistant-msg p:last-child {
+    margin-bottom: 0;
+}
+.ext-assistant-msg ul,
+.ext-assistant-msg ol {
+    margin: 4px 0;
+    padding-left: 18px;
+}
+.ext-assistant-msg pre {
+    margin: 6px 0;
+    padding: 8px 9px;
+    overflow: auto;
+    font-family: var(--ext-font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    background: var(--ext-surface);
+    border-radius: var(--ext-radius-sm);
+}
+.ext-assistant-msg code {
+    font-family: var(--ext-font-mono);
+    font-size: 12px;
+}
+.ext-assistant-msg-user {
+    align-self: flex-end;
+    max-width: 88%;
+    color: var(--ext-ink);
+    background: var(--ext-accent-soft);
+    box-shadow: inset 0 0 0 1px rgba(var(--ext-accent-rgb), 0.18);
+}
+.ext-assistant-msg-assistant {
+    max-width: 100%;
+    color: var(--ext-ink);
+    background: var(--ext-surface-2);
+}
+.ext-assistant-notice {
+    margin: 0;
+}
+.ext-assistant-composer {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+.ext-assistant-composer textarea {
+    width: 100%;
+    min-height: 54px;
+    max-height: 132px;
+    padding: 7px 9px;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ext-ink);
+    background: var(--ext-surface);
+    border: 1px solid var(--ext-line-strong);
+    border-radius: var(--ext-radius);
+    resize: vertical;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.ext-assistant-composer textarea::placeholder {
+    color: #9aa1aa;
+}
+.ext-assistant-composer textarea:hover {
+    border-color: #b9b8b1;
+}
+.ext-assistant-composer textarea:focus-visible {
+    outline: none;
+    border-color: var(--ext-accent);
+    box-shadow: var(--ext-ring);
+}
+.ext-assistant-composer-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ext-assistant-send {
+    margin-left: auto;
+}
+
+/* ============================ 16. 视图状态 ============================ */
+/* 文章视图：独立 popup 窗口（body.ext-article-view），首页只看文章区 */
+body:not(.ext-article-view) #ext-page-article-section {
+    display: none;
+}
+body.ext-article-view #ext-home-section,
+body.ext-article-view #ext-result-section,
+body.ext-article-view #ext-capture-section,
+body.ext-article-view #ext-assistant-section {
+    display: none;
+}
+/* 助手视图：只展示助手，dialog 仍可用 */
+body.ext-assistant-view #ext-home-section,
+body.ext-assistant-view #ext-result-section,
+body.ext-assistant-view #ext-capture-section,
+body.ext-assistant-view #ext-page-article-section {
+    display: none;
+}
+/* 首页：未查词时不占用结果与收藏区 */
+body.ext-home:not(.ext-has-query) #ext-result-section,
+body.ext-home:not(.ext-has-query) #ext-capture-section {
+    display: none;
+}
+/* 小窗不显示首页快捷区 */
+body.ext-inline #ext-home-section {
+    display: none;
+}
+/* 助手视图里词卡工具列只留返回／设定／关闭：AI 与编辑选词在此无意义 */
+body.ext-assistant-view #ext-inline-ai,
+body.ext-assistant-view #ext-inline-edit,
+body.ext-assistant-view #ext-inline-more {
+    display: none !important;
+}
+
+/* 助手视图版面：390×500 小窗起始、展开为 max 420 宽的全高侧栏；
+   实际窗口尺寸由宿主决定，这里只负责填满并让消息区可卷、输入区固定在底部。 */
+body.ext-assistant-view {
+    --ext-pad: 12px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 420px;
+    min-width: 0;
+    height: 100vh;
+    margin: 0 auto;
+    padding: var(--ext-pad);
+    background: var(--ext-surface);
+}
+body.ext-assistant-view .ext-header {
+    flex: none;
+    padding-bottom: 8px;
+    margin-bottom: 0;
+}
+body.ext-assistant-view #ext-subtitle {
+    display: none;
+}
+body.ext-assistant-view #ext-assistant-section {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 8px 0 0;
+    border-top: 0;
+}
+body.ext-assistant-view #ext-assistant-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+}
+
+/* ============================ 17. 窄屏（≤360px） ============================ */
+@media (max-width: 360px) {
+    body {
+        --ext-pad: 10px;
+    }
+    .ext-compact {
+        --ext-pad: 10px;
+    }
+    .ext-row-submit .ext-btn-primary {
+        margin-left: 0;
+        flex: 1 1 auto;
+    }
+    .ext-section {
+        padding: 10px 0;
+    }
+    .ext-home-action {
+        min-height: 54px;
+        font-size: 11px;
+    }
+    dialog.ext-dialog {
+        width: calc(100vw - 16px);
+        max-height: calc(100vh - 16px);
+    }
+    .ext-dialog-body {
+        padding: 10px 12px 12px;
+    }
+}
+
+@media (max-width: 380px) {
+    body.ext-assistant-view {
+        --ext-pad: 10px;
+    }
+    .ext-assistant-messages {
+        max-height: 42vh;
+    }
+}
+
+/* 320px 展開時工具列放不下品牌字樣：只留必要操作 */
+@media (max-width: 330px) {
+    .ext-expanded .ext-toolbar-title {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Expand the browser action while a settings dialog is open. The article
+   workspace has its own window and can use the available reading width. */
+body.ext-home.ext-modal-open {
+    min-height: 560px;
+}
+body.ext-workspace-window:not(.ext-assistant-view) {
+    width: 100%;
+    max-width: 900px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 20px;
+}
+body.ext-workspace-window #ext-article-body {
+    min-height: 40vh;
+}
+.ext-assistant-msg-user {
+    white-space: pre-wrap;
+}
+.ext-assistant-msg table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+}
+.ext-assistant-msg img {
+    max-width: 100%;
+}
+body.ext-inline.ext-assistant-view .ext-assistant-title,
+body:not(.ext-home) #ext-home-notice {
+    display: none;
+}
+body.ext-article-view #ext-subtitle {
+    display: none;
+}
+.ext-book-select-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ext-book-select-row > select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.ext-book-select-row > button {
+    flex: none;
+    min-width: 30px;
+    min-height: 30px;
+}
+.ext-capture-bar {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+}
+.ext-capture-bar > #ext-capture-save {
+    flex: 0 0 auto;
+    min-width: 64px;
+    padding-inline: 14px;
+}
+.ext-capture-bar > #ext-book-settings,
+.ext-capture-bar > #ext-inline-retry {
+    flex: 0 0 34px;
+    min-height: 32px;
+    border: 1px solid var(--ext-line);
+    border-radius: var(--ext-radius-sm);
+}
+.ext-book-advanced {
+    margin-top: 12px;
+}

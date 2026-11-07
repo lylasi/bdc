@@ -1,0 +1,223 @@
+{
+  "baseline": true,
+  "checks": [
+    {
+      "name": "延遲供應商仍按原文順序組合全部段落",
+      "ok": true
+    },
+    {
+      "name": "實際請求並行不超過兩個",
+      "ok": true,
+      "detail": {
+        "ms": 9081.200000047684,
+        "peak": 1,
+        "requests": 8,
+        "progress": [
+          {
+            "done": 1,
+            "total": 8,
+            "time": 0.2999999523162842
+          },
+          {
+            "done": 2,
+            "total": 8,
+            "time": 1830.4000000953674
+          },
+          {
+            "done": 3,
+            "total": 8,
+            "time": 2537.4000000953674
+          },
+          {
+            "done": 4,
+            "total": 8,
+            "time": 3545.7000000476837
+          },
+          {
+            "done": 5,
+            "total": 8,
+            "time": 4752.700000047684
+          },
+          {
+            "done": 6,
+            "total": 8,
+            "time": 5561.400000095367
+          },
+          {
+            "done": 7,
+            "total": 8,
+            "time": 7068.799999952316
+          },
+          {
+            "done": 8,
+            "total": 8,
+            "time": 7974.900000095367
+          }
+        ]
+      }
+    },
+    {
+      "name": "多塊清洗維持原始順序及全部段落",
+      "ok": true
+    }
+  ],
+  "metrics": {
+    "cold": {
+      "ms": 9081.200000047684,
+      "peak": 1,
+      "requests": 8,
+      "progress": [
+        {
+          "done": 1,
+          "total": 8,
+          "time": 0.2999999523162842
+        },
+        {
+          "done": 2,
+          "total": 8,
+          "time": 1830.4000000953674
+        },
+        {
+          "done": 3,
+          "total": 8,
+          "time": 2537.4000000953674
+        },
+        {
+          "done": 4,
+          "total": 8,
+          "time": 3545.7000000476837
+        },
+        {
+          "done": 5,
+          "total": 8,
+          "time": 4752.700000047684
+        },
+        {
+          "done": 6,
+          "total": 8,
+          "time": 5561.400000095367
+        },
+        {
+          "done": 7,
+          "total": 8,
+          "time": 7068.799999952316
+        },
+        {
+          "done": 8,
+          "total": 8,
+          "time": 7974.900000095367
+        }
+      ]
+    },
+    "cleanup": {
+      "ms": 3516.5,
+      "peak": 1,
+      "requests": 3,
+      "progress": [
+        {
+          "done": 1,
+          "total": 3
+        },
+        {
+          "done": 2,
+          "total": 3
+        },
+        {
+          "done": 3,
+          "total": 3
+        }
+      ]
+    }
+  },
+  "calls": [
+    {
+      "prefix": "SPEED",
+      "index": 0,
+      "started": 2192.347209,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 4000.34825
+    },
+    {
+      "prefix": "SPEED",
+      "index": 1,
+      "started": 4003.151875,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 4706.373292
+    },
+    {
+      "prefix": "SPEED",
+      "index": 2,
+      "started": 4710.553459,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 5715.282334
+    },
+    {
+      "prefix": "SPEED",
+      "index": 3,
+      "started": 5717.68825,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 6921.460584
+    },
+    {
+      "prefix": "SPEED",
+      "index": 4,
+      "started": 6926.365667,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 7730.150834
+    },
+    {
+      "prefix": "SPEED",
+      "index": 5,
+      "started": 7733.700084,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 9237.802792
+    },
+    {
+      "prefix": "SPEED",
+      "index": 6,
+      "started": 9241.505959,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 10144.082042
+    },
+    {
+      "prefix": "SPEED",
+      "index": 7,
+      "started": 10146.432792,
+      "mode": "normal",
+      "maxTokens": 800,
+      "fulfilled": 11250.048375
+    },
+    {
+      "prefix": "CLEAN",
+      "index": 0,
+      "started": 11257.830792,
+      "mode": "normal",
+      "maxTokens": 4173,
+      "fulfilled": 13060.638709
+    },
+    {
+      "prefix": "CLEAN",
+      "index": 1,
+      "started": 13061.992292,
+      "mode": "normal",
+      "maxTokens": 4173,
+      "fulfilled": 13767.286834
+    },
+    {
+      "prefix": "CLEAN",
+      "index": 2,
+      "started": 13768.933834,
+      "mode": "normal",
+      "maxTokens": 4173,
+      "fulfilled": 14771.209167
+    }
+  ],
+  "errors": []
+}

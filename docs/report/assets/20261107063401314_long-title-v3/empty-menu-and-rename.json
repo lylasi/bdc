@@ -1,0 +1,1781 @@
+{
+  "finishedAt": "2026-11-06T22:58:49.319Z",
+  "results": [
+    {
+      "case": "empty-menu",
+      "locale": "zh-CN",
+      "viewport": "320x720",
+      "stages": [
+        {
+          "step": "open-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "rect": {
+            "x": 107,
+            "y": 507.8,
+            "w": 188,
+            "h": 141.2,
+            "right": 295,
+            "bottom": 649
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 241,
+          "clientHeight": 139,
+          "scrollable": true,
+          "items": 5,
+          "itemTexts": [
+            "补全资料",
+            "合并",
+            "导出",
+            "编辑",
+            "删除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "删除",
+            "y": 699.8,
+            "bottom": 743.8,
+            "h": 44,
+            "disabled": true
+          }
+        },
+        {
+          "step": "resize-320x400",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 0,
+          "clientHeight": 0,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "补全资料",
+            "合并",
+            "导出",
+            "编辑",
+            "删除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "删除",
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "h": 0
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": false,
+            "hitTag": "HEADER.app-bar"
+          }
+        },
+        {
+          "step": "resize-320x260",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 0,
+          "clientHeight": 0,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "补全资料",
+            "合并",
+            "导出",
+            "编辑",
+            "删除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "删除",
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "h": 0
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": false,
+            "hitTag": "HEADER.app-bar"
+          }
+        },
+        {
+          "step": "resize-390x900",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "innerWidth": 390,
+          "innerHeight": 900,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 0,
+          "clientHeight": 0,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "补全资料",
+            "合并",
+            "导出",
+            "编辑",
+            "删除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "删除",
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "h": 0
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": false,
+            "hitTag": "HEADER.app-bar"
+          }
+        },
+        {
+          "step": "resize-320x720",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 0,
+          "clientHeight": 0,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "补全资料",
+            "合并",
+            "导出",
+            "编辑",
+            "删除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "删除",
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "h": 0
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": false,
+            "hitTag": "HEADER.app-bar"
+          }
+        },
+        {
+          "step": "reopen-320x720",
+          "reopened": true,
+          "triggerScrolled": false,
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "rect": {
+            "x": 107,
+            "y": 507.8,
+            "w": 188,
+            "h": 141.2,
+            "right": 295,
+            "bottom": 649
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 241,
+          "clientHeight": 139,
+          "scrollable": true,
+          "items": 5,
+          "itemTexts": [
+            "补全资料",
+            "合并",
+            "导出",
+            "编辑",
+            "删除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "删除",
+            "y": 699.8,
+            "bottom": 743.8,
+            "h": 44,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 102,
+            "lastRect": {
+              "x": 114,
+              "y": 597.8,
+              "bottom": 641.8,
+              "h": 44
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": true,
+            "hitTag": "BUTTON.menu-item danger"
+          }
+        },
+        {
+          "step": "reopen-390x900",
+          "reopened": true,
+          "triggerScrolled": false,
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 390,
+          "innerHeight": 900,
+          "rect": {
+            "x": 177,
+            "y": 507.8,
+            "w": 188,
+            "h": 243,
+            "right": 365,
+            "bottom": 750.8
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "321.156px",
+          "overflowY": "auto",
+          "maxHeight": "321.156px",
+          "scrollHeight": 241,
+          "clientHeight": 241,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "补全资料",
+            "合并",
+            "导出",
+            "编辑",
+            "删除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "删除",
+            "y": 699.8,
+            "bottom": 743.8,
+            "h": 44,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 184,
+              "y": 699.8,
+              "bottom": 743.8,
+              "h": 44
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": true,
+            "hitTag": "BUTTON.menu-item danger"
+          }
+        },
+        {
+          "step": "reopen-320x560",
+          "reopened": true,
+          "triggerScrolled": true,
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 320,
+          "innerHeight": 560,
+          "rect": {
+            "x": 107,
+            "y": 302.8,
+            "w": 188,
+            "h": 186.2,
+            "right": 295,
+            "bottom": 489
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "186.156px",
+          "overflowY": "auto",
+          "maxHeight": "186.156px",
+          "scrollHeight": 241,
+          "clientHeight": 184,
+          "scrollable": true,
+          "items": 5,
+          "itemTexts": [
+            "补全资料",
+            "合并",
+            "导出",
+            "编辑",
+            "删除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "删除",
+            "y": 494.8,
+            "bottom": 538.8,
+            "h": 44,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 57,
+            "lastRect": {
+              "x": 114,
+              "y": 437.8,
+              "bottom": 481.8,
+              "h": 44
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": true,
+            "hitTag": "BUTTON.menu-item danger"
+          }
+        },
+        {
+          "step": "reopen-390x600",
+          "reopened": true,
+          "triggerScrolled": false,
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 390,
+          "innerHeight": 600,
+          "rect": {
+            "x": 177,
+            "y": 218.8,
+            "w": 188,
+            "h": 243,
+            "right": 365,
+            "bottom": 461.8
+          },
+          "inlineTop": "-235px",
+          "inlineMaxHeight": "396.844px",
+          "overflowY": "auto",
+          "maxHeight": "396.844px",
+          "scrollHeight": 241,
+          "clientHeight": 241,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "补全资料",
+            "合并",
+            "导出",
+            "编辑",
+            "删除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "删除",
+            "y": 410.8,
+            "bottom": 454.8,
+            "h": 44,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 184,
+              "y": 410.8,
+              "bottom": 454.8,
+              "h": 44
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": true,
+            "hitTag": "BUTTON.menu-item danger"
+          }
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "before": {
+        "title": "请选择一个单词本",
+        "moreVisible": true,
+        "bookCount": 0
+      },
+      "reach": {
+        "found": true,
+        "menuScrollTop": 102,
+        "lastRect": {
+          "x": 114,
+          "y": 597.8,
+          "bottom": 641.8,
+          "h": 44
+        },
+        "insideMenu": true,
+        "insideViewport": true,
+        "hitTestHitsItem": true,
+        "hitTag": "BUTTON.menu-item danger"
+      },
+      "zoomProbe": {
+        "before": {
+          "ih": 600,
+          "dpr": 1
+        },
+        "after": {
+          "ih": 600,
+          "dpr": 1
+        },
+        "changed": false
+      }
+    },
+    {
+      "case": "empty-menu",
+      "locale": "zh-HK",
+      "viewport": "320x720",
+      "stages": [
+        {
+          "step": "open-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "rect": {
+            "x": 107,
+            "y": 507.8,
+            "w": 188,
+            "h": 141.2,
+            "right": 295,
+            "bottom": 649
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 241,
+          "clientHeight": 139,
+          "scrollable": true,
+          "items": 5,
+          "itemTexts": [
+            "補全資料",
+            "合併",
+            "匯出",
+            "編輯",
+            "刪除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "刪除",
+            "y": 699.8,
+            "bottom": 743.8,
+            "h": 44,
+            "disabled": true
+          }
+        },
+        {
+          "step": "resize-320x400",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 0,
+          "clientHeight": 0,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "補全資料",
+            "合併",
+            "匯出",
+            "編輯",
+            "刪除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "刪除",
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "h": 0
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": false,
+            "hitTag": "HEADER.app-bar"
+          }
+        },
+        {
+          "step": "resize-320x260",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 0,
+          "clientHeight": 0,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "補全資料",
+            "合併",
+            "匯出",
+            "編輯",
+            "刪除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "刪除",
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "h": 0
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": false,
+            "hitTag": "HEADER.app-bar"
+          }
+        },
+        {
+          "step": "resize-390x900",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "innerWidth": 390,
+          "innerHeight": 900,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 0,
+          "clientHeight": 0,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "補全資料",
+            "合併",
+            "匯出",
+            "編輯",
+            "刪除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "刪除",
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "h": 0
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": false,
+            "hitTag": "HEADER.app-bar"
+          }
+        },
+        {
+          "step": "resize-320x720",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 0,
+          "clientHeight": 0,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "補全資料",
+            "合併",
+            "匯出",
+            "編輯",
+            "刪除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "刪除",
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 0,
+              "y": 0,
+              "bottom": 0,
+              "h": 0
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": false,
+            "hitTag": "HEADER.app-bar"
+          }
+        },
+        {
+          "step": "reopen-320x720",
+          "reopened": true,
+          "triggerScrolled": false,
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "rect": {
+            "x": 107,
+            "y": 507.8,
+            "w": 188,
+            "h": 141.2,
+            "right": 295,
+            "bottom": 649
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "overflowY": "auto",
+          "maxHeight": "141.156px",
+          "scrollHeight": 241,
+          "clientHeight": 139,
+          "scrollable": true,
+          "items": 5,
+          "itemTexts": [
+            "補全資料",
+            "合併",
+            "匯出",
+            "編輯",
+            "刪除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "刪除",
+            "y": 699.8,
+            "bottom": 743.8,
+            "h": 44,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 102,
+            "lastRect": {
+              "x": 114,
+              "y": 597.8,
+              "bottom": 641.8,
+              "h": 44
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": true,
+            "hitTag": "BUTTON.menu-item danger"
+          }
+        },
+        {
+          "step": "reopen-390x900",
+          "reopened": true,
+          "triggerScrolled": false,
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 390,
+          "innerHeight": 900,
+          "rect": {
+            "x": 177,
+            "y": 507.8,
+            "w": 188,
+            "h": 243,
+            "right": 365,
+            "bottom": 750.8
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "321.156px",
+          "overflowY": "auto",
+          "maxHeight": "321.156px",
+          "scrollHeight": 241,
+          "clientHeight": 241,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "補全資料",
+            "合併",
+            "匯出",
+            "編輯",
+            "刪除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "刪除",
+            "y": 699.8,
+            "bottom": 743.8,
+            "h": 44,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 184,
+              "y": 699.8,
+              "bottom": 743.8,
+              "h": 44
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": true,
+            "hitTag": "BUTTON.menu-item danger"
+          }
+        },
+        {
+          "step": "reopen-320x560",
+          "reopened": true,
+          "triggerScrolled": true,
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 320,
+          "innerHeight": 560,
+          "rect": {
+            "x": 107,
+            "y": 302.8,
+            "w": 188,
+            "h": 186.2,
+            "right": 295,
+            "bottom": 489
+          },
+          "inlineTop": "54px",
+          "inlineMaxHeight": "186.156px",
+          "overflowY": "auto",
+          "maxHeight": "186.156px",
+          "scrollHeight": 241,
+          "clientHeight": 184,
+          "scrollable": true,
+          "items": 5,
+          "itemTexts": [
+            "補全資料",
+            "合併",
+            "匯出",
+            "編輯",
+            "刪除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "刪除",
+            "y": 494.8,
+            "bottom": 538.8,
+            "h": 44,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 57,
+            "lastRect": {
+              "x": 114,
+              "y": 437.8,
+              "bottom": 481.8,
+              "h": 44
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": true,
+            "hitTag": "BUTTON.menu-item danger"
+          }
+        },
+        {
+          "step": "reopen-390x600",
+          "reopened": true,
+          "triggerScrolled": false,
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "innerWidth": 390,
+          "innerHeight": 600,
+          "rect": {
+            "x": 177,
+            "y": 218.8,
+            "w": 188,
+            "h": 243,
+            "right": 365,
+            "bottom": 461.8
+          },
+          "inlineTop": "-235px",
+          "inlineMaxHeight": "396.844px",
+          "overflowY": "auto",
+          "maxHeight": "396.844px",
+          "scrollHeight": 241,
+          "clientHeight": 241,
+          "scrollable": false,
+          "items": 5,
+          "itemTexts": [
+            "補全資料",
+            "合併",
+            "匯出",
+            "編輯",
+            "刪除"
+          ],
+          "bottomWithinViewport": true,
+          "topWithinViewport": true,
+          "rightWithinViewport": true,
+          "lastItem": {
+            "text": "刪除",
+            "y": 410.8,
+            "bottom": 454.8,
+            "h": 44,
+            "disabled": true
+          },
+          "reach": {
+            "found": true,
+            "menuScrollTop": 0,
+            "lastRect": {
+              "x": 184,
+              "y": 410.8,
+              "bottom": 454.8,
+              "h": 44
+            },
+            "insideMenu": true,
+            "insideViewport": true,
+            "hitTestHitsItem": true,
+            "hitTag": "BUTTON.menu-item danger"
+          }
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "before": {
+        "title": "請選擇一個生字簿",
+        "moreVisible": true,
+        "bookCount": 0
+      },
+      "reach": {
+        "found": true,
+        "menuScrollTop": 102,
+        "lastRect": {
+          "x": 114,
+          "y": 597.8,
+          "bottom": 641.8,
+          "h": 44
+        },
+        "insideMenu": true,
+        "insideViewport": true,
+        "hitTestHitsItem": true,
+        "hitTag": "BUTTON.menu-item danger"
+      },
+      "zoomProbe": {
+        "before": {
+          "ih": 600,
+          "dpr": 1
+        },
+        "after": {
+          "ih": 600,
+          "dpr": 1
+        },
+        "changed": false
+      }
+    },
+    {
+      "case": "rename-icon",
+      "locale": "zh-CN",
+      "width": 320,
+      "mode": "menu",
+      "findings": [],
+      "pageErrors": [],
+      "initial": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true,
+        "moreVisible": true
+      },
+      "modalOpen": true,
+      "afterRename": {
+        "title": "5A Unit 1 单词本",
+        "titleAttr": "5A Unit 1 单词本",
+        "iconHidden": true,
+        "iconDisplay": "none",
+        "storedName": "5A Unit 1 单词本",
+        "modalClosed": true
+      },
+      "frameStats": {
+        "frames": 68,
+        "residualIconFrames": 0,
+        "residualSamples": [],
+        "firstFrameTexts": [
+          {
+            "t": 0,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 13,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 30,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 67,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 67,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 80,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          }
+        ],
+        "lastFrames": [
+          {
+            "t": 1164,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1180,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1197,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1213,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          }
+        ]
+      },
+      "afterRestore": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true
+      },
+      "restoreFrameStats": {
+        "frames": 85,
+        "framesWithIconHidden": 44,
+        "last": [
+          {
+            "t": 1369,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1386,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1402,
+            "len": 247,
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "case": "rename-icon",
+      "locale": "zh-CN",
+      "width": 834,
+      "mode": "chips",
+      "findings": [],
+      "pageErrors": [],
+      "initial": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true,
+        "moreVisible": false
+      },
+      "modalOpen": true,
+      "afterRename": {
+        "title": "5A Unit 1 单词本",
+        "titleAttr": "5A Unit 1 单词本",
+        "iconHidden": true,
+        "iconDisplay": "none",
+        "storedName": "5A Unit 1 单词本",
+        "modalClosed": true
+      },
+      "frameStats": {
+        "frames": 73,
+        "residualIconFrames": 0,
+        "residualSamples": [],
+        "firstFrameTexts": [
+          {
+            "t": 0,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 13,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 29,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 79,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 80,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 96,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          }
+        ],
+        "lastFrames": [
+          {
+            "t": 1162,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1180,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1196,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1212,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          }
+        ]
+      },
+      "afterRestore": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true
+      },
+      "restoreFrameStats": {
+        "frames": 85,
+        "framesWithIconHidden": 31,
+        "last": [
+          {
+            "t": 1381,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1398,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1415,
+            "len": 247,
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "case": "rename-icon",
+      "locale": "zh-CN",
+      "width": 1440,
+      "mode": "chips",
+      "findings": [],
+      "pageErrors": [],
+      "initial": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true,
+        "moreVisible": false
+      },
+      "modalOpen": true,
+      "afterRename": {
+        "title": "5A Unit 1 单词本",
+        "titleAttr": "5A Unit 1 单词本",
+        "iconHidden": true,
+        "iconDisplay": "none",
+        "storedName": "5A Unit 1 单词本",
+        "modalClosed": true
+      },
+      "frameStats": {
+        "frames": 73,
+        "residualIconFrames": 0,
+        "residualSamples": [],
+        "firstFrameTexts": [
+          {
+            "t": 0,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 17,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 34,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 72,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 73,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 85,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          }
+        ],
+        "lastFrames": [
+          {
+            "t": 1151,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1168,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1185,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1202,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          }
+        ]
+      },
+      "afterRestore": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true
+      },
+      "restoreFrameStats": {
+        "frames": 85,
+        "framesWithIconHidden": 31,
+        "last": [
+          {
+            "t": 1379,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1395,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1411,
+            "len": 247,
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "case": "rename-icon",
+      "locale": "zh-HK",
+      "width": 320,
+      "mode": "menu",
+      "findings": [],
+      "pageErrors": [],
+      "initial": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true,
+        "moreVisible": true
+      },
+      "modalOpen": true,
+      "afterRename": {
+        "title": "5A Unit 1 单词本",
+        "titleAttr": "5A Unit 1 单词本",
+        "iconHidden": true,
+        "iconDisplay": "none",
+        "storedName": "5A Unit 1 单词本",
+        "modalClosed": true
+      },
+      "frameStats": {
+        "frames": 74,
+        "residualIconFrames": 0,
+        "residualSamples": [],
+        "firstFrameTexts": [
+          {
+            "t": 0,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 2,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 19,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 36,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 74,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 75,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          }
+        ],
+        "lastFrames": [
+          {
+            "t": 1154,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1169,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1185,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1202,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          }
+        ]
+      },
+      "afterRestore": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true
+      },
+      "restoreFrameStats": {
+        "frames": 85,
+        "framesWithIconHidden": 44,
+        "last": [
+          {
+            "t": 1372,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1387,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1404,
+            "len": 247,
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "case": "rename-icon",
+      "locale": "zh-HK",
+      "width": 834,
+      "mode": "chips",
+      "findings": [],
+      "pageErrors": [],
+      "initial": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true,
+        "moreVisible": false
+      },
+      "modalOpen": true,
+      "afterRename": {
+        "title": "5A Unit 1 单词本",
+        "titleAttr": "5A Unit 1 单词本",
+        "iconHidden": true,
+        "iconDisplay": "none",
+        "storedName": "5A Unit 1 单词本",
+        "modalClosed": true
+      },
+      "frameStats": {
+        "frames": 72,
+        "residualIconFrames": 0,
+        "residualSamples": [],
+        "firstFrameTexts": [
+          {
+            "t": 0,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 17,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 32,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 78,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 79,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 101,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          }
+        ],
+        "lastFrames": [
+          {
+            "t": 1149,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1168,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1183,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1201,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          }
+        ]
+      },
+      "afterRestore": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true
+      },
+      "restoreFrameStats": {
+        "frames": 85,
+        "framesWithIconHidden": 31,
+        "last": [
+          {
+            "t": 1384,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1400,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1416,
+            "len": 247,
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "case": "rename-icon",
+      "locale": "zh-HK",
+      "width": 1440,
+      "mode": "chips",
+      "findings": [],
+      "pageErrors": [],
+      "initial": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true,
+        "moreVisible": false
+      },
+      "modalOpen": true,
+      "afterRename": {
+        "title": "5A Unit 1 单词本",
+        "titleAttr": "5A Unit 1 单词本",
+        "iconHidden": true,
+        "iconDisplay": "none",
+        "storedName": "5A Unit 1 单词本",
+        "modalClosed": true
+      },
+      "frameStats": {
+        "frames": 73,
+        "residualIconFrames": 0,
+        "residualSamples": [],
+        "firstFrameTexts": [
+          {
+            "t": 0,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 17,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 35,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 71,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 72,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          },
+          {
+            "t": 86,
+            "len": 247,
+            "visible": true,
+            "lines": 2
+          }
+        ],
+        "lastFrames": [
+          {
+            "t": 1151,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1167,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1184,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          },
+          {
+            "t": 1202,
+            "len": 13,
+            "visible": false,
+            "lines": 1
+          }
+        ]
+      },
+      "afterRestore": {
+        "title": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful.",
+        "len": 247,
+        "iconHidden": false,
+        "iconVisible": true
+      },
+      "restoreFrameStats": {
+        "frames": 85,
+        "framesWithIconHidden": 32,
+        "last": [
+          {
+            "t": 1380,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1398,
+            "len": 247,
+            "visible": true
+          },
+          {
+            "t": 1415,
+            "len": 247,
+            "visible": true
+          }
+        ]
+      }
+    }
+  ]
+}

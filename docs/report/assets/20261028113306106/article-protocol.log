@@ -1,0 +1,16 @@
+✔ Worker D1：文章協議與權限 (40.065416ms)
+✔ selfhost SQLite：文章協議與權限（與 Worker 一致） (142.322709ms)
+✔ 容量規則：單篇、總量與筆數 (0.135458ms)
+✔ 舊快照判定：空群組不算舊文章寫入 (0.046834ms)
+✔ Worker D1：文章關閘原子推進快照版本，舊版本條件讀取不再命中 (10.43525ms)
+✔ selfhost SQLite：文章關閘快照版本契約與 Worker 一致 (66.993625ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 308.581917
+
+[exited with code 0]

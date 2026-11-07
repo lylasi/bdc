@@ -1,0 +1,67 @@
+{
+  "passed": 12,
+  "total": 12,
+  "results": [
+    {
+      "name": "anonymous cannot use managed providers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "login verifies and loads the managed catalog",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "shared key is memory-only and bound to the request",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "catalog refresh drops old shared keys after a version change",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "personal cloud key uploads, conflicts and resolves locally",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "401 invalidation keeps personal keys but clears shared access",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "explicit import copies device providers and can sync the key",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "explicit logout clears account keys, catalog and metadata",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "admin panel opens and publishes a new release",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "admin can import a legacy provider JSON export",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "legacy AI settings migrate once into the device profile",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "missing provider/key does not borrow another provider",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}
+PASS mock provider standalone page

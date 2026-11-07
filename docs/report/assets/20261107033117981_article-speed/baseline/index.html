@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <script>
+      // 先套用已儲存的配色主題，避免首次繪製時閃一下預設色（modules/theme.js 之後會再同步一次）
+      try {
+        var saved = JSON.parse(localStorage.getItem('pen_global_settings') || '{}').theme;
+        var themes = ['teal', 'indigo', 'violet', 'slate'];
+        document.documentElement.dataset.theme = themes.indexOf(saved) >= 0 ? saved : 'teal';
+      } catch (e) {}
+    </script>
+    <script>
+      // 啟動失敗兜底：main.js 或它相依的模組（例如未建立的 ai-config.js）載入失敗時，
+      // 瀏覽器只會在 console 留一行資源錯誤，使用者看到的卻是半個白畫面。
+      // 這裡用傳統 script 搶先註冊，確保模組圖斷掉時仍能給出可行動的訊息。
+      (function () {
+        var shown = false;
+        function showStartupFailure(detail) {
+          if (shown) return;
+          shown = true;
+          var isHK = false;
+          try {
+            var s = JSON.parse(localStorage.getItem('pen_global_settings') || '{}');
+            isHK = s && s.language && s.language.interfaceLocale === 'zh-HK';
+          } catch (e) {}
+          var text = isHK
+            ? {
+                title: '應用未能啟動',
+                body: '頁面需要的程式檔案載入失敗，最常見的原因是專案根目錄缺少 ai-config.js。',
+                steps: '請在專案根目錄執行 cp ai-config.example.js ai-config.js，然後重新整理頁面。',
+                detail: '技術細節'
+              }
+            : {
+                title: '应用未能启动',
+                body: '页面需要的程序文件加载失败，最常见的原因是项目根目录缺少 ai-config.js。',
+                steps: '请在项目根目录执行 cp ai-config.example.js ai-config.js，然后刷新页面。',
+                detail: '技术细节'
+              };
+          var box = document.createElement('div');
+          box.setAttribute('role', 'alert');
+          box.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#f6f7f9;font:15px/1.7 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#1f2937;';
+          var card = document.createElement('div');
+          card.style.cssText = 'max-width:560px;width:100%;background:#fff;border:1px solid #e3e6eb;border-radius:14px;padding:24px;box-shadow:0 8px 28px rgba(15,23,42,.08);';
+          var h = document.createElement('h1');
+          h.textContent = text.title;
+          h.style.cssText = 'margin:0 0 12px;font-size:19px;';
+          var p1 = document.createElement('p');
+          p1.textContent = text.body;
+          p1.style.cssText = 'margin:0 0 10px;';
+          var p2 = document.createElement('p');
+          p2.textContent = text.steps;
+          p2.style.cssText = 'margin:0 0 16px;color:#0f766e;font-weight:600;';
+          var pre = document.createElement('pre');
+          pre.textContent = String(detail || '');
+          pre.style.cssText = 'margin:0;padding:10px 12px;background:#f3f4f6;border-radius:8px;font-size:12px;white-space:pre-wrap;word-break:break-all;color:#4b5563;max-height:180px;overflow:auto;';
+          card.appendChild(h); card.appendChild(p1); card.appendChild(p2);
+          if (detail) {
+            var sum = document.createElement('details');
+            var sm = document.createElement('summary');
+            sm.textContent = text.detail;
+            sm.style.cssText = 'cursor:pointer;font-size:13px;color:#6b7280;margin-bottom:8px;';
+            sum.appendChild(sm); sum.appendChild(pre);
+            card.appendChild(sum);
+          }
+          box.appendChild(card);
+          function mount() { document.body ? document.body.appendChild(box) : document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(box); }); }
+          mount();
+        }
+
+        window.__bdcStartupFailure = showStartupFailure;
+
+        // 模組 script 載入失敗會在 script 元素上觸發 error（需 capture）
+        window.addEventListener('error', function (ev) {
+          var t = ev.target;
+          if (t && t.tagName === 'SCRIPT' && t.type === 'module') {
+            showStartupFailure('Failed to load: ' + (t.src || '(inline)'));
+          }
+        }, true);
+      })();
+    </script>
+    <title data-i18n="app.documentTitle">背单词应用</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230f766e'/%3E%3Cpath d='M7 6.5h6.5L17 10v7.5H7z' fill='none' stroke='white' stroke-width='1.7' stroke-linejoin='round'/%3E%3Cpath d='M13 6.5V10h3.8' fill='none' stroke='white' stroke-width='1.7'/%3E%3C/svg%3E"
+    />
+    <!-- release-assets:importmap:start -->
+    <!-- 由 scripts/update-release-map.mjs 產生；請勿手改，改完模組或 CSS 後重新執行。 -->
+    <script type="importmap">
+      {
+        "imports": {
+          "/features/admin-users/admin-users.js": "/features/admin-users/admin-users.js?v=c0609f2ea8fa",
+          "/features/ai-admin/ai-admin.js": "/features/ai-admin/ai-admin.js?v=c0609f2ea8fa",
+          "/features/article/analysis-state.js": "/features/article/analysis-state.js?v=c0609f2ea8fa",
+          "/features/article/article.js": "/features/article/article.js?v=c0609f2ea8fa",
+          "/features/article/paragraph-pipeline.js": "/features/article/paragraph-pipeline.js?v=c0609f2ea8fa",
+          "/features/article/perf-probe.js": "/features/article/perf-probe.js?v=c0609f2ea8fa",
+          "/features/article/phrase-picker.js": "/features/article/phrase-picker.js?v=c0609f2ea8fa",
+          "/features/article/reading-export-dialog.js": "/features/article/reading-export-dialog.js?v=c0609f2ea8fa",
+          "/features/article/reading-panel.js": "/features/article/reading-panel.js?v=c0609f2ea8fa",
+          "/features/article/reading-view.js": "/features/article/reading-view.js?v=c0609f2ea8fa",
+          "/features/article/sentence-actions.js": "/features/article/sentence-actions.js?v=c0609f2ea8fa",
+          "/features/article/tokenize.js": "/features/article/tokenize.js?v=c0609f2ea8fa",
+          "/features/assistant/assistant.js": "/features/assistant/assistant.js?v=c0609f2ea8fa",
+          "/features/assistant/request-plan.js": "/features/assistant/request-plan.js?v=c0609f2ea8fa",
+          "/features/assistant/word-chat.js": "/features/assistant/word-chat.js?v=c0609f2ea8fa",
+          "/features/dictation/dictation-grader.js": "/features/dictation/dictation-grader.js?v=c0609f2ea8fa",
+          "/features/dictation/dictation.js": "/features/dictation/dictation.js?v=c0609f2ea8fa",
+          "/features/learning/learning.js": "/features/learning/learning.js?v=c0609f2ea8fa",
+          "/features/ocr/ocr.js": "/features/ocr/ocr.js?v=c0609f2ea8fa",
+          "/features/phonetics/phonetics.js": "/features/phonetics/phonetics.js?v=c0609f2ea8fa",
+          "/features/phonetics/word-sheet.js": "/features/phonetics/word-sheet.js?v=c0609f2ea8fa",
+          "/features/qa/qa-checker.js": "/features/qa/qa-checker.js?v=c0609f2ea8fa",
+          "/features/qa/qa-creator.js": "/features/qa/qa-creator.js?v=c0609f2ea8fa",
+          "/features/qa/qa-pdf.js": "/features/qa/qa-pdf.js?v=c0609f2ea8fa",
+          "/features/qa/qa-storage.js": "/features/qa/qa-storage.js?v=c0609f2ea8fa",
+          "/features/qa/qa-trainer.js": "/features/qa/qa-trainer.js?v=c0609f2ea8fa",
+          "/features/qa/qa.js": "/features/qa/qa.js?v=c0609f2ea8fa",
+          "/features/quiz/quiz.js": "/features/quiz/quiz.js?v=c0609f2ea8fa",
+          "/features/sync/ai-provider-settings.js": "/features/sync/ai-provider-settings.js?v=c0609f2ea8fa",
+          "/features/sync/sync-status.js": "/features/sync/sync-status.js?v=c0609f2ea8fa",
+          "/features/sync/sync.js": "/features/sync/sync.js?v=c0609f2ea8fa",
+          "/features/vocabulary/vocabulary.js": "/features/vocabulary/vocabulary.js?v=c0609f2ea8fa",
+          "/locales/zh-CN.js": "/locales/zh-CN.js?v=c0609f2ea8fa",
+          "/locales/zh-HK.js": "/locales/zh-HK.js?v=c0609f2ea8fa",
+          "/main.js": "/main.js?v=c0609f2ea8fa",
+          "/modules/ai-catalog.js": "/modules/ai-catalog.js?v=c0609f2ea8fa",
+          "/modules/ai-credential-sync.js": "/modules/ai-credential-sync.js?v=c0609f2ea8fa",
+          "/modules/ai-model-picker.js": "/modules/ai-model-picker.js?v=c0609f2ea8fa",
+          "/modules/ai-models.js": "/modules/ai-models.js?v=c0609f2ea8fa",
+          "/modules/ai-profile-storage.js": "/modules/ai-profile-storage.js?v=c0609f2ea8fa",
+          "/modules/ai-protocols/anthropic.js": "/modules/ai-protocols/anthropic.js?v=c0609f2ea8fa",
+          "/modules/ai-protocols/chat-completions.js": "/modules/ai-protocols/chat-completions.js?v=c0609f2ea8fa",
+          "/modules/ai-protocols/common.js": "/modules/ai-protocols/common.js?v=c0609f2ea8fa",
+          "/modules/ai-protocols/gemini.js": "/modules/ai-protocols/gemini.js?v=c0609f2ea8fa",
+          "/modules/ai-protocols/index.js": "/modules/ai-protocols/index.js?v=c0609f2ea8fa",
+          "/modules/ai-settings-sanitize.js": "/modules/ai-settings-sanitize.js?v=c0609f2ea8fa",
+          "/modules/ai-thinking-help.js": "/modules/ai-thinking-help.js?v=c0609f2ea8fa",
+          "/modules/ai-thinking.js": "/modules/ai-thinking.js?v=c0609f2ea8fa",
+          "/modules/api.js": "/modules/api.js?v=c0609f2ea8fa",
+          "/modules/article-book-link.js": "/modules/article-book-link.js?v=c0609f2ea8fa",
+          "/modules/article-route.js": "/modules/article-route.js?v=c0609f2ea8fa",
+          "/modules/article-session.js": "/modules/article-session.js?v=c0609f2ea8fa",
+          "/modules/article-store.js": "/modules/article-store.js?v=c0609f2ea8fa",
+          "/modules/article-sync.js": "/modules/article-sync.js?v=c0609f2ea8fa",
+          "/modules/audio.js": "/modules/audio.js?v=c0609f2ea8fa",
+          "/modules/backup-store.js": "/modules/backup-store.js?v=c0609f2ea8fa",
+          "/modules/cache.js": "/modules/cache.js?v=c0609f2ea8fa",
+          "/modules/detail-state.js": "/modules/detail-state.js?v=c0609f2ea8fa",
+          "/modules/dom.js": "/modules/dom.js?v=c0609f2ea8fa",
+          "/modules/i18n-config.js": "/modules/i18n-config.js?v=c0609f2ea8fa",
+          "/modules/i18n.js": "/modules/i18n.js?v=c0609f2ea8fa",
+          "/modules/local-backup.js": "/modules/local-backup.js?v=c0609f2ea8fa",
+          "/modules/markdown.js": "/modules/markdown.js?v=c0609f2ea8fa",
+          "/modules/permanent-db.js": "/modules/permanent-db.js?v=c0609f2ea8fa",
+          "/modules/phonetics-data.js": "/modules/phonetics-data.js?v=c0609f2ea8fa",
+          "/modules/platform.js": "/modules/platform.js?v=c0609f2ea8fa",
+          "/modules/prompts/article.js": "/modules/prompts/article.js?v=c0609f2ea8fa",
+          "/modules/prompts/assistant.js": "/modules/prompts/assistant.js?v=c0609f2ea8fa",
+          "/modules/prompts/dictation.js": "/modules/prompts/dictation.js?v=c0609f2ea8fa",
+          "/modules/prompts/dictionary.js": "/modules/prompts/dictionary.js?v=c0609f2ea8fa",
+          "/modules/prompts/import.js": "/modules/prompts/import.js?v=c0609f2ea8fa",
+          "/modules/prompts/index.js": "/modules/prompts/index.js?v=c0609f2ea8fa",
+          "/modules/prompts/language-rules.js": "/modules/prompts/language-rules.js?v=c0609f2ea8fa",
+          "/modules/prompts/learning.js": "/modules/prompts/learning.js?v=c0609f2ea8fa",
+          "/modules/prompts/ocr.js": "/modules/prompts/ocr.js?v=c0609f2ea8fa",
+          "/modules/prompts/qa.js": "/modules/prompts/qa.js?v=c0609f2ea8fa",
+          "/modules/qr.js": "/modules/qr.js?v=c0609f2ea8fa",
+          "/modules/quick-model-picker.js": "/modules/quick-model-picker.js?v=c0609f2ea8fa",
+          "/modules/reading-actions.js": "/modules/reading-actions.js?v=c0609f2ea8fa",
+          "/modules/reading-edition.js": "/modules/reading-edition.js?v=c0609f2ea8fa",
+          "/modules/reading-export.js": "/modules/reading-export.js?v=c0609f2ea8fa",
+          "/modules/reading-store.js": "/modules/reading-store.js?v=c0609f2ea8fa",
+          "/modules/reading-sync.js": "/modules/reading-sync.js?v=c0609f2ea8fa",
+          "/modules/settings.js": "/modules/settings.js?v=c0609f2ea8fa",
+          "/modules/state.js": "/modules/state.js?v=c0609f2ea8fa",
+          "/modules/storage.js": "/modules/storage.js?v=c0609f2ea8fa",
+          "/modules/sync-cloudflare.js": "/modules/sync-cloudflare.js?v=c0609f2ea8fa",
+          "/modules/sync-core.js": "/modules/sync-core.js?v=c0609f2ea8fa",
+          "/modules/sync-signals.js": "/modules/sync-signals.js?v=c0609f2ea8fa",
+          "/modules/theme-art.js": "/modules/theme-art.js?v=c0609f2ea8fa",
+          "/modules/theme.js": "/modules/theme.js?v=c0609f2ea8fa",
+          "/modules/ui.js": "/modules/ui.js?v=c0609f2ea8fa",
+          "/modules/validate.js": "/modules/validate.js?v=c0609f2ea8fa",
+          "/modules/vendor/qrcode-generator.js": "/modules/vendor/qrcode-generator.js?v=c0609f2ea8fa",
+          "/modules/vocab.js": "/modules/vocab.js?v=c0609f2ea8fa",
+          "/modules/vocabulary-route.js": "/modules/vocabulary-route.js?v=c0609f2ea8fa",
+          "/modules/voices.js": "/modules/voices.js?v=c0609f2ea8fa",
+          "/shared/article-book-link.mjs": "/shared/article-book-link.mjs?v=c0609f2ea8fa",
+          "/shared/article-protocol.mjs": "/shared/article-protocol.mjs?v=c0609f2ea8fa",
+          "/shared/page-protocol.mjs": "/shared/page-protocol.mjs?v=c0609f2ea8fa",
+          "/shared/reading-protocol.mjs": "/shared/reading-protocol.mjs?v=c0609f2ea8fa",
+          "/shared/vocabulary-source.mjs": "/shared/vocabulary-source.mjs?v=c0609f2ea8fa"
+        }
+      }
+    </script>
+    <!-- release-assets:importmap:end -->
+    <link rel="stylesheet" href="styles.css?v=c0609f2ea8fa" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <!-- 統一線性圖標（SVG sprite，24 網格 / 1.7 描邊） -->
+      <svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+        <symbol id="ic-app" viewBox="0 0 24 24"><path d="M5.5 3.5h8L18.5 8v12.5h-13z"/><path d="M13.5 3.5V8h5"/><path d="M8.5 12.5h7M8.5 16h4.5"/></symbol>
+        <symbol id="ic-book" viewBox="0 0 24 24"><path d="M4.5 5.5A2 2 0 0 1 6.5 3.5H19v14.5H6.5a2 2 0 0 0-2 2z"/><path d="M4.5 18A2 2 0 0 1 6.5 16H19"/></symbol>
+        <symbol id="ic-bookmark" viewBox="0 0 24 24"><path d="M6.5 4h11v16l-5.5-3.5L6.5 20z"/></symbol>
+        <symbol id="ic-pen" viewBox="0 0 24 24"><path d="M4 6.5h9M4 10.5h6"/><path d="M13.6 13.4 19.3 7.7a1.8 1.8 0 0 0-2.5-2.5l-5.7 5.7-.7 3.2z"/></symbol>
+        <symbol id="ic-bulb" viewBox="0 0 24 24"><path d="M12 3.5a6 6 0 0 0-3.6 10.8V17h7.2v-2.7A6 6 0 0 0 12 3.5z"/><path d="M9.5 20h5"/></symbol>
+        <symbol id="ic-chat" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-11 6.7L4.5 19.5l1.3-4.2A7.5 7.5 0 1 1 20 11.5z"/></symbol>
+        <symbol id="ic-doc" viewBox="0 0 24 24"><path d="M6.5 3.5h7L18.5 8.5v12h-12z"/><path d="M13 3.5v5h5.5"/><path d="M9.5 13h5.5M9.5 16.5h3.5"/></symbol>
+        <symbol id="ic-scan" viewBox="0 0 24 24"><path d="M4 8.5V6a2 2 0 0 1 2-2h2.5M15.5 4H18a2 2 0 0 1 2 2v2.5M20 15.5V18a2 2 0 0 1-2 2h-2.5M8.5 20H6a2 2 0 0 1-2-2v-2.5"/><path d="M4 12h16"/></symbol>
+        <symbol id="ic-camera" viewBox="0 0 24 24"><path d="M4 8.6A1.6 1.6 0 0 1 5.6 7h2.2l1.1-1.7h6.2L16.2 7h2.2A1.6 1.6 0 0 1 20 8.6v8.8a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 17.4z"/><circle cx="12" cy="12.8" r="3.4"/></symbol>
+        <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M2.8 12S6.2 6.7 12 6.7 21.2 12 21.2 12 17.8 17.3 12 17.3 2.8 12 2.8 12z"/><circle cx="12" cy="12" r="3.1"/></symbol>
+        <symbol id="ic-eye-off" viewBox="0 0 24 24"><path d="M4.5 4.5 19.5 19.5"/><path d="M10.3 6.9A9.6 9.6 0 0 1 12 6.8c5.8 0 9.2 5.2 9.2 5.2a15.6 15.6 0 0 1-3.3 3.7M6.6 8.4A15.2 15.2 0 0 0 2.8 12s3.4 5.2 9.2 5.2c1.2 0 2.3-.2 3.3-.5"/><path d="M9.9 10a3 3 0 0 0 4.2 4.2"/></symbol>
+        <symbol id="ic-follow" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.2"/><circle cx="12" cy="12" r="1.7"/><path d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2"/></symbol>
+        <symbol id="ic-grip" viewBox="0 0 24 24"><path d="M9 7h.01M15 7h.01M9 12h.01M15 12h.01M9 17h.01M15 17h.01" stroke-width="3"/></symbol>
+        <symbol id="ic-quiz" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+        <symbol id="ic-sliders" viewBox="0 0 24 24"><path d="M4 8h9M17.5 8H20M4 16h3.5M11.5 16H20"/><circle cx="15" cy="8" r="2.2"/><circle cx="9.5" cy="16" r="2.2"/></symbol>
+        <symbol id="ic-model" viewBox="0 0 24 24"><rect x="7.5" y="7.5" width="9" height="9" rx="2"/><path d="M10 3.5v4M14 3.5v4M10 16.5v4M14 16.5v4M3.5 10h4M3.5 14h4M16.5 10h4M16.5 14h4"/></symbol>
+        <symbol id="ic-more" viewBox="0 0 24 24"><path d="M5.5 12h.01M12 12h.01M18.5 12h.01" stroke-width="2.6"/></symbol>
+        <symbol id="ic-play" viewBox="0 0 24 24"><path d="M8.5 5.8v12.4L18 12z"/></symbol>
+        <symbol id="ic-pause" viewBox="0 0 24 24"><path d="M9.5 5.5v13M14.5 5.5v13" stroke-width="2.4"/></symbol>
+        <symbol id="ic-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></symbol>
+        <symbol id="ic-replay" viewBox="0 0 24 24"><path d="M4.5 10.5a8 8 0 1 1 2.4 6.9"/><path d="M4.5 4.5v6h6"/></symbol>
+        <symbol id="ic-prev" viewBox="0 0 24 24"><path d="M14.5 6 8.5 12l6 6"/></symbol>
+        <symbol id="ic-next" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+        <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+        <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M12 16.5V4.5"/><path d="m7.5 9 4.5-4.5L16.5 9"/><path d="M4.5 15v3.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></symbol>
+        <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 4.5v12"/><path d="m7.5 12 4.5 4.5L16.5 12"/><path d="M4.5 15v3.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></symbol>
+        <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M4.5 19.5h4l10-10-4-4-10 10z"/><path d="m13.5 6.5 4 4"/></symbol>
+        <symbol id="ic-trash" viewBox="0 0 24 24"><path d="M4.5 7h15"/><path d="M9.5 7V4.8h5V7"/><path d="m6.5 7 .8 12.3a1.6 1.6 0 0 0 1.6 1.5h6.2a1.6 1.6 0 0 0 1.6-1.5L17.5 7"/></symbol>
+        <symbol id="ic-merge" viewBox="0 0 24 24"><path d="m12 3.5 8 4.3-8 4.3-8-4.3z"/><path d="m4 12.5 8 4.3 8-4.3"/></symbol>
+        <symbol id="ic-sparkle" viewBox="0 0 24 24"><path d="m11 4 1.7 4.6L17.3 10l-4.6 1.7L11 16.3 9.3 11.7 4.7 10l4.6-1.4z"/><path d="m18 15.5.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></symbol>
+        <symbol id="ic-speaker" viewBox="0 0 24 24"><path d="M11.5 5 7 9H4v6h3l4.5 4z"/><path d="M15 9.5a3.6 3.6 0 0 1 0 5"/><path d="M17.6 7a7 7 0 0 1 0 10"/></symbol>
+        <symbol id="ic-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+        <symbol id="ic-close" viewBox="0 0 24 24"><path d="m6.5 6.5 11 11M17.5 6.5l-11 11"/></symbol>
+        <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.2"/><path d="m15.8 15.8 4.2 4.2"/></symbol>
+        <symbol id="ic-paper" viewBox="0 0 24 24"><path d="M6 3.5h12v17H6z"/><path d="M9 8.5h6M9 12.5h6M9 16.5h3"/></symbol>
+        <symbol id="ic-timer" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.8v3.7l2.6 1.6"/><path d="M9.5 3h5"/></symbol>
+        <symbol id="ic-list" viewBox="0 0 24 24"><path d="M8.5 7h11M8.5 12h11M8.5 17h11"/><path d="M4.5 7h.01M4.5 12h.01M4.5 17h.01" stroke-width="2.4"/></symbol>
+        <symbol id="ic-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></symbol>
+        <symbol id="ic-cloud" viewBox="0 0 24 24"><path d="M7.5 18.5h9.2a4.3 4.3 0 0 0 .4-8.6A5.6 5.6 0 0 0 7 10.9a3.8 3.8 0 0 0 .5 7.6z"/></symbol>
+        <symbol id="ic-chevron" viewBox="0 0 24 24"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></symbol>
+        <symbol id="ic-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+        <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3"/></symbol>
+        <symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 11v5.5"/><path d="M12 8h.01" stroke-width="2.4"/></symbol>
+        <symbol id="ic-warning" viewBox="0 0 24 24"><path d="M12 4.2 20.8 19.8H3.2z"/><path d="M12 10v4.4"/><path d="M12 17.2h.01" stroke-width="2.4"/></symbol>
+        <symbol id="ic-flame" viewBox="0 0 24 24"><path d="M12 3.4c.7 3.1-2.3 4.6-2.3 7.5a2.3 2.3 0 0 0 4.6 0c0-1.3-.6-2.3-1-3.1 2.7 1.5 4.5 3.8 4.5 6.3a5.8 5.8 0 0 1-11.6 0c0-4.1 3.5-6.9 5.8-10.7z"/></symbol>
+        <symbol id="ic-blade" viewBox="0 0 24 24"><path d="M4 20 19.6 4.4a1.4 1.4 0 0 0-2-2L2 18z"/><path d="M6.4 13.2 11 17.8"/></symbol>
+      </svg>
+
+      <header class="app-bar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"><svg class="icon brand-mark-icon"><use href="#ic-app"/></svg><img class="brand-mark-img" alt="" hidden /></span>
+          <span class="brand-text">
+            <h1 class="brand-title" data-i18n="app.title">PEN子背单词</h1>
+            <span class="brand-sub" data-i18n="app.subtitle">纸上听写 · 单词 · 学习</span>
+          </span>
+        </div>
+        <div class="app-bar-context">
+          <div id="sync-controls" class="sync-controls" style="display: none"></div>
+          <button
+            id="app-gear-btn"
+            class="floating-gear-btn"
+            title="设置"
+            aria-label="设置"
+            data-i18n-title="app.settings"
+            data-i18n-aria-label="app.settings"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#ic-sliders"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <nav class="app-nav" aria-label="主导航" data-i18n-aria-label="nav.aria">
+        <button id="vocabulary-btn" class="nav-btn active">
+          <svg class="icon" aria-hidden="true"><use href="#ic-book"/></svg>
+          <span class="nav-text">
+            <span class="nav-label-full" data-i18n="nav.vocabulary.full">单词本</span>
+            <span class="nav-label-short" data-i18n="nav.vocabulary.short">词</span>
+          </span>
+        </button>
+        <button id="dictation-btn" class="nav-btn">
+          <svg class="icon" aria-hidden="true"><use href="#ic-pen"/></svg>
+          <span class="nav-text">
+            <span class="nav-label-full" data-i18n="nav.dictation.full">听写模式</span>
+            <span class="nav-label-short" data-i18n="nav.dictation.short">听</span>
+          </span>
+        </button>
+        <button id="learning-btn" class="nav-btn">
+          <svg class="icon" aria-hidden="true"><use href="#ic-bulb"/></svg>
+          <span class="nav-text">
+            <span class="nav-label-full" data-i18n="nav.learning.full">学习模式</span>
+            <span class="nav-label-short" data-i18n="nav.learning.short">学</span>
+          </span>
+        </button>
+        <button id="qa-btn" class="nav-btn">
+          <svg class="icon" aria-hidden="true"><use href="#ic-chat"/></svg>
+          <span class="nav-text">
+            <span class="nav-label-full" data-i18n="nav.qa.full">问答训练</span>
+            <span class="nav-label-short" data-i18n="nav.qa.short">问</span>
+          </span>
+        </button>
+        <div class="nav-more-wrap">
+          <button id="nav-more-btn" class="nav-more-trigger" aria-expanded="false" aria-controls="nav-more-list">
+            <svg class="icon" aria-hidden="true"><use href="#ic-more"/></svg>
+            <span class="nav-text" data-i18n="nav.more">更多</span>
+          </button>
+          <div id="nav-more-list" class="nav-more-list">
+            <button id="article-btn" class="nav-btn">
+              <svg class="icon" aria-hidden="true"><use href="#ic-doc"/></svg>
+              <span class="nav-text" data-i18n="nav.article.full">文章详解</span>
+            </button>
+            <button id="ocr-btn" class="nav-btn">
+              <svg class="icon" aria-hidden="true"><use href="#ic-scan"/></svg>
+              <span class="nav-text" data-i18n="nav.ocr.full">图片识别</span>
+            </button>
+            <button id="quiz-btn" class="nav-btn">
+              <svg class="icon" aria-hidden="true"><use href="#ic-quiz"/></svg>
+              <span class="nav-text" data-i18n="nav.quiz.full">随堂测验</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+      <div id="nav-backdrop" class="nav-backdrop" hidden></div>
+
+<main>
+        <div class="container">
+        <!-- 單詞本頁面 -->
+        <section id="vocabulary-section" class="section active">
+          <div class="page-head">
+            <h2 data-i18n="vocabulary.myBooks">我的单词本</h2>
+            <p class="page-sub" data-i18n="vocabulary.pageSub">选择单词本后可朗读、编辑、导出，也能直接进入听写与学习。</p>
+            <div class="page-actions">
+              <button
+                id="import-vocab-book-btn"
+                class="btn-primary"
+                title="导入单词本"
+                data-i18n-title="vocabulary.importBook"
+              >
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-upload"/></svg>
+                <span data-i18n="vocabulary.importBook">导入单词本</span>
+              </button>
+              <button
+                id="add-vocab-book-btn"
+                class="btn-secondary"
+                title="新增单词本"
+                data-i18n-title="vocabulary.addBook"
+              >
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-plus"/></svg>
+                <span data-i18n="vocabulary.addBook">新增单词本</span>
+              </button>
+            </div>
+          </div>
+          <div class="vocabulary-layout">
+            <!-- 左側：單詞本清單 -->
+            <div id="vocab-books-panel" class="vocab-books-panel">
+              <div class="panel-header">
+                <h3 data-i18n="vocabulary.booksPanel">全部单词本</h3>
+                <span id="vocab-book-count" class="badge"></span>
+              </div>
+              <ul id="vocab-book-list">
+                <!-- JS動態生成 -->
+              </ul>
+            </div>
+            <!-- 右側：選定單詞本的內容 -->
+            <div id="vocab-words-panel" class="vocab-words-panel">
+              <div class="panel-header">
+                <h3 id="current-book-name" data-i18n="vocabulary.selectBook">请选择一个单词本</h3>
+                <div class="word-panel-actions">
+                  <button
+                    id="complete-missing-btn"
+                    class="action-chip"
+                    title="补全缺失资料"
+                    data-i18n-title="vocabulary.completeMissing"
+                    disabled
+                  >
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-sparkle"/></svg>
+                    <span data-i18n="vocabulary.completeMissingShort">补全资料</span>
+                  </button>
+                  <button
+                    id="merge-vocab-books-btn"
+                    class="action-chip"
+                    title="合并单词本"
+                    data-i18n-title="vocabulary.mergeBooks"
+                  >
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-merge"/></svg>
+                    <span data-i18n="vocabulary.mergeShort">合并</span>
+                  </button>
+                  <button
+                    id="export-vocab-book-btn"
+                    class="action-chip"
+                    title="导出单词本"
+                    data-i18n-title="vocabulary.exportBook"
+                    disabled
+                  >
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-download"/></svg>
+                    <span data-i18n="vocabulary.exportShort">导出</span>
+                  </button>
+                  <button
+                    id="edit-vocab-book-btn"
+                    class="action-chip"
+                    title="编辑单词"
+                    data-i18n-title="vocabulary.editWords"
+                    disabled
+                  >
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-edit"/></svg>
+                    <span data-i18n="vocabulary.editShort">编辑</span>
+                  </button>
+                  <button
+                    id="delete-vocab-book-btn"
+                    class="action-chip"
+                    title="删除单词本"
+                    data-i18n-title="vocabulary.deleteBook"
+                    disabled
+                  >
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-trash"/></svg>
+                    <span data-i18n="vocabulary.deleteShort">删除</span>
+                  </button>
+                </div>
+                <!-- 手機：操作收進「更多」選單，避免佔用上下空間 -->
+                <button
+                  id="word-panel-more-btn"
+                  class="action-chip word-panel-more-btn"
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  title="更多操作"
+                  data-i18n-title="vocabulary.moreActions"
+                  aria-label="更多操作"
+                  data-i18n-aria-label="vocabulary.moreActions"
+                >
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-more"/></svg>
+                </button>
+              </div>
+              <p id="current-book-meta" class="form-hint"></p>
+              <div class="word-toolbar">
+                <label class="sr-only" for="word-filter" data-i18n="vocabulary.filterLabel">筛选单词</label>
+                <span class="search-field">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-search"/></svg>
+                  <input
+                    id="word-filter"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="筛选单词或释义"
+                    data-i18n-placeholder="vocabulary.filterPlaceholder"
+                  />
+                </span>
+                <span id="word-filter-count" class="form-hint"></span>
+              </div>
+              <div class="list-container">
+                <ul id="word-list">
+                  <li class="word-item-placeholder" data-i18n="vocabulary.chooseOrCreate">
+                    请从左侧选择或创建一个单词本
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 默寫模式頁面 -->
+        <section id="dictation-section" class="section">
+          <div class="page-head">
+            <h2 data-i18n="dictation.title">听写模式</h2>
+            <p class="page-sub" data-i18n="dictation.pageSub">设备朗读单词，孩子在纸上书写；可随时暂停、重播、跳转。</p>
+          </div>
+          <div class="dictation-container">
+            <!-- 進行中：播放器（紙上聽寫的主要狀態區） -->
+            <div
+              id="dictation-player"
+              class="dictation-player hidden"
+              aria-live="polite"
+              aria-label="听写进行中"
+              data-i18n-aria-label="dictation.playerAria"
+            >
+              <div class="player-top">
+                <span id="dictation-state-badge" class="badge badge-live" data-i18n="dictation.statePlaying">播放中</span>
+                <span id="dictation-book-chip" class="badge"></span>
+                <span class="player-counter">
+                  <strong id="dictation-counter-current">1</strong>
+                  <span aria-hidden="true">/</span>
+                  <span id="dictation-counter-total">0</span>
+                </span>
+              </div>
+              <div class="player-stage">
+                <span class="stage-icon" aria-hidden="true"><svg class="icon"><use href="#ic-paper"/></svg></span>
+                <p class="stage-title" id="dictation-stage-title" data-i18n="dictation.stageListening">
+                  正在朗读，请在纸上写下单词
+                </p>
+                <p class="stage-hint" id="dictation-stage-hint" data-i18n="dictation.stageHint">
+                  听不清可以点「重播」，或点「上一个」回听。
+                </p>
+                <div id="dictation-progress-container" class="progress-container hidden">
+                  <div id="dictation-progress-bar"></div>
+                  <span id="dictation-progress-text">0/0</span>
+                </div>
+                <div id="dictation-summary" class="player-summary"></div>
+              </div>
+              <div class="player-controls">
+                <button id="prev-dictation-btn" class="player-btn" disabled>
+                  <svg class="icon" aria-hidden="true"><use href="#ic-prev"/></svg>
+                  <span data-i18n="dictation.previousShort">上一个</span>
+                </button>
+                <button id="replay-dictation-btn" class="player-btn">
+                  <svg class="icon" aria-hidden="true"><use href="#ic-replay"/></svg>
+                  <span data-i18n="dictation.replay">重播</span>
+                </button>
+                <button id="pause-dictation-btn" class="player-btn player-btn-primary" disabled>
+                  <svg class="icon" aria-hidden="true"><use href="#ic-pause"/></svg>
+                  <span id="pause-dictation-label" data-i18n="dictation.pause">暂停</span>
+                </button>
+                <button id="next-dictation-btn" class="player-btn" disabled>
+                  <svg class="icon" aria-hidden="true"><use href="#ic-next"/></svg>
+                  <span data-i18n="dictation.nextShort">下一个</span>
+                </button>
+                <button id="stop-dictation-btn" class="player-btn" disabled>
+                  <svg class="icon" aria-hidden="true"><use href="#ic-stop"/></svg>
+                  <span data-i18n="dictation.finish">结束</span>
+                </button>
+              </div>
+              <div class="player-meta">
+                <button id="dictation-ai-grade-btn" class="btn-secondary" type="button">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-sparkle"/></svg>
+                  <span data-i18n="dictation.aiGrade">AI 批改手写</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 完成狀態 -->
+            <div id="dictation-complete" class="dictation-complete hidden" role="status">
+              <span class="complete-icon" aria-hidden="true"><svg class="icon"><use href="#ic-check"/></svg></span>
+              <h3 data-i18n="dictation.doneTitle">听写完成</h3>
+              <p id="dictation-complete-desc" data-i18n="dictation.doneDesc">全部单词都播放完了，检查一下纸上的拼写吧。</p>
+              <div class="complete-stats">
+                <div class="stat"><b id="complete-words">0</b><span data-i18n="dictation.statWords">单词</span></div>
+                <div class="stat"><b id="complete-repeat">2</b><span data-i18n="dictation.statRepeat">每词次数</span></div>
+                <div class="stat"><b id="complete-time">0:00</b><span data-i18n="dictation.statTime">用时</span></div>
+              </div>
+              <div class="complete-actions">
+                <button id="dictation-again-btn" class="btn-primary" type="button">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-replay"/></svg>
+                  <span data-i18n="dictation.again">再来一遍</span>
+                </button>
+                <button id="dictation-back-settings-btn" class="btn-secondary" type="button">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-list"/></svg>
+                  <span data-i18n="dictation.backToSettings">返回设置</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 設定（開始前的主要畫面，訓練中同時作為設定面板） -->
+            <div id="dictation-settings-card" class="dictation-settings">
+              <h3 data-i18n="dictation.settings">设置</h3>
+              <div id="dictation-settings-container">
+                <div class="form-group">
+                  <label data-i18n="dictation.selectBook">选择单词本：</label>
+                  <div id="dictation-book-selector" class="book-selector">
+                    <!-- JS動態生成 -->
+                  </div>
+                  <p id="dictation-book-hint" class="form-hint"></p>
+                </div>
+
+                <div
+                  id="dictation-mode-row"
+                  class="dictation-mode-row"
+                  role="radiogroup"
+                  aria-label="练习方式"
+                  data-i18n-aria-label="dictation.modeAria"
+                >
+                  <label class="mode-choice">
+                    <input type="radio" name="dictation-mode" id="listen-only-mode" value="paper" checked />
+                    <span class="mode-icon" aria-hidden="true"><svg class="icon"><use href="#ic-paper"/></svg></span>
+                    <span class="mode-body">
+                      <span class="mode-title" data-i18n="dictation.modePaper">纸上听写</span>
+                      <span class="mode-desc" data-i18n="dictation.modePaperDesc">只听声音，在纸上书写（推荐）</span>
+                    </span>
+                  </label>
+                  <label class="mode-choice">
+                    <input type="radio" name="dictation-mode" id="dictation-typed-mode" value="typed" />
+                    <span class="mode-icon" aria-hidden="true"><svg class="icon"><use href="#ic-edit"/></svg></span>
+                    <span class="mode-body">
+                      <span class="mode-title" data-i18n="dictation.modeTyped">跟打练习</span>
+                      <span class="mode-desc" data-i18n="dictation.modeTypedDesc">听完后在下方输入框拼写并检查</span>
+                    </span>
+                  </label>
+                </div>
+
+                <details class="dictation-advanced">
+                  <summary data-i18n="dictation.advanced">高级设置</summary>
+                  <div class="adv-grid">
+                    <div class="settings-grid">
+                      <div class="form-group">
+                        <label for="repeat-times" data-i18n="dictation.repeat">每个单词播放次数：</label>
+                        <div class="number-stepper" data-slider-max="10">
+                          <input
+                            type="range"
+                            class="stepper-slider"
+                            min="1"
+                            max="10"
+                            step="1"
+                            value="2"
+                            aria-label="滑动设置重复次数"
+                            data-i18n-aria-label="dictation.repeatSlider"
+                          />
+                          <div class="stepper-field">
+                            <input
+                              type="text"
+                              id="repeat-times"
+                              class="stepper-input"
+                              inputmode="numeric"
+                              pattern="[0-9]*"
+                              min="1"
+                              value="2"
+                            />
+                            <div class="stepper-buttons">
+                              <button
+                                type="button"
+                                class="stepper-arrow stepper-up"
+                                aria-label="增加"
+                                data-i18n-aria-label="common.increase"
+                              ></button>
+                              <button
+                                type="button"
+                                class="stepper-arrow stepper-down"
+                                aria-label="减少"
+                                data-i18n-aria-label="common.decrease"
+                              ></button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label for="word-interval" data-i18n="dictation.interval">单词间隔（秒）：</label>
+                        <div class="number-stepper" data-slider-max="30">
+                          <input
+                            type="range"
+                            class="stepper-slider"
+                            min="1"
+                            max="30"
+                            step="1"
+                            value="3"
+                            aria-label="滑动设置单词间隔"
+                            data-i18n-aria-label="dictation.intervalSlider"
+                          />
+                          <div class="stepper-field">
+                            <input
+                              type="text"
+                              id="word-interval"
+                              class="stepper-input"
+                              inputmode="numeric"
+                              pattern="[0-9]*"
+                              min="1"
+                              value="3"
+                            />
+                            <div class="stepper-buttons">
+                              <button
+                                type="button"
+                                class="stepper-arrow stepper-up"
+                                aria-label="增加"
+                                data-i18n-aria-label="common.increase"
+                              ></button>
+                              <button
+                                type="button"
+                                class="stepper-arrow stepper-down"
+                                aria-label="减少"
+                                data-i18n-aria-label="common.decrease"
+                              ></button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="form-group chinese-voice-group">
+                        <label data-i18n="dictation.chinese">朗读中文意思：</label>
+                        <div class="chinese-voice-options">
+                          <label class="voice-toggle">
+                            <input type="checkbox" id="read-chinese-mandarin" aria-label="朗读普通话" data-i18n-aria-label="dictation.mandarinAria" />
+                            <span data-i18n="dictation.mandarinShort">普</span>
+                          </label>
+                          <label class="voice-toggle">
+                            <input type="checkbox" id="read-chinese-cantonese" aria-label="朗读粤语" data-i18n-aria-label="dictation.cantoneseAria" />
+                            <span data-i18n="dictation.cantoneseShort">粤</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="toggle-row">
+                      <span class="toggle-main">
+                        <span class="toggle-label" data-i18n="dictation.loop">循环播放</span>
+                        <small data-i18n="dictation.loopHint">播完最后一个后回到第一个</small>
+                      </span>
+                      <label class="switch">
+                        <input type="checkbox" id="loop-mode" aria-label="循环播放" data-i18n-aria-label="dictation.loop" />
+                        <span class="slider" aria-hidden="true"></span>
+                      </label>
+                    </div>
+                    <div class="toggle-row">
+                      <span class="toggle-main">
+                        <span class="toggle-label" data-i18n="dictation.shuffle">随机顺序</span>
+                        <small data-i18n="dictation.shuffleHint">打乱单词顺序后再开始</small>
+                      </span>
+                      <label class="switch">
+                        <input type="checkbox" id="shuffle-mode" aria-label="随机顺序" data-i18n-aria-label="dictation.shuffle" />
+                        <span class="slider" aria-hidden="true"></span>
+                      </label>
+                    </div>
+                  </div>
+                </details>
+
+                <div class="dictation-start">
+                  <button id="start-dictation-btn" class="btn-primary btn-lg">
+                    <svg class="icon" aria-hidden="true"><use href="#ic-play"/></svg>
+                    <span data-i18n="dictation.start">开始听写</span>
+                  </button>
+                  <p id="dictation-start-hint" class="form-hint" data-i18n="dictation.startHint">
+                    开始后会先朗读第一个单词，请准备好纸和笔。
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 跟打練習（保留既有輸入式聽寫） -->
+            <div class="dictation-practice hidden">
+              <h3 data-i18n="dictation.practice">跟打练习</h3>
+              <div id="dictation-word-display" class="word-display-box"></div>
+              <div class="input-group">
+                <input
+                  type="text"
+                  id="dictation-input"
+                  class="input-field"
+                  autocomplete="off"
+                  placeholder="请输入听到的单词"
+                  data-i18n-placeholder="dictation.inputPlaceholder"
+                />
+                <button id="check-dictation-btn" class="btn-primary">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-check"/></svg>
+                  <span data-i18n="dictation.check">检查</span>
+                </button>
+              </div>
+              <div id="dictation-result" class="result-box"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 學習模式頁面 -->
+        <section id="learning-section" class="section">
+          <div class="page-head">
+            <h2 data-i18n="learning.title">学习模式</h2>
+            <p class="page-sub" data-i18n="learning.pageSub">逐词查看音标、释义与例句，也能听发音、做造句练习。</p>
+          </div>
+          <div class="learning-container">
+            <div class="learning-side">
+              <div class="settings-group">
+                <label data-i18n="learning.selectBook">选择单词本：</label>
+                <div id="learning-book-selector" class="book-selector">
+                  <!-- JS動態生成 -->
+                </div>
+              </div>
+              <div class="word-selection">
+                <h3 data-i18n="learning.selectWordTitle">选择单词</h3>
+                <select id="word-select">
+                  <option value="" data-i18n="learning.selectBookFirst">请先从上方选择单词本</option>
+                </select>
+                <div class="word-nav">
+                  <button id="word-prev-btn" class="btn-secondary btn-small" type="button">
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-prev"/></svg>
+                    <span data-i18n="learning.prevWord">上一个</span>
+                  </button>
+                  <span id="word-position" aria-live="polite"></span>
+                  <button id="word-next-btn" class="btn-secondary btn-small" type="button">
+                    <span data-i18n="learning.nextWord">下一个</span>
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-next"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="word-details">
+                <div id="word-detail-container">
+                  <h3 id="detail-word"></h3>
+                  <p id="detail-phonetic"></p>
+                  <p id="detail-meaning"></p>
+                  <div class="detail-actions">
+                    <button id="speak-word-btn" class="btn-primary" type="button">
+                      <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-speaker"/></svg>
+                      <span data-i18n="learning.speakWord">朗读单词</span>
+                    </button>
+                    <button id="phonetics-open" class="btn-secondary" type="button" data-i18n="phonetics.practice" hidden>
+                      拆音练习
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="learning-main">
+              <div class="example-sentences">
+                <h3 data-i18n="learning.examples">例句</h3>
+                <div id="examples-container"></div>
+                <button id="generate-examples-btn" class="btn-secondary" type="button">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-sparkle"/></svg>
+                  <span data-i18n="learning.generateExamples">生成 AI 例句</span>
+                </button>
+              </div>
+              <div class="practice-sentences">
+                <h3 data-i18n="learning.sentencePractice">造句练习</h3>
+                <div class="input-group">
+                  <textarea
+                    id="sentence-input"
+                    placeholder="请使用此单词造句"
+                    data-i18n-placeholder="learning.sentencePlaceholder"
+                  ></textarea>
+                  <button id="check-sentence-btn" class="btn-primary" type="button">
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-check"/></svg>
+                    <span data-i18n="learning.check">检查</span>
+                  </button>
+                </div>
+                <div id="sentence-feedback"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 圖片 OCR 頁面 -->
+        <section id="ocr-section" class="section">
+          <h2 data-i18n="ocr.title">图片文字识别（OCR）</h2>
+          <div class="ocr-layout">
+            <div class="ocr-left">
+              <div class="ocr-form">
+                <div class="form-row">
+                  <label for="ocr-image-input" data-i18n="ocr.upload">上传图片：</label>
+                  <div class="field-inline">
+                    <input
+                      id="ocr-image-input"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      capture="environment"
+                    />
+                    <!-- 相機優先切換：緊貼檔案選擇，節省空間且直覺 -->
+                    <input
+                      type="checkbox"
+                      id="ocr-prefer-camera"
+                      class="sr-only"
+                      aria-hidden="true"
+                    />
+                    <button
+                      id="ocr-prefer-toggle"
+                      class="btn-secondary btn-icon"
+                      title="优先使用相机" data-i18n-title="ocr.preferCamera"
+                      aria-pressed="false"
+                    >
+                      <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-camera"/></svg>
+                      <span class="sr-only" data-i18n="ocr.preferCamera">优先使用相机</span>
+                    </button>
+                    <!-- 操作按鈕改為同行，節省垂直空間 -->
+                    <button
+                      id="ocr-open-camera-btn"
+                      class="btn-secondary btn-icon"
+                      title="打开相机" data-i18n-title="ocr.openCamera"
+                    >
+                      <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-camera"/></svg>
+                      <span class="sr-only" data-i18n="ocr.openCamera">打开相机</span>
+                    </button>
+                    <button
+                      id="ocr-clear-btn"
+                      class="btn-secondary"
+                      title="清除已添加的图片和结果" data-i18n-title="ocr.clearTitle"
+                    >
+                      <span data-i18n="ocr.clear">清除</span>
+                    </button>
+                    <button
+                      id="ocr-stop-btn"
+                      class="btn-secondary btn-icon hidden"
+                      title="停止" data-i18n-title="ocr.stop"
+                      disabled
+                    >
+                      <svg class="icon icon-sm" aria-hidden="true"><use href="#ic-stop"/></svg>
+                      <span class="sr-only" data-i18n="ocr.stop">停止</span>
+                    </button>
+                    <button id="ocr-run-btn" class="btn-primary">
+                      <span data-i18n="ocr.run">识别文字</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="ocr-progress-row"
+                  class="form-row actions compact hidden"
+                >
+                  <span class="label-spacer"></span>
+                  <div class="ocr-progress slim">
+                    <div class="ocr-progress-bar">
+                      <span id="ocr-progress-bar"></span>
+                    </div>
+                    <div class="ocr-progress-text" id="ocr-progress-text">
+                      <span data-i18n="ocr.notStarted">尚未开始</span>
+                    </div>
+                  </div>
+                </div>
+
+                <details class="ocr-advanced">
+                  <summary data-i18n="ocr.advanced">高级选项</summary>
+                  <div class="adv-grid">
+                    <div class="form-row">
+                      <label for="ocr-hint" data-i18n="ocr.prompt">补充要求：</label>
+                      <textarea
+                        id="ocr-hint"
+                        rows="6"
+                        placeholder="例如：只提取右下角蓝色对话框文字" data-i18n-placeholder="ocr.promptPlaceholder"
+                      ></textarea>
+                    </div>
+                    <div class="form-row">
+                      <label for="ocr-hint-preset" data-i18n="ocr.presets">常用模板：</label>
+                      <div class="field-inline">
+                        <select id="ocr-hint-preset">
+                          <option value="" data-i18n="ocr.presetDefault">常用模板...</option>
+                          <option
+                            value="只擷取圖片中右下角藍色對話框的所有文字，按原有換行輸出；忽略其它區域與UI元素。"
+                            data-i18n-value="ocr.presetBluePrompt"
+                            data-i18n="ocr.presetBlueLabel"
+                          >
+                            只提取：右下角蓝色对话框
+                          </option>
+                          <option
+                            value="僅輸出圖片中的英文與阿拉伯數字，保留原始換行；忽略圖示、按鈕、介面元素與背景雜訊。"
+                            data-i18n-value="ocr.presetEnglishPrompt"
+                            data-i18n="ocr.presetEnglishLabel"
+                          >
+                            只提取：英文与数字
+                          </option>
+                          <option
+                            value="請將正文完整轉寫為純文字，保留原始換行與標點；刪除頁碼、分隔線、圖示與介面文字。"
+                            data-i18n-value="ocr.presetBodyPrompt"
+                            data-i18n="ocr.presetBodyLabel"
+                          >
+                            正文转写，移除 UI／噪声
+                          </option>
+                          <option
+                            value="若是題目圖片，僅擷取題幹與選項文字，依序以 A)、B)、C)、D) 標示；不要輸出解析或多餘內容。"
+                            data-i18n-value="ocr.presetQuizPrompt"
+                            data-i18n="ocr.presetQuizLabel"
+                          >
+                            试题模式：题干＋选项
+                          </option>
+                          <option
+                            value="輸出為 Markdown 清單：每個段落作為一個條目，若有小標題請使用二級標題。"
+                            data-i18n-value="ocr.presetMarkdownPrompt"
+                            data-i18n="ocr.presetMarkdownLabel"
+                          >
+                            输出格式：Markdown 列表
+                          </option>
+                          <option
+                            value="這是一張默寫單詞的相片。請先逐行擷取學生書寫的英文單詞或短語，保留順序與原始大小寫。接著檢查每行拼寫是否正確，如果有中文意思，也要檢查中文是否書寫正確：若正確請在該行末標註 (正確)；若錯誤請在該行末標註 (錯→建議：correct)。只輸出純文字清單，如：1) word (正確)；2) wrd (錯→建議：word)。不要翻譯，不要加入多餘解釋或格式。"
+                            data-i18n-value="ocr.presetDictationPrompt"
+                            data-i18n="ocr.presetDictationLabel"
+                          >
+                            小学生听写单词：检查拼写
+                          </option>
+                        </select>
+                        <span class="hint" data-i18n="ocr.presetHint">选择模板会附加到提示词</span>
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <label for="ocr-model-select" data-i18n="ocr.model">OCR 模型：</label>
+                      <select id="ocr-model-select" title="请先到全局设置配置 provider 与模型" data-i18n-title="ocr.configureModel"></select>
+                    </div>
+                    <div class="form-row">
+                      <label>&nbsp;</label>
+                      <label class="checkbox-inline"
+                        ><input type="checkbox" id="ocr-merge-output" />
+                        <span data-i18n="ocr.merge">多张图片合并为一段输出</span></label
+                      >
+                    </div>
+                  </div>
+                </details>
+
+                <div id="ocr-camera-area" class="camera-area hidden">
+                  <video id="ocr-video" autoplay playsinline></video>
+                  <div class="btn-row">
+                    <button id="ocr-capture-btn" class="btn-primary">
+                      <span data-i18n="ocr.capture">拍照</span>
+                    </button>
+                    <button id="ocr-close-camera-btn" class="btn-secondary">
+                      <span data-i18n="ocr.closeCamera">关闭相机</span>
+                    </button>
+                  </div>
+                  <canvas id="ocr-canvas" class="hidden"></canvas>
+                </div>
+              </div>
+              <!-- .ocr-form end -->
+            </div>
+            <!-- .ocr-left end -->
+
+            <div class="ocr-right">
+              <div class="preview-pane">
+                <div
+                  class="thumbs"
+                  id="ocr-preview-list"
+                  tabindex="0"
+                  aria-label="拖放或粘贴图片以加入 OCR" data-i18n-aria-label="ocr.dropAria"
+                ></div>
+                <p class="ocr-clipboard-hint">
+                  <span data-i18n="ocr.pasteHint">提示：在此区域按 Ctrl+V 或 ⌘+V 可以直接粘贴截图，也可以拖放图片。</span>
+                </p>
+              </div>
+              <div class="result-pane">
+                <div class="result-head">
+                  <label for="ocr-result" data-i18n="ocr.result">识别结果</label>
+                  <div class="result-mode">
+                    <select id="ocr-display-mode" aria-label="显示模式" data-i18n-aria-label="ocr.displayMode">
+                      <option value="text" data-i18n="ocr.plainText">纯文本</option>
+                      <option value="md" data-i18n="ocr.markdownPreview">Markdown 预览</option>
+                    </select>
+                  </div>
+                </div>
+                <textarea
+                  id="ocr-result"
+                  class="mono"
+                  rows="16"
+                  placeholder="识别后的文字将显示在此处" data-i18n-placeholder="ocr.resultPlaceholder"
+                ></textarea>
+                <div id="ocr-result-preview" class="ocr-md hidden"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 隨堂測驗頁面 -->
+        <section id="quiz-section" class="section">
+          <h2 data-i18n="quiz.title">随堂测验</h2>
+          <div class="quiz-container">
+            <div id="quiz-settings-container">
+              <div class="quiz-settings">
+                <h3 data-i18n="quiz.settings">测验设置</h3>
+                <div class="settings-group">
+                  <label data-i18n="quiz.selectBook">选择单词本：</label>
+                  <div id="quiz-book-selector" class="book-selector">
+                    <!-- JS動態生成 -->
+                  </div>
+                </div>
+                <div class="settings-group hidden">
+                  <label for="quiz-count" data-i18n="quiz.count">题目数量：</label>
+                  <div class="number-stepper">
+                    <input
+                      type="range"
+                      class="stepper-slider"
+                      min="5"
+                      max="20"
+                      step="1"
+                      value="10"
+                      aria-label="滑动设置题目数量"
+                      data-i18n-aria-label="quiz.countSlider"
+                    />
+                    <div class="stepper-field">
+                      <input
+                        type="text"
+                        id="quiz-count"
+                        class="stepper-input"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        min="5"
+                        max="20"
+                        value="10"
+                      />
+                      <div class="stepper-buttons">
+                        <button
+                          type="button"
+                          class="stepper-arrow stepper-up"
+                          aria-label="增加"
+                          data-i18n-aria-label="common.increase"
+                        ></button>
+                        <button
+                          type="button"
+                          class="stepper-arrow stepper-down"
+                          aria-label="减少"
+                          data-i18n-aria-label="common.decrease"
+                        ></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <label for="quiz-type" data-i18n="quiz.type">测验类型：</label>
+                  <select id="quiz-type">
+                    <option value="meaning" data-i18n="quiz.typeMeaning">看英文选中文</option>
+                    <option value="word" data-i18n="quiz.typeWord">看中文选英文</option>
+                    <option value="phonetic" data-i18n="quiz.typePhonetic">看音标选单词</option>
+                    <option value="mixed" data-i18n="quiz.typeMixed">混合模式</option>
+                  </select>
+                </div>
+                <button id="start-quiz-btn" class="primary-btn">
+                  <span data-i18n="quiz.start">开始测验</span>
+                </button>
+              </div>
+            </div>
+            <div id="quiz-main-container" class="hidden">
+              <div class="quiz-header">
+                <div id="quiz-info">
+                  <span id="quiz-progress" data-i18n="quiz.progressInitial">题目 0/0</span>
+                  <span id="quiz-score" data-i18n="quiz.scoreInitial">得分：0/0</span>
+                </div>
+                <button id="stop-quiz-btn" disabled data-i18n="quiz.stop">结束测验</button>
+              </div>
+              <div class="quiz-content">
+                <div id="quiz-question-container">
+                  <h3 id="quiz-question"></h3>
+                  <div id="quiz-options"></div>
+                  <button id="next-question-btn" disabled data-i18n="quiz.next">下一题</button>
+                </div>
+                <div id="quiz-result" class="quiz-result hidden">
+                  <h3 data-i18n="quiz.completed">测验完成！</h3>
+                  <div id="final-score"></div>
+                  <div id="quiz-summary"></div>
+                  <button id="restart-quiz-btn" data-i18n="quiz.restart">重新测验</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 文章詳解頁面 -->
+        <section id="article-section" class="section" aria-label="文章详解" data-i18n-aria-label="article.title">
+          <div id="article-reader-head" class="article-reader-head">
+            <div id="article-reader-actions" class="article-reader-actions" role="group" aria-label="文章操作" data-i18n-aria-label="article.readerActions">
+              <button type="button" id="article-input-toggle" class="article-reader-action" aria-controls="article-input-editor" aria-expanded="true" title="输入文章" data-i18n-title="article.inputTitle" aria-label="输入文章" data-i18n-aria-label="article.inputTitle">
+                <svg class="icon" aria-hidden="true"><use href="#ic-edit"/></svg>
+                <span class="article-action-label" data-i18n="article.inputShort">输入</span>
+              </button>
+              <button type="button" id="import-article-btn" class="article-reader-action" title="从网址或图片导入文章" data-i18n-title="article.importTitle" aria-label="导入文章" data-i18n-aria-label="article.importModal">
+                <svg class="icon" aria-hidden="true"><use href="#ic-upload"/></svg>
+                <span class="article-action-label" data-i18n="article.importShort">导入</span>
+              </button>
+              <button type="button" id="show-article-library-btn" class="article-reader-action" title="从文章库选取" data-i18n-title="article.library" aria-label="从文章库选取" data-i18n-aria-label="article.library">
+                <svg class="icon" aria-hidden="true"><use href="#ic-book"/></svg>
+                <span class="article-action-label" data-i18n="article.libraryShort">文章库</span>
+              </button>
+              <button type="button" id="article-book-btn" class="article-reader-action" title="打开这篇文章的词书" data-i18n-title="article.openBookTitle" aria-label="词书" data-i18n-aria-label="article.openBookTitle">
+                <svg class="icon" aria-hidden="true"><use href="#ic-book"/></svg>
+                <span class="article-action-label" data-i18n="article.openBookShort">词书</span>
+              </button>
+              <button type="button" id="article-history-btn" class="article-reader-action history-entry-btn" title="打开阅读记录" data-i18n-title="article.historyOpenTitle" aria-label="打开阅读记录" data-i18n-aria-label="article.historyOpenTitle">
+                <svg class="icon" aria-hidden="true"><use href="#ic-timer"/></svg>
+                <span class="article-action-label" data-i18n="article.historyRecords">阅读记录</span>
+                <span id="article-history-count" class="history-count hidden" aria-hidden="true">0</span>
+              </button>
+              <button type="button" id="article-ai-model-btn" class="article-reader-action" title="切换 AI 模型" data-i18n-title="article.quickModelTitle" aria-label="切换 AI 模型" data-i18n-aria-label="article.quickModelTitle">
+                <svg class="icon" aria-hidden="true"><use href="#ic-model"/></svg>
+                <span class="article-action-label" data-i18n="quickModel.label">模型</span>
+              </button>
+            </div>
+            <div id="article-compact-controls" class="article-compact-controls hidden" role="group" aria-label="朗读控制" data-i18n-aria-label="article.readingControls">
+              <button type="button" id="article-compact-read-btn" class="article-compact-button" title="朗读文章" data-i18n-title="article.read" aria-label="朗读文章" data-i18n-aria-label="article.read">
+                <svg class="icon" aria-hidden="true"><use href="#ic-play"/></svg>
+              </button>
+              <button type="button" id="article-compact-stop-btn" class="article-compact-button" title="停止朗读" data-i18n-title="article.stopReading" aria-label="停止朗读" data-i18n-aria-label="article.stopReading" disabled>
+                <svg class="icon" aria-hidden="true"><use href="#ic-stop"/></svg>
+              </button>
+              <div id="article-compact-speed-control" class="article-compact-speed">
+                <button type="button" id="article-compact-speed-toggle" class="article-compact-button article-speed-toggle" aria-controls="article-compact-speed-panel" aria-expanded="false" title="调整语速" data-i18n-title="article.adjustSpeed">
+                  <span class="sr-only" data-i18n="article.speed">语速：</span>
+                  <span id="article-compact-speed-value">x1.0</span>
+                </button>
+                <div id="article-compact-speed-panel" class="article-speed-panel hidden">
+                  <span aria-hidden="true">x1.5</span>
+                  <div class="article-speed-slider">
+                    <input id="article-compact-speed" type="range" min="-100" max="100" step="50" value="0" aria-valuetext="x1.0" aria-orientation="vertical" aria-label="语速：" data-i18n-aria-label="article.speed" />
+                  </div>
+                  <span aria-hidden="true">x0.5</span>
+                </div>
+              </div>
+            </div>
+            <button type="button" id="article-sidebar-toggle" class="btn secondary article-sidebar-toggle" aria-controls="article-sidebar" aria-expanded="true" title="收起输入和设置，扩展文章阅读区" data-i18n-title="article.collapseSidebarHint" aria-label="收起侧栏" data-i18n-aria-label="article.collapseSidebar">
+              <svg class="icon" aria-hidden="true"><use href="#ic-sidebar"/></svg>
+              <span class="article-action-label sr-only" data-i18n="article.collapseSidebar">收起侧栏</span>
+            </button>
+            <div id="article-reader-more" class="article-reader-more hidden">
+              <button type="button" id="article-reader-more-toggle" class="article-reader-action" aria-controls="article-reader-menu" aria-expanded="false" title="更多操作" data-i18n-title="article.moreActions" aria-label="更多操作" data-i18n-aria-label="article.moreActions">
+                <svg class="icon" aria-hidden="true"><use href="#ic-more"/></svg>
+              </button>
+              <div id="article-reader-menu" class="article-reader-menu hidden" role="group" aria-label="更多操作" data-i18n-aria-label="article.moreActions"></div>
+            </div>
+          </div>
+          <div id="article-entry" class="article-entry hidden">
+            <button type="button" id="article-continue-btn" class="btn-secondary hidden"></button>
+          </div>
+          <div id="article-route-status" class="article-route-status hidden" role="status" aria-live="polite">
+            <p id="article-route-message"></p>
+            <div class="article-route-actions">
+              <button type="button" id="article-route-retry" class="btn-secondary" data-i18n="article.routeRetry">重试</button>
+              <button type="button" id="article-route-login" class="btn-secondary hidden" data-i18n="article.routeLogin">登录后重试</button>
+              <button type="button" id="article-route-choose" class="btn-tertiary" data-i18n="article.historyOpenTitle">打开阅读记录</button>
+            </div>
+          </div>
+          <div class="analysis-container">
+            <div id="article-sidebar" class="analysis-input">
+              <div id="article-input-slot">
+                <div id="article-input-editor" class="article-input-editor" role="region" aria-labelledby="article-input-editor-title">
+                  <div class="analysis-input-head">
+                    <h3 id="article-input-editor-title" data-i18n="article.inputTitle">输入文章</h3>
+                    <button type="button" id="article-input-close" class="article-compact-button hidden" title="收起输入" data-i18n-title="article.closeInput" aria-label="收起输入" data-i18n-aria-label="article.closeInput">
+                      <svg class="icon" aria-hidden="true"><use href="#ic-close"/></svg>
+                    </button>
+                  </div>
+                  <textarea
+                    id="article-input"
+                    aria-label="输入文章"
+                    data-i18n-aria-label="article.inputTitle"
+                    placeholder="在这里输入或粘贴您想分析的文章..."
+                    data-i18n-placeholder="article.inputPlaceholder"
+                  ></textarea>
+                  <div id="article-version-notice" class="article-version-notice hidden" role="status">
+                    <div class="article-version-notice__body">
+                      <strong data-i18n="article.analysisStaleTitle">原文已修改，画面仍是旧版分析</strong>
+                      <span data-i18n="article.analysisStaleHint">朗读与助手会使用目前输入；重新分析后才会更新译文</span>
+                    </div>
+                    <button type="button" id="reanalyze-article-btn" class="btn small primary" data-i18n="article.reanalyze">重新分析</button>
+                  </div>
+                  <div id="article-analysis-resume" class="article-analysis-resume hidden" role="status">
+                    <div class="article-analysis-resume__body">
+                      <strong id="article-analysis-resume-status"></strong>
+                      <span data-i18n="article.checkpointResumeHint">继续时会跳过已完成段落</span>
+                    </div>
+                    <button type="button" id="resume-analysis-btn" class="btn small primary" data-i18n="article.resumeAnalysis">继续未完成分析</button>
+                  </div>
+                  <p id="article-checkpoint-note" class="article-checkpoint-note hidden" role="status"></p>
+                  <div class="button-group">
+                    <button id="analyze-article-btn" class="btn primary" data-i18n="article.analyze">分析文章</button>
+                    <button
+                      id="retry-failed-paragraphs-btn"
+                      class="btn secondary hidden"
+                    >
+                      <span data-i18n="article.retryFailed">重试失败段</span>
+                      <span id="retry-failed-count" class="retry-count-badge hidden" aria-hidden="true">0</span>
+                    </button>
+                    <button id="clear-article-btn" class="btn secondary" data-i18n="article.clear">清除重写</button>
+                  </div>
+                  <p class="form-hint">
+                    <span data-i18n="article.compactHint">当前文章详解采用精简模式：仅输出中文翻译。</span>
+                  </p>
+                </div>
+              </div>
+              <div class="audio-controls">
+                <h4 data-i18n="article.readingControls">朗读控制</h4>
+                <div class="audio-main-buttons">
+                  <button id="read-article-btn" title="朗读文章" data-i18n-title="article.read">
+                    <svg class="icon" aria-hidden="true"><use href="#ic-play"/></svg>
+                  </button>
+                  <button id="stop-read-article-btn" title="停止朗读" data-i18n-title="article.stopReading" aria-label="停止朗读" data-i18n-aria-label="article.stopReading" disabled>
+                    <svg class="icon" aria-hidden="true"><use href="#ic-stop"/></svg>
+                  </button>
+                  <button id="download-audio-btn" title="下载语音" data-i18n-title="article.downloadAudio" aria-label="下载语音" data-i18n-aria-label="article.downloadAudio">
+                    <svg class="icon" aria-hidden="true"><use href="#ic-download"/></svg>
+                  </button>
+                </div>
+                <div class="settings-group">
+                  <label for="reading-mode" data-i18n="article.mode">模式：</label>
+                  <select id="reading-mode">
+                    <option value="full" data-i18n="article.full">全文</option>
+                    <option value="paragraph" data-i18n="article.paragraph">段落</option>
+                    <option value="sentence" data-i18n="article.sentence">句子</option>
+                  </select>
+                </div>
+                <div class="settings-group" title="调整非当前句子的淡化程度" data-i18n-title="article.dimmingTitle">
+                  <label for="dimming-intensity" data-i18n="article.dimming">淡化强度：</label>
+                  <input
+                    type="range"
+                    id="dimming-intensity"
+                    min="0.1"
+                    max="0.9"
+                    step="0.05"
+                    value="0.45"
+                  />
+                </div>
+                <div id="chunk-repeat-controls" class="settings-group hidden">
+                  <label for="chunk-repeat-times" data-i18n="article.repeat">重复：</label>
+                  <div
+                    class="number-stepper"
+                    title="设置段落/句子朗读的重复次数"
+                    data-i18n-title="article.repeatTitle"
+                  >
+                    <input
+                      type="range"
+                      class="stepper-slider"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value="1"
+                      aria-label="滑动设置重复次数"
+                      data-i18n-aria-label="article.repeatSlider"
+                    />
+                    <div class="stepper-field">
+                      <input
+                        type="text"
+                        id="chunk-repeat-times"
+                        class="stepper-input"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        min="1"
+                        max="10"
+                        value="1"
+                      />
+                      <div class="stepper-buttons">
+                        <button
+                          type="button"
+                          class="stepper-arrow stepper-up"
+                          aria-label="增加" data-i18n-aria-label="common.increase"
+                        ></button>
+                        <button
+                          type="button"
+                          class="stepper-arrow stepper-down"
+                          aria-label="减少" data-i18n-aria-label="common.decrease"
+                        ></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <span class="field-label" id="reading-speed-label" data-i18n="article.speed"
+                    >语速：</span
+                  >
+                  <div
+                    id="speed-control-group"
+                    class="speed-control"
+                    role="group"
+                    aria-labelledby="reading-speed-label"
+                  >
+                    <button class="speed-btn" data-speed="-100">x0.5</button>
+                    <button class="speed-btn" data-speed="-50">x0.75</button>
+                    <button class="speed-btn active" data-speed="0">
+                      x1.0
+                    </button>
+                    <button class="speed-btn" data-speed="50">x1.25</button>
+                    <button class="speed-btn" data-speed="100">x1.5</button>
+                  </div>
+                </div>
+                <div id="chunk-nav-controls" class="settings-group hidden">
+                  <button id="prev-chunk-btn" disabled data-i18n="article.previousSentence">上一句</button>
+                  <span id="chunk-progress">0 / 0</span>
+                  <button id="next-chunk-btn" disabled data-i18n="article.nextSentence">下一句</button>
+                </div>
+                <div
+                  id="current-sentence-display"
+                  class="current-sentence"
+                ></div>
+              </div>
+            </div>
+            <div class="analysis-result">
+              <div class="ar-head">
+                <h3 data-i18n="article.result">分析结果</h3>
+                <div class="ar-tools">
+                  <button
+                    type="button"
+                    id="article-reading-records-btn"
+                    class="btn-tertiary reading-records-btn"
+                    data-i18n-title="article.readingPanelOpenTitle"
+                    data-i18n-aria-label="article.readingPanelOpenTitle"
+                    aria-expanded="false"
+                    aria-controls="article-reading-panel"
+                  >
+                    <svg class="icon" aria-hidden="true"><use href="#ic-timer"/></svg>
+                    <span data-i18n="article.readingPanelOpen">本文学习记录</span>
+                    <span id="article-reading-count" class="history-count hidden" aria-hidden="true">0</span>
+                  </button>
+                  <label class="reading-marks-toggle">
+                    <input type="checkbox" id="article-reading-marks-toggle" checked />
+                    <span data-i18n="article.readingMarksToggle">显示标记</span>
+                  </label>
+                  <button
+                    type="button"
+                    id="article-reading-export-btn"
+                    class="btn-tertiary"
+                    data-i18n="article.readingExport"
+                    data-i18n-title="article.readingExportTitle"
+                  >导出阅读版</button>
+                </div>
+                <div class="cn-mask-group" aria-label="翻译遮罩" data-i18n-aria-label="article.maskAria">
+                  <span class="cn-mask-label" data-i18n="article.maskLabel">迷雾</span>
+                  <label
+                    class="cn-mask-mini"
+                    title="翻译遮罩：默认开启；鼠标移入/按住显示"
+                    data-i18n-title="article.maskTitle"
+                  >
+                    <input type="checkbox" id="toggle-cn-mask" checked />
+                    <span class="slider" aria-hidden="true"></span>
+                    <span class="sr-only" data-i18n="article.maskAria">翻译遮罩</span>
+                  </label>
+                </div>
+                <div
+                  id="article-source-bar"
+                  class="form-hint hidden"
+                >
+                  <span id="article-source-label" data-i18n="article.sourceEmpty">来源：—</span>
+                  <a
+                    id="article-source-link"
+                    class="hidden"
+                    href="#"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-i18n="article.openSource">打开原文</a
+                  >
+                  <button
+                    type="button"
+                    id="article-history-status"
+                    class="article-history-status hidden"
+                    data-i18n="article.historyStatusUnsaved"
+                  >尚未存入阅读记录</button>
+                  <span id="article-history-undo" class="article-history-undo hidden" role="status" aria-live="polite"></span>
+                </div>
+              </div>
+              <p id="article-draft-notice" class="form-hint hidden" role="status" data-i18n="article.draftRecovered">已恢复本机草稿。文章内容仍未保存，已有详解对应保存时的原文。</p>
+              <div id="article-analysis-container">
+                <p data-i18n="article.initialHint">请先输入文章并点击分析按钮。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 問答訓練模組 -->
+<section id="qa-module" class="section" style="display: none">
+          <h2 data-i18n="qa.title">问答训练</h2>
+
+          <!-- 問答集管理區域 -->
+          <div id="qa-management-area" class="qa-management">
+            <h3 data-i18n="qa.mySets">我的问答集</h3>
+            <div class="qa-buttons">
+              <button id="create-qa-set-btn" class="btn primary" data-i18n="qa.createSet">
+                创建问答集
+              </button>
+              <button id="import-qa-set-btn" class="btn secondary" data-i18n="qa.importSet">
+                导入问答集
+              </button>
+            </div>
+            <div id="qa-sets-list" class="qa-sets-list">
+              <!-- 問答集列表將在這裡動態生成 -->
+            </div>
+          </div>
+
+          <!-- 問答集創建區域 -->
+          <div id="qa-creator-area" class="qa-creator" style="display: none">
+            <h3 data-i18n="qa.createSet">创建问答集</h3>
+            <div class="qa-creator-form">
+              <div class="qa-creator-card">
+                <div class="qa-creator-header">
+                  <div class="qa-template-row">
+                    <select id="qa-template-select">
+                      <option value="" data-i18n="qa.selectExisting">选择已有问答集</option>
+                    </select>
+                    <button
+                      id="load-qa-template-btn"
+                      class="btn small secondary"
+                      disabled
+                    >
+                      <span data-i18n="qa.applyTemplate">应用模板</span>
+                    </button>
+                  </div>
+                  <p class="form-hint">
+                    <span data-i18n="qa.templateHint">选择问答集作为起点，仍可微调后另存新集。</span>
+                  </p>
+                </div>
+
+                <div class="qa-creator-body">
+                  <div class="qa-form-row">
+                    <label class="qa-input-label" for="qa-set-name" data-i18n="qa.name">名称</label>
+                    <input
+                      type="text"
+                      id="qa-set-name"
+                      placeholder="输入问答集名称" data-i18n-placeholder="qa.namePlaceholder"
+                    />
+                  </div>
+                  <div class="qa-form-row">
+                    <label class="qa-input-label" for="qa-set-description"
+                      data-i18n="qa.description">描述</label
+                    >
+                    <input
+                      type="text"
+                      id="qa-set-description"
+                      placeholder="输入问答集描述" data-i18n-placeholder="qa.descriptionPlaceholder"
+                    />
+                  </div>
+                  <div class="qa-form-row qa-pairs-row">
+                    <label class="qa-input-label" for="qa-pairs-input"
+                      data-i18n="qa.pairsLabel">问答对（每两行一组：上一行问题、下一行答案）</label
+                    >
+                    <div class="qa-pairs-field">
+                      <textarea
+                        id="qa-pairs-input"
+                        rows="10"
+                        placeholder="问题1？
+答案1。
+
+问题2？
+答案2。" data-i18n-placeholder="qa.pairsPlaceholder"
+                      ></textarea>
+                      <div class="qa-pairs-actions">
+                        <button
+                          id="load-example-btn"
+                          type="button"
+                          class="btn small secondary"
+                        >
+                          <span data-i18n="qa.loadExample">加载示例</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="qa-preview-wrapper">
+                    <div id="qa-preview" class="qa-preview"></div>
+                  </div>
+                </div>
+
+                <div class="qa-creator-actions">
+                  <button id="save-qa-set-btn" class="btn primary">
+                    <span data-i18n="qa.saveSet">保存问答集</span>
+                  </button>
+                  <button id="cancel-qa-creator-btn" class="btn secondary">
+                    <span data-i18n="qa.cancel">取消</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 問答訓練區域 -->
+          <div id="qa-training-area" class="qa-training" style="display: none">
+            <div class="qa-training-header">
+              <h3 id="qa-training-title" data-i18n="qa.title">问答训练</h3>
+              <div class="qa-progress">
+                <span id="qa-progress-text" data-i18n="qa.progressInitial">第 1 题 / 共 10 题</span>
+                <div class="progress-bar">
+                  <div
+                    id="qa-progress-bar"
+                    class="progress-fill"
+                    style="width: 10%"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI 校對模型選擇（問答訓練） -->
+            <div
+              class="settings-group"
+              style="
+                margin: 8px 0 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <label for="qa-model-select" data-i18n="qa.checkerModel">校对模型：</label>
+              <select id="qa-model-select"></select>
+            </div>
+
+            <div class="qa-question-area">
+              <div class="question-card">
+                <h4 data-i18n="qa.question">问题：</h4>
+                <p id="qa-current-question" data-i18n="qa.questionPlaceholder">这里将显示当前问题</p>
+              </div>
+
+              <div class="answer-area">
+                <label for="qa-answer-input" data-i18n="qa.yourAnswer">您的答案：</label>
+                <textarea
+                  id="qa-answer-input"
+                  rows="4"
+                  placeholder="请输入您的答案" data-i18n-placeholder="qa.answerPlaceholder"
+                ></textarea>
+              </div>
+
+              <div class="qa-training-controls">
+                <button id="prev-qa-btn" class="btn secondary" data-i18n="qa.previous">上一题</button>
+                <button id="submit-and-check-btn" class="btn primary">
+                  <span data-i18n="qa.checkCurrent">AI 校对本题</span>
+                </button>
+                <button id="next-qa-btn" class="btn secondary" data-i18n="qa.next">下一题</button>
+              </div>
+              <div
+                id="qa-instant-feedback"
+                class="qa-instant-feedback"
+                style="display: none"
+              >
+                <h4 data-i18n="qa.instantFeedback">本题 AI 反馈</h4>
+                <div
+                  id="qa-instant-feedback-content"
+                  class="qa-instant-feedback-content"
+                ></div>
+              </div>
+            </div>
+
+            <div class="qa-training-actions">
+              <button id="finish-training-btn" class="btn warning">
+                <span data-i18n="qa.finish">完成训练</span>
+              </button>
+              <button id="back-to-qa-list-btn" class="btn secondary">
+                <span data-i18n="qa.backSets">返回问答集</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 校對報告區域 -->
+          <div id="qa-report-area" class="qa-report" style="display: none">
+            <h3 data-i18n="qa.reportTitle">AI 校对报告</h3>
+            <div class="report-summary" style="display: none"></div>
+
+            <div id="qa-detailed-results" class="detailed-results">
+              <!-- 詳細結果將在這裡顯示 -->
+            </div>
+
+            <!-- AI校對進度提示 -->
+            <div
+              id="ai-checking-progress"
+              class="checking-progress"
+              style="display: none"
+            >
+              <div class="progress-indicator">
+                <div class="spinner"></div>
+                <span id="checking-status" data-i18n="qa.checking">正在进行 AI 智能校对...</span>
+              </div>
+              <div id="checking-details" class="checking-details"></div>
+            </div>
+
+            <div class="report-actions">
+              <label for="qa-model-select-report" style="margin-right: 6px"
+                data-i18n="qa.checkerModel">校对模型：</label
+              >
+              <select
+                id="qa-model-select-report"
+                style="margin-right: 12px"
+              ></select>
+              <button id="ai-check-btn" class="btn primary">
+                <span data-i18n="qa.checkAll">AI 校对全部题目</span>
+              </button>
+              <button id="export-pdf-btn" class="btn primary" data-i18n="qa.exportPdf">导出 PDF</button>
+              <button id="copy-report-btn" class="btn secondary">
+                <span data-i18n="qa.copyReport">复制错误报告</span>
+              </button>
+              <button
+                id="toggle-all-details-btn"
+                class="btn secondary"
+                data-expanded="true"
+              >
+                <span data-i18n="qa.collapseAll">收起全部</span>
+              </button>
+              <button id="retry-training-btn" class="btn secondary">
+                <span data-i18n="qa.retryTraining">重新训练</span>
+              </button>
+              <button id="back-to-qa-menu-btn" class="btn secondary">
+                <span data-i18n="qa.backMenu">返回主菜单</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+      </main>
+
+      <div id="word-analysis-tooltip" class="tooltip" role="dialog" aria-modal="false" aria-labelledby="word-tooltip-title" tabindex="-1"></div>
+
+      <!-- Modal 結構 -->
+      <div id="article-sentence-menu" class="article-sentence-menu hidden" role="menu" aria-label="句子操作" data-i18n-aria-label="article.sentenceActions">
+        <button type="button" role="menuitem" data-sentence-action="once"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-speaker"/></svg><span data-i18n="article.readSentence">朗读本句</span></button>
+        <button type="button" role="menuitem" data-sentence-action="continue"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-play"/></svg><span data-i18n="article.readFromHere">从这里开始读</span></button>
+        <button type="button" role="menuitem" data-sentence-action="loop"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-replay"/></svg><span data-i18n="article.loopSentence">循环读本句</span></button>
+        <button type="button" role="menuitem" data-sentence-action="analyze"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-info"/></svg><span data-i18n="article.sentenceAnalysis">句子解析</span></button>
+      </div>
+      <button type="button" id="article-sentence-quick-read" class="article-sentence-quick-read hidden" title="朗读本句" aria-label="朗读本句" data-i18n-title="article.readSentence" data-i18n-aria-label="article.readSentence"><svg class="icon icon-sm" aria-hidden="true"><use href="#ic-speaker"/></svg></button>
+
+      <div id="app-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+          <button class="modal-close-btn">&times;</button>
+          <div class="modal-layout">
+            <header id="modal-header">
+              <h3 id="modal-title">Modal Title</h3>
+            </header>
+            <main id="modal-body">
+              <!-- JS動態生成 -->
+            </main>
+            <!-- 面板專用的固定底部列：只有寫入內容的面板才會顯示（見 modules/ui.js closeModal） -->
+            <footer id="modal-actions" hidden></footer>
+          </div>
+        </div>
+      </div>
+
+      <!-- 文章庫 Modal -->
+      <div id="article-library-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+          <button class="modal-close-btn">&times;</button>
+          <h3 id="article-library-title" data-i18n="article.library">从文章库选取</h3>
+          <div id="article-library-controls" class="article-library-controls">
+            <label for="article-category-filter" class="sr-only" data-i18n="article.allCategories">全部分类</label>
+            <select id="article-category-filter">
+              <option value="" data-i18n="article.allCategories">全部分类</option>
+            </select>
+            <span
+              id="article-library-count"
+              class="article-library-count"
+            ></span>
+          </div>
+          <div id="article-library-list" class="article-library">
+            <!-- JS動態生成 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 中文字型（Noto Sans TC 子集／完整版、思源黑體 mini）不在首頁載入：
+           佔 12MB 以上，僅 PDF 導出需要，改由 features/qa/qa-pdf.js 在導出時按需抓取。 -->
+      <script type="module" src="main.js?v=c0609f2ea8fa"></script>
+    </div>
+  </body>
+</html>

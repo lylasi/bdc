@@ -1,0 +1,500 @@
+{
+  "passed": 77,
+  "total": 77,
+  "checks": [
+    {
+      "name": "zh-CN desktop icon label and dialog semantics",
+      "ok": true
+    },
+    {
+      "name": "zh-CN desktop matching round action icons",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-CN desktop compact row without inline source details",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-CN desktop popup contains all sources and original content",
+      "ok": true,
+      "detail": {
+        "title": "stellar 的来源（2）",
+        "count": 2,
+        "href": "https://example.com/sky",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "text": "The night sky — Research notes原句：The telescope captured a stellar nursery.当时释义：恒星的附近语境：New observations reveal the formation of stars.\nThis original context stays unchanged.2026/11/6 18:15:00離線教材原句：Her stellar performance impressed everyone.当时释义：杰出的附近语境：An outstanding performance in the final round.2026/11/6 19:15:00",
+        "fits": true
+      }
+    },
+    {
+      "name": "zh-CN desktop safe original page link",
+      "ok": true
+    },
+    {
+      "name": "zh-CN desktop popup fits viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-CN desktop reverse Tab stays inside modal",
+      "ok": true
+    },
+    {
+      "name": "zh-CN desktop Tab wraps to close button",
+      "ok": true
+    },
+    {
+      "name": "zh-CN desktop Escape closes and restores icon focus",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile icon label and dialog semantics",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile matching round action icons",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-CN mobile compact row without inline source details",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-CN mobile popup contains all sources and original content",
+      "ok": true,
+      "detail": {
+        "title": "stellar 的来源（2）",
+        "count": 2,
+        "href": "https://example.com/sky",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "text": "The night sky — Research notes原句：The telescope captured a stellar nursery.当时释义：恒星的附近语境：New observations reveal the formation of stars.\nThis original context stays unchanged.2026/11/6 18:15:00離線教材原句：Her stellar performance impressed everyone.当时释义：杰出的附近语境：An outstanding performance in the final round.2026/11/6 19:15:00",
+        "fits": true
+      }
+    },
+    {
+      "name": "zh-CN mobile safe original page link",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile popup fits viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile reverse Tab stays inside modal",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile Tab wraps to close button",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile Escape closes and restores icon focus",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow icon label and dialog semantics",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow matching round action icons",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-CN narrow compact row without inline source details",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-CN narrow popup contains all sources and original content",
+      "ok": true,
+      "detail": {
+        "title": "stellar 的来源（2）",
+        "count": 2,
+        "href": "https://example.com/sky",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "text": "The night sky — Research notes原句：The telescope captured a stellar nursery.当时释义：恒星的附近语境：New observations reveal the formation of stars.\nThis original context stays unchanged.2026/11/6 18:15:00離線教材原句：Her stellar performance impressed everyone.当时释义：杰出的附近语境：An outstanding performance in the final round.2026/11/6 19:15:00",
+        "fits": true
+      }
+    },
+    {
+      "name": "zh-CN narrow safe original page link",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow popup fits viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow reverse Tab stays inside modal",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow Tab wraps to close button",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow Escape closes and restores icon focus",
+      "ok": true
+    },
+    {
+      "name": "zh-CN no source icon for unsourced word",
+      "ok": true
+    },
+    {
+      "name": "zh-CN keyboard Enter opens popup",
+      "ok": true
+    },
+    {
+      "name": "zh-CN close button restores focus",
+      "ok": true
+    },
+    {
+      "name": "zh-CN backdrop closes popup",
+      "ok": true
+    },
+    {
+      "name": "zh-CN long source wraps and scrolls inside popup",
+      "ok": true,
+      "detail": {
+        "wraps": true,
+        "scrolls": true,
+        "titleFits": true
+      }
+    },
+    {
+      "name": "zh-CN setting describes icon and popup",
+      "ok": true
+    },
+    {
+      "name": "zh-CN hide switch immediately removes source icons",
+      "ok": true
+    },
+    {
+      "name": "zh-CN hidden preference saved",
+      "ok": true
+    },
+    {
+      "name": "zh-CN show switch restores source icons",
+      "ok": true
+    },
+    {
+      "name": "zh-CN source data unchanged",
+      "ok": true
+    },
+    {
+      "name": "zh-HK desktop icon label and dialog semantics",
+      "ok": true
+    },
+    {
+      "name": "zh-HK desktop matching round action icons",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-HK desktop compact row without inline source details",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-HK desktop popup contains all sources and original content",
+      "ok": true,
+      "detail": {
+        "title": "stellar 的來源（2）",
+        "count": 2,
+        "href": "https://example.com/sky",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "text": "The night sky — Research notes原句：The telescope captured a stellar nursery.當時釋義：恒星的附近語境：New observations reveal the formation of stars.\nThis original context stays unchanged.6/11/2026 下午6:15:00離線教材原句：Her stellar performance impressed everyone.當時釋義：杰出的附近語境：An outstanding performance in the final round.6/11/2026 下午7:15:00",
+        "fits": true
+      }
+    },
+    {
+      "name": "zh-HK desktop safe original page link",
+      "ok": true
+    },
+    {
+      "name": "zh-HK desktop popup fits viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-HK desktop reverse Tab stays inside modal",
+      "ok": true
+    },
+    {
+      "name": "zh-HK desktop Tab wraps to close button",
+      "ok": true
+    },
+    {
+      "name": "zh-HK desktop Escape closes and restores icon focus",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile icon label and dialog semantics",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile matching round action icons",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-HK mobile compact row without inline source details",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-HK mobile popup contains all sources and original content",
+      "ok": true,
+      "detail": {
+        "title": "stellar 的來源（2）",
+        "count": 2,
+        "href": "https://example.com/sky",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "text": "The night sky — Research notes原句：The telescope captured a stellar nursery.當時釋義：恒星的附近語境：New observations reveal the formation of stars.\nThis original context stays unchanged.6/11/2026 下午6:15:00離線教材原句：Her stellar performance impressed everyone.當時釋義：杰出的附近語境：An outstanding performance in the final round.6/11/2026 下午7:15:00",
+        "fits": true
+      }
+    },
+    {
+      "name": "zh-HK mobile safe original page link",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile popup fits viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile reverse Tab stays inside modal",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile Tab wraps to close button",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile Escape closes and restores icon focus",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow icon label and dialog semantics",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow matching round action icons",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-HK narrow compact row without inline source details",
+      "ok": true,
+      "detail": {
+        "noInlineSources": true,
+        "sourceFirst": true,
+        "sizes": [
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)",
+          "38|38|50%|rgb(255, 255, 255)|rgb(74, 81, 91)"
+        ],
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "zh-HK narrow popup contains all sources and original content",
+      "ok": true,
+      "detail": {
+        "title": "stellar 的來源（2）",
+        "count": 2,
+        "href": "https://example.com/sky",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "text": "The night sky — Research notes原句：The telescope captured a stellar nursery.當時釋義：恒星的附近語境：New observations reveal the formation of stars.\nThis original context stays unchanged.6/11/2026 下午6:15:00離線教材原句：Her stellar performance impressed everyone.當時釋義：杰出的附近語境：An outstanding performance in the final round.6/11/2026 下午7:15:00",
+        "fits": true
+      }
+    },
+    {
+      "name": "zh-HK narrow safe original page link",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow popup fits viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow reverse Tab stays inside modal",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow Tab wraps to close button",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow Escape closes and restores icon focus",
+      "ok": true
+    },
+    {
+      "name": "zh-HK no source icon for unsourced word",
+      "ok": true
+    },
+    {
+      "name": "zh-HK keyboard Enter opens popup",
+      "ok": true
+    },
+    {
+      "name": "zh-HK close button restores focus",
+      "ok": true
+    },
+    {
+      "name": "zh-HK backdrop closes popup",
+      "ok": true
+    },
+    {
+      "name": "zh-HK long source wraps and scrolls inside popup",
+      "ok": true,
+      "detail": {
+        "wraps": true,
+        "scrolls": true,
+        "titleFits": true
+      }
+    },
+    {
+      "name": "zh-HK setting describes icon and popup",
+      "ok": true
+    },
+    {
+      "name": "zh-HK hide switch immediately removes source icons",
+      "ok": true
+    },
+    {
+      "name": "zh-HK hidden preference saved",
+      "ok": true
+    },
+    {
+      "name": "zh-HK show switch restores source icons",
+      "ok": true
+    },
+    {
+      "name": "zh-HK source data unchanged",
+      "ok": true
+    },
+    {
+      "name": "source content rendered as text and unsafe URL omitted",
+      "ok": true
+    },
+    {
+      "name": "floating statusbar standalone smoke checks",
+      "ok": true
+    },
+    {
+      "name": "no JavaScript page errors",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": []
+}

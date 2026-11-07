@@ -1,0 +1,1426 @@
+[
+  {
+    "case": "empty-320x720",
+    "before": {
+      "t": 1598,
+      "scrollY": 0,
+      "innerHeight": 720,
+      "menuHidden": true,
+      "menuDisplay": "none",
+      "menuRect": {
+        "y": 0,
+        "bottom": 0,
+        "h": 0
+      },
+      "menuInlineTop": "",
+      "menuInlineMaxH": "",
+      "menuOffsetParent": null,
+      "menuOffsetTop": 0,
+      "headerRect": {
+        "y": 465.8,
+        "bottom": 503.8,
+        "h": 38
+      },
+      "headerOffsetTop": 12,
+      "headerOffsetParent": "DIV#vocab-words-panel",
+      "moreRect": {
+        "y": 465.8,
+        "bottom": 503.8,
+        "h": 38
+      },
+      "navRect": {
+        "y": 657,
+        "bottom": 720,
+        "h": 63
+      },
+      "panelRect": {
+        "y": 452.8,
+        "bottom": 665.2,
+        "h": 212.4
+      },
+      "ariaExpanded": "false"
+    },
+    "samples": [
+      {
+        "t": 1727,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 508.5,
+          "bottom": 649.7,
+          "h": 141.2
+        },
+        "menuInlineTop": "54px",
+        "menuInlineMaxH": "141.156px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 54,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 1852,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 507.8,
+          "bottom": 649,
+          "h": 141.2
+        },
+        "menuInlineTop": "54px",
+        "menuInlineMaxH": "141.156px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 54,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 1975,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 507.8,
+          "bottom": 649,
+          "h": 141.2
+        },
+        "menuInlineTop": "54px",
+        "menuInlineMaxH": "141.156px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 54,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2098,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 507.8,
+          "bottom": 649,
+          "h": 141.2
+        },
+        "menuInlineTop": "54px",
+        "menuInlineMaxH": "141.156px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 54,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2222,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 507.8,
+          "bottom": 649,
+          "h": 141.2
+        },
+        "menuInlineTop": "54px",
+        "menuInlineMaxH": "141.156px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 54,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2343,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 507.8,
+          "bottom": 649,
+          "h": 141.2
+        },
+        "menuInlineTop": "54px",
+        "menuInlineMaxH": "141.156px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 54,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2468,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 507.8,
+          "bottom": 649,
+          "h": 141.2
+        },
+        "menuInlineTop": "54px",
+        "menuInlineMaxH": "141.156px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 54,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2594,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 507.8,
+          "bottom": 649,
+          "h": 141.2
+        },
+        "menuInlineTop": "54px",
+        "menuInlineMaxH": "141.156px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 54,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "true"
+      }
+    ]
+  },
+  {
+    "case": "empty-320x560",
+    "before": {
+      "t": 1483,
+      "scrollY": 0,
+      "innerHeight": 560,
+      "menuHidden": true,
+      "menuDisplay": "none",
+      "menuRect": {
+        "y": 0,
+        "bottom": 0,
+        "h": 0
+      },
+      "menuInlineTop": "",
+      "menuInlineMaxH": "",
+      "menuOffsetParent": null,
+      "menuOffsetTop": 0,
+      "headerRect": {
+        "y": 465.8,
+        "bottom": 503.8,
+        "h": 38
+      },
+      "headerOffsetTop": 12,
+      "headerOffsetParent": "DIV#vocab-words-panel",
+      "moreRect": {
+        "y": 465.8,
+        "bottom": 503.8,
+        "h": 38
+      },
+      "navRect": {
+        "y": 497,
+        "bottom": 560,
+        "h": 63
+      },
+      "panelRect": {
+        "y": 452.8,
+        "bottom": 665.2,
+        "h": 212.4
+      },
+      "ariaExpanded": "false"
+    },
+    "samples": [
+      {
+        "t": 1609,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": true,
+        "menuDisplay": "none",
+        "menuRect": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0
+        },
+        "menuInlineTop": "",
+        "menuInlineMaxH": "",
+        "menuOffsetParent": null,
+        "menuOffsetTop": 0,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "false"
+      },
+      {
+        "t": 1732,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": true,
+        "menuDisplay": "none",
+        "menuRect": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0
+        },
+        "menuInlineTop": "",
+        "menuInlineMaxH": "",
+        "menuOffsetParent": null,
+        "menuOffsetTop": 0,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "false"
+      },
+      {
+        "t": 1859,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": true,
+        "menuDisplay": "none",
+        "menuRect": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0
+        },
+        "menuInlineTop": "",
+        "menuInlineMaxH": "",
+        "menuOffsetParent": null,
+        "menuOffsetTop": 0,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "false"
+      },
+      {
+        "t": 1984,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": true,
+        "menuDisplay": "none",
+        "menuRect": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0
+        },
+        "menuInlineTop": "",
+        "menuInlineMaxH": "",
+        "menuOffsetParent": null,
+        "menuOffsetTop": 0,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "false"
+      },
+      {
+        "t": 2108,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": true,
+        "menuDisplay": "none",
+        "menuRect": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0
+        },
+        "menuInlineTop": "",
+        "menuInlineMaxH": "",
+        "menuOffsetParent": null,
+        "menuOffsetTop": 0,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "false"
+      },
+      {
+        "t": 2230,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": true,
+        "menuDisplay": "none",
+        "menuRect": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0
+        },
+        "menuInlineTop": "",
+        "menuInlineMaxH": "",
+        "menuOffsetParent": null,
+        "menuOffsetTop": 0,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "false"
+      },
+      {
+        "t": 2354,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": true,
+        "menuDisplay": "none",
+        "menuRect": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0
+        },
+        "menuInlineTop": "",
+        "menuInlineMaxH": "",
+        "menuOffsetParent": null,
+        "menuOffsetTop": 0,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "false"
+      },
+      {
+        "t": 2479,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": true,
+        "menuDisplay": "none",
+        "menuRect": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0
+        },
+        "menuInlineTop": "",
+        "menuInlineMaxH": "",
+        "menuOffsetParent": null,
+        "menuOffsetTop": 0,
+        "headerRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 465.8,
+          "bottom": 503.8,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 452.8,
+          "bottom": 665.2,
+          "h": 212.4
+        },
+        "ariaExpanded": "false"
+      }
+    ]
+  },
+  {
+    "case": "long-320x720",
+    "before": {
+      "t": 1497,
+      "scrollY": 0,
+      "innerHeight": 720,
+      "menuHidden": true,
+      "menuDisplay": "none",
+      "menuRect": {
+        "y": 0,
+        "bottom": 0,
+        "h": 0
+      },
+      "menuInlineTop": "",
+      "menuInlineMaxH": "",
+      "menuOffsetParent": null,
+      "menuOffsetTop": 0,
+      "headerRect": {
+        "y": 383.5,
+        "bottom": 431.5,
+        "h": 48
+      },
+      "headerOffsetTop": 12,
+      "headerOffsetParent": "DIV#vocab-words-panel",
+      "moreRect": {
+        "y": 383.5,
+        "bottom": 421.5,
+        "h": 38
+      },
+      "navRect": {
+        "y": 657,
+        "bottom": 720,
+        "h": 63
+      },
+      "panelRect": {
+        "y": 370.5,
+        "bottom": 615.2,
+        "h": 244.8
+      },
+      "ariaExpanded": "false"
+    },
+    "samples": [
+      {
+        "t": 1626,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 436.1,
+          "bottom": 649.7,
+          "h": 213.5
+        },
+        "menuInlineTop": "64px",
+        "menuInlineMaxH": "213.547px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 64,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 1750,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 435.5,
+          "bottom": 649,
+          "h": 213.5
+        },
+        "menuInlineTop": "64px",
+        "menuInlineMaxH": "213.547px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 64,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 1878,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 435.5,
+          "bottom": 649,
+          "h": 213.5
+        },
+        "menuInlineTop": "64px",
+        "menuInlineMaxH": "213.547px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 64,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2003,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 435.5,
+          "bottom": 649,
+          "h": 213.5
+        },
+        "menuInlineTop": "64px",
+        "menuInlineMaxH": "213.547px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 64,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2129,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 435.5,
+          "bottom": 649,
+          "h": 213.5
+        },
+        "menuInlineTop": "64px",
+        "menuInlineMaxH": "213.547px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 64,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2252,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 435.5,
+          "bottom": 649,
+          "h": 213.5
+        },
+        "menuInlineTop": "64px",
+        "menuInlineMaxH": "213.547px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 64,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2376,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 435.5,
+          "bottom": 649,
+          "h": 213.5
+        },
+        "menuInlineTop": "64px",
+        "menuInlineMaxH": "213.547px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 64,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2501,
+        "scrollY": 0,
+        "innerHeight": 720,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 435.5,
+          "bottom": 649,
+          "h": 213.5
+        },
+        "menuInlineTop": "64px",
+        "menuInlineMaxH": "213.547px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": 64,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 657,
+          "bottom": 720,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      }
+    ]
+  },
+  {
+    "case": "long-320x560",
+    "before": {
+      "t": 1574,
+      "scrollY": 0,
+      "innerHeight": 560,
+      "menuHidden": true,
+      "menuDisplay": "none",
+      "menuRect": {
+        "y": 0,
+        "bottom": 0,
+        "h": 0
+      },
+      "menuInlineTop": "",
+      "menuInlineMaxH": "",
+      "menuOffsetParent": null,
+      "menuOffsetTop": 0,
+      "headerRect": {
+        "y": 383.5,
+        "bottom": 431.5,
+        "h": 48
+      },
+      "headerOffsetTop": 12,
+      "headerOffsetParent": "DIV#vocab-words-panel",
+      "moreRect": {
+        "y": 383.5,
+        "bottom": 421.5,
+        "h": 38
+      },
+      "navRect": {
+        "y": 497,
+        "bottom": 560,
+        "h": 63
+      },
+      "panelRect": {
+        "y": 370.5,
+        "bottom": 615.2,
+        "h": 244.8
+      },
+      "ariaExpanded": "false"
+    },
+    "samples": [
+      {
+        "t": 1701,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 137.1,
+          "bottom": 380.1,
+          "h": 243
+        },
+        "menuInlineTop": "-235px",
+        "menuInlineMaxH": "314.453px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": -235,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 1824,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243
+        },
+        "menuInlineTop": "-235px",
+        "menuInlineMaxH": "314.453px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": -235,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 1948,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243
+        },
+        "menuInlineTop": "-235px",
+        "menuInlineMaxH": "314.453px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": -235,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2073,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243
+        },
+        "menuInlineTop": "-235px",
+        "menuInlineMaxH": "314.453px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": -235,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2197,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243
+        },
+        "menuInlineTop": "-235px",
+        "menuInlineMaxH": "314.453px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": -235,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2321,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243
+        },
+        "menuInlineTop": "-235px",
+        "menuInlineMaxH": "314.453px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": -235,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2446,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243
+        },
+        "menuInlineTop": "-235px",
+        "menuInlineMaxH": "314.453px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": -235,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      },
+      {
+        "t": 2571,
+        "scrollY": 0,
+        "innerHeight": 560,
+        "menuHidden": false,
+        "menuDisplay": "block",
+        "menuRect": {
+          "y": 136.5,
+          "bottom": 379.5,
+          "h": 243
+        },
+        "menuInlineTop": "-235px",
+        "menuInlineMaxH": "314.453px",
+        "menuOffsetParent": "DIV#vocab-words-panel",
+        "menuOffsetTop": -235,
+        "headerRect": {
+          "y": 383.5,
+          "bottom": 431.5,
+          "h": 48
+        },
+        "headerOffsetTop": 12,
+        "headerOffsetParent": "DIV#vocab-words-panel",
+        "moreRect": {
+          "y": 383.5,
+          "bottom": 421.5,
+          "h": 38
+        },
+        "navRect": {
+          "y": 497,
+          "bottom": 560,
+          "h": 63
+        },
+        "panelRect": {
+          "y": 370.5,
+          "bottom": 615.2,
+          "h": 244.8
+        },
+        "ariaExpanded": "true"
+      }
+    ]
+  }
+]

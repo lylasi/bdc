@@ -1,0 +1,14 @@
+{
+  "paraRequestsBeforeSwitch": 1,
+  "aborted": 1,
+  "aliceBefore": 0,
+  "aliceRows": 0,
+  "bobRows": 0,
+  "pending": 0,
+  "previewHidden": true,
+  "titleCleared": true,
+  "bodyCleared": true,
+  "notice": "",
+  "accountStatus": "已连接账户：bob",
+  "afterSwitchBackPending": 0
+}

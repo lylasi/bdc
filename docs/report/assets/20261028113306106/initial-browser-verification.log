@@ -1,0 +1,17 @@
+ok 1 - zh-CN: A can open their private article URL
+ok 2 - zh-CN: B opening A's URL cannot read A's article
+ok 3 - zh-CN: B cannot delete A's article with the same ID
+ok 4 - zh-CN: B can have an independent copy with exactly the same ID
+ok 5 - zh-CN: deleting B's reading record removes B's saved article
+ok 6 - zh-CN: A's article and URL remain available after B deletes the record
+ok 7 - zh-CN: B's other device receives the deletion
+ok 8 - zh-CN: undo restores B's article without modifying A
+Error: Condition timed out: () => page.evaluate(async ({ id, body }) => {
+            const state = await import('/modules/state.js');
+            return state.currentArticleId === id && document.getElementById('article-input').value === body;
+        }, { id: DOC.id, body })
+    at until (/Users/linus/CODE/bdc/docs/report/assets/20261028113306106/verify-article-delete.cjs:42:11)
+    at async expectArticle (/Users/linus/CODE/bdc/docs/report/assets/20261028113306106/verify-article-delete.cjs:121:9)
+    at async /Users/linus/CODE/bdc/docs/report/assets/20261028113306106/verify-article-delete.cjs:221:17
+    at async check (/Users/linus/CODE/bdc/docs/report/assets/20261028113306106/verify-article-delete.cjs:30:20)
+    at async main (/Users/linus/CODE/bdc/docs/report/assets/20261028113306106/verify-article-delete.cjs:219:13)

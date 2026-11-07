@@ -1,0 +1,17 @@
+LOGIN_OK
+CONSOLE Failed to load resource: the server responded with a status of 401 (Unauthorized)
+BALL_BOX [
+  1134,  790, 1180,
+   790, 1180,  836,
+  1134,  836
+]
+ASSISTANT_OK Major tech stocks plunge
+DIALOG_OK
+OPEN true
+EXTRACT_OK
+SAVE_OK
+CONSOLE qa-pdf.js 模組載入
+ARTICLE_WINDOW_OK
+CONSOLE 問答訓練模組初始化...
+CONSOLE 初始化問答模組事件監聽器
+CONSOLE 載入問答集...

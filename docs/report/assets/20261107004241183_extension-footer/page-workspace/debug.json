@@ -1,0 +1,68 @@
+{
+  "debug": [
+    {
+      "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html",
+      "state": {
+        "notice": "",
+        "captureNotice": "",
+        "account": "已连接账户：alice",
+        "choices": [
+          {
+            "text": "网页（首次加入时自动建立）",
+            "value": ""
+          },
+          {
+            "text": "单词本",
+            "value": "book"
+          },
+          {
+            "text": "Reading",
+            "value": "book-2"
+          }
+        ],
+        "pending": ""
+      }
+    },
+    {
+      "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html?embedded=1&ticket=2466463c-a5f9-4987-bb3b-b14d2f635d5e",
+      "state": {
+        "notice": "",
+        "captureNotice": "",
+        "account": "已连接账户：alice",
+        "choices": [
+          {
+            "text": "网页（首次加入时自动建立）",
+            "value": ""
+          },
+          {
+            "text": "单词本",
+            "value": "book"
+          },
+          {
+            "text": "Reading",
+            "value": "book-2"
+          }
+        ],
+        "pending": ""
+      }
+    },
+    {
+      "db": [
+        {
+          "entity_id": "book",
+          "data_json": "{\"name\":\"单词本\"}"
+        },
+        {
+          "entity_id": "book-2",
+          "data_json": "{\"name\":\"Reading\"}"
+        },
+        {
+          "entity_id": "bob-book",
+          "data_json": "{\"name\":\"Bob only\"}"
+        }
+      ],
+      "preferences": []
+    }
+  ],
+  "bookResponses": []
+}

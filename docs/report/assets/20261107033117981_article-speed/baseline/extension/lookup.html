@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="extension.title"></title>
+    <link rel="stylesheet" href="./lookup.css" />
+</head>
+<body>
+    <!-- 内嵌小窗工具列：图标按钮只挂 data-i18n-title / data-i18n-aria-label，
+         不可加 data-i18n，否则 applyTranslations 会以 textContent 覆盖 SVG 图标。 -->
+    <div id="ext-inline-toolbar" hidden>
+        <strong class="ext-toolbar-title" data-i18n="extension.inlineTitle"></strong>
+        <div class="ext-toolbar-actions">
+            <button id="ext-inline-ai" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.assistantAsk" data-i18n-aria-label="extension.assistantAsk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.7 4.3 4.3 1.7-4.3 1.7L12 15.5l-1.7-4.3L6 9.5l4.3-1.7L12 3.5z" /><path d="M18 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z" /></svg></button>
+            <button id="ext-inline-more" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.inlineMore" data-i18n-aria-label="extension.inlineMore"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="18" cy="12" r="1.5" fill="currentColor" stroke="none" /></svg></button>
+            <button id="ext-inline-back" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" hidden data-i18n-title="extension.inlineBack" data-i18n-aria-label="extension.inlineBack"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6" /><path d="M11.5 6.5L6 12l5.5 5.5" /></svg></button>
+            <button id="ext-inline-edit" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.inlineEdit" data-i18n-aria-label="extension.inlineEdit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z" /><path d="M14 6l4 4" /></svg></button>
+            <button id="ext-inline-settings" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.inlineSettings" data-i18n-aria-label="extension.inlineSettings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h9" /><path d="M17 8h3" /><path d="M4 16h4" /><path d="M12 16h8" /><circle cx="15" cy="8" r="2" /><circle cx="10" cy="16" r="2" /></svg></button>
+            <button id="ext-inline-close" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only ext-btn-close" data-i18n-title="extension.inlineClose" data-i18n-aria-label="extension.inlineClose"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11" /><path d="M17.5 6.5l-11 11" /></svg></button>
+        </div>
+    </div>
+
+    <p id="ext-inline-status" class="ext-notice ext-notice-info" hidden></p>
+    <p id="ext-inline-action-notice" class="ext-notice ext-notice-error" role="status" hidden></p>
+
+    <div id="ext-inline-confirm" role="alertdialog" aria-modal="true" aria-labelledby="ext-inline-confirm-title" hidden>
+        <strong id="ext-inline-confirm-title" class="ext-confirm-title" data-i18n="extension.inlineUnsavedTitle"></strong>
+        <p id="ext-inline-confirm-text" class="ext-confirm-text"></p>
+        <div class="ext-row">
+            <button id="ext-inline-keep" type="button" class="ext-btn ext-btn-primary" data-i18n="extension.inlineKeepEditing"></button>
+            <button id="ext-inline-discard" type="button" class="ext-btn" data-i18n="extension.inlineDiscardClose"></button>
+        </div>
+    </div>
+
+    <header class="ext-header" id="ext-header">
+        <div class="ext-header-text">
+            <h1 class="ext-title" id="ext-title" data-i18n="extension.title"></h1>
+            <p class="ext-subtitle" id="ext-subtitle" data-i18n="extension.subtitle"></p>
+        </div>
+        <div class="ext-header-controls">
+            <button type="button" id="ext-open-tab-btn" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.openStandaloneBtn" data-i18n-aria-label="extension.openStandaloneBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7" /><path d="M9 7h8v8" /></svg></button>
+            <button type="button" id="ext-settings-open" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.settingsOpen" data-i18n-aria-label="extension.settingsOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h9" /><path d="M17 8h3" /><path d="M4 16h4" /><path d="M12 16h8" /><circle cx="15" cy="8" r="2" /><circle cx="10" cy="16" r="2" /></svg></button>
+        </div>
+    </header>
+
+    <!-- 首頁：集中狀態與快捷入口；查詞表單已移入 #ext-query-dialog -->
+    <section class="ext-section ext-home" id="ext-home-section" aria-labelledby="ext-home-heading">
+        <div class="ext-section-head ext-home-head">
+            <h2 class="ext-section-title" id="ext-home-heading" data-i18n="extension.homeHeading"></h2>
+            <span id="ext-home-status" class="ext-chip"></span>
+        </div>
+        <div class="ext-home-actions" id="ext-home-actions">
+            <button type="button" id="ext-home-assistant" class="ext-home-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.7 4.3 4.3 1.7-4.3 1.7L12 15.5l-1.7-4.3L6 9.5l4.3-1.7L12 3.5z" /><path d="M18 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z" /></svg><span data-i18n="extension.homeAssistant"></span></button>
+            <button type="button" id="ext-home-article" class="ext-home-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3.5H7.5A1.5 1.5 0 0 0 6 5v14a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7.5L14 3.5z" /><path d="M14 3.5V8h4" /><path d="M9 13h6" /><path d="M9 16.5h4" /></svg><span data-i18n="extension.homeArticle"></span></button>
+            <button type="button" id="ext-home-book" class="ext-home-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.6C10.5 5.4 8.6 4.9 6 4.9H4v13h2c2.6 0 4.5.5 6 1.6 1.5-1.1 3.4-1.6 6-1.6h2v-13h-2c-2.6 0-4.5.5-6 1.7z" /><path d="M12 6.6v13" /></svg><span data-i18n="extension.homeBook"></span></button>
+            <label class="ext-switch" for="ext-assistant-enabled">
+                <input type="checkbox" id="ext-assistant-enabled" checked />
+                <span class="ext-switch-track" aria-hidden="true"></span>
+                <span class="ext-switch-label" data-i18n="extension.assistantToggleLabel"></span>
+            </label>
+        </div>
+    </section>
+
+    <p id="ext-home-notice" class="ext-notice hidden" role="status" aria-live="polite"></p>
+
+    <!-- 文章助手：section 本身由 hidden 控制，body.ext-assistant-view 时独占版面 -->
+    <section id="ext-assistant-section" class="ext-section ext-assistant" aria-labelledby="ext-assistant-title" hidden>
+        <div class="ext-assistant-head">
+            <div class="ext-assistant-heading">
+                <span class="ext-assistant-title" id="ext-assistant-title" data-i18n="extension.assistantTitle"></span>
+                <p id="ext-assistant-context" class="ext-assistant-context"></p>
+            </div>
+            <div class="ext-assistant-head-actions">
+                <button id="ext-assistant-new" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.assistantNew" data-i18n-aria-label="extension.assistantNew"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13" /><path d="M5.5 12h13" /></svg></button>
+                <button id="ext-assistant-expand" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" aria-pressed="false" data-i18n-title="extension.assistantExpand" data-i18n-aria-label="extension.assistantExpand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5" /><path d="M14.5 4.5v15" /></svg></button>
+            </div>
+        </div>
+        <div id="ext-assistant-reference" class="ext-assistant-reference" hidden>
+            <span class="ext-assistant-reference-label" data-i18n="extension.assistantReferenceLabel"></span>
+            <p id="ext-assistant-reference-text" class="ext-assistant-reference-text"></p>
+        </div>
+        <div id="ext-assistant-messages" class="ext-assistant-messages" role="log" aria-live="polite" aria-relevant="additions text">
+            <p class="ext-assistant-empty" data-i18n="extension.assistantEmpty"></p>
+        </div>
+        <p id="ext-assistant-notice" class="ext-notice ext-assistant-notice" role="status" aria-live="polite" hidden></p>
+        <form id="ext-assistant-form" class="ext-assistant-composer" autocomplete="off">
+            <label class="ext-visually-hidden" for="ext-assistant-input" data-i18n="extension.assistantInputLabel"></label>
+            <textarea id="ext-assistant-input" rows="2" data-i18n-placeholder="extension.assistantPlaceholder" data-i18n-aria-label="extension.assistantInputLabel"></textarea>
+            <div class="ext-assistant-composer-actions">
+                <button id="ext-assistant-stop" type="button" class="ext-btn ext-btn-sm" hidden data-i18n="extension.assistantStop"></button>
+                <button id="ext-assistant-retry" type="button" class="ext-btn ext-btn-sm" hidden data-i18n="extension.assistantRetry"></button>
+                <button id="ext-assistant-send" type="submit" class="ext-btn ext-btn-primary ext-btn-sm ext-icon-only ext-assistant-send" data-i18n-title="extension.assistantSend" data-i18n-aria-label="extension.assistantSend"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5V5" /><path d="M6 11l6-6 6 6" /></svg></button>
+            </div>
+        </form>
+    </section>
+
+    <section id="ext-result-section" class="ext-section ext-section-result" aria-labelledby="ext-result-heading">
+        <h2 class="ext-section-title" id="ext-result-heading" data-i18n="extension.resultSectionTitle"></h2>
+        <div id="ext-result-empty" class="ext-hint" data-i18n="extension.resultEmpty"></div>
+        <div id="ext-inline-lookup-notice" class="ext-notice" role="alert" aria-live="assertive" hidden></div>
+        <div id="ext-result-box" class="ext-result-box hidden" aria-live="polite">
+            <div class="ext-result-head">
+                <span class="ext-result-word" id="ext-result-word"></span>
+                <span class="ext-result-phonetic" id="ext-result-phonetic"></span>
+                <span class="ext-result-pos" id="ext-result-pos"></span>
+                <span class="ext-cache-badge" id="ext-result-cache" hidden data-i18n="extension.lookupCached"></span>
+            </div>
+            <div class="ext-result-meaning" id="ext-result-meaning"></div>
+            <div class="ext-result-role" id="ext-result-role"></div>
+            <details id="ext-result-details" class="ext-disclosure ext-disclosure-quiet ext-result-extra">
+                <summary class="ext-disclosure-summary">
+                    <span class="ext-disclosure-title" data-i18n="extension.resultExamplesLabel"></span>
+                </summary>
+                <div class="ext-disclosure-body">
+                    <ul id="ext-result-examples" class="ext-result-examples"></ul>
+                </div>
+            </details>
+            <div class="ext-result-meta" id="ext-result-meta"></div>
+        </div>
+    </section>
+
+    <section id="ext-capture-section" class="ext-section" aria-labelledby="ext-capture-heading">
+        <div class="ext-section-head">
+            <h2 class="ext-section-title" id="ext-capture-heading" data-i18n="extension.captureTitle"></h2>
+        </div>
+        <p id="ext-capture-source" class="ext-source"></p>
+        <p id="ext-capture-hint" class="ext-hint" data-i18n="extension.captureHint"></p>
+        <div class="ext-capture-bar">
+            <button type="button" id="ext-capture-save" class="ext-btn ext-btn-primary ext-btn-sm" disabled data-i18n="extension.captureAddShort" data-i18n-aria-label="extension.captureSave"></button>
+            <button id="ext-book-settings" type="button" class="ext-btn ext-btn-quiet ext-icon-only" aria-haspopup="dialog" data-i18n-title="extension.bookSettingsOpen" data-i18n-aria-label="extension.bookSettingsOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.6C10.5 5.4 8.6 4.9 6 4.9H4v13h2c2.6 0 4.5.5 6 1.6 1.5-1.1 3.4-1.6 6-1.6h2v-13h-2c-2.6 0-4.5.5-6 1.7z" /><path d="M12 6.6v13" /></svg></button>
+            <button id="ext-inline-retry" type="button" class="ext-btn ext-btn-quiet ext-icon-only" hidden data-i18n-title="extension.lookupRefresh" data-i18n-aria-label="extension.lookupRefresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5" /><path d="M4 17v-5h5" /><path d="M6.1 7a7 7 0 0 1 11.5-1.5L20 8M4 16l2.4 2.5A7 7 0 0 0 17.9 17" /></svg></button>
+        </div>
+        <div id="ext-capture-notice" class="ext-notice" role="status" aria-live="polite" hidden></div>
+        <details id="ext-capture-pending" class="ext-disclosure ext-disclosure-quiet ext-pending" hidden>
+            <summary id="ext-capture-pending-summary" class="ext-disclosure-summary"></summary>
+            <div class="ext-disclosure-body">
+                <p class="ext-hint" data-i18n="extension.capturePendingHint"></p>
+                <ul id="ext-capture-pending-list" class="ext-pending-list"></ul>
+            </div>
+        </details>
+    </section>
+
+    <!-- 文章详解：只在 body.ext-article-view（独立 popup 窗口）显示，不常驻工具列下拉 -->
+    <section id="ext-page-article-section" class="ext-section" aria-labelledby="ext-page-article-heading">
+        <div class="ext-section-head">
+            <h2 id="ext-page-article-heading" class="ext-section-title" data-i18n="extension.pageArticleTitle"></h2>
+            <button id="ext-open-source" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.openSource" data-i18n-aria-label="extension.openSource"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7" /><path d="M9 7h8v8" /></svg></button>
+            <button id="ext-article-cancel" type="button" class="ext-btn ext-btn-sm" hidden data-i18n="extension.pageArticleCancel"></button>
+            <button id="ext-article-open" type="button" class="ext-btn ext-btn-sm" hidden data-i18n="extension.pageArticleOpen"></button>
+        </div>
+        <p class="ext-hint" data-i18n="extension.pageArticleHint"></p>
+        <div class="ext-row ext-row-actions">
+            <button id="ext-article-extract" type="button" class="ext-btn" data-i18n="extension.pageArticleExtract"></button>
+        </div>
+        <div id="ext-article-preview" class="ext-preview" hidden>
+            <div class="ext-field">
+                <label for="ext-article-title" data-i18n="extension.pageArticleTitleLabel"></label>
+                <input id="ext-article-title" type="text" maxlength="300" />
+            </div>
+            <div class="ext-field">
+                <label for="ext-article-body" data-i18n="extension.pageArticleBodyLabel"></label>
+                <textarea id="ext-article-body" rows="14"></textarea>
+            </div>
+            <label class="ext-check"><input id="ext-article-analyze" type="checkbox" checked /><span data-i18n="extension.pageArticleAnalyze"></span></label>
+            <button id="ext-article-save" type="button" class="ext-btn ext-btn-primary" data-i18n="extension.pageArticleSave"></button>
+        </div>
+        <p id="ext-workspace-notice" class="ext-notice" role="status" aria-live="polite" hidden></p>
+        <details id="ext-workspace-pending" class="ext-disclosure ext-disclosure-quiet ext-pending" hidden>
+            <summary class="ext-disclosure-summary"><span class="ext-disclosure-title" data-i18n="extension.workspacePending"></span></summary>
+            <div class="ext-disclosure-body">
+                <p class="ext-hint" data-i18n="extension.workspacePendingHint"></p>
+                <ul id="ext-workspace-pending-list" class="ext-pending-list"></ul>
+            </div>
+        </details>
+    </section>
+
+    <dialog id="ext-book-dialog" class="ext-dialog" aria-labelledby="ext-book-dialog-title">
+        <div class="ext-dialog-head">
+            <h2 id="ext-book-dialog-title" class="ext-dialog-title" data-i18n="extension.bookSettingsTitle"></h2>
+            <button type="button" id="ext-book-close" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.dialogClose" data-i18n-aria-label="extension.dialogClose"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11" /><path d="M17.5 6.5l-11 11" /></svg></button>
+        </div>
+        <div class="ext-dialog-body">
+            <div class="ext-field ext-field-book">
+                <label for="ext-capture-book" data-i18n="extension.captureBookLabel"></label>
+                <div class="ext-book-select-row">
+                    <select id="ext-capture-book" data-i18n-aria-label="extension.captureBookLabel"></select>
+                    <button id="ext-open-book" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.openBook" data-i18n-aria-label="extension.openBook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.6C10.5 5.4 8.6 4.9 6 4.9H4v13h2c2.6 0 4.5.5 6 1.6 1.5-1.1 3.4-1.6 6-1.6h2v-13h-2c-2.6 0-4.5.5-6 1.7z" /><path d="M12 6.6v13" /></svg></button>
+                    <button type="button" id="ext-capture-refresh" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.captureRefresh" data-i18n-aria-label="extension.captureRefresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 9a8 8 0 1 0 0 6" /><path d="M19.5 4.5V9H15" /></svg></button>
+                </div>
+            </div>
+            <p class="ext-hint" data-i18n="extension.bookAutoHint"></p>
+            <div class="ext-row ext-row-actions ext-book-actions">
+                <button id="ext-book-page" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookCreatePage"></button>
+                <button id="ext-book-new" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookCreate"></button>
+            </div>
+            <div id="ext-book-form" class="ext-book-form" hidden>
+                <div class="ext-field">
+                    <label for="ext-book-name" data-i18n="extension.bookName"></label>
+                    <input id="ext-book-name" type="text" maxlength="300" data-i18n-placeholder="extension.bookNamePlaceholder" />
+                </div>
+                <label class="ext-check"><input id="ext-book-link-page" type="checkbox" checked /><span data-i18n="extension.bookLinkPage"></span></label>
+                <label class="ext-check"><input id="ext-book-make-default" type="checkbox" /><span data-i18n="extension.bookMakeDefault"></span></label>
+                <button id="ext-book-submit" type="button" class="ext-btn ext-btn-primary ext-btn-sm" data-i18n="extension.bookCreate"></button>
+            </div>
+            <details class="ext-disclosure ext-disclosure-quiet ext-book-advanced">
+                <summary class="ext-disclosure-summary"><span class="ext-disclosure-title" data-i18n="extension.inlineMore"></span></summary>
+                <div class="ext-row ext-disclosure-body">
+                    <button id="ext-book-default-create" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookCreateDefault"></button>
+                    <button id="ext-book-set-default" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.bookSetDefault"></button>
+                </div>
+            </details>
+            <div id="ext-book-feedback"></div>
+        </div>
+    </dialog>
+
+    <!-- 语境查词编辑弹窗：原 #ext-lookup-section 整块移入，业务 id 不变 -->
+    <dialog id="ext-query-dialog" class="ext-dialog" aria-labelledby="ext-lookup-heading">
+        <div class="ext-dialog-body">
+            <section class="ext-dialog-section" id="ext-lookup-section">
+                <div class="ext-section-head">
+                    <h2 class="ext-section-title" id="ext-lookup-heading" data-i18n="extension.lookupSectionTitle"></h2>
+                    <button type="button" id="ext-query-close" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.dialogClose" data-i18n-aria-label="extension.dialogClose"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11" /><path d="M17.5 6.5l-11 11" /></svg></button>
+                </div>
+
+                <div class="ext-field ext-field-word">
+                    <label for="ext-word-input" data-i18n="extension.wordLabel"></label>
+                    <input type="text" id="ext-word-input" data-i18n-placeholder="extension.wordPlaceholder" />
+                </div>
+
+                <div class="ext-row ext-row-quiet">
+                    <button type="button" id="ext-extract-btn" class="ext-btn ext-btn-quiet ext-btn-sm" data-i18n="extension.extractFromTabBtn"></button>
+                </div>
+
+                <details id="ext-query-details" class="ext-disclosure ext-disclosure-quiet" open>
+                    <summary id="ext-query-summary" class="ext-disclosure-summary">
+                        <span class="ext-disclosure-title" data-i18n="extension.sentenceLabel"></span>
+                    </summary>
+                    <div class="ext-disclosure-body">
+                        <div class="ext-field">
+                            <textarea id="ext-sentence-input" rows="2" data-i18n-placeholder="extension.sentencePlaceholder" data-i18n-aria-label="extension.sentenceLabel"></textarea>
+                        </div>
+                        <div class="ext-field">
+                            <label for="ext-context-input" data-i18n="extension.contextLabel"></label>
+                            <textarea id="ext-context-input" rows="2" data-i18n-placeholder="extension.contextPlaceholder"></textarea>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="ext-row ext-row-submit" id="ext-force-row">
+                    <label class="ext-check">
+                        <input type="checkbox" id="ext-force-refresh" />
+                        <span data-i18n="extension.forceRefreshLabel"></span>
+                    </label>
+                    <button type="button" id="ext-lookup-btn" class="ext-btn ext-btn-primary" data-i18n="extension.lookupBtn"></button>
+                </div>
+
+                <div id="ext-lookup-notice" class="ext-notice hidden" role="alert" aria-live="assertive"></div>
+            </section>
+        </div>
+    </dialog>
+
+    <!-- 設定弹窗：語言、AI 控件 slot、帳戶原有欄位 -->
+    <dialog id="ext-settings-dialog" class="ext-dialog" aria-labelledby="ext-settings-title">
+        <div class="ext-dialog-head">
+            <h2 class="ext-dialog-title" id="ext-settings-title" data-i18n="extension.settingsTitle"></h2>
+            <button type="button" id="ext-settings-close" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only" data-i18n-title="extension.dialogClose" data-i18n-aria-label="extension.dialogClose"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11" /><path d="M17.5 6.5l-11 11" /></svg></button>
+        </div>
+        <div class="ext-dialog-body">
+            <div class="ext-field">
+                <label for="ext-locale-select" data-i18n="extension.localeLabel"></label>
+                <select id="ext-locale-select" class="ext-select" data-i18n-aria-label="extension.localeLabel">
+                    <option value="zh-CN" data-i18n="extension.localeZhCN"></option>
+                    <option value="zh-HK" data-i18n="extension.localeZhHK"></option>
+                </select>
+            </div>
+
+            <div class="ext-dialog-group">
+                <h3 class="ext-dialog-group-title" data-i18n="extension.settingsAiTitle"></h3>
+                <div id="ext-ai-settings-slot" class="ext-ai-settings-slot"></div>
+            </div>
+
+            <section class="ext-dialog-group" id="ext-account-section" aria-labelledby="ext-account-heading">
+                <details id="ext-account-details" class="ext-disclosure ext-disclosure-block" open>
+                    <summary id="ext-account-summary" class="ext-disclosure-summary">
+                        <h2 class="ext-disclosure-title" id="ext-account-heading" data-i18n="extension.accountSectionTitle"></h2>
+                        <span id="ext-account-status" class="ext-chip"></span>
+                    </summary>
+                    <div class="ext-disclosure-body">
+                        <div class="ext-field">
+                            <label for="ext-endpoint-input" data-i18n="extension.endpointLabel"></label>
+                            <input type="url" id="ext-endpoint-input" data-i18n-placeholder="extension.endpointPlaceholder" autocomplete="off" />
+                        </div>
+                        <div class="ext-field">
+                            <label for="ext-app-url" data-i18n="extension.appUrlLabel"></label>
+                            <input type="url" id="ext-app-url" placeholder="https://your-bdc.example/" autocomplete="off" />
+                        </div>
+                        <div class="ext-field">
+                            <label for="ext-login-mode" data-i18n="extension.loginModeLabel"></label>
+                            <select id="ext-login-mode" data-i18n-aria-label="extension.loginModeLabel">
+                                <option value="password" data-i18n="extension.loginModePassword"></option>
+                                <option value="token" data-i18n="extension.loginModeToken"></option>
+                                <option value="code" data-i18n="extension.loginModeCode"></option>
+                            </select>
+                        </div>
+
+                        <div id="ext-mode-password-fields">
+                            <div class="ext-field">
+                                <label for="ext-username-input" data-i18n="extension.usernameLabel"></label>
+                                <input type="text" id="ext-username-input" data-i18n-placeholder="extension.usernamePlaceholder" autocomplete="username" />
+                            </div>
+                            <div class="ext-field">
+                                <label for="ext-password-input" data-i18n="extension.passwordLabel"></label>
+                                <input type="password" id="ext-password-input" data-i18n-placeholder="extension.passwordPlaceholder" autocomplete="current-password" />
+                            </div>
+                        </div>
+
+                        <div id="ext-mode-token-fields" class="hidden">
+                            <div class="ext-field">
+                                <label for="ext-token-input" data-i18n="extension.tokenLabel"></label>
+                                <input type="password" id="ext-token-input" data-i18n-placeholder="extension.tokenPlaceholder" autocomplete="off" />
+                            </div>
+                        </div>
+
+                        <div id="ext-mode-code-fields" class="hidden">
+                            <div class="ext-field">
+                                <label for="ext-code-input" data-i18n="extension.loginCodeLabel"></label>
+                                <input type="text" id="ext-code-input" data-i18n-placeholder="extension.loginCodePlaceholder" autocomplete="off" />
+                            </div>
+                        </div>
+
+                        <div class="ext-row ext-row-actions">
+                            <button type="button" id="ext-connect-btn" class="ext-btn ext-btn-primary" data-i18n="extension.connectBtn"></button>
+                            <button type="button" id="ext-sync-btn" class="ext-btn" data-i18n="extension.syncBtn"></button>
+                            <button type="button" id="ext-logout-btn" class="ext-btn" data-i18n="extension.logoutBtn"></button>
+                            <button type="button" id="ext-enable-inline" class="ext-btn" data-i18n="extension.inlineEnable"></button>
+                        </div>
+
+                        <div class="ext-status-list" id="ext-readiness-box" aria-live="polite">
+                            <div class="ext-status-line" id="ext-catalog-status"></div>
+                            <div class="ext-status-line" id="ext-task-status"></div>
+                        </div>
+                    </div>
+                </details>
+
+                <div id="ext-account-notice" class="ext-notice hidden" role="status" aria-live="polite"></div>
+
+                <div id="ext-missing-key-banner" class="ext-banner-warning hidden" role="region" data-i18n-aria-label="extension.missingKeyBannerTitle">
+                    <h4 id="ext-missing-key-title" class="ext-banner-title" data-i18n="extension.missingKeyBannerTitle"></h4>
+                    <p id="ext-missing-key-desc" class="ext-banner-text"></p>
+                    <div class="ext-field">
+                        <label for="ext-import-provider-select" data-i18n="extension.importKeyProviderLabel"></label>
+                        <select id="ext-import-provider-select" data-i18n-aria-label="extension.importKeyProviderLabel"></select>
+                    </div>
+                    <div class="ext-field">
+                        <label for="ext-import-key-input" data-i18n="extension.importKeyInputLabel"></label>
+                        <input type="password" id="ext-import-key-input" data-i18n-placeholder="extension.importKeyPlaceholder" autocomplete="off" />
+                    </div>
+                    <button type="button" id="ext-import-key-btn" class="ext-btn" data-i18n="extension.importKeyBtn"></button>
+                </div>
+            </section>
+        </div>
+    </dialog>
+
+    <script type="module" src="./lookup.js"></script>
+</body>
+</html>

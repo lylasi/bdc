@@ -1,0 +1,102 @@
+{
+  "finishedAt": "2026-11-06T23:00:33.413Z",
+  "build": [
+    "a58173e033c8ab815c002f37a34646ab",
+    "ea160feff903259bc322f117b87a9539",
+    "97fe37fc361cf5653a73ffca1bfc5080"
+  ],
+  "results": [
+    {
+      "variant": "v3-control",
+      "locale": "zh-CN",
+      "barBottom": 57,
+      "navTop": 657,
+      "innerHeight": 720,
+      "menu": {
+        "y": 507.8,
+        "bottom": 712,
+        "h": 204.2,
+        "maxHeight": "204.156px",
+        "scrollHeight": 241,
+        "clientHeight": 202
+      },
+      "lastItem": {
+        "text": "删除",
+        "y": 660.8,
+        "bottom": 704.8,
+        "centerY": 682.8
+      },
+      "lastItemHitTag": "BUTTON.nav-btn",
+      "lastItemHitSelf": false
+    },
+    {
+      "variant": "v3-control",
+      "locale": "zh-HK",
+      "barBottom": 57,
+      "navTop": 657,
+      "innerHeight": 720,
+      "menu": {
+        "y": 507.8,
+        "bottom": 712,
+        "h": 204.2,
+        "maxHeight": "204.156px",
+        "scrollHeight": 241,
+        "clientHeight": 202
+      },
+      "lastItem": {
+        "text": "刪除",
+        "y": 660.8,
+        "bottom": 704.8,
+        "centerY": 682.8
+      },
+      "lastItemHitTag": "BUTTON.nav-btn",
+      "lastItemHitSelf": false
+    },
+    {
+      "variant": "v4-current",
+      "locale": "zh-CN",
+      "barBottom": 57,
+      "navTop": 657,
+      "innerHeight": 720,
+      "menu": {
+        "y": 507.8,
+        "bottom": 649,
+        "h": 141.2,
+        "maxHeight": "141.156px",
+        "scrollHeight": 241,
+        "clientHeight": 139
+      },
+      "lastItem": {
+        "text": "删除",
+        "y": 597.8,
+        "bottom": 641.8,
+        "centerY": 619.8
+      },
+      "lastItemHitTag": "BUTTON.menu-item danger",
+      "lastItemHitSelf": true
+    },
+    {
+      "variant": "v4-current",
+      "locale": "zh-HK",
+      "barBottom": 57,
+      "navTop": 657,
+      "innerHeight": 720,
+      "menu": {
+        "y": 507.8,
+        "bottom": 649,
+        "h": 141.2,
+        "maxHeight": "141.156px",
+        "scrollHeight": 241,
+        "clientHeight": 139
+      },
+      "lastItem": {
+        "text": "刪除",
+        "y": 597.8,
+        "bottom": 641.8,
+        "centerY": 619.8
+      },
+      "lastItemHitTag": "BUTTON.menu-item danger",
+      "lastItemHitSelf": true
+    }
+  ]
+}

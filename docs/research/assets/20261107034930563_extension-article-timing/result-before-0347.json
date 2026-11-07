@@ -1,0 +1,766 @@
+{
+  "config": {
+    "WORKER_MS": 120,
+    "AI_CLEAN_MS": 2500,
+    "AI_PARA_MS": 2500,
+    "ARTICLE_PARAS": 6,
+    "failMode": 2
+  },
+  "s1": {
+    "openToPreviewMs": 3442,
+    "body": "Para 0: sentence 0.",
+    "notice": "正文已提取，尚未分析或导入。请检查或修改标题与正文，再确认导入。"
+  },
+  "s2": {
+    "openToPreviewMs": 5923
+  },
+  "s3": {
+    "saveToOpenMs": 18409,
+    "sections": 7,
+    "paraRequests": 7,
+    "cleanupRequests": 0
+  },
+  "whatIf": {
+    "seq": {
+      "label": "seq-6",
+      "ms": 15028,
+      "v": [
+        "译文 -1",
+        "译文 -1",
+        "译文 -1",
+        "译文 -1",
+        "译文 -1",
+        "译文 -1"
+      ]
+    },
+    "par": {
+      "label": "par-6",
+      "ms": 8014,
+      "v": [
+        "译文 -1",
+        "译文 -1",
+        "译文 -1",
+        "译文 -1",
+        "译文 -1",
+        "译文 -1"
+      ]
+    },
+    "cleanSeq": {
+      "label": "clean-seq-3",
+      "ms": 7511,
+      "v": 3
+    },
+    "cleanPar": {
+      "label": "clean-par-3",
+      "ms": 5009,
+      "v": 3
+    }
+  },
+  "s5": {
+    "bodyPreserved": true,
+    "notice": "段落分析未完成，正文预览仍保留，可重试或取消同时分析后保存。",
+    "paraRequests": 4,
+    "articles": 0,
+    "retryMs": 10887,
+    "retryParaRequests": 4,
+    "articlesAfter": 1
+  },
+  "s6": {
+    "notices": "段落分析未完成，正文预览仍保留，可重试或取消同时分析后保存。",
+    "body": "S6 Para 0: sentence 0.\n\nS6 Para 1: sente",
+    "abortedRequests": 1,
+    "paraRequests": 1,
+    "articles": 0,
+    "cancelHidden": true,
+    "saveDisabled": false
+  },
+  "s7": {
+    "notice": "这篇网页已有文章，已沿用原记录并保留原内容。",
+    "previewVisible": false,
+    "openVisible": true,
+    "linkWrites": 1,
+    "articlesUnchanged": 2
+  },
+  "counts": {
+    "cleanup": 12,
+    "para": 28,
+    "other": 0,
+    "s5Fail": false,
+    "extraCleanCount": 0
+  },
+  "events": [
+    {
+      "t": 97514,
+      "aborted": "http://127.0.0.1:55151/mock-ai/v1/chat/completions",
+      "reason": "net::ERR_ABORTED"
+    }
+  ],
+  "timeline": [
+    {
+      "t": 1134,
+      "kind": "worker",
+      "name": "GET /me"
+    },
+    {
+      "t": 1261,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 1262,
+      "kind": "worker",
+      "name": "GET /vocabulary/books"
+    },
+    {
+      "t": 1264,
+      "kind": "worker",
+      "name": "GET /snapshot"
+    },
+    {
+      "t": 1391,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 1392,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 1565,
+      "kind": "phase",
+      "name": "S1 open"
+    },
+    {
+      "t": 1595,
+      "kind": "worker",
+      "name": "GET /timing-article?s1=1&paras=2&chars=120"
+    },
+    {
+      "t": 1726,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 1728,
+      "kind": "phase",
+      "name": "article window document"
+    },
+    {
+      "t": 1801,
+      "kind": "worker",
+      "name": "GET /me"
+    },
+    {
+      "t": 1801,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 1802,
+      "kind": "worker",
+      "name": "GET /vocabulary/books"
+    },
+    {
+      "t": 1929,
+      "kind": "worker",
+      "name": "GET /snapshot"
+    },
+    {
+      "t": 2055,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 2056,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 2185,
+      "kind": "worker",
+      "name": "GET /vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A55151%2Ftiming-article%3Fs1%3D1%26paras%3D2%26chars%3D120"
+    },
+    {
+      "t": 2313,
+      "kind": "worker",
+      "name": "GET /ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "t": 2440,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 2799,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 5054,
+      "kind": "phase",
+      "name": "S1 preview visible"
+    },
+    {
+      "t": 5134,
+      "kind": "worker",
+      "name": "GET /timing-article?s2=1&paras=4&chars=1400"
+    },
+    {
+      "t": 5241,
+      "kind": "phase",
+      "name": "article window document"
+    },
+    {
+      "t": 5299,
+      "kind": "worker",
+      "name": "GET /me"
+    },
+    {
+      "t": 5299,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 5300,
+      "kind": "worker",
+      "name": "GET /vocabulary/books"
+    },
+    {
+      "t": 5428,
+      "kind": "worker",
+      "name": "GET /snapshot"
+    },
+    {
+      "t": 5553,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 5554,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 5682,
+      "kind": "worker",
+      "name": "GET /vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A55151%2Ftiming-article%3Fs2%3D1%26paras%3D4%26chars%3D1400"
+    },
+    {
+      "t": 5808,
+      "kind": "worker",
+      "name": "GET /ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "t": 5934,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 6298,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 8438,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 11073,
+      "kind": "phase",
+      "name": "S2 preview visible (long/chunked)"
+    },
+    {
+      "t": 11167,
+      "kind": "worker",
+      "name": "GET /timing-article?s3=1&paras=2&chars=120"
+    },
+    {
+      "t": 11271,
+      "kind": "phase",
+      "name": "article window document"
+    },
+    {
+      "t": 11322,
+      "kind": "worker",
+      "name": "GET /me"
+    },
+    {
+      "t": 11323,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 11323,
+      "kind": "worker",
+      "name": "GET /vocabulary/books"
+    },
+    {
+      "t": 11451,
+      "kind": "worker",
+      "name": "GET /snapshot"
+    },
+    {
+      "t": 11576,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 11577,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 11702,
+      "kind": "worker",
+      "name": "GET /vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A55151%2Ftiming-article%3Fs3%3D1%26paras%3D2%26chars%3D120"
+    },
+    {
+      "t": 11828,
+      "kind": "worker",
+      "name": "GET /ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "t": 11953,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 12325,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 14606,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 17111,
+      "kind": "ai",
+      "name": "para 0",
+      "start": true
+    },
+    {
+      "t": 19616,
+      "kind": "ai",
+      "name": "para 1",
+      "start": true
+    },
+    {
+      "t": 22121,
+      "kind": "ai",
+      "name": "para 2",
+      "start": true
+    },
+    {
+      "t": 24626,
+      "kind": "ai",
+      "name": "para 3",
+      "start": true
+    },
+    {
+      "t": 27132,
+      "kind": "ai",
+      "name": "para 4",
+      "start": true
+    },
+    {
+      "t": 29636,
+      "kind": "ai",
+      "name": "para 5",
+      "start": true
+    },
+    {
+      "t": 32143,
+      "kind": "worker",
+      "name": "GET /vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A55151%2Ftiming-article%3Fs3%3D1%26paras%3D2%26chars%3D120"
+    },
+    {
+      "t": 32269,
+      "kind": "worker",
+      "name": "POST /articles"
+    },
+    {
+      "t": 32395,
+      "kind": "worker",
+      "name": "POST /vocabulary/page-link"
+    },
+    {
+      "t": 32524,
+      "kind": "worker",
+      "name": "GET /vocabulary/books"
+    },
+    {
+      "t": 32987,
+      "kind": "phase",
+      "name": "S3 saved"
+    },
+    {
+      "t": 32989,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 35495,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 37999,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 40503,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 43008,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 45513,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 48018,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 48520,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 50522,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 51024,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 53026,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 53527,
+      "kind": "ai",
+      "name": "para -1",
+      "start": true
+    },
+    {
+      "t": 56031,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 58535,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 61037,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 63542,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 63695,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 66046,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 68669,
+      "kind": "worker",
+      "name": "GET /timing-article?s5=1&paras=2&chars=120"
+    },
+    {
+      "t": 68806,
+      "kind": "phase",
+      "name": "article window document"
+    },
+    {
+      "t": 68905,
+      "kind": "worker",
+      "name": "GET /me"
+    },
+    {
+      "t": 68905,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 68905,
+      "kind": "worker",
+      "name": "GET /vocabulary/books"
+    },
+    {
+      "t": 69036,
+      "kind": "worker",
+      "name": "GET /snapshot"
+    },
+    {
+      "t": 69162,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 69162,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 69289,
+      "kind": "worker",
+      "name": "GET /vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A55151%2Ftiming-article%3Fs5%3D1%26paras%3D2%26chars%3D120"
+    },
+    {
+      "t": 69413,
+      "kind": "worker",
+      "name": "GET /ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "t": 69539,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 69905,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 72174,
+      "kind": "ai",
+      "name": "para 0",
+      "start": true
+    },
+    {
+      "t": 74681,
+      "kind": "ai",
+      "name": "para 1",
+      "start": true
+    },
+    {
+      "t": 77184,
+      "kind": "ai",
+      "name": "para 2",
+      "start": true
+    },
+    {
+      "t": 79688,
+      "kind": "ai",
+      "name": "para 2",
+      "start": true
+    },
+    {
+      "t": 82257,
+      "kind": "ai",
+      "name": "para 2",
+      "start": true
+    },
+    {
+      "t": 84763,
+      "kind": "ai",
+      "name": "para 3",
+      "start": true
+    },
+    {
+      "t": 87272,
+      "kind": "ai",
+      "name": "para 4",
+      "start": true
+    },
+    {
+      "t": 89777,
+      "kind": "ai",
+      "name": "para 5",
+      "start": true
+    },
+    {
+      "t": 92284,
+      "kind": "worker",
+      "name": "GET /vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A55151%2Ftiming-article%3Fs5%3D1%26paras%3D2%26chars%3D120"
+    },
+    {
+      "t": 92412,
+      "kind": "worker",
+      "name": "POST /articles"
+    },
+    {
+      "t": 92537,
+      "kind": "worker",
+      "name": "POST /vocabulary/page-link"
+    },
+    {
+      "t": 92663,
+      "kind": "worker",
+      "name": "GET /vocabulary/books"
+    },
+    {
+      "t": 93142,
+      "kind": "worker",
+      "name": "GET /timing-article?s6=1&paras=2&chars=120"
+    },
+    {
+      "t": 93237,
+      "kind": "phase",
+      "name": "article window document"
+    },
+    {
+      "t": 93296,
+      "kind": "worker",
+      "name": "GET /me"
+    },
+    {
+      "t": 93296,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 93297,
+      "kind": "worker",
+      "name": "GET /vocabulary/books"
+    },
+    {
+      "t": 93426,
+      "kind": "worker",
+      "name": "GET /snapshot"
+    },
+    {
+      "t": 93550,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 93550,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 93677,
+      "kind": "worker",
+      "name": "GET /vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A55151%2Ftiming-article%3Fs6%3D1%26paras%3D2%26chars%3D120"
+    },
+    {
+      "t": 93802,
+      "kind": "worker",
+      "name": "GET /ai-catalog/providers/managed-capture/credential?catalogVersion=1"
+    },
+    {
+      "t": 93928,
+      "kind": "ai",
+      "name": "cleanup",
+      "start": true
+    },
+    {
+      "t": 94294,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 96595,
+      "kind": "ai",
+      "name": "para 0",
+      "start": true
+    },
+    {
+      "t": 97974,
+      "kind": "worker",
+      "name": "GET /timing-article?s3=1&paras=2&chars=120"
+    },
+    {
+      "t": 98060,
+      "kind": "phase",
+      "name": "article window document"
+    },
+    {
+      "t": 98117,
+      "kind": "worker",
+      "name": "GET /me"
+    },
+    {
+      "t": 98117,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 98118,
+      "kind": "worker",
+      "name": "GET /vocabulary/books"
+    },
+    {
+      "t": 98246,
+      "kind": "worker",
+      "name": "GET /snapshot"
+    },
+    {
+      "t": 98371,
+      "kind": "worker",
+      "name": "GET /ai-catalog"
+    },
+    {
+      "t": 98372,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    },
+    {
+      "t": 98499,
+      "kind": "worker",
+      "name": "GET /vocabulary/books?sourceUrl=http%3A%2F%2F127.0.0.1%3A55151%2Ftiming-article%3Fs3%3D1%26paras%3D2%26chars%3D120"
+    },
+    {
+      "t": 98624,
+      "kind": "worker",
+      "name": "POST /vocabulary/page-link"
+    },
+    {
+      "t": 99114,
+      "kind": "worker",
+      "name": "GET /ai-credentials"
+    }
+  ],
+  "dbNote": "webart_17ed17db4613be1914aa6b6634b4619ddff1a54cc5f21b81"
+}

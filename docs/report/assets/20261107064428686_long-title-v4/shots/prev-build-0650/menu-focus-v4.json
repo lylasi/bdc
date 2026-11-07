@@ -1,0 +1,245 @@
+{
+  "finishedAt": "2026-11-06T22:50:48.819Z",
+  "results": [
+    {
+      "locale": "zh-CN",
+      "width": 1024,
+      "mode": "menu",
+      "pageErrors": [],
+      "findings": [],
+      "initial": {
+        "chipsVisible": false,
+        "moreVisible": true,
+        "detailsHidden": false
+      },
+      "menuOpen": {
+        "hidden": false,
+        "ariaExpanded": "true",
+        "items": 5,
+        "rect": {
+          "x": 809,
+          "y": 211.9,
+          "w": 188,
+          "h": 243,
+          "bottom": 454.9
+        },
+        "insideViewport": true,
+        "band": {
+          "top": 57,
+          "bottom": 900,
+          "height": 843
+        },
+        "inBand": true,
+        "maxHeight": "680.109px",
+        "bars": {
+          "appBar": {
+            "position": "sticky",
+            "top": 0,
+            "bottom": 57,
+            "width": 1024,
+            "role": "top"
+          },
+          "appNav": {
+            "position": "sticky",
+            "top": 57,
+            "bottom": 901,
+            "width": 244,
+            "innerWidth": 1024,
+            "role": "ignored(sidebar)"
+          }
+        },
+        "wantedByV4": [
+          {
+            "name": "app-bar",
+            "width": 1024,
+            "fullWidthOk": true,
+            "used": true
+          },
+          {
+            "name": "app-nav",
+            "width": 244,
+            "fullWidthOk": false,
+            "used": false
+          }
+        ]
+      },
+      "editFocus": "action-chip word-panel-more-btn",
+      "edit": {
+        "modalOpen": true,
+        "modalTitle": "编辑单词本",
+        "menuClosed": true
+      },
+      "editAfterClose": {
+        "tag": "BUTTON",
+        "id": "word-panel-more-btn",
+        "cls": "action-chip word-panel-more-btn",
+        "ariaExpanded": "false",
+        "menuHidden": true,
+        "bodyHasFocus": false
+      },
+      "merge": {
+        "modalOpen": true,
+        "modalTitle": "合并单词本"
+      },
+      "mergeAfterClose": {
+        "tag": "BUTTON",
+        "id": "word-panel-more-btn",
+        "cls": "action-chip word-panel-more-btn",
+        "ariaExpanded": "false",
+        "bodyHasFocus": false
+      }
+    },
+    {
+      "locale": "zh-CN",
+      "width": 1440,
+      "mode": "chips",
+      "pageErrors": [],
+      "findings": [],
+      "initial": {
+        "chipsVisible": true,
+        "moreVisible": false,
+        "detailsHidden": false
+      },
+      "edit": {
+        "modalOpen": true,
+        "modalTitle": "编辑单词本"
+      },
+      "editAfterClose": {
+        "tag": "BUTTON",
+        "id": "edit-vocab-book-btn",
+        "cls": "action-chip",
+        "bodyHasFocus": false
+      },
+      "merge": {
+        "modalOpen": true,
+        "modalTitle": "合并单词本"
+      },
+      "mergeAfterClose": {
+        "tag": "BUTTON",
+        "id": "merge-vocab-books-btn",
+        "cls": "action-chip",
+        "bodyHasFocus": false
+      }
+    },
+    {
+      "locale": "zh-HK",
+      "width": 1024,
+      "mode": "menu",
+      "pageErrors": [],
+      "findings": [],
+      "initial": {
+        "chipsVisible": false,
+        "moreVisible": true,
+        "detailsHidden": false
+      },
+      "menuOpen": {
+        "hidden": false,
+        "ariaExpanded": "true",
+        "items": 5,
+        "rect": {
+          "x": 809,
+          "y": 211.9,
+          "w": 188,
+          "h": 243,
+          "bottom": 454.9
+        },
+        "insideViewport": true,
+        "band": {
+          "top": 57,
+          "bottom": 900,
+          "height": 843
+        },
+        "inBand": true,
+        "maxHeight": "680.109px",
+        "bars": {
+          "appBar": {
+            "position": "sticky",
+            "top": 0,
+            "bottom": 57,
+            "width": 1024,
+            "role": "top"
+          },
+          "appNav": {
+            "position": "sticky",
+            "top": 57,
+            "bottom": 901,
+            "width": 244,
+            "innerWidth": 1024,
+            "role": "ignored(sidebar)"
+          }
+        },
+        "wantedByV4": [
+          {
+            "name": "app-bar",
+            "width": 1024,
+            "fullWidthOk": true,
+            "used": true
+          },
+          {
+            "name": "app-nav",
+            "width": 244,
+            "fullWidthOk": false,
+            "used": false
+          }
+        ]
+      },
+      "editFocus": "action-chip word-panel-more-btn",
+      "edit": {
+        "modalOpen": true,
+        "modalTitle": "編輯生字簿",
+        "menuClosed": true
+      },
+      "editAfterClose": {
+        "tag": "BUTTON",
+        "id": "word-panel-more-btn",
+        "cls": "action-chip word-panel-more-btn",
+        "ariaExpanded": "false",
+        "menuHidden": true,
+        "bodyHasFocus": false
+      },
+      "merge": {
+        "modalOpen": true,
+        "modalTitle": "合併生字簿"
+      },
+      "mergeAfterClose": {
+        "tag": "BUTTON",
+        "id": "word-panel-more-btn",
+        "cls": "action-chip word-panel-more-btn",
+        "ariaExpanded": "false",
+        "bodyHasFocus": false
+      }
+    },
+    {
+      "locale": "zh-HK",
+      "width": 1440,
+      "mode": "chips",
+      "pageErrors": [],
+      "findings": [],
+      "initial": {
+        "chipsVisible": true,
+        "moreVisible": false,
+        "detailsHidden": false
+      },
+      "edit": {
+        "modalOpen": true,
+        "modalTitle": "編輯生字簿"
+      },
+      "editAfterClose": {
+        "tag": "BUTTON",
+        "id": "edit-vocab-book-btn",
+        "cls": "action-chip",
+        "bodyHasFocus": false
+      },
+      "merge": {
+        "modalOpen": true,
+        "modalTitle": "合併生字簿"
+      },
+      "mergeAfterClose": {
+        "tag": "BUTTON",
+        "id": "merge-vocab-books-btn",
+        "cls": "action-chip",
+        "bodyHasFocus": false
+      }
+    }
+  ]
+}

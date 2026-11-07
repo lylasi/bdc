@@ -13,7 +13,8 @@
 //   5. 網頁世界讀不到 chrome.storage（TRUSTED_CONTEXTS），也沒有 token／AI Key
 //   6. 待傳 UI（F1 回歸）：保存失敗後預覽鎖定；重開面板後再由本頁擷取必須「從待傳還原原稿並鎖定」，
 //      不可產生第二份可編輯新稿；只能由待傳列重試／取消；雲端保留第一次正文、不重跑 AI、不重建文章。
-//      另驗證「本頁沒有待傳但雲端已有文章」時直接顯示既有文章入口（GET ?sourceUrl → page-link）。
+//      另驗證「本頁沒有待傳但雲端已有文章」時直接顯示既有文章入口（唯讀 GET ?sourceUrl；
+//      只有明確「在 BDC 打開」才補 page-link）。
 //   7. 登出／帳戶切換：導航到新 query URL 取得真新頁預覽，再驗證取消 AI、清預覽、殘留內容與跨帳戶隔離
 //
 // 所有帳號與資料由測試自建；不連正式 Worker、不讀私有設定。輸出寫到 docs/report/assets/<時間戳>_inline-security/。
@@ -126,6 +127,15 @@ async function articleIds(env) {
         .all().map((row) => row.id);
 }
 
+async function articleDbId(env) {
+    return env.db.prepare("SELECT id FROM articles WHERE owner_user_id='alice' AND deleted_at IS NULL ORDER BY created_at LIMIT 1").get()?.id || '';
+}
+
+async function pageBooks(env) {
+    return env.db.prepare("SELECT data_json FROM reading_entities WHERE owner_user_id='alice' AND entity_type='vocabularyBook' AND deleted_at IS NULL")
+        .all().map((row) => { try { return JSON.parse(row.data_json || '{}'); } catch (_) { return {}; } });
+}
+
 /**
  * 「伺服器已套用，但回應遺失」：測試端先把同一個請求真的送進 Worker（等它寫完），再讓瀏覽器看到 503。
  * 不用 route.fetch()：它的完成時機在本輪曾出現 1 次時序差，讓「伺服器其實已建立」的斷言偶發失敗；
@@ -169,6 +179,18 @@ async function closeSettings(scope) {
 }
 async function openAccount(scope) {
     if (!(await scope.locator('#ext-account-details').evaluate((node) => node.open))) await scope.locator('#ext-account-summary').click();
+}
+// 0.6.1 起詞書下拉、重整與「建立本頁詞書／新詞書」都在 #ext-book-settings 開啟的原生 dialog；
+// 舊版「更多」只展開浮窗，不會顯示這些按鈕。
+async function openBookDialog(scope) {
+    const dialog = scope.locator('#ext-book-dialog');
+    const opened = () => dialog.evaluate((node) => node.open).catch(() => false);
+    if (await opened()) return;
+    await scope.waitForFunction(() => !document.querySelector('dialog[open]')
+        && !document.body.classList.contains('ext-modal-open'), null, { timeout: 5000 }).catch(() => {});
+    await scope.locator('#ext-book-settings').click();
+    if (!(await waitFor(opened, { timeout: 3000 }))) await scope.locator('#ext-book-settings').click();
+    if (!(await waitFor(opened, { timeout: 5000 }))) throw new Error('book dialog did not open');
 }
 async function connect(popup, base, env, token) {
     await openSettings(popup);
@@ -448,11 +470,14 @@ async function connect(popup, base, env, token) {
         check('重開面板後待傳仍在（重試失敗保留）', (await pendingCount(workspace)) === 1, await pendingKeys(workspace));
         check('重試失敗不會重跑 AI', env.state.aiCalls === aiAfterSave, { aiAfterSave, aiCalls: env.state.aiCalls });
 
-        // F1：重開面板後再按「擷取本頁文章」時，必須從待傳還原原稿並鎖定，
+        // F1：重開面板（或再按「擷取本頁文章」）時，必須從待傳還原原稿並鎖定，
         //     而不是產生第二份可編輯的新稿（那樣的編輯會被「沿用」靜默丟棄）。
+        // 現在同步待傳時就會自動還原，擷取按鈕因此已停用；只有尚未還原時才需要再按一次。
         const markRestore = requestLog.length;
         await article.bringToFront();
-        await workspace.locator('#ext-article-extract').click();
+        const restoredBySync = await waitFor(async () => workspace.evaluate(() => !document.querySelector('#ext-article-preview').hidden
+            && document.querySelector('#ext-article-extract').disabled), { timeout: 3000 });
+        if (!restoredBySync) await workspace.locator('#ext-article-extract').click();
         await workspace.locator('#ext-article-preview').waitFor({ state: 'visible', timeout: 60000 });
         await workspace.waitForFunction(() => !document.querySelector('#ext-workspace-notice').hidden, null, { timeout: 30000 });
         const lockState = await workspace.evaluate(() => ({
@@ -463,15 +488,19 @@ async function connect(popup, base, env, token) {
             bodyDisabled: document.querySelector('#ext-article-body').disabled,
             analyzeDisabled: document.querySelector('#ext-article-analyze').disabled,
             saveDisabled: document.querySelector('#ext-article-save').disabled,
+            saveText: document.querySelector('#ext-article-save').textContent,
             extractDisabled: document.querySelector('#ext-article-extract').disabled,
             pendingHidden: document.querySelector('#ext-workspace-pending').hidden,
             pendingOpen: document.querySelector('#ext-workspace-pending').open,
             pendingItems: document.querySelectorAll('#ext-workspace-pending-list li').length,
             notice: document.querySelector('#ext-workspace-notice').textContent
         }));
-        debug.push({ step: 'after-pending-restore', lockState, aiCalls: env.state.aiCalls, requests: requestsSince(markRestore) });
-        check('F1：重開面板後仍有待傳時，預覽必須鎖定（標題／正文／分析／儲存都不可用）',
-            lockState.titleDisabled && lockState.bodyDisabled && lockState.analyzeDisabled && lockState.saveDisabled && lockState.extractDisabled, lockState);
+        debug.push({ step: 'after-pending-restore', restoredBySync, lockState, aiCalls: env.state.aiCalls, requests: requestsSince(markRestore) });
+        // 現行版本待傳期間只凍結內容與擷取；主按鈕改為「重試匯入」，
+        // 只重送原 payload，不重跑 AI，也不新增第二份待傳。
+        check('F1：待傳期間標題／正文／分析／擷取凍結，主按鈕可重試匯入',
+            lockState.titleDisabled && lockState.bodyDisabled && lockState.analyzeDisabled && lockState.extractDisabled
+            && lockState.saveDisabled === false && /重试导入|重試匯入/.test(lockState.saveText), lockState);
         check('F1：鎖定時顯示待傳提示（pagePendingLocked 實際可達）', /待传队列/.test(lockState.notice), { notice: lockState.notice });
         check('F1：待傳清單自動展開且仍只有一筆',
             lockState.pendingHidden === false && lockState.pendingOpen === true && lockState.pendingItems === 1, lockState);
@@ -490,6 +519,7 @@ async function connect(popup, base, env, token) {
         await applyThenFail(context, env, ALICE, '/vocabulary/books');
         const booksBeforeCancel = await bookCount(env);
         // 文章 popup 只顯示文章區；建立本頁詞書仍在原網頁的 inline 小窗（已展開）。
+        await openBookDialog(panel);
         await panel.locator('#ext-book-page').click();
         await workspace.waitForFunction(() => document.querySelectorAll('#ext-workspace-pending-list li').length === 2, null, { timeout: 30000 });
         check('建立本頁詞書的回應遺失時也會留下待傳', (await pendingCount(workspace)) === 2, await pendingKeys(workspace));
@@ -519,9 +549,13 @@ async function connect(popup, base, env, token) {
         check('重試沒有再送 POST /articles', writesSince(markRetry, '/articles') === 0, requestsSince(markRetry));
         check('重試沒有重跑 AI', env.state.aiCalls === aiBeforeRetry && aiRequestsSince(markRetry) === 0,
             { aiBeforeRetry, aiCalls: env.state.aiCalls, aiRequests: aiRequestsSince(markRetry) });
-        check('重試走的是 GET ?sourceUrl 與 page-link 補關聯',
+        // 由待傳列重試是「已確認的送出」：先 GET ?sourceUrl 沿用既有文章，成功後才補 page-link。
+        check('重試先 GET ?sourceUrl 沿用既有文章，確認送出成功後才補 page-link',
             requestsSince(markRetry).some((entry) => entry.method === 'GET' && entry.path.startsWith('/vocabulary/books?sourceUrl='))
             && writesSince(markRetry, '/vocabulary/page-link') === 1, requestsSince(markRetry));
+        const dbArticleId = await articleDbId(env);
+        const linkedBook = (await pageBooks(env)).find((book) => book.articleId === dbArticleId);
+        check('確認送出後由 Worker 建立頁書關聯（用戶端不必補 page-link）', !!linkedBook, await pageBooks(env));
         check('重試成功時介面有提示（沿用既有文章，不是靜默成功）', /沿用/.test(await noticeText(workspace)), { notice: await noticeText(workspace) });
 
         // 本頁已無待傳、雲端已有文章：直接顯示既有文章的開啟入口，不再產生「可編輯但存不進去」的預覽。
@@ -533,7 +567,7 @@ async function connect(popup, base, env, token) {
         for (let attempt = 0; attempt < 100; attempt += 1) {
             const seen = requestsSince(markExisting);
             if (seen.some((entry) => entry.method === 'GET' && entry.path.startsWith('/vocabulary/books?sourceUrl='))
-                && writesSince(markExisting, '/vocabulary/page-link') === 1
+                && writesSince(markExisting, '/vocabulary/page-link') === 0
                 && await workspace.evaluate(() => !document.querySelector('#ext-article-extract').disabled)) break;
             await sleep(100);
         }
@@ -547,13 +581,26 @@ async function connect(popup, base, env, token) {
         check('雲端已有文章時直接顯示既有文章入口（不再產生可編輯預覽）',
             entryState.previewHidden === true && entryState.openHidden === false, entryState);
         check('既有文章入口會說明「已沿用原記錄」', /沿用/.test(entryState.notice), { notice: entryState.notice });
-        check('既有文章入口先查 GET ?sourceUrl 再用 page-link 補關聯',
+        check('既有文章入口只查 GET ?sourceUrl（唯讀沿用），不寫 page-link',
             requestsSince(markExisting).some((entry) => entry.method === 'GET' && entry.path.startsWith('/vocabulary/books?sourceUrl='))
-            && writesSince(markExisting, '/vocabulary/page-link') === 1, requestsSince(markExisting));
+            && writesSince(markExisting, '/vocabulary/page-link') === 0, requestsSince(markExisting));
         check('既有文章入口不跑 AI、不建立文章、不改內容',
             env.state.aiCalls === aiBeforeExisting && aiRequestsSince(markExisting) === 0
             && writesSince(markExisting, '/articles') === 0 && (await articleRowCount(env)) === articlesBefore + 1
             && (await articleBody(env)).includes(editedBody));
+
+        // 只有明確按「在 BDC 打開」才補 page-link；提取既有文章本身保持唯讀。
+        await popup.evaluate((appBase) => chrome.storage.local.set({ bdc_extension_app_url: appBase }), env.appBase);
+        const markOpen = requestLog.length;
+        const aiBeforeOpen = env.state.aiCalls;
+        await workspace.locator('#ext-article-open').click();
+        await waitFor(() => writesSince(markOpen, '/vocabulary/page-link') === 1, { timeout: 15000 });
+        const openedApp = await waitFor(() => workspace.url().startsWith(env.appBase) ? workspace.url() : false, { timeout: 15000 });
+        check('明確「在 BDC 打開」才補 page-link 關聯', writesSince(markOpen, '/vocabulary/page-link') === 1, requestsSince(markOpen));
+        check('開啟既有文章不重送文章、不重跑 AI',
+            writesSince(markOpen, '/articles') === 0 && env.state.aiCalls === aiBeforeOpen, requestsSince(markOpen));
+        check('開啟既有文章後導向 BDC 文章路由', !!openedApp, { url: workspace.url() });
+        workspace = await reopenWorkspace();
 
         // 觀察（只記錄、不列入需求斷言）：另一個分頁／外部寫入的「同頁待傳」出現時，
         // 目前會不會覆蓋使用者正在編輯、尚未保存的預覽？屬於 F1 的鏡像情境，留給產品決策。
@@ -599,6 +646,7 @@ async function connect(popup, base, env, token) {
         const booksBeforeAutoRetry = await bookCount(env);
         // 文章 popup 不顯示詞書表單；自訂詞書從（重新開啟的）inline 小窗建立，待傳仍是全域。
         const bookPanel = await openInlinePanel();
+        await openBookDialog(bookPanel);
         await bookPanel.locator('#ext-book-new').click();
         await bookPanel.locator('#ext-book-link-page').uncheck();
         await bookPanel.locator('#ext-book-name').fill('自動重試用的詞書');

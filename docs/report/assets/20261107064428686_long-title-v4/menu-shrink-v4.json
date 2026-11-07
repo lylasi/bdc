@@ -1,0 +1,2942 @@
+{
+  "finishedAt": "2026-11-06T22:58:46.317Z",
+  "build": [
+    "a58173e033c8ab815c002f37a34646ab",
+    "ea160feff903259bc322f117b87a9539",
+    "97fe37fc361cf5653a73ffca1bfc5080"
+  ],
+  "results": [
+    {
+      "locale": "zh-CN",
+      "kind": "empty",
+      "stages": [
+        {
+          "step": "open-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 597.8,
+              "bottom": 641.8
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "openAttempted": true
+        },
+        {
+          "step": "resize-320x400",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 337,
+            "height": 280
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 337,
+              "bottom": 400,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": false
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-320x260",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 201.8,
+            "height": 144.8
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 201.8,
+              "bottom": 260,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": false
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-390x900",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 390,
+          "innerHeight": 900,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 837,
+            "height": 780
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 390,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 837,
+              "bottom": 900,
+              "width": 390,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-320x720",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "reopen-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 597.8,
+              "bottom": 641.8
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "wasClosed": true,
+          "openAttempted": true
+        },
+        {
+          "step": "page-scroll(-120)",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 597.8,
+              "bottom": 641.8
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "allowClose": true
+        },
+        {
+          "step": "page-scroll(200)",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 63,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 402.8,
+            "bottom": 440.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "allowClose": true
+        },
+        {
+          "step": "page-scroll(400)",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 63,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 402.8,
+            "bottom": 440.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "allowClose": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "scrollRange": {
+        "scrollY": 63,
+        "maxScroll": 63
+      }
+    },
+    {
+      "locale": "zh-CN",
+      "kind": "long",
+      "stages": [
+        {
+          "step": "open-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "openAttempted": true
+        },
+        {
+          "step": "resize-320x400",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 337,
+            "height": 280
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 337,
+              "bottom": 400,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": false
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-320x260",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 201.8,
+            "height": 144.8
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 201.8,
+              "bottom": 260,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": false
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-390x900",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 390,
+          "innerHeight": 900,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 837,
+            "height": 780
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 390,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 837,
+              "bottom": 900,
+              "width": 390,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-320x720",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "reopen-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "wasClosed": true,
+          "openAttempted": true
+        },
+        {
+          "step": "page-scroll(-120)",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "allowClose": true
+        },
+        {
+          "step": "page-scroll(200)",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "allowClose": true
+        },
+        {
+          "step": "page-scroll(400)",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "allowClose": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "scrollRange": {
+        "scrollY": 0,
+        "maxScroll": 0
+      }
+    },
+    {
+      "locale": "zh-HK",
+      "kind": "empty",
+      "stages": [
+        {
+          "step": "open-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 597.8,
+              "bottom": 641.8
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "openAttempted": true
+        },
+        {
+          "step": "resize-320x400",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 337,
+            "height": 280
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 337,
+              "bottom": 400,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": false
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-320x260",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 201.8,
+            "height": 144.8
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 201.8,
+              "bottom": 260,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": false
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-390x900",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 390,
+          "innerHeight": 900,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 837,
+            "height": 780
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 390,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 837,
+              "bottom": 900,
+              "width": 390,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-320x720",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "reopen-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 597.8,
+              "bottom": 641.8
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "wasClosed": true,
+          "openAttempted": true
+        },
+        {
+          "step": "page-scroll(-120)",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 597.8,
+              "bottom": 641.8
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "allowClose": true
+        },
+        {
+          "step": "page-scroll(200)",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 63,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 402.8,
+            "bottom": 440.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "allowClose": true
+        },
+        {
+          "step": "page-scroll(400)",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 63,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 402.8,
+            "bottom": 440.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "141.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "allowClose": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "scrollRange": {
+        "scrollY": 63,
+        "maxScroll": 63
+      }
+    },
+    {
+      "locale": "zh-HK",
+      "kind": "long",
+      "stages": [
+        {
+          "step": "open-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "openAttempted": true
+        },
+        {
+          "step": "resize-320x400",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 337,
+            "height": 280
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 337,
+              "bottom": 400,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": false
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-320x260",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 201.8,
+            "height": 144.8
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 201.8,
+              "bottom": 260,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": false
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-390x900",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 390,
+          "innerHeight": 900,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 837,
+            "height": 780
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 390,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 837,
+              "bottom": 900,
+              "width": 390,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "resize-320x720",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5
+        },
+        {
+          "step": "reopen-320x720",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "wasClosed": true,
+          "openAttempted": true
+        },
+        {
+          "step": "page-scroll(-120)",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "allowClose": true
+        },
+        {
+          "step": "page-scroll(200)",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "allowClose": true
+        },
+        {
+          "step": "page-scroll(400)",
+          "found": true,
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "innerWidth": 320,
+          "innerHeight": 720,
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657,
+            "height": 600
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 657,
+              "bottom": 720,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 435.5,
+            "bottom": 649,
+            "h": 213.5,
+            "w": 188
+          },
+          "painted": true,
+          "inBand": true,
+          "inlineTop": "64px",
+          "inlineMaxHeight": "213.547px",
+          "scrollable": true,
+          "hitAtMenuCenter": "BUTTON.menu-item",
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 598.5,
+              "bottom": 642.5
+            },
+            "insideMenu": true,
+            "hitIsSelf": true,
+            "hitTag": "BUTTON.menu-item danger"
+          },
+          "blockedItems": [],
+          "itemsInBand": 5,
+          "itemCount": 5,
+          "allowClose": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "scrollRange": {
+        "scrollY": 0,
+        "maxScroll": 0
+      }
+    },
+    {
+      "locale": "zh-CN",
+      "kind": "empty",
+      "viewport": "320x400",
+      "stages": [
+        {
+          "step": "open",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "scrollY": 285,
+          "band": {
+            "top": 57,
+            "bottom": 337,
+            "height": 280
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 337,
+              "bottom": 400,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 180.8,
+            "bottom": 218.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "106.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "openAttempted": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "outcome": "closed-on-open(harness-autoscroll: page.click 自動捲動→scroll→close；人類操作順序見 audit-menu-open-320x400-v4.cjs)"
+    },
+    {
+      "locale": "zh-CN",
+      "kind": "empty",
+      "viewport": "320x260",
+      "stages": [
+        {
+          "step": "open",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "scrollY": 355,
+          "band": {
+            "top": 57,
+            "bottom": 201.8,
+            "height": 144.8
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 201.8,
+              "bottom": 260,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 110.8,
+            "bottom": 148.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "-33.8438px",
+          "inlineMaxHeight": "41.8438px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "openAttempted": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "outcome": "closed-on-open(harness-autoscroll: page.click 自動捲動→scroll→close；人類操作順序見 audit-menu-open-320x400-v4.cjs)"
+    },
+    {
+      "locale": "zh-CN",
+      "kind": "long",
+      "viewport": "320x400",
+      "stages": [
+        {
+          "step": "open",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "scrollY": 202,
+          "band": {
+            "top": 57,
+            "bottom": 337,
+            "height": 280
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 337,
+              "bottom": 400,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 181.5,
+            "bottom": 219.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "-104.453px",
+          "inlineMaxHeight": "112.453px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "openAttempted": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "outcome": "closed-on-open(harness-autoscroll: page.click 自動捲動→scroll→close；人類操作順序見 audit-menu-open-320x400-v4.cjs)"
+    },
+    {
+      "locale": "zh-CN",
+      "kind": "long",
+      "viewport": "320x260",
+      "stages": [
+        {
+          "step": "open",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "scrollY": 272,
+          "band": {
+            "top": 57,
+            "bottom": 201.8,
+            "height": 144.8
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 201.8,
+              "bottom": 260,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 111.5,
+            "bottom": 149.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "-34.4531px",
+          "inlineMaxHeight": "42.4531px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "删除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "openAttempted": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "outcome": "closed-on-open(harness-autoscroll: page.click 自動捲動→scroll→close；人類操作順序見 audit-menu-open-320x400-v4.cjs)"
+    },
+    {
+      "locale": "zh-HK",
+      "kind": "empty",
+      "viewport": "320x400",
+      "stages": [
+        {
+          "step": "open",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "scrollY": 285,
+          "band": {
+            "top": 57,
+            "bottom": 337,
+            "height": 280
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 337,
+              "bottom": 400,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 180.8,
+            "bottom": 218.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "54px",
+          "inlineMaxHeight": "106.156px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "openAttempted": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "outcome": "closed-on-open(harness-autoscroll: page.click 自動捲動→scroll→close；人類操作順序見 audit-menu-open-320x400-v4.cjs)"
+    },
+    {
+      "locale": "zh-HK",
+      "kind": "empty",
+      "viewport": "320x260",
+      "stages": [
+        {
+          "step": "open",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "scrollY": 355,
+          "band": {
+            "top": 57,
+            "bottom": 201.8,
+            "height": 144.8
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 201.8,
+              "bottom": 260,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 110.8,
+            "bottom": 148.8,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "-33.8438px",
+          "inlineMaxHeight": "41.8438px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "openAttempted": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "outcome": "closed-on-open(harness-autoscroll: page.click 自動捲動→scroll→close；人類操作順序見 audit-menu-open-320x400-v4.cjs)"
+    },
+    {
+      "locale": "zh-HK",
+      "kind": "long",
+      "viewport": "320x400",
+      "stages": [
+        {
+          "step": "open",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 400,
+          "scrollY": 202,
+          "band": {
+            "top": 57,
+            "bottom": 337,
+            "height": 280
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 337,
+              "bottom": 400,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 181.5,
+            "bottom": 219.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "-104.453px",
+          "inlineMaxHeight": "112.453px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "openAttempted": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "outcome": "closed-on-open(harness-autoscroll: page.click 自動捲動→scroll→close；人類操作順序見 audit-menu-open-320x400-v4.cjs)"
+    },
+    {
+      "locale": "zh-HK",
+      "kind": "long",
+      "viewport": "320x260",
+      "stages": [
+        {
+          "step": "open",
+          "found": true,
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "innerWidth": 320,
+          "innerHeight": 260,
+          "scrollY": 272,
+          "band": {
+            "top": 57,
+            "bottom": 201.8,
+            "height": 144.8
+          },
+          "bars": [
+            {
+              "el": "app-bar",
+              "position": "sticky",
+              "top": 0,
+              "bottom": 57,
+              "width": 320,
+              "role": "top"
+            },
+            {
+              "el": "app-nav",
+              "position": "fixed",
+              "top": 201.8,
+              "bottom": 260,
+              "width": 320,
+              "role": "bottom"
+            }
+          ],
+          "trigger": {
+            "top": 111.5,
+            "bottom": 149.5,
+            "inBand": true
+          },
+          "rect": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "w": 0
+          },
+          "painted": false,
+          "inBand": false,
+          "inlineTop": "-34.4531px",
+          "inlineMaxHeight": "42.4531px",
+          "scrollable": false,
+          "hitAtMenuCenter": null,
+          "lastItem": {
+            "text": "刪除",
+            "rect": {
+              "y": 0,
+              "bottom": 0
+            },
+            "insideMenu": true,
+            "hitIsSelf": false,
+            "hitTag": "(off-viewport)"
+          },
+          "blockedItems": [],
+          "itemsInBand": 0,
+          "itemCount": 5,
+          "openAttempted": true
+        }
+      ],
+      "findings": [],
+      "pageErrors": [],
+      "outcome": "closed-on-open(harness-autoscroll: page.click 自動捲動→scroll→close；人類操作順序見 audit-menu-open-320x400-v4.cjs)"
+    }
+  ]
+}

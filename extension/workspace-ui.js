@@ -12,10 +12,12 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     let preview = null;
     let currentJob = null;
     let busy = false;
+    let articleStage = '';
     let controller = null;
     let epoch = 0;
     let message = null;
     let savedArticleId = '';
+    let pendingLinkSource = '';
     let ready = false;
     const listeners = new Set();
     const hasDraft = () => (!!preview && !currentJob) || (!dom.bookForm.hidden && !!(dom.bookName.value.trim() || dom.bookMakeDefault.checked || !dom.bookLinkPage.checked));
@@ -23,7 +25,8 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
         capture_server_update_required: 'extension.captureServerUpdateRequired', unauthorized: 'extension.captureLoginRequired', capture_invalid_record: 'extension.captureInvalidPending', capture_storage_failed: 'extension.captureStorageFailed',
         article_too_large: 'extension.pageArticleTooLarge', article_quota_exceeded: 'extension.pageArticleQuota', article_count_exceeded: 'extension.pageArticleQuota',
         page_extraction_truncated: 'extension.pageExtractionTruncated', invalid_article: 'extension.pageArticleEmpty',
-        page_analysis_failed: 'extension.pageAnalysisFailed', page_unavailable: 'extension.inlineUnavailable', stale_session: 'extension.captureLoginRequired',
+        page_analysis_failed: 'extension.pageAnalysisFailed', article_context_changed: 'extension.pageAnalysisSettingsChanged',
+        page_unavailable: 'extension.inlineUnavailable', stale_session: 'extension.captureLoginRequired',
         page_pending_conflict: 'extension.pagePendingConflict',
         capture_invalid_input: 'extension.captureInvalidInput', capture_outbox_full: 'extension.captureOutboxFull' };
     function render() {
@@ -34,11 +37,11 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
         dom.createPageBook.textContent = t(pageBook ? 'extension.bookUsePage' : 'extension.bookCreatePage');
         dom.defaultBook.disabled ||= !state.selectedBookId || state.selectedBookId === state.defaultBookId;
         dom.defaultBook.textContent = t(state.selectedBookId && state.selectedBookId === state.defaultBookId ? 'extension.bookIsDefault' : 'extension.bookSetDefault');
-        dom.articleSave.disabled = busy || !ready || !preview || !!currentJob;
-        dom.articleSave.textContent = t(dom.articleAnalyze.checked ? 'extension.pageArticleSave' : 'extension.pageArticleSaveOnly');
+        dom.articleSave.disabled = busy || !ready || !preview;
+        dom.articleSave.textContent = t(currentJob ? 'extension.pageArticleRetry' : dom.articleAnalyze.checked ? 'extension.pageArticleSave' : 'extension.pageArticleSaveOnly');
         dom.bookSubmit.disabled = busy || !ready || !state.loggedIn;
         dom.articleExtract.disabled ||= !!currentJob;
-        dom.articleCancel.hidden = !busy;
+        dom.articleCancel.hidden = !busy || articleStage === 'saving';
         for (const input of [dom.articleTitle, dom.articleBody, dom.articleAnalyze]) input.disabled = busy || !!currentJob;
         dom.workspaceNotice.hidden = !message;
         dom.workspaceNotice.textContent = message ? t(message.key, message.params || {}) : '';
@@ -49,6 +52,8 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     function notice(key, params, error = false) { message = { key, params, error }; render(); }
     function showError(error) {
         if (error?.name === 'AbortError') { notice('extension.pageStopped'); return; }
+        if (error?.failedIndexes?.length) { notice('extension.pageAnalysisPartialFailed', { count: error.failedIndexes.length }, true); return; }
+        if (error?.causeCode && getAIErrorTranslationKey(error.causeCode)) { notice(getAIErrorTranslationKey(error.causeCode), {}, true); return; }
         notice(errorKeys[error?.code] || getAIErrorTranslationKey(error?.code) || 'extension.workspaceFailed', {}, true);
     }
     async function readPage() {
@@ -108,10 +113,11 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
             dom.bookForm.hidden = true;
         } else {
             savedArticleId = receipt.articleId;
+            pendingLinkSource = '';
             notice(receipt.reused ? 'extension.pageArticleReused' : 'extension.pageArticleSaved');
             preview = null; currentJob = null;
             dom.articlePreview.hidden = true;
-            await captureUI.refreshBooks();
+            captureUI.refreshBooks().catch(() => {});
         }
         render();
     }
@@ -175,8 +181,10 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     }
     async function extract() {
         if (busy || !ready || !state.loggedIn) return;
+        if (preview && !currentJob && (dom.articleTitle.value.trim() !== String(preview.title || '').trim()
+            || dom.articleBody.value.trim() !== String(preview.body || '').trim()) && !window.confirm(t('extension.pageReplacePreviewConfirm'))) return;
         const session = captureAuthSession(); const version = epoch;
-        busy = true; controller = new AbortController(); notice('extension.pageExtracting');
+        busy = true; articleStage = 'extracting'; controller = new AbortController(); notice('extension.pageExtracting');
         const signal = controller.signal;
         try {
             const page = await readPage();
@@ -200,6 +208,7 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
             signal.throwIfAborted();
             if (existingId) {
                 savedArticleId = existingId; preview = null; dom.articlePreview.hidden = true;
+                pendingLinkSource = page.pageUrl;
                 captureUI.setSource({ pageUrl: page.pageUrl, pageTitle: page.pageTitle });
                 notice('extension.pageArticleReused'); return;
             }
@@ -208,16 +217,19 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
             if (!isAuthSessionCurrent(session) || version !== epoch) return;
             captureUI.setSource({ pageUrl: page.pageUrl, pageTitle: page.pageTitle });
             preview = result; currentJob = null; savedArticleId = '';
+            pendingLinkSource = '';
             dom.articleTitle.value = result.title; dom.articleBody.value = result.body;
             dom.articleAnalyze.checked = true;
-            dom.articlePreview.hidden = false; notice(deferredLookup ? 'extension.pagePreviewSyncDeferred' : 'extension.pagePreviewReady');
+            dom.articlePreview.hidden = false;
+            notice(result.cleanupIncomplete ? 'extension.pageExtractionPartial' : deferredLookup ? 'extension.pagePreviewSyncDeferred' : 'extension.pagePreviewReady', { count: result.cleanupIncomplete });
         } catch (error) { if (version === epoch && isAuthSessionCurrent(session)) showError(error); }
-        finally { if (version === epoch) { busy = false; controller = null; render(); } }
+        finally { if (version === epoch) { busy = false; articleStage = ''; controller = null; render(); } }
     }
     async function saveArticle() {
         if (busy || !ready || !state.loggedIn || !preview) return;
         const session = captureAuthSession(); const version = epoch;
-        busy = true; controller = new AbortController(); notice('extension.pageSaving');
+        busy = true; articleStage = !currentJob && dom.articleAnalyze.checked ? 'analyzing' : 'saving';
+        controller = new AbortController(); notice(articleStage === 'analyzing' ? 'extension.pageAnalyzing' : 'extension.pageSaving');
         try {
             const title = dom.articleTitle.value.trim(); const body = dom.articleBody.value.trim();
             if (!title || !body || !pageUrlKey(preview.sourceUrl)) throw Object.assign(new Error('invalid_article'), { code: 'invalid_article' });
@@ -229,13 +241,15 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
             if (!currentJob && dom.articleAnalyze.checked) payload.analysis = await runExtensionArticleTask({ article: payload, analyze: true, signal: controller.signal,
                 onProgress: (current, total) => { if (version === epoch) notice('extension.pageAnalysisProgress', { current, total }); } });
             if (!isAuthSessionCurrent(session) || version !== epoch) return;
+            controller.signal.throwIfAborted();
+            articleStage = 'saving'; notice('extension.pageSaving');
             if (!currentJob) currentJob = await client.enqueue('article', payload, session);
             render();
             const job = currentJob;
             const receipt = await client.send(job, session);
             if (isAuthSessionCurrent(session) && version === epoch) await applyReceipt(job, receipt);
         } catch (error) { if (version === epoch && isAuthSessionCurrent(session)) showError(error); }
-        finally { if (version === epoch) { busy = false; controller = null; render(); await showPending(); } }
+        finally { if (version === epoch) { busy = false; articleStage = ''; controller = null; render(); await showPending(); } }
     }
     captureUI.subscribe((next) => { state = next; render(); });
     dom.createPageBook.addEventListener('click', () => create('page'));
@@ -258,10 +272,19 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     async function openArticle() {
         if (!savedArticleId) return;
         try {
+            if (pendingLinkSource) {
+                const id = await findExistingPageArticle(pendingLinkSource, { link: true });
+                if (!id) throw Object.assign(new Error('capture_target_missing'), { code: 'capture_target_missing' });
+                savedArticleId = id;
+                pendingLinkSource = '';
+            }
             const response = await chrome.runtime.sendMessage({ type: 'BDC_OPEN_SITE', target: 'article', id: savedArticleId,
                 replace: true, ...(ticket ? { ticket } : {}) });
             if (!response?.ok) throw new Error('invalid_url');
-        } catch (_) { notice('extension.pageAppUrlInvalid', {}, true); }
+        } catch (error) {
+            if (error?.code) showError(error);
+            else notice('extension.pageAppUrlInvalid', {}, true);
+        }
     }
     dom.articleOpen.addEventListener('click', openArticle);
     dom.appUrl.addEventListener('change', () => chrome.storage.local.set({ bdc_extension_app_url: dom.appUrl.value.trim() }));
@@ -277,7 +300,7 @@ export function createWorkspaceUI(dom, captureUI, { ticket = '' } = {}) {
     });
     for (const input of [dom.bookName, dom.bookMakeDefault, dom.bookLinkPage]) input.addEventListener('input', render);
     window.addEventListener(AUTH_EVENT, () => {
-        epoch += 1; controller?.abort(); controller = null; busy = false; preview = null; currentJob = null; savedArticleId = '';
+        epoch += 1; controller?.abort(); controller = null; busy = false; articleStage = ''; preview = null; currentJob = null; savedArticleId = ''; pendingLinkSource = '';
         dom.articleTitle.value = ''; dom.articleBody.value = ''; dom.bookName.value = '';
         dom.bookMakeDefault.checked = false; dom.bookLinkPage.checked = true; dom.articleAnalyze.checked = true;
         dom.articlePreview.hidden = true; dom.bookForm.hidden = true; message = null; render();

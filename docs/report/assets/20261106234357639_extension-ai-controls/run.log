@@ -1,0 +1,30 @@
+PASS 首頁查詞表單與 AI 摘要已收進 dialog
+PASS 設定 dialog 可開啟且包含 AI 控件
+PASS 密碼、通行碼及 API Key 欄位遮蔽輸入
+PASS 未登入的帳戶表單展開，AI 控制停用
+PASS 登入後自動收合帳戶表單，帳戶狀態仍可見
+PASS 模型來自帳戶允許清單
+PASS 選擇即時保存但不自行呼叫 AI
+PASS 小窗可用 #ext-inline-edit 打開查詞 dialog
+PASS 小窗內可直接打開設定 dialog 並看到模型與思考選擇
+PASS 網頁單詞請求實際帶選定模型和 high
+PASS 相同選項可命中原有快取
+PASS 思考程度改變會分開快取並傳送 low
+PASS 關閉思考傳送 none
+PASS 跟隨服務端省略 reasoning_effort
+PASS 擴充套件選擇不改寫雲端 AI profile
+PASS 重開頁面仍保留按帳戶保存的選擇
+PASS 重新讀取帳戶 API 不覆蓋擴充套件選擇
+PASS 恢復帳戶設定會移除當前用途的覆寫
+PASS 短語有自己的設定，請求傳送 medium
+PASS 獨立查詞同樣使用選定模型和思考程度
+PASS 文章擷取實際使用所選模型和思考程度
+PASS 段落翻譯實際使用所選模型和思考程度
+PASS zh-CN 動態控制翻譯與窄窗不溢出
+PASS zh-HK 動態控制翻譯與窄窗不溢出
+PASS 換帳戶不沿用前一帳戶的模型與思考程度
+PASS 切回帳戶恢復自己的偏好
+PASS 兩個視窗並行修改同用途的模型和思考均保留
+PASS 兩個視窗並行修改不同用途均保留
+PASS 偏好儲存不含 Token、Key 或 API URL
+PASS 無頁面 JavaScript 例外

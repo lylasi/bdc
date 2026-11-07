@@ -1,0 +1,77 @@
+{
+  "locale": "zh-HK",
+  "browser": "153.0.8010.12",
+  "channel": "chromium",
+  "phases": [
+    {
+      "name": "lookup-loaded",
+      "autofocus": 0,
+      "focused": ""
+    },
+    {
+      "name": "edit-open",
+      "focused": "ext-word-input",
+      "active": true
+    },
+    {
+      "name": "settings-open",
+      "focused": "ext-settings-close"
+    },
+    {
+      "name": "assistant-open",
+      "focused": "ext-assistant-input"
+    },
+    {
+      "name": "assistant-response",
+      "focused": ""
+    }
+  ],
+  "focusLogs": [],
+  "positiveControlLogs": [
+    {
+      "source": "console",
+      "type": "error",
+      "text": "Blocked autofocusing on a <input> element in a cross-origin subframe.",
+      "location": {
+        "url": "",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "source": "security",
+      "level": "error",
+      "text": "Blocked autofocusing on a <input> element in a cross-origin subframe.",
+      "timestamp": 1793981862638.753,
+      "lineNumber": 0,
+      "stackTrace": {
+        "callFrames": [
+          {
+            "functionName": "eval",
+            "scriptId": "212",
+            "url": "",
+            "lineNumber": 0,
+            "columnNumber": 130
+          },
+          {
+            "functionName": "evaluate",
+            "scriptId": "68",
+            "url": "",
+            "lineNumber": 312,
+            "columnNumber": 15
+          },
+          {
+            "functionName": "",
+            "scriptId": "75",
+            "url": "",
+            "lineNumber": 0,
+            "columnNumber": 43
+          }
+        ]
+      }
+    }
+  ],
+  "pageErrors": []
+}

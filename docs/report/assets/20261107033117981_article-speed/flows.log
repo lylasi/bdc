@@ -1,0 +1,39 @@
+
+### 學習模式
+  ok   學習詞書選擇器：{"html":"<div class=\"radio-item-wrapper\"><input type=\"radio\" id=\"learning-book-radio-audit-book\" name=\"learning-book\" value=\"audit-book\" class=\"radio-btn\"><label for=\"learning-book-radio-
+  ok   單詞下拉：{"options":["请选择单词","apple","notebook","running","beautiful","environment"],"value":""}
+  ok   單字詳解：{"word":"选择单词","phonetic":"","meaning":""}
+  ok   下一個：选择单词 -> apple
+  ok   未選取時從第一個開始：第 1 / 5 个
+  ok   上一個停在原地：apple
+  ok   邊界提示：已经是第一个单词
+  ok   連按下一個後停在：environment
+  ok   連按上一個後停在：apple
+  ok   例句區：还没有例句，点击“生成 AI 例句”按钮生成例句。
+  [low] learning :: AI 例句：console error -- 生成例句時出錯: Error: 尚未选择模型
+    at modelError (http://127.0.0.1:51143/modules/ai-models.js?v=b37b774bc1c7:109:17)
+    at resolveAIRequestConfig (http://127.0.0.1:51143/modules/ai-models.js?v=b37b774bc1c7:432:42)
+    at resolv
+  ok   造句回饋：检查失败。
+  [low] learning :: 造句檢查：console error -- 檢查例句時出錯: Error: 尚未选择模型
+    at modelError (http://127.0.0.1:51143/modules/ai-models.js?v=b37b774bc1c7:109:17)
+    at resolveAIRequestConfig (http://127.0.0.1:51143/modules/ai-models.js?v=b37b774bc1c7:432:42)
+    at resolv
+  ok   朗讀：["apple"]
+  ok   重載後語言為 zh-HK
+  ok   zh-HK 下單字：選擇生字
+
+### 文章詳解
+  ok   初始：{"textarea":"","historyCount":"0","historyEntry":true,"historyStatus":"尚未存入阅读记录","sourceBarVisible":false,"analysisHtml":21}
+  ok   文章庫：{"open":true,"count":"30 篇","items":30,"categories":["全部分类","ready reading","R&E"]}
+  ok   載入文章後：{"input":1861,"historyStatus":"已暂存草稿 · 1秒钟前","analysisLen":199,"modalOpen":false}
+  ok   分類數：3
+  ok   分析結果：{"container":3442,"text":"解析失败 失败原因：模型没有返回译文 重试本段 The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet. 分析失败"}
+  ok   空文章送出提示：["请输入要分析的文章！×","请输入要分析的文章！","×"]
+  ok   清空後輸入框長度：0
+  ok   朗讀按鈕 disabled=false
+  ok   朗讀中：{"stopVisible":true,"chunkNav":"none"}
+  ok   閱讀記錄：{"open":true,"title":"阅读记录","rows":1,"hasSearch":true,"body":"最近阅读 最近更新 标题 A→Z 全部来源网页 / 新闻文章库 / 文件图片 OCR粘贴文字 未保存的草稿 2秒钟前 · Unit 1: Let's give a hand 恢复 丢弃 搜索范围：已下载到本机的文章全文 今天 Unit 1: Let's give a hand 7秒钟前 · 文章库 "}
+
+=== 共 2 項發現 ===
+嚴重度分布: { low: 2 } -> /Users/linus/CODE/bdc/docs/report/root-audit/flows.json

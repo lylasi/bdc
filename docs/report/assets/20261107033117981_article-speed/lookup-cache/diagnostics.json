@@ -1,0 +1,29 @@
+{
+  "aiCalls": 5,
+  "diagnostics": [
+    {
+      "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html",
+      "word": "",
+      "sentence": "",
+      "result": "",
+      "notice": "",
+      "inlineNotice": "",
+      "task": "当前查词模型：Capture Test · capture-model（思考：关闭思考）",
+      "refreshDisabled": false,
+      "capture": "",
+      "account": "已连接账户：alice"
+    },
+    {
+      "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html?embedded=1&ticket=f7beac3f-9485-42d0-93c5-113147149806",
+      "word": "plunge",
+      "sentence": "Major tech stocks plunge as investors worry.",
+      "result": "cached-answer-5",
+      "notice": "",
+      "inlineNotice": "",
+      "task": "目前查詞模型：Capture Test · capture-model（思考：關閉思考）",
+      "refreshDisabled": false,
+      "capture": "",
+      "account": "已連接帳戶：alice"
+    }
+  ]
+}

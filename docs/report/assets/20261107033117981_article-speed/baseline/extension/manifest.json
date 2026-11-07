@@ -1,0 +1,64 @@
+{
+    "manifest_version": 3,
+    "name": "__MSG_extensionName__",
+    "version": "0.6.3",
+    "description": "__MSG_extensionDescription__",
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting",
+        "contextMenus"
+    ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+    ],
+    "action": {
+        "default_title": "__MSG_extensionName__",
+        "default_popup": "lookup.html"
+    },
+    "options_ui": {
+        "page": "lookup.html",
+        "open_in_tab": true
+    },
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "default_locale": "zh_CN",
+    "content_scripts": [
+        {
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "js": [
+                "page-lookup.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "lookup.html",
+                "lookup.css",
+                "lookup.js",
+                "ai-controls.js",
+                "capture-ui.js",
+                "workspace-ui.js",
+                "inline-panel.js",
+                "assistant-ui.js",
+                "icons.js",
+                "modules/*",
+                "locales/*",
+                "shared/*",
+                "ai-config.js"
+            ],
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ]
+        }
+    ]
+}

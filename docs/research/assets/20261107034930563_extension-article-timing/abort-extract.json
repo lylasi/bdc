@@ -1,0 +1,162 @@
+{
+  "trail": [
+    {
+      "at": 0,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 250,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 500,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 750,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 1000,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 1250,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 1500,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 1750,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 2000,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 2250,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 2500,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 2750,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 3000,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 3250,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 3500,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 3750,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 4000,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 4250,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 4500,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 4750,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 5000,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 5250,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 5500,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    },
+    {
+      "at": 5750,
+      "notice": "已停止，可重新提取或保存。",
+      "preview": false,
+      "saveDisabled": true
+    }
+  ],
+  "cleanRequests": 2,
+  "aborted": 1,
+  "events": [
+    "clean start 1 marker=0 chars=3908",
+    "clean end 1",
+    "clean start 2 marker=2 chars=3892",
+    "clean end 2"
+  ],
+  "noticeAtClick": "已停止，可重新提取或保存。",
+  "noticeAfter": "已停止，可重新提取或保存。",
+  "previewVisible": false,
+  "body": "",
+  "saveDisabled": true,
+  "busy": false
+}

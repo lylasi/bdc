@@ -1,0 +1,660 @@
+--- a/extension/lookup.js
++++ b/extension/lookup.js
+@@ -11,6 +11,7 @@
+     syncExtensionAccountAI,
+     importScopedLocalProviderKey,
+     getExtensionReadiness,
++    readExtensionLookupCache,
+     runExtensionLookup,
+     lookupSelection
+ } from './modules/extension-ai-runtime.js';
+@@ -93,6 +94,8 @@
+     resultRole: document.getElementById('ext-result-role'),
+     resultExamples: document.getElementById('ext-result-examples'),
+     resultMeta: document.getElementById('ext-result-meta'),
++    resultCache: document.getElementById('ext-result-cache'),
++    requery: document.getElementById('ext-inline-retry'),
+     captureBook: document.getElementById('ext-capture-book'),
+     captureSave: document.getElementById('ext-capture-save'),
+     captureRefresh: document.getElementById('ext-capture-refresh'),
+@@ -126,6 +129,7 @@
+ 
+ let activeLookupSequence = 0;
+ let activeLookupController = null;
++let lookupSetupPromise = null;
+ let lastResultPayload = null;
+ let lastAccountNotice = null;
+ let lastLookupNotice = null;
+@@ -141,7 +145,7 @@
+     close: document.getElementById('ext-inline-close'), confirm: document.getElementById('ext-inline-confirm'),
+     confirmText: document.getElementById('ext-inline-confirm-text'), keep: document.getElementById('ext-inline-keep'),
+     discard: document.getElementById('ext-inline-discard'),
+-    retry: document.getElementById('ext-inline-retry'), actionNotice: document.getElementById('ext-inline-action-notice'),
++    actionNotice: document.getElementById('ext-inline-action-notice'),
+     captureBook: dom.captureBook, lookup: dom.lookupBtn, queryInputs: [dom.wordInput, dom.sentenceInput, dom.contextInput]
+ }, captureUI, workspaceUI, { ticket: inlineTicket, initialMode: requestedView === 'assistant' ? 'assistant' : 'compact',
+     getAuxState: () => document.body.classList.contains('ext-assistant-view') ? assistantUI?.getState() || {} : {},
+@@ -164,7 +168,7 @@
+ } }) : null;
+ const aiControls = createAIControls({ embedded: isEmbedded, onChange: renderReadiness, onLookup: () => {
+     document.getElementById('ext-settings-dialog')?.close();
+-    handleLookup();
++    handleLookup({ noCache: true });
+ } });
+ 
+ const assistantDom = Object.fromEntries(Object.entries({ section: 'section', context: 'context', reference: 'reference', referenceText: 'reference-text',
+@@ -235,10 +239,12 @@
+ function setNotice(el, kind, keyOrText, params = {}, isRawText = false) {
+     if (!el) return;
+     if (!keyOrText) {
++        el.hidden = true;
+         el.classList.add('hidden');
+         el.textContent = '';
+         return;
+     }
++    el.hidden = false;
+     el.classList.remove('hidden', 'ext-notice-error', 'ext-notice-info');
+     el.classList.add(kind === 'error' ? 'ext-notice-error' : 'ext-notice-info');
+     el.textContent = isRawText ? String(keyOrText) : t(keyOrText, params);
+@@ -273,6 +279,7 @@
+     if (dom.resultPhonetic) dom.resultPhonetic.textContent = '';
+     if (dom.resultPos) dom.resultPos.textContent = '';
+     if (dom.resultMeaning) dom.resultMeaning.textContent = '';
++    if (dom.resultCache) dom.resultCache.hidden = true;
+     if (dom.resultRole) dom.resultRole.textContent = '';
+     if (dom.resultExamples) dom.resultExamples.innerHTML = '';
+     if (dom.resultMeta) dom.resultMeta.textContent = '';
+@@ -315,6 +322,7 @@
+         return;
+     }
+     lastResultPayload = result;
++    dom.resultCache.hidden = !result.fromCache;
+     dom.resultEmpty?.classList.add('hidden');
+     dom.resultBox?.classList.remove('hidden');
+     if (dom.resultWord) dom.resultWord.textContent = result.text || result.word || '';
+@@ -358,6 +366,9 @@
+ function renderReadiness() {
+     const wordText = dom.wordInput ? dom.wordInput.value : '';
+     const readiness = getExtensionReadiness({ text: wordText, sentence: dom.sentenceInput?.value, context: dom.contextInput?.value });
++    dom.requery.hidden = !wordText.trim();
++    dom.requery.disabled = !readiness.loggedIn || !!activeLookupController;
++    dom.requery.setAttribute('aria-busy', String(!!activeLookupController));
+     aiControls.render(readiness, { busy: !!activeLookupController, hasQuery: !!wordText.trim() });
+     const identity = readiness.loggedIn ? readiness.scope.key : '';
+     const accountDetails = document.getElementById('ext-account-details');
+@@ -558,7 +569,16 @@
+     }
+ }
+ 
+-async function handleLookup() {
++function prepareLookupAccount() {
++    if (!lookupSetupPromise) {
++        const pending = syncExtensionAccountAI();
++        lookupSetupPromise = pending;
++        pending.catch(() => { if (lookupSetupPromise === pending) lookupSetupPromise = null; });
++    }
++    return lookupSetupPromise;
++}
++
++async function handleLookup({ noCache: forceRefresh = false } = {}) {
+     aiControls.clearFallback();
+     clearDisplayedResult();
+     const seq = ++activeLookupSequence;
+@@ -579,22 +599,30 @@
+     const text = dom.wordInput ? dom.wordInput.value.trim() : '';
+     const sentence = dom.sentenceInput ? dom.sentenceInput.value.trim() : '';
+     const context = dom.contextInput ? dom.contextInput.value.trim() : '';
+-    const noCache = !!(dom.forceRefresh && dom.forceRefresh.checked);
++    const noCache = forceRefresh || !!(dom.forceRefresh && dom.forceRefresh.checked);
+     if (isEmbedded) dom.resultEmpty.textContent = t('extension.inlineLookingUp', { word: text });
+ 
+     try {
+-        const result = await runExtensionLookup({
++        const input = {
+             text,
+             sentence,
+             context,
+             locale: getLocale(),
+             signal: controller.signal,
+             noCache
+-        });
++        };
++        let result = noCache ? null : await readExtensionLookupCache(input);
++        if (!result) {
++            await prepareLookupAccount();
++            controller.signal.throwIfAborted();
++            if (seq !== activeLookupSequence) return;
++            result = await runExtensionLookup(input);
++        }
+         if (seq !== activeLookupSequence) return;
+         renderResult(result);
+         captureUI.showResult(result, { text, sentence, context }, getLocale());
+         renderReadiness();
++        return result;
+     } catch (error) {
+         if (seq !== activeLookupSequence) return;
+         clearDisplayedResult();
+@@ -674,6 +702,7 @@
+     dom.importKeyBtn?.addEventListener('click', handleImportKey);
+     dom.extractBtn?.addEventListener('click', handleExtractFromTab);
+     dom.lookupBtn?.addEventListener('click', handleLookup);
++    dom.requery.addEventListener('click', () => handleLookup({ noCache: true }));
+     document.getElementById('ext-enable-inline').addEventListener('click', async () => {
+         const response = await chrome.runtime.sendMessage({ type: 'BDC_ENABLE_INLINE' }).catch(() => null);
+         showAccountNotice(response?.ok ? 'info' : 'error', response?.ok ? 'extension.inlineEnabled' : 'extension.inlineUnavailable');
+@@ -750,6 +779,7 @@
+ 
+     window.addEventListener(AUTH_EVENT, (ev) => {
+         const kind = ev?.detail?.event || '';
++        if (['SIGNED_IN', 'ACCOUNT_CHANGED', 'SIGNED_OUT', 'SESSION_INVALID'].includes(kind)) lookupSetupPromise = null;
+         if (kind === 'ACCOUNT_CHANGED' || kind === 'SIGNED_OUT' || kind === 'SESSION_INVALID') {
+             invalidateLookup();
+         }
+@@ -767,17 +797,20 @@
+         if (status.busy && !articleWasBusy) aiControls.clearFallback();
+         articleWasBusy = !!status.busy;
+     });
+-    await captureUI.sync();
+-    await workspaceUI.sync();
++    // Book lists and durable outboxes may use the network. A local lookup hit
++    // must be visible before either finishes loading.
++    const workspaceStartup = Promise.allSettled([captureUI.sync(), workspaceUI.sync()]);
+     if (!isWorkspaceWindow) workspaceUI.setReady(true);
+     if (inlineContext) {
+         const page = inlineContext.page;
+         dom.wordInput.value = page.text; dom.sentenceInput.value = page.sentence || ''; dom.contextInput.value = page.context || '';
+         captureUI.setSource(page);
+         if (requestedView === 'assistant') {
++            await workspaceStartup;
+             if (getExtensionReadiness().loggedIn) await syncExtensionAccountAI();
+             await openAssistant();
+         } else if (isWorkspaceWindow) {
++            await workspaceStartup;
+             if (getExtensionReadiness().loggedIn) {
+                 try { await syncExtensionAccountAI(); }
+                 catch (error) { workspaceUI.setReady(true, error); return; }
+@@ -786,13 +819,17 @@
+             } else { workspaceUI.setReady(true); openDialog('ext-settings-dialog'); }
+         } else if (getExtensionReadiness().loggedIn) {
+             dom.resultEmpty.textContent = t('extension.inlineLookingUp', { word: page.text });
+-            try { await syncExtensionAccountAI(); await handleLookup(); }
++            try {
++                const result = await handleLookup();
++                if (result?.fromCache) prepareLookupAccount().catch((error) => showFailure(showAccountNotice, error));
++            }
+             catch (error) { clearDisplayedResult(); showFailure(showLookupNotice, error); }
+         } else {
+             const status = document.getElementById('ext-inline-status');
+             status.hidden = false; status.textContent = t('extension.inlineLoginRequired');
+         }
+     }
++    await workspaceStartup;
+ }
+ 
+ // Expose shared lookup & runtime helpers on globalThis for deterministic extension E2E verification
+--- a/extension/lookup.html
++++ b/extension/lookup.html
+@@ -104,6 +104,7 @@
+                 <span class="ext-result-word" id="ext-result-word"></span>
+                 <span class="ext-result-phonetic" id="ext-result-phonetic"></span>
+                 <span class="ext-result-pos" id="ext-result-pos"></span>
++                <span class="ext-cache-badge" id="ext-result-cache" hidden data-i18n="extension.lookupCached"></span>
+             </div>
+             <div class="ext-result-meaning" id="ext-result-meaning"></div>
+             <div class="ext-result-role" id="ext-result-role"></div>
+@@ -117,7 +118,6 @@
+             </details>
+             <div class="ext-result-meta" id="ext-result-meta"></div>
+         </div>
+-        <button id="ext-inline-retry" type="button" class="ext-btn ext-btn-sm" hidden data-i18n="extension.inlineRetry"></button>
+     </section>
+ 
+     <section id="ext-capture-section" class="ext-section" aria-labelledby="ext-capture-heading">
+@@ -127,8 +127,9 @@
+         <p id="ext-capture-source" class="ext-source"></p>
+         <p id="ext-capture-hint" class="ext-hint" data-i18n="extension.captureHint"></p>
+         <div class="ext-capture-bar">
+-            <button type="button" id="ext-capture-save" class="ext-btn ext-btn-primary" disabled data-i18n="extension.captureSave"></button>
++            <button type="button" id="ext-capture-save" class="ext-btn ext-btn-primary ext-btn-sm" disabled data-i18n="extension.captureAddShort" data-i18n-aria-label="extension.captureSave"></button>
+             <button id="ext-book-settings" type="button" class="ext-btn ext-btn-quiet ext-icon-only" aria-haspopup="dialog" data-i18n-title="extension.bookSettingsOpen" data-i18n-aria-label="extension.bookSettingsOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.6C10.5 5.4 8.6 4.9 6 4.9H4v13h2c2.6 0 4.5.5 6 1.6 1.5-1.1 3.4-1.6 6-1.6h2v-13h-2c-2.6 0-4.5.5-6 1.7z" /><path d="M12 6.6v13" /></svg></button>
++            <button id="ext-inline-retry" type="button" class="ext-btn ext-btn-quiet ext-icon-only" hidden data-i18n-title="extension.lookupRefresh" data-i18n-aria-label="extension.lookupRefresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5" /><path d="M4 17v-5h5" /><path d="M6.1 7a7 7 0 0 1 11.5-1.5L20 8M4 16l2.4 2.5A7 7 0 0 0 17.9 17" /></svg></button>
+         </div>
+         <div id="ext-capture-notice" class="ext-notice" role="status" aria-live="polite" hidden></div>
+         <details id="ext-capture-pending" class="ext-disclosure ext-disclosure-quiet ext-pending" hidden>
+--- a/extension/lookup.css
++++ b/extension/lookup.css
+@@ -609,8 +609,11 @@
+     border-top: 1px solid var(--ext-line);
+     overflow-wrap: anywhere;
+ }
+-#ext-inline-retry {
+-    margin-top: 8px;
++.ext-cache-badge {
++    color: var(--ext-ink-muted);
++    font-size: 10px;
++    font-weight: 400;
++    white-space: nowrap;
+ }
+ 
+ /* ============================ 9. 内嵌小窗 ============================ */
+@@ -711,9 +714,6 @@
+ }
+ .ext-compact #ext-inline-action-notice {
+     margin: 0 0 8px;
+-}
+-.ext-compact #ext-inline-retry {
+-    margin-top: 6px;
+ }
+ 
+ /* 草稿确认：居中卡片 + 整卡遮罩 */
+@@ -1520,10 +1520,12 @@
+     gap: 6px;
+ }
+ .ext-capture-bar > #ext-capture-save {
+-    flex: 1 1 auto;
+-    min-width: 0;
+-}
+-.ext-capture-bar > #ext-book-settings {
++    flex: 0 0 auto;
++    min-width: 64px;
++    padding-inline: 14px;
++}
++.ext-capture-bar > #ext-book-settings,
++.ext-capture-bar > #ext-inline-retry {
+     flex: 0 0 34px;
+     min-height: 32px;
+     border: 1px solid var(--ext-line);
+--- a/extension/capture-ui.js
++++ b/extension/capture-ui.js
+@@ -59,7 +59,8 @@
+         const session = captureAuthSession();
+         const saved = !!displayed && savedKey === currentKey();
+         dom.captureSave.disabled = busy || saved || !session.loggedIn || !displayed || (!dom.captureBook.value && (!resolveTarget || targetMissing));
+-        dom.captureSave.textContent = t(busy ? 'extension.captureSaving' : saved ? 'extension.captureSaved' : 'extension.captureSave');
++        dom.captureSave.textContent = t(busy ? 'extension.captureAddingShort' : saved ? 'extension.captureAddedShort' : 'extension.captureAddShort');
++        dom.captureSave.setAttribute('aria-label', t(busy ? 'extension.captureSaving' : saved ? 'extension.captureSaved' : 'extension.captureSave'));
+         dom.captureSave.title = t('extension.captureDestination', { book: books.find((book) => book.id === dom.captureBook.value)?.name || t('extension.webBookName') });
+         dom.captureBook.disabled = busy;
+         dom.captureRefresh.disabled = !session.loggedIn;
+--- a/extension/inline-panel.js
++++ b/extension/inline-panel.js
+@@ -36,7 +36,6 @@
+         dom.captureBook.disabled = busy();
+         dom.actionNotice.hidden = !localNotice;
+         dom.actionNotice.textContent = localNotice ? t(localNotice.key, localNotice.params || {}) : '';
+-        dom.retry.hidden = mode !== 'compact' || !capture.loggedIn || !!capture.hasResult || dom.lookup.disabled;
+         dom.confirm.hidden = !confirmation;
+         if (confirmation) {
+             dom.confirmText.textContent = t(busy() ? 'extension.inlineBusyClose' : confirmation.kind === 'back' ? 'extension.inlineUnsavedBack' : 'extension.inlineUnsavedClose');
+@@ -93,7 +92,6 @@
+             queryDirty = false; document.body.classList.remove('ext-edit-query'); setMode('compact');
+         } else close(action.requestId);
+     });
+-    dom.retry.addEventListener('click', () => dom.lookup.click());
+     for (const input of dom.queryInputs) input.addEventListener('input', () => { queryDirty = true; render(); });
+     dom.lookup.addEventListener('click', () => { queryDirty = false; render(); });
+     window.addEventListener('keydown', (event) => {
+--- a/extension/manifest.json
++++ b/extension/manifest.json
+@@ -1,7 +1,7 @@
+ {
+     "manifest_version": 3,
+     "name": "__MSG_extensionName__",
+-    "version": "0.6.2",
++    "version": "0.6.3",
+     "description": "__MSG_extensionDescription__",
+     "permissions": [
+         "storage",
+--- a/modules/api.js
++++ b/modules/api.js
+@@ -2256,8 +2256,7 @@
+ }
+ 
+ 
+-/** Shared lookup boundary; configuration and transport remain in the existing AI layer. */
+-export async function lookupSelection({ text = '', sentence = '', context = '', locale, signal, noCache = false, timeoutMs = 20000, model, thinking: thinkingOverride } = {}) {
++function lookupInputs({ text = '', sentence = '', context = '', locale, model, thinking: thinkingOverride } = {}, cacheOnly = false) {
+     const cleanText = String(text || '').trim();
+     if (!cleanText) throw Object.assign(new Error(t('errors.lookupTextRequired')), { code: 'lookup_text_required' });
+     const cleanContext = String(context || '').trim();
+@@ -2269,13 +2268,83 @@
+     const task = isPhrase ? 'articlePhraseTranslation' : (cleanSentence ? 'articleWordTranslation' : 'wordAnalysis');
+     const chain = isPhrase ? ['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis']
+         : (cleanSentence ? ['articleWordTranslation', 'articleWordTooltip', 'wordAnalysis'] : ['wordAnalysis']);
+-    const modelSpec = getPreferredTaskSpec(chain, { settings: loadGlobalSettings(), override: model });
++    const modelSpec = getPreferredTaskSpec(chain, { settings: loadGlobalSettings(), override: model, cacheOnly });
++    const thinking = resolveThinkingLevel(task, { override: thinkingOverride }).level;
++    const promptId = isPhrase ? 'article.phraseAnalysis' : (cleanSentence ? 'article.wordTooltip' : 'dictionary.wordAnalysis');
++    const promptVersion = getPromptVersion(promptId);
++    return { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptId, promptVersion };
++}
++
++function lookupResult(raw, query, connection, fromCache = false) {
++    const { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, thinking, promptVersion } = query;
++    const analysis = raw?.analysis || {};
++    const meaning = String(analysis.meaning || '').trim();
++    if (!meaning || raw.failed) throw invalidLookupResponse();
++    const actual = raw.lookupModel || connection;
++    const phonetic = String(analysis.phonetic || '').trim();
++    const pos = String(analysis.pos || '').trim();
++    const role = String(analysis.role || analysis.usage || '').trim();
++    const examples = Array.isArray(analysis.examples) ? analysis.examples : [];
++    return {
++        kind: isPhrase ? 'phrase' : 'word', task, text: cleanText, word: cleanText, selection: cleanText,
++        sentence: cleanSentence, context: cleanContext, locale: effectiveLocale, scope: cacheScope,
++        provider: actual.provider, model: actual.model, thinking, promptVersion, fromCache,
++        phonetic, pos, meaning, role, usage: role, examples,
++        analysis: { phonetic, pos, meaning, role, usage: role, examples }
++    };
++}
++
++/** Read existing successful answers only; never sync configuration or fetch a key. */
++export async function getCachedLookupSelection(input = {}) {
++    try {
++        const query = lookupInputs(input, true);
++        const { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptVersion } = query;
++        const opts = { strict: true };
++        const cacheOptions = { locale: effectiveLocale, promptVersion, thinking, structuredLookup: 1 };
++        const fallbackTasks = isPhrase ? ['articlePhraseTranslationFallback', 'wordAnalysis'] : ['articleWordTranslationFallback', 'wordAnalysis'];
++        const candidates = hasModelSpec(input.model) || (!isPhrase && !cleanSentence) ? [modelSpec]
++            : buildModelCandidates(modelSpec, getPreferredTaskSpec(fallbackTasks, { cacheOnly: true }));
++        const contextHash = isPhrase || cleanContext ? await cache.makeKey('ctx', cleanContext) : '';
++        if (!isPhrase && cleanContext) cacheOptions.contextHash = contextHash;
++        Object.assign(cacheOptions, cacheScope);
++        for (const candidate of candidates) {
++            let connection;
++            try { connection = resolveAIRequestConfig({ task, model: candidate, cacheOnly: true }); }
++            catch (_) { continue; }
++            const modelKey = analysisCacheModelKey(connection, opts);
++            let raw;
++            if (isPhrase) raw = await cache.getSelectionAnalysisCached(cleanText, cleanSentence || cleanText, contextHash, modelKey, cacheOptions);
++            else if (cleanSentence) raw = await cache.getWordAnalysisCached(cleanText, cleanSentence, modelKey, cacheOptions);
++            else raw = await cache.getCached('dictionaryWordAnalysis', {
++                word: cleanText, locale: effectiveLocale, promptVersion, thinking, ...cacheScope, modelKey, schema: 'structured-v1'
++            });
++            if (typeof raw?.analysis?.meaning === 'string' && raw.analysis.meaning.trim() && !raw.failed) {
++                const currentScope = getActiveAIScope();
++                if (input.signal?.aborted || (currentScope.endpoint || '') !== cacheScope.endpoint || (currentScope.userId || '') !== cacheScope.userId) return null;
++                return lookupResult(raw, query, connection, true);
++            }
++        }
++    } catch (_) {}
++    return null;
++}
++
++/** Shared lookup boundary; configuration and transport remain in the existing AI layer. */
++export async function lookupSelection(input = {}) {
++    const { signal, noCache = false, timeoutMs = 20000, model } = input;
++    const query = lookupInputs(input);
++    if (!noCache) {
++        const cached = await getCachedLookupSelection(input);
++        signal?.throwIfAborted();
++        const currentScope = getActiveAIScope();
++        if ((currentScope.endpoint || '') !== query.cacheScope.endpoint || (currentScope.userId || '') !== query.cacheScope.userId) {
++            throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
++        }
++        if (cached) return cached;
++    }
++    const { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptId, promptVersion } = query;
+     let connection;
+     try { connection = await resolveAIRequestConfigAsync({ task, model: modelSpec }); }
+     catch (error) { throw localizeAIError(error); }
+-    const thinking = resolveThinkingLevel(task, { override: thinkingOverride }).level;
+-    const promptId = isPhrase ? 'article.phraseAnalysis' : (cleanSentence ? 'article.wordTooltip' : 'dictionary.wordAnalysis');
+-    const promptVersion = getPromptVersion(promptId);
+     const opts = { timeoutMs, signal, noCache, locale: effectiveLocale, context: cleanContext, cacheScope, strict: true, model, thinking };
+     let raw;
+     if (isPhrase) {
+@@ -2300,19 +2369,5 @@
+             await cache.setCached('dictionaryWordAnalysis', cachePayload, raw, 30 * 24 * 60 * 60 * 1000);
+         }
+     }
+-    const analysis = raw?.analysis || {};
+-    const meaning = String(analysis.meaning || '').trim();
+-    if (!meaning || raw.failed) throw invalidLookupResponse();
+-    const actual = raw.lookupModel || connection;
+-    const phonetic = String(analysis.phonetic || '').trim();
+-    const pos = String(analysis.pos || '').trim();
+-    const role = String(analysis.role || analysis.usage || '').trim();
+-    const examples = Array.isArray(analysis.examples) ? analysis.examples : [];
+-    return {
+-        kind: isPhrase ? 'phrase' : 'word', task, text: cleanText, word: cleanText, selection: cleanText,
+-        sentence: cleanSentence, context: cleanContext, locale: effectiveLocale, scope: cacheScope,
+-        provider: actual.provider, model: actual.model, thinking, promptVersion,
+-        phonetic, pos, meaning, role, usage: role, examples,
+-        analysis: { phonetic, pos, meaning, role, usage: role, examples }
+-    };
+-}
++    return lookupResult(raw, query, connection);
++}
+--- a/modules/ai-models.js
++++ b/modules/ai-models.js
+@@ -9,6 +9,7 @@
+ 
+ import {
+     loadAIProfile,
++    getActiveAIScope,
+     updateAIProfile,
+     isManagedProviderId,
+     isPersonalProviderId
+@@ -309,8 +310,8 @@
+     return spec;
+ }
+ 
+-function getManagedTaskSpecSafe(taskName) {
+-    if (!isManagedUsable()) return '';
++function getManagedTaskSpecSafe(taskName, cacheOnly = false) {
++    if (!cacheOnly && !isManagedUsable()) return '';
+     return getManagedTaskSpec(normalizeTaskName(taskName));
+ }
+ 
+@@ -334,14 +335,14 @@
+     return getManagedTaskSpecSafe(taskName);
+ }
+ 
+-export function getPreferredTaskSpec(taskNames = [], { settings, override } = {}) {
++export function getPreferredTaskSpec(taskNames = [], { settings, override, cacheOnly = false } = {}) {
+     if (hasModelSpec(override)) return override;
+     for (const taskName of taskNames) {
+         const stored = getStoredMapping(taskName, settings);
+         if (hasModelSpec(stored)) {
+             const resolution = splitSpec(stringifyModelSpec(stored));
+             if (resolution.providerId === 'default') {
+-                const managed = getManagedTaskSpecSafe(taskName);
++                const managed = getManagedTaskSpecSafe(taskName, cacheOnly);
+                 if (managed) return managed;
+                 continue;
+             }
+@@ -351,7 +352,7 @@
+     const personal = getPersonalDefaultSpec();
+     if (personal) return personal;
+     for (const taskName of taskNames) {
+-        const managed = getManagedTaskSpecSafe(taskName);
++        const managed = getManagedTaskSpecSafe(taskName, cacheOnly);
+         if (managed) return managed;
+     }
+     return '';
+@@ -425,13 +426,13 @@
+  * asynchronously by resolveAIRequestConfigAsync; this function never returns a
+  * shared key it does not already have in memory.
+  */
+-export function resolveAIRequestConfig({ task = 'default', model, apiUrl, apiKey, provider, profile, settings } = {}) {
++export function resolveAIRequestConfig({ task = 'default', model, apiUrl, apiKey, provider, profile, settings, cacheOnly = false } = {}) {
+     const canonicalTask = normalizeTaskName(task);
+     const chosenSpec = hasModelSpec(model) ? model : resolveAITaskSpec(canonicalTask, { settings });
+     if (!hasModelSpec(chosenSpec)) throw modelError('model_not_selected', 'no model selected');
+     const split = splitSpec(chosenSpec);
+     let providerId = firstNonEmptyString(provider, profile, split.providerId);
+-    if (providerId === 'default') providerId = splitSpec(getManagedTaskSpecSafe(canonicalTask)).providerId;
++    if (providerId === 'default') providerId = splitSpec(getManagedTaskSpecSafe(canonicalTask, cacheOnly)).providerId;
+     if (!providerId) providerId = findProviderForModel(split.model);
+     if (!providerId) throw modelError('model_provider_missing', 'no provider for model', { model: split.model });
+ 
+@@ -471,7 +472,12 @@
+         resolvedKey = record.apiKey;
+     }
+     if (record.source === 'managed') {
+-        if (!isManagedUsable()) {
++        const catalog = getCatalogState();
++        const scope = getActiveAIScope();
++        // Public metadata may identify an existing local answer before online
++        // verification. It must never authorise a new request or return a key.
++        const sameAccount = !scope.guest && catalog.userId === scope.userId && catalog.endpoint === scope.endpoint;
++        if ((cacheOnly && !sameAccount) || (!cacheOnly && !isManagedUsable())) {
+             throw modelError(
+                 getCatalogState().status === 'expired' ? 'managed_session_expired' : 'managed_login_required',
+                 'managed session unavailable',
+@@ -488,20 +494,21 @@
+         provider: providerId,
+         profile: providerId,
+         apiUrl: record.apiUrl,
+-        apiKey: resolvedKey,
++        apiKey: cacheOnly ? '' : resolvedKey,
+         modelsUrl: record.modelsUrl || '',
+         authMode: record.authMode || 'bearer',
+         format: record.format || 'openai-chat',
+         source: record.source,
+         label: record.label || record.name || providerId,
+         binding: record.source === 'personal' ? (record.credential ? record.credential.binding : null) : null,
+-        requiresManagedCredential: record.source === 'managed' && requiresAuth
++        requiresManagedCredential: !cacheOnly && record.source === 'managed' && requiresAuth
+     };
+ }
+ 
+ /** Async resolution used by every AI request: fetches a managed key on demand. */
+ export async function resolveAIRequestConfigAsync(options = {}) {
+-    const config = resolveAIRequestConfig(options);
++    // A cache-only resolution is never an authorisation for transport.
++    const config = resolveAIRequestConfig({ ...options, cacheOnly: false });
+     if (!config.requiresManagedCredential) return config;
+     const credential = await getManagedCredential(config.provider);
+     const expected = {
+--- a/modules/extension-ai-runtime.js
++++ b/modules/extension-ai-runtime.js
+@@ -59,7 +59,7 @@
+ } from './ai-models.js';
+ import { isThinkingLevel } from './ai-thinking.js';
+ import { EXTENSION_AI_TASKS, getExtensionAIChoice, saveExtensionAIChoice } from './extension-ai-preferences.js';
+-import { lookupSelection, resetThinkingFallbackMemory, extractPageArticle, analyzeParagraph, streamAIResponse } from './api.js';
++import { lookupSelection, getCachedLookupSelection, resetThinkingFallbackMemory, extractPageArticle, analyzeParagraph, streamAIResponse } from './api.js';
+ import { sanitizeAISettings } from './ai-settings-sanitize.js';
+ import { getLocale, t } from './i18n.js';
+ 
+@@ -499,6 +499,20 @@
+  * Execute contextual lookup in the trusted extension context while guarding
+  * against account switches / logout / endpoint changes during the in-flight request.
+  */
++export async function readExtensionLookupCache(input = {}) {
++    const session = captureAuthSession();
++    const scopeKey = getActiveAIScope().key;
++    if (!session.loggedIn || input.noCache) return null;
++    input.signal?.throwIfAborted();
++    const choice = getExtensionAIChoice(getExtensionLookupTask(input));
++    const result = await getCachedLookupSelection({ ...input, locale: input.locale || getLocale(), model: choice.model, thinking: choice.thinking });
++    input.signal?.throwIfAborted();
++    if (!isAuthSessionCurrent(session) || getActiveAIScope().key !== scopeKey) {
++        throw Object.assign(new Error(t('extension.staleLookupDiscarded')), { code: 'stale_session' });
++    }
++    return result;
++}
++
+ export async function runExtensionLookup({
+     text = '',
+     sentence = '',
+--- a/locales/zh-CN.js
++++ b/locales/zh-CN.js
+@@ -893,6 +893,15 @@
+         modelLabel: '模型'
+     },
+     article: {
++        sentenceActions: '句子操作',
++        readSentence: '朗读本句',
++        readFromHere: '从这里开始读',
++        loopSentence: '循环读本句',
++        stopSentence: '停止朗读本句',
++        stopFromHere: '停止连续朗读',
++        stopLoopSentence: '停止循环本句',
++        readSelection: '朗读选中内容',
++        playbackModeLabel: '{mode} · {action}',
+         openBookNeedsRecord: '先分析或打开一篇文章，才能建立词书。',
+         createBookFailed: '无法建立词书：{message}',
+         bookCreated: '已建立这篇文章的词书',
+@@ -1573,6 +1582,8 @@
+         inlineCreateAndCapture: '建立本页词书并加入',
+         inlineCreatingAndCapturing: '正在建立词书并加入…',
+         inlineRetry: '重新查询',
++        lookupRefresh: '重新查词（跳过缓存）',
++        lookupCached: '本机缓存',
+         inlineOpenFailed: '查词窗口未能打开，请重新选词后再试。',
+         inlineUnsavedTitle: '保留当前编辑？',
+         inlineUnsavedClose: '还有未保存的内容，关闭后这些编辑会丢失。已提交的待传记录会继续保留。',
+@@ -1642,6 +1653,9 @@
+         captureChooseBook: '请选择词书',
+         captureNoBooks: '暂无词书，可直接在此新建。',
+         captureSave: '加入词书',
++        captureAddShort: '加入',
++        captureAddingShort: '加入中',
++        captureAddedShort: '已加入',
+         captureDestination: '收藏到《{book}》',
+         bookSettingsOpen: '选择或建立词书',
+         bookSettingsTitle: '词书',
+--- a/locales/zh-HK.js
++++ b/locales/zh-HK.js
+@@ -893,6 +893,15 @@
+         modelLabel: '模型'
+     },
+     article: {
++        sentenceActions: '句子操作',
++        readSentence: '朗讀本句',
++        readFromHere: '從這裏開始讀',
++        loopSentence: '循環讀本句',
++        stopSentence: '停止朗讀本句',
++        stopFromHere: '停止連續朗讀',
++        stopLoopSentence: '停止循環本句',
++        readSelection: '朗讀選中內容',
++        playbackModeLabel: '{mode} · {action}',
+         openBookNeedsRecord: '先分析或開啟一篇文章，才能建立詞書。',
+         createBookFailed: '無法建立詞書：{message}',
+         bookCreated: '已建立這篇文章的詞書',
+@@ -1573,6 +1582,8 @@
+         inlineCreateAndCapture: '建立本頁詞書並加入',
+         inlineCreatingAndCapturing: '正在建立詞書並加入…',
+         inlineRetry: '重新查詢',
++        lookupRefresh: '重新查詞（略過快取）',
++        lookupCached: '本機快取',
+         inlineOpenFailed: '未能開啟查詞視窗，請重新選詞後再試。',
+         inlineUnsavedTitle: '保留目前編輯？',
+         inlineUnsavedClose: '仍有未保存的內容，關閉後這些編輯會遺失。已提交的待傳記錄會繼續保留。',
+@@ -1642,6 +1653,9 @@
+         captureChooseBook: '請選擇詞書',
+         captureNoBooks: '暫無詞書，可直接在此新增。',
+         captureSave: '加入詞書',
++        captureAddShort: '加入',
++        captureAddingShort: '加入中',
++        captureAddedShort: '已加入',
+         captureDestination: '收藏到《{book}》',
+         bookSettingsOpen: '選擇或建立詞書',
+         bookSettingsTitle: '詞書',
+--- a/README.md
++++ b/README.md
+@@ -16,7 +16,7 @@
+ 
+ ## 瀏覽器擴充套件
+ 
+-Chrome／Edge 擴充套件 0.6.2 提供選詞旁的精簡詞卡、按需開啟的編輯與設定對話框，以及可切換顯示的文章 AI 助手懸浮球。收藏列只保留加入按鈕與詞書圖示，優先加入本頁詞書，否則使用「網頁」詞書；選書與新建操作放在圖示開啟的對話框內。助手可在小窗與側欄間切換；文章提取與詳解改用獨立視窗，並支援右鍵 AI 提取匯入。提取後先顯示可修改的正文預覽，按「確認並分析匯入」後才分析翻譯及寫入文章記錄。文章與詞書可互相跳轉、查看原文來源，並沿用可識別的舊資料關聯。每部電腦 pull 後，先執行 `node scripts/package-extension.mjs` 生成依賴，再載入或重新載入 `extension/` 並重新整理閱讀網頁。生成副本不提交到 Git，操作詳見 [精簡介面與文章助手說明](docs/spec/20261106231952409_擴充套件精簡與文章助手操作說明.md)。
++Chrome／Edge 擴充套件 0.6.3 提供選詞旁的精簡詞卡、按需開啟的編輯與設定對話框，以及可切換顯示的文章 AI 助手懸浮球。同一語境的成功查詞優先直讀本機快取，命中時顯示「本機快取」；詞書和帳戶同步不再阻塞結果。收藏列提供精簡的「加入」、詞書圖示及常駐重查圖示，重查只略過當次快取。收藏優先加入本頁詞書，否則使用「網頁」詞書；選書與新建操作放在圖示開啟的對話框內。助手可在小窗與側欄間切換；文章提取與詳解改用獨立視窗，並支援右鍵 AI 提取匯入。提取後先顯示可修改的正文預覽，按「確認並分析匯入」後才分析翻譯及寫入文章記錄。文章與詞書可互相跳轉、查看原文來源，並沿用可識別的舊資料關聯。每部電腦 pull 後，先執行 `node scripts/package-extension.mjs` 生成依賴，再載入或重新載入 `extension/` 並重新整理閱讀網頁。生成副本不提交到 Git，操作詳見 [本機快取與重查說明](docs/spec/20261107021311656_擴充套件本機快取與重新查詞操作說明.md)及[精簡介面與文章助手說明](docs/spec/20261106231952409_擴充套件精簡與文章助手操作說明.md)。
+ 
+ ## 技術棧
+ 
+--- a/extension/page-lookup.js
++++ b/extension/page-lookup.js
+@@ -91,7 +91,8 @@
+         if (rect) lastRect = rect;
+         if (!lastRect) return;
+         const width = Math.min(340, Math.max(0, v.width - 16));
+-        let height = Math.min(desiredHeight, Math.max(80, v.height - 16), Math.max(160, Math.floor(v.height * 0.65)));
++        // The reported body height excludes the iframe's two 1px borders.
++        let height = Math.min(desiredHeight + 2, Math.max(80, v.height - 16), Math.max(160, Math.floor(v.height * 0.65)));
+         const below = v.top + v.height - 8 - lastRect.bottom - 8;
+         const above = lastRect.top - 8 - v.top - 8;
+         const down = below >= height || below >= above;

@@ -1,0 +1,4 @@
+{"width":320,"chipsVisible":false,"focusInMenu":"action-chip word-panel-more-btn","modalOpen":true,"afterClose":{"tag":"BODY","id":"","cls":""},"mergeOpen":false,"afterMergeClose":{"tag":"BODY","id":"","cls":""}}
+{"width":719,"chipsVisible":false,"focusInMenu":"action-chip word-panel-more-btn","modalOpen":true,"afterClose":{"tag":"BODY","id":"","cls":""},"mergeOpen":false,"afterMergeClose":{"tag":"BODY","id":"","cls":""}}
+{"width":1024,"chipsVisible":false,"focusInMenu":"action-chip word-panel-more-btn","modalOpen":true,"afterClose":{"tag":"BODY","id":"","cls":""},"mergeOpen":false,"afterMergeClose":{"tag":"BODY","id":"","cls":""}}
+{"width":1440,"chipsVisible":true,"modalOpen":true,"afterClose":{"tag":"BUTTON","id":"edit-vocab-book-btn","cls":"action-chip"}}

@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-01",
+  "repositoryHead": "1dda21a",
+  "verificationType": "Source inspection, official documentation and existing pure-function probes",
+  "applicationCodeChangedByThisTask": false,
+  "androidDeviceTested": false,
+  "extensionInstalledForTesting": false,
+  "productionDeploymentInspected": false,
+  "contractProbes": {
+    "urlOnlyArticle": {
+      "input": {
+        "title": "Example",
+        "sourceType": "url",
+        "sourceUrl": "https://example.org/article"
+      },
+      "result": {
+        "ok": false,
+        "error": "invalid_article"
+      }
+    },
+    "articleWithBodyAndNullAnalysisAccepted": true,
+    "savedPageInExistingReadingEntityTypes": false,
+    "vocabularySourceFieldsAfterNormalization": [
+      "sentence",
+      "context",
+      "articleId",
+      "contentVersion",
+      "anchor",
+      "addedAt"
+    ],
+    "suppliedVocabularySourceFieldsRemoved": [
+      "sourceUrl",
+      "pageTitle",
+      "savedPageId",
+      "meaning",
+      "sentenceTranslation"
+    ]
+  },
+  "androidCapabilities": {
+    "processText": {
+      "apiLevelIntroduced": 23,
+      "action": "android.intent.action.PROCESS_TEXT",
+      "textExtra": "android.intent.extra.PROCESS_TEXT",
+      "readonlyExtra": "android.intent.extra.PROCESS_TEXT_READONLY",
+      "textDeliveryDocumented": true,
+      "automaticSurroundingSentenceOrPageUrlGuaranteed": false,
+      "sources": [
+        "https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT",
+        "https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/master/core/java/android/content/Intent.java"
+      ]
+    },
+    "receiveSharedText": {
+      "action": "android.intent.action.SEND",
+      "mimeType": "text/plain",
+      "textExtra": "android.intent.extra.TEXT",
+      "source": "https://developer.android.com/develop/ui/compose/sharing/receive"
+    },
+    "pwaShareTarget": {
+      "requiresInstallation": true,
+      "doesNotItselfRegisterNativeProcessTextHandler": true,
+      "urlsMayBeIncludedInTextField": true,
+      "sources": [
+        "https://developer.chrome.com/docs/capabilities/web-apis/web-share-target",
+        "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/share_target"
+      ]
+    },
+    "firefoxAndroidMenus": {
+      "bcdPath": "webextensions.api.menus.__compat.support.firefox_android.version_added",
+      "value": false,
+      "source": "https://raw.githubusercontent.com/mdn/browser-compat-data/main/webextensions/api/menus.json"
+    }
+  },
+  "sourceInspectionFindings": {
+    "existingWorkerIsAiProxy": false,
+    "existingManagedKeysAreMemoryOnlyInClient": true,
+    "existingAiProfilesAreAccountOrDeviceScoped": true,
+    "pwaShareTargetImplementationFoundInBdc": false,
+    "newSavedPageIsNotAutomaticallyIncludedInCurrentBackups": true,
+    "foregroundPollPrimarilyChecksSnapshotVersion": true
+  }
+}

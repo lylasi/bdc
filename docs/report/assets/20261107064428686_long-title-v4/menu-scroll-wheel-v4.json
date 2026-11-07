@@ -1,0 +1,1190 @@
+{
+  "finishedAt": "2026-11-06T22:57:13.143Z",
+  "build": [
+    "a58173e033c8ab815c002f37a34646ab",
+    "ea160feff903259bc322f117b87a9539",
+    "97fe37fc361cf5653a73ffca1bfc5080"
+  ],
+  "results": [
+    {
+      "locale": "zh-CN",
+      "scenario": "outside-scroll-320x400-empty",
+      "opened": {
+        "scrollY": 285,
+        "band": {
+          "top": 57,
+          "bottom": 337
+        },
+        "trigger": {
+          "top": 180.8,
+          "bottom": 218.8
+        },
+        "hidden": true,
+        "ariaExpanded": "false",
+        "display": "none",
+        "painted": false,
+        "menu": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0,
+          "scrollTop": 0,
+          "scrollHeight": 0,
+          "clientHeight": 0
+        },
+        "items": [
+          {
+            "text": "补全资料",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "合并",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "导出",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "编辑",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "删除",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "step": "wheel-outside(-260)",
+          "scrollY": 25,
+          "band": {
+            "top": 57,
+            "bottom": 337
+          },
+          "trigger": {
+            "top": 440.8,
+            "bottom": 478.8
+          },
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "painted": false,
+          "menu": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "scrollTop": 0,
+            "scrollHeight": 0,
+            "clientHeight": 0
+          },
+          "items": [
+            {
+              "text": "补全资料",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "合并",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "导出",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "编辑",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "删除",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            }
+          ]
+        }
+      ],
+      "pageErrors": [],
+      "verdict": {
+        "closedAfterScroll": true,
+        "ariaExpandedAfter": "false",
+        "anyPainted": false,
+        "anyItemCoveredWhilePainted": false,
+        "menuScrolledInternally": false,
+        "note": "open-failed"
+      }
+    },
+    {
+      "locale": "zh-CN",
+      "scenario": "outside-scroll-320x400-long",
+      "opened": {
+        "scrollY": 202,
+        "band": {
+          "top": 57,
+          "bottom": 337
+        },
+        "trigger": {
+          "top": 181.5,
+          "bottom": 219.5
+        },
+        "hidden": true,
+        "ariaExpanded": "false",
+        "display": "none",
+        "painted": false,
+        "menu": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0,
+          "scrollTop": 0,
+          "scrollHeight": 0,
+          "clientHeight": 0
+        },
+        "items": [
+          {
+            "text": "补全资料",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "合并",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "导出",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "编辑",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "删除",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "step": "wheel-outside(-260)",
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 337
+          },
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5
+          },
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "painted": false,
+          "menu": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "scrollTop": 0,
+            "scrollHeight": 0,
+            "clientHeight": 0
+          },
+          "items": [
+            {
+              "text": "补全资料",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "合并",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "导出",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "编辑",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "删除",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            }
+          ]
+        }
+      ],
+      "pageErrors": [],
+      "verdict": {
+        "closedAfterScroll": true,
+        "ariaExpandedAfter": "false",
+        "anyPainted": false,
+        "anyItemCoveredWhilePainted": false,
+        "menuScrolledInternally": false,
+        "note": "open-failed"
+      }
+    },
+    {
+      "locale": "zh-CN",
+      "scenario": "inside-menu-scroll-320x720-empty",
+      "opened": {
+        "scrollY": 0,
+        "band": {
+          "top": 57,
+          "bottom": 657
+        },
+        "trigger": {
+          "top": 465.8,
+          "bottom": 503.8
+        },
+        "hidden": false,
+        "ariaExpanded": "true",
+        "display": "block",
+        "painted": true,
+        "menu": {
+          "y": 507.8,
+          "bottom": 649,
+          "h": 141.2,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 139
+        },
+        "items": [
+          {
+            "text": "补全资料",
+            "y": 514.8,
+            "bottom": 558.8,
+            "fullyInside": true,
+            "hit": "self"
+          },
+          {
+            "text": "合并",
+            "y": 558.8,
+            "bottom": 602.8,
+            "fullyInside": true,
+            "hit": "self"
+          },
+          {
+            "text": "导出",
+            "y": 602.8,
+            "bottom": 646.8,
+            "fullyInside": true,
+            "hit": "self"
+          },
+          {
+            "text": "编辑",
+            "y": 646.8,
+            "bottom": 690.8,
+            "fullyInside": false,
+            "hit": "clipped"
+          },
+          {
+            "text": "删除",
+            "y": 699.8,
+            "bottom": 743.8,
+            "fullyInside": false,
+            "hit": "clipped"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "step": "wheel-inside(+30)#0",
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657
+          },
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8
+          },
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "painted": true,
+          "menu": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "scrollTop": 30,
+            "scrollHeight": 241,
+            "clientHeight": 139
+          },
+          "items": [
+            {
+              "text": "补全资料",
+              "y": 484.8,
+              "bottom": 528.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "合并",
+              "y": 528.8,
+              "bottom": 572.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "导出",
+              "y": 572.8,
+              "bottom": 616.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "编辑",
+              "y": 616.8,
+              "bottom": 660.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "删除",
+              "y": 669.8,
+              "bottom": 713.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            }
+          ]
+        },
+        {
+          "step": "wheel-inside(+60)#1",
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657
+          },
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8
+          },
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "painted": true,
+          "menu": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "scrollTop": 90,
+            "scrollHeight": 241,
+            "clientHeight": 139
+          },
+          "items": [
+            {
+              "text": "补全资料",
+              "y": 424.8,
+              "bottom": 468.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "合并",
+              "y": 468.8,
+              "bottom": 512.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "导出",
+              "y": 512.8,
+              "bottom": 556.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "编辑",
+              "y": 556.8,
+              "bottom": 600.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "删除",
+              "y": 609.8,
+              "bottom": 653.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            }
+          ]
+        },
+        {
+          "step": "wheel-inside(+120)#2",
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657
+          },
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8
+          },
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "painted": true,
+          "menu": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "scrollTop": 102,
+            "scrollHeight": 241,
+            "clientHeight": 139
+          },
+          "items": [
+            {
+              "text": "补全资料",
+              "y": 412.8,
+              "bottom": 456.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "合并",
+              "y": 456.8,
+              "bottom": 500.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "导出",
+              "y": 500.8,
+              "bottom": 544.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "编辑",
+              "y": 544.8,
+              "bottom": 588.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "删除",
+              "y": 597.8,
+              "bottom": 641.8,
+              "fullyInside": true,
+              "hit": "self"
+            }
+          ]
+        },
+        {
+          "step": "wheel-inside(+400)#3",
+          "scrollY": 63,
+          "band": {
+            "top": 57,
+            "bottom": 657
+          },
+          "trigger": {
+            "top": 402.8,
+            "bottom": 440.8
+          },
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "painted": false,
+          "menu": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "scrollTop": 0,
+            "scrollHeight": 0,
+            "clientHeight": 0
+          },
+          "items": [
+            {
+              "text": "补全资料",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "合并",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "导出",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "编辑",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "删除",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            }
+          ]
+        }
+      ],
+      "pageErrors": [],
+      "verdict": {
+        "closedAfterScroll": true,
+        "ariaExpandedAfter": "false",
+        "anyPainted": true,
+        "anyItemCoveredWhilePainted": false,
+        "menuScrolledInternally": true
+      }
+    },
+    {
+      "locale": "zh-HK",
+      "scenario": "outside-scroll-320x400-empty",
+      "opened": {
+        "scrollY": 285,
+        "band": {
+          "top": 57,
+          "bottom": 337
+        },
+        "trigger": {
+          "top": 180.8,
+          "bottom": 218.8
+        },
+        "hidden": true,
+        "ariaExpanded": "false",
+        "display": "none",
+        "painted": false,
+        "menu": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0,
+          "scrollTop": 0,
+          "scrollHeight": 0,
+          "clientHeight": 0
+        },
+        "items": [
+          {
+            "text": "補全資料",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "合併",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "匯出",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "編輯",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "刪除",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "step": "wheel-outside(-260)",
+          "scrollY": 25,
+          "band": {
+            "top": 57,
+            "bottom": 337
+          },
+          "trigger": {
+            "top": 440.8,
+            "bottom": 478.8
+          },
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "painted": false,
+          "menu": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "scrollTop": 0,
+            "scrollHeight": 0,
+            "clientHeight": 0
+          },
+          "items": [
+            {
+              "text": "補全資料",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "合併",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "匯出",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "編輯",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "刪除",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            }
+          ]
+        }
+      ],
+      "pageErrors": [],
+      "verdict": {
+        "closedAfterScroll": true,
+        "ariaExpandedAfter": "false",
+        "anyPainted": false,
+        "anyItemCoveredWhilePainted": false,
+        "menuScrolledInternally": false,
+        "note": "open-failed"
+      }
+    },
+    {
+      "locale": "zh-HK",
+      "scenario": "outside-scroll-320x400-long",
+      "opened": {
+        "scrollY": 202,
+        "band": {
+          "top": 57,
+          "bottom": 337
+        },
+        "trigger": {
+          "top": 181.5,
+          "bottom": 219.5
+        },
+        "hidden": true,
+        "ariaExpanded": "false",
+        "display": "none",
+        "painted": false,
+        "menu": {
+          "y": 0,
+          "bottom": 0,
+          "h": 0,
+          "scrollTop": 0,
+          "scrollHeight": 0,
+          "clientHeight": 0
+        },
+        "items": [
+          {
+            "text": "補全資料",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "合併",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "匯出",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "編輯",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          },
+          {
+            "text": "刪除",
+            "y": 0,
+            "bottom": 0,
+            "fullyInside": true,
+            "hit": "(null)"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "step": "wheel-outside(-260)",
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 337
+          },
+          "trigger": {
+            "top": 383.5,
+            "bottom": 421.5
+          },
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "painted": false,
+          "menu": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "scrollTop": 0,
+            "scrollHeight": 0,
+            "clientHeight": 0
+          },
+          "items": [
+            {
+              "text": "補全資料",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "合併",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "匯出",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "編輯",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "刪除",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            }
+          ]
+        }
+      ],
+      "pageErrors": [],
+      "verdict": {
+        "closedAfterScroll": true,
+        "ariaExpandedAfter": "false",
+        "anyPainted": false,
+        "anyItemCoveredWhilePainted": false,
+        "menuScrolledInternally": false,
+        "note": "open-failed"
+      }
+    },
+    {
+      "locale": "zh-HK",
+      "scenario": "inside-menu-scroll-320x720-empty",
+      "opened": {
+        "scrollY": 0,
+        "band": {
+          "top": 57,
+          "bottom": 657
+        },
+        "trigger": {
+          "top": 465.8,
+          "bottom": 503.8
+        },
+        "hidden": false,
+        "ariaExpanded": "true",
+        "display": "block",
+        "painted": true,
+        "menu": {
+          "y": 507.8,
+          "bottom": 649,
+          "h": 141.2,
+          "scrollTop": 0,
+          "scrollHeight": 241,
+          "clientHeight": 139
+        },
+        "items": [
+          {
+            "text": "補全資料",
+            "y": 514.8,
+            "bottom": 558.8,
+            "fullyInside": true,
+            "hit": "self"
+          },
+          {
+            "text": "合併",
+            "y": 558.8,
+            "bottom": 602.8,
+            "fullyInside": true,
+            "hit": "self"
+          },
+          {
+            "text": "匯出",
+            "y": 602.8,
+            "bottom": 646.8,
+            "fullyInside": true,
+            "hit": "self"
+          },
+          {
+            "text": "編輯",
+            "y": 646.8,
+            "bottom": 690.8,
+            "fullyInside": false,
+            "hit": "clipped"
+          },
+          {
+            "text": "刪除",
+            "y": 699.8,
+            "bottom": 743.8,
+            "fullyInside": false,
+            "hit": "clipped"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "step": "wheel-inside(+30)#0",
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657
+          },
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8
+          },
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "painted": true,
+          "menu": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "scrollTop": 30,
+            "scrollHeight": 241,
+            "clientHeight": 139
+          },
+          "items": [
+            {
+              "text": "補全資料",
+              "y": 484.8,
+              "bottom": 528.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "合併",
+              "y": 528.8,
+              "bottom": 572.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "匯出",
+              "y": 572.8,
+              "bottom": 616.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "編輯",
+              "y": 616.8,
+              "bottom": 660.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "刪除",
+              "y": 669.8,
+              "bottom": 713.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            }
+          ]
+        },
+        {
+          "step": "wheel-inside(+60)#1",
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657
+          },
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8
+          },
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "painted": true,
+          "menu": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "scrollTop": 90,
+            "scrollHeight": 241,
+            "clientHeight": 139
+          },
+          "items": [
+            {
+              "text": "補全資料",
+              "y": 424.8,
+              "bottom": 468.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "合併",
+              "y": 468.8,
+              "bottom": 512.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "匯出",
+              "y": 512.8,
+              "bottom": 556.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "編輯",
+              "y": 556.8,
+              "bottom": 600.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "刪除",
+              "y": 609.8,
+              "bottom": 653.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            }
+          ]
+        },
+        {
+          "step": "wheel-inside(+120)#2",
+          "scrollY": 0,
+          "band": {
+            "top": 57,
+            "bottom": 657
+          },
+          "trigger": {
+            "top": 465.8,
+            "bottom": 503.8
+          },
+          "hidden": false,
+          "ariaExpanded": "true",
+          "display": "block",
+          "painted": true,
+          "menu": {
+            "y": 507.8,
+            "bottom": 649,
+            "h": 141.2,
+            "scrollTop": 102,
+            "scrollHeight": 241,
+            "clientHeight": 139
+          },
+          "items": [
+            {
+              "text": "補全資料",
+              "y": 412.8,
+              "bottom": 456.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "合併",
+              "y": 456.8,
+              "bottom": 500.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "匯出",
+              "y": 500.8,
+              "bottom": 544.8,
+              "fullyInside": false,
+              "hit": "clipped"
+            },
+            {
+              "text": "編輯",
+              "y": 544.8,
+              "bottom": 588.8,
+              "fullyInside": true,
+              "hit": "self"
+            },
+            {
+              "text": "刪除",
+              "y": 597.8,
+              "bottom": 641.8,
+              "fullyInside": true,
+              "hit": "self"
+            }
+          ]
+        },
+        {
+          "step": "wheel-inside(+400)#3",
+          "scrollY": 63,
+          "band": {
+            "top": 57,
+            "bottom": 657
+          },
+          "trigger": {
+            "top": 402.8,
+            "bottom": 440.8
+          },
+          "hidden": true,
+          "ariaExpanded": "false",
+          "display": "none",
+          "painted": false,
+          "menu": {
+            "y": 0,
+            "bottom": 0,
+            "h": 0,
+            "scrollTop": 0,
+            "scrollHeight": 0,
+            "clientHeight": 0
+          },
+          "items": [
+            {
+              "text": "補全資料",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "合併",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "匯出",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "編輯",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            },
+            {
+              "text": "刪除",
+              "y": 0,
+              "bottom": 0,
+              "fullyInside": true,
+              "hit": "(null)"
+            }
+          ]
+        }
+      ],
+      "pageErrors": [],
+      "verdict": {
+        "closedAfterScroll": true,
+        "ariaExpandedAfter": "false",
+        "anyPainted": true,
+        "anyItemCoveredWhilePainted": false,
+        "menuScrolledInternally": true
+      }
+    }
+  ]
+}
