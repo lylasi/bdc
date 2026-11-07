@@ -24,6 +24,7 @@ import { initTheme } from './modules/theme.js';
 import { migrateLegacyAISettings } from './modules/ai-profile-storage.js';
 import { initAICatalog } from './modules/ai-catalog.js';
 import { initAICredentialSync } from './modules/ai-credential-sync.js';
+import { initTTSAccountSync } from './modules/tts-account-sync.js';
 import { initAiAdmin } from './features/ai-admin/ai-admin.js';
 import { initAdminUsers } from './features/admin-users/admin-users.js';
 
@@ -369,6 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // a failure in either must not block the rest of the app.
     await step('aiCatalog', () => initAICatalog());
     await step('aiCredentialSync', () => initAICredentialSync());
+    await step('ttsAccountSync', () => initTTSAccountSync());
     await step('aiAdmin', () => initAiAdmin());
     await step('adminUsers', () => initAdminUsers());
 

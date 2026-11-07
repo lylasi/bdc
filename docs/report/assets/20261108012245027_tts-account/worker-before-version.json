@@ -1,0 +1,59 @@
+{
+  "id": "b60e7760-4bb5-44f5-a997-92d744226301",
+  "number": 15,
+  "metadata": {
+    "created_on": "2026-11-06T06:46:02.313327Z",
+    "source": "wrangler",
+    "author_id": "083c571534e996ac4f8f4ebf7ebc0852",
+    "author_email": "a4a41234@gmail.com",
+    "has_preview": true
+  },
+  "annotations": {
+    "workers/message": "BDC extension 0.3.0 inline lookup, vocabulary books and linked articles (e324d2e)",
+    "workers/tag": "page-workspace-e324d2e",
+    "workers/triggered_by": "version_upload"
+  },
+  "resources": {
+    "script": {
+      "etag": "b23e9a84cde378cd228f05e3732b84b9f7c84bc7af0e6a999af72761940c0016",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler"
+    },
+    "script_runtime": {
+      "compatibility_date": "2026-01-01",
+      "usage_model": "standard"
+    },
+    "bindings": [
+      {
+        "name": "AI_CATALOG_DIGEST_KEY",
+        "type": "secret_text"
+      },
+      {
+        "name": "AI_CREDENTIAL_KEY_V1",
+        "type": "secret_text"
+      },
+      {
+        "name": "AI_CREDENTIAL_KEY_VERSION",
+        "text": "1",
+        "type": "plain_text"
+      },
+      {
+        "name": "ALLOW_ORIGIN",
+        "text": "*",
+        "type": "plain_text"
+      },
+      {
+        "database_id": "088d7819-b477-4d64-8b5d-583798712042",
+        "id": "088d7819-b477-4d64-8b5d-583798712042",
+        "name": "DB",
+        "type": "d1"
+      },
+      {
+        "name": "PASSWORD_PEPPER",
+        "type": "secret_text"
+      }
+    ]
+  }
+}

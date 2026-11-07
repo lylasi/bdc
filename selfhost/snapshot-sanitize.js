@@ -1,3 +1,5 @@
+import { sanitizeTTSGroup, TTS_CREDENTIAL_ID } from '../shared/tts-settings.mjs';
+
 // Server-side snapshot sanitisation for the AI settings group.
 // Mirrors cloudflare-worker/src/snapshot-sanitize.js; keep both in sync.
 //
@@ -19,7 +21,7 @@ function isPlainObject(value) {
 function isValidPersonalProviderId(id) {
     const value = String(id || '');
     if (!/^[A-Za-z0-9_-]{1,64}$/.test(value)) return false;
-    if (value === 'default' || value.startsWith('managed-')) return false;
+    if (value === 'default' || value === TTS_CREDENTIAL_ID || value.startsWith('managed-')) return false;
     return !['__proto__', 'prototype', 'constructor', 'aiApiKey'].includes(value);
 }
 
@@ -164,6 +166,12 @@ export function sanitizeSnapshotPayload(payload) {
         delete next.aiSettings.apiKey;
         delete next.aiSettings.apiProviders;
     }
+    if (Object.prototype.hasOwnProperty.call(next, 'ttsSettings')) {
+        const voice = sanitizeTTSGroup(next.ttsSettings);
+        if (voice) next.ttsSettings = voice;
+        else delete next.ttsSettings;
+    }
+    delete next.ttsApiKey;
     // Never carry legacy top-level AI secrets through a snapshot response.
     delete next.aiApiKey;
     delete next.aiProviders;

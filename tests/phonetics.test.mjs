@@ -46,7 +46,7 @@ test('TTS reuses current BDC channel and selected voice with encoded text', () =
 });
 test('setting defaults off, persists locally and survives unrelated updates', () => {
     const storage=new Map();
-    const context={TTS_CONFIG:{},syncTouch(){},getAIViewFromProfile:()=>({}),applyAISettingsPatch(){},AI_PROFILE_MIGRATION_KEY:'test-ai-profile',localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)}};
+    const context={TTS_CONFIG:{},syncTouch(){},getTTSProfileView:()=>({}),saveTTSSettingsPatch(){},saveTTSKey(){},getAIViewFromProfile:()=>({}),applyAISettingsPatch(){},AI_PROFILE_MIGRATION_KEY:'test-ai-profile',localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)}};
     vm.createContext(context);
     vm.runInContext(read('modules/settings.js').replace(/^import[\s\S]*?;\n/gm,'').replace(/^export /gm,''),context);
     assert.equal(context.loadGlobalSettings().phonetics.enabled,false);

@@ -32,6 +32,9 @@ import {
 import { mountAIProviderSettings } from './ai-provider-settings.js';
 import { openAdminUsersPanel } from '../admin-users/admin-users.js';
 import { getCredentialSyncState } from '../../modules/ai-credential-sync.js';
+import { getTTSAccountSyncState, ttsAccountStatusKey, syncTTSAccount, TTS_SYNC_EVENT } from '../../modules/tts-account-sync.js';
+import { normalizeTTSUrl } from '../../shared/tts-settings.mjs';
+import { ttsProfileKey } from '../../modules/tts-profile-storage.js';
 import { THEMES, applyTheme, getSavedTheme } from '../../modules/theme.js';
 import {
   getArtSettings,
@@ -1141,6 +1144,7 @@ function showGlobalSettingsModal() {
   try { const mc = dom.appModal.querySelector('.modal-content'); if (mc) mc.classList.add('modal-large'); } catch(_) {}
 
   let disposed = false;
+  let ttsFormScope = ttsProfileKey();
   const persistedSettings = loadGlobalSettings();
   const persistedSecrets = loadGlobalSecrets();
   const settings = {
@@ -1318,6 +1322,8 @@ function showGlobalSettingsModal() {
                 <div class="gs-field">
                   <input id="gs-tts-key" type="password" placeholder="..." value="${escapeHtml(secrets.ttsKey)}" autocomplete="off" spellcheck="false" aria-label="${escapeHtml(t('settings.ttsKey'))}">
                   <p class="gs-hint">${escapeHtml(t('settings.ttsKeyHint'))}</p>
+                  <p id="gs-tts-account-state" class="gs-hint" role="status" aria-live="polite"></p>
+                  <button id="gs-tts-account-sync" type="button" class="btn-secondary gs-mini">${escapeHtml(t('settings.ttsAccountSync'))}</button>
                 </div>
               </div>
             </div>
@@ -1428,8 +1434,18 @@ function showGlobalSettingsModal() {
   // 所有設定都走這裡：成功就更新底部狀態，失敗保留在使用者眼前而不是靜靜吞掉。
   const persist = (patch, secretPatch, options = {}) => {
     try {
+      if ((patch?.tts || patch?.reading || secretPatch?.ttsApiKey !== undefined) && ttsFormScope !== ttsProfileKey()) {
+        markFailed(); return false;
+      }
       if (patch) saveGlobalSettings(patch);
       if (secretPatch) saveGlobalSecrets(secretPatch);
+      const matches = (actual, expected) => Object.entries(expected).every(([key, value]) => {
+        if (value && typeof value === 'object') return matches(actual?.[key] || {}, value);
+        const normalized = key.startsWith('baseUrl') && typeof value === 'string' ? normalizeTTSUrl(value) : value;
+        return actual?.[key] === normalized;
+      });
+      if (patch && !matches(loadGlobalSettings(), patch)) throw new Error('settings_not_persisted');
+      if (secretPatch?.ttsApiKey !== undefined && loadGlobalSecrets().ttsApiKey !== secretPatch.ttsApiKey) throw new Error('tts_key_not_persisted');
       if (options.silent !== true) markSaved();
       return true;
     } catch (_) {
@@ -1656,7 +1672,10 @@ function showGlobalSettingsModal() {
   const currentTtsUse = () => $('#gs-tts-use-custom')?.checked ? 'custom' : ($('#gs-tts-use-local')?.checked ? 'local' : 'remote');
   const syncCustomWrap = () => { if (customWrap) customWrap.hidden = currentTtsUse() !== 'custom'; };
   const saveCustomUrl = debounce(() => {
+    const raw = String(customInput?.value || '').trim();
+    if (raw && !normalizeTTSUrl(raw)) { markFailed(); return; }
     persist({ tts: { baseUrlCustom: String(customInput?.value || '').trim() } });
+    if (keyInput) keyInput.value = loadGlobalSecrets().ttsApiKey || '';
     loadVoices(false);
   }, 700);
   ['#gs-tts-use-remote', '#gs-tts-use-local', '#gs-tts-use-custom'].forEach((sel) => {
@@ -1670,11 +1689,46 @@ function showGlobalSettingsModal() {
   customInput?.addEventListener('input', saveCustomUrl);
   customInput?.addEventListener('change', () => saveCustomUrl.flush());
 
-  // TTS 金鑰（只存本機）
+  // TTS 金鑰由帳戶範圍保存；已登入時同步到加密憑據槽位。
   const keyInput = $('#gs-tts-key');
   const saveTtsKey = debounce(() => persist(null, { ttsApiKey: String(keyInput?.value || '').trim() }), 600);
   keyInput?.addEventListener('input', saveTtsKey);
   keyInput?.addEventListener('change', () => saveTtsKey.flush());
+  const refreshTTSAccount = () => {
+    if (disposed) return;
+    const state = getTTSAccountSyncState();
+    const changedScope = ttsFormScope !== ttsProfileKey();
+    if (changedScope) {
+      saveCustomUrl.cancel(); saveTtsKey.cancel(); ttsFormScope = ttsProfileKey();
+    }
+    const voice = loadGlobalSettings();
+    if (customInput && (changedScope || document.activeElement !== customInput)) customInput.value = voice.tts?.baseUrlCustom || '';
+    for (const mode of ['remote', 'local', 'custom']) {
+      const radio = $('#gs-tts-use-' + mode);
+      if (radio) radio.checked = voice.tts?.use === mode;
+    }
+    syncCustomWrap();
+    for (const [variant, id] of [['en-US', 'gs-read-en-us'], ['en-GB', 'gs-read-en-gb'], ['zh-CN', 'gs-read-zh-cn'], ['zh-HK', 'gs-read-zh-hk']]) {
+      const radio = $('#' + id);
+      if (radio) radio.checked = (variant.startsWith('en') ? voice.reading?.englishVariant : voice.reading?.chineseVariant) === variant;
+      const select = $(`[data-voice-group="${variant}"]`), selected = voice.tts?.selectedVoices?.[variant];
+      if (select && selected && document.activeElement !== select) {
+        if (![...select.options].some((option) => option.value === selected)) {
+          const option = document.createElement('option'); option.value = selected; option.textContent = selected; select.appendChild(option);
+        }
+        select.value = selected;
+      }
+    }
+    if ($('#gs-tts-account-state')) $('#gs-tts-account-state').textContent = t(ttsAccountStatusKey());
+    if ($('#gs-tts-account-sync')) $('#gs-tts-account-sync').disabled = ['guest', 'syncing'].includes(state.state);
+    if (keyInput && (changedScope || document.activeElement !== keyInput)) keyInput.value = loadGlobalSecrets().ttsApiKey || '';
+  };
+  $('#gs-tts-account-sync')?.addEventListener('click', () => {
+    saveCustomUrl.flush(); saveTtsKey.flush(); syncTTSAccount({ force: true });
+  });
+  window.addEventListener(TTS_SYNC_EVENT, refreshTTSAccount);
+  const removeTTSListeners = () => window.removeEventListener(TTS_SYNC_EVENT, refreshTTSAccount);
+  refreshTTSAccount();
 
   // 讀音偏好
   ['#gs-read-en-gb', '#gs-read-en-us'].forEach((sel) => {
@@ -1865,6 +1919,7 @@ function showGlobalSettingsModal() {
     try { saveCustomUrl.flush(); } catch (_) {}
   };
   const onClosed = () => {
+    removeTTSListeners();
     disposed = true;
     flushPending();
     document.removeEventListener('bdc:modal-closed', onClosed);
@@ -1877,6 +1932,7 @@ function showGlobalSettingsModal() {
     try { ui.closeModal(); } catch (_) {}
   });
   gsCleanup = () => {
+    removeTTSListeners();
     document.removeEventListener('bdc:modal-closed', onClosed);
     disposed = true;
     try { saveTtsKey.cancel(); } catch (_) {}

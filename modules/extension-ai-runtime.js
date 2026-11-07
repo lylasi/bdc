@@ -62,11 +62,13 @@ import { EXTENSION_AI_TASKS, getExtensionAIChoice, saveExtensionAIChoice } from 
 import { lookupSelection, getCachedLookupSelection, resetThinkingFallbackMemory, extractPageArticle, analyzeParagraph, streamAIResponse } from './api.js';
 import { sanitizeAISettings } from './ai-settings-sanitize.js';
 import { getLocale, t } from './i18n.js';
+import { initTTSAccountSync, syncTTSAccount } from './tts-account-sync.js';
 
 export const EXTENSION_ENDPOINT_STORAGE_KEY = 'bdc_ext_sync_endpoint_v1';
 export const EXTENSION_SESSION_BACKUP_KEY = 'bdc_ext_trusted_session_v1';
 
 let runtimeInitialized = false;
+let pendingTTSSync = Promise.resolve();
 
 // Endpoint reads remain synchronous across extension pages. Both existing auth
 // and AI profile modules use this hook; a per-page cached string can pair a new
@@ -117,6 +119,7 @@ export async function restoreTrustedSessionState() {
         runtimeInitialized = true;
         initAICatalog();
         initAICredentialSync();
+        initTTSAccountSync({ auto: false });
     }
     return getAuthSnapshot();
 }
@@ -162,6 +165,7 @@ export async function pullExtensionAISettings() {
         try { payload = JSON.parse(payload); } catch (_) { payload = {}; }
     }
     const aiGroup = payload && typeof payload === 'object' ? payload.aiSettings : null;
+    pendingTTSSync = syncTTSAccount({ snapshot: data });
     const rawSettings = aiGroup && typeof aiGroup === 'object' ? aiGroup.settings : null;
     const updatedAt = aiGroup && typeof aiGroup.updatedAt === 'string' ? aiGroup.updatedAt : (data?.updated_at || '');
     const scope = {
@@ -201,7 +205,8 @@ export async function syncExtensionAccountAI({ forceCatalog = true } = {}) {
     }
     await Promise.all([
         refreshAICatalog({ force: forceCatalog, reason: 'extension-sync' }),
-        syncCredentials({ reason: 'extension-sync' })
+        syncCredentials({ reason: 'extension-sync' }),
+        pendingTTSSync
     ]);
     if (!isAuthSessionCurrent(session)) {
         const err = new Error('session changed');

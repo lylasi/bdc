@@ -100,7 +100,9 @@ function wav() {
         await frame.locator('#ext-tts-test').click();
         check('無效地址阻止試播，修改其他欄位也不會誤播舊服務', (await frame.locator('#ext-tts-check').textContent()).includes('HTTP(S)')
             && requests.length === requestsBeforeInvalid);
-        await frame.locator('#ext-tts-url').fill(service); await frame.locator('#ext-tts-key').fill(KEY);
+        await frame.locator('#ext-tts-url').fill(service.replace('http:', 'HTTP:') + '/'); await frame.locator('#ext-tts-key').fill(KEY);
+        check('貼上的大小寫及尾斜線地址會正規化保存', await frame.evaluate(async () =>
+            (await import('./modules/settings.js')).loadGlobalSettings().tts.baseUrlCustom) === service);
         await frame.locator('#ext-tts-accent').selectOption('en-US');
         await frame.locator('#ext-tts-voice').fill('en-US-ServiceVoice');
         await frame.locator('#ext-tts-device-voice').selectOption('natural-us');
@@ -150,6 +152,8 @@ function wav() {
         await frame.locator('#ext-tts-test').click();
         await frame.waitForFunction(() => document.querySelector('#ext-tts-check').dataset.state === 'info'
             && document.querySelector('#ext-tts-test').textContent.includes('停止'));
+        await frame.evaluate(async () => { await (await import('./modules/tts-account-sync.js')).syncTTSAccount(); });
+        check('背景確認 Key 同步狀態不會打斷正在等待的試播', await frame.locator('#ext-tts-test').getAttribute('aria-pressed') === 'true');
         await frame.locator('#ext-tts-test').click();
         for (const res of held) res.destroy(); held.clear();
         await page.waitForTimeout(150);

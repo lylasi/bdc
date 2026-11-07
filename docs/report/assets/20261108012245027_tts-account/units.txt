@@ -1,0 +1,239 @@
+✔ openai-chat: text request and auth header (87.96825ms)
+✔ openai-chat: image input is encoded for the protocol (9.391208ms)
+✔ openai-chat: structured output is requested (1.808625ms)
+✔ openai-chat: streaming deltas are decoded (5.206042ms)
+✔ openai-chat: cancellation aborts the stream (5.793875ms)
+✔ anthropic-messages: text request and auth header (1.911667ms)
+✔ anthropic-messages: image input is encoded for the protocol (4.499083ms)
+✔ anthropic-messages: structured output is requested (1.039084ms)
+✔ anthropic-messages: streaming deltas are decoded (4.972417ms)
+✔ anthropic-messages: cancellation aborts the stream (19.857625ms)
+✔ gemini: text request and auth header (37.199ms)
+✔ gemini: image input is encoded for the protocol (4.459333ms)
+✔ gemini: structured output is requested (1.54475ms)
+✔ gemini: streaming deltas are decoded (2.09075ms)
+✔ gemini: cancellation aborts the stream (3.28675ms)
+✔ reasoning output never reaches the answer channel (5.714917ms)
+✔ non-retryable error statuses map to stable provider error codes (10.6485ms)
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm1'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'articleSentenceTranslation',
+  level: 'high',
+  provider: 'personal-anthropic',
+  model: 'm1'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'assistant',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm2'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'none',
+  provider: 'personal-chat',
+  model: 'm-levels'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'none',
+  provider: 'personal-chat',
+  model: 'm-endpoint'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'none',
+  provider: 'personal-chat',
+  model: 'm-reset'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'none',
+  provider: 'personal-chat',
+  model: 'm-reset'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm-422'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm-late-event'
+}
+✔ retryable failures keep their code after the bounded retries (14633.833708ms)
+✔ a missing provider key never borrows another provider (1.279375ms)
+✔ rejected thinking parameters are remembered and drop the token floor (1.714083ms)
+✔ anthropic max_tokens rejection during thinking also falls back once (0.617ms)
+✔ streaming thinking fallback remembers the target and restores maxTokens (0.78375ms)
+✔ unsupported thinking memory is scoped to the level that was rejected (1.134083ms)
+✔ unsupported thinking memory is retried after the endpoint changes (1.03275ms)
+✔ auth and catalog changes clear the thinking fallback memory (1.801042ms)
+✔ structured 422 detail arrays trigger one thinking-free retry (1.007709ms)
+✔ Anthropic max_tokens and Gemini MAX_TOKENS stop reasons trigger the truncation retry (1.346334ms)
+✔ truncation doubles the adapter outbound budget when the caller gave no maxTokens (1.475958ms)
+✔ a fallback event is emitted when the remembered auto request succeeds (2.023833ms)
+✔ analysis requests send the thinking level used in their cache key (9.207666ms)
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm-pinned'
+}
+[ai-thinking] thinking parameter rejected; retried without it {
+  task: 'default',
+  level: 'high',
+  provider: 'personal-chat',
+  model: 'm-pinned'
+}
+✔ a catalog reset during a rejected request does not poison the new memory (5.543208ms)
+✔ a thinking fallback retry stays on the endpoint that rejected it (1.261666ms)
+✔ F1: a new device downloads the key that only exists on the server (148.940709ms)
+✔ F1: an explicit local-only key is never replaced by the cloud copy (6.9555ms)
+✔ F1: a cloud row bound to another endpoint is not downloaded (3.910125ms)
+✔ F1: a remote delete tombstone never creates a local key (6.18675ms)
+✔ F2: a provider saved while an upload is in flight survives the sync (18.684834ms)
+✔ F2: a key changed while its upload is in flight is kept as a new pending upload (13.1065ms)
+✔ F2: deleting a provider during its upload keeps the delete (25.644625ms)
+✔ F2: task model changes made during a sync are preserved (50.213ms)
+✔ R1: removing the cloud copy keeps the local key and goes local-only (6.362792ms)
+✔ R1: remove-cloud against an already deleted cloud row keeps the local key (5.275208ms)
+✔ R1: a lost remove-cloud response is confirmed by its tombstone without clearing the key (6.215833ms)
+✔ R1: deleting the provider still removes the key everywhere (5.6465ms)
+✔ R1: a tombstone this device never asked for still clears the local copy (2.972083ms)
+✔ R2: a key saved during the conflict download is not overwritten (2.1125ms)
+✔ R2: a conflict result of a previous login session is discarded (0.924958ms)
+✔ R2: adopting the cloud version replaces the key when nothing changed meanwhile (0.784042ms)
+✔ R2: a downloaded conflict answer older than the conflict is rejected (2.502833ms)
+✔ R2: a downloaded key bound to another endpoint is not stored (3.329875ms)
+✔ R2: adopting a cloud copy that was deleted meanwhile drops the key (1.185ms)
+✔ R2: resolving with the local version uploads against the conflicted version (4.984958ms)
+✔ F3: a 401 from an older account does not sign out the new one (6.417792ms)
+✔ F3: a real 401 in the current session still ends the session (11.187459ms)
+✔ F4: switching accounts without signing out locks shared keys (8.144125ms)
+✔ F3: a 401 credential download from the previous account cannot sign out the new one (3.372375ms)
+✔ F4: a cross-tab account change also locks the shared keys (4.419791ms)
+✔ F6: legacy per-task model choices survive the migration (2.810083ms)
+✔ F6: a failed profile write keeps the old task choices (0.701375ms)
+✔ P1: the account key policy defaults to cloud and travels in the snapshot (1.619459ms)
+✔ P2: downloading a key does not move the AI definition timestamp (9.689917ms)
+✔ P2: switching the key sync mode does not move the AI definition timestamp (8.068292ms)
+✔ lwwMerge keeps thinking from the older AI settings side (1.170041ms)
+✔ lwwMerge merges older thinking into a newer remote winner (0.555875ms)
+✔ lwwMerge lets the winning side override duplicate thinking tasks (0.432125ms)
+✔ lwwMerge omits thinking when both sides have none (0.202916ms)
+✔ lwwMerge bumps updatedAt when it adopts loser-only thinking so the merge applies locally (3.456083ms)
+✔ P0: applying remote AI settings triggers the credential download that was missed (305.681208ms)
+✔ detection candidates keep path prefixes and avoid credential URLs (6.480792ms)
+✔ chat completions adapter builds a faithful OpenAI request (2.440291ms)
+✔ anthropic adapter uses Messages wire format and headers (1.342417ms)
+✔ gemini adapter substitutes the model and encodes images (0.800917ms)
+✔ thinking policy normalises values and keeps the documented app defaults (0.92575ms)
+✔ chat completions maps every non-auto thinking level to reasoning_effort (0.45275ms)
+✔ anthropic enables extended thinking with temperature 1 and a larger max_tokens (0.35775ms)
+✔ gemini maps 2.5 to thinkingBudget and 3 to thinkingLevel (4.267125ms)
+✔ gemini 2.5 reserves the thinking budget on top of the answer allowance (0.766583ms)
+✔ adapters expose the actual outbound max tokens after thinking adjustments (0.532875ms)
+✔ assistant request plan freezes the effective thinking level and model for retries (2.118208ms)
+✔ stream event parsing works for every protocol (0.815417ms)
+✔ stream event parsing keeps reasoning separate from the answer (0.747333ms)
+✔ snapshot sanitizer removes keys, managed definitions and URL overrides (2.669709ms)
+✔ credential sync decision table matches the specification (1.50725ms)
+✔ worker idempotency and provider-id validation (0.354208ms)
+✔ profile normalisation drops unsafe URLs and unknown credential modes (1.393583ms)
+✔ profile and snapshot sanitisation keep only valid thinking mappings (2.023291ms)
+✔ empty thinking maps are never emitted by views or sanitizers (0.621083ms)
+✔ older AI snapshots do not clear newer task thinking choices (5.6665ms)
+✔ thinking priority is override > personal setting > app default (2.614458ms)
+✔ static checker reads stdin instead of reporting an uninspected pass (218.941875ms)
+✔ static checker accepts clean stdin and reports what it scanned (174.947875ms)
+✔ static checker permits protocol hostname hints but rejects concrete provider URLs (467.107875ms)
+✔ static checker preserves key checks after URL strings and ignores line comments (108.940208ms)
+✔ static checker refuses empty stdin instead of reporting clean (50.113167ms)
+✔ static checker refuses a target that is not a directory (47.705708ms)
+✔ static checker refuses a missing target and an empty directory (101.403583ms)
+✔ static checker scans a real directory in both directions (115.774708ms)
+✔ a pending delete keeps its keep-local intent through normalisation (2.453458ms)
+✔ <details> open state survives a settings re-render (1.073625ms)
+✔ saving one settings field keeps the rest of pen_global_settings (4.133208ms)
+✔ authentication, roles and passcode strength (146.867291ms)
+✔ admin user management: list, create, edit and reset (173.699625ms)
+✔ admin user management: admin, unknown-user and weak-passcode guards (11.670166ms)
+✔ device pairing: one-time codes, session auth and revocation (35.349541ms)
+✔ login code TTL options, default and revocation (22.789584ms)
+✔ auth capabilities expose login-code and password support (2.7965ms)
+✔ password login issues a session and rejects bad credentials (201.446333ms)
+✔ password login is rate limited per client and username (7.048792ms)
+✔ change password rotates auth_version and revokes other sessions (149.505209ms)
+✔ admin can assign credentials and password reset revokes sessions (118.002125ms)
+✔ passcode change and recovery reset revoke paired sessions (12.105917ms)
+✔ personal credentials: isolation, CAS, idempotency and tombstones (12.352292ms)
+✔ credential binding is part of the AAD (2.380083ms)
+✔ managed catalog: admin-only publish, shared key download and versions (11.378125ms)
+✔ disabled providers cannot be downloaded; clearing requires disabling (3.811084ms)
+✔ missing master key only breaks credential routes (1.059667ms)
+✔ origin allow-list and no-store headers (0.725041ms)
+✔ server-side snapshot sanitisation drops keys and managed definitions (3.199541ms)
+✔ snapshot CAS still works (1.375375ms)
+✔ service success is confirmed after playback starts, with host and selected voice only (48.616416ms)
+✔ unconfigured selected service uses a natural English voice instead of Albert (5.200833ms)
+✔ settings form URL follows the same remote, local and custom routing as playback (6.533958ms)
+✔ explicit device voice and device-only mode are respected without a service request (1.843292ms)
+✔ automatic device voice follows the English accent and never picks the Chinese default (1.762709ms)
+✔ service rejection reports fallback and the actual device voice, never remote success (3.577166ms)
+✔ decode failure falls back only once even when play() rejects afterwards (4.679791ms)
+✔ a service which never starts times out and clearly reports device fallback (18.334666ms)
+✔ stop releases a pending request and prevents late rejection from starting device speech (10.508583ms)
+✔ late success from a stopped request cannot change the new playback state (1.600833ms)
+✔ blocked remote audio is identified without reporting the fallback as service success (2.334458ms)
+✔ failure of both service and device returns one clear error and false (7.297875ms)
+✔ status never exposes URL credentials or query secrets (3.073666ms)
+✔ 事件 stub 本身能註冊與派送 (5.527542ms)
+✔ 音訊 owner 與中斷通知 (15.999084ms)
+✔ unknown IPA is a reference, never relabeled by the selected voice (10.613709ms)
+✔ AI output must identify exact word and accent, and preserves heteronyms (0.632958ms)
+✔ accent voices never silently fall back from UK to US (0.564ms)
+✔ TTS reuses current BDC channel and selected voice with encoded text (3.703125ms)
+✔ setting defaults off, persists locally and survives unrelated updates (55.460791ms)
+✔ new UI translation keys match in both locales (88.897542ms)
+✔ shelter splits existing IPA offline and treats parenthesized r as optional (9.991208ms)
+✔ phrases preserve complete IPA and reject non-English input (6.488041ms)
+✔ other IPA notations the AI may return still find a playable sound (53.810917ms)
+✔ prompt symbol list matches what the chart can actually play (15.529167ms)
+✔ both dictionary prompts inject the notation rule (8.864333ms)
+✔ public settings whitelist excludes keys, device preferences, credentials in URLs and malformed groups (5.607583ms)
+✔ account save preserves other snapshot groups, keeps keys out of snapshots and stores AES-GCM ciphertext (171.4115ms)
+✔ a new extension/device downloads the server, voices and key without overwriting the cloud snapshot (37.208833ms)
+✔ switching account or endpoint never reuses the previous account server or key (11.861ms)
+✔ changing the service URL prevents transmitting the old service key (30.861833ms)
+✔ clearing a personal key deletes its cloud ciphertext and a new device sees the tombstone (67.817375ms)
+✔ legacy local settings migrate to the first account only, while existing cloud settings take precedence (60.009334ms)
+✔ legacy guest settings can seed an empty account and are not copied to its next account (50.134333ms)
+✔ first migration in an already logged-in account preserves that account legacy custom service (13.908334ms)
+✔ a stale vault 401 cannot sign out or modify the new account (42.377041ms)
+✔ editing a key during upload preserves the new edit and advances only the successful CAS base (23.974417ms)
+✔ a remote key conflict keeps the local edit and requires an explicit retry to replace the remote version (20.978ms)
+✔ a lost key-upload reply is confirmed by mutation id without duplicate writes (29.0115ms)
+✔ offline settings remain pending and retry succeeds; a backend without a vault reports key-local-only (24.176083ms)
+✔ device-only preferences do not alter the public account settings or upload the device voice URI (13.225459ms)
+✔ snapshot sanitizer strips a modified client key and rejects credential-bearing TTS URLs (1.88575ms)
+✔ a failed account-profile write cannot be reported as a persisted TTS key (10.89825ms)
+✔ snapshot CAS retry preserves another writer learning group (12.190834ms)
+✔ repeated settings CAS conflicts retain the local draft and do not claim a key conflict (6.724625ms)
+✔ an explicitly cleared service is saved account data, and an empty new device respects that choice (18.257333ms)
+ℹ tests 165
+ℹ suites 0
+ℹ pass 165
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15318.617583

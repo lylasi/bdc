@@ -251,7 +251,7 @@ export function buildTTSUrl(text, langOrVoice = 'english', speed = 0) {
     const s = loadGlobalSettings();
     const sec = loadGlobalSecrets();
     const baseUrl = getEffectiveBaseUrl(s);
-    const apiKey = (sec?.ttsApiKey && String(sec.ttsApiKey).trim()) || TTS_CONFIG.apiKey;
+    const apiKey = sec?.ttsApiKey !== undefined ? String(sec.ttsApiKey).trim() : TTS_CONFIG.apiKey || '';
     const voice = resolveVoiceId(langOrVoice, s) || TTS_CONFIG.voices.english;
     // 注意：保持與 speakText 同步
     return `${baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(apiKey)}`;
@@ -343,7 +343,7 @@ export async function speakText(text, langOrVoice = 'english', speed = 0, onStar
     const settings = loadGlobalSettings();
     const secrets = loadGlobalSecrets();
     const base = String(getEffectiveBaseUrl(settings)).replace(/\/+$/, '');
-    const key = String(secrets?.ttsApiKey || TTS_CONFIG.apiKey || '').trim();
+    const key = String(secrets?.ttsApiKey !== undefined ? secrets.ttsApiKey : TTS_CONFIG.apiKey || '').trim();
     const voice = plan.voice || '';
     const url = `${base}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(key)}`;
     const metadata = { source: 'remote', host: plan.host, voice, fallbackReason: '', targetHost: plan.host,

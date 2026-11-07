@@ -73,6 +73,18 @@ export default {
         quiz: { full: '随堂测验', short: '测' }
     },
     settings: {
+        ttsAccountGuest: '未登录：语音设置保存在此浏览器。',
+        ttsAccountPending: '本机已保存，等待同步到当前账号。',
+        ttsAccountSyncing: '正在同步账号语音设置…',
+        ttsAccountSynced: '已保存到当前账号；登录扩展会自动带入。',
+        ttsAccountEmpty: '账号尚未保存 TTS。请在主站打开语音设置一次，或在此填写服务。',
+        ttsAccountError: '账号语音暂时无法同步，本机设置已保留。请重新同步。',
+        ttsAccountConflict: '云端 Key 已变更，本机输入已保留。重新同步将保存当前输入。',
+        ttsAccountSettingsConflict: '账号设置同时有更新，本机修改已保留，请稍后重新同步。',
+        ttsAccountKeyLocal: '地址与声音已同步；当前同步服务不支持 Key 同步，Key 保留在本机。',
+        ttsAccountBinding: '服务已带入，账号 Key 对应其他服务，请核对地址与 Key。',
+        ttsAccountSync: '重新同步账号语音',
+
         globalTitle: '全局设置',
         languageLabel: '显示语言',
         languageHint: '界面和 AI 回复使用所选语言，学习内容保持原样。',
@@ -96,9 +108,9 @@ export default {
         autoSaved: '已自动保存',
         autoSaveFailed: '自动保存失败，请重试',
         done: '完成',
-        ttsKeyHint: '密钥只保存在此装置，不会同步到云端。',
+        ttsKeyHint: '登录后通过加密凭据同步到当前账号；不会写入普通学习数据快照。',
         ttsVoiceDefaultsHint: '首次载入会自动选好可用的默认语音，之后照你的选择保存。',
-        saveFailed: '保存失败：', ttsSource: 'TTS 来源', remote: '远程', local: '本地', custom: '自定义', ttsSourceHint: '一般用户只需选择来源；需要自定义时再输入 URL', customTtsUrl: '自定义 TTS 基础 URL', ttsKey: 'TTS API Key（仅保存在本机）', englishVoicePreference: '英语朗读首选', britishEnglish: '英音 en-GB', americanEnglish: '美音 en-US', defaultBritish: '未指定时默认英音', chineseVoicePreference: '中文朗读首选', mandarin: '普通话 zh-CN', cantonese: '粤语 zh-HK', ttsVoices: 'TTS 声音（仅显示：美音、英音、粤语、普通话）', reloadList: '重新加载列表', englishAmerican: '英语（美音 en-US）', englishBritish: '英语（英音 en-GB）', cantoneseVoice: '粤语（广东话 zh-HK）', mandarinVoice: '中文（普通话 zh-CN）', previewVoice: '试听', loading: '正在加载...', voiceLoadHint: '如果加载失败，请确认 TTS 基础 URL 或 ai-config.js 的 voicesUrl 可以访问。', assistant: 'AI 助手', enableAssistant: '启用助手', streaming: '流式响应', assistantHint: '右下角入口 · 流式响应更顺畅', cancel: '取消', save: '保存', localOnlyHint: '设置仅保存在本机，不会同步到云端。'
+        saveFailed: '保存失败：', ttsSource: 'TTS 来源', remote: '远程', local: '本地', custom: '自定义', ttsSourceHint: '一般用户只需选择来源；需要自定义时再输入 URL', customTtsUrl: '自定义 TTS 基础 URL', ttsKey: 'TTS API Key（登录后加密同步）', englishVoicePreference: '英语朗读首选', britishEnglish: '英音 en-GB', americanEnglish: '美音 en-US', defaultBritish: '未指定时默认英音', chineseVoicePreference: '中文朗读首选', mandarin: '普通话 zh-CN', cantonese: '粤语 zh-HK', ttsVoices: 'TTS 声音（仅显示：美音、英音、粤语、普通话）', reloadList: '重新加载列表', englishAmerican: '英语（美音 en-US）', englishBritish: '英语（英音 en-GB）', cantoneseVoice: '粤语（广东话 zh-HK）', mandarinVoice: '中文（普通话 zh-CN）', previewVoice: '试听', loading: '正在加载...', voiceLoadHint: '如果加载失败，请确认 TTS 基础 URL 或 ai-config.js 的 voicesUrl 可以访问。', assistant: 'AI 助手', enableAssistant: '启用助手', streaming: '流式响应', assistantHint: '右下角入口 · 流式响应更顺畅', cancel: '取消', save: '保存', localOnlyHint: '设置仅保存在本机，不会同步到云端。'
         ,localeCn: '大陆简体中文', localeHk: '香港繁体中文', providerSettings: 'AI Provider 设置', addProvider: '新增 provider', enabled: '启用', fetched: '已获取', fetching: '获取中', fetchFailed: '获取失败', notFetched: '尚未获取', fetchModels: '获取模型', remove: '移除', name: '名称', displayName: '显示名称', apiUrlOptional: 'API URL（可选）', modelsUrlOptional: 'Models URL（可选）', deriveApiUrl: '留空则由 Base URL 推导', deriveModelsUrl: '留空则默认为 baseUrl + /v1/models', apiKeyLocal: 'API Key（仅本机）', allowedModels: '允许模型', selectedModels: '已选 {selected} / 全部 {total}', modelHint: '勾选后会出现在各任务下拉列表', noModels: '还没有模型，可以先获取或手动新增。', manualModel: '手动新增模型，例如 gpt-4.1-mini 或 provider:model', addModel: '新增模型', manualAdded: '手动新增', providerHint: '可设置 baseUrl / key，获取模型后勾选允许列表；default 仍作为全局回退。', taskMapping: '按功能指定模型', taskHint: '各任务仅显示允许模型；如果当前值不在允许列表中，会暂时保留显示。', providerIdPrompt: '请输入 provider ID（英文、数字、- 或 _）', providerExists: '此 provider ID 已存在', taskWord: '查词 / 单词分析', taskSentence: '造句检查', taskQa: '问答 AI 校对', taskArticle: '文章详解', taskCleanup: '文章 AI 清洗', taskExamples: '例句生成', taskOcr: 'OCR / 视觉', taskAssistant: 'AI 助手'
         ,taskArticleParagraph: '文章翻译（段落 / 全文）'
         ,taskArticleSentence: '句子详解'
@@ -1536,12 +1548,12 @@ export default {
     },
     extension: {
         ttsSettings: '语音 / TTS',
-        ttsScopeHint: '设置仅保存在此扩展，供本机各网页共用；不会自动读取 BDC 网页里的 TTS 地址或密钥。',
+        ttsScopeHint: '登录后自动带入账号的服务地址、声音与朗读偏好；Key 通过加密凭据同步。装置声音及仅装置模式只保存在本机。',
         ttsMode: '播放来源',
         ttsModeAuto: '优先 TTS 服务，失败时使用装置语音',
         ttsModeDevice: '仅装置语音',
         ttsUrl: 'TTS 服务基础地址（与 BDC 主站相同）',
-        ttsKey: 'TTS API Key（可选，仅保存在本机）',
+        ttsKey: 'TTS API Key（可选，登录后加密同步）',
         ttsServiceVoice: 'TTS 英语声音 ID',
         ttsLoadVoices: '读取服务声音',
         ttsDeviceVoice: '装置英语声音（后备）',

@@ -13,6 +13,7 @@
 import { SYNC } from '../ai-config.js';
 import { touch as syncTouch } from './sync-signals.js';
 import { normalizeTaskThinkingMap } from './ai-thinking.js';
+import { TTS_CREDENTIAL_ID } from '../shared/tts-settings.mjs';
 
 export const AI_PROFILE_PREFIX = 'bdc_ai_profile_v1';
 export const AI_PROFILE_SCHEMA_VERSION = 1;
@@ -24,7 +25,7 @@ export const AI_KEY_SYNC_DEFAULTS = ['cloud', 'local-only'];
 export const AI_PROFILE_MIGRATION_KEY = 'bdc_ai_profile_migrated_v1';
 export const AI_PROFILE_QUARANTINE_KEY = 'bdc_ai_profile_quarantine_v1';
 
-const RESERVED_PROVIDER_IDS = new Set(['default', 'aiApiKey', '__proto__', 'prototype', 'constructor']);
+const RESERVED_PROVIDER_IDS = new Set(['default', 'aiApiKey', '__proto__', 'prototype', 'constructor', TTS_CREDENTIAL_ID]);
 const CREDENTIAL_QUERY_RE = /key|token|secret|auth|pass|sig/i;
 const PROVIDER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 

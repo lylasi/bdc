@@ -2,6 +2,9 @@ import { t } from './modules/i18n.js';
 import { loadGlobalSettings, saveGlobalSettings, loadGlobalSecrets, saveGlobalSecrets } from './modules/settings.js';
 import { describeSpeechTarget, getTtsServiceBaseUrl, getLocalSpeechVoices, getActiveAudioOwner, speakText, stopCurrentAudio, unlockAudioContext } from './modules/audio.js';
 import { fetchTtsServiceVoices, formatVoiceLabel } from './modules/voices.js';
+import { syncTTSAccount, getTTSAccountSyncState, ttsAccountStatusKey, TTS_SYNC_EVENT } from './modules/tts-account-sync.js';
+import { TTS_PROFILE_EVENT } from './modules/tts-profile-storage.js';
+import { normalizeTTSUrl } from './shared/tts-settings.mjs';
 
 const TEST_OWNER = 'extension-tts-test';
 const reasonKeys = {
@@ -26,6 +29,16 @@ function validUrl(value) {
 export function createTTSControls(dom, { getText, onChange }) {
     let lastPlayback = null, testActive = false, testSequence = 0, catalogSequence = 0;
     let catalogController = null, catalogMessage = null, saveError = '', pending = null, pendingField = null, saveTimer;
+    let pendingScope = '', formScope = getTTSAccountSyncState().key;
+    // Private in-memory comparison only; never expose credentials through an
+    // event, status message or diagnostic. Vault version acknowledgements must
+    // not stop playback when its effective target and key did not change.
+    const speechIdentity = () => {
+        const settings = loadGlobalSettings();
+        return JSON.stringify([getTTSAccountSyncState().key, settings.tts,
+            settings.reading?.englishVariant, loadGlobalSecrets().ttsApiKey]);
+    };
+    let playbackIdentity = '';
     const playbackOptions = () => ({ forceLocal: loadGlobalSettings().tts?.extensionMode === 'device', timeoutMs: 10000 });
     const plan = () => describeSpeechTarget('english', playbackOptions());
 
@@ -63,6 +76,9 @@ export function createTTSControls(dom, { getText, onChange }) {
         dom.saveNotice.textContent = saveError ? t(saveError) : '';
         dom.voicesNotice.hidden = !catalogMessage;
         dom.voicesNotice.textContent = catalogMessage ? t(catalogMessage.key, catalogMessage.params || {}) : '';
+        const account = getTTSAccountSyncState();
+        dom.accountState.textContent = t(ttsAccountStatusKey());
+        dom.accountSync.disabled = ['syncing', 'guest'].includes(account.state);
     }
 
     function recordPlayback(status) {
@@ -111,6 +127,8 @@ export function createTTSControls(dom, { getText, onChange }) {
                 if (loadGlobalSecrets().ttsApiKey !== secrets.ttsApiKey) throw new Error('save');
             }
             invalidate(!!secrets || !!settings?.tts && ('baseUrlCustom' in settings.tts || 'use' in settings.tts));
+            if (settings?.tts?.baseUrlCustom !== undefined) dom.key.value = loadGlobalSecrets().ttsApiKey || '';
+            playbackIdentity = speechIdentity();
         } catch (_) { saveError = 'extension.ttsSaveFailed'; }
         render();
     }
@@ -119,7 +137,8 @@ export function createTTSControls(dom, { getText, onChange }) {
         clearTimeout(saveTimer);
         const action = pending;
         pending = null; pendingField = null;
-        action?.();
+        if (pendingScope === getTTSAccountSyncState().key) action?.();
+        pendingScope = '';
     }
 
     function bindInput(input, save) {
@@ -127,11 +146,12 @@ export function createTTSControls(dom, { getText, onChange }) {
             if (pendingField && pendingField !== input) flush();
             clearTimeout(saveTimer);
             pending = save; pendingField = input;
+            pendingScope = getTTSAccountSyncState().key;
             saveTimer = setTimeout(flush, 300);
         });
         input.addEventListener('change', () => {
             if (pendingField && pendingField !== input) flush();
-            pending = save; pendingField = input; flush();
+            pending = save; pendingField = input; pendingScope = getTTSAccountSyncState().key; flush();
         });
     }
 
@@ -165,12 +185,13 @@ export function createTTSControls(dom, { getText, onChange }) {
         dom.accent.value = settings.reading?.englishVariant === 'en-US' ? 'en-US' : 'en-GB';
         const target = describeSpeechTarget('english');
         dom.voice.value = settings.tts?.selectedVoices?.[dom.accent.value] || (target.source === 'remote' ? target.voice : '') || '';
-        deviceVoices(); render();
+        deviceVoices(); playbackIdentity = speechIdentity(); render();
     }
 
     bindInput(dom.url, () => {
-        const value = dom.url.value.trim().replace(/\/+$/, '');
-        if (value && !validUrl(value)) { saveError = 'extension.ttsUrlInvalid'; render(); return; }
+        const raw = dom.url.value.trim();
+        const value = normalizeTTSUrl(raw);
+        if (raw && (!validUrl(raw) || !value)) { saveError = 'extension.ttsUrlInvalid'; render(); return; }
         persist({ tts: { use: 'custom', baseUrlCustom: value } });
     });
     bindInput(dom.key, () => persist(null, { ttsApiKey: dom.key.value.trim() }));
@@ -229,6 +250,23 @@ export function createTTSControls(dom, { getText, onChange }) {
         }
     });
     window.speechSynthesis?.addEventListener?.('voiceschanged', () => { deviceVoices(); render(); });
+    dom.accountSync.addEventListener('click', () => { flush(); syncTTSAccount({ force: true }); });
+    window.addEventListener(TTS_SYNC_EVENT, () => {
+        const nextScope = getTTSAccountSyncState().key;
+        if (nextScope !== formScope) {
+            clearTimeout(saveTimer); pending = null; pendingField = null; pendingScope = '';
+            formScope = nextScope; saveError = ''; invalidate(); sync();
+        } else render();
+    });
+    window.addEventListener(TTS_PROFILE_EVENT, (event) => {
+        if (!['remote', 'credential'].includes(event.detail?.reason)) return;
+        const next = speechIdentity();
+        if (next === playbackIdentity) return;
+        playbackIdentity = next;
+        invalidate();
+        if (!pending && ![dom.url, dom.key, dom.voice].includes(document.activeElement)) sync();
+        else render();
+    });
     window.addEventListener('storage', (event) => {
         if (event.key === 'pen_global_settings' || event.key === 'pen_global_secrets') { invalidate(); sync(); }
     });

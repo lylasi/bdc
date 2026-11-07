@@ -1,5 +1,6 @@
 import { TTS_CONFIG } from '../ai-config.js';
 import { touch as syncTouch } from './sync-signals.js';
+import { getTTSProfileView, saveTTSSettingsPatch, saveTTSKey } from './tts-profile-storage.js';
 import {
     getAIViewFromProfile,
     applyAISettingsPatch,
@@ -135,6 +136,9 @@ export function loadGlobalSettings() {
   const merged = mergeSettings(defaults, parsed);
   // AI is always projected from the active account/device profile.
   merged.ai = getAIViewFromProfile();
+  const voice = getTTSProfileView();
+  merged.tts = { ...merged.tts, ...voice.tts };
+  merged.reading = { ...merged.reading, ...voice.reading };
   return merged;
 }
 
@@ -166,6 +170,7 @@ export function saveGlobalSettings(partial, options = {}) {
     try { migrated = localStorage.getItem(AI_PROFILE_MIGRATION_KEY) === 'done'; } catch (_) {}
     if (migrated) delete nextStored.ai;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(nextStored));
+    saveTTSSettingsPatch(legacyPartial);
   } catch (_) {
     savedToStorage = false;
   }
@@ -180,12 +185,13 @@ export function saveGlobalSettings(partial, options = {}) {
 }
 
 export function loadGlobalSecrets() {
+  const ttsApiKey = getTTSProfileView().apiKey;
   try {
     const raw = localStorage.getItem(SECRETS_KEY);
-    if (!raw) return mergeSecrets(secretDefaults, {});
-    return mergeSecrets(secretDefaults, JSON.parse(raw));
+    if (!raw) return { ...mergeSecrets(secretDefaults, {}), ttsApiKey };
+    return { ...mergeSecrets(secretDefaults, JSON.parse(raw)), ttsApiKey };
   } catch (_) {
-    return mergeSecrets(secretDefaults, {});
+    return { ...mergeSecrets(secretDefaults, {}), ttsApiKey };
   }
 }
 
@@ -211,6 +217,7 @@ export function saveGlobalSecrets(partial) {
       if (stored && stored.aiApiKey !== undefined) toStore.aiApiKey = stored.aiApiKey;
     }
     localStorage.setItem(SECRETS_KEY, JSON.stringify(toStore));
+    if (Object.prototype.hasOwnProperty.call(clean, 'ttsApiKey')) saveTTSKey(clean.ttsApiKey);
     return next;
   } catch (_) {
     return current;

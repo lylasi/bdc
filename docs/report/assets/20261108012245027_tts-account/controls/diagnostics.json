@@ -1,0 +1,44 @@
+[
+  {
+    "owner": "",
+    "label": "试播并检查",
+    "status": "使用装置语音 · English US Natural",
+    "audio": {
+      "time": 0,
+      "duration": null,
+      "ended": false,
+      "paused": true,
+      "readyState": 0,
+      "networkState": 0,
+      "endedHandler": "object"
+    }
+  },
+  {
+    "owner": "",
+    "label": "試播並檢查",
+    "status": "使用裝置語音 · English US Natural",
+    "audio": {
+      "time": 0,
+      "duration": null,
+      "ended": false,
+      "paused": true,
+      "readyState": 0,
+      "networkState": 0,
+      "endedHandler": "object"
+    }
+  },
+  {
+    "owner": "",
+    "label": "試播並檢查",
+    "status": "使用裝置語音 · English US Natural",
+    "audio": {
+      "time": 0,
+      "duration": null,
+      "ended": false,
+      "paused": true,
+      "readyState": 0,
+      "networkState": 0,
+      "endedHandler": "object"
+    }
+  }
+]

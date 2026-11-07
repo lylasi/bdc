@@ -1,0 +1,18 @@
+{
+  "checks": [
+    {
+      "id": "platform-result",
+      "ok": true
+    },
+    {
+      "id": "state-result",
+      "ok": true
+    },
+    {
+      "id": "ui-result",
+      "ok": true
+    }
+  ],
+  "removal": true,
+  "errors": []
+}

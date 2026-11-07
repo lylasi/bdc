@@ -186,7 +186,7 @@ const ttsDom = Object.fromEntries(Object.entries({
     section: 'settings', status: 'status', summary: 'summary', mode: 'mode', url: 'url', key: 'key',
     accent: 'accent', voice: 'voice', voiceList: 'voice-list', loadVoices: 'load-voices',
     voicesNotice: 'voices-notice', deviceVoice: 'device-voice', check: 'check', test: 'test',
-    saveNotice: 'save-notice', serviceFields: 'service-fields'
+    saveNotice: 'save-notice', serviceFields: 'service-fields', accountState: 'account-state', accountSync: 'account-sync'
 }).map(([key, suffix]) => [key, document.getElementById('ext-tts-' + suffix)]));
 ttsControls = createTTSControls(ttsDom, { getText: () => dom.resultWord.textContent.trim(), onChange: stopPronunciation });
 

@@ -1,0 +1,23 @@
+{
+  "findings": [
+    {
+      "area": "vocabulary",
+      "severity": "low",
+      "title": "篩選清空：console error",
+      "detail": "Error analyzing word \"banana\": Error: 尚未选择模型\n    at modelError (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:109:17)\n    at resolveAIRequestConfig (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:432:42)\n    at resolveAIRequestConfigAsync (http://127.0.0.1:8357/modules/ai-mode | Error analyzing word \"orange\": Error: 尚未选择模型\n    at modelError (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:109:17)\n    at resolveAIRequestConfig (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:432:42)\n    at resolveAIRequestConfigAsync (http://127.0.0.1:8357/modules/ai-m"
+    },
+    {
+      "area": "learning",
+      "severity": "low",
+      "title": "AI 例句：console error",
+      "detail": "生成例句時出錯: Error: 尚未选择模型\n    at modelError (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:109:17)\n    at resolveAIRequestConfig (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:432:42)\n    at resolveAIRequestConfigAsync (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:5"
+    },
+    {
+      "area": "learning",
+      "severity": "low",
+      "title": "造句檢查：console error",
+      "detail": "檢查例句時出錯: Error: 尚未选择模型\n    at modelError (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:109:17)\n    at resolveAIRequestConfig (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:432:42)\n    at resolveAIRequestConfigAsync (http://127.0.0.1:8357/modules/ai-models.js?v=c40067a291c4:5"
+    }
+  ],
+  "generatedAt": "2026-11-07T17:50:08.433Z"
+}

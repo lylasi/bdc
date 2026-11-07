@@ -15,6 +15,8 @@ import { loadGlobalSettings } from './settings.js';
 import { sanitizeAISettings } from './ai-settings-sanitize.js';
 import { applyRemoteAISettings, getAIProfileUpdatedAt } from './ai-profile-storage.js';
 import { t } from './i18n.js';
+import { getTTSSettingsGroup, applyRemoteTTSSettings } from './tts-profile-storage.js';
+import { sanitizeTTSGroup } from '../shared/tts-settings.mjs';
 
 const ASSISTANT_LEGACY_KEY = 'assistantConversations';
 const ASSISTANT_INDEX_KEY = 'assistantConvIndex';
@@ -393,6 +395,7 @@ async function applySnapshotPayload(payload, force = false) {
   }
   applyQAPayload(remote, force);
   applyAISettingsPayload(remote, force);
+  applyRemoteTTSSettings(remote.ttsSettings, undefined, { force });
   await applyAssistantPayload(remote, force);
   return errors.length ? { ok: false, errors } : { ok: true, errors: [] };
 }
@@ -474,6 +477,7 @@ export async function buildLocalSnapshot() {
         updatedAt: aiSettingsUpdatedAt,
         settings: sanitizeAISettings(globalSettings?.ai)
       },
+      ...(getTTSSettingsGroup() ? { ttsSettings: getTTSSettingsGroup() } : {}),
       ...(readingStore.isReadingMigrated() ? {} : {
         assistant: {
           updatedAt: assistantUpdatedAt,
@@ -603,6 +607,12 @@ export function lwwMerge(localPayload, remotePayload) {
   }
 
   // assistant group-level LWW
+  const localTTS = sanitizeTTSGroup(localPayload?.ttsSettings);
+  const remoteTTS = sanitizeTTSGroup(remotePayload?.ttsSettings);
+  if (localTTS && (!remoteTTS || localTTS.updatedAt > remoteTTS.updatedAt)) out.ttsSettings = localTTS;
+  else if (remoteTTS) out.ttsSettings = remoteTTS;
+  else delete out.ttsSettings;
+
   if (!readingStore.isReadingMigrated()) {
     const las = localPayload?.assistant;
     const ras = remotePayload?.assistant;
