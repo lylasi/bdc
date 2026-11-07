@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "node",
+    "/Users/linus/.npm/_npx/32026684e21afda6/node_modules/wrangler/bin/wrangler.js",
+    "deploy",
+    "/tmp/bdc-tts-account-20261108012245027/cloudflare-worker/src/worker.js",
+    "--config",
+    "/Users/linus/CODE/bdc/cloudflare-worker/wrangler.toml",
+    "--keep-vars",
+    "--tag",
+    "tts-account-ee1a603",
+    "--message",
+    "TTS account settings and snapshot whitelist ee1a603"
+  ],
+  "sourceCommit": "ee1a603075089000108298286502ce4e54d17c3e",
+  "bindingPreflightPassed": true
+}

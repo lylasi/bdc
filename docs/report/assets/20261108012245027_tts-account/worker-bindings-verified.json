@@ -1,0 +1,10 @@
+{
+  "before": "b60e7760-4bb5-44f5-a997-92d744226301",
+  "after": "fe19bafb-4ec5-4eb9-b65b-4fa603a665ae",
+  "bindingsUnchanged": true,
+  "secretNamesPreserved": [
+    "AI_CATALOG_DIGEST_KEY",
+    "AI_CREDENTIAL_KEY_V1",
+    "PASSWORD_PEPPER"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "id": "fe19bafb-4ec5-4eb9-b65b-4fa603a665ae",
+  "number": 16,
+  "metadata": {
+    "created_on": "2026-11-07T18:08:54.953827Z",
+    "source": "wrangler",
+    "author_id": "083c571534e996ac4f8f4ebf7ebc0852",
+    "author_email": "a4a41234@gmail.com",
+    "has_preview": true
+  },
+  "annotations": {
+    "workers/message": "TTS account settings and snapshot whitelist ee1a603",
+    "workers/tag": "tts-account-ee1a603",
+    "workers/triggered_by": "version_upload"
+  },
+  "resources": {
+    "script": {
+      "etag": "315ac466d072718e36c8eec2d3170c2f239c4eff177fed915667c5bd3cb7057a",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler"
+    },
+    "script_runtime": {
+      "compatibility_date": "2026-01-01",
+      "usage_model": "standard"
+    },
+    "bindings": [
+      {
+        "name": "AI_CATALOG_DIGEST_KEY",
+        "type": "secret_text"
+      },
+      {
+        "name": "AI_CREDENTIAL_KEY_V1",
+        "type": "secret_text"
+      },
+      {
+        "name": "AI_CREDENTIAL_KEY_VERSION",
+        "text": "1",
+        "type": "plain_text"
+      },
+      {
+        "name": "ALLOW_ORIGIN",
+        "text": "*",
+        "type": "plain_text"
+      },
+      {
+        "database_id": "088d7819-b477-4d64-8b5d-583798712042",
+        "id": "088d7819-b477-4d64-8b5d-583798712042",
+        "name": "DB",
+        "type": "d1"
+      },
+      {
+        "name": "PASSWORD_PEPPER",
+        "type": "secret_text"
+      }
+    ]
+  }
+}

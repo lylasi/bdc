@@ -1,0 +1,1717 @@
+{
+  "release": "a82b70626b94",
+  "checks": [
+    {
+      "file": "features/ai-admin/ai-admin.js",
+      "url": "http://10.10.10.149:8001/features/ai-admin/ai-admin.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87",
+      "expected": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87",
+      "ok": true
+    },
+    {
+      "file": "features/article/paragraph-pipeline.js",
+      "url": "http://10.10.10.149:8001/features/article/paragraph-pipeline.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3",
+      "expected": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3",
+      "ok": true
+    },
+    {
+      "file": "features/admin-users/admin-users.js",
+      "url": "http://10.10.10.149:8001/features/admin-users/admin-users.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04",
+      "expected": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04",
+      "ok": true
+    },
+    {
+      "file": "features/article/analysis-state.js",
+      "url": "http://10.10.10.149:8001/features/article/analysis-state.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3",
+      "expected": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3",
+      "ok": true
+    },
+    {
+      "file": "features/article/perf-probe.js",
+      "url": "http://10.10.10.149:8001/features/article/perf-probe.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61",
+      "expected": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61",
+      "ok": true
+    },
+    {
+      "file": "features/article/article.js",
+      "url": "http://10.10.10.149:8001/features/article/article.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "100061e139bbef0b9e28e1797e633ea9ce693a5299dfdd5d3e132532f00b8617",
+      "expected": "100061e139bbef0b9e28e1797e633ea9ce693a5299dfdd5d3e132532f00b8617",
+      "ok": true
+    },
+    {
+      "file": "features/article/phrase-picker.js",
+      "url": "http://10.10.10.149:8001/features/article/phrase-picker.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e135fe40fa3604c5257b18b6017439678c3cb5ec331acbc8b325f93efae2ad7b",
+      "expected": "e135fe40fa3604c5257b18b6017439678c3cb5ec331acbc8b325f93efae2ad7b",
+      "ok": true
+    },
+    {
+      "file": "features/article/reading-export-dialog.js",
+      "url": "http://10.10.10.149:8001/features/article/reading-export-dialog.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "5d31c61b07de31dce86e51c7136a52cba275c500e58b8dcc63d0f3a573e6670a",
+      "expected": "5d31c61b07de31dce86e51c7136a52cba275c500e58b8dcc63d0f3a573e6670a",
+      "ok": true
+    },
+    {
+      "file": "features/article/tokenize.js",
+      "url": "http://10.10.10.149:8001/features/article/tokenize.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a",
+      "expected": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a",
+      "ok": true
+    },
+    {
+      "file": "features/article/reading-view.js",
+      "url": "http://10.10.10.149:8001/features/article/reading-view.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+      "expected": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+      "ok": true
+    },
+    {
+      "file": "features/article/reading-panel.js",
+      "url": "http://10.10.10.149:8001/features/article/reading-panel.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e30f42c2c526a7d91d5eda99ebc8c24fc926b0781022a4a3ac4e58b0e1b0714f",
+      "expected": "e30f42c2c526a7d91d5eda99ebc8c24fc926b0781022a4a3ac4e58b0e1b0714f",
+      "ok": true
+    },
+    {
+      "file": "features/article/sentence-actions.js",
+      "url": "http://10.10.10.149:8001/features/article/sentence-actions.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "74214e11b7a2836a647c000dfa1667b02ff57bd7c922abe77f3c3a42c379e688",
+      "expected": "74214e11b7a2836a647c000dfa1667b02ff57bd7c922abe77f3c3a42c379e688",
+      "ok": true
+    },
+    {
+      "file": "features/assistant/assistant.js",
+      "url": "http://10.10.10.149:8001/features/assistant/assistant.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "69f158bc78cf30b020ed9dfe053e9ae88cc44e39cfcb6afe3f69d4502efbef4b",
+      "expected": "69f158bc78cf30b020ed9dfe053e9ae88cc44e39cfcb6afe3f69d4502efbef4b",
+      "ok": true
+    },
+    {
+      "file": "features/assistant/request-plan.js",
+      "url": "http://10.10.10.149:8001/features/assistant/request-plan.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "6c399c3cf46bfc712b22018c9a03ceb179562491ee79007abb037fc90694687f",
+      "expected": "6c399c3cf46bfc712b22018c9a03ceb179562491ee79007abb037fc90694687f",
+      "ok": true
+    },
+    {
+      "file": "features/assistant/word-chat.js",
+      "url": "http://10.10.10.149:8001/features/assistant/word-chat.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+      "expected": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+      "ok": true
+    },
+    {
+      "file": "features/dictation/dictation-grader.js",
+      "url": "http://10.10.10.149:8001/features/dictation/dictation-grader.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd",
+      "expected": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd",
+      "ok": true
+    },
+    {
+      "file": "features/dictation/dictation.js",
+      "url": "http://10.10.10.149:8001/features/dictation/dictation.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b",
+      "expected": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b",
+      "ok": true
+    },
+    {
+      "file": "features/learning/learning.js",
+      "url": "http://10.10.10.149:8001/features/learning/learning.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36",
+      "expected": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36",
+      "ok": true
+    },
+    {
+      "file": "features/ocr/ocr.js",
+      "url": "http://10.10.10.149:8001/features/ocr/ocr.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e",
+      "expected": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e",
+      "ok": true
+    },
+    {
+      "file": "features/phonetics/phonetics.js",
+      "url": "http://10.10.10.149:8001/features/phonetics/phonetics.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce",
+      "expected": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce",
+      "ok": true
+    },
+    {
+      "file": "features/phonetics/word-sheet.js",
+      "url": "http://10.10.10.149:8001/features/phonetics/word-sheet.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b",
+      "expected": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-checker.js",
+      "url": "http://10.10.10.149:8001/features/qa/qa-checker.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1",
+      "expected": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-pdf.js",
+      "url": "http://10.10.10.149:8001/features/qa/qa-pdf.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e",
+      "expected": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-creator.js",
+      "url": "http://10.10.10.149:8001/features/qa/qa-creator.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba",
+      "expected": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-storage.js",
+      "url": "http://10.10.10.149:8001/features/qa/qa-storage.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226",
+      "expected": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-trainer.js",
+      "url": "http://10.10.10.149:8001/features/qa/qa-trainer.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee",
+      "expected": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa.js",
+      "url": "http://10.10.10.149:8001/features/qa/qa.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d18898ad9a88ae2b3cf23e3308b07a4e4c80470819f3c1cc866371981af7f0ad",
+      "expected": "d18898ad9a88ae2b3cf23e3308b07a4e4c80470819f3c1cc866371981af7f0ad",
+      "ok": true
+    },
+    {
+      "file": "features/quiz/quiz.js",
+      "url": "http://10.10.10.149:8001/features/quiz/quiz.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede",
+      "expected": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede",
+      "ok": true
+    },
+    {
+      "file": "features/sync/sync-status.js",
+      "url": "http://10.10.10.149:8001/features/sync/sync-status.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "35779b7c612bf9dc6db0ad5f29bdabf87ea0f99f6924529c857e416b342e1a5e",
+      "expected": "35779b7c612bf9dc6db0ad5f29bdabf87ea0f99f6924529c857e416b342e1a5e",
+      "ok": true
+    },
+    {
+      "file": "features/sync/ai-provider-settings.js",
+      "url": "http://10.10.10.149:8001/features/sync/ai-provider-settings.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c0370f3ad6e92eb4a29a32107d43f6b6148123add8c1e122cfdd2d6605ca3e43",
+      "expected": "c0370f3ad6e92eb4a29a32107d43f6b6148123add8c1e122cfdd2d6605ca3e43",
+      "ok": true
+    },
+    {
+      "file": "features/sync/sync.js",
+      "url": "http://10.10.10.149:8001/features/sync/sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f995012276a5b2288fd66fb2479a012e9a121b36400cf80b5cdef2d92f65c802",
+      "expected": "f995012276a5b2288fd66fb2479a012e9a121b36400cf80b5cdef2d92f65c802",
+      "ok": true
+    },
+    {
+      "file": "features/vocabulary/vocabulary.js",
+      "url": "http://10.10.10.149:8001/features/vocabulary/vocabulary.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "803587959630eae07a673819721421453043709f73ec2c4328029c359f71e9a4",
+      "expected": "803587959630eae07a673819721421453043709f73ec2c4328029c359f71e9a4",
+      "ok": true
+    },
+    {
+      "file": "index.html",
+      "url": "http://10.10.10.149:8001/",
+      "status": 200,
+      "sha256": "4a2345326c48faa526219f0729cb2c4a7931753b29c7f13c0dc8dc7e787ea105",
+      "expected": "4a2345326c48faa526219f0729cb2c4a7931753b29c7f13c0dc8dc7e787ea105",
+      "ok": true
+    },
+    {
+      "file": "locales/zh-CN.js",
+      "url": "http://10.10.10.149:8001/locales/zh-CN.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "bef249fb590771f9f96616f83ed4b983150f329eed1888e155b5b58b4343ada9",
+      "expected": "bef249fb590771f9f96616f83ed4b983150f329eed1888e155b5b58b4343ada9",
+      "ok": true
+    },
+    {
+      "file": "main.js",
+      "url": "http://10.10.10.149:8001/main.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "1712c4b92538b2a99ebba552b5045ac9340754eeb5a4c6faa7b1494c36d566d4",
+      "expected": "1712c4b92538b2a99ebba552b5045ac9340754eeb5a4c6faa7b1494c36d566d4",
+      "ok": true
+    },
+    {
+      "file": "locales/zh-HK.js",
+      "url": "http://10.10.10.149:8001/locales/zh-HK.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "99619c3fe62a6b57c15f13ea491b18b00c84d47972b84a437651625ef79dafce",
+      "expected": "99619c3fe62a6b57c15f13ea491b18b00c84d47972b84a437651625ef79dafce",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-catalog.js",
+      "url": "http://10.10.10.149:8001/modules/ai-catalog.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec",
+      "expected": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-credential-sync.js",
+      "url": "http://10.10.10.149:8001/modules/ai-credential-sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "46dea4caa35e605dcd5b69879d0033055dcbace09420e52044d9175f986d2a9c",
+      "expected": "46dea4caa35e605dcd5b69879d0033055dcbace09420e52044d9175f986d2a9c",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-model-picker.js",
+      "url": "http://10.10.10.149:8001/modules/ai-model-picker.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee",
+      "expected": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-models.js",
+      "url": "http://10.10.10.149:8001/modules/ai-models.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f39f55ecff2772f332fd1a8a591b82f07eafd2e6fef0dd2f55561d707149cd48",
+      "expected": "f39f55ecff2772f332fd1a8a591b82f07eafd2e6fef0dd2f55561d707149cd48",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/anthropic.js",
+      "url": "http://10.10.10.149:8001/modules/ai-protocols/anthropic.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "65765ba253ba830e82930236bb756d30f9c39b6661f428a6def2bda24893630b",
+      "expected": "65765ba253ba830e82930236bb756d30f9c39b6661f428a6def2bda24893630b",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/chat-completions.js",
+      "url": "http://10.10.10.149:8001/modules/ai-protocols/chat-completions.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "4966045e6e7ad0403e848aa4f8dc6c5b390a1a033b6ba59c3715420a0b4d23d4",
+      "expected": "4966045e6e7ad0403e848aa4f8dc6c5b390a1a033b6ba59c3715420a0b4d23d4",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/common.js",
+      "url": "http://10.10.10.149:8001/modules/ai-protocols/common.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181",
+      "expected": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/index.js",
+      "url": "http://10.10.10.149:8001/modules/ai-protocols/index.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9",
+      "expected": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/gemini.js",
+      "url": "http://10.10.10.149:8001/modules/ai-protocols/gemini.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "fdb8999adb513b766993b4aa62783b6f91c587bf1ab2c1497a894c467664813b",
+      "expected": "fdb8999adb513b766993b4aa62783b6f91c587bf1ab2c1497a894c467664813b",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-profile-storage.js",
+      "url": "http://10.10.10.149:8001/modules/ai-profile-storage.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "319304383f78fe0672deece5bcdb58f85a9838d4bf9f27a56b946cb1e1c0b334",
+      "expected": "319304383f78fe0672deece5bcdb58f85a9838d4bf9f27a56b946cb1e1c0b334",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-settings-sanitize.js",
+      "url": "http://10.10.10.149:8001/modules/ai-settings-sanitize.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "6284741710a92240a4358b2a5f39f773cf6ebeb2efebfa6afa0108f654eec705",
+      "expected": "6284741710a92240a4358b2a5f39f773cf6ebeb2efebfa6afa0108f654eec705",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-thinking-help.js",
+      "url": "http://10.10.10.149:8001/modules/ai-thinking-help.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "b086623750c09a696a05e31d8fb43c9efc9e5de34233fc670c5a0d04042d5c2f",
+      "expected": "b086623750c09a696a05e31d8fb43c9efc9e5de34233fc670c5a0d04042d5c2f",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-thinking.js",
+      "url": "http://10.10.10.149:8001/modules/ai-thinking.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "6a406ab27beb2636fdc69ffbd1d52eb231bb8e99b02b3587731114de1d073423",
+      "expected": "6a406ab27beb2636fdc69ffbd1d52eb231bb8e99b02b3587731114de1d073423",
+      "ok": true
+    },
+    {
+      "file": "modules/article-route.js",
+      "url": "http://10.10.10.149:8001/modules/article-route.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "ef01b3585776c3fee60c4f47e4072c790fb462b3174d6c7370f95f7ca2194011",
+      "expected": "ef01b3585776c3fee60c4f47e4072c790fb462b3174d6c7370f95f7ca2194011",
+      "ok": true
+    },
+    {
+      "file": "modules/article-session.js",
+      "url": "http://10.10.10.149:8001/modules/article-session.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b",
+      "expected": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b",
+      "ok": true
+    },
+    {
+      "file": "modules/api.js",
+      "url": "http://10.10.10.149:8001/modules/api.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "579a808a2267655aecb2ff3d0d96cf7f492d75dee6374cd8eb7ccdf417d2e327",
+      "expected": "579a808a2267655aecb2ff3d0d96cf7f492d75dee6374cd8eb7ccdf417d2e327",
+      "ok": true
+    },
+    {
+      "file": "modules/article-book-link.js",
+      "url": "http://10.10.10.149:8001/modules/article-book-link.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c1b7be12137b712a6e930cdc8db48a810088050006ba2b82ec3637f82a32f483",
+      "expected": "c1b7be12137b712a6e930cdc8db48a810088050006ba2b82ec3637f82a32f483",
+      "ok": true
+    },
+    {
+      "file": "modules/article-store.js",
+      "url": "http://10.10.10.149:8001/modules/article-store.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "86ab267766b4811abbe49e7fc16ec797ab5db5ccb7efc53dc99fbd347fd309b6",
+      "expected": "86ab267766b4811abbe49e7fc16ec797ab5db5ccb7efc53dc99fbd347fd309b6",
+      "ok": true
+    },
+    {
+      "file": "modules/article-sync.js",
+      "url": "http://10.10.10.149:8001/modules/article-sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "1ab7f89480638e2592cf8a47e0da613b07a68ec223886ed19babac3bed2b709e",
+      "expected": "1ab7f89480638e2592cf8a47e0da613b07a68ec223886ed19babac3bed2b709e",
+      "ok": true
+    },
+    {
+      "file": "modules/audio.js",
+      "url": "http://10.10.10.149:8001/modules/audio.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "06ed362f7476d1295b50ff0fadff3ad613271ea6ad593ecd04ddcda6b57ddc2a",
+      "expected": "06ed362f7476d1295b50ff0fadff3ad613271ea6ad593ecd04ddcda6b57ddc2a",
+      "ok": true
+    },
+    {
+      "file": "modules/dom.js",
+      "url": "http://10.10.10.149:8001/modules/dom.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "1a39e46e7b6236925182a02e7433b01f8f844d5857324e90ffcd0d8e973fde0f",
+      "expected": "1a39e46e7b6236925182a02e7433b01f8f844d5857324e90ffcd0d8e973fde0f",
+      "ok": true
+    },
+    {
+      "file": "modules/backup-store.js",
+      "url": "http://10.10.10.149:8001/modules/backup-store.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "4477928bd610a9c74f7f414d4c6538295d36c22e17e8616e3bbffa4c33e1e469",
+      "expected": "4477928bd610a9c74f7f414d4c6538295d36c22e17e8616e3bbffa4c33e1e469",
+      "ok": true
+    },
+    {
+      "file": "modules/detail-state.js",
+      "url": "http://10.10.10.149:8001/modules/detail-state.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086",
+      "expected": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086",
+      "ok": true
+    },
+    {
+      "file": "modules/cache.js",
+      "url": "http://10.10.10.149:8001/modules/cache.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd",
+      "expected": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd",
+      "ok": true
+    },
+    {
+      "file": "modules/i18n-config.js",
+      "url": "http://10.10.10.149:8001/modules/i18n-config.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66",
+      "expected": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66",
+      "ok": true
+    },
+    {
+      "file": "modules/i18n.js",
+      "url": "http://10.10.10.149:8001/modules/i18n.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76",
+      "expected": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76",
+      "ok": true
+    },
+    {
+      "file": "modules/local-backup.js",
+      "url": "http://10.10.10.149:8001/modules/local-backup.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "2f4d7c482e8204ea3f10dd55676728a5bc3597dc9f1033a30ab8bf0b5900809a",
+      "expected": "2f4d7c482e8204ea3f10dd55676728a5bc3597dc9f1033a30ab8bf0b5900809a",
+      "ok": true
+    },
+    {
+      "file": "modules/markdown.js",
+      "url": "http://10.10.10.149:8001/modules/markdown.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558",
+      "expected": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558",
+      "ok": true
+    },
+    {
+      "file": "modules/permanent-db.js",
+      "url": "http://10.10.10.149:8001/modules/permanent-db.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "89e8a09ddd00b91dada37145c4212b7ea3796009f13e37dcc7eb2f5561a5e43d",
+      "expected": "89e8a09ddd00b91dada37145c4212b7ea3796009f13e37dcc7eb2f5561a5e43d",
+      "ok": true
+    },
+    {
+      "file": "modules/phonetics-data.js",
+      "url": "http://10.10.10.149:8001/modules/phonetics-data.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0",
+      "expected": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0",
+      "ok": true
+    },
+    {
+      "file": "modules/platform.js",
+      "url": "http://10.10.10.149:8001/modules/platform.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690",
+      "expected": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/article.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/article.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f93dc485bf774327797368ffb60d8c4ef03d15b724f7b82ba7d1a7eba9fbeca9",
+      "expected": "f93dc485bf774327797368ffb60d8c4ef03d15b724f7b82ba7d1a7eba9fbeca9",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/assistant.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/assistant.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6",
+      "expected": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/dictation.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/dictation.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec",
+      "expected": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/dictionary.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/dictionary.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7",
+      "expected": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/import.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/import.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf",
+      "expected": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/index.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/index.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+      "expected": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/learning.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/learning.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e",
+      "expected": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/qa.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/qa.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837",
+      "expected": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/ocr.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/ocr.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0",
+      "expected": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0",
+      "ok": true
+    },
+    {
+      "file": "modules/qr.js",
+      "url": "http://10.10.10.149:8001/modules/qr.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363",
+      "expected": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/language-rules.js",
+      "url": "http://10.10.10.149:8001/modules/prompts/language-rules.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986",
+      "expected": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986",
+      "ok": true
+    },
+    {
+      "file": "modules/quick-model-picker.js",
+      "url": "http://10.10.10.149:8001/modules/quick-model-picker.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "3e29c2dec7765b4e562ac8316ab6ff8b966b6c5c3804e435152b238bb70432ab",
+      "expected": "3e29c2dec7765b4e562ac8316ab6ff8b966b6c5c3804e435152b238bb70432ab",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-actions.js",
+      "url": "http://10.10.10.149:8001/modules/reading-actions.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+      "expected": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-edition.js",
+      "url": "http://10.10.10.149:8001/modules/reading-edition.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e15feb34ed2ca831787a2d19ea8c7adea69e16f3360e626068828dc47ba6e9f7",
+      "expected": "e15feb34ed2ca831787a2d19ea8c7adea69e16f3360e626068828dc47ba6e9f7",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-export.js",
+      "url": "http://10.10.10.149:8001/modules/reading-export.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "350a9cc197f63cb0ed9b7018582fa3ae24060a9e8c061becf92674ab6fc19d47",
+      "expected": "350a9cc197f63cb0ed9b7018582fa3ae24060a9e8c061becf92674ab6fc19d47",
+      "ok": true
+    },
+    {
+      "file": "modules/settings.js",
+      "url": "http://10.10.10.149:8001/modules/settings.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "fb878f2c58bd1c19860227197abc77731e922c413982991b48f61470d1382baf",
+      "expected": "fb878f2c58bd1c19860227197abc77731e922c413982991b48f61470d1382baf",
+      "ok": true
+    },
+    {
+      "file": "modules/state.js",
+      "url": "http://10.10.10.149:8001/modules/state.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "246ba41c1eaca5b6be2ff8eeaf25bd64bc962cb0055bc4bb339855f2656c5a7f",
+      "expected": "246ba41c1eaca5b6be2ff8eeaf25bd64bc962cb0055bc4bb339855f2656c5a7f",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-sync.js",
+      "url": "http://10.10.10.149:8001/modules/reading-sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e",
+      "expected": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-store.js",
+      "url": "http://10.10.10.149:8001/modules/reading-store.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "23344d0c0221d17349472673911b6dfa5326d58fe89721fa8dbf5dfe614e227b",
+      "expected": "23344d0c0221d17349472673911b6dfa5326d58fe89721fa8dbf5dfe614e227b",
+      "ok": true
+    },
+    {
+      "file": "modules/storage.js",
+      "url": "http://10.10.10.149:8001/modules/storage.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "5b0fb44fcace370dad1be47b92f1512ce397bff6612439f29599e257a442c105",
+      "expected": "5b0fb44fcace370dad1be47b92f1512ce397bff6612439f29599e257a442c105",
+      "ok": true
+    },
+    {
+      "file": "modules/sync-cloudflare.js",
+      "url": "http://10.10.10.149:8001/modules/sync-cloudflare.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "5bb36b5ffed2968179dc0e77f35fb5de2f41ab042886ca1bd318e0915860f0bb",
+      "expected": "5bb36b5ffed2968179dc0e77f35fb5de2f41ab042886ca1bd318e0915860f0bb",
+      "ok": true
+    },
+    {
+      "file": "modules/sync-core.js",
+      "url": "http://10.10.10.149:8001/modules/sync-core.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f298918bb73fb8c0e915acbc97faf1eeb2ecedc3356540420d6762a6d570df5d",
+      "expected": "f298918bb73fb8c0e915acbc97faf1eeb2ecedc3356540420d6762a6d570df5d",
+      "ok": true
+    },
+    {
+      "file": "modules/theme-art.js",
+      "url": "http://10.10.10.149:8001/modules/theme-art.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4",
+      "expected": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4",
+      "ok": true
+    },
+    {
+      "file": "modules/sync-signals.js",
+      "url": "http://10.10.10.149:8001/modules/sync-signals.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff",
+      "expected": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff",
+      "ok": true
+    },
+    {
+      "file": "modules/theme.js",
+      "url": "http://10.10.10.149:8001/modules/theme.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd",
+      "expected": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd",
+      "ok": true
+    },
+    {
+      "file": "modules/tts-account-sync.js",
+      "url": "http://10.10.10.149:8001/modules/tts-account-sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f46ad608d06b2f9c42f2d8222b05cb8479a5d2a30ea15cd7fcf25618787a299f",
+      "expected": "f46ad608d06b2f9c42f2d8222b05cb8479a5d2a30ea15cd7fcf25618787a299f",
+      "ok": true
+    },
+    {
+      "file": "modules/tts-profile-storage.js",
+      "url": "http://10.10.10.149:8001/modules/tts-profile-storage.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "06bdf518314f9f383b1fe294848fc35b9030b12b4d52f28fe751f391c7d73bce",
+      "expected": "06bdf518314f9f383b1fe294848fc35b9030b12b4d52f28fe751f391c7d73bce",
+      "ok": true
+    },
+    {
+      "file": "modules/ui.js",
+      "url": "http://10.10.10.149:8001/modules/ui.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d635ab2f214ea3417323a36e914c6e974283035c5ff55ca4cc30147c36040e85",
+      "expected": "d635ab2f214ea3417323a36e914c6e974283035c5ff55ca4cc30147c36040e85",
+      "ok": true
+    },
+    {
+      "file": "modules/validate.js",
+      "url": "http://10.10.10.149:8001/modules/validate.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8",
+      "expected": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8",
+      "ok": true
+    },
+    {
+      "file": "modules/vendor/qrcode-generator.js",
+      "url": "http://10.10.10.149:8001/modules/vendor/qrcode-generator.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c",
+      "expected": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c",
+      "ok": true
+    },
+    {
+      "file": "modules/voices.js",
+      "url": "http://10.10.10.149:8001/modules/voices.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "54280077f0d6d19f8d93539fb7f82e768f9fe862c208cf416c2ff4138d824b13",
+      "expected": "54280077f0d6d19f8d93539fb7f82e768f9fe862c208cf416c2ff4138d824b13",
+      "ok": true
+    },
+    {
+      "file": "modules/vocab.js",
+      "url": "http://10.10.10.149:8001/modules/vocab.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "14b818bad3d92f60829c91b12d9583f5c60af96963e03a7916367007c710b95f",
+      "expected": "14b818bad3d92f60829c91b12d9583f5c60af96963e03a7916367007c710b95f",
+      "ok": true
+    },
+    {
+      "file": "modules/vocabulary-route.js",
+      "url": "http://10.10.10.149:8001/modules/vocabulary-route.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "bc9ce8476d502381ae9c27d892399804bf92b9df19f5c802cbabf6e9ffeb71a0",
+      "expected": "bc9ce8476d502381ae9c27d892399804bf92b9df19f5c802cbabf6e9ffeb71a0",
+      "ok": true
+    },
+    {
+      "file": "shared/article-book-link.mjs",
+      "url": "http://10.10.10.149:8001/shared/article-book-link.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "97629a9d9f4e9361785d72d9665e506ad41c1954d42f949c5c81334378cd55d1",
+      "expected": "97629a9d9f4e9361785d72d9665e506ad41c1954d42f949c5c81334378cd55d1",
+      "ok": true
+    },
+    {
+      "file": "shared/article-protocol.mjs",
+      "url": "http://10.10.10.149:8001/shared/article-protocol.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e8c03d9e26db99d01a5b3e93ab329bf499eace29ca5d81b1f63ded32421b2c6d",
+      "expected": "e8c03d9e26db99d01a5b3e93ab329bf499eace29ca5d81b1f63ded32421b2c6d",
+      "ok": true
+    },
+    {
+      "file": "shared/page-protocol.mjs",
+      "url": "http://10.10.10.149:8001/shared/page-protocol.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "9a1cf273a67c55c5a3e1259f52993941c043d5b89773139f70eae6b7bfc5dab6",
+      "expected": "9a1cf273a67c55c5a3e1259f52993941c043d5b89773139f70eae6b7bfc5dab6",
+      "ok": true
+    },
+    {
+      "file": "shared/reading-protocol.mjs",
+      "url": "http://10.10.10.149:8001/shared/reading-protocol.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "6c115d1256e7221cabcef1b6682d31ed57f7d1eb4073fc566bc474d103650f1e",
+      "expected": "6c115d1256e7221cabcef1b6682d31ed57f7d1eb4073fc566bc474d103650f1e",
+      "ok": true
+    },
+    {
+      "file": "shared/tts-settings.mjs",
+      "url": "http://10.10.10.149:8001/shared/tts-settings.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "828bd85bdf103dd645cb9700356d888a7a269734ee9b622317635db023ff1d0b",
+      "expected": "828bd85bdf103dd645cb9700356d888a7a269734ee9b622317635db023ff1d0b",
+      "ok": true
+    },
+    {
+      "file": "shared/vocabulary-source.mjs",
+      "url": "http://10.10.10.149:8001/shared/vocabulary-source.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "8fbe1556b200cb8bb976d57dfe7e1639615a3ee1512b15a0da3c9c2f8a27c04f",
+      "expected": "8fbe1556b200cb8bb976d57dfe7e1639615a3ee1512b15a0da3c9c2f8a27c04f",
+      "ok": true
+    },
+    {
+      "file": "styles.css",
+      "url": "http://10.10.10.149:8001/styles.css?v=a82b70626b94",
+      "status": 200,
+      "sha256": "1bdac418da8c877bc8980e4e2288d54d70b13859dea5879e3cba93cc50c2e7b1",
+      "expected": "1bdac418da8c877bc8980e4e2288d54d70b13859dea5879e3cba93cc50c2e7b1",
+      "ok": true
+    },
+    {
+      "file": "features/article/analysis-state.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/analysis-state.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3",
+      "expected": "67abe37de4f98a8aae659f2b353e9340bdcef51ae96e4ea55fe9f52c449e3af3",
+      "ok": true
+    },
+    {
+      "file": "features/article/reading-export-dialog.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/reading-export-dialog.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "5d31c61b07de31dce86e51c7136a52cba275c500e58b8dcc63d0f3a573e6670a",
+      "expected": "5d31c61b07de31dce86e51c7136a52cba275c500e58b8dcc63d0f3a573e6670a",
+      "ok": true
+    },
+    {
+      "file": "features/article/paragraph-pipeline.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/paragraph-pipeline.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3",
+      "expected": "e457a10ea844ac754ff0c2138bb9e097bf29a001de5513ef17d752cf42f06dd3",
+      "ok": true
+    },
+    {
+      "file": "features/article/perf-probe.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/perf-probe.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61",
+      "expected": "c944262bff99879548b27e99192989938179191bf92afdf049bcdadc3aca9b61",
+      "ok": true
+    },
+    {
+      "file": "features/admin-users/admin-users.js",
+      "url": "https://bdc.a4a4.qzz.io/features/admin-users/admin-users.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04",
+      "expected": "218ae2d29d1ea81a452b181bc85bcfaeffd2ae50d36c61928f2066c225031a04",
+      "ok": true
+    },
+    {
+      "file": "features/ai-admin/ai-admin.js",
+      "url": "https://bdc.a4a4.qzz.io/features/ai-admin/ai-admin.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87",
+      "expected": "c78df4cb9e4edc18248c57b190dcf2411ae30774880492b0edfa93d8aa926f87",
+      "ok": true
+    },
+    {
+      "file": "features/article/sentence-actions.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/sentence-actions.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "74214e11b7a2836a647c000dfa1667b02ff57bd7c922abe77f3c3a42c379e688",
+      "expected": "74214e11b7a2836a647c000dfa1667b02ff57bd7c922abe77f3c3a42c379e688",
+      "ok": true
+    },
+    {
+      "file": "features/article/phrase-picker.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/phrase-picker.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e135fe40fa3604c5257b18b6017439678c3cb5ec331acbc8b325f93efae2ad7b",
+      "expected": "e135fe40fa3604c5257b18b6017439678c3cb5ec331acbc8b325f93efae2ad7b",
+      "ok": true
+    },
+    {
+      "file": "features/article/tokenize.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/tokenize.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a",
+      "expected": "4c6bf27c1550fd01ad21a94febcaf5b90b0326c4c3ef24a5c28066e583a32a7a",
+      "ok": true
+    },
+    {
+      "file": "features/dictation/dictation-grader.js",
+      "url": "https://bdc.a4a4.qzz.io/features/dictation/dictation-grader.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd",
+      "expected": "e3fa4e99a81e76a2fe6a4927c1adb7a76cb46988cdca930cfcda6cc31c7f2ffd",
+      "ok": true
+    },
+    {
+      "file": "features/assistant/word-chat.js",
+      "url": "https://bdc.a4a4.qzz.io/features/assistant/word-chat.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+      "expected": "7ac832482242df204125c50ffd790084d9bdd60474eb81752ca56f2b0b1e5c06",
+      "ok": true
+    },
+    {
+      "file": "features/ocr/ocr.js",
+      "url": "https://bdc.a4a4.qzz.io/features/ocr/ocr.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e",
+      "expected": "52a1384ddc0a9d8cd91d66284925957dd906f1e559909799c2b9a3f991691c1e",
+      "ok": true
+    },
+    {
+      "file": "features/article/article.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/article.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "100061e139bbef0b9e28e1797e633ea9ce693a5299dfdd5d3e132532f00b8617",
+      "expected": "100061e139bbef0b9e28e1797e633ea9ce693a5299dfdd5d3e132532f00b8617",
+      "ok": true
+    },
+    {
+      "file": "features/article/reading-panel.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/reading-panel.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e30f42c2c526a7d91d5eda99ebc8c24fc926b0781022a4a3ac4e58b0e1b0714f",
+      "expected": "e30f42c2c526a7d91d5eda99ebc8c24fc926b0781022a4a3ac4e58b0e1b0714f",
+      "ok": true
+    },
+    {
+      "file": "features/article/reading-view.js",
+      "url": "https://bdc.a4a4.qzz.io/features/article/reading-view.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+      "expected": "75b79384a35ff14ae6491521f3ce1082f1d343f585a989a06e3df9a64a574787",
+      "ok": true
+    },
+    {
+      "file": "features/assistant/request-plan.js",
+      "url": "https://bdc.a4a4.qzz.io/features/assistant/request-plan.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "6c399c3cf46bfc712b22018c9a03ceb179562491ee79007abb037fc90694687f",
+      "expected": "6c399c3cf46bfc712b22018c9a03ceb179562491ee79007abb037fc90694687f",
+      "ok": true
+    },
+    {
+      "file": "features/assistant/assistant.js",
+      "url": "https://bdc.a4a4.qzz.io/features/assistant/assistant.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "69f158bc78cf30b020ed9dfe053e9ae88cc44e39cfcb6afe3f69d4502efbef4b",
+      "expected": "69f158bc78cf30b020ed9dfe053e9ae88cc44e39cfcb6afe3f69d4502efbef4b",
+      "ok": true
+    },
+    {
+      "file": "features/phonetics/phonetics.js",
+      "url": "https://bdc.a4a4.qzz.io/features/phonetics/phonetics.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce",
+      "expected": "603dda4a5b0e723387b5077cc4cba37988abe487f2bc9154298d9a8923913fce",
+      "ok": true
+    },
+    {
+      "file": "features/learning/learning.js",
+      "url": "https://bdc.a4a4.qzz.io/features/learning/learning.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36",
+      "expected": "0e35b3dc2da311a3a462fe0db722a332aa431cf091bb6bf5942c6aba6cc41d36",
+      "ok": true
+    },
+    {
+      "file": "features/dictation/dictation.js",
+      "url": "https://bdc.a4a4.qzz.io/features/dictation/dictation.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b",
+      "expected": "9bda1e6f6d2d2a9b48c5e8a6b1a87597c0b659269dea3289686417b208e2771b",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-trainer.js",
+      "url": "https://bdc.a4a4.qzz.io/features/qa/qa-trainer.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee",
+      "expected": "a7f4ed602e8eb5a9eedac7e71d71d06b1898348880cee270bb67ae68e7e4baee",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-creator.js",
+      "url": "https://bdc.a4a4.qzz.io/features/qa/qa-creator.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba",
+      "expected": "0e0ef1e65bddb930f4638037ecd4e62891f48c56fba9c9bfad1c3c6fc66b95ba",
+      "ok": true
+    },
+    {
+      "file": "features/phonetics/word-sheet.js",
+      "url": "https://bdc.a4a4.qzz.io/features/phonetics/word-sheet.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b",
+      "expected": "efe60d0bf5ea8a4e4ff4261b67ee8ae1f94ba9cfdf80ec1c6e0c2b93ba35729b",
+      "ok": true
+    },
+    {
+      "file": "features/quiz/quiz.js",
+      "url": "https://bdc.a4a4.qzz.io/features/quiz/quiz.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede",
+      "expected": "dd214f1ccf7ea4a8427a28a335a5bff11e1fdcda7c16ab8aa477e193ca4deede",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-storage.js",
+      "url": "https://bdc.a4a4.qzz.io/features/qa/qa-storage.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226",
+      "expected": "8d5dc10100d5ac5c3b154b1fd33f84013cc5d5f9a7d63ce5f2bb0262aa6f2226",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-checker.js",
+      "url": "https://bdc.a4a4.qzz.io/features/qa/qa-checker.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1",
+      "expected": "22c78418c0ead5314887fd1050fd8654c98ad73f68b823aa67836232c9fc15c1",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa-pdf.js",
+      "url": "https://bdc.a4a4.qzz.io/features/qa/qa-pdf.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e",
+      "expected": "96deb6d03fce547e193ad3d6dc625941e3b3a5d8b0cfdba7226ecc38318d321e",
+      "ok": true
+    },
+    {
+      "file": "features/qa/qa.js",
+      "url": "https://bdc.a4a4.qzz.io/features/qa/qa.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d18898ad9a88ae2b3cf23e3308b07a4e4c80470819f3c1cc866371981af7f0ad",
+      "expected": "d18898ad9a88ae2b3cf23e3308b07a4e4c80470819f3c1cc866371981af7f0ad",
+      "ok": true
+    },
+    {
+      "file": "features/sync/ai-provider-settings.js",
+      "url": "https://bdc.a4a4.qzz.io/features/sync/ai-provider-settings.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c0370f3ad6e92eb4a29a32107d43f6b6148123add8c1e122cfdd2d6605ca3e43",
+      "expected": "c0370f3ad6e92eb4a29a32107d43f6b6148123add8c1e122cfdd2d6605ca3e43",
+      "ok": true
+    },
+    {
+      "file": "features/sync/sync.js",
+      "url": "https://bdc.a4a4.qzz.io/features/sync/sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f995012276a5b2288fd66fb2479a012e9a121b36400cf80b5cdef2d92f65c802",
+      "expected": "f995012276a5b2288fd66fb2479a012e9a121b36400cf80b5cdef2d92f65c802",
+      "ok": true
+    },
+    {
+      "file": "features/vocabulary/vocabulary.js",
+      "url": "https://bdc.a4a4.qzz.io/features/vocabulary/vocabulary.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "803587959630eae07a673819721421453043709f73ec2c4328029c359f71e9a4",
+      "expected": "803587959630eae07a673819721421453043709f73ec2c4328029c359f71e9a4",
+      "ok": true
+    },
+    {
+      "file": "index.html",
+      "url": "https://bdc.a4a4.qzz.io/",
+      "status": 200,
+      "sha256": "4a2345326c48faa526219f0729cb2c4a7931753b29c7f13c0dc8dc7e787ea105",
+      "expected": "4a2345326c48faa526219f0729cb2c4a7931753b29c7f13c0dc8dc7e787ea105",
+      "ok": true
+    },
+    {
+      "file": "locales/zh-HK.js",
+      "url": "https://bdc.a4a4.qzz.io/locales/zh-HK.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "99619c3fe62a6b57c15f13ea491b18b00c84d47972b84a437651625ef79dafce",
+      "expected": "99619c3fe62a6b57c15f13ea491b18b00c84d47972b84a437651625ef79dafce",
+      "ok": true
+    },
+    {
+      "file": "features/sync/sync-status.js",
+      "url": "https://bdc.a4a4.qzz.io/features/sync/sync-status.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "35779b7c612bf9dc6db0ad5f29bdabf87ea0f99f6924529c857e416b342e1a5e",
+      "expected": "35779b7c612bf9dc6db0ad5f29bdabf87ea0f99f6924529c857e416b342e1a5e",
+      "ok": true
+    },
+    {
+      "file": "locales/zh-CN.js",
+      "url": "https://bdc.a4a4.qzz.io/locales/zh-CN.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "bef249fb590771f9f96616f83ed4b983150f329eed1888e155b5b58b4343ada9",
+      "expected": "bef249fb590771f9f96616f83ed4b983150f329eed1888e155b5b58b4343ada9",
+      "ok": true
+    },
+    {
+      "file": "main.js",
+      "url": "https://bdc.a4a4.qzz.io/main.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "1712c4b92538b2a99ebba552b5045ac9340754eeb5a4c6faa7b1494c36d566d4",
+      "expected": "1712c4b92538b2a99ebba552b5045ac9340754eeb5a4c6faa7b1494c36d566d4",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-catalog.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-catalog.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec",
+      "expected": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-model-picker.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-model-picker.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee",
+      "expected": "a613982c5e632772e7b6145e2f876f91adfadd7f7450fb6b786d5090900f51ee",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/anthropic.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-protocols/anthropic.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "65765ba253ba830e82930236bb756d30f9c39b6661f428a6def2bda24893630b",
+      "expected": "65765ba253ba830e82930236bb756d30f9c39b6661f428a6def2bda24893630b",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/gemini.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-protocols/gemini.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "fdb8999adb513b766993b4aa62783b6f91c587bf1ab2c1497a894c467664813b",
+      "expected": "fdb8999adb513b766993b4aa62783b6f91c587bf1ab2c1497a894c467664813b",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-profile-storage.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-profile-storage.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "319304383f78fe0672deece5bcdb58f85a9838d4bf9f27a56b946cb1e1c0b334",
+      "expected": "319304383f78fe0672deece5bcdb58f85a9838d4bf9f27a56b946cb1e1c0b334",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/common.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-protocols/common.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181",
+      "expected": "638245b42ca6f1283052f8607099143b7d202eab00ae9e225675e15764d1c181",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-settings-sanitize.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-settings-sanitize.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "6284741710a92240a4358b2a5f39f773cf6ebeb2efebfa6afa0108f654eec705",
+      "expected": "6284741710a92240a4358b2a5f39f773cf6ebeb2efebfa6afa0108f654eec705",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-credential-sync.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-credential-sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "46dea4caa35e605dcd5b69879d0033055dcbace09420e52044d9175f986d2a9c",
+      "expected": "46dea4caa35e605dcd5b69879d0033055dcbace09420e52044d9175f986d2a9c",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/index.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-protocols/index.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9",
+      "expected": "fdfdf5d126a02ebc2fa1a37096bcf3bf18ccf46fe6e80b7f08cfeb3d7f0b68a9",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-models.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-models.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f39f55ecff2772f332fd1a8a591b82f07eafd2e6fef0dd2f55561d707149cd48",
+      "expected": "f39f55ecff2772f332fd1a8a591b82f07eafd2e6fef0dd2f55561d707149cd48",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-protocols/chat-completions.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-protocols/chat-completions.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "4966045e6e7ad0403e848aa4f8dc6c5b390a1a033b6ba59c3715420a0b4d23d4",
+      "expected": "4966045e6e7ad0403e848aa4f8dc6c5b390a1a033b6ba59c3715420a0b4d23d4",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-thinking-help.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-thinking-help.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "b086623750c09a696a05e31d8fb43c9efc9e5de34233fc670c5a0d04042d5c2f",
+      "expected": "b086623750c09a696a05e31d8fb43c9efc9e5de34233fc670c5a0d04042d5c2f",
+      "ok": true
+    },
+    {
+      "file": "modules/api.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/api.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "579a808a2267655aecb2ff3d0d96cf7f492d75dee6374cd8eb7ccdf417d2e327",
+      "expected": "579a808a2267655aecb2ff3d0d96cf7f492d75dee6374cd8eb7ccdf417d2e327",
+      "ok": true
+    },
+    {
+      "file": "modules/ai-thinking.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ai-thinking.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "6a406ab27beb2636fdc69ffbd1d52eb231bb8e99b02b3587731114de1d073423",
+      "expected": "6a406ab27beb2636fdc69ffbd1d52eb231bb8e99b02b3587731114de1d073423",
+      "ok": true
+    },
+    {
+      "file": "modules/article-book-link.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/article-book-link.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c1b7be12137b712a6e930cdc8db48a810088050006ba2b82ec3637f82a32f483",
+      "expected": "c1b7be12137b712a6e930cdc8db48a810088050006ba2b82ec3637f82a32f483",
+      "ok": true
+    },
+    {
+      "file": "modules/article-session.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/article-session.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b",
+      "expected": "35f0f6197fb5dd428050c13d127eb63a1a70d8ef532f0aa08bcc63d291a5f73b",
+      "ok": true
+    },
+    {
+      "file": "modules/audio.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/audio.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "06ed362f7476d1295b50ff0fadff3ad613271ea6ad593ecd04ddcda6b57ddc2a",
+      "expected": "06ed362f7476d1295b50ff0fadff3ad613271ea6ad593ecd04ddcda6b57ddc2a",
+      "ok": true
+    },
+    {
+      "file": "modules/article-route.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/article-route.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "ef01b3585776c3fee60c4f47e4072c790fb462b3174d6c7370f95f7ca2194011",
+      "expected": "ef01b3585776c3fee60c4f47e4072c790fb462b3174d6c7370f95f7ca2194011",
+      "ok": true
+    },
+    {
+      "file": "modules/article-sync.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/article-sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "1ab7f89480638e2592cf8a47e0da613b07a68ec223886ed19babac3bed2b709e",
+      "expected": "1ab7f89480638e2592cf8a47e0da613b07a68ec223886ed19babac3bed2b709e",
+      "ok": true
+    },
+    {
+      "file": "modules/i18n-config.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/i18n-config.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66",
+      "expected": "65a75844287a802b53f38d852769f9bf3ca5ee9d46892f3319fd222396bd0f66",
+      "ok": true
+    },
+    {
+      "file": "modules/backup-store.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/backup-store.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "4477928bd610a9c74f7f414d4c6538295d36c22e17e8616e3bbffa4c33e1e469",
+      "expected": "4477928bd610a9c74f7f414d4c6538295d36c22e17e8616e3bbffa4c33e1e469",
+      "ok": true
+    },
+    {
+      "file": "modules/dom.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/dom.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "1a39e46e7b6236925182a02e7433b01f8f844d5857324e90ffcd0d8e973fde0f",
+      "expected": "1a39e46e7b6236925182a02e7433b01f8f844d5857324e90ffcd0d8e973fde0f",
+      "ok": true
+    },
+    {
+      "file": "modules/cache.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/cache.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd",
+      "expected": "f2c0eaeb30783398f3911f5c32ef49845815003489bc12a6c9ed0ddb4e520cbd",
+      "ok": true
+    },
+    {
+      "file": "modules/article-store.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/article-store.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "86ab267766b4811abbe49e7fc16ec797ab5db5ccb7efc53dc99fbd347fd309b6",
+      "expected": "86ab267766b4811abbe49e7fc16ec797ab5db5ccb7efc53dc99fbd347fd309b6",
+      "ok": true
+    },
+    {
+      "file": "modules/detail-state.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/detail-state.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086",
+      "expected": "5fdac7baa2ace9b30cfcedd52ff6ad920db8dd887af7e72ffa50eb6a31fe1086",
+      "ok": true
+    },
+    {
+      "file": "modules/i18n.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/i18n.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76",
+      "expected": "7cb2277944166fb9eb6456172f4a5eaf6fd09ccf1e1520266075e250f8e88e76",
+      "ok": true
+    },
+    {
+      "file": "modules/local-backup.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/local-backup.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "2f4d7c482e8204ea3f10dd55676728a5bc3597dc9f1033a30ab8bf0b5900809a",
+      "expected": "2f4d7c482e8204ea3f10dd55676728a5bc3597dc9f1033a30ab8bf0b5900809a",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/dictation.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/dictation.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec",
+      "expected": "71531b0da1cfb0b377cd093f5b744a048dfbc7991eac1a0020a79c7b5ac7cfec",
+      "ok": true
+    },
+    {
+      "file": "modules/platform.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/platform.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690",
+      "expected": "25374d63977ca9033a209dc175cc2fa59010beb9d596020b7f3f27a41f760690",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/article.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/article.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f93dc485bf774327797368ffb60d8c4ef03d15b724f7b82ba7d1a7eba9fbeca9",
+      "expected": "f93dc485bf774327797368ffb60d8c4ef03d15b724f7b82ba7d1a7eba9fbeca9",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/assistant.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/assistant.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6",
+      "expected": "84cec03c282f4120a7a83d4aa1f7d0546e8f0532a050e373b5331c0fd9abe3c6",
+      "ok": true
+    },
+    {
+      "file": "modules/markdown.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/markdown.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558",
+      "expected": "c899b75d3f46314cf67ccd1d3fe70ca1305032908378a8a917798f06c1bee558",
+      "ok": true
+    },
+    {
+      "file": "modules/permanent-db.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/permanent-db.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "89e8a09ddd00b91dada37145c4212b7ea3796009f13e37dcc7eb2f5561a5e43d",
+      "expected": "89e8a09ddd00b91dada37145c4212b7ea3796009f13e37dcc7eb2f5561a5e43d",
+      "ok": true
+    },
+    {
+      "file": "modules/phonetics-data.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/phonetics-data.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0",
+      "expected": "d82cc8f896fa20aeecf404df750ac2a5ec32b4a7d8ef70e72806fccd3ec48fe0",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/import.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/import.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf",
+      "expected": "4edbd91fc847bda3cd7e02de4cd7e45b96b3cd43a6bd4bfb9754f05dc80e31bf",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/dictionary.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/dictionary.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7",
+      "expected": "33a5ef66dfef1688b17b0950fcc5a6848b45da46ad137e05230e5430b01fadb7",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/index.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/index.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+      "expected": "2278270f92715b3f2342d7ed4cbd544675696cb31461fc3543be32589bba1b8e",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/language-rules.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/language-rules.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986",
+      "expected": "d2672ebe66757f156bedd0bc5ee491cce3f427981acf5d95351911eeb43b5986",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/ocr.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/ocr.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0",
+      "expected": "109d87cdc7af59f07549e8d50c96d185e3fda71c8b1bebc73cfb4c90b4da08e0",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/qa.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/qa.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837",
+      "expected": "0f8491b557b67e63c7e21e4fd36b92e48f47bcf2878258f827bd725e6aa96837",
+      "ok": true
+    },
+    {
+      "file": "modules/prompts/learning.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/prompts/learning.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e",
+      "expected": "d009e2a31bc11ac8b34bc6b31e8a2ad327ae4ba4020a0ce76488f309d1df1c6e",
+      "ok": true
+    },
+    {
+      "file": "modules/qr.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/qr.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363",
+      "expected": "7bb9aa4280ace3a010716d693ab23fbd7678fd330a927a31c74a284e629dc363",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-actions.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/reading-actions.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+      "expected": "73a056909e0e6ef5040a49d9f7d8d200c220a873fda4750819c4b48f0653312d",
+      "ok": true
+    },
+    {
+      "file": "modules/settings.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/settings.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "fb878f2c58bd1c19860227197abc77731e922c413982991b48f61470d1382baf",
+      "expected": "fb878f2c58bd1c19860227197abc77731e922c413982991b48f61470d1382baf",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-edition.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/reading-edition.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e15feb34ed2ca831787a2d19ea8c7adea69e16f3360e626068828dc47ba6e9f7",
+      "expected": "e15feb34ed2ca831787a2d19ea8c7adea69e16f3360e626068828dc47ba6e9f7",
+      "ok": true
+    },
+    {
+      "file": "modules/state.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/state.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "246ba41c1eaca5b6be2ff8eeaf25bd64bc962cb0055bc4bb339855f2656c5a7f",
+      "expected": "246ba41c1eaca5b6be2ff8eeaf25bd64bc962cb0055bc4bb339855f2656c5a7f",
+      "ok": true
+    },
+    {
+      "file": "modules/quick-model-picker.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/quick-model-picker.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "3e29c2dec7765b4e562ac8316ab6ff8b966b6c5c3804e435152b238bb70432ab",
+      "expected": "3e29c2dec7765b4e562ac8316ab6ff8b966b6c5c3804e435152b238bb70432ab",
+      "ok": true
+    },
+    {
+      "file": "modules/storage.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/storage.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "5b0fb44fcace370dad1be47b92f1512ce397bff6612439f29599e257a442c105",
+      "expected": "5b0fb44fcace370dad1be47b92f1512ce397bff6612439f29599e257a442c105",
+      "ok": true
+    },
+    {
+      "file": "modules/sync-cloudflare.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/sync-cloudflare.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "5bb36b5ffed2968179dc0e77f35fb5de2f41ab042886ca1bd318e0915860f0bb",
+      "expected": "5bb36b5ffed2968179dc0e77f35fb5de2f41ab042886ca1bd318e0915860f0bb",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-export.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/reading-export.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "350a9cc197f63cb0ed9b7018582fa3ae24060a9e8c061becf92674ab6fc19d47",
+      "expected": "350a9cc197f63cb0ed9b7018582fa3ae24060a9e8c061becf92674ab6fc19d47",
+      "ok": true
+    },
+    {
+      "file": "modules/theme-art.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/theme-art.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4",
+      "expected": "d595b7747fe42bd46c9dd4f1ab9ebf83417da04cbec787fc6f9b7ff329d976f4",
+      "ok": true
+    },
+    {
+      "file": "modules/theme.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/theme.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd",
+      "expected": "3ed4678302b9603488ff8e4765b58874f525f59df1ce9c20f75836f4dba883cd",
+      "ok": true
+    },
+    {
+      "file": "modules/tts-profile-storage.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/tts-profile-storage.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "06bdf518314f9f383b1fe294848fc35b9030b12b4d52f28fe751f391c7d73bce",
+      "expected": "06bdf518314f9f383b1fe294848fc35b9030b12b4d52f28fe751f391c7d73bce",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-store.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/reading-store.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "23344d0c0221d17349472673911b6dfa5326d58fe89721fa8dbf5dfe614e227b",
+      "expected": "23344d0c0221d17349472673911b6dfa5326d58fe89721fa8dbf5dfe614e227b",
+      "ok": true
+    },
+    {
+      "file": "modules/sync-signals.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/sync-signals.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff",
+      "expected": "0d156a991664d9aa1d0099c4751fb8460a1a575dcab4b5c94c071a20b8733eff",
+      "ok": true
+    },
+    {
+      "file": "modules/reading-sync.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/reading-sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e",
+      "expected": "c6b00c4daa542672f8a391e2d63a6166784a51b8d5da898805aac62b9db13b9e",
+      "ok": true
+    },
+    {
+      "file": "modules/sync-core.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/sync-core.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f298918bb73fb8c0e915acbc97faf1eeb2ecedc3356540420d6762a6d570df5d",
+      "expected": "f298918bb73fb8c0e915acbc97faf1eeb2ecedc3356540420d6762a6d570df5d",
+      "ok": true
+    },
+    {
+      "file": "modules/tts-account-sync.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/tts-account-sync.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "f46ad608d06b2f9c42f2d8222b05cb8479a5d2a30ea15cd7fcf25618787a299f",
+      "expected": "f46ad608d06b2f9c42f2d8222b05cb8479a5d2a30ea15cd7fcf25618787a299f",
+      "ok": true
+    },
+    {
+      "file": "modules/validate.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/validate.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8",
+      "expected": "bcce007f91d9810dac97df5e565f85b66b439e0684eaf32d8b2206ef19dc82e8",
+      "ok": true
+    },
+    {
+      "file": "modules/ui.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/ui.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "d635ab2f214ea3417323a36e914c6e974283035c5ff55ca4cc30147c36040e85",
+      "expected": "d635ab2f214ea3417323a36e914c6e974283035c5ff55ca4cc30147c36040e85",
+      "ok": true
+    },
+    {
+      "file": "modules/vendor/qrcode-generator.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/vendor/qrcode-generator.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c",
+      "expected": "a35f7324d77b61684c4ca57499ca31462ba64ffcacc6cd474c270e1d84a9577c",
+      "ok": true
+    },
+    {
+      "file": "modules/vocabulary-route.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/vocabulary-route.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "bc9ce8476d502381ae9c27d892399804bf92b9df19f5c802cbabf6e9ffeb71a0",
+      "expected": "bc9ce8476d502381ae9c27d892399804bf92b9df19f5c802cbabf6e9ffeb71a0",
+      "ok": true
+    },
+    {
+      "file": "shared/reading-protocol.mjs",
+      "url": "https://bdc.a4a4.qzz.io/shared/reading-protocol.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "6c115d1256e7221cabcef1b6682d31ed57f7d1eb4073fc566bc474d103650f1e",
+      "expected": "6c115d1256e7221cabcef1b6682d31ed57f7d1eb4073fc566bc474d103650f1e",
+      "ok": true
+    },
+    {
+      "file": "shared/page-protocol.mjs",
+      "url": "https://bdc.a4a4.qzz.io/shared/page-protocol.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "9a1cf273a67c55c5a3e1259f52993941c043d5b89773139f70eae6b7bfc5dab6",
+      "expected": "9a1cf273a67c55c5a3e1259f52993941c043d5b89773139f70eae6b7bfc5dab6",
+      "ok": true
+    },
+    {
+      "file": "shared/article-book-link.mjs",
+      "url": "https://bdc.a4a4.qzz.io/shared/article-book-link.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "97629a9d9f4e9361785d72d9665e506ad41c1954d42f949c5c81334378cd55d1",
+      "expected": "97629a9d9f4e9361785d72d9665e506ad41c1954d42f949c5c81334378cd55d1",
+      "ok": true
+    },
+    {
+      "file": "modules/voices.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/voices.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "54280077f0d6d19f8d93539fb7f82e768f9fe862c208cf416c2ff4138d824b13",
+      "expected": "54280077f0d6d19f8d93539fb7f82e768f9fe862c208cf416c2ff4138d824b13",
+      "ok": true
+    },
+    {
+      "file": "shared/article-protocol.mjs",
+      "url": "https://bdc.a4a4.qzz.io/shared/article-protocol.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "e8c03d9e26db99d01a5b3e93ab329bf499eace29ca5d81b1f63ded32421b2c6d",
+      "expected": "e8c03d9e26db99d01a5b3e93ab329bf499eace29ca5d81b1f63ded32421b2c6d",
+      "ok": true
+    },
+    {
+      "file": "modules/vocab.js",
+      "url": "https://bdc.a4a4.qzz.io/modules/vocab.js?v=a82b70626b94",
+      "status": 200,
+      "sha256": "14b818bad3d92f60829c91b12d9583f5c60af96963e03a7916367007c710b95f",
+      "expected": "14b818bad3d92f60829c91b12d9583f5c60af96963e03a7916367007c710b95f",
+      "ok": true
+    },
+    {
+      "file": "styles.css",
+      "url": "https://bdc.a4a4.qzz.io/styles.css?v=a82b70626b94",
+      "status": 200,
+      "sha256": "1bdac418da8c877bc8980e4e2288d54d70b13859dea5879e3cba93cc50c2e7b1",
+      "expected": "1bdac418da8c877bc8980e4e2288d54d70b13859dea5879e3cba93cc50c2e7b1",
+      "ok": true
+    },
+    {
+      "file": "shared/tts-settings.mjs",
+      "url": "https://bdc.a4a4.qzz.io/shared/tts-settings.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "828bd85bdf103dd645cb9700356d888a7a269734ee9b622317635db023ff1d0b",
+      "expected": "828bd85bdf103dd645cb9700356d888a7a269734ee9b622317635db023ff1d0b",
+      "ok": true
+    },
+    {
+      "file": "shared/vocabulary-source.mjs",
+      "url": "https://bdc.a4a4.qzz.io/shared/vocabulary-source.mjs?v=a82b70626b94",
+      "status": 200,
+      "sha256": "8fbe1556b200cb8bb976d57dfe7e1639615a3ee1512b15a0da3c9c2f8a27c04f",
+      "expected": "8fbe1556b200cb8bb976d57dfe7e1639615a3ee1512b15a0da3c9c2f8a27c04f",
+      "ok": true
+    }
+  ]
+}
