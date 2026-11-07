@@ -558,6 +558,12 @@ select.ext-select-sm {
     color: var(--ext-ink-muted);
     overflow-wrap: anywhere;
 }
+.ext-result-head .ext-pronunciation {
+    align-self: center;
+    flex: 0 0 auto;
+    min-height: 26px;
+    border-color: transparent;
+}
 .ext-result-pos {
     padding: 0 5px;
     font-size: 11px;

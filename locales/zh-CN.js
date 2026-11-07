@@ -1535,6 +1535,9 @@ export default {
         analysisFailed: '分析失败'
     },
     extension: {
+        lookupPronounce: '播放发音',
+        lookupPronounceStop: '停止发音',
+        lookupPronounceFailed: '暂时无法播放发音，请检查设备语音后重试。',
         captureMoreOptions: '词书选项',
         inlineQuickAdd: '新建并加入',
         pageArticleShortTitle: '文章',

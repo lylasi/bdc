@@ -62,6 +62,11 @@ export const ICONS = {
     ],
     stop: [
         'M8 8h8v8H8z'
+    ],
+    speaker: [
+        'M11 5 6 9H3v6h3l5 4V5z',
+        'M15 8a6 6 0 0 1 0 8',
+        'M18 5a10 10 0 0 1 0 14'
     ]
 };
 

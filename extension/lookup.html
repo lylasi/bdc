@@ -102,11 +102,13 @@
         <div id="ext-result-box" class="ext-result-box hidden" aria-live="polite">
             <div class="ext-result-head">
                 <span class="ext-result-word" id="ext-result-word"></span>
+                <button id="ext-result-speak" type="button" class="ext-btn ext-btn-quiet ext-btn-sm ext-icon-only ext-pronunciation" disabled aria-pressed="false" data-i18n-title="extension.lookupPronounce" data-i18n-aria-label="extension.lookupPronounce"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z" /><path d="M15 8a6 6 0 0 1 0 8" /><path d="M18 5a10 10 0 0 1 0 14" /></svg></button>
                 <span class="ext-result-phonetic" id="ext-result-phonetic"></span>
                 <span class="ext-result-pos" id="ext-result-pos"></span>
                 <span class="ext-cache-badge" id="ext-result-cache" hidden data-i18n="extension.lookupCached"></span>
             </div>
             <div class="ext-result-meaning" id="ext-result-meaning"></div>
+            <p id="ext-pronunciation-notice" class="ext-notice ext-notice-error" role="status" hidden></p>
             <div class="ext-result-role" id="ext-result-role"></div>
             <details id="ext-result-details" class="ext-disclosure ext-disclosure-quiet ext-result-extra">
                 <summary class="ext-disclosure-summary">

@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(result.events.some((event) => event.type === 'start' && event.text === 'impeached' && /^en/i.test(event.lang)))
+
+    at /Users/linus/CODE/bdc/docs/report/assets/20261107164401685_extension-pronunciation/native-voice.cjs:57:16 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

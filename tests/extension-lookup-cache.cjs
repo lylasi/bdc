@@ -9,7 +9,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const { environment, ALICE } = require('./helpers/extension-mv3.cjs');
 const ROOT = path.resolve(__dirname, '..');
 const OUT = process.env.LOOKUP_CACHE_OUTPUT || path.join(ROOT, 'docs/report/assets/20261107015023770_lookup-cache/browser');
-const checks = [], errors = [], timings = [];
+const checks = [], errors = [], timings = [], speechEvents = [];
 function check(name, value, detail) {
     checks.push({ name, ok: !!value, ...(detail ? { detail } : {}) });
     console.log(`${value ? 'PASS' : 'FAIL'} ${name}`);
@@ -63,7 +63,9 @@ async function closeCard(page, frame, base) {
     for (let n = 0; n < 100 && page.frames().some((f) => f.url().startsWith(base + '/lookup.html')); n += 1) await page.waitForTimeout(20);
     assert.ok(!page.frames().some((f) => f.url().startsWith(base + '/lookup.html')));
 }
-(async () => {
+module.exports = { openCard, waitResult, closeCard };
+
+if (require.main === module) (async () => {
     fs.mkdirSync(OUT, { recursive: true });
     execFileSync(process.execPath, ['scripts/package-extension.mjs'], { cwd: ROOT });
     const env = await environment();
@@ -75,6 +77,28 @@ async function closeCard(page, frame, base) {
         context = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true,
             viewport: { width: 1100, height: 800 }, args: [`--disable-extensions-except=${ROOT}/extension`, `--load-extension=${ROOT}/extension`] });
         context.on('page', (p) => p.on('pageerror', (e) => errors.push(e.message)));
+        await context.exposeFunction('__recordLookupSpeech', (event) => speechEvents.push(event));
+        await context.addInitScript(() => {
+            if (location.protocol !== 'chrome-extension:') return;
+            const speech = window.__lookupSpeech = { calls: [], canceled: 0, current: null, failNext: false };
+            Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: class {
+                constructor(text) { this.text = text; }
+            } });
+            Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+                getVoices: () => [{ name: 'Chinese', lang: 'zh-CN' }, { name: 'English', lang: 'en-US' }],
+                cancel() {
+                    speech.canceled += 1; speech.current = null;
+                    window.__recordLookupSpeech({ type: 'cancel', url: location.href }).catch(() => {});
+                },
+                speak(utterance) {
+                    speech.calls.push(utterance); speech.current = utterance;
+                    if (speech.failNext) {
+                        speech.failNext = false;
+                        utterance.onerror?.({ error: 'synthesis-failed' });
+                    } else utterance.onstart?.();
+                }
+            } });
+        });
         await context.route(env.base + '/**', async (route) => {
             const url = new URL(route.request().url());
             if (hold && !url.pathname.startsWith('/mock-ai/')) {
@@ -120,6 +144,22 @@ async function closeCard(page, frame, base) {
         timings.push({ scenario: 'reopen-blocked-network', elapsed: Date.now() - started, held });
         check('關窗後重開，同步請求被按住仍在兩秒內讀到本機結果', env.state.aiCalls === 1 && await frame.locator('#ext-result-cache').isVisible(), timings.at(-1));
         check('命中的內容就是第一次成功結果，網絡仍未放行', (await frame.locator('#ext-result-meaning').textContent()) === first && hold);
+        const beforeAudio = env.state.aiCalls;
+        await frame.locator('#ext-result-speak').click();
+        const spoken = await frame.evaluate(() => window.__lookupSpeech.calls.map(({ text, lang }) => ({ text, lang })));
+        check('同步網絡被阻塞時，快取詞卡仍可立即用英語發音且不重查 AI', hold && env.state.aiCalls === beforeAudio
+            && spoken.length === 1 && spoken[0].text === 'plunge' && spoken[0].lang === 'en-US'
+            && await frame.locator('#ext-result-speak').getAttribute('aria-pressed') === 'true', spoken);
+        const cancels = await frame.evaluate(() => window.__lookupSpeech.canceled);
+        await frame.locator('#ext-result-speak').click();
+        check('同一喇叭再點一次會停止發音', await frame.evaluate((count) => window.__lookupSpeech.canceled > count, cancels)
+            && await frame.locator('#ext-result-speak').getAttribute('aria-pressed') === 'false');
+        await frame.locator('#ext-result-speak').click();
+        await frame.evaluate(() => window.__lookupSpeech.calls[0].onend?.());
+        check('前一次發音的遲到回呼不會結束新播放', await frame.locator('#ext-result-speak').getAttribute('aria-pressed') === 'true');
+        await frame.evaluate(() => window.__lookupSpeech.current.onend());
+        check('正常播放結束後恢復喇叭及可重播狀態', await frame.locator('#ext-result-speak').getAttribute('aria-pressed') === 'false'
+            && await frame.locator('#ext-pronunciation-notice').isHidden());
         await page.screenshot({ path: path.join(OUT, 'cached-before-network.png') });
         releaseAll();
         await closeCard(page, frame, base); await page.reload();
@@ -169,6 +209,19 @@ async function closeCard(page, frame, base) {
             });
             check(locale + ' 收藏短按鈕與兩個圖示保持一行、320px 無溢出', geometry.width <= 304 && geometry.scroll <= geometry.width && Math.max(...geometry.buttons.map((b) => b.y)) - Math.min(...geometry.buttons.map((b) => b.y)) < 2 && geometry.buttons[0].width < 100, geometry);
             check(locale + ' 重查圖示有本地化可讀標籤', /重新查词|重新查詞/.test(geometry.buttons[2].label));
+            const expectedLabel = locale === 'zh-HK' ? '播放發音' : '播放发音';
+            check(locale + ' 發音圖示可見且具本地化標籤', await frame.locator('#ext-result-speak').isVisible()
+                && await frame.locator('#ext-result-speak').getAttribute('aria-label') === expectedLabel);
+            await frame.evaluate(() => { window.__lookupSpeech.failNext = true; });
+            await frame.locator('#ext-result-speak').click();
+            const errorText = await frame.locator('#ext-pronunciation-notice').textContent();
+            check(locale + ' 系統語音失敗會顯示對應語言提示並可重試', await frame.locator('#ext-pronunciation-notice').isVisible()
+                && errorText.includes(locale === 'zh-HK' ? '暫時無法播放發音' : '暂时无法播放发音')
+                && await frame.locator('#ext-result-speak').getAttribute('aria-pressed') === 'false');
+            await frame.locator('#ext-result-speak').click();
+            check(locale + ' 發音失敗後可直接重播，原單詞保持英文', await frame.locator('#ext-pronunciation-notice').isHidden()
+                && await frame.evaluate(() => window.__lookupSpeech.current.text === 'plunge' && window.__lookupSpeech.current.lang === 'en-US'));
+            await frame.evaluate(() => window.__lookupSpeech.current.onend());
             await other.screenshot({ path: path.join(OUT, 'compact-' + locale + '.png') });
         }
         const attemptsBeforeFailure = aiAttempts;
@@ -184,7 +237,11 @@ async function closeCard(page, frame, base) {
         check('失敗後可再次點圖示恢復，不會卡在忙碌狀態', aiAttempts === attemptsBeforeRecovery + 1
             && await frame.locator('#ext-inline-lookup-notice').isHidden());
         const latest = await frame.locator('#ext-result-meaning').textContent(), successfulCalls = env.state.aiCalls;
-        await closeCard(other, frame, base); frame = await openCard(other, base); await waitResult(frame);
+        await frame.locator('#ext-result-speak').click();
+        const beforeCloseSpeech = speechEvents.length;
+        await closeCard(other, frame, base);
+        check('關閉正在發音的詞卡會取消語音', speechEvents.slice(beforeCloseSpeech).some((event) => event.type === 'cancel'));
+        frame = await openCard(other, base); await waitResult(frame);
         check('恢復後普通查詢命中新成功結果，失敗沒有覆蓋快取', env.state.aiCalls === successfulCalls
             && (await frame.locator('#ext-result-meaning').textContent()) === latest && await frame.locator('#ext-result-cache').isVisible());
         check('所有流程無未捕獲 JavaScript 例外', errors.length === 0, errors);

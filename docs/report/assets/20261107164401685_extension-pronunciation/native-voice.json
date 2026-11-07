@@ -1,0 +1,925 @@
+{
+  "engine": "native Chromium speechSynthesis; no speech mock",
+  "events": [
+    {
+      "type": "start",
+      "text": "impeached",
+      "lang": "en-US",
+      "error": ""
+    },
+    {
+      "type": "end",
+      "text": "impeached",
+      "lang": "en-US",
+      "error": ""
+    }
+  ],
+  "checks": [
+    "native English voice starts in actual cross-origin extension iframe",
+    "native engine ends without error",
+    "no AI request for speech",
+    "button returns to play"
+  ],
+  "voices": [
+    {
+      "name": "婷婷",
+      "lang": "zh-CN",
+      "localService": true
+    },
+    {
+      "name": "Albert",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Alice",
+      "lang": "it-IT",
+      "localService": true
+    },
+    {
+      "name": "Alva",
+      "lang": "sv-SE",
+      "localService": true
+    },
+    {
+      "name": "Amélie",
+      "lang": "fr-CA",
+      "localService": true
+    },
+    {
+      "name": "Amira",
+      "lang": "ms-MY",
+      "localService": true
+    },
+    {
+      "name": "Anna",
+      "lang": "de-DE",
+      "localService": true
+    },
+    {
+      "name": "Bad News",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Bahh",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Bells",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Boing",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Bubbles",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Carmit",
+      "lang": "he-IL",
+      "localService": true
+    },
+    {
+      "name": "Cellos",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Damayanti",
+      "lang": "id-ID",
+      "localService": true
+    },
+    {
+      "name": "Daniel",
+      "lang": "en-GB",
+      "localService": true
+    },
+    {
+      "name": "Daria",
+      "lang": "bg-BG",
+      "localService": true
+    },
+    {
+      "name": "Eddy (中文（中国大陆）)",
+      "lang": "zh-CN",
+      "localService": true
+    },
+    {
+      "name": "Eddy (中文（台湾）)",
+      "lang": "zh-TW",
+      "localService": true
+    },
+    {
+      "name": "Eddy (德语（德国）)",
+      "lang": "de-DE",
+      "localService": true
+    },
+    {
+      "name": "Eddy (英语（英国）)",
+      "lang": "en-GB",
+      "localService": true
+    },
+    {
+      "name": "Eddy (英语（美国）)",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Eddy (西班牙语（西班牙）)",
+      "lang": "es-ES",
+      "localService": true
+    },
+    {
+      "name": "Eddy (西班牙语（墨西哥）)",
+      "lang": "es-MX",
+      "localService": true
+    },
+    {
+      "name": "Eddy (芬兰语（芬兰）)",
+      "lang": "fi-FI",
+      "localService": true
+    },
+    {
+      "name": "Eddy (法语（加拿大）)",
+      "lang": "fr-CA",
+      "localService": true
+    },
+    {
+      "name": "Eddy (法语（法国）)",
+      "lang": "fr-FR",
+      "localService": true
+    },
+    {
+      "name": "Eddy (意大利语（意大利）)",
+      "lang": "it-IT",
+      "localService": true
+    },
+    {
+      "name": "Eddy (日语（日本）)",
+      "lang": "ja-JP",
+      "localService": true
+    },
+    {
+      "name": "Eddy (韩语（韩国）)",
+      "lang": "ko-KR",
+      "localService": true
+    },
+    {
+      "name": "Eddy (葡萄牙语（巴西）)",
+      "lang": "pt-BR",
+      "localService": true
+    },
+    {
+      "name": "Ellen",
+      "lang": "nl-BE",
+      "localService": true
+    },
+    {
+      "name": "Flo (中文（中国大陆）)",
+      "lang": "zh-CN",
+      "localService": true
+    },
+    {
+      "name": "Flo (中文（台湾）)",
+      "lang": "zh-TW",
+      "localService": true
+    },
+    {
+      "name": "Flo (德语（德国）)",
+      "lang": "de-DE",
+      "localService": true
+    },
+    {
+      "name": "Flo (英语（英国）)",
+      "lang": "en-GB",
+      "localService": true
+    },
+    {
+      "name": "Flo (英语（美国）)",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Flo (西班牙语（西班牙）)",
+      "lang": "es-ES",
+      "localService": true
+    },
+    {
+      "name": "Flo (西班牙语（墨西哥）)",
+      "lang": "es-MX",
+      "localService": true
+    },
+    {
+      "name": "Flo (芬兰语（芬兰）)",
+      "lang": "fi-FI",
+      "localService": true
+    },
+    {
+      "name": "Flo (法语（加拿大）)",
+      "lang": "fr-CA",
+      "localService": true
+    },
+    {
+      "name": "Flo (法语（法国）)",
+      "lang": "fr-FR",
+      "localService": true
+    },
+    {
+      "name": "Flo (意大利语（意大利）)",
+      "lang": "it-IT",
+      "localService": true
+    },
+    {
+      "name": "Flo (日语（日本）)",
+      "lang": "ja-JP",
+      "localService": true
+    },
+    {
+      "name": "Flo (韩语（韩国）)",
+      "lang": "ko-KR",
+      "localService": true
+    },
+    {
+      "name": "Flo (葡萄牙语（巴西）)",
+      "lang": "pt-BR",
+      "localService": true
+    },
+    {
+      "name": "Fred",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Geeta",
+      "lang": "te-IN",
+      "localService": true
+    },
+    {
+      "name": "Good News",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Grandma (中文（中国大陆）)",
+      "lang": "zh-CN",
+      "localService": true
+    },
+    {
+      "name": "Grandma (中文（台湾）)",
+      "lang": "zh-TW",
+      "localService": true
+    },
+    {
+      "name": "Grandma (德语（德国）)",
+      "lang": "de-DE",
+      "localService": true
+    },
+    {
+      "name": "Grandma (英语（英国）)",
+      "lang": "en-GB",
+      "localService": true
+    },
+    {
+      "name": "Grandma (英语（美国）)",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Grandma (西班牙语（西班牙）)",
+      "lang": "es-ES",
+      "localService": true
+    },
+    {
+      "name": "Grandma (西班牙语（墨西哥）)",
+      "lang": "es-MX",
+      "localService": true
+    },
+    {
+      "name": "Grandma (芬兰语（芬兰）)",
+      "lang": "fi-FI",
+      "localService": true
+    },
+    {
+      "name": "Grandma (法语（加拿大）)",
+      "lang": "fr-CA",
+      "localService": true
+    },
+    {
+      "name": "Grandma (法语（法国）)",
+      "lang": "fr-FR",
+      "localService": true
+    },
+    {
+      "name": "Grandma (意大利语（意大利）)",
+      "lang": "it-IT",
+      "localService": true
+    },
+    {
+      "name": "Grandma (日语（日本）)",
+      "lang": "ja-JP",
+      "localService": true
+    },
+    {
+      "name": "Grandma (韩语（韩国）)",
+      "lang": "ko-KR",
+      "localService": true
+    },
+    {
+      "name": "Grandma (葡萄牙语（巴西）)",
+      "lang": "pt-BR",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (中文（中国大陆）)",
+      "lang": "zh-CN",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (中文（台湾）)",
+      "lang": "zh-TW",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (德语（德国）)",
+      "lang": "de-DE",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (英语（英国）)",
+      "lang": "en-GB",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (英语（美国）)",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (西班牙语（西班牙）)",
+      "lang": "es-ES",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (西班牙语（墨西哥）)",
+      "lang": "es-MX",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (芬兰语（芬兰）)",
+      "lang": "fi-FI",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (法语（加拿大）)",
+      "lang": "fr-CA",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (法语（法国）)",
+      "lang": "fr-FR",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (意大利语（意大利）)",
+      "lang": "it-IT",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (日语（日本）)",
+      "lang": "ja-JP",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (韩语（韩国）)",
+      "lang": "ko-KR",
+      "localService": true
+    },
+    {
+      "name": "Grandpa (葡萄牙语（巴西）)",
+      "lang": "pt-BR",
+      "localService": true
+    },
+    {
+      "name": "Ioana",
+      "lang": "ro-RO",
+      "localService": true
+    },
+    {
+      "name": "Jacques",
+      "lang": "fr-FR",
+      "localService": true
+    },
+    {
+      "name": "Jester",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Joana",
+      "lang": "pt-PT",
+      "localService": true
+    },
+    {
+      "name": "Junior",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Kanya",
+      "lang": "th-TH",
+      "localService": true
+    },
+    {
+      "name": "Karen",
+      "lang": "en-AU",
+      "localService": true
+    },
+    {
+      "name": "Kathy",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Kyoko",
+      "lang": "ja-JP",
+      "localService": true
+    },
+    {
+      "name": "Lana",
+      "lang": "hr-HR",
+      "localService": true
+    },
+    {
+      "name": "Laura",
+      "lang": "sk-SK",
+      "localService": true
+    },
+    {
+      "name": "Lekha",
+      "lang": "hi-IN",
+      "localService": true
+    },
+    {
+      "name": "Lesya",
+      "lang": "uk-UA",
+      "localService": true
+    },
+    {
+      "name": "Linh",
+      "lang": "vi-VN",
+      "localService": true
+    },
+    {
+      "name": "Luciana",
+      "lang": "pt-BR",
+      "localService": true
+    },
+    {
+      "name": "Majed",
+      "lang": "ar-001",
+      "localService": true
+    },
+    {
+      "name": "Melina",
+      "lang": "el-GR",
+      "localService": true
+    },
+    {
+      "name": "Milena",
+      "lang": "ru-RU",
+      "localService": true
+    },
+    {
+      "name": "Moira",
+      "lang": "en-IE",
+      "localService": true
+    },
+    {
+      "name": "Montse",
+      "lang": "ca-ES",
+      "localService": true
+    },
+    {
+      "name": "Mónica",
+      "lang": "es-ES",
+      "localService": true
+    },
+    {
+      "name": "Nora",
+      "lang": "nb-NO",
+      "localService": true
+    },
+    {
+      "name": "Organ",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Paulina",
+      "lang": "es-MX",
+      "localService": true
+    },
+    {
+      "name": "Piya",
+      "lang": "bn-IN",
+      "localService": true
+    },
+    {
+      "name": "Ralph",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Reed (中文（中国大陆）)",
+      "lang": "zh-CN",
+      "localService": true
+    },
+    {
+      "name": "Reed (中文（台湾）)",
+      "lang": "zh-TW",
+      "localService": true
+    },
+    {
+      "name": "Reed (德语（德国）)",
+      "lang": "de-DE",
+      "localService": true
+    },
+    {
+      "name": "Reed (英语（英国）)",
+      "lang": "en-GB",
+      "localService": true
+    },
+    {
+      "name": "Reed (英语（美国）)",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Reed (西班牙语（西班牙）)",
+      "lang": "es-ES",
+      "localService": true
+    },
+    {
+      "name": "Reed (西班牙语（墨西哥）)",
+      "lang": "es-MX",
+      "localService": true
+    },
+    {
+      "name": "Reed (芬兰语（芬兰）)",
+      "lang": "fi-FI",
+      "localService": true
+    },
+    {
+      "name": "Reed (法语（加拿大）)",
+      "lang": "fr-CA",
+      "localService": true
+    },
+    {
+      "name": "Reed (意大利语（意大利）)",
+      "lang": "it-IT",
+      "localService": true
+    },
+    {
+      "name": "Reed (日语（日本）)",
+      "lang": "ja-JP",
+      "localService": true
+    },
+    {
+      "name": "Reed (韩语（韩国）)",
+      "lang": "ko-KR",
+      "localService": true
+    },
+    {
+      "name": "Reed (葡萄牙语（巴西）)",
+      "lang": "pt-BR",
+      "localService": true
+    },
+    {
+      "name": "Rishi",
+      "lang": "en-IN",
+      "localService": true
+    },
+    {
+      "name": "Rocko (中文（中国大陆）)",
+      "lang": "zh-CN",
+      "localService": true
+    },
+    {
+      "name": "Rocko (中文（台湾）)",
+      "lang": "zh-TW",
+      "localService": true
+    },
+    {
+      "name": "Rocko (德语（德国）)",
+      "lang": "de-DE",
+      "localService": true
+    },
+    {
+      "name": "Rocko (英语（英国）)",
+      "lang": "en-GB",
+      "localService": true
+    },
+    {
+      "name": "Rocko (英语（美国）)",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Rocko (西班牙语（西班牙）)",
+      "lang": "es-ES",
+      "localService": true
+    },
+    {
+      "name": "Rocko (西班牙语（墨西哥）)",
+      "lang": "es-MX",
+      "localService": true
+    },
+    {
+      "name": "Rocko (芬兰语（芬兰）)",
+      "lang": "fi-FI",
+      "localService": true
+    },
+    {
+      "name": "Rocko (法语（加拿大）)",
+      "lang": "fr-CA",
+      "localService": true
+    },
+    {
+      "name": "Rocko (法语（法国）)",
+      "lang": "fr-FR",
+      "localService": true
+    },
+    {
+      "name": "Rocko (意大利语（意大利）)",
+      "lang": "it-IT",
+      "localService": true
+    },
+    {
+      "name": "Rocko (日语（日本）)",
+      "lang": "ja-JP",
+      "localService": true
+    },
+    {
+      "name": "Rocko (韩语（韩国）)",
+      "lang": "ko-KR",
+      "localService": true
+    },
+    {
+      "name": "Rocko (葡萄牙语（巴西）)",
+      "lang": "pt-BR",
+      "localService": true
+    },
+    {
+      "name": "Samantha",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Sandy (中文（中国大陆）)",
+      "lang": "zh-CN",
+      "localService": true
+    },
+    {
+      "name": "Sandy (中文（台湾）)",
+      "lang": "zh-TW",
+      "localService": true
+    },
+    {
+      "name": "Sandy (德语（德国）)",
+      "lang": "de-DE",
+      "localService": true
+    },
+    {
+      "name": "Sandy (英语（英国）)",
+      "lang": "en-GB",
+      "localService": true
+    },
+    {
+      "name": "Sandy (英语（美国）)",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Sandy (西班牙语（西班牙）)",
+      "lang": "es-ES",
+      "localService": true
+    },
+    {
+      "name": "Sandy (西班牙语（墨西哥）)",
+      "lang": "es-MX",
+      "localService": true
+    },
+    {
+      "name": "Sandy (芬兰语（芬兰）)",
+      "lang": "fi-FI",
+      "localService": true
+    },
+    {
+      "name": "Sandy (法语（加拿大）)",
+      "lang": "fr-CA",
+      "localService": true
+    },
+    {
+      "name": "Sandy (法语（法国）)",
+      "lang": "fr-FR",
+      "localService": true
+    },
+    {
+      "name": "Sandy (意大利语（意大利）)",
+      "lang": "it-IT",
+      "localService": true
+    },
+    {
+      "name": "Sandy (日语（日本）)",
+      "lang": "ja-JP",
+      "localService": true
+    },
+    {
+      "name": "Sandy (韩语（韩国）)",
+      "lang": "ko-KR",
+      "localService": true
+    },
+    {
+      "name": "Sandy (葡萄牙语（巴西）)",
+      "lang": "pt-BR",
+      "localService": true
+    },
+    {
+      "name": "Sara",
+      "lang": "da-DK",
+      "localService": true
+    },
+    {
+      "name": "Satu",
+      "lang": "fi-FI",
+      "localService": true
+    },
+    {
+      "name": "Shelley (中文（中国大陆）)",
+      "lang": "zh-CN",
+      "localService": true
+    },
+    {
+      "name": "Shelley (中文（台湾）)",
+      "lang": "zh-TW",
+      "localService": true
+    },
+    {
+      "name": "Shelley (德语（德国）)",
+      "lang": "de-DE",
+      "localService": true
+    },
+    {
+      "name": "Shelley (英语（英国）)",
+      "lang": "en-GB",
+      "localService": true
+    },
+    {
+      "name": "Shelley (英语（美国）)",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Shelley (西班牙语（西班牙）)",
+      "lang": "es-ES",
+      "localService": true
+    },
+    {
+      "name": "Shelley (西班牙语（墨西哥）)",
+      "lang": "es-MX",
+      "localService": true
+    },
+    {
+      "name": "Shelley (芬兰语（芬兰）)",
+      "lang": "fi-FI",
+      "localService": true
+    },
+    {
+      "name": "Shelley (法语（加拿大）)",
+      "lang": "fr-CA",
+      "localService": true
+    },
+    {
+      "name": "Shelley (法语（法国）)",
+      "lang": "fr-FR",
+      "localService": true
+    },
+    {
+      "name": "Shelley (意大利语（意大利）)",
+      "lang": "it-IT",
+      "localService": true
+    },
+    {
+      "name": "Shelley (日语（日本）)",
+      "lang": "ja-JP",
+      "localService": true
+    },
+    {
+      "name": "Shelley (韩语（韩国）)",
+      "lang": "ko-KR",
+      "localService": true
+    },
+    {
+      "name": "Shelley (葡萄牙语（巴西）)",
+      "lang": "pt-BR",
+      "localService": true
+    },
+    {
+      "name": "Soumya",
+      "lang": "kn-IN",
+      "localService": true
+    },
+    {
+      "name": "Superstar",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Tessa",
+      "lang": "en-ZA",
+      "localService": true
+    },
+    {
+      "name": "Thomas",
+      "lang": "fr-FR",
+      "localService": true
+    },
+    {
+      "name": "Tina",
+      "lang": "sl-SI",
+      "localService": true
+    },
+    {
+      "name": "Trinoids",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Tünde",
+      "lang": "hu-HU",
+      "localService": true
+    },
+    {
+      "name": "Vani",
+      "lang": "ta-IN",
+      "localService": true
+    },
+    {
+      "name": "Whisper",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Wobble",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Xander",
+      "lang": "nl-NL",
+      "localService": true
+    },
+    {
+      "name": "Yelda",
+      "lang": "tr-TR",
+      "localService": true
+    },
+    {
+      "name": "Yuna",
+      "lang": "ko-KR",
+      "localService": true
+    },
+    {
+      "name": "Zarvox",
+      "lang": "en-US",
+      "localService": true
+    },
+    {
+      "name": "Zosia",
+      "lang": "pl-PL",
+      "localService": true
+    },
+    {
+      "name": "Zuzana",
+      "lang": "cs-CZ",
+      "localService": true
+    },
+    {
+      "name": "善怡",
+      "lang": "yue-HK",
+      "localService": true
+    },
+    {
+      "name": "美嘉",
+      "lang": "zh-TW",
+      "localService": true
+    }
+  ]
+}

@@ -26,6 +26,8 @@ import { createAIControls } from './ai-controls.js';
 import { createAssistantUI } from './assistant-ui.js';
 import { publicSourceUrl } from './shared/vocabulary-source.mjs';
 import { EXTENSION_AI_PREFERENCES_PREFIX } from './modules/extension-ai-preferences.js';
+import { speakText, stopCurrentAudio, unlockAudioContext, getActiveAudioOwner } from './modules/audio.js';
+import { createIcon } from './icons.js';
 
 const pageParameters = new URLSearchParams(location.search);
 const isEmbedded = window.parent !== window;
@@ -88,6 +90,8 @@ const dom = {
     resultEmpty: document.getElementById('ext-result-empty'),
     resultBox: document.getElementById('ext-result-box'),
     resultWord: document.getElementById('ext-result-word'),
+    resultSpeak: document.getElementById('ext-result-speak'),
+    pronunciationNotice: document.getElementById('ext-pronunciation-notice'),
     resultPhonetic: document.getElementById('ext-result-phonetic'),
     resultPos: document.getElementById('ext-result-pos'),
     resultMeaning: document.getElementById('ext-result-meaning'),
@@ -131,6 +135,10 @@ let activeLookupSequence = 0;
 let activeLookupController = null;
 let lookupSetupPromise = null;
 let lastResultPayload = null;
+let pronunciationSequence = 0;
+let pronunciationActive = false;
+let pronunciationFailed = false;
+const PRONUNCIATION_OWNER = 'extension-lookup';
 let lastAccountNotice = null;
 let lastLookupNotice = null;
 let lastAccountIdentity = null;
@@ -149,8 +157,9 @@ const inlineUI = isEmbedded ? createInlinePanel({
     captureBook: dom.captureBook, lookup: dom.lookupBtn, queryInputs: [dom.wordInput, dom.sentenceInput, dom.contextInput]
 }, captureUI, workspaceUI, { ticket: inlineTicket, initialMode: requestedView === 'assistant' ? 'assistant' : 'compact',
     getAuxState: () => document.body.classList.contains('ext-assistant-view') ? assistantUI?.getState() || {} : {},
-    onClose: () => assistantUI?.stop(),
+    onClose: () => { assistantUI?.stop(); stopPronunciation(); },
     onMode: (mode) => {
+        if (['dialog', 'assistant', 'assistant-dock'].includes(mode)) stopPronunciation();
         if (mode === 'dialog') return;
         const assistant = mode === 'assistant' || mode === 'assistant-dock';
         document.body.classList.toggle('ext-assistant-view', assistant);
@@ -270,6 +279,7 @@ function syncLoginModeFields() {
 }
 
 function clearDisplayedResult() {
+    stopPronunciation();
     captureUI.clearResult();
     lastResultPayload = null;
     dom.resultEmpty?.classList.remove('hidden');
@@ -283,6 +293,56 @@ function clearDisplayedResult() {
     if (dom.resultRole) dom.resultRole.textContent = '';
     if (dom.resultExamples) dom.resultExamples.innerHTML = '';
     if (dom.resultMeta) dom.resultMeta.textContent = '';
+    renderPronunciation();
+}
+
+function renderPronunciation() {
+    const key = pronunciationActive ? 'extension.lookupPronounceStop' : 'extension.lookupPronounce';
+    dom.resultSpeak.disabled = !dom.resultWord.textContent.trim();
+    dom.resultSpeak.title = t(key);
+    dom.resultSpeak.setAttribute('aria-label', t(key));
+    dom.resultSpeak.setAttribute('aria-pressed', String(pronunciationActive));
+    dom.resultSpeak.dataset.i18nTitle = key;
+    dom.resultSpeak.dataset.i18nAriaLabel = key;
+    dom.resultSpeak.replaceChildren(createIcon(pronunciationActive ? 'stop' : 'speaker'));
+    dom.pronunciationNotice.hidden = !pronunciationFailed;
+    dom.pronunciationNotice.textContent = pronunciationFailed ? t('extension.lookupPronounceFailed') : '';
+}
+
+function stopPronunciation() {
+    pronunciationSequence += 1;
+    pronunciationActive = false;
+    pronunciationFailed = false;
+    if (getActiveAudioOwner() === PRONUNCIATION_OWNER) stopCurrentAudio();
+    renderPronunciation();
+}
+
+async function togglePronunciation() {
+    if (pronunciationActive) { stopPronunciation(); return; }
+    const text = dom.resultWord.textContent.trim();
+    if (!text) return;
+    const sequence = ++pronunciationSequence;
+    pronunciationFailed = false;
+    pronunciationActive = true;
+    renderPronunciation();
+    try {
+        unlockAudioContext();
+        const played = await speakText(text, 'english', 0, null, null, {
+            owner: PRONUNCIATION_OWNER,
+            onStatus: ({ state }) => {
+                if (sequence !== pronunciationSequence) return;
+                if (state === 'ended' || state === 'error') pronunciationActive = false;
+                pronunciationFailed = state === 'error';
+                renderPronunciation();
+            }
+        });
+        if (sequence !== pronunciationSequence || played) return;
+    } catch (_) {
+        if (sequence !== pronunciationSequence) return;
+    }
+    pronunciationActive = false;
+    pronunciationFailed = true;
+    renderPronunciation();
 }
 
 function invalidateLookup() {
@@ -326,6 +386,7 @@ function renderResult(result) {
     dom.resultEmpty?.classList.add('hidden');
     dom.resultBox?.classList.remove('hidden');
     if (dom.resultWord) dom.resultWord.textContent = result.text || result.word || '';
+    renderPronunciation();
     if (dom.resultPhonetic) {
         const ipa = String(result.phonetic || '').trim().replace(/^\/|\/$/g, '');
         dom.resultPhonetic.textContent = ipa ? `/${ipa}/` : '';
@@ -703,6 +764,9 @@ async function initExtensionPage() {
     dom.extractBtn?.addEventListener('click', handleExtractFromTab);
     dom.lookupBtn?.addEventListener('click', handleLookup);
     dom.requery.addEventListener('click', () => handleLookup({ noCache: true }));
+    dom.resultSpeak.addEventListener('click', togglePronunciation);
+    window.addEventListener('pagehide', stopPronunciation);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) stopPronunciation(); });
     document.getElementById('ext-enable-inline').addEventListener('click', async () => {
         const response = await chrome.runtime.sendMessage({ type: 'BDC_ENABLE_INLINE' }).catch(() => null);
         showAccountNotice(response?.ok ? 'info' : 'error', response?.ok ? 'extension.inlineEnabled' : 'extension.inlineUnavailable');

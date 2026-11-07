@@ -32,6 +32,7 @@ const SHARED_FILES = [
     'modules/ai-settings-sanitize.js',
     'modules/ai-thinking.js',
     'modules/api.js',
+    'modules/audio.js',
     'modules/article-store.js',
     'modules/cache.js',
     'modules/extension-ai-runtime.js',

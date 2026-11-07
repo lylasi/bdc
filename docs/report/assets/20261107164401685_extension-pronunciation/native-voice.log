@@ -1,0 +1,4 @@
+PASS native engine in real extension iframe [
+  { type: 'start', text: 'impeached', lang: 'en-US', error: '' },
+  { type: 'end', text: 'impeached', lang: 'en-US', error: '' }
+]
