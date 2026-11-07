@@ -11,7 +11,9 @@ const LABELS = {
 let handlers;
 let menuTarget = null;
 let quickTarget = null;
+let quickPopover = null;
 let hideTimer;
+let suppressQuickFocus = false;
 
 function targetFor(trigger) {
     const sentence = trigger?.closest('.sentence-wrap')?.querySelector('.interactive-sentence');
@@ -66,6 +68,10 @@ export function refreshSentenceActions() {
     quick.title = t(active ? 'article.stopSentence' : 'article.readSentence');
     quick.setAttribute('aria-label', quick.title);
     quick.querySelector('use').setAttribute('href', active ? '#ic-stop' : '#ic-speaker');
+    if (quickPopover) {
+        quickPopover.setAttribute('aria-label', t('article.sentenceActions'));
+        quickPopover.querySelector('.sentence-hint-label').textContent = t('article.sentenceAnalysis');
+    }
     if (menuTarget && !menu.classList.contains('hidden')) position(menu, menuTarget.trigger);
 }
 
@@ -131,32 +137,32 @@ export function initSentenceActions(callbacks) {
         if (target?.sentence.isConnected) handlers.read(target.sentence, 'once');
     });
     const showQuick = (event) => {
-        if (menuTarget || event.pointerType === 'touch' || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        if (menuTarget || suppressQuickFocus || event.pointerType === 'touch' || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
         const wrap = event.target.closest('.sentence-wrap');
         const trigger = wrap?.querySelector('.sent-analyze-btn');
         if (!trigger) return;
         const target = targetFor(trigger);
-        if (!target || handlers.readUnavailableReason(target.sentence)) return;
+        if (!target) return;
         clearTimeout(hideTimer);
         quickTarget = target;
         refreshSentenceActions();
-        quick.classList.remove('hidden');
-        position(quick, trigger, true);
-        // Keep the existing translation hint visible without putting a button over it.
-        const hint = handlers.hintBounds();
-        if (hint) {
-            const box = quick.getBoundingClientRect();
-            const width = document.documentElement.clientWidth;
-            const left = hint.right + box.width + 14 <= width ? hint.right + 6 : Math.max(8, hint.left - box.width - 6);
-            quick.style.left = `${left}px`;
-            quick.style.top = `${Math.max(8, Math.min(innerHeight - box.height - 8, hint.top))}px`;
+        quick.classList.toggle('hidden', !!handlers.readUnavailableReason(target.sentence));
+        const popover = handlers.showQuickHint(trigger);
+        if (popover && popover !== quickPopover) {
+            quickPopover = popover;
+            popover.addEventListener('pointerenter', () => clearTimeout(hideTimer));
+            popover.addEventListener('pointerleave', scheduleHide);
+            popover.addEventListener('focusin', () => clearTimeout(hideTimer));
+            popover.addEventListener('focusout', scheduleHide);
         }
     };
     const scheduleHide = (event) => {
         const to = event.relatedTarget;
-        if (to && (quick.contains(to) || quickTarget?.trigger.closest('.sentence-wrap')?.contains(to))) return;
+        if (to && (quickPopover?.contains(to) || quick.contains(to) || quickTarget?.trigger.closest('.sentence-wrap')?.contains(to))) return;
         clearTimeout(hideTimer);
-        hideTimer = setTimeout(hideQuick, 200);
+        hideTimer = setTimeout(() => {
+            if (!quickPopover?.contains(document.activeElement)) hideQuick();
+        }, 200);
     };
     dom.articleAnalysisContainer.addEventListener('mouseover', showQuick);
     dom.articleAnalysisContainer.addEventListener('focusin', showQuick);
@@ -173,13 +179,27 @@ export function initSentenceActions(callbacks) {
         }
     });
     document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || !menuTarget) return;
-        event.preventDefault();
-        event.stopPropagation();
-        closeSentenceActions({ restoreFocus: true });
+        if (event.key !== 'Escape' || (!menuTarget && !quickTarget)) return;
+        if (menuTarget) {
+            event.preventDefault();
+            event.stopPropagation();
+            closeSentenceActions({ restoreFocus: true });
+        }
+        else {
+            const trigger = quickTarget.trigger;
+            const restoreFocus = quickPopover?.contains(document.activeElement);
+            hideQuick();
+            // Hover alone must not consume Escape intended for a word dialog.
+            if (!restoreFocus) return;
+            event.preventDefault();
+            event.stopPropagation();
+            suppressQuickFocus = true;
+            try { trigger.focus({ preventScroll: true }); }
+            finally { suppressQuickFocus = false; }
+        }
     }, { capture: true });
     document.addEventListener('pointerdown', (event) => {
-        if (menu.contains(event.target) || quick.contains(event.target) || menuTarget?.trigger.contains(event.target)) return;
+        if (menu.contains(event.target) || quickPopover?.contains(event.target) || quick.contains(event.target) || menuTarget?.trigger.contains(event.target)) return;
         closeSentenceActions();
     });
     let scrollFrame = 0;

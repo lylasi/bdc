@@ -255,8 +255,8 @@ async function desktop(browser, locale) {
         assert.equal(await page.locator('.sentence-linked').count(), 2);
         const hint = await page.locator('.sentence-hint').boundingBox();
         const quick = await page.locator('#article-sentence-quick-read').boundingBox();
-        assert.ok(quick.x + quick.width <= hint.x || quick.x >= hint.x + hint.width
-            || quick.y + quick.height <= hint.y || quick.y >= hint.y + hint.height);
+        assert.ok(quick.x >= hint.x && quick.x + quick.width <= hint.x + hint.width
+            && quick.y >= hint.y && quick.y + quick.height <= hint.y + hint.height);
         await screenshot(page, `desktop-${locale}-hover.png`);
         await page.locator('#article-sentence-quick-read').click();
         assert.equal(await last(page), SENTENCES[0]);
@@ -342,7 +342,7 @@ async function chineseSource(browser, locale, mobile = false) {
     } finally { await context.close(); }
 }
 
-(async () => {
+async function run() {
     const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' });
     try {
         for (const locale of Object.keys(LABELS)) {
@@ -352,4 +352,7 @@ async function chineseSource(browser, locale, mobile = false) {
             await chineseSource(browser, locale, true);
         }
     } finally { await browser.close(); }
-})().catch((error) => { console.error(error); process.exitCode = 1; });
+}
+
+module.exports = { setup, action, count, finish, last, screenshot };
+if (require.main === module) run().catch((error) => { console.error(error); process.exitCode = 1; });

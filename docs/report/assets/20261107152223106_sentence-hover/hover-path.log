@@ -1,0 +1,4 @@
+PASS hover path 1280 zh-CN: wrapped tail, bridge, text dwell, real mouse click, dismissal and Escape
+PASS hover path 960 zh-CN: wrapped tail, bridge, text dwell, real mouse click, dismissal and Escape
+PASS hover path 1280 zh-HK: wrapped tail, bridge, text dwell, real mouse click, dismissal and Escape
+PASS hover path 960 zh-HK: wrapped tail, bridge, text dwell, real mouse click, dismissal and Escape

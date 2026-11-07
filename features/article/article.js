@@ -896,7 +896,7 @@ export function initArticle() {
             && sentencePlaybackMode === mode && state.readingChunks[state.currentChunkIndex]?.el === sentence,
         onOpen: clearSentenceLink,
         onQuickHide: clearSentenceLink,
-        hintBounds: () => sentenceHintEl?.classList.contains('is-shown') ? sentenceHintEl.getBoundingClientRect() : null
+        showQuickHint: linkSentenceToButton
     });
     dom.readArticleBtn.addEventListener('click', handleReadButtonClick);
     dom.stopReadArticleBtn.addEventListener('click', stopReadArticle);
@@ -8830,13 +8830,18 @@ function ensureSentenceHint() {
     if (sentenceHintEl && sentenceHintEl.isConnected) return sentenceHintEl;
     sentenceHintEl = document.createElement('div');
     sentenceHintEl.className = 'sentence-hint';
-    sentenceHintEl.setAttribute('role', 'tooltip');
+    sentenceHintEl.setAttribute('role', 'dialog');
+    sentenceHintEl.setAttribute('aria-modal', 'false');
+    sentenceHintEl.setAttribute('aria-label', t('article.sentenceActions'));
+    const header = document.createElement('div');
+    header.className = 'sentence-hint-head';
     const label = document.createElement('span');
     label.className = 'sentence-hint-label';
     label.textContent = t('article.sentenceAnalysis');
     const text = document.createElement('span');
     text.className = 'sentence-hint-text';
-    sentenceHintEl.append(label, text);
+    header.append(label, dom.articleSentenceQuickRead);
+    sentenceHintEl.append(header, text);
     document.body.appendChild(sentenceHintEl);
     return sentenceHintEl;
 }
@@ -8914,7 +8919,7 @@ function sentenceLinkTargets(btn) {
 
 /** 高亮解析鍵所指的那一句（英文＋對應中文），並顯示中文譯文提示 */
 function linkSentenceToButton(btn) {
-    if (!btn || sentenceHintAnchor === btn) return;
+    if (!btn) return null;
     const { eng, zh, engRects, zhRects } = sentenceLinkTargets(btn);
     if (!eng && !zh) return;
     dom.articleAnalysisContainer.querySelectorAll('.sentence-linked').forEach(el => {
@@ -8930,21 +8935,10 @@ function linkSentenceToButton(btn) {
     hint.classList.add('is-shown');   // 先顯示才量得到尺寸，再決定落點
     positionSentenceHint(hint, btn, engRects, zhRects);
     sentenceHintAnchor = btn;
+    return hint;
 }
 
 if (dom.articleAnalysisContainer) {
-    dom.articleAnalysisContainer.addEventListener('mouseover', (ev) => {
-        const btn = ev.target?.closest?.('.sent-analyze-btn');
-        if (btn) linkSentenceToButton(btn);
-    });
-    dom.articleAnalysisContainer.addEventListener('mouseout', (ev) => {
-        const btn = ev.target?.closest?.('.sent-analyze-btn');
-        if (!btn) return;
-        const to = ev.relatedTarget;
-        if (to && btn.contains(to)) return;   // 只是移到按鈕內的 svg，不算離開
-        if (to && dom.articleSentenceQuickRead.contains(to)) return;
-        clearSentenceLink();
-    });
     // 提示是 fixed 定位，不會跟著句子捲動：捲動時改為重新對位，句子捲出畫面才收起
     let repositionScheduled = false;
     const followScroll = () => {
