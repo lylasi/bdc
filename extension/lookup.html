@@ -108,6 +108,7 @@
                 <span class="ext-cache-badge" id="ext-result-cache" hidden data-i18n="extension.lookupCached"></span>
             </div>
             <div class="ext-result-meaning" id="ext-result-meaning"></div>
+            <button id="ext-tts-status" type="button" class="ext-tts-status" aria-haspopup="dialog" aria-controls="ext-settings-dialog"></button>
             <p id="ext-pronunciation-notice" class="ext-notice ext-notice-error" role="status" hidden></p>
             <div class="ext-result-role" id="ext-result-role"></div>
             <details id="ext-result-details" class="ext-disclosure ext-disclosure-quiet ext-result-extra">
@@ -276,6 +277,54 @@
                     <option value="zh-HK" data-i18n="extension.localeZhHK"></option>
                 </select>
             </div>
+
+            <details id="ext-tts-settings" class="ext-disclosure ext-disclosure-block ext-tts-settings">
+                <summary class="ext-disclosure-summary">
+                    <span class="ext-disclosure-title" data-i18n="extension.ttsSettings"></span>
+                    <span id="ext-tts-summary" class="ext-tts-summary"></span>
+                </summary>
+                <div class="ext-disclosure-body">
+                    <p class="ext-hint" data-i18n="extension.ttsScopeHint"></p>
+                    <div class="ext-field">
+                        <label for="ext-tts-mode" data-i18n="extension.ttsMode"></label>
+                        <select id="ext-tts-mode">
+                            <option value="auto" data-i18n="extension.ttsModeAuto"></option>
+                            <option value="device" data-i18n="extension.ttsModeDevice"></option>
+                        </select>
+                    </div>
+                    <div id="ext-tts-service-fields">
+                        <div class="ext-field">
+                            <label for="ext-tts-url" data-i18n="extension.ttsUrl"></label>
+                            <input id="ext-tts-url" type="url" placeholder="https://tts.example.com" autocomplete="off" spellcheck="false" />
+                        </div>
+                        <div class="ext-field">
+                            <label for="ext-tts-key" data-i18n="extension.ttsKey"></label>
+                            <input id="ext-tts-key" type="password" autocomplete="off" spellcheck="false" />
+                        </div>
+                        <div class="ext-field">
+                            <label for="ext-tts-accent" data-i18n="settings.englishVoicePreference"></label>
+                            <select id="ext-tts-accent">
+                                <option value="en-US" data-i18n="settings.americanEnglish"></option>
+                                <option value="en-GB" data-i18n="settings.britishEnglish"></option>
+                            </select>
+                        </div>
+                        <div class="ext-field">
+                            <label for="ext-tts-voice" data-i18n="extension.ttsServiceVoice"></label>
+                            <input id="ext-tts-voice" type="text" list="ext-tts-voice-list" placeholder="en-US-JennyNeural" autocomplete="off" spellcheck="false" />
+                            <datalist id="ext-tts-voice-list"></datalist>
+                        </div>
+                        <button id="ext-tts-load-voices" type="button" class="ext-btn ext-btn-sm" data-i18n="extension.ttsLoadVoices"></button>
+                    </div>
+                    <div class="ext-field">
+                        <label for="ext-tts-device-voice" data-i18n="extension.ttsDeviceVoice"></label>
+                        <select id="ext-tts-device-voice"></select>
+                    </div>
+                    <button id="ext-tts-test" type="button" class="ext-btn ext-btn-primary ext-btn-sm" data-i18n="extension.ttsTest"></button>
+                    <p id="ext-tts-check" class="ext-tts-check" role="status" aria-live="polite"></p>
+                    <p id="ext-tts-voices-notice" class="ext-hint" role="status" hidden></p>
+                    <p id="ext-tts-save-notice" class="ext-notice ext-notice-error" role="status" hidden></p>
+                </div>
+            </details>
 
             <div class="ext-dialog-group">
                 <h3 class="ext-dialog-group-title" data-i18n="extension.settingsAiTitle"></h3>

@@ -1,0 +1,50 @@
+[
+  {
+    "type": "blur",
+    "target": "ext-tts-test",
+    "y": 517.890625,
+    "height": 26,
+    "pressed": "false",
+    "state": "success"
+  },
+  {
+    "type": "pointerdown",
+    "target": "ext-tts-test",
+    "y": 517.890625,
+    "height": 26,
+    "pressed": "false",
+    "state": "success"
+  },
+  {
+    "type": "change",
+    "target": "ext-tts-key",
+    "y": 517.890625,
+    "height": 26,
+    "pressed": "false",
+    "state": "success"
+  },
+  {
+    "type": "blur",
+    "target": "ext-tts-key",
+    "y": 517.890625,
+    "height": 26,
+    "pressed": "false",
+    "state": "info"
+  },
+  {
+    "type": "pointerup",
+    "target": "ext-tts-test",
+    "y": 517.890625,
+    "height": 26,
+    "pressed": "false",
+    "state": "info"
+  },
+  {
+    "type": "click",
+    "target": "ext-tts-test",
+    "y": 517.890625,
+    "height": 26,
+    "pressed": "false",
+    "state": "info"
+  }
+]

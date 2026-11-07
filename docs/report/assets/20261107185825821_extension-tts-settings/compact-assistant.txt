@@ -1,0 +1,99 @@
+Packaged 56 files into /Users/linus/CODE/bdc/extension
+PASS 首頁顯示三個快捷入口
+PASS 首頁沒有常駐單詞／原句／上文表單
+PASS 首頁沒有常駐 AI 摘要與結果／收藏區
+PASS 首頁沒有常駐文章擷取區
+PASS 設定圖示具可見文字以外的無障礙名稱
+PASS 設定 dialog 初始關閉
+PASS 設定圖示可開啟 dialog，AI 設定位於 dialog 內
+PASS 登入可在設定 dialog 完成
+PASS 切換 zh-HK 立即寫入 extension storage 並即時翻譯
+PASS AI 思考程度即時儲存，無需儲存按鈕
+PASS zh-HK 首頁 320px 無橫向溢出
+PASS 切回 zh-CN 即時翻譯
+PASS zh-CN 首頁 320px 無橫向溢出
+PASS zh-CN 首頁桌面無橫向溢出
+PASS 重開首頁仍保留語言與 AI 設定
+PASS 重開後仍為已登入且 dialog 保持關閉
+PASS 未選字時懸浮球預設顯示
+PASS 懸浮球具可讀的無障礙名稱
+PASS 懸浮球開關預設勾選
+PASS 關閉懸浮球會即時寫入 storage
+PASS 已開啟的網頁即時隱藏懸浮球
+PASS 重開懸浮球即時寫入 storage
+PASS 已開啟的網頁即時恢復懸浮球
+PASS 切換語言後懸浮球無障礙名稱即時更新
+PASS 選字旁可點真實查詞按鈕
+PASS 選字可開啟內嵌詞卡
+PASS 詞卡保留詞義與收藏區
+PASS 緊湊詞卡把查詞表單收進 dialog，工具列可編輯查詞
+PASS 精簡詞卡可從收藏列開啟詞書 dialog 選書
+PASS 取消編輯會恢復詞卡及原網頁來源，不重新呼叫 AI
+PASS 詞卡助手入口帶上原詞與原句
+PASS 從詞卡開助手不預先呼叫 AI
+PASS 返回後原詞卡結果仍保留
+PASS 返回原詞卡後仍可加入原詞書
+PASS 收藏沿用詞卡結果，不再呼叫 AI
+PASS 收藏保留原句與原文來源
+PASS 詞卡顯示原文連結
+PASS 展開詞卡後仍不提供文章擷取
+PASS 展開後收藏列仍提供詞書設定與原文連結
+PASS 詞書 dialog 可查看目前所在詞書
+PASS 查看所在詞書導向 BDC #v/<id>
+PASS 原文連結開啟原網頁
+PASS 詞卡 320px 內無橫向溢出
+PASS 背景已註冊 bdc-import-article contextMenu
+PASS #ext-home-article 開啟獨立文章 popup（不經下拉／inline 更多）
+PASS 文章 popup 是獨立視窗而非主視窗分頁
+PASS 首頁文章區不再常駐，inline 更多也看不到文章擷取
+PASS 可開啟助手獨立 popup 作為可信用 ticket 來源
+PASS 可信 frame 可發送 BDC_OPEN_WINDOW autoImport
+PASS autoImport 產生 view=article&import=1 的 lookup popup
+PASS autoImport 先停在可編輯正文預覽，不自動分析或跳轉
+PASS 提取階段只允許正文清洗 AI，不送逐段翻譯
+PASS 確認前資料庫沒有新增文章
+PASS 確認前沒有送出逐段翻譯／分析請求
+PASS 取消分析勾選後按鈕改為僅匯入正文
+PASS 重新勾選分析恢復預設按鈕文案
+PASS 預覽標題與正文可編輯，確認前任何輸入都不寫入
+PASS 按確認後才逐段翻譯、分析並保存文章
+PASS 保存的是編輯後的標題與正文
+PASS 文章保存原文來源 URL（ticket 綁定，不是前景 decoy）
+PASS 文章正文含標題、章節，且不含網頁表單私有值
+PASS 確認保存後完成逐段分析
+PASS 成功後仍停在文章 popup，等待使用者按「在 BDC 打開」
+PASS 導入完成後同 popup 導航 BDC 原站 #a/<id>
+PASS BDC 導向的文章與確認保存的是同一篇
+PASS BDC 文章頁載入同一篇正文
+PASS autoImport 完成於獨立 popup 視窗
+PASS 無選字仍可點擊懸浮球
+PASS 點球產生 iframe view=assistant
+PASS 助手開啟時不預先呼叫 AI
+PASS 助手讀到目前文章標題與 URL 上下文
+PASS 助手初始顯示空狀態
+PASS 助手串流顯示使用者問題與回答
+PASS 助手請求使用真 stream:true 與 SSE 回應
+PASS 助手請求帶文章原文與 URL 上下文
+PASS 助手請求包含系統提示與目前問題
+PASS 連續提問在 UI 累積兩輪
+PASS 連續提問把前一輪問答帶進上下文
+PASS 停止串流後顯示已停止並提供重試
+PASS 停止後重試沿用中斷的問題並完成
+PASS 助手失敗顯示錯誤並提供重試
+PASS 助手失敗後重試成功且不新增重複問題
+PASS 內嵌助手有草稿時關閉會確認
+PASS 回收小窗後可再點懸浮球重開
+PASS 重開助手仍在同一個 iframe 入口
+PASS 重開助手恢復未送出的草稿
+PASS 重開助手恢復既有對話
+PASS 展開助手為側欄並保持同一個 frame
+PASS 收回助手回到小窗且仍是同一個 frame
+PASS 助手 320px 無橫向溢出
+PASS 助手桌面無橫向溢出
+PASS 調整視窗與語言後助手仍存活
+PASS 切換帳戶前登出會清空助手對話與草稿
+PASS 切換 Bob 後不顯示 Alice 的對話
+PASS 切換 Bob 後請求上下文不含 Alice 對話
+PASS 切換 Bob 後仍使用同一篇文章上下文
+PASS 整個流程沒有未捕獲頁面錯誤
+{"passed":97,"failed":0,"output":"/Users/linus/CODE/bdc/docs/report/assets/20261107185825821_extension-tts-settings/compact-assistant"}

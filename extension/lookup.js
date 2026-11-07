@@ -28,6 +28,7 @@ import { publicSourceUrl } from './shared/vocabulary-source.mjs';
 import { EXTENSION_AI_PREFERENCES_PREFIX } from './modules/extension-ai-preferences.js';
 import { speakText, stopCurrentAudio, unlockAudioContext, getActiveAudioOwner } from './modules/audio.js';
 import { createIcon } from './icons.js';
+import { createTTSControls } from './tts-controls.js';
 
 const pageParameters = new URLSearchParams(location.search);
 const isEmbedded = window.parent !== window;
@@ -138,6 +139,7 @@ let lastResultPayload = null;
 let pronunciationSequence = 0;
 let pronunciationActive = false;
 let pronunciationFailed = false;
+let ttsControls = null;
 const PRONUNCIATION_OWNER = 'extension-lookup';
 let lastAccountNotice = null;
 let lastLookupNotice = null;
@@ -157,9 +159,9 @@ const inlineUI = isEmbedded ? createInlinePanel({
     captureBook: dom.captureBook, lookup: dom.lookupBtn, queryInputs: [dom.wordInput, dom.sentenceInput, dom.contextInput]
 }, captureUI, workspaceUI, { ticket: inlineTicket, initialMode: requestedView === 'assistant' ? 'assistant' : 'compact',
     getAuxState: () => document.body.classList.contains('ext-assistant-view') ? assistantUI?.getState() || {} : {},
-    onClose: () => { assistantUI?.stop(); stopPronunciation(); },
+    onClose: () => { assistantUI?.stop(); stopPronunciation(); ttsControls?.stopTest(); },
     onMode: (mode) => {
-        if (['dialog', 'assistant', 'assistant-dock'].includes(mode)) stopPronunciation();
+        if (['dialog', 'assistant', 'assistant-dock'].includes(mode)) { stopPronunciation(); ttsControls?.stopTest(); }
         if (mode === 'dialog') return;
         const assistant = mode === 'assistant' || mode === 'assistant-dock';
         document.body.classList.toggle('ext-assistant-view', assistant);
@@ -179,6 +181,14 @@ const aiControls = createAIControls({ embedded: isEmbedded, onChange: renderRead
     document.getElementById('ext-settings-dialog')?.close();
     handleLookup({ noCache: true });
 } });
+
+const ttsDom = Object.fromEntries(Object.entries({
+    section: 'settings', status: 'status', summary: 'summary', mode: 'mode', url: 'url', key: 'key',
+    accent: 'accent', voice: 'voice', voiceList: 'voice-list', loadVoices: 'load-voices',
+    voicesNotice: 'voices-notice', deviceVoice: 'device-voice', check: 'check', test: 'test',
+    saveNotice: 'save-notice', serviceFields: 'service-fields'
+}).map(([key, suffix]) => [key, document.getElementById('ext-tts-' + suffix)]));
+ttsControls = createTTSControls(ttsDom, { getText: () => dom.resultWord.textContent.trim(), onChange: stopPronunciation });
 
 const assistantDom = Object.fromEntries(Object.entries({ section: 'section', context: 'context', reference: 'reference', referenceText: 'reference-text',
     messages: 'messages', notice: 'notice', form: 'form', input: 'input', send: 'send', stop: 'stop', retry: 'retry',
@@ -207,6 +217,7 @@ async function openAssistant(fromWord = false) {
 function openDialog(id) {
     const dialog = document.getElementById(id);
     if (!dialog || dialog.open) return;
+    if (id === 'ext-settings-dialog') ttsControls.sync();
     if (savedDialogMode === null) savedDialogMode = inlineUI?.getMode() || null;
     inlineUI?.setMode('dialog');
     if (id === 'ext-query-dialog') {
@@ -307,6 +318,7 @@ function renderPronunciation() {
     dom.resultSpeak.replaceChildren(createIcon(pronunciationActive ? 'stop' : 'speaker'));
     dom.pronunciationNotice.hidden = !pronunciationFailed;
     dom.pronunciationNotice.textContent = pronunciationFailed ? t('extension.lookupPronounceFailed') : '';
+    ttsControls?.render();
 }
 
 function stopPronunciation() {
@@ -328,9 +340,12 @@ async function togglePronunciation() {
     try {
         unlockAudioContext();
         const played = await speakText(text, 'english', 0, null, null, {
+            ...ttsControls.getPlaybackOptions(),
             owner: PRONUNCIATION_OWNER,
-            onStatus: ({ state }) => {
+            onStatus: (status) => {
                 if (sequence !== pronunciationSequence) return;
+                const { state } = status;
+                ttsControls.recordPlayback(status);
                 if (state === 'ended' || state === 'error') pronunciationActive = false;
                 pronunciationFailed = state === 'error';
                 renderPronunciation();
@@ -705,6 +720,7 @@ function refreshLocalizedView() {
         document.getElementById('ext-title').dataset.i18n = 'extension.pageArticleTitle';
     }
     applyTranslations(document);
+    ttsControls.translate();
     captureUI.translate();
     workspaceUI.render();
     inlineUI?.render();
@@ -765,8 +781,13 @@ async function initExtensionPage() {
     dom.lookupBtn?.addEventListener('click', handleLookup);
     dom.requery.addEventListener('click', () => handleLookup({ noCache: true }));
     dom.resultSpeak.addEventListener('click', togglePronunciation);
-    window.addEventListener('pagehide', stopPronunciation);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) stopPronunciation(); });
+    ttsDom.status.addEventListener('click', () => {
+        openDialog('ext-settings-dialog');
+        ttsDom.section.open = true;
+        ttsDom.section.scrollIntoView({ block: 'nearest' });
+    });
+    window.addEventListener('pagehide', () => { ttsControls.flush(); stopPronunciation(); ttsControls.stopTest(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { stopPronunciation(); ttsControls.stopTest(); } });
     document.getElementById('ext-enable-inline').addEventListener('click', async () => {
         const response = await chrome.runtime.sendMessage({ type: 'BDC_ENABLE_INLINE' }).catch(() => null);
         showAccountNotice(response?.ok ? 'info' : 'error', response?.ok ? 'extension.inlineEnabled' : 'extension.inlineUnavailable');
@@ -781,6 +802,7 @@ async function initExtensionPage() {
             // Native close events are queued. A quick reopen must retain its
             // own layout rather than applying the previous close afterwards.
             if (dialog.open) return;
+            if (id === 'ext-settings-dialog') { ttsControls.flush(); ttsControls.stopTest(); }
             if (id === 'ext-query-dialog' && querySnapshot && !querySubmitted) {
                 const previous = querySnapshot;
                 dom.wordInput.value = previous.text; dom.sentenceInput.value = previous.sentence; dom.contextInput.value = previous.context;

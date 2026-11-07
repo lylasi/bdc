@@ -581,6 +581,29 @@ select.ext-select-sm {
     color: var(--ext-ink);
     overflow-wrap: anywhere;
 }
+.ext-tts-status {
+    display: block;
+    max-width: 100%;
+    padding: 1px 0;
+    margin-top: 3px;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 11px;
+    color: var(--ext-ink-muted);
+    text-align: left;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    cursor: pointer;
+}
+.ext-tts-status:hover { text-decoration: underline; }
+.ext-tts-status[data-state="warning"], .ext-tts-check[data-state="warning"] { color: #8a5b0a; }
+.ext-tts-status[data-state="error"], .ext-tts-check[data-state="error"] { color: #a32929; }
+.ext-tts-status[data-state="success"], .ext-tts-check[data-state="success"] { color: var(--ext-accent-strong); }
+.ext-tts-summary { min-width: 0; margin-left: auto; font-size: 11px; color: var(--ext-ink-muted); overflow: hidden; text-overflow: ellipsis; }
+.ext-tts-check { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.ext-tts-settings { margin: 12px 0; }
 .ext-result-role {
     margin-top: 3px;
     font-size: 12px;

@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "__MSG_extensionName__",
-    "version": "0.6.5",
+    "version": "0.6.6",
     "description": "__MSG_extensionDescription__",
     "permissions": [
         "storage",
@@ -45,6 +45,7 @@
                 "lookup.css",
                 "lookup.js",
                 "ai-controls.js",
+                "tts-controls.js",
                 "capture-ui.js",
                 "workspace-ui.js",
                 "inline-panel.js",

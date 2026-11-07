@@ -1,0 +1,34 @@
+✔ service success is confirmed after playback starts, with host and selected voice only (3.593833ms)
+✔ unconfigured selected service uses a natural English voice instead of Albert (0.997209ms)
+✔ settings form URL follows the same remote, local and custom routing as playback (0.505042ms)
+✔ explicit device voice and device-only mode are respected without a service request (0.373125ms)
+✔ automatic device voice follows the English accent and never picks the Chinese default (0.343666ms)
+✔ service rejection reports fallback and the actual device voice, never remote success (1.023042ms)
+✔ decode failure falls back only once even when play() rejects afterwards (0.52275ms)
+✔ a service which never starts times out and clearly reports device fallback (15.723667ms)
+✔ stop releases a pending request and prevents late rejection from starting device speech (0.590417ms)
+✔ late success from a stopped request cannot change the new playback state (0.58275ms)
+✔ blocked remote audio is identified without reporting the fallback as service success (0.550125ms)
+✔ failure of both service and device returns one clear error and false (0.490875ms)
+✔ status never exposes URL credentials or query secrets (0.388125ms)
+✔ 事件 stub 本身能註冊與派送 (1.032833ms)
+✔ 音訊 owner 與中斷通知 (2.141625ms)
+✔ unknown IPA is a reference, never relabeled by the selected voice (1.049042ms)
+✔ AI output must identify exact word and accent, and preserves heteronyms (0.236959ms)
+✔ accent voices never silently fall back from UK to US (0.149625ms)
+✔ TTS reuses current BDC channel and selected voice with encoded text (1.213708ms)
+✔ setting defaults off, persists locally and survives unrelated updates (1.564458ms)
+✔ new UI translation keys match in both locales (12.211583ms)
+✔ shelter splits existing IPA offline and treats parenthesized r as optional (2.975542ms)
+✔ phrases preserve complete IPA and reject non-English input (1.047167ms)
+✔ other IPA notations the AI may return still find a playable sound (2.440792ms)
+✔ prompt symbol list matches what the chart can actually play (0.735667ms)
+✔ both dictionary prompts inject the notation rule (0.713ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 72.748292

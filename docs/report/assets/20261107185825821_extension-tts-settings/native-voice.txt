@@ -1,0 +1,16 @@
+PASS native engine in real extension iframe [
+  {
+    type: 'start',
+    text: 'impeached',
+    lang: 'en-GB',
+    voice: 'Daniel',
+    error: ''
+  },
+  {
+    type: 'end',
+    text: 'impeached',
+    lang: 'en-GB',
+    voice: 'Daniel',
+    error: ''
+  }
+]

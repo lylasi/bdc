@@ -1,0 +1,25 @@
+PASS 未設定服務時明示裝置來源及未配置原因
+PASS 自動裝置聲音不再選取 Albert
+PASS 來源提示可直接開啟 TTS 設定彈窗
+PASS TTS 金鑰欄位遮蔽輸入
+PASS 無效地址阻止試播，修改其他欄位也不會誤播舊服務
+PASS 只讀取所填服務的聲音清單並使用 Key
+PASS 讀取清單不會誤報播放成功
+PASS 真 HTTP WAV 音訊播放成功，顯示服務及聲音 ID
+PASS 服務正常時沒有偷用裝置語音
+PASS TTS 請求實際使用所選聲音及 Key
+PASS 公開狀態不顯示密鑰或請求 URL
+PASS 服務拒絕時明示回退裝置及實際聲音
+PASS 服務失敗不顯示綠色正常
+PASS 聲音清單可辨識 HTTP 401，而不是使用別個服務的快取
+PASS 修正 Key 後直接重試可恢復服務播放
+PASS 取消未完成的遠端試播後不會突然啟動裝置語音
+PASS 可明確選裝置語音，保留手選的自然聲音
+PASS 320px TTS 設定彈窗及欄位完整置於畫面內
+PASS 香港繁體設定及播放來源文案完整
+PASS 320px 詞卡顯示聲音來源而不橫向溢出
+PASS 詞卡發音沿用已儲存的裝置聲音
+PASS 修改及測試語音不會重新請求 AI 查詞
+PASS 重新開啟擴充後保留模式、服務、聲音及金鑰
+PASS 設定及錯誤路徑沒有未捕獲頁面例外
+{"passed":24,"failed":0,"output":"/Users/linus/CODE/bdc/docs/report/assets/20261107185825821_extension-tts-settings/controls"}

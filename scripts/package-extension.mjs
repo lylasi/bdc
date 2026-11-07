@@ -33,6 +33,7 @@ const SHARED_FILES = [
     'modules/ai-thinking.js',
     'modules/api.js',
     'modules/audio.js',
+    'modules/voices.js',
     'modules/article-store.js',
     'modules/cache.js',
     'modules/extension-ai-runtime.js',
@@ -113,6 +114,7 @@ export function packageExtension() {
     const entryFiles = [
         'lookup.js',
         'ai-controls.js',
+        'tts-controls.js',
         'capture-ui.js',
         'workspace-ui.js',
         'inline-panel.js',

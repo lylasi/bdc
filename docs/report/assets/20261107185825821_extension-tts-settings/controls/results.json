@@ -1,0 +1,145 @@
+{
+  "checks": [
+    {
+      "name": "未設定服務時明示裝置來源及未配置原因",
+      "ok": true
+    },
+    {
+      "name": "自動裝置聲音不再選取 Albert",
+      "ok": true
+    },
+    {
+      "name": "來源提示可直接開啟 TTS 設定彈窗",
+      "ok": true
+    },
+    {
+      "name": "TTS 金鑰欄位遮蔽輸入",
+      "ok": true
+    },
+    {
+      "name": "無效地址阻止試播，修改其他欄位也不會誤播舊服務",
+      "ok": true
+    },
+    {
+      "name": "只讀取所填服務的聲音清單並使用 Key",
+      "ok": true
+    },
+    {
+      "name": "讀取清單不會誤報播放成功",
+      "ok": true
+    },
+    {
+      "name": "真 HTTP WAV 音訊播放成功，顯示服務及聲音 ID",
+      "ok": true
+    },
+    {
+      "name": "服務正常時沒有偷用裝置語音",
+      "ok": true
+    },
+    {
+      "name": "TTS 請求實際使用所選聲音及 Key",
+      "ok": true
+    },
+    {
+      "name": "公開狀態不顯示密鑰或請求 URL",
+      "ok": true
+    },
+    {
+      "name": "服務拒絕時明示回退裝置及實際聲音",
+      "ok": true
+    },
+    {
+      "name": "服務失敗不顯示綠色正常",
+      "ok": true
+    },
+    {
+      "name": "聲音清單可辨識 HTTP 401，而不是使用別個服務的快取",
+      "ok": true
+    },
+    {
+      "name": "修正 Key 後直接重試可恢復服務播放",
+      "ok": true
+    },
+    {
+      "name": "取消未完成的遠端試播後不會突然啟動裝置語音",
+      "ok": true
+    },
+    {
+      "name": "可明確選裝置語音，保留手選的自然聲音",
+      "ok": true
+    },
+    {
+      "name": "320px TTS 設定彈窗及欄位完整置於畫面內",
+      "ok": true
+    },
+    {
+      "name": "香港繁體設定及播放來源文案完整",
+      "ok": true
+    },
+    {
+      "name": "320px 詞卡顯示聲音來源而不橫向溢出",
+      "ok": true
+    },
+    {
+      "name": "詞卡發音沿用已儲存的裝置聲音",
+      "ok": true
+    },
+    {
+      "name": "修改及測試語音不會重新請求 AI 查詞",
+      "ok": true
+    },
+    {
+      "name": "重新開啟擴充後保留模式、服務、聲音及金鑰",
+      "ok": true
+    },
+    {
+      "name": "設定及錯誤路徑沒有未捕獲頁面例外",
+      "ok": true
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "path": "/voices",
+      "voice": null,
+      "authenticated": true,
+      "mode": "good"
+    },
+    {
+      "path": "/tts",
+      "voice": "en-US-ServiceVoice",
+      "authenticated": true,
+      "mode": "good"
+    },
+    {
+      "path": "/tts",
+      "voice": "en-US-ServiceVoice",
+      "authenticated": false,
+      "mode": "good"
+    },
+    {
+      "path": "/voices",
+      "voice": null,
+      "authenticated": false,
+      "mode": "good"
+    },
+    {
+      "path": "/tts",
+      "voice": "en-US-ServiceVoice",
+      "authenticated": true,
+      "mode": "good"
+    },
+    {
+      "path": "/tts",
+      "voice": "en-US-ServiceVoice",
+      "authenticated": true,
+      "mode": "hold"
+    },
+    {
+      "path": "/tts",
+      "voice": "en-US-ServiceVoice",
+      "authenticated": true,
+      "mode": "hold"
+    }
+  ]
+}

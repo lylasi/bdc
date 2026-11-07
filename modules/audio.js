@@ -9,6 +9,8 @@ import { loadGlobalSettings, loadGlobalSecrets } from './settings.js';
 // 目前佔用音訊播放的模組（文章朗讀、單詞發音、聽寫…）。
 // 只有 owner 真正更換時才會發出中斷事件；停止本身不發事件，避免呼叫端誤判。
 let activeAudioOwner = '';
+let playbackSequence = 0;
+let cancelRemotePlayback = null;
 
 export function getActiveAudioOwner() {
     return activeAudioOwner;
@@ -50,6 +52,10 @@ export function unlockAudioContext() {
  * 這包括 Web Audio API 的 source、全局的 HTML Audio 元素，以及本機語音合成。
  */
 export function stopCurrentAudio(options = {}) {
+    playbackSequence += 1;
+    const cancel = cancelRemotePlayback;
+    cancelRemotePlayback = null;
+    cancel?.();
     // 停止即代表沒有 owner；不由這裡主動派送中斷事件，避免「自己停止」被當成被別人打斷。
     activeAudioOwner = '';
     // 停止 Web Audio API 音頻源
@@ -87,12 +93,21 @@ export function stopCurrentAudio(options = {}) {
 
 let localSpeechSeq = 0;
 
+/** Selected service URL for local settings forms; never include it in playback status. */
+export function getTtsServiceBaseUrl() {
+    return String(getEffectiveBaseUrl(loadGlobalSettings()) || '').trim();
+}
+
 /** 遠端 TTS 是否已設定（未設定時直接使用系統語音，避免討厭的錯誤彈窗） */
 export function isRemoteTtsConfigured() {
     const url = getEffectiveBaseUrl(loadGlobalSettings());
     if (!url || typeof url !== 'string') return false;
-    let host = url;
-    try { host = new URL(url, window.location.href).hostname; } catch (_) { /* 保持原字串 */ }
+    let host = '';
+    try {
+        const parsed = new URL(url, window.location.href);
+        if (!/^https?:$/.test(parsed.protocol)) return false;
+        host = parsed.hostname;
+    } catch (_) { return false; }
     if (!host) return false;
     if (/(^|\.)example\.(com|org|net)$/i.test(host)) return false;
     if (/your-tts|yourtts|placeholder/i.test(url)) return false;
@@ -105,35 +120,58 @@ export function isRemoteTtsConfigured() {
  * @returns {{configured: boolean, host: string}}
  */
 export function describeTtsTarget() {
+    const { configured, host } = describeSpeechTarget();
+    return { configured, host };
+}
+
+export function describeSpeechTarget(langOrVoice = 'english', options = {}) {
     const url = getEffectiveBaseUrl(loadGlobalSettings());
     const configured = isRemoteTtsConfigured();
     let host = '';
     if (url && typeof url === 'string') {
         try {
             const parsed = new URL(url, window.location.href);
-            host = parsed.host || parsed.hostname || '';
+            if (/^https?:$/.test(parsed.protocol)) host = parsed.host;
         } catch (_) {
-            // 非絕對網址（例如只填主機名）時退回原字串，仍不帶查詢參數。
-            host = String(url).split(/[/?#]/)[0] || '';
+            host = '';
         }
     }
-    return { configured, host };
+    const source = configured && !options.forceLocal ? 'remote' : 'device';
+    const voice = source === 'remote' ? null : pickLocalVoice(langOrVoice);
+    return { configured, host: configured ? host : '', source,
+        voice: source === 'remote' ? resolveVoiceId(langOrVoice) : voice?.name || '',
+        voiceURI: voice?.voiceURI || '', lang: voice?.lang || localLanguage(langOrVoice) };
 }
 
-/** 依語系提示挑選系統語音 */
-function pickLocalVoice(langOrVoice) {
-    const synth = window.speechSynthesis;
-    if (!synth || typeof synth.getVoices !== 'function') return null;
-    const voices = synth.getVoices() || [];
-    if (!voices.length) return null;
+function localLanguage(langOrVoice) {
     const raw = String(langOrVoice || '').toLowerCase();
-    let wanted = 'en';
-    if (/cantonese|yue|zh-hk|zh_hk|粵|粤/.test(raw)) wanted = 'zh-hk';
-    else if (/chinese|mandarin|zh|中文|普通/.test(raw)) wanted = 'zh';
-    const exact = voices.find(v => (v.lang || '').toLowerCase() === wanted);
-    if (exact) return exact;
-    const byPrefix = voices.find(v => (v.lang || '').toLowerCase().startsWith(wanted.slice(0, 2)));
-    return byPrefix || voices[0];
+    if (/cantonese|yue|zh-hk|zh_hk|粵|粤/.test(raw)) return 'zh-HK';
+    if (/chinese|mandarin|zh|中文|普通/.test(raw)) return 'zh-CN';
+    const locale = raw.match(/^en-(us|gb|au|ie|za)/i)?.[0];
+    return locale || loadGlobalSettings()?.reading?.englishVariant || 'en-GB';
+}
+
+export function getLocalSpeechVoices(langOrVoice = 'english') {
+    const wanted = localLanguage(langOrVoice).slice(0, 2).toLowerCase();
+    return (window.speechSynthesis?.getVoices?.() || [])
+        .filter((voice) => String(voice.lang || '').slice(0, 2).toLowerCase() === wanted);
+}
+
+/** 優先明確選擇、語系及自然語音；不再直接使用清單首個趣味音色。 */
+function pickLocalVoice(langOrVoice) {
+    const voices = getLocalSpeechVoices(langOrVoice);
+    if (!voices.length) return null;
+    const wanted = localLanguage(langOrVoice).toLowerCase();
+    const selected = loadGlobalSettings()?.tts?.deviceVoiceURI;
+    const explicit = selected && voices.find((voice) => voice.voiceURI === selected || voice.name === selected);
+    if (explicit && wanted.startsWith('en')) return explicit;
+    const novelty = /^(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|junior|organ|pipe organ|princess|ralph|trinoids|whisper|wobble|zarvox|fred)$/i;
+    const natural = /natural|enhanced|premium|neural|google|samantha|alex|daniel|karen|moira|tessa|serena|ava|zoe/i;
+    const score = (voice) => (novelty.test(voice.name || '') ? -1000 : 0)
+        + (String(voice.lang).toLowerCase() === wanted ? 250 : 0)
+        + (voice.default ? 200 : 0) + (natural.test(voice.name || '') ? 100 : 0)
+        + (voice.localService ? 1 : 0);
+    return [...voices].sort((a, b) => score(b) - score(a))[0];
 }
 
 /** 以系統語音朗讀（離線可用；音質依裝置而定） */
@@ -142,11 +180,16 @@ function speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd, options =
     const UtteranceCtor = window.SpeechSynthesisUtterance;
     const plainText = text == null ? '' : String(text);
     const hasStatusConsumer = typeof options.onStatus === 'function' || typeof options.onError === 'function';
+    const voice = pickLocalVoice(langOrVoice);
+    const metadata = { source: 'device', voice: voice?.name || '', voiceURI: voice?.voiceURI || '',
+        lang: voice?.lang || localLanguage(langOrVoice), host: '',
+        fallbackReason: options.fallbackReason || '', targetHost: options.targetHost || '' };
+    const status = (state, error) => options.onStatus?.({ ...metadata, state, ...(error ? { error } : {}) });
     // 有 status／error 回呼的呼叫端（文章朗讀）要能明確停止；
     // 舊呼叫端（聽寫）沒有這些回呼，保留原本「失敗也走 onEnd」的相容行為。
     const notifyFailure = (error) => {
         if (typeof options.onStatus === 'function') {
-            try { options.onStatus({ state: 'error', error }); } catch (_) { /* noop */ }
+            try { status('error', error); } catch (_) { /* noop */ }
         }
         if (typeof options.onError === 'function') {
             try { options.onError(error); } catch (_) { /* noop */ }
@@ -164,29 +207,25 @@ function speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd, options =
     try {
         synth.cancel();
         const utterance = new UtteranceCtor(plainText);
-        const voice = pickLocalVoice(langOrVoice);
         if (voice) {
             utterance.voice = voice;
             utterance.lang = voice.lang;
         } else {
-            const raw = String(langOrVoice || '').toLowerCase();
-            utterance.lang = /cantonese|yue|zh-hk/.test(raw)
-                ? 'zh-HK'
-                : (/chinese|mandarin|zh/.test(raw) ? 'zh-CN' : 'en-US');
+            utterance.lang = localLanguage(langOrVoice);
         }
         const numericSpeed = Number(speed) || 0;
         utterance.rate = Math.min(2, Math.max(0.5, 1 + numericSpeed / 100));
         utterance.onstart = () => {
             if (seq !== localSpeechSeq) return;
             if (typeof options.onStatus === 'function') {
-                try { options.onStatus({ state: 'playing' }); } catch (_) { /* noop */ }
+                try { status('playing'); } catch (_) { /* noop */ }
             }
             if (onStart) onStart();
         };
         utterance.onend = () => {
             if (seq !== localSpeechSeq) return;
             if (typeof options.onStatus === 'function') {
-                try { options.onStatus({ state: 'ended' }); } catch (_) { /* noop */ }
+                try { status('ended'); } catch (_) { /* noop */ }
             }
             if (!state.isDictationPaused && onEnd) onEnd();
         };
@@ -195,6 +234,7 @@ function speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd, options =
             console.warn('本機語音播放失敗:', event?.error || event);
             notifyFailure(event?.error || event || new Error('local_speech_error'));
         };
+        status('loading');
         synth.speak(utterance);
         return true;
     } catch (error) {
@@ -284,98 +324,92 @@ export async function speakText(text, langOrVoice = 'english', speed = 0, onStar
     const previousOwner = activeAudioOwner;
     stopCurrentAudio({ reason: 'replaced-by-speak' });
     activeAudioOwner = owner;
-    if (previousOwner && previousOwner !== owner) {
-        dispatchAudioInterrupted(previousOwner, owner);
-    }
+    const sequence = playbackSequence;
+    const current = () => sequence === playbackSequence;
+    if (previousOwner && previousOwner !== owner) dispatchAudioInterrupted(previousOwner, owner);
 
     let errorReported = false;
     const notifyStatus = (status) => {
-        if (status && status.state === 'error') errorReported = true;
-        if (typeof opts.onStatus === 'function') {
-            try { opts.onStatus(status); } catch (_) { /* 呼叫端錯誤不影響音訊 */ }
-        }
+        if (!current()) return;
+        if (status?.state === 'error') errorReported = true;
+        try { opts.onStatus?.(status); } catch (_) { /* consumer */ }
     };
-    const reportError = (error) => {
-        if (errorReported) return;
-        notifyStatus({ state: 'error', error });
-        if (typeof opts.onError === 'function') {
-            try { opts.onError(error); } catch (_) { /* noop */ }
-        }
-    };
-    const localOptions = { ...opts, onStatus: notifyStatus };
+    const plan = describeSpeechTarget(langOrVoice, opts);
+    const local = (fallbackReason) => speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd, {
+        ...opts, fallbackReason, targetHost: plan.host, onStatus: notifyStatus
+    });
+    if (opts.forceLocal || !plan.configured) return local(opts.forceLocal ? '' : 'not_configured');
 
-    // 未設定遠端 TTS（或設定仍為範例網址）時，直接使用系統語音，確保聽寫有聲音
-    if (!isRemoteTtsConfigured()) {
-        return speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd, localOptions);
-    }
+    const settings = loadGlobalSettings();
+    const secrets = loadGlobalSecrets();
+    const base = String(getEffectiveBaseUrl(settings)).replace(/\/+$/, '');
+    const key = String(secrets?.ttsApiKey || TTS_CONFIG.apiKey || '').trim();
+    const voice = plan.voice || '';
+    const url = `${base}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(key)}`;
+    const metadata = { source: 'remote', host: plan.host, voice, fallbackReason: '', targetHost: plan.host,
+        lang: voice.match(/^[a-z]{2,4}-[a-z]{2}/i)?.[0] || localLanguage(langOrVoice) };
+    const el = state.globalAudioElement;
+    if (!el) return local('media_unavailable');
 
-    const s = loadGlobalSettings();
-    const sec = loadGlobalSecrets();
-    const baseUrl = getEffectiveBaseUrl(s);
-    const apiKey = (sec?.ttsApiKey && String(sec.ttsApiKey).trim()) || TTS_CONFIG.apiKey;
-    const voice = resolveVoiceId(langOrVoice, s) || TTS_CONFIG.voices.english;
-    const url = `${baseUrl}/tts?t=${encodeURIComponent(text)}&v=${encodeURIComponent(voice)}&r=${speed}&api_key=${encodeURIComponent(apiKey)}`;
-    let fallbackResult = null;
-    let started = false;
-
-    const markStarted = () => {
-        if (started) return;
-        started = true;
-        notifyStatus({ state: 'playing' });
-        if (onStart) onStart();
-    };
-    const clearHandlers = () => {
-        const el = state.globalAudioElement;
-        if (!el) return;
-        el.onended = null;
-        el.onerror = null;
-        el.onloadstart = null;
-        el.onplaying = null;
-        el.oncanplay = null;
-        el.onwaiting = null;
-    };
-    const fallbackToLocal = () => {
-        if (fallbackResult !== null) return fallbackResult;
-        clearHandlers();
-        fallbackResult = speakWithLocalVoice(text, langOrVoice, speed, onStart, onEnd, localOptions);
-        return fallbackResult;
-    };
-
-    try {
-        const el = state.globalAudioElement;
-        // 先綁事件再設定 src，避免 loadstart 在 handler 掛上之前就觸發。
-        el.onloadstart = () => notifyStatus({ state: 'loading' });
-        el.onplaying = () => markStarted();
-        el.oncanplay = () => markStarted();
-        el.onwaiting = () => notifyStatus({ state: 'loading' });
-        el.onended = () => {
-            clearHandlers();
-            notifyStatus({ state: 'ended' });
-            if (!state.isDictationPaused && onEnd) onEnd();
+    return new Promise((resolve) => {
+        let settled = false, started = false, fallbackStarted = false, timer;
+        const finish = (value) => { if (!settled) { settled = true; resolve(value); } };
+        const handlers = {};
+        const cleanup = () => {
+            clearTimeout(timer);
+            for (const [property, handler] of Object.entries(handlers)) {
+                if (el[property] === handler) el[property] = null;
+            }
+            if (cancelRemotePlayback === cancel) cancelRemotePlayback = null;
         };
-        el.onerror = (error) => {
-            clearHandlers();
-            console.warn('遠端 TTS 播放失敗，改用系統語音:', error?.message || error);
-            const ok = fallbackToLocal();
-            if (!ok) reportError(error || new Error('remote_tts_failed'));
+        const stopRemote = () => {
+            cleanup();
+            try { el.pause(); el.removeAttribute?.('src'); el.load?.(); } catch (_) { /* already stopped */ }
         };
-        el.src = url;
-        el.load();
-        await el.play();
-        // 少數瀏覽器 play() resolve 後才補 onplaying；這裡保証 onStart 一定會來。
-        markStarted();
-        return true;
-    } catch (error) {
-        if (error?.name === 'AbortError') {
-            // 暫停 / 停止 / 切換單詞時主動中斷播放，屬預期行為，不可觸發 onEnd（避免流程多走一格）
-            console.log('Audio playback was aborted, which is expected on pause/stop.');
-            return false;
+        const cancel = () => { stopRemote(); finish(false); };
+        const fallback = (reason) => {
+            if (!current() || fallbackStarted) return;
+            fallbackStarted = true;
+            stopRemote();
+            const ok = local(reason);
+            if (!ok && !errorReported) notifyStatus({ ...metadata, state: 'error', error: new Error(reason) });
+            finish(ok);
+        };
+        const markStarted = () => {
+            if (!current() || fallbackStarted || started) return;
+            started = true;
+            clearTimeout(timer);
+            notifyStatus({ ...metadata, state: 'playing' });
+            onStart?.();
+            finish(true);
+        };
+        handlers.onloadstart = () => { if (current() && !fallbackStarted) notifyStatus({ ...metadata, state: 'loading' }); };
+        handlers.onwaiting = handlers.onloadstart;
+        handlers.onplaying = markStarted;
+        handlers.onended = () => {
+            if (!current() || fallbackStarted) return;
+            cleanup();
+            notifyStatus({ ...metadata, state: 'ended' });
+            finish(true);
+            if (!state.isDictationPaused) onEnd?.();
+        };
+        handlers.onerror = () => fallback(el.error?.code === 3 ? 'decode_failed' : 'audio_load_failed');
+        for (const [property, handler] of Object.entries(handlers)) el[property] = handler;
+        cancelRemotePlayback = cancel;
+        timer = setTimeout(() => fallback('timeout'), Math.max(1, Number(opts.timeoutMs) || 15000));
+        notifyStatus({ ...metadata, state: 'loading' });
+        try {
+            el.src = url;
+            el.load();
+            Promise.resolve(el.play()).then(markStarted, (error) => {
+                if (!current() || fallbackStarted) return;
+                fallback(error?.name === 'NotAllowedError' ? 'playback_blocked'
+                    : error?.name === 'NotSupportedError' ? 'audio_load_failed' : 'service_unavailable');
+            });
+        } catch (error) {
+            fallback(error?.name === 'NotAllowedError' ? 'playback_blocked' : 'service_unavailable');
         }
-        console.warn('遠端 TTS 無法播放，改用系統語音:', error?.name || error);
-        const ok = fallbackToLocal();
-        if (!ok) reportError(error || new Error('remote_tts_failed'));
-        return ok;
-    }
+    });
 }
 
 // ---------------------------------
@@ -421,7 +455,7 @@ function resolveVoiceId(langOrVoice, settingsObj) {
 }
 
 function fallbackByKey(key) {
-    return TTS_CONFIG.voices[key] || TTS_CONFIG.voices.english;
+    return TTS_CONFIG.voices?.[key] || TTS_CONFIG.voices?.english || '';
 }
 
 function getEffectiveBaseUrl(s) {
@@ -429,7 +463,7 @@ function getEffectiveBaseUrl(s) {
     const r = ((s?.tts && s.tts.baseUrlRemote && String(s.tts.baseUrlRemote).trim()) || (TTS_CONFIG.baseUrlRemote || TTS_CONFIG.baseUrl || '')).trim();
     const l = ((s?.tts && s.tts.baseUrlLocal && String(s.tts.baseUrlLocal).trim()) || (TTS_CONFIG.baseUrlLocal || '')).trim();
     const c = (s?.tts && s.tts.baseUrlCustom && String(s.tts.baseUrlCustom).trim()) || '';
-    if (sel === 'custom' && c) return c;
+    if (sel === 'custom') return c;
     if (sel === 'local' && l) return l;
     if (sel === 'remote' && r) return r;
     // backward compatibility

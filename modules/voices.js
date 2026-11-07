@@ -57,6 +57,35 @@ export function formatVoiceLabel(v) {
     return parts.join(' ');
 }
 
+// Read exactly the selected service. Bundled/cached lists cannot establish
+// whether a user-entered TTS service supports a voice or is reachable.
+export async function fetchTtsServiceVoices({ baseUrl, apiKey = '', signal, timeoutMs = 8000 } = {}) {
+    const base = new URL(String(baseUrl || '').trim());
+    if (!/^https?:$/.test(base.protocol) || base.search || base.hash || !base.href.startsWith(base.origin + '/')) {
+        throw Object.assign(new Error('tts_url_invalid'), { code: 'tts_url_invalid' });
+    }
+    const url = new URL(base.href.replace(/\/+$/, '') + '/voices');
+    if (apiKey) url.searchParams.set('api_key', apiKey);
+    const controller = new AbortController();
+    const abort = () => controller.abort(signal?.reason);
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) abort();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const response = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+        if (!response.ok) throw Object.assign(new Error('tts_voices_failed'), { code: 'tts_voices_failed', status: response.status });
+        const data = await response.json();
+        const rows = Array.isArray(data) ? data : Array.isArray(data?.voices) ? data.voices
+            : Object.values(data || {}).flatMap((value) => Array.isArray(value) ? value : []);
+        const list = rows.map(normalizeVoice).filter(Boolean);
+        if (!list.length) throw Object.assign(new Error('tts_voices_empty'), { code: 'tts_voices_empty' });
+        return list;
+    } finally {
+        clearTimeout(timer);
+        signal?.removeEventListener('abort', abort);
+    }
+}
+
 // Try both configured voicesUrl and baseUrl/voices
 export async function fetchVoicesList({ signal, refresh = false, allowCache = true, overrideUse, overrideBaseUrls, ttlMs = 24*60*60*1000 } = {}) {
     const s = loadGlobalSettings();
