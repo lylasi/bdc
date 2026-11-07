@@ -4315,6 +4315,21 @@ a .interactive-word { cursor: inherit; border-bottom-color: transparent; }
 }
 .sentence-card-head > div:first-child { font-weight: 650; color: var(--ink-900); }
 .sentence-card-head .actions { display: flex; gap: var(--sp-1); }
+.sentence-card .sentence-original-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    margin: var(--sp-2) 0;
+}
+.sentence-card .sentence-original {
+    flex: 1;
+    min-width: 0;
+    color: var(--ink-900);
+    font-weight: 600;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+.sentence-card .sent-copy-original { flex-shrink: 0; white-space: nowrap; }
 .sentence-card .sentence-translation { margin: var(--sp-2) 0; color: var(--ink-700); }
 .sentence-card .sentence-align { margin: var(--sp-1) 0; font-size: var(--fs-sm); color: var(--ink-600); }
 .sentence-card .align-pair { margin-right: var(--sp-2); }

@@ -1,0 +1,405 @@
+{
+  "passed": 100,
+  "results": [
+    {
+      "ok": true,
+      "message": "zh-CN: English original appears while loading"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: existing translation stays below original"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: copy button is localized"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: loading copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: loading preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: loading uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: loading reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: open card updates copy label on language switch"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: language switch copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: language switch preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: language switch uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: language switch reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: original wraps within 390px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: copy button fits 390px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: original wraps within 320px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: copy button fits 320px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: HTTP fallback copies exact source text (legacy)"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: HTTP fallback preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: HTTP fallback uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: HTTP fallback reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: completed card uses source rather than AI sentence"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: completed copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: completed preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: completed uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: completed reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: refreshed card retains original"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: refreshed copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: refreshed preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: refreshed uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: refreshed reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: saved card retains original without a new request"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: saved copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: saved preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: saved uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: saved reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: failure retains original"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: localized error message"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: analysis failed / clipboard API rejected copies exact source text (denied)"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: analysis failed / clipboard API rejected preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: analysis failed / clipboard API rejected uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: analysis failed / clipboard API rejected reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: clipboard unavailable copies exact source text (failure)"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: clipboard unavailable preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: clipboard unavailable uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: clipboard unavailable reports localized failure"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: legacy copy throws copies exact source text (throw)"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: legacy copy throws preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: legacy copy throws uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: legacy copy throws reports localized failure"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: no page errors: "
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: English original appears while loading"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: existing translation stays below original"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: copy button is localized"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: loading copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: loading preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: loading uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: loading reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: open card updates copy label on language switch"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: language switch copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: language switch preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: language switch uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: language switch reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: original wraps within 390px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: copy button fits 390px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: original wraps within 320px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: copy button fits 320px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: HTTP fallback copies exact source text (legacy)"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: HTTP fallback preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: HTTP fallback uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: HTTP fallback reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: completed card uses source rather than AI sentence"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: completed copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: completed preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: completed uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: completed reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: refreshed card retains original"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: refreshed copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: refreshed preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: refreshed uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: refreshed reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: saved card retains original without a new request"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: saved copies exact source text (native)"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: saved preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: saved uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: saved reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: failure retains original"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: localized error message"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: analysis failed / clipboard API rejected copies exact source text (denied)"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: analysis failed / clipboard API rejected preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: analysis failed / clipboard API rejected uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: analysis failed / clipboard API rejected reports localized success"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: clipboard unavailable copies exact source text (failure)"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: clipboard unavailable preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: clipboard unavailable uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: clipboard unavailable reports localized failure"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: legacy copy throws copies exact source text (throw)"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: legacy copy throws preserves focus and modal, removes temporary input"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: legacy copy throws uses expected clipboard path"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: legacy copy throws reports localized failure"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: no page errors: "
+    }
+  ]
+}

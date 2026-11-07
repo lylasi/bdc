@@ -1,0 +1,73 @@
+{
+  "browser": {
+    "passed": 20,
+    "failed": 0,
+    "locales": [
+      "zh-CN",
+      "zh-HK"
+    ],
+    "widths": [
+      1280,
+      390,
+      320
+    ]
+  },
+  "sentenceKeyboard": {
+    "command": "ONLY=keyboard node tests/article-keyboard-tooltip.cjs",
+    "exitCode": 0
+  },
+  "aiUnits": {
+    "passed": 87,
+    "failed": 0
+  },
+  "settingsAutosave": {
+    "passed": 18,
+    "failed": 0
+  },
+  "readingPhraseLookup": {
+    "exitCode": 0
+  },
+  "aiReview": {
+    "passed": 29,
+    "failed": 0
+  },
+  "aiProviderE2E": {
+    "passed": 12,
+    "total": 12
+  },
+  "i18n": {
+    "localeCounts": {
+      "zh-CN": 2496,
+      "zh-HK": 2496
+    },
+    "onlyInZhCN": [],
+    "onlyInZhHK": [],
+    "interpolationMismatch": [],
+    "missingKeys": [
+      {
+        "key": "phonetics.",
+        "refs": [
+          ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:19",
+          ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:23",
+          ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:76"
+        ]
+      },
+      {
+        "key": "a.b",
+        "refs": [
+          ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75",
+          ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75",
+          ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:77"
+        ]
+      }
+    ]
+  },
+  "fullAudit": {
+    "exitCode": 0,
+    "lowFindings": 11,
+    "details": "flows.json"
+  },
+  "syntaxAndWhitespace": {
+    "exitCode": 0
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "localeCounts": {
+    "zh-CN": 2499,
+    "zh-HK": 2499
+  },
+  "onlyInZhCN": [],
+  "onlyInZhHK": [],
+  "interpolationMismatch": [],
+  "missingKeys": [
+    {
+      "key": "phonetics.",
+      "refs": [
+        "features/phonetics/page.js:19",
+        "features/phonetics/page.js:23",
+        "features/phonetics/page.js:76"
+      ]
+    }
+  ],
+  "hardcodedChineseCount": 1235,
+  "hardcodedHtmlLabelCount": 8
+}

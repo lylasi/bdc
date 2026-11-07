@@ -1,0 +1,171 @@
+{
+  "release": "c5e99080a50b",
+  "checks": [
+    {
+      "name": "release map is generated and current",
+      "pass": true,
+      "detail": "release import map 已是最新：c5e99080a50b（102 個模組）"
+    },
+    {
+      "name": "article-store is mapped to release query",
+      "pass": true,
+      "detail": "/modules/article-store.js?v=c5e99080a50b"
+    },
+    {
+      "name": "reading-panel is mapped to release query",
+      "pass": true,
+      "detail": "/features/article/reading-panel.js?v=c5e99080a50b"
+    },
+    {
+      "name": "shared protocols and locales are mapped",
+      "pass": true
+    },
+    {
+      "name": "ai-config stays unversioned",
+      "pass": true
+    },
+    {
+      "name": "main.js and styles.css entries are versioned",
+      "pass": true,
+      "detail": {
+        "main": "c5e99080a50b",
+        "styles": "c5e99080a50b"
+      }
+    },
+    {
+      "name": "import map appears before the module entry",
+      "pass": true
+    },
+    {
+      "name": "same-scope refresh retains opened body",
+      "pass": true,
+      "detail": {
+        "opened": {
+          "body": "We look forward to meeting you.\n\nWe look forward to meeting you.",
+          "summaryOnly": false,
+          "hasAnalysis": true
+        },
+        "cold": {
+          "body": "",
+          "summaryOnly": true
+        }
+      }
+    },
+    {
+      "name": "same-scope refresh keeps cold article lazy",
+      "pass": true,
+      "detail": {
+        "body": "",
+        "summaryOnly": true
+      }
+    },
+    {
+      "name": "mapped and explicit-query imports share one instance",
+      "pass": true,
+      "detail": {
+        "article": true,
+        "panel": true,
+        "protocol": true,
+        "locale": true
+      }
+    },
+    {
+      "name": "second occurrence carries current version and exact anchor",
+      "pass": true,
+      "detail": {
+        "version": "cv1_7019bacf_64",
+        "anchorStart": 36,
+        "anchorEnd": 40
+      }
+    },
+    {
+      "name": "manual mark underlines only the second occurrence",
+      "pass": true,
+      "detail": [
+        false,
+        true
+      ]
+    },
+    {
+      "name": "note saves for the marked occurrence",
+      "pass": true,
+      "detail": {
+        "itemId": "li_cv1_4d435baf_50"
+      }
+    },
+    {
+      "name": "article body, mark and note survive reading scope reload",
+      "pass": true,
+      "detail": {
+        "body": "We look forward to meeting you.\n\nWe look forward to meeting you.",
+        "summaryOnly": false,
+        "active": [
+          false,
+          true
+        ],
+        "item": {
+          "marked": true,
+          "note": "release map note: look forward to + V-ing"
+        },
+        "items": [
+          {
+            "id": "li_cv1_970470ca_76",
+            "marked": false,
+            "note": "",
+            "anchor": {
+              "start": -1,
+              "end": -1,
+              "quote": "look",
+              "prefix": "",
+              "suffix": ""
+            },
+            "version": "cv1_7019bacf_64"
+          },
+          {
+            "id": "li_cv1_4d435baf_50",
+            "marked": true,
+            "note": "release map note: look forward to + V-ing",
+            "anchor": {
+              "start": 36,
+              "end": 40,
+              "quote": "look",
+              "prefix": "We look forward to meeting you.\n\nWe ",
+              "suffix": " forward to meeting you."
+            },
+            "version": "cv1_7019bacf_64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unmark keeps the note and clears both underlines",
+      "pass": true,
+      "detail": {
+        "item": {
+          "marked": false,
+          "note": "release map note: look forward to + V-ing"
+        },
+        "active": [
+          false,
+          false
+        ]
+      }
+    },
+    {
+      "name": "no unversioned local module requests",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "no stale article-store/reading-panel response used",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": []
+    }
+  ],
+  "failed": 0
+}

@@ -2129,16 +2129,64 @@ function analyzeSentenceDedupe(sentence, context = '', opts = {}) {
 // 以 Modal 呈現句子詳解（避免佔據版面與收合誤觸）
 const USE_SENTENCE_MODAL = true;
 
-// 句卡載入中：若中文側已有該句譯文（按句翻譯對齊產生），先顯示譯文再等 AI 詳解
-function sentenceCardLoadingHtml(paraIdx, sentIdx) {
+function sentenceOriginalHtml(sentence) {
+    return `<div class="sentence-original-row">
+        <div class="sentence-original">${escapeHtml(sentence)}</div>
+        <button type="button" class="btn-ghost btn-mini sent-copy-original" data-i18n="article.copyOriginal">${t('article.copyOriginal')}</button>
+    </div>`;
+}
+
+// 綁在卡片上，載入／完成／失敗時重畫內容仍可複製同一份原句。
+function bindSentenceOriginalCopy(card, sentence) {
+    card.addEventListener('click', async (event) => {
+        const button = event.target.closest?.('.sent-copy-original');
+        if (!button || !card.contains(button)) return;
+        event.stopPropagation();
+        let copied = false;
+        try {
+            if (navigator.clipboard?.writeText) {
+                try {
+                    await navigator.clipboard.writeText(sentence);
+                    copied = true;
+                } catch (_) {}
+            }
+            // HTTP 區域網絡頁面可能沒有 Clipboard API，改用選取文字的複製方式。
+            if (!copied) {
+                const previousFocus = document.activeElement;
+                const textarea = document.createElement('textarea');
+                textarea.value = sentence;
+                textarea.readOnly = true;
+                textarea.tabIndex = -1;
+                textarea.style.cssText = 'position:fixed;left:-9999px;top:0';
+                textarea.setAttribute('aria-hidden', 'true');
+                card.appendChild(textarea);
+                try {
+                    textarea.focus({ preventScroll: true });
+                    textarea.select();
+                    copied = document.execCommand('copy');
+                } finally {
+                    textarea.remove();
+                    if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+                }
+            }
+        } catch (_) {
+            copied = false;
+        }
+        if (copied) ui.displayMessage(t('article.originalCopied'), 'success');
+        else ui.displayMessage(t('article.originalCopyFailed'), 'error');
+    });
+}
+
+// 句卡載入中：先顯示原句與已有的中文譯文，再等 AI 詳解。
+function sentenceCardLoadingHtml(paraIdx, sentIdx, sentence) {
     let zh = '';
     try {
         const el = dom.articleAnalysisContainer.querySelector(`.interactive-sentence-zh[data-para-index="${paraIdx}"][data-sent-index="${sentIdx}"]`);
         zh = el ? (el.textContent || '').trim() : '';
     } catch (_) {}
-    return zh
-      ? `<div class="sentence-card-zh">${escapeHtml(zh)}</div><div class="sentence-card-loading">${t('article.loadingDetails')}</div>`
-      : `<div class="sentence-card-loading">${t('article.loading')}</div>`;
+    return sentenceOriginalHtml(sentence) + (zh
+        ? `<div class="sentence-card-zh">${escapeHtml(zh)}</div><div class="sentence-card-loading">${t('article.loadingDetails')}</div>`
+        : `<div class="sentence-card-loading">${t('article.loading')}</div>`);
 }
 
 // Merge helper: deduplicate detailed_analysis by key (word|sentence)
@@ -8399,12 +8447,13 @@ async function toggleSentenceCard(sentenceEl, options = {}) {
         const card = document.createElement('div');
         card.className = 'sentence-card is-modal';
         card.dataset.modal = '1';
+        bindSentenceOriginalCopy(card, sentence);
         stampSentenceCardTarget(card, targetArticleId, contentVersion, sentenceAnchor, {
             sentence, context, paraIdx, sentIdx,
             articleContext: articleContextSnapshot,
             actionContext
         });
-        card.innerHTML = sentenceCardLoadingHtml(paraIdx, sentIdx);
+        card.innerHTML = sentenceCardLoadingHtml(paraIdx, sentIdx, sentence);
         dom.modalBody.appendChild(card);
         // 鍵盤開卡：先讓焦點進入卡片；內容渲染後再移到第一個操作（逐詞檢視）。
         if (openedByKeyboard) {
@@ -8445,7 +8494,7 @@ async function toggleSentenceCard(sentenceEl, options = {}) {
         } catch (e) {
             if (!canUpdateView(card)) return;
             card.classList.add('is-error');
-            card.textContent = t('article.analysisRetry');
+            card.innerHTML = `${sentenceOriginalHtml(sentence)}<div>${t('article.analysisRetry')}</div>`;
             if (card.dataset.keyboardFocus === '1') {
                 delete card.dataset.keyboardFocus;
                 focusSentenceCardFirstAction(card);
@@ -8473,6 +8522,7 @@ async function toggleSentenceCard(sentenceEl, options = {}) {
     }
     card = document.createElement('div');
     card.className = 'sentence-card is-inline';
+    bindSentenceOriginalCopy(card, sentence);
     setSentenceExpanded(sentenceEl, true);
     articleSentenceCard = { sentenceEl, paraIdx, sentIdx, openedByKeyboard };
     if (openedByKeyboard) card.dataset.keyboardFocus = '1';
@@ -8481,7 +8531,7 @@ async function toggleSentenceCard(sentenceEl, options = {}) {
         articleContext: articleContextSnapshot,
         actionContext
     });
-    card.innerHTML = sentenceCardLoadingHtml(paraIdx, sentIdx);
+    card.innerHTML = sentenceCardLoadingHtml(paraIdx, sentIdx, sentence);
     sentenceEl.after(card);
 
     const savedInlineItem = readingActions.findSavedItem(targetArticleId, 'sentence', sentence, sentence, { anchor: sentenceAnchor, contentVersion });
@@ -8514,7 +8564,7 @@ async function toggleSentenceCard(sentenceEl, options = {}) {
         }, 300);
     } catch (e) {
         card.classList.add('is-error');
-            card.innerHTML = `${t('article.wordAnalysisFailed')}<button class="retry-sentence-btn">${t('article.retry')}</button>`;
+        card.innerHTML = `${sentenceOriginalHtml(sentence)}${t('article.wordAnalysisFailed')}<button class="retry-sentence-btn">${t('article.retry')}</button>`;
         const btn = card.querySelector('.retry-sentence-btn');
         if (btn) btn.addEventListener('click', async () => {
             const retryTarget = sentenceCardTarget(card);
@@ -8567,6 +8617,7 @@ function renderSentenceCard(card, data, sentence, context, paraIdx, sentIdx, tar
                 <button class="btn-ghost btn-mini sent-collapse">${t('article.collapse')}</button>
             </div>
         </div>
+        ${sentenceOriginalHtml(sentence)}
         <div class="sentence-translation">${translation}</div>
         ${align.length? `<div class="sentence-align">`
             + align.slice(0,12).map(a=>`<span class="align-pair"><span class="align-en">${esc(a.en)}</span> ➜ <span class="align-zh">${esc(a.zh)}</span></span>`).join('')

@@ -1,0 +1,29 @@
+{
+  "passed": 6,
+  "results": [
+    {
+      "ok": true,
+      "message": "zh-CN: switch back to zh-CN: 复制原文"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: switch back to zh-HK: 複製原文"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: switch back to zh-CN: 复制原文"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: switch back to zh-HK: 複製原文"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: switch back to zh-CN: 复制原文"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: switch back to zh-HK: 複製原文"
+    }
+  ]
+}

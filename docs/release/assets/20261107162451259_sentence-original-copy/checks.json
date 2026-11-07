@@ -1,0 +1,32 @@
+{
+  "base": "be248a549b832449072e4c4ec55ef8d11b175ff8",
+  "target": "origin/master",
+  "release": "c5e99080a50b",
+  "browser": {
+    "passed": 100,
+    "failed": 0
+  },
+  "assetVersioning": {
+    "passed": 18,
+    "failed": 0
+  },
+  "aiUnits": {
+    "passed": 87,
+    "failed": 0
+  },
+  "sentenceHover": {
+    "passed": 4,
+    "failed": 0
+  },
+  "keyboard": {
+    "exitCode": 0
+  },
+  "i18n": {
+    "zh-CN": 2499,
+    "zh-HK": 2499,
+    "missingNewKeys": 0
+  },
+  "syntaxAndWhitespace": {
+    "exitCode": 0
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "passed": 20,
+  "results": [
+    {
+      "ok": true,
+      "message": "zh-CN: English original appears while loading"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: existing translation stays below original"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: original wraps within 390px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: original wraps within 320px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: completed card uses source rather than AI sentence"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: refreshed card retains original"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: saved card retains original without a new request"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: failure retains original"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: localized error message"
+    },
+    {
+      "ok": true,
+      "message": "zh-CN: no page errors: "
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: English original appears while loading"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: existing translation stays below original"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: original wraps within 390px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: original wraps within 320px viewport"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: completed card uses source rather than AI sentence"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: refreshed card retains original"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: saved card retains original without a new request"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: failure retains original"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: localized error message"
+    },
+    {
+      "ok": true,
+      "message": "zh-HK: no page errors: "
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "browser": {
+    "passed": 100,
+    "failed": 0,
+    "clipboardMethods": "mocked browser APIs"
+  },
+  "localeSwitch": {
+    "passed": 6,
+    "failed": 0
+  },
+  "keyboard": {
+    "exitCode": 0
+  },
+  "readingPhraseLookup": {
+    "exitCode": 0
+  },
+  "aiUnits": {
+    "passed": 87,
+    "failed": 0
+  },
+  "i18n": {
+    "localeCounts": {
+      "zh-CN": 2499,
+      "zh-HK": 2499
+    },
+    "onlyInZhCN": [],
+    "onlyInZhHK": [],
+    "interpolationMismatch": [],
+    "missingKeys": [
+      {
+        "key": "phonetics.",
+        "refs": [
+          ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:19",
+          ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:23",
+          ".claude/worktrees/article-readonly-sharing/features/phonetics/page.js:76"
+        ]
+      },
+      {
+        "key": "a.b",
+        "refs": [
+          ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75",
+          ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:75",
+          ".claude/worktrees/article-readonly-sharing/tests/audit-i18n.mjs:77"
+        ]
+      }
+    ]
+  },
+  "syntaxAndWhitespace": {
+    "exitCode": 0
+  }
+}
