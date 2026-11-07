@@ -1,0 +1,65 @@
+{
+  "unitTests": 175,
+  "browserChecks": {
+    "articleSpeed": 24,
+    "articleOptimization": 35,
+    "previewConfirmIncludingDeferredSync": 21,
+    "compactAssistant": 97,
+    "inlineSecurityAndPending": 76,
+    "sentenceReadingGroups": 10,
+    "releaseAssetsAndModuleIdentity": 18,
+    "settingsAutosave": 18,
+    "phraseLookupTwoLocales": 28
+  },
+  "locales": {
+    "zh-CN": 2496,
+    "zh-HK": 2496
+  },
+  "groups": [
+    {
+      "test": "extension-article-speed",
+      "exit": 0,
+      "seconds": 33.96
+    },
+    {
+      "test": "extension-article-optimization",
+      "exit": 0,
+      "seconds": 16.06
+    },
+    {
+      "test": "extension-article-confirm",
+      "exit": 0,
+      "seconds": 10.94
+    },
+    {
+      "test": "extension-compact-assistant",
+      "exit": 0,
+      "seconds": 38.97
+    },
+    {
+      "test": "extension-inline-security-deepseek",
+      "exit": 0,
+      "seconds": 102.9
+    },
+    {
+      "test": "article-sentence-reading",
+      "exit": 0,
+      "seconds": 27.64
+    },
+    {
+      "test": "release-asset-versioning",
+      "exit": 0,
+      "seconds": 6.45
+    },
+    {
+      "test": "settings-autosave",
+      "exit": 0,
+      "seconds": 7.23
+    },
+    {
+      "test": "reading-phrase-lookup",
+      "exit": 0,
+      "seconds": 78.81
+    }
+  ]
+}

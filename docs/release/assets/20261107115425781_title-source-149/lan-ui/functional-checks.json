@@ -1,0 +1,230 @@
+{
+  "passed": 42,
+  "total": 42,
+  "checks": [
+    {
+      "name": "zh-CN tablet title at most two lines and controls separated",
+      "ok": true,
+      "detail": {
+        "titleHeight": 48,
+        "lineHeight": 24,
+        "titleWidth": 314,
+        "headerHeight": 48,
+        "toolbarBelow": true,
+        "noOverflow": true,
+        "titleText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful."
+      }
+    },
+    {
+      "name": "zh-CN tablet stored title displayed without rewriting",
+      "ok": true
+    },
+    {
+      "name": "zh-CN tablet full-name popup preserves original text",
+      "ok": true
+    },
+    {
+      "name": "zh-CN tablet full-name popup wraps inside viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-CN tablet closing returns focus to title info",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile title at most two lines and controls separated",
+      "ok": true,
+      "detail": {
+        "titleHeight": 48,
+        "lineHeight": 24,
+        "titleWidth": 252,
+        "headerHeight": 48,
+        "toolbarBelow": true,
+        "noOverflow": true,
+        "titleText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful."
+      }
+    },
+    {
+      "name": "zh-CN mobile stored title displayed without rewriting",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile full-name popup preserves original text",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile full-name popup wraps inside viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile closing returns focus to title info",
+      "ok": true
+    },
+    {
+      "name": "zh-CN mobile more menu starts below title",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow title at most two lines and controls separated",
+      "ok": true,
+      "detail": {
+        "titleHeight": 48,
+        "lineHeight": 24,
+        "titleWidth": 182,
+        "headerHeight": 48,
+        "toolbarBelow": true,
+        "noOverflow": true,
+        "titleText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful."
+      }
+    },
+    {
+      "name": "zh-CN narrow stored title displayed without rewriting",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow full-name popup preserves original text",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow full-name popup wraps inside viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow closing returns focus to title info",
+      "ok": true
+    },
+    {
+      "name": "zh-CN narrow more menu starts below title",
+      "ok": true
+    },
+    {
+      "name": "zh-CN edit popup has concise title and intact name",
+      "ok": true
+    },
+    {
+      "name": "zh-CN long source word placed in scrollable body with concise heading",
+      "ok": true
+    },
+    {
+      "name": "zh-CN short title hides extra info icon",
+      "ok": true
+    },
+    {
+      "name": "zh-CN no uncaught errors",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "zh-HK tablet title at most two lines and controls separated",
+      "ok": true,
+      "detail": {
+        "titleHeight": 48,
+        "lineHeight": 24,
+        "titleWidth": 314,
+        "headerHeight": 48,
+        "toolbarBelow": true,
+        "noOverflow": true,
+        "titleText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful."
+      }
+    },
+    {
+      "name": "zh-HK tablet stored title displayed without rewriting",
+      "ok": true
+    },
+    {
+      "name": "zh-HK tablet full-name popup preserves original text",
+      "ok": true
+    },
+    {
+      "name": "zh-HK tablet full-name popup wraps inside viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-HK tablet closing returns focus to title info",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile title at most two lines and controls separated",
+      "ok": true,
+      "detail": {
+        "titleHeight": 48,
+        "lineHeight": 24,
+        "titleWidth": 252,
+        "headerHeight": 48,
+        "toolbarBelow": true,
+        "noOverflow": true,
+        "titleText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful."
+      }
+    },
+    {
+      "name": "zh-HK mobile stored title displayed without rewriting",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile full-name popup preserves original text",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile full-name popup wraps inside viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile closing returns focus to title info",
+      "ok": true
+    },
+    {
+      "name": "zh-HK mobile more menu starts below title",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow title at most two lines and controls separated",
+      "ok": true,
+      "detail": {
+        "titleHeight": 48,
+        "lineHeight": 24,
+        "titleWidth": 182,
+        "headerHeight": 48,
+        "toolbarBelow": true,
+        "noOverflow": true,
+        "titleText": "Mike: Some volunteers help sell flags in the street. There are some other volunteers who help online. I'm one of them. Last month, I filmed a video to encourage people to donate money and posted it online. Although it took time, it was meaningful."
+      }
+    },
+    {
+      "name": "zh-HK narrow stored title displayed without rewriting",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow full-name popup preserves original text",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow full-name popup wraps inside viewport",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow closing returns focus to title info",
+      "ok": true
+    },
+    {
+      "name": "zh-HK narrow more menu starts below title",
+      "ok": true
+    },
+    {
+      "name": "zh-HK edit popup has concise title and intact name",
+      "ok": true
+    },
+    {
+      "name": "zh-HK long source word placed in scrollable body with concise heading",
+      "ok": true
+    },
+    {
+      "name": "zh-HK short title hides extra info icon",
+      "ok": true
+    },
+    {
+      "name": "zh-HK no uncaught errors",
+      "ok": true,
+      "detail": []
+    }
+  ]
+}
