@@ -87,7 +87,7 @@ function wav() {
         context.on('page', (p) => p.on('pageerror', (error) => errors.push(error.message)));
         const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
         const base = 'chrome-extension://' + new URL(worker.url()).host;
-        const popup = await context.newPage(); await popup.goto(base + '/lookup.html');
+        let popup = await context.newPage(); await popup.goto(base + '/lookup.html');
         await popup.waitForFunction(() => !!document.querySelector('#ext-account-status').textContent);
         await popup.evaluate(() => chrome.storage.local.set({ bdc_extension_assistant_enabled: false }));
         await popup.locator('#ext-settings-open').click();
@@ -110,6 +110,21 @@ function wav() {
         check('香港繁體顯示帳戶帶入及加密同步說明', (await popup.locator('#ext-tts-account-state').textContent()).includes('帳戶')
             && (await popup.locator('[data-i18n="extension.ttsScopeHint"]').textContent()).includes('加密憑據'));
         await popup.screenshot({ path: path.join(OUT, 'extension-inherited-zh-HK-320.png') });
+
+        await popup.close();
+        const saved = await cloud();
+        saved.payload.ttsSettings.updatedAt = new Date(Date.now() + 1000).toISOString();
+        saved.payload.ttsSettings.settings.reading.englishVariant = 'en-GB';
+        saved.payload.ttsSettings.settings.tts.selectedVoices['en-GB'] = 'en-GB-SoniaNeural';
+        const updated = await fetch(env.base + '/snapshot', { method: 'POST', headers: { Authorization: 'Bearer ' + ALICE, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expected_version: saved.version, payload: saved.payload }) });
+        assert.equal(updated.status, 200);
+        popup = await context.newPage(); await popup.goto(base + '/lookup.html');
+        await popup.waitForFunction(() => !!document.querySelector('#ext-account-status').textContent);
+        await popup.locator('#ext-settings-open').click(); await popup.locator('#ext-tts-settings').evaluate((node) => { node.open = true; });
+        await popup.waitForFunction(() => document.querySelector('#ext-tts-voice').value === 'en-GB-SoniaNeural');
+        check('已登入擴充重開首頁即取得新語音設定，無需再次登入', await popup.locator('#ext-tts-key').inputValue() === KEY
+            && await popup.locator('#ext-tts-accent').inputValue() === 'en-GB');
 
         // Bob has his own account configuration and encrypted key.
         const bobSettings = { ttsSettings: { updatedAt: new Date().toISOString(), settings: { tts: { use: 'custom', baseUrlCustom: otherService,

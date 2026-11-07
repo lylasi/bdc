@@ -29,6 +29,7 @@ import { EXTENSION_AI_PREFERENCES_PREFIX } from './modules/extension-ai-preferen
 import { speakText, stopCurrentAudio, unlockAudioContext, getActiveAudioOwner } from './modules/audio.js';
 import { createIcon } from './icons.js';
 import { createTTSControls } from './tts-controls.js';
+import { syncTTSAccount } from './modules/tts-account-sync.js';
 
 const pageParameters = new URLSearchParams(location.search);
 const isEmbedded = window.parent !== window;
@@ -888,6 +889,9 @@ async function initExtensionPage() {
     const captureStartup = captureUI.sync();
     const workspaceOnlyStartup = workspaceUI.sync();
     const workspaceStartup = Promise.allSettled([captureStartup, workspaceOnlyStartup]);
+    // A returning signed-in user can open settings directly from the popup,
+    // without running a word query or logging in again to refresh account TTS.
+    if (!inlineContext && getExtensionReadiness().loggedIn) syncTTSAccount();
     if (!isWorkspaceWindow) workspaceUI.setReady(true);
     if (inlineContext) {
         const page = inlineContext.page;

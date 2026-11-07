@@ -125,7 +125,7 @@
     "extension/locales/zh-HK.js": "99619c3fe62a6b57c15f13ea491b18b00c84d47972b84a437651625ef79dafce",
     "extension/lookup.css": "16fb21d4ef3594700560b2edbd53711d3ab13fd9b80d6a88c63fd37dcafa1be2",
     "extension/lookup.html": "6a07e6df30dac8f703399b81383d88bda637d89cb5b652bdb54d0b9e1450206e",
-    "extension/lookup.js": "b2636a9527a77b5ced86b87d030c6168c84e75eabca3497e9643d8ee0b94b511",
+    "extension/lookup.js": "9d10a7d167ab4dcef983af27e8a635006c7d597b25e8fb7a439091ed3923135c",
     "extension/manifest.json": "c2f7e9ab367af12de7008dd0de6e2fe7c52f22212d85bf9749d7a21ae63ea58f",
     "extension/modules/ai-catalog.js": "c23f3287f324aec5dfbb47ceee66eee8483919208e458f78f5015cde5b8409ec",
     "extension/modules/ai-credential-sync.js": "46dea4caa35e605dcd5b69879d0033055dcbace09420e52044d9175f986d2a9c",
@@ -188,5 +188,5 @@
     "extension/workspace-ui.js": "4e78295d5aa480b0f956a435740d0c084251578c9ede39f0eda843805a17cb62"
   },
   "archive": "docs/report/assets/20261108012245027_tts-account/BDC-extension-0.6.7.zip",
-  "archiveSha256": "0331c85fa5f598e05bf873dda185eeed18b1c114a4c4e5d9bce820eb2ac0807c"
+  "archiveSha256": "79124a8425afcdd6ae0e17337d8ce546239838206cd5b5a90b06a445a47dabea"
 }
