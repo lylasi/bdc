@@ -625,10 +625,6 @@ select.ext-select-sm {
     margin: 2px 0;
     overflow-wrap: anywhere;
 }
-/* 没有例句时整段折叠保持安静 */
-#ext-result-details:not(:has(li)) {
-    display: none;
-}
 .ext-result-meta {
     margin-top: 8px;
     padding-top: 6px;
@@ -702,7 +698,6 @@ select.ext-select-sm {
 }
 /* 只收合词卡自身：查词表单已移入 #ext-query-dialog，编辑弹窗内必须完整显示 */
 .ext-compact #ext-result-heading,
-.ext-compact #ext-result-role,
 .ext-compact #ext-result-meta,
 .ext-compact #ext-capture-heading,
 .ext-compact #ext-capture-section .ext-section-head,

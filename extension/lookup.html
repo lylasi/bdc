@@ -111,12 +111,14 @@
             <button id="ext-tts-status" type="button" class="ext-tts-status" aria-haspopup="dialog" aria-controls="ext-settings-dialog"></button>
             <p id="ext-pronunciation-notice" class="ext-notice ext-notice-error" role="status" hidden></p>
             <div class="ext-result-role" id="ext-result-role"></div>
-            <details id="ext-result-details" class="ext-disclosure ext-disclosure-quiet ext-result-extra">
+            <details id="ext-result-details" class="ext-disclosure ext-disclosure-quiet ext-result-extra" hidden>
                 <summary class="ext-disclosure-summary">
                     <span class="ext-disclosure-title" data-i18n="extension.resultExamplesLabel"></span>
                 </summary>
                 <div class="ext-disclosure-body">
                     <ul id="ext-result-examples" class="ext-result-examples"></ul>
+                    <p id="ext-examples-notice" class="ext-notice" role="status" aria-live="polite" hidden></p>
+                    <button id="ext-examples-retry" type="button" class="ext-btn ext-btn-sm" hidden data-i18n="extension.lookupExamplesRetry"></button>
                 </div>
             </details>
             <div class="ext-result-meta" id="ext-result-meta"></div>

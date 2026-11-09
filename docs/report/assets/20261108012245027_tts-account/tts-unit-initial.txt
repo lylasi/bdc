@@ -1,0 +1,23 @@
+✔ public settings whitelist excludes keys, device preferences, credentials in URLs and malformed groups (0.713959ms)
+✔ account save preserves other snapshot groups, keeps keys out of snapshots and stores AES-GCM ciphertext (20.596ms)
+✔ a new extension/device downloads the server, voices and key without overwriting the cloud snapshot (4.489208ms)
+✔ switching account or endpoint never reuses the previous account server or key (2.395542ms)
+✔ changing the service URL prevents transmitting the old service key (3.052375ms)
+✔ clearing a personal key deletes its cloud ciphertext and a new device sees the tombstone (2.837041ms)
+✔ legacy local settings migrate to the first account only, while existing cloud settings take precedence (2.285708ms)
+✔ legacy guest settings can seed an empty account and are not copied to its next account (2.874041ms)
+✔ a stale vault 401 cannot sign out or modify the new account (1.72875ms)
+✔ editing a key during upload preserves the new edit and advances only the successful CAS base (2.802416ms)
+✔ a remote key conflict keeps the local edit and requires an explicit retry to replace the remote version (2.82225ms)
+✔ a lost key-upload reply is confirmed by mutation id without duplicate writes (2.371375ms)
+✔ offline settings remain pending and retry succeeds; a backend without a vault reports key-local-only (2.3885ms)
+✔ device-only preferences do not alter the public account settings or upload the device voice URI (5.805584ms)
+✔ snapshot sanitizer strips a modified client key and rejects credential-bearing TTS URLs (0.42725ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 121.358042

@@ -143,6 +143,15 @@ Return only strict JSON:
 Selected phrase: "\${selection}"
 Sentence: "\${sentence}"
 Context: "\${context}"`,
+        concise: `Analyze the selected English phrase in its sentence.
+Provide reliable IPA, its Chinese meaning in this context, and one short usage note.
+Return only strict JSON:
+{"phonetic":"IPA","meaning":"...","usage":"..."}
+Do not generate examples or repeat the selected phrase, sentence or context in the response.
+
+Selected phrase: "\${selection}"
+Sentence: "\${sentence}"
+Context: "\${context}"`,
         fallback: `Give only the target Chinese meaning of the selected English phrase in this sentence. Do not add an explanation.
 Phrase: \${selection}
 Sentence: \${sentence}`

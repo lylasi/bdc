@@ -1,0 +1,11 @@
+{
+  "head": "7669824dde2f403209b459ddafc352f97979434a",
+  "implementation": "a5ceca73f6d5b4db41997d9c60e3785ac182a9ae",
+  "release": "8ca1454b7ffa",
+  "extensionVersion": "0.6.6",
+  "privateConfigPreserved": true,
+  "health": "healthy",
+  "worktreeClean": true,
+  "docsOnlyFastForward": true,
+  "restartNeeded": false
+}

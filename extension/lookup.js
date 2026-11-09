@@ -13,6 +13,7 @@ import {
     getExtensionReadiness,
     readExtensionLookupCache,
     runExtensionLookup,
+    runExtensionLookupExamples,
     lookupSelection
 } from './modules/extension-ai-runtime.js';
 import { AUTH_EVENT } from './modules/sync-cloudflare.js';
@@ -98,7 +99,10 @@ const dom = {
     resultPos: document.getElementById('ext-result-pos'),
     resultMeaning: document.getElementById('ext-result-meaning'),
     resultRole: document.getElementById('ext-result-role'),
+    resultDetails: document.getElementById('ext-result-details'),
     resultExamples: document.getElementById('ext-result-examples'),
+    examplesNotice: document.getElementById('ext-examples-notice'),
+    examplesRetry: document.getElementById('ext-examples-retry'),
     resultMeta: document.getElementById('ext-result-meta'),
     resultCache: document.getElementById('ext-result-cache'),
     requery: document.getElementById('ext-inline-retry'),
@@ -137,6 +141,8 @@ let activeLookupSequence = 0;
 let activeLookupController = null;
 let lookupSetupPromise = null;
 let lastResultPayload = null;
+let activeExamplesController = null;
+let examplesFailed = false;
 let pronunciationSequence = 0;
 let pronunciationActive = false;
 let pronunciationFailed = false;
@@ -160,7 +166,7 @@ const inlineUI = isEmbedded ? createInlinePanel({
     captureBook: dom.captureBook, lookup: dom.lookupBtn, queryInputs: [dom.wordInput, dom.sentenceInput, dom.contextInput]
 }, captureUI, workspaceUI, { ticket: inlineTicket, initialMode: requestedView === 'assistant' ? 'assistant' : 'compact',
     getAuxState: () => document.body.classList.contains('ext-assistant-view') ? assistantUI?.getState() || {} : {},
-    onClose: () => { assistantUI?.stop(); stopPronunciation(); ttsControls?.stopTest(); },
+    onClose: () => { assistantUI?.stop(); cancelLookupExamples(); stopPronunciation(); ttsControls?.stopTest(); },
     onMode: (mode) => {
         if (['dialog', 'assistant', 'assistant-dock'].includes(mode)) { stopPronunciation(); ttsControls?.stopTest(); }
         if (mode === 'dialog') return;
@@ -291,6 +297,8 @@ function syncLoginModeFields() {
 }
 
 function clearDisplayedResult() {
+    cancelLookupExamples();
+    dom.resultDetails.open = false;
     stopPronunciation();
     captureUI.clearResult();
     lastResultPayload = null;
@@ -304,6 +312,7 @@ function clearDisplayedResult() {
     if (dom.resultCache) dom.resultCache.hidden = true;
     if (dom.resultRole) dom.resultRole.textContent = '';
     if (dom.resultExamples) dom.resultExamples.innerHTML = '';
+    renderLookupExamples();
     if (dom.resultMeta) dom.resultMeta.textContent = '';
     renderPronunciation();
 }
@@ -397,7 +406,11 @@ function renderResult(result) {
         clearDisplayedResult();
         return;
     }
-    lastResultPayload = result;
+    if (lastResultPayload !== result) {
+        cancelLookupExamples();
+        dom.resultDetails.open = false;
+        lastResultPayload = result;
+    }
     dom.resultCache.hidden = !result.fromCache;
     dom.resultEmpty?.classList.add('hidden');
     dom.resultBox?.classList.remove('hidden');
@@ -421,22 +434,62 @@ function renderResult(result) {
         dom.resultRole.textContent = role ? `${t('extension.resultRoleLabel')}：${role}` : '';
         dom.resultRole.classList.toggle('hidden', !role);
     }
-    if (dom.resultExamples) {
-        dom.resultExamples.innerHTML = '';
-        const examples = Array.isArray(result.examples) ? result.examples : [];
-        for (const item of examples) {
-            if (!item || (!item.en && !item.zh)) continue;
-            const li = document.createElement('li');
-            li.textContent = [item.en, item.zh].filter(Boolean).join(' — ');
-            dom.resultExamples.appendChild(li);
-        }
-        dom.resultExamples.classList.toggle('hidden', examples.length === 0);
-    }
+    renderLookupExamples();
     if (dom.resultMeta) {
         dom.resultMeta.textContent = t('extension.resultMetaLabel', {
             model: result.model || '',
             thinking: thinkingLabel(result.thinking)
         });
+    }
+}
+
+function cancelLookupExamples() {
+    activeExamplesController?.abort();
+    activeExamplesController = null;
+    examplesFailed = false;
+}
+
+function renderLookupExamples() {
+    const examples = Array.isArray(lastResultPayload?.examples) ? lastResultPayload.examples : [];
+    const busy = !!activeExamplesController;
+    dom.resultDetails.hidden = !lastResultPayload;
+    dom.resultDetails.setAttribute('aria-busy', String(busy));
+    dom.resultExamples.replaceChildren();
+    for (const item of examples) {
+        if (!item || (!item.en && !item.zh)) continue;
+        const li = document.createElement('li');
+        li.textContent = [item.en, item.zh].filter(Boolean).join(' — ');
+        dom.resultExamples.appendChild(li);
+    }
+    dom.resultExamples.classList.toggle('hidden', examples.length === 0);
+    setNotice(dom.examplesNotice, examplesFailed ? 'error' : 'info',
+        busy ? 'extension.lookupExamplesLoading' : examplesFailed ? 'extension.lookupExamplesFailed' : '');
+    dom.examplesRetry.hidden = busy || !examplesFailed;
+}
+
+async function loadLookupExamples() {
+    const result = lastResultPayload;
+    if (!result || activeExamplesController || result.examples?.length) return;
+    const sequence = activeLookupSequence;
+    const controller = new AbortController();
+    activeExamplesController = controller;
+    examplesFailed = false;
+    renderLookupExamples();
+    const isCurrent = () => sequence === activeLookupSequence && lastResultPayload === result
+        && activeExamplesController === controller && !controller.signal.aborted;
+    try {
+        const examples = await runExtensionLookupExamples(result, { signal: controller.signal });
+        if (!isCurrent()) return;
+        result.examples = examples;
+        result.analysis = { ...result.analysis, examples };
+    } catch (_) {
+        if (!isCurrent()) return;
+        examplesFailed = true;
+    } finally {
+        if (activeExamplesController === controller) {
+            activeExamplesController = null;
+            renderLookupExamples();
+        }
     }
 }
 
@@ -648,7 +701,7 @@ async function handleExtractFromTab() {
 
 function prepareLookupAccount() {
     if (!lookupSetupPromise) {
-        const pending = syncExtensionAccountAI();
+        const pending = syncExtensionAccountAI({ waitForTTS: false });
         lookupSetupPromise = pending;
         pending.catch(() => { if (lookupSetupPromise === pending) lookupSetupPromise = null; });
     }
@@ -782,12 +835,14 @@ async function initExtensionPage() {
     dom.lookupBtn?.addEventListener('click', handleLookup);
     dom.requery.addEventListener('click', () => handleLookup({ noCache: true }));
     dom.resultSpeak.addEventListener('click', togglePronunciation);
+    dom.resultDetails.addEventListener('toggle', () => { if (dom.resultDetails.open) loadLookupExamples(); });
+    dom.examplesRetry.addEventListener('click', loadLookupExamples);
     ttsDom.status.addEventListener('click', () => {
         openDialog('ext-settings-dialog');
         ttsDom.section.open = true;
         ttsDom.section.scrollIntoView({ block: 'nearest' });
     });
-    window.addEventListener('pagehide', () => { ttsControls.flush(); stopPronunciation(); ttsControls.stopTest(); });
+    window.addEventListener('pagehide', () => { cancelLookupExamples(); ttsControls.flush(); stopPronunciation(); ttsControls.stopTest(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) { stopPronunciation(); ttsControls.stopTest(); } });
     document.getElementById('ext-enable-inline').addEventListener('click', async () => {
         const response = await chrome.runtime.sendMessage({ type: 'BDC_ENABLE_INLINE' }).catch(() => null);

@@ -142,6 +142,13 @@ globalThis.fetch = async (input, init = {}) => {
     state.providerCalls.push({ route, url, auth: headers.Authorization || headers.authorization || '' });
     if (route === 'pfail') return jsonRes({ error: 'boom' }, 500);
     const prompt = (parsedBody?.messages || []).map((m) => m.content).join('\n');
+    if (prompt.includes('Generate exactly 2 short')) {
+        if (state.exampleGate) { state.exampleGate.started(); await state.exampleGate.wait; }
+        return jsonRes({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ examples: [
+            { en: `First example from ${route}.`, zh: '第一個例句。' },
+            { en: `Second example from ${route}.`, zh: '第二個例句。' }
+        ] }) } }] });
+    }
     const wordMatch = prompt.match(/Target word:\s*"([^"]*)"/);
     const sentenceMatch = prompt.match(/Sentence:\s*"([^"]*)"/);
     return jsonRes({
@@ -204,6 +211,7 @@ async function resetAll() {
     chromeStorageMap.clear();
     state.providerCalls = [];
     state.personalCredentials = {};
+    state.exampleGate = null;
     await cache.clearRebuildable().catch(() => {});
     setLocale('zh-CN', { persist: true });
     await runtime.restoreTrustedSessionState();
@@ -314,6 +322,47 @@ test('C3 憑證 binding 與供應商定義不一致時必須拒絕使用，且�
         `錯誤應指向金鑰/binding 問題；實際 code=${caught.code} message=${caught.message}`
     );
     assert.equal(calls.length, 0, `binding 不一致時不得向上游發出請求；實際=${JSON.stringify(calls.map((c) => c.route))}`);
+});
+
+test('C4 按需例句的快取依上游連線隔離，即使 provider 與模型相同也不能沿用', async () => {
+    await resetAll();
+    state.snapshot = aliceSnapshot({ providerId: 'personal-a', apiUrl: P1, model: 'model-1' });
+    state.personalCredentials['personal-a'] = { version: 1, apiKey: 'fixture-key', binding: providerBinding(P1) };
+    await login();
+    const result = await runtime.runExtensionLookup({ text: 'charge', sentence: 'They charge admission.' });
+    const first = await runtime.runExtensionLookupExamples(result);
+    assert.ok(first[0].en.includes('p1'));
+    assert.deepEqual(await runtime.runExtensionLookupExamples(result), first);
+    assert.equal(state.providerCalls.length, 2);
+    state.snapshot = aliceSnapshot({ providerId: 'personal-a', apiUrl: P2, model: 'model-1' });
+    state.personalCredentials['personal-a'] = { version: 2, apiKey: 'fixture-key', binding: providerBinding(P2) };
+    await runtime.syncExtensionAccountAI();
+    const second = await runtime.runExtensionLookupExamples(result);
+    assert.ok(second[0].en.includes('p2'));
+    assert.equal(state.providerCalls.length, 3);
+});
+
+test('C5 生成例句期間供應商連線改變時，不接受或快取舊連線的遲到結果', async () => {
+    await resetAll();
+    state.snapshot = aliceSnapshot({ providerId: 'personal-a', apiUrl: P1, model: 'model-1' });
+    state.personalCredentials['personal-a'] = { version: 1, apiKey: 'fixture-key', binding: providerBinding(P1) };
+    await login();
+    const result = await runtime.runExtensionLookup({ text: 'charge', sentence: 'They charge admission.' });
+    let started, release;
+    const ready = new Promise((resolve) => { started = resolve; });
+    const wait = new Promise((resolve) => { release = resolve; });
+    state.exampleGate = { started, wait };
+    const pending = runtime.runExtensionLookupExamples(result);
+    const rejected = assert.rejects(pending, { code: 'stale_session' });
+    await ready;
+    state.snapshot = aliceSnapshot({ providerId: 'personal-a', apiUrl: P2, model: 'model-1' });
+    state.personalCredentials['personal-a'] = { version: 2, apiKey: 'fixture-key', binding: providerBinding(P2) };
+    await runtime.syncExtensionAccountAI();
+    release();
+    await rejected;
+    state.exampleGate = null;
+    const examples = await runtime.runExtensionLookupExamples(result);
+    assert.ok(examples[0].en.includes('p2'));
 });
 
 after(() => {

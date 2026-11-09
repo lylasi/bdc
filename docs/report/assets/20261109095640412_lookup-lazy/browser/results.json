@@ -1,0 +1,73 @@
+{
+  "checks": [
+    {
+      "name": "首次新短語在 TTS 憑據請求仍被按住時已顯示詞義",
+      "ok": true
+    },
+    {
+      "name": "首輪提示詞沒有要求例句，尚未點開時例句請求為零",
+      "ok": true
+    },
+    {
+      "name": "首屏保留音標及簡短用法，例句入口可見且預設收合",
+      "ok": true
+    },
+    {
+      "name": "首次點開才發例句請求，傳入剛才的詞義與原文",
+      "ok": true
+    },
+    {
+      "name": "生成中收合再展開不會重複請求",
+      "ok": true
+    },
+    {
+      "name": "完成後顯示兩句中英對照並保留原詞義",
+      "ok": true
+    },
+    {
+      "name": "關窗重開後詞義及例句都使用本機快取",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 例句失敗顯示本語言重試，詞義保持可用",
+      "ok": true
+    },
+    {
+      "name": "zh-CN 失敗沒有寫入快取，重試成功且文案完整",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 例句失敗顯示本語言重試，詞義保持可用",
+      "ok": true
+    },
+    {
+      "name": "zh-HK 失敗沒有寫入快取，重試成功且文案完整",
+      "ok": true
+    },
+    {
+      "name": "切換 UI 語言沒有轉換原文內容",
+      "ok": true
+    },
+    {
+      "name": "更換選詞會取消舊例句，遲到回覆不會覆蓋新詞卡",
+      "ok": true
+    },
+    {
+      "name": "獨立浮動狀態列頁的平台、持久化及 UI 檢查通過",
+      "ok": true
+    },
+    {
+      "name": "真 MV3 與雙語操作沒有未處理的頁面錯誤",
+      "ok": true
+    }
+  ],
+  "errors": [],
+  "timings": [
+    {
+      "scenario": "new-phrase-with-tts-request-held",
+      "elapsedMs": 454
+    }
+  ],
+  "lookupRequests": 5,
+  "examplesRequests": 6
+}

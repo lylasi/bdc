@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "bdc-sync-api" generated at 2026-11-07T17:56:23.481Z.

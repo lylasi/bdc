@@ -1,0 +1,51 @@
+{
+  "before": "5c948f470f70ef1d0288cc0b44a06392e40929d6",
+  "head": "be248a549b832449072e4c4ec55ef8d11b175ff8",
+  "release": "1f2c52a9f361",
+  "docs_paths": [
+    "docs/release/20261107154631324_句尾朗讀懸停修復149部署記錄.md",
+    "docs/release/assets/20261107152223106_sentence-hover-149/deploy-149.json",
+    "docs/release/assets/20261107152223106_sentence-hover-149/deploy-149.stderr",
+    "docs/release/assets/20261107152223106_sentence-hover-149/lan-hover.log",
+    "docs/release/assets/20261107152223106_sentence-hover-149/lan/hover-path-1280-zh-CN.png",
+    "docs/release/assets/20261107152223106_sentence-hover-149/lan/hover-path-1280-zh-HK.png",
+    "docs/release/assets/20261107152223106_sentence-hover-149/lan/hover-path-960-zh-CN.png",
+    "docs/release/assets/20261107152223106_sentence-hover-149/lan/hover-path-960-zh-HK.png",
+    "docs/release/assets/20261107152223106_sentence-hover-149/online-runtime.json",
+    "docs/release/assets/20261107152223106_sentence-hover-149/online-runtime.log",
+    "docs/release/assets/20261107152223106_sentence-hover-149/public-hover.log",
+    "docs/release/assets/20261107152223106_sentence-hover-149/public/hover-path-1280-zh-CN.png",
+    "docs/release/assets/20261107152223106_sentence-hover-149/public/hover-path-1280-zh-HK.png",
+    "docs/release/assets/20261107152223106_sentence-hover-149/public/hover-path-960-zh-CN.png",
+    "docs/release/assets/20261107152223106_sentence-hover-149/public/hover-path-960-zh-HK.png",
+    "docs/report/20261107152223106_句尾朗讀懸停浮層修復與驗證.md"
+  ],
+  "restart": false,
+  "container_running": true,
+  "container_health": "healthy",
+  "started_at": "2026-11-07T07:41:14.625964985Z",
+  "private_config_preserved": true,
+  "http_status": 200,
+  "files": {
+    "index.html": {
+      "source": "2b09bfdece55bb5e7a8a68b0432474694f9086c0c7d7a7a65f05ee95ee7cd391",
+      "runtime": "2b09bfdece55bb5e7a8a68b0432474694f9086c0c7d7a7a65f05ee95ee7cd391",
+      "ok": true
+    },
+    "styles.css": {
+      "source": "a6730bf270322b300a5811a5ebfca1250360a5fb330441ed59d4dc00b72a3d50",
+      "runtime": "a6730bf270322b300a5811a5ebfca1250360a5fb330441ed59d4dc00b72a3d50",
+      "ok": true
+    },
+    "features/article/article.js": {
+      "source": "6fcb58f710054c71440739f1f22ecdacac741b933732c92b61346a110bce8893",
+      "runtime": "6fcb58f710054c71440739f1f22ecdacac741b933732c92b61346a110bce8893",
+      "ok": true
+    },
+    "features/article/sentence-actions.js": {
+      "source": "7e4f9042b835119b787c6a27618bdd0e4f873cbd296b597833f1e69903631130",
+      "runtime": "7e4f9042b835119b787c6a27618bdd0e4f873cbd296b597833f1e69903631130",
+      "ok": true
+    }
+  }
+}

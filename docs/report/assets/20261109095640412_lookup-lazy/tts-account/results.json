@@ -1,0 +1,84 @@
+{
+  "checks": [
+    {
+      "name": "主站登入後自動保存原本遠端 TTS 伺服器",
+      "ok": true
+    },
+    {
+      "name": "個人設定的語音頁顯示已保存到目前帳戶",
+      "ok": true
+    },
+    {
+      "name": "主站 Key 欄位保持遮蔽",
+      "ok": true
+    },
+    {
+      "name": "主站 Key 標籤明示登入後加密同步",
+      "ok": true
+    },
+    {
+      "name": "聲音與英語朗讀偏好均保存到帳戶",
+      "ok": true
+    },
+    {
+      "name": "真 Worker 在資料庫保存密文，沒有明文 Key",
+      "ok": true
+    },
+    {
+      "name": "一般學習資料快照沒有 TTS Key",
+      "ok": true
+    },
+    {
+      "name": "主站香港繁體顯示帳戶保存及加密同步",
+      "ok": true
+    },
+    {
+      "name": "全新擴充登入即帶入主站遠端地址，不用重新填寫",
+      "ok": true
+    },
+    {
+      "name": "所選聲音、朗讀偏好與加密 Key 一併帶入",
+      "ok": true
+    },
+    {
+      "name": "新擴充沒有用空白內容覆蓋主站快照",
+      "ok": true
+    },
+    {
+      "name": "帶入的配置實際成功播放 HTTP 音訊",
+      "ok": true
+    },
+    {
+      "name": "香港繁體顯示帳戶帶入及加密同步說明",
+      "ok": true
+    },
+    {
+      "name": "已登入擴充重開首頁即取得新語音設定，無需再次登入",
+      "ok": true
+    },
+    {
+      "name": "切換帳戶後顯示 Bob 自己的服務與 Key",
+      "ok": true
+    },
+    {
+      "name": "舊帳戶尚未自動儲存的輸入不會寫進新帳戶",
+      "ok": true
+    },
+    {
+      "name": "登出即清除目前帳戶聲音及 Key 的表單顯示",
+      "ok": true
+    },
+    {
+      "name": "網站及擴充流程沒有未捕獲 JS 例外",
+      "ok": true
+    }
+  ],
+  "errors": [],
+  "audioRequests": [
+    {
+      "path": "/tts",
+      "authenticated": true,
+      "voice": "en-US-JennyNeural"
+    }
+  ]
+}

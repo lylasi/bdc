@@ -783,6 +783,95 @@ test('10. tasks-only account snapshots and mixed patches preserve task model map
     assert.equal(profile.taskModels.articleCleanup, 'managed-main:gpt-managed-alt');
 });
 
+test('11. extension phrase lookups omit examples while full details and older full caches remain usable', async () => {
+    resetStorageAndRuntime();
+    await runtime.connectExtensionAccount({ endpoint: 'https://sync.mock.test', mode: 'token', token: mockState.users.alice.token });
+    const examples = [{ en: 'She took charge of the team.', zh: '她接管了團隊。' }, { en: 'He took charge of the project.', zh: '他接管了項目。' }];
+    const requests = [];
+    mockState.providerHandler = async ({ body }) => {
+        requests.push(body);
+        const concise = body.messages[0].content.includes('Do not generate examples');
+        return jsonRes({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({
+            phonetic: 'teɪk tʃɑːdʒ ɒv', meaning: '接管', usage: '動詞短語', ...(concise ? {} : { examples })
+        }) } }] });
+    };
+    const input = { text: 'take charge of', sentence: 'She took charge of the team.' };
+    const concise = await runtime.runExtensionLookup(input);
+    assert.equal(concise.meaning, '接管');
+    assert.deepEqual(concise.examples, []);
+    assert.equal(requests.length, 1);
+    assert.ok(!requests[0].messages[0].content.includes('"examples"'));
+    assert.equal(requests[0].reasoning_effort, 'low');
+    const full = await runtime.lookupSelection(input);
+    assert.deepEqual(full.examples, examples);
+    assert.equal(requests.length, 2, 'concise cache must not satisfy a full-details request');
+    assert.equal((await runtime.runExtensionLookup(input)).fromCache, true);
+    assert.equal(requests.length, 2);
+    const older = { text: 'take control of', sentence: 'She took control of the team.' };
+    await runtime.lookupSelection(older);
+    assert.deepEqual((await runtime.runExtensionLookup(older)).examples, examples);
+    assert.equal(requests.length, 3, 'complete older cache can satisfy extension lookup without another request');
+});
+
+test('12. on-demand examples follow the completed meaning/model/thinking and cache independently by context and language', async () => {
+    resetStorageAndRuntime();
+    await runtime.connectExtensionAccount({ endpoint: 'https://sync.mock.test', mode: 'token', token: mockState.users.alice.token });
+    const result = await runtime.runExtensionLookup({ text: 'charge', sentence: 'They charge £10 for admission.', context: 'Museum guide.' });
+    const requests = [];
+    const examples = [{ en: 'They charge a small fee.', zh: '他們收取少量費用。' }, { en: 'We charge ten pounds.', zh: '我們收取十英鎊。' }];
+    mockState.providerHandler = async ({ body }) => {
+        requests.push(body);
+        return jsonRes({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ examples }) } }] });
+    };
+    assert.equal(requests.length, 0);
+    assert.deepEqual(await runtime.runExtensionLookupExamples(result), examples);
+    const prompt = requests[0].messages[0].content;
+    assert.ok(prompt.includes(JSON.stringify(result.meaning)));
+    assert.ok(prompt.includes('Museum guide.'));
+    assert.ok(prompt.includes('exactly 2'));
+    assert.equal(requests[0].model, result.model);
+    assert.equal(requests[0].reasoning_effort, result.thinking);
+    assert.deepEqual(await runtime.runExtensionLookupExamples(result), examples);
+    assert.equal(requests.length, 1);
+    await runtime.runExtensionLookupExamples({ ...result, meaning: '指控' });
+    await runtime.runExtensionLookupExamples({ ...result, context: 'Battery instructions.' });
+    await runtime.runExtensionLookupExamples({ ...result, locale: 'zh-HK' });
+    assert.equal(requests.length, 4, 'meaning, nearby context and locale each isolate the examples cache');
+    assert.ok(requests[3].messages[0].content.includes('香港繁體中文'));
+});
+
+test('13. malformed examples are retryable and logout discards delayed examples and rejects the previous account result', async () => {
+    resetStorageAndRuntime();
+    await runtime.connectExtensionAccount({ endpoint: 'https://sync.mock.test', mode: 'token', token: mockState.users.alice.token });
+    const result = await runtime.runExtensionLookup({ text: 'charge', sentence: 'They charge admission.' });
+    let requests = 0, valid = false;
+    const examples = [{ en: 'They charge admission.', zh: '他們收取入場費。' }, { en: 'We charge a fee.', zh: '我們收取費用。' }];
+    mockState.providerHandler = async () => {
+        requests += 1;
+        return jsonRes({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ examples: valid ? examples : [{ en: 'Incomplete.' }] }) } }] });
+    };
+    await assert.rejects(runtime.runExtensionLookupExamples(result), { code: 'invalid_response' });
+    valid = true;
+    assert.deepEqual(await runtime.runExtensionLookupExamples(result), examples);
+    assert.equal(requests, 2, 'a failed response must not poison the cache');
+    let release, started;
+    const gate = new Promise((resolve) => { release = resolve; });
+    const ready = new Promise((resolve) => { started = resolve; });
+    mockState.providerHandler = async () => {
+        started();
+        await gate;
+        return jsonRes({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ examples }) } }] });
+    };
+    const pending = runtime.runExtensionLookupExamples({ ...result, meaning: '新釋義' });
+    const rejection = assert.rejects(pending, (error) => error.code === 'stale_session' || error.name === 'AbortError');
+    await ready;
+    await runtime.disconnectExtensionAccount();
+    release();
+    await rejection;
+    await runtime.connectExtensionAccount({ endpoint: 'https://sync.mock.test', mode: 'token', token: mockState.users.bob.token });
+    await assert.rejects(runtime.runExtensionLookupExamples(result), { code: 'stale_session' });
+});
+
 after(() => {
     runtime.stopExtensionRuntimeTimers();
 });

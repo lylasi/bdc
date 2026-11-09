@@ -1437,6 +1437,7 @@ export async function analyzeSentence(sentence, context = '', opts = {}) {
 // --- Selection/phrase analysis ---
 export async function analyzeSelection(selection, sentence, context = '', opts = {}) {
     const { timeoutMs = 15000, signal, noCache = false } = opts;
+    const includeExamples = opts.includeExamples !== false;
     const s = loadGlobalSettings();
     const primaryModel = getPreferredTaskSpec(['articlePhraseTranslation', 'articlePhraseAnalysis', 'wordAnalysis'], { settings: s, override: opts.model });
     const fallbackModel = getPreferredTaskSpec(['articlePhraseTranslationFallback', 'wordAnalysis'], { settings: s });
@@ -1445,7 +1446,8 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
     const promptVersion = getPromptVersion('article.phraseAnalysis');
     const thinking = resolveThinkingLevel('articlePhraseTranslation', { override: opts.thinking }).level;
     // Stored under the requested level even if the channel downgraded to auto.
-    const cacheOptions = { locale, promptVersion, thinking, ...(opts.strict ? { structuredLookup: 1 } : {}) };
+    const cacheOptions = { locale, promptVersion, thinking, ...(opts.strict ? { structuredLookup: 1 } : {}),
+        ...(!includeExamples ? { includeExamples: false } : {}) };
     if (opts.cacheScope && typeof opts.cacheScope === 'object') {
         cacheOptions.endpoint = String(opts.cacheScope.endpoint || '');
         cacheOptions.userId = String(opts.cacheScope.userId || '');
@@ -1461,7 +1463,7 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
             } catch (_) {}
         }
     }
-    const prompt = buildPrompt('article.phraseAnalysis', { selection, sentence, context }, { locale, variant: 'standard' });
+    const prompt = buildPrompt('article.phraseAnalysis', { selection, sentence, context }, { locale, variant: includeExamples ? 'standard' : 'concise' });
 
     let lastErr = null;
     for (const modelSpec of candidates) {
@@ -1471,7 +1473,7 @@ export async function analyzeSelection(selection, sentence, context = '', opts =
                 model: modelSpec,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.2,
-                maxTokens: 520,
+                maxTokens: includeExamples ? 520 : 320,
                 timeoutMs,
                 signal,
                 responseFormat: { type: 'json_object' },
@@ -2340,7 +2342,7 @@ export async function getWordPronunciations(word, accent, { signal, refresh = fa
 }
 
 
-function lookupInputs({ text = '', sentence = '', context = '', locale, model, thinking: thinkingOverride } = {}, cacheOnly = false) {
+function lookupInputs({ text = '', sentence = '', context = '', locale, model, thinking: thinkingOverride, includeExamples = true } = {}, cacheOnly = false) {
     const cleanText = String(text || '').trim();
     if (!cleanText) throw Object.assign(new Error(t('errors.lookupTextRequired')), { code: 'lookup_text_required' });
     const cleanContext = String(context || '').trim();
@@ -2356,7 +2358,7 @@ function lookupInputs({ text = '', sentence = '', context = '', locale, model, t
     const thinking = resolveThinkingLevel(task, { override: thinkingOverride }).level;
     const promptId = isPhrase ? 'article.phraseAnalysis' : (cleanSentence ? 'article.wordTooltip' : 'dictionary.wordAnalysis');
     const promptVersion = getPromptVersion(promptId);
-    return { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptId, promptVersion };
+    return { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptId, promptVersion, includeExamples };
 }
 
 function lookupResult(raw, query, connection, fromCache = false) {
@@ -2382,7 +2384,7 @@ function lookupResult(raw, query, connection, fromCache = false) {
 export async function getCachedLookupSelection(input = {}) {
     try {
         const query = lookupInputs(input, true);
-        const { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptVersion } = query;
+        const { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, isPhrase, task, modelSpec, thinking, promptVersion, includeExamples } = query;
         const opts = { strict: true };
         const cacheOptions = { locale: effectiveLocale, promptVersion, thinking, structuredLookup: 1 };
         const fallbackTasks = isPhrase ? ['articlePhraseTranslationFallback', 'wordAnalysis'] : ['articleWordTranslationFallback', 'wordAnalysis'];
@@ -2397,7 +2399,14 @@ export async function getCachedLookupSelection(input = {}) {
             catch (_) { continue; }
             const modelKey = analysisCacheModelKey(connection, opts);
             let raw;
-            if (isPhrase) raw = await cache.getSelectionAnalysisCached(cleanText, cleanSentence || cleanText, contextHash, modelKey, cacheOptions);
+            if (isPhrase) {
+                if (includeExamples === false) {
+                    raw = await cache.getSelectionAnalysisCached(cleanText, cleanSentence || cleanText, contextHash, modelKey, { ...cacheOptions, includeExamples: false });
+                }
+                // A complete older answer can satisfy a concise lookup, while
+                // a concise answer must never replace the main site's details.
+                if (!raw) raw = await cache.getSelectionAnalysisCached(cleanText, cleanSentence || cleanText, contextHash, modelKey, cacheOptions);
+            }
             else if (cleanSentence) raw = await cache.getWordAnalysisCached(cleanText, cleanSentence, modelKey, cacheOptions);
             else raw = await cache.getCached('dictionaryWordAnalysis', {
                 word: cleanText, locale: effectiveLocale, promptVersion, thinking, ...cacheScope, modelKey, schema: 'structured-v1'
@@ -2429,7 +2438,8 @@ export async function lookupSelection(input = {}) {
     let connection;
     try { connection = await resolveAIRequestConfigAsync({ task, model: modelSpec }); }
     catch (error) { throw localizeAIError(error); }
-    const opts = { timeoutMs, signal, noCache, locale: effectiveLocale, context: cleanContext, cacheScope, strict: true, model, thinking };
+    const opts = { timeoutMs, signal, noCache, locale: effectiveLocale, context: cleanContext, cacheScope, strict: true, model, thinking,
+        includeExamples: query.includeExamples };
     let raw;
     if (isPhrase) {
         raw = await analyzeSelection(cleanText, cleanSentence || cleanText, cleanContext, opts);
@@ -2454,4 +2464,65 @@ export async function lookupSelection(input = {}) {
         }
     }
     return lookupResult(raw, query, connection);
+}
+
+function normalizeLookupExamples(value) {
+    if (!Array.isArray(value) || value.length !== 2) return null;
+    if (!value.every((item) => typeof item?.en === 'string' && item.en.trim()
+        && typeof item.zh === 'string' && item.zh.trim())) return null;
+    return value.map(({ en, zh }) => ({ en: en.trim(), zh: zh.trim() }));
+}
+
+/** Generate examples for a completed lookup, independently of the first answer. */
+export async function generateLookupExamples(input = {}) {
+    const { signal, noCache = false, timeoutMs = 20000 } = input;
+    const query = lookupInputs(input, true);
+    const { cleanText, cleanSentence, cleanContext, effectiveLocale, cacheScope, task, modelSpec, thinking } = query;
+    const meaning = String(input.meaning || '').trim();
+    if (!meaning) throw invalidLookupResponse();
+    const assertCurrent = (modelKey = '') => {
+        throwIfAIAborted(signal);
+        const scope = getActiveAIScope();
+        if ((scope.endpoint || '') !== cacheScope.endpoint || (scope.userId || '') !== cacheScope.userId) {
+            throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
+        }
+        if (modelKey && analysisCacheModelKey(resolveAIRequestConfig({ task, model: modelSpec, cacheOnly: true }), { strict: true }) !== modelKey) {
+            throw Object.assign(new Error('stale_session'), { code: 'stale_session' });
+        }
+    };
+    assertCurrent();
+    const payload = {
+        text: cleanText, meaning, sentence: cleanSentence, context: cleanContext,
+        locale: effectiveLocale, thinking, ...cacheScope,
+        promptVersion: getPromptVersion('dictionary.lookupExamples'), schema: 'v1'
+    };
+    let cachedConnection;
+    try { cachedConnection = resolveAIRequestConfig({ task, model: modelSpec, cacheOnly: true }); }
+    catch (_) { /* A missing connection still follows normal resolution below. */ }
+    if (!noCache && cachedConnection) {
+        const modelKey = analysisCacheModelKey(cachedConnection, { strict: true });
+        const cached = normalizeLookupExamples(await cache.getCached('lookupExamples', {
+            ...payload, modelKey
+        }));
+        assertCurrent(modelKey);
+        if (cached) return cached;
+    }
+    const connection = await resolveAIRequestConfigAsync({ task, model: modelSpec });
+    const modelKey = analysisCacheModelKey(connection, { strict: true });
+    assertCurrent(modelKey);
+    const data = await requestAI({
+        model: modelSpec, taskType: task, thinking, signal, timeoutMs,
+        messages: [{ role: 'user', content: buildPrompt('dictionary.lookupExamples', {
+            referenceJSON: JSON.stringify({ text: cleanText, meaning, sentence: cleanSentence, context: cleanContext })
+        }, { locale: effectiveLocale }) }],
+        temperature: 0.4, maxTokens: 360, responseFormat: { type: 'json_object' }
+    });
+    assertCurrent(modelKey);
+    const examples = normalizeLookupExamples(safeJsonParse(pickMessageContent(data))?.examples);
+    if (!examples) throw invalidLookupResponse();
+    await cache.setCached('lookupExamples', {
+        ...payload, modelKey
+    }, examples, 30 * 24 * 60 * 60 * 1000);
+    assertCurrent(modelKey);
+    return examples;
 }

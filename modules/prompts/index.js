@@ -1,6 +1,6 @@
 import { normalizeLocale } from '../i18n-config.js';
 import { AI_LANGUAGE_RULES } from './language-rules.js';
-import { wordAnalysisPrompt, pronunciationPrompt } from './dictionary.js';
+import { wordAnalysisPrompt, pronunciationPrompt, lookupExamplesPrompt } from './dictionary.js';
 import { exampleGenerationPrompt, sentenceCheckingPrompt } from './learning.js';
 import {
     paragraphTranslationPrompt,
@@ -18,6 +18,7 @@ import { htmlExtractionPrompt, markdownCleanupPrompt } from './import.js';
 const promptRegistry = {
     [wordAnalysisPrompt.id]: wordAnalysisPrompt,
     [pronunciationPrompt.id]: pronunciationPrompt,
+    [lookupExamplesPrompt.id]: lookupExamplesPrompt,
     [exampleGenerationPrompt.id]: exampleGenerationPrompt,
     [sentenceCheckingPrompt.id]: sentenceCheckingPrompt,
     [paragraphTranslationPrompt.id]: paragraphTranslationPrompt,

@@ -59,7 +59,7 @@ import {
 } from './ai-models.js';
 import { isThinkingLevel } from './ai-thinking.js';
 import { EXTENSION_AI_TASKS, getExtensionAIChoice, saveExtensionAIChoice } from './extension-ai-preferences.js';
-import { lookupSelection, getCachedLookupSelection, resetThinkingFallbackMemory, extractPageArticle, analyzeParagraph, streamAIResponse } from './api.js';
+import { lookupSelection, getCachedLookupSelection, generateLookupExamples, resetThinkingFallbackMemory, extractPageArticle, analyzeParagraph, streamAIResponse } from './api.js';
 import { sanitizeAISettings } from './ai-settings-sanitize.js';
 import { getLocale, t } from './i18n.js';
 import { initTTSAccountSync, syncTTSAccount } from './tts-account-sync.js';
@@ -192,7 +192,7 @@ export async function pullExtensionAISettings() {
  * Every step checks session currency so an account switch or logout mid-flight
  * drops stale responses cleanly.
  */
-export async function syncExtensionAccountAI({ forceCatalog = true } = {}) {
+export async function syncExtensionAccountAI({ forceCatalog = true, waitForTTS = true } = {}) {
     const session = captureAuthSession();
     if (!session.loggedIn) {
         return getExtensionReadiness();
@@ -206,7 +206,8 @@ export async function syncExtensionAccountAI({ forceCatalog = true } = {}) {
     await Promise.all([
         refreshAICatalog({ force: forceCatalog, reason: 'extension-sync' }),
         syncCredentials({ reason: 'extension-sync' }),
-        pendingTTSSync
+        // Text lookup does not need a separate speech-service credential round trip.
+        ...(waitForTTS ? [pendingTTSSync] : [])
     ]);
     if (!isAuthSessionCurrent(session)) {
         const err = new Error('session changed');
@@ -510,7 +511,8 @@ export async function readExtensionLookupCache(input = {}) {
     if (!session.loggedIn || input.noCache) return null;
     input.signal?.throwIfAborted();
     const choice = getExtensionAIChoice(getExtensionLookupTask(input));
-    const result = await getCachedLookupSelection({ ...input, locale: input.locale || getLocale(), model: choice.model, thinking: choice.thinking });
+    const result = await getCachedLookupSelection({ ...input, includeExamples: false,
+        locale: input.locale || getLocale(), model: choice.model, thinking: choice.thinking });
     input.signal?.throwIfAborted();
     if (!isAuthSessionCurrent(session) || getActiveAIScope().key !== scopeKey) {
         throw Object.assign(new Error(t('extension.staleLookupDiscarded')), { code: 'stale_session' });
@@ -518,14 +520,7 @@ export async function readExtensionLookupCache(input = {}) {
     return result;
 }
 
-export async function runExtensionLookup({
-    text = '',
-    sentence = '',
-    context = '',
-    locale,
-    signal,
-    noCache = false
-} = {}) {
+async function withLookupSession(signal, run) {
     const capturedSession = captureAuthSession();
     const capturedScope = getActiveAIScope();
     const ac = new AbortController();
@@ -541,20 +536,7 @@ export async function runExtensionLookup({
     };
     try {
         if (typeof window !== 'undefined') window.addEventListener(AUTH_EVENT, onAuthChange);
-        if (getExtensionReadiness({ text, sentence, context }).taskResolution.errorCode === 'ai_key_binding_mismatch') {
-            throw Object.assign(new Error(t('errors.aiKeyBindingMismatch')), { code: 'ai_key_binding_mismatch' });
-        }
-        const choice = getExtensionAIChoice(getExtensionLookupTask({ text, sentence, context }));
-        const result = await lookupSelection({
-            text,
-            sentence,
-            context,
-            locale: locale || getLocale(),
-            signal: ac.signal,
-            noCache,
-            model: choice.model,
-            thinking: choice.thinking
-        });
+        const result = await run(ac.signal, capturedScope);
         if (!isAuthSessionCurrent(capturedSession) || profileKeyForScope(getActiveAIScope()) !== capturedScope.key) {
             const err = new Error(t('extension.staleLookupDiscarded'));
             err.code = 'stale_session';
@@ -567,6 +549,42 @@ export async function runExtensionLookup({
             if (typeof window !== 'undefined') window.removeEventListener(AUTH_EVENT, onAuthChange);
         } catch (_) {}
     }
+}
+
+export async function runExtensionLookup({
+    text = '',
+    sentence = '',
+    context = '',
+    locale,
+    signal,
+    noCache = false
+} = {}) {
+    return await withLookupSession(signal, async (lookupSignal) => {
+        if (getExtensionReadiness({ text, sentence, context }).taskResolution.errorCode === 'ai_key_binding_mismatch') {
+            throw Object.assign(new Error(t('errors.aiKeyBindingMismatch')), { code: 'ai_key_binding_mismatch' });
+        }
+        const choice = getExtensionAIChoice(getExtensionLookupTask({ text, sentence, context }));
+        return await lookupSelection({
+            text, sentence, context, locale: locale || getLocale(),
+            signal: lookupSignal, noCache, includeExamples: false,
+            model: choice.model, thinking: choice.thinking
+        });
+    });
+}
+
+export async function runExtensionLookupExamples(result, { signal } = {}) {
+    return await withLookupSession(signal, async (lookupSignal, scope) => {
+        if (!getAuthSnapshot().loggedIn || result?.scope?.endpoint !== (scope.endpoint || '')
+            || result?.scope?.userId !== (scope.userId || '')) {
+            throw Object.assign(new Error(t('extension.staleLookupDiscarded')), { code: 'stale_session' });
+        }
+        return await generateLookupExamples({
+            text: result.text, sentence: result.sentence, context: result.context,
+            meaning: result.meaning, locale: result.locale,
+            model: { provider: result.provider, model: result.model }, thinking: result.thinking,
+            signal: lookupSignal
+        });
+    });
 }
 
 export async function runExtensionArticleTask({ page, article, analyze = false, signal, onProgress } = {}) {
