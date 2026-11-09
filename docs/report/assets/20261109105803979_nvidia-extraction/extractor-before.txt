@@ -1,0 +1,31 @@
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
+  {
+    pageTitle: 'Statement from NVIDIA Board of Directors',
+    pageUrl: 'https://nvidianews.nvidia.com/news/statement-from-nvidia-board-of-directors',
++   text: '### NVIDIA and Oracle Expand NVIDIA Vera Rubin to Multi-Gigawatt Scale and Bring NVIDIA Vera CPU to Oracle Cloud Infrastructure',
+-   text: '# Statement from NVIDIA Board of Directors\n' +
+-     '\n' +
+-     'Board statement paragraph 1. This belongs to the current press release.\n' +
+-     '\n' +
+-     'Board statement paragraph 2. This belongs to the current press release.\n' +
+-     '\n' +
+-     'Board statement paragraph 3. This belongs to the current press release.\n' +
+-     '\n' +
+-     'Board statement paragraph 4. This belongs to the current press release.\n' +
+-     '\n' +
+-     'Board statement paragraph 5. This belongs to the current press release.\n' +
+-     '\n' +
+-     'Board statement paragraph 6. This belongs to the current press release.',
+    tooLarge: false
+  }
+
+    at /private/tmp/bdc-nvidia-extractor-baseline.cjs:33:16 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [Object],
+  expected: [Object],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}

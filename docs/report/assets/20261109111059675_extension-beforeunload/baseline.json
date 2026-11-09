@@ -1,0 +1,89 @@
+{
+  "baseline": true,
+  "phases": [
+    {
+      "name": "positive control",
+      "warnings": [
+        {
+          "source": "intervention",
+          "level": "error",
+          "text": "Blocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808",
+          "timestamp": 1794193861943.543,
+          "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html"
+        }
+      ]
+    },
+    {
+      "name": "zh-CN auto-import preview without interaction",
+      "warnings": [
+        {
+          "source": "intervention",
+          "level": "error",
+          "text": "Blocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808",
+          "timestamp": 1794193862399.949,
+          "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html?windowTicket=cd7266da-ce0f-4980-a86b-866622767290&view=article&import=1"
+        }
+      ]
+    },
+    {
+      "name": "zh-CN edited preview",
+      "dialogs": [
+        "beforeunload",
+        "beforeunload"
+      ],
+      "keptDraftAfterCancel": true
+    },
+    {
+      "name": "zh-CN activated empty workspace",
+      "dialogs": []
+    },
+    {
+      "name": "zh-CN restored inline draft without interaction",
+      "warnings": [
+        {
+          "source": "intervention",
+          "level": "error",
+          "text": "Blocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808",
+          "timestamp": 1794193862980.058,
+          "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html?embedded=1&view=assistant&ticket=e40e0286-6fb8-4160-a855-1a7cd67b965b"
+        }
+      ]
+    },
+    {
+      "name": "zh-HK auto-import preview without interaction",
+      "warnings": [
+        {
+          "source": "intervention",
+          "level": "error",
+          "text": "Blocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808",
+          "timestamp": 1794193863219.895,
+          "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html?windowTicket=86b58910-7a7f-4edc-a53a-149a48655a5e&view=article&import=1"
+        }
+      ]
+    },
+    {
+      "name": "zh-HK edited preview",
+      "dialogs": [
+        "beforeunload",
+        "beforeunload"
+      ],
+      "keptDraftAfterCancel": true
+    },
+    {
+      "name": "zh-HK activated empty workspace",
+      "dialogs": []
+    },
+    {
+      "name": "zh-HK restored inline draft without interaction",
+      "warnings": [
+        {
+          "source": "intervention",
+          "level": "error",
+          "text": "Blocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808",
+          "timestamp": 1794193864071.498,
+          "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html?embedded=1&view=assistant&ticket=6e5b104e-27dd-4101-9031-862a0cc9c521"
+        }
+      ]
+    }
+  ]
+}

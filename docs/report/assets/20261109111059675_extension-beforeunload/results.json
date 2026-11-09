@@ -1,0 +1,57 @@
+{
+  "baseline": false,
+  "phases": [
+    {
+      "name": "positive control",
+      "warnings": [
+        {
+          "source": "intervention",
+          "level": "error",
+          "text": "Blocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808",
+          "timestamp": 1794193908903.89,
+          "url": "chrome-extension://ofgbcbpcedcodjhmhjmlpfmogfponapd/lookup.html"
+        }
+      ]
+    },
+    {
+      "name": "zh-CN auto-import preview without interaction",
+      "warnings": []
+    },
+    {
+      "name": "zh-CN edited preview",
+      "dialogs": [
+        "beforeunload",
+        "beforeunload"
+      ],
+      "keptDraftAfterCancel": true
+    },
+    {
+      "name": "zh-CN activated empty workspace",
+      "dialogs": []
+    },
+    {
+      "name": "zh-CN restored inline draft without interaction",
+      "warnings": []
+    },
+    {
+      "name": "zh-HK auto-import preview without interaction",
+      "warnings": []
+    },
+    {
+      "name": "zh-HK edited preview",
+      "dialogs": [
+        "beforeunload",
+        "beforeunload"
+      ],
+      "keptDraftAfterCancel": true
+    },
+    {
+      "name": "zh-HK activated empty workspace",
+      "dialogs": []
+    },
+    {
+      "name": "zh-HK restored inline draft without interaction",
+      "warnings": []
+    }
+  ]
+}

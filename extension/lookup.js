@@ -891,6 +891,8 @@ async function initExtensionPage() {
     });
     dom.lookupBtn.addEventListener('click', () => { querySubmitted = true; document.getElementById('ext-query-dialog')?.close(); });
     window.addEventListener('beforeunload', (event) => {
+        // Auto-import can create a draft before this window receives any input.
+        if (!navigator.userActivation?.hasBeenActive) return;
         if (isWorkspaceWindow && (workspaceState.busy || workspaceState.hasDraft)) { event.preventDefault(); event.returnValue = ''; }
     });
     chrome.storage.onChanged.addListener((changes, area) => {

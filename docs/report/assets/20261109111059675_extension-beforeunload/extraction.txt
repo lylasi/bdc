@@ -1,0 +1,15 @@
+PASS newsroom: all six paragraphs, correct title/URL, no related news, unchanged DOM
+PASS standard article remains scoped despite unrelated body paragraphs
+PASS prose wins over longer linked article cards inside main
+PASS schema articleBody supports multiple itemprop tokens and very short text
+PASS unmarked story found through the main heading ancestors
+PASS linked headline candidates fall back to unmarked body prose
+PASS plain text without paragraph markup remains readable
+PASS plain text in main is not replaced by an unrelated paragraph
+PASS a title-only wrapper cannot beat a very short story
+PASS private controls, hidden text, sidebars and extension UI are excluded
+PASS headings, lists and nested prose are kept once
+PASS empty pages return empty content
+PASS 100000 code points remain allowed
+PASS oversized content is blocked rather than silently truncated
+14/14 extraction checks passed

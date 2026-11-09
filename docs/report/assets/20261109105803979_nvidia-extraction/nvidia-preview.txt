@@ -1,0 +1,2 @@
+PASS zh-CN: real MV3 -> six source paragraphs -> AI input -> editable preview; no premature save
+PASS zh-HK: real MV3 -> six source paragraphs -> AI input -> editable preview; no premature save

@@ -1,0 +1,21 @@
+{
+  "sourceUrl": "https://nvidianews.nvidia.com/news/statement-from-nvidia-board-of-directors",
+  "aiTransport": "mock",
+  "source": "captured original HTML",
+  "checks": [
+    {
+      "locale": "zh-CN",
+      "paragraphs": 6,
+      "correctAIInput": true,
+      "correctPreview": true,
+      "savedBeforeConfirmation": false
+    },
+    {
+      "locale": "zh-HK",
+      "paragraphs": 6,
+      "correctAIInput": true,
+      "correctPreview": true,
+      "savedBeforeConfirmation": false
+    }
+  ]
+}

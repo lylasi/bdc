@@ -104,6 +104,8 @@ export function createInlinePanel(dom, captureUI, workspaceUI, { ticket, restore
         if (event.isTrusted && event.key === 'Escape') { event.preventDefault(); requestClose(); }
     });
     window.addEventListener('beforeunload', (event) => {
+        // Restoring a draft does not activate this frame for native dialogs.
+        if (!navigator.userActivation?.hasBeenActive) return;
         if (!closing && dirty()) { event.preventDefault(); event.returnValue = ''; }
     });
     chrome.runtime.onMessage.addListener((message, sender, reply) => {

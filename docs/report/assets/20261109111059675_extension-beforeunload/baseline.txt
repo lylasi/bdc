@@ -1,0 +1,10 @@
+PASS positive control captures the exact Chrome intervention
+PASS zh-CN auto-import preview without interaction (baseline warning reproduced)
+PASS zh-CN edited preview prompts, cancel keeps the draft, accept leaves
+PASS zh-CN empty workspace leaves without a prompt
+PASS zh-CN restored inline draft without interaction (baseline warning reproduced)
+PASS zh-HK auto-import preview without interaction (baseline warning reproduced)
+PASS zh-HK edited preview prompts, cancel keeps the draft, accept leaves
+PASS zh-HK empty workspace leaves without a prompt
+PASS zh-HK restored inline draft without interaction (baseline warning reproduced)
+All beforeunload checks passed; /Users/linus/CODE/bdc/docs/report/assets/20261109111059675_extension-beforeunload
