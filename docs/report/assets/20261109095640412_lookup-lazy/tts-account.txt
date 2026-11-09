@@ -1,0 +1,19 @@
+PASS 主站登入後自動保存原本遠端 TTS 伺服器
+PASS 個人設定的語音頁顯示已保存到目前帳戶
+PASS 主站 Key 欄位保持遮蔽
+PASS 主站 Key 標籤明示登入後加密同步
+PASS 聲音與英語朗讀偏好均保存到帳戶
+PASS 真 Worker 在資料庫保存密文，沒有明文 Key
+PASS 一般學習資料快照沒有 TTS Key
+PASS 主站香港繁體顯示帳戶保存及加密同步
+PASS 全新擴充登入即帶入主站遠端地址，不用重新填寫
+PASS 所選聲音、朗讀偏好與加密 Key 一併帶入
+PASS 新擴充沒有用空白內容覆蓋主站快照
+PASS 帶入的配置實際成功播放 HTTP 音訊
+PASS 香港繁體顯示帳戶帶入及加密同步說明
+PASS 已登入擴充重開首頁即取得新語音設定，無需再次登入
+PASS 切換帳戶後顯示 Bob 自己的服務與 Key
+PASS 舊帳戶尚未自動儲存的輸入不會寫進新帳戶
+PASS 登出即清除目前帳戶聲音及 Key 的表單顯示
+PASS 網站及擴充流程沒有未捕獲 JS 例外
+{"passed":18,"failed":0,"output":"docs/report/assets/20261109095640412_lookup-lazy/tts-account"}
